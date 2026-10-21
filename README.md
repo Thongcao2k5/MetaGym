@@ -20,7 +20,7 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
-Backend mặc định chạy tại `http://localhost:3000`. Kiểm tra bằng `GET /health`.
+Trước khi chạy backend, tạo database và chạy migration theo [hướng dẫn database](database/README.md). Backend mặc định chạy tại `http://localhost:3000`. Kiểm tra kết nối API và PostgreSQL bằng `GET /api/v1/health`.
 
 ### Admin web
 
@@ -38,4 +38,4 @@ F:\flutter\bin\flutter.bat run
 
 ## Trạng thái hiện tại
 
-Dự án mới chỉ có khung kỹ thuật và dependency nền. Chưa có schema PostgreSQL, dữ liệu mẫu hay nghiệp vụ.
+Dự án đã có schema PostgreSQL gồm 33 bảng, baseline seed, API health và luồng đăng ký/đăng nhập có giới hạn thử đăng nhập. Các API nghiệp vụ còn lại và dữ liệu demo chưa được triển khai.

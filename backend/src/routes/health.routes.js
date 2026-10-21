@@ -1,9 +1,27 @@
 import { Router } from 'express';
 
-const healthRouter = Router();
+export function createHealthRouter({ database }) {
+  const healthRouter = Router();
 
-healthRouter.get('/', (_request, response) => {
-  response.status(200).json({ status: 'ok' });
-});
+  healthRouter.get('/', async (_request, response) => {
+    try {
+      await database.query('SELECT 1 AS connected');
 
-export default healthRouter;
+      response.status(200).json({
+        data: {
+          api: 'AVAILABLE',
+          database: 'AVAILABLE',
+        },
+      });
+    } catch {
+      response.status(503).json({
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message: 'Cơ sở dữ liệu tạm thời không khả dụng',
+        },
+      });
+    }
+  });
+
+  return healthRouter;
+}

@@ -19,3 +19,9 @@
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local database test runtime
+.tmp/
+
+# Generated code-analysis cache
+graphify-out/
