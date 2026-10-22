@@ -20,7 +20,20 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
-Backend mặc định chạy tại `http://localhost:3000`. Kiểm tra bằng `GET /health`.
+Trước khi chạy backend, tạo database và chạy migration theo [hướng dẫn database](database/README.md). Backend mặc định chạy tại `http://localhost:3000`. Kiểm tra kết nối API và PostgreSQL bằng `GET /api/v1/health`.
+
+Các tích hợp bên ngoài chỉ được bật khi cấu hình đủ biến môi trường:
+
+- AI: `OPENAI_API_KEY` và `OPENAI_MODEL`; backend gọi OpenAI Responses API.
+- Email đặt lại mật khẩu: `PASSWORD_RESET_DELIVERY_URL`; có thể thêm
+  `PASSWORD_RESET_DELIVERY_TOKEN`. Dịch vụ nhận `POST` JSON gồm `email`, `code`
+  và `requestId` rồi chịu trách nhiệm gửi email.
+- Token gọi thoại/video: `CALL_TOKEN_SERVICE_URL`; có thể thêm
+  `CALL_TOKEN_SERVICE_TOKEN`. Dịch vụ RTC nhận thông tin cuộc gọi và trả về
+  `accessToken`, `providerCallId`, `channelId`, `expiresAt`.
+
+Nếu chưa cấu hình tích hợp tương ứng, API trả `503 SERVICE_UNAVAILABLE` thay vì
+dùng khóa hoặc token giả.
 
 ### Admin web
 
@@ -38,4 +51,4 @@ F:\flutter\bin\flutter.bat run
 
 ## Trạng thái hiện tại
 
-Dự án mới chỉ có khung kỹ thuật và dependency nền. Chưa có schema PostgreSQL, dữ liệu mẫu hay nghiệp vụ.
+Dự án đã có schema PostgreSQL, API nghiệp vụ MVP, admin web và các luồng Member/Coach chính. Các tích hợp AI, email và RTC cần được cấu hình riêng theo môi trường triển khai.
