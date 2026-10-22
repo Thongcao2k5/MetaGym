@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 34 THEN
-    RAISE EXCEPTION 'Expected 34 public tables, found %', table_count;
+  IF table_count <> 35 THEN
+    RAISE EXCEPTION 'Expected 35 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -27,7 +27,8 @@ DECLARE
     'workout_log_exercises', 'meal_logs', 'body_measurements',
     'progress_photos', 'progress_comments', 'conversations',
     'conversation_participants', 'messages', 'call_logs', 'ai_conversations',
-    'ai_messages', 'admin_audit_logs', 'auth_login_rate_limits'
+    'ai_messages', 'admin_audit_logs', 'auth_login_rate_limits',
+    'auth_password_reset_rate_limits'
   ];
   missing_tables text[];
 BEGIN

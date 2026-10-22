@@ -146,6 +146,38 @@ Input không hợp lệ trả `422 VALIDATION_ERROR`; email đã tồn tại tr�
 
 Ghi chú: đăng xuất trong MVP chỉ xóa access token ở ứng dụng. Không cần API đăng xuất khi chưa xây refresh token hoặc danh sách thu hồi token.
 
+### 3.3. Phiên hiện tại và hồ sơ
+
+`GET /users/me`, `PATCH /users/me` và `PATCH /users/me/password` yêu cầu
+`Authorization: Bearer <accessToken>`. Mỗi request kiểm tra chữ ký HS256,
+`issuer`, `audience`, thời hạn token, vai trò, trạng thái tài khoản và
+`sessionVersion` hiện tại trong PostgreSQL. Token cũ hoặc tài khoản bị khóa trả
+`401 UNAUTHORIZED`.
+
+`GET /users/me` trả `data` gồm `id`, `email`, `fullName`, `phone`, `role`,
+`status` và `profile` cho Member/Coach. `profile` chỉ chứa trường thuộc vai trò
+của chính người gọi; mật khẩu, hash, ghi chú nội bộ và phiên bản token không
+được trả về.
+
+`PATCH /users/me` chỉ nhận các trường cần sửa, với JSON object không rỗng:
+
+- Mọi vai trò: `fullName` (2–120 ký tự sau khi trim), `phone` (tối đa 20 ký tự hoặc `null`).
+- Member: `dateOfBirth`, `gender`, `heightCm`, `fitnessGoal`, `experienceLevel`,
+  `activityLevel`, `healthNotes`, `injuryNotes`, `dietaryPreferences`.
+- Coach: `biography`, `specialties`, `qualifications`, `experienceYears`,
+  `availabilityNote`. Giới hạn Member của Coach do Admin quản lý, không sửa ở đây.
+
+Các trường khác, gồm `role`, `status`, `email`, trả `422 VALIDATION_ERROR`.
+Cập nhật bảng tài khoản và hồ sơ tương ứng trong cùng transaction rồi trả hồ sơ
+mới. Member chỉ sửa hồ sơ của mình; Coach chỉ sửa hồ sơ của mình.
+
+`PATCH /users/me/password` nhận đúng `currentPassword` và `newPassword`.
+Mật khẩu mới theo quy tắc đăng ký: 8–72 byte, có chữ hoa, chữ thường và chữ số.
+Sai mật khẩu hiện tại trả `401 INVALID_CREDENTIALS`. Khi thành công, backend
+khóa dòng tài khoản, lưu bcrypt hash mới và tăng `session_version` trong cùng
+transaction, trả `{ "data": { "changed": true } }`. Tất cả token cũ hết hiệu
+lực và ứng dụng phải đăng nhập lại.
+
 ## 4. Membership & Payment
 
 ### 4.1. Gói tập
@@ -157,6 +189,7 @@ Ghi chú: đăng xuất trong MVP chỉ xóa access token ở ứng dụng. Khô
 | `GET` | `/memberships/me` | Member | Gói hiện tại và gói đang chờ kích hoạt |
 | `GET` | `/memberships/me/history` | Member | Lịch sử gói tập |
 | `GET` | `/admin/memberships` | Admin | Danh sách gói của tất cả Member |
+| `GET` | `/admin/membership-plans` | Admin | Danh sách tất cả gói, kể cả gói đã ngừng bán |
 | `GET` | `/admin/members/:memberId/memberships` | Admin | Lịch sử gói của một Member |
 | `POST` | `/admin/membership-plans` | Admin | Tạo gói tập |
 | `PATCH` | `/admin/membership-plans/:planId` | Admin | Sửa hoặc ngừng bán gói tập |
@@ -327,6 +360,8 @@ Backend phải kiểm tra và chuẩn hóa phản hồi từ dịch vụ AI trư
 | `GET` | `/equipment/:equipmentId` | Public | Hướng dẫn và cảnh báo của thiết bị |
 | `POST` | `/admin/equipment` | Admin | Thêm thiết bị |
 | `PATCH` | `/admin/equipment/:equipmentId` | Admin | Sửa hoặc ẩn thiết bị |
+| `GET` | `/admin/equipment` | Admin | Danh sách tất cả thiết bị, kể cả thiết bị đã ẩn |
+| `GET` | `/admin/exercises` | Admin | Danh sách tất cả bài tập, kể cả bài tập đã ẩn |
 
 ## 12. Admin Dashboard
 
