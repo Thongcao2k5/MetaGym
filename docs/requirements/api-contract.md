@@ -316,6 +316,8 @@ Quy tắc công bố đồng thời và chỉ một bản `ACTIVE` cũng áp d�
 | `GET` | `/progress-comments` | Member/Coach liên quan | Xem nhận xét theo đối tượng |
 | `POST` | `/coach/progress-comments` | Coach | Gửi nhận xét cho Member |
 
+`GET /workout-logs` và `GET /meal-logs` dùng `page` (từ 1) và `pageSize` (1–100, mặc định 20), trả `pagination`. Nhật ký tập xếp theo `performedAt DESC, id DESC`; nhật ký ăn xếp theo `eatenAt DESC, id DESC` để phân trang ổn định khi nhiều bản ghi cùng thời điểm. Việc thêm bản ghi giữa hai lần tải trang có thể làm dịch vị trí vì API hiện dùng offset pagination.
+
 Admin không có API đọc nhật ký, số đo hoặc ảnh tiến trình chi tiết.
 
 ## 8. Messaging

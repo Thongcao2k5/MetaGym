@@ -34,14 +34,18 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
     const base = `http://127.0.0.1:${server.address().port}`;
     const adminId = randomUUID();
     const memberId = randomUUID();
+    const secondMemberId = randomUUID();
     const coachId = randomUUID();
     const outsiderId = randomUUID();
     const planId = randomUUID();
     const paymentId = randomUUID();
     const membershipId = randomUUID();
+    const secondPaymentId = randomUUID();
+    const secondMembershipId = randomUUID();
     const relationshipId = randomUUID();
     const admin = token(adminId, 'ADMIN');
     const member = token(memberId, 'MEMBER');
+    const secondMember = token(secondMemberId, 'MEMBER');
     const coach = token(coachId, 'COACH');
     const outsider = token(outsiderId, 'COACH');
     try {
@@ -50,9 +54,11 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
          VALUES ($1, $2, 'hash', 'ADMIN', 'Admin'),
                 ($3, $4, 'hash', 'MEMBER', 'Member'),
                 ($5, $6, 'hash', 'COACH', 'Coach'),
-                ($7, $8, 'hash', 'COACH', 'Outsider')`,
+                ($7, $8, 'hash', 'COACH', 'Outsider'),
+                ($9, $10, 'hash', 'MEMBER', 'Second member')`,
         [adminId, `${adminId}@example.com`, memberId, `${memberId}@example.com`,
-          coachId, `${coachId}@example.com`, outsiderId, `${outsiderId}@example.com`],
+          coachId, `${coachId}@example.com`, outsiderId, `${outsiderId}@example.com`,
+          secondMemberId, `${secondMemberId}@example.com`],
       );
       await database.query(
         `INSERT INTO membership_plans
@@ -78,6 +84,26 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
           'ACTIVE', now())`, [membershipId, memberId, planId, paymentId],
       );
       await database.query(
+        `INSERT INTO payments
+         (id, member_id, plan_id, plan_name_snapshot, duration_days_snapshot,
+          amount, method, status, transaction_code, idempotency_key,
+          request_hash, created_by, confirmed_at, decided_at)
+         VALUES ($1, $2, $3, 'Monthly', 30, 100000, 'MOCK_QR', 'SUCCESS',
+                 $4, $5, repeat('a', 64), $2, now(), now())`,
+        [secondPaymentId, secondMemberId, planId,
+          `MG-${secondPaymentId.slice(0, 18)}`, randomUUID()],
+      );
+      await database.query(
+        `INSERT INTO member_memberships
+         (id, member_id, plan_id, source_payment_id, start_date, end_date,
+          status, activated_at)
+         VALUES ($1, $2, $3, $4,
+          (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,
+          (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 29,
+          'ACTIVE', now())`,
+        [secondMembershipId, secondMemberId, planId, secondPaymentId],
+      );
+      await database.query(
         'INSERT INTO coach_relationships (id, member_id, coach_id) VALUES ($1, $2, $3)',
         [relationshipId, memberId, coachId],
       );
@@ -88,10 +114,87 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       assert.equal(log.status, 201, JSON.stringify(log.body));
       const logId = log.body.data.id;
       assert.equal(log.body.data.exercises[0].exerciseName, 'Squat');
+      assert.equal((await call(base, '/workout-logs', member, 'POST', {
+        performedAt: 'not-a-date', durationMinutes: 30,
+      })).status, 422);
+      assert.equal((await call(base, '/workout-logs', member, 'POST', {
+        performedAt: '2026-10-20T08:00:00+07:00', durationMinutes: 0,
+      })).status, 422);
+      assert.equal((await call(base, '/workout-logs', member, 'POST', {
+        performedAt: '2026-10-20T08:00:00+07:00',
+        exercises: [
+          { exerciseName: 'Squat', displayOrder: 1 },
+          { exerciseName: 'Row', displayOrder: 1 },
+        ],
+      })).status, 422);
+      assert.equal((await call(base, `/workout-logs/${logId}`, secondMember,
+        'PATCH', { durationMinutes: 20 })).status, 404);
+      const extraWorkoutIds = [];
+      for (const name of ['Row', 'Press']) {
+        const created = await call(base, '/workout-logs', member, 'POST', {
+          performedAt: '2026-10-20T08:00:00+07:00',
+          exercises: [{ exerciseName: name, displayOrder: 1 }],
+        });
+        assert.equal(created.status, 201, JSON.stringify(created.body));
+        extraWorkoutIds.push(created.body.data.id);
+      }
+      const workoutPages = await Promise.all([1, 2].map((page) =>
+        call(base, `/workout-logs?page=${page}&pageSize=2`, member)));
+      assert.deepEqual(workoutPages.map((item) => item.body.data.length), [2, 1]);
+      assert.equal(workoutPages[0].body.pagination.totalItems, 3);
+      assert.equal(new Set(workoutPages.flatMap((item) => item.body.data.map(
+        (entry) => entry.id))).size, 3);
+      assert.deepEqual(workoutPages.flatMap((item) => item.body.data.map(
+        (entry) => entry.id)), [logId, ...extraWorkoutIds].sort().reverse());
+      assert.equal((await call(base, '/workout-logs?page=0', member)).status, 422);
+      assert.equal((await call(base, '/workout-logs', admin)).status, 403);
+      const changedWorkout = await call(base, `/workout-logs/${extraWorkoutIds[0]}`,
+        member, 'PATCH', { exercises: [
+          { exerciseName: 'Deadlift', displayOrder: 1, setsCompleted: 4 },
+        ] });
+      assert.equal(changedWorkout.body.data.exercises[0].exerciseName, 'Deadlift');
+      assert.equal(changedWorkout.body.data.exercises[0].setsCompleted, 4);
+      assert.equal((await call(base, `/workout-logs/${extraWorkoutIds[0]}`,
+        member, 'PATCH', { exercises: [
+          { exerciseId: randomUUID(), displayOrder: 1 },
+        ] })).status, 422);
+      assert.equal((await call(base, '/workout-logs', member)).body.data.find(
+        (entry) => entry.id === extraWorkoutIds[0]).exercises[0].exerciseName,
+      'Deadlift');
+      assert.equal((await call(base, '/workout-logs', undefined)).status, 401);
+
+      assert.equal((await call(base, '/meal-logs', member, 'POST', {
+        eatenAt: '2026-10-20T12:00:00+07:00', mealName: 'Lunch',
+        mealType: 'BRUNCH',
+      })).status, 422);
+      assert.equal((await call(base, '/meal-logs', member, 'POST', {
+        eatenAt: '2026-10-20T12:00:00+07:00', mealName: 'Lunch',
+        imageMediaId: randomUUID(),
+      })).status, 422);
+      const mealIds = [];
+      for (const mealName of ['Rice', 'Chicken', 'Fruit']) {
+        const created = await call(base, '/meal-logs', member, 'POST', {
+          eatenAt: '2026-10-20T12:00:00+07:00', mealName,
+          mealType: 'LUNCH', estimatedCalories: 300,
+        });
+        assert.equal(created.status, 201, JSON.stringify(created.body));
+        mealIds.push(created.body.data.id);
+      }
+      assert.equal((await call(base, `/meal-logs/${mealIds[0]}`, secondMember,
+        'PATCH', { mealName: 'Stolen' })).status, 404);
+      assert.equal((await call(base, `/meal-logs/${mealIds[0]}`, member, 'PATCH',
+        { mealType: 'SNACK', estimatedCalories: 150 })).body.data.mealType, 'SNACK');
+      const mealPages = await Promise.all([1, 2].map((page) =>
+        call(base, `/meal-logs?page=${page}&pageSize=2`, member)));
+      assert.deepEqual(mealPages.map((item) => item.body.data.length), [2, 1]);
+      assert.equal(new Set(mealPages.flatMap((item) => item.body.data.map(
+        (entry) => entry.id))).size, 3);
+      assert.deepEqual(mealPages.flatMap((item) => item.body.data.map(
+        (entry) => entry.id)), mealIds.sort().reverse());
       assert.equal((await call(base, '/workout-logs?page=1&pageSize=1', member))
-        .body.pagination.totalItems, 1);
+        .body.pagination.totalItems, 3);
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, coach))
-        .body.data[0].id, logId);
+        .body.data.some((entry) => entry.id === logId), true);
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, outsider))
         .status, 404);
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, admin))
@@ -104,7 +207,8 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       assert.equal(charts.status, 200);
       assert.equal(charts.body.data.length, 1);
       assert.equal(Number(charts.body.data[0].weightKg), 72.5);
-      assert.equal((await call(base, '/progress/me/summary', member)).body.data.workoutCount, 1);
+      assert.equal((await call(base, '/progress/me/summary', member)).body.data.workoutCount, 3);
+      assert.equal((await call(base, '/progress/me/summary', member)).body.data.mealCount, 3);
       const comment = await call(base, '/coach/progress-comments', coach, 'POST', {
         memberId, workoutLogId: logId, content: 'Good form',
       });
@@ -116,7 +220,18 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       });
       assert.equal(reviewedUpdate.status, 409, JSON.stringify(reviewedUpdate.body));
       assert.equal(reviewedUpdate.body.error.code, 'PROGRESS_ALREADY_REVIEWED');
-      assert.equal((await call(base, '/workout-logs', member)).body.data[0].durationMinutes, 45);
+      assert.equal((await call(base, '/workout-logs', member)).body.data.find(
+        (entry) => entry.id === logId).durationMinutes, 45);
+      await database.query(
+        `UPDATE member_memberships SET status = 'EXPIRED', expired_at = now()
+         WHERE id = $1`, [membershipId],
+      );
+      assert.equal((await call(base, '/meal-logs', member, 'POST', {
+        eatenAt: '2026-10-20T12:00:00+07:00', mealName: 'After expiry',
+      })).body.error.code, 'MEMBERSHIP_REQUIRED');
+      assert.equal((await call(base, `/workout-logs/${extraWorkoutIds[0]}`,
+        member, 'PATCH', { durationMinutes: 20 })).body.error.code,
+      'MEMBERSHIP_REQUIRED');
       await database.query(
         `UPDATE coach_relationships SET status = 'ENDED', ended_at = now(),
          ended_by = $1, end_reason = 'Test ending' WHERE id = $2`,
@@ -132,13 +247,17 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       await database.query('DELETE FROM progress_comments WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM workout_log_exercises WHERE workout_log_id IN (SELECT id FROM workout_logs WHERE member_id = $1)', [memberId]);
       await database.query('DELETE FROM workout_logs WHERE member_id = $1', [memberId]);
+      await database.query('DELETE FROM meal_logs WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM body_measurements WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM coach_relationships WHERE id = $1', [relationshipId]);
       await database.query('DELETE FROM member_memberships WHERE id = $1', [membershipId]);
+      await database.query('DELETE FROM member_memberships WHERE id = $1',
+        [secondMembershipId]);
       await database.query('DELETE FROM payments WHERE id = $1', [paymentId]);
+      await database.query('DELETE FROM payments WHERE id = $1', [secondPaymentId]);
       await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
-      await database.query('DELETE FROM users WHERE id IN ($1, $2, $3, $4)',
-        [adminId, memberId, coachId, outsiderId]);
+      await database.query('DELETE FROM users WHERE id IN ($1, $2, $3, $4, $5)',
+        [adminId, memberId, coachId, outsiderId, secondMemberId]);
       await new Promise((resolve) => server.close(resolve));
       await database.end();
     }

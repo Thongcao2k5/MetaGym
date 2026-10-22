@@ -79,7 +79,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T13 — Kiểm chứng API nhật ký tập luyện và ăn uống
 
-**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Bổ sung test PostgreSQL cho validation ngày, thời lượng, bài tập, loại bữa và ảnh không hợp lệ; membership hết hạn, quyền sửa của Member, Coach và Admin, bài tập sau cập nhật, cùng phân trang ổn định khi trùng thời điểm. Không phát hiện lỗi route cần sửa. Backend check và 50/50 test đạt, không skip; contract ghi rõ thứ tự và giới hạn offset pagination.
 
 **API hiện có:** `GET/POST/PATCH /workout-logs` và `/meal-logs` trong `backend/src/routes/progress.routes.js`.
 
