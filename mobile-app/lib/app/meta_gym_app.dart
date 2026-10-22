@@ -9,6 +9,9 @@ import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
+import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
+import 'package:meta_gym_app/features/catalog/presentation/catalog_controller.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
@@ -22,12 +25,14 @@ class MetaGymApp extends StatefulWidget {
     this.apiClient,
     this.authService,
     this.profileService,
+    this.catalogService,
   });
 
   final SessionController? sessionController;
   final ApiClient? apiClient;
   final AuthService? authService;
   final ProfileService? profileService;
+  final CatalogService? catalogService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -41,6 +46,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final ProfileService _profileService;
   late final ProfileController _profileController;
   late final PasswordResetController _passwordResetController;
+  late final CatalogService _catalogService;
+  late final CatalogController _catalogController;
   late final GoRouter _router;
 
   @override
@@ -74,6 +81,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileService = widget.profileService ?? ProfileApi(_apiClient);
     _profileController = ProfileController(_profileService, _sessionController);
     _passwordResetController = PasswordResetController(_profileService);
+    _catalogService = widget.catalogService ?? CatalogApi(_apiClient);
+    _catalogController = CatalogController(_catalogService);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -84,6 +93,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _authController.dispose();
     _profileController.dispose();
     _passwordResetController.dispose();
+    _catalogController.dispose();
     super.dispose();
   }
 
@@ -100,6 +110,10 @@ class _MetaGymAppState extends State<MetaGymApp> {
         ),
         ChangeNotifierProvider<PasswordResetController>.value(
           value: _passwordResetController,
+        ),
+        Provider<CatalogService>.value(value: _catalogService),
+        ChangeNotifierProvider<CatalogController>.value(
+          value: _catalogController,
         ),
         ChangeNotifierProvider<SessionController>.value(
           value: _sessionController,

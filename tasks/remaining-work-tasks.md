@@ -194,14 +194,18 @@
 
 ### T09 — Trang chủ Member và nội dung phòng gym
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Tạo shell điều hướng Member, trang chủ, thông tin phòng gym, thiết bị và bài tập.
 
 **Tiêu chí hoàn thành:**
-- [ ] Có navigation nhất quán trên kích thước điện thoại phổ biến.
-- [ ] Danh sách có loading, empty, error và tìm kiếm cơ bản.
-- [ ] Nội dung bị ẩn không hiển thị.
+- [x] Có navigation nhất quán trên kích thước điện thoại phổ biến.
+- [x] Danh sách có loading, empty, error và tìm kiếm cơ bản.
+- [x] Nội dung bị ẩn không hiển thị.
 
 **Kiểm tra:** Widget test các trạng thái; thử với API demo.
+
+**Đã kiểm tra:** Unit/widget test bao phủ trạng thái ready, empty, error, tìm kiếm và lọc nội dung `HIDDEN`; `flutter analyze` sạch. API demo thật chưa chạy nên dùng catalog service giả lập xác định.
 
 **Phụ thuộc:** T07.
 **File dự kiến:** `mobile-app/lib/features/member_home/`, `mobile-app/lib/features/catalog/`.
