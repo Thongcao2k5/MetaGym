@@ -130,11 +130,33 @@ void main() {
       expect(output, isNot(contains('authorization')));
       expect(output, isNot(contains('password')));
     });
+
+    test('supports PATCH and DELETE with the same response contract', () async {
+      adapter.respond(statusCode: 200, body: {'data': {'updated': true}});
+      final updated = await client.patch<bool>(
+        '/users/me',
+        body: {'fullName': 'Tên mới'},
+        decode: (data) => (data as Map<String, dynamic>)['updated'] as bool,
+      );
+
+      expect(updated.data, isTrue);
+      expect(adapter.lastRequest?.method, 'PATCH');
+
+      adapter.respond(statusCode: 200, body: {'data': {'deleted': true}});
+      final deleted = await client.delete<bool>(
+        '/ai/conversations/conversation-1',
+        decode: (data) => (data as Map<String, dynamic>)['deleted'] as bool,
+      );
+
+      expect(deleted.data, isTrue);
+      expect(adapter.lastRequest?.method, 'DELETE');
+    });
   });
 }
 
 class _MockHttpClientAdapter implements HttpClientAdapter {
   ResponseBody? _response;
+  RequestOptions? lastRequest;
 
   void respond({required int statusCode, required Object body}) {
     _response = ResponseBody.fromString(
@@ -152,6 +174,7 @@ class _MockHttpClientAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    lastRequest = options;
     return _response!;
   }
 

@@ -67,6 +67,40 @@ class ApiClient {
     );
   }
 
+  Future<ApiResult<T>> patch<T>(
+    String path, {
+    required ApiDecoder<T> decode,
+    Object? body,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) {
+    return _request(
+      'PATCH',
+      path,
+      decode: decode,
+      body: body,
+      queryParameters: queryParameters,
+      headers: headers,
+    );
+  }
+
+  Future<ApiResult<T>> delete<T>(
+    String path, {
+    required ApiDecoder<T> decode,
+    Object? body,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) {
+    return _request(
+      'DELETE',
+      path,
+      decode: decode,
+      body: body,
+      queryParameters: queryParameters,
+      headers: headers,
+    );
+  }
+
   Future<ApiResult<T>> _request<T>(
     String method,
     String path, {
