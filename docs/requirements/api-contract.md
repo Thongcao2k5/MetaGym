@@ -1,20 +1,21 @@
-# Meta Gym — Danh sách API REST cho MVP
+# Meta Gym — Hợp đồng API REST backend MVP
 
-> Cập nhật: 20/10/2026  
-> Trạng thái: Bản thiết kế để duyệt trước khi lập trình.  
-> Phạm vi: Một phòng gym, Flutter cho Member/Coach, web cho Admin.
+> Cập nhật: 22/10/2026. Đối chiếu với route Node.js và test PostgreSQL T11–T17.
+> Phạm vi hiện tại: nghiệp vụ và API backend cho một phòng gym; frontend sẽ được thiết kế riêng.
 
 ## 1. Quy ước chung
 
 - Base URL: `/api/v1`.
 - API cần đăng nhập dùng `Authorization: Bearer <accessToken>`.
 - Vai trò: `MEMBER`, `COACH`, `ADMIN`.
-- Tất cả danh sách dùng phân trang: `page`, `pageSize`, `sortBy`, `sortOrder`.
-- Bộ lọc dùng query string dạng camelCase, ví dụ `?status=ACTIVE&search=an`.
+- Chỉ endpoint trả `pagination` mới nhận `page`, `pageSize` (mặc định 1/20, `pageSize` tối đa 100); một số danh sách trả thẳng `{ "data": [] }`. Thứ tự từng danh sách do backend xác định; API chưa hỗ trợ chung `sortBy`/`sortOrder`.
+- Bộ lọc được mô tả riêng theo endpoint, dùng query string dạng camelCase, ví dụ `?status=ACTIVE&search=an` trên danh sách Admin users.
 - Dữ liệu trả về dùng camelCase; giá trị enum dùng `UPPER_SNAKE_CASE`.
 - `PATCH` chỉ cập nhật những trường được gửi lên.
 - Các API tạo thanh toán phải nhận header `Idempotency-Key` để gửi lại không tạo giao dịch trùng.
 - Backend luôn kiểm tra quyền sở hữu và quan hệ Coach–Member; không chỉ dựa vào việc ẩn nút ở giao diện.
+- `POST`/`PATCH` nhận JSON trừ `POST /media/images` nhận bytes PNG/JPEG. Timestamp gửi lên phải là ISO 8601 có offset (`2026-10-22T08:00:00+07:00`); timestamp trả về theo UTC ISO. Ngày kinh doanh của membership và bộ lọc biểu đồ dùng múi giờ `Asia/Ho_Chi_Minh`. Trường chỉ chứa ngày dùng `YYYY-MM-DD`.
+- Access token JWT hết hạn sau 3600 giây; chưa có refresh token. Đổi mật khẩu hoặc khóa tài khoản làm token cũ vô hiệu ngay.
 
 Phản hồi thành công cho một đối tượng:
 
@@ -47,6 +48,8 @@ Phản hồi lỗi thống nhất:
   }
 }
 ```
+
+Mã HTTP thường gặp: `401 UNAUTHORIZED` (thiếu/token cũ), `403 FORBIDDEN` hoặc `MEMBERSHIP_REQUIRED`, `404 NOT_FOUND` (không tồn tại hoặc không có quyền xem), `409` (xung đột trạng thái), `413 PAYLOAD_TOO_LARGE`, `422 VALIDATION_ERROR`, `429 TOO_MANY_REQUESTS`, `502` (dịch vụ ngoài/lưu trữ lỗi), `503 SERVICE_UNAVAILABLE` (provider chưa cấu hình). Client xử lý theo HTTP status và `error.code`; không dựa vào câu chữ `message`.
 
 ## 2. System
 
@@ -246,6 +249,7 @@ Quy tắc xác nhận `MOCK_QR`:
 | `GET` | `/admin/termination-requests` | Admin | Danh sách yêu cầu ngừng phụ trách |
 | `PATCH` | `/admin/termination-requests/:requestId` | Admin | Duyệt hoặc từ chối yêu cầu |
 | `POST` | `/admin/coach-transfers` | Admin | Chuyển Coach khi có sự cố và lưu lý do |
+| `GET` | `/admin/coach-transfers` | Admin | Lịch sử chuyển Coach |
 
 ## 6. Training & Nutrition
 

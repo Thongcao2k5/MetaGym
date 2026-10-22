@@ -147,7 +147,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T18 — Chốt tài liệu API để frontend tự thiết kế
 
-**Trạng thái:** Chưa thực hiện.
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Đối chiếu toàn bộ route tĩnh với contract (không thiếu endpoint), bổ sung `GET /admin/coach-transfers`, sửa quy ước phân trang/giờ/ngày/HTTP lỗi đã lỗi thời và tạo `docs/requirements/frontend-api-integration.md` với payload, response, quyền, retry, media, mock/provider và checklist tích hợp. Schema assertions trên PostgreSQL test đạt; backend check và 53/53 test đạt, không skip; health/smoke đạt 7/7. Không dựng giao diện.
 
 **Công việc:** Đối chiếu `docs/requirements/api-contract.md` với route/test thực tế; ghi rõ endpoint, vai trò, request/response mẫu, mã lỗi, pagination, timezone/ngày, quy tắc idempotency và media URL. Ghi rõ môi trường `MOCK_QR`, media local và provider 503. Tạo checklist tích hợp để frontend tự quyết định giao diện mà không đoán quy tắc backend.
 
@@ -157,10 +157,10 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### Checkpoint cuối — Backend sẵn sàng cho frontend
 
-- [ ] T11–T18 có bằng chứng test và review, không chỉ có route tồn tại.
-- [ ] Schema assertions, backend check/test và smoke test API đạt; ghi rõ số test pass/fail/skip.
-- [ ] API contract khớp code về quyền, trạng thái, response, lỗi và dữ liệu riêng tư.
-- [ ] Mọi tích hợp mock/chưa cấu hình được ghi rõ để frontend không hiểu nhầm là production.
+- [x] T11–T18 có bằng chứng test và review, không chỉ có route tồn tại.
+- [x] Schema assertions, backend check/test và smoke test API đạt: 53 pass, 0 fail, 0 skip; smoke 7/7.
+- [x] Đã đối chiếu route/contract, quyền, trạng thái, response, lỗi và dữ liệu riêng tư của các luồng T11–T17.
+- [x] Mock QR, media local và provider chưa cấu hình được ghi rõ để frontend không hiểu nhầm là production.
 
 ## Phân chia công việc gợi ý khi có nhóm
 

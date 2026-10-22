@@ -68,3 +68,5 @@ không in mật khẩu hoặc access token ra log.
 ## Trạng thái hiện tại
 
 Dự án đã có schema PostgreSQL, API nghiệp vụ MVP, admin web và các luồng Member/Coach chính. Các tích hợp AI, email và RTC cần được cấu hình riêng theo môi trường triển khai.
+
+Để thiết kế frontend theo ý riêng, dùng [hợp đồng API](docs/requirements/api-contract.md) và [hướng dẫn tích hợp frontend](docs/requirements/frontend-api-integration.md). Backend đã có test liên thông với PostgreSQL; các màn hình hiện có không quyết định thiết kế giao diện tiếp theo.
