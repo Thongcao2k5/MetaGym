@@ -146,14 +146,18 @@
 
 ### T07 — Màn hình đăng nhập và đăng ký Member
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Kết nối form đăng nhập/đăng ký với API và hiển thị lỗi xác thực bằng tiếng Việt.
 
 **Tiêu chí hoàn thành:**
-- [ ] Member đăng ký và đăng nhập được.
-- [ ] Coach/Admin đăng nhập được nhưng không thể tự đăng ký.
-- [ ] Form chặn dữ liệu sai cơ bản và tránh gửi lặp.
+- [x] Member đăng ký và đăng nhập được.
+- [x] Coach/Admin đăng nhập được nhưng không thể tự đăng ký.
+- [x] Form chặn dữ liệu sai cơ bản và tránh gửi lặp.
 
 **Kiểm tra:** Widget test form; thử thật với ba tài khoản demo.
+
+**Đã kiểm tra:** 26 test Flutter thành công, gồm validation form, điều hướng Coach theo vai trò và chống gửi lặp; `flutter analyze` sạch. Việc thử tài khoản demo thật được thay bằng API giả lập xác định vì môi trường hiện tại không có PostgreSQL demo đang chạy.
 
 **Phụ thuộc:** T06.
 **File dự kiến:** `mobile-app/lib/features/auth/`, `mobile-app/test/features/auth/`.

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/login_page.dart';
+import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
@@ -9,6 +11,8 @@ import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 abstract final class AppRoutes {
   static const welcome = '/';
   static const loading = '/loading';
+  static const login = '/login';
+  static const register = '/register';
   static const memberHome = '/member';
   static const coachHome = '/coach';
   static const adminHome = '/admin';
@@ -28,7 +32,12 @@ GoRouter createAppRouter({
             : AppRoutes.loading;
       }
       if (sessionController.status == SessionStatus.unauthenticated) {
-        return state.matchedLocation == AppRoutes.welcome
+        const publicRoutes = {
+          AppRoutes.welcome,
+          AppRoutes.login,
+          AppRoutes.register,
+        };
+        return publicRoutes.contains(state.matchedLocation)
             ? null
             : AppRoutes.welcome;
       }
@@ -45,6 +54,14 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.welcome,
         builder: (context, state) => const WelcomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (context, state) => const RegisterPage(),
       ),
       GoRoute(
         path: AppRoutes.memberHome,
