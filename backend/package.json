@@ -8,7 +8,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "check": "node --check src/app.js && node --check src/server.js && node --check src/config/database.js && node --check src/config/providers.js && node --check src/routes/auth.routes.js && node --check src/routes/health.routes.js && node --check src/routes/users.routes.js && node --check src/routes/admin-users.routes.js && node --check src/routes/membership-plans.routes.js && node --check src/routes/payments.routes.js && node --check src/routes/coaching.routes.js && node --check src/routes/catalog.routes.js && node --check src/routes/training.routes.js && node --check src/routes/sessions.routes.js && node --check src/routes/messaging.routes.js && node --check src/routes/progress.routes.js && node --check src/routes/dashboard.routes.js && node --check src/routes/ai-conversations.routes.js && node --check src/routes/calls.routes.js && node --check src/routes/password-resets.routes.js && node --check src/routes/media.routes.js && node --check src/services/membership-lifecycle.js && node --check src/storage/local-image-storage.js && node --check src/security/login-rate-limiter.js",
-    "test": "node --test --test-concurrency=1"
+    "test": "node --test --test-concurrency=1",
+    "smoke": "node scripts/smoke.js"
   },
   "keywords": [],
   "author": "",

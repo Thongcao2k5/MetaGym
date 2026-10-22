@@ -49,6 +49,20 @@ cd mobile-app
 F:\flutter\bin\flutter.bat run
 ```
 
+### Smoke test API
+
+Sau khi chạy migration, baseline seed và demo seed, khởi động backend rồi cấu
+hình các biến `SMOKE_*` trong `backend/.env`. Chạy bộ kiểm tra nhanh:
+
+```powershell
+cd backend
+npm run smoke
+```
+
+Script kiểm tra health, đăng nhập Admin/Coach/Member và một API nghiệp vụ có
+phân quyền cho mỗi vai trò. Lệnh trả mã thoát khác `0` nếu một bước thất bại và
+không in mật khẩu hoặc access token ra log.
+
 ## Trạng thái hiện tại
 
 Dự án đã có schema PostgreSQL, API nghiệp vụ MVP, admin web và các luồng Member/Coach chính. Các tích hợp AI, email và RTC cần được cấu hình riêng theo môi trường triển khai.

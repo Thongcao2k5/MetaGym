@@ -66,14 +66,16 @@
 
 ### T03 — Tạo bộ smoke test cho API MVP
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t03-api-smoke-test`.
+
 **Mô tả:** Ghi lại và tự động hóa các yêu cầu API tối thiểu cho đăng nhập, health, Member, Coach và Admin để dùng sau mỗi lần triển khai.
 
 **Tiêu chí hoàn thành:**
-- [ ] Kiểm tra được health và đăng nhập ba vai trò.
-- [ ] Mỗi vai trò có ít nhất một API nghiệp vụ được kiểm tra.
-- [ ] Script thất bại với mã thoát khác 0 khi response sai.
+- [x] Kiểm tra được health và đăng nhập ba vai trò.
+- [x] Mỗi vai trò có ít nhất một API nghiệp vụ được kiểm tra.
+- [x] Script thất bại với mã thoát khác 0 khi response sai.
 
-**Kiểm tra:** Chạy smoke test trên database demo và backend local.
+**Kiểm tra:** [x] Đã chạy smoke test trên database demo và backend local.
 
 **Phụ thuộc:** T02.
 **File dự kiến:** `backend/test/smoke/`, `backend/package.json`.
@@ -81,9 +83,9 @@
 
 ### Checkpoint A — Nền tảng dữ liệu
 
-- [ ] Backend check/test thành công.
-- [ ] Database dựng mới được từ tài liệu.
-- [ ] Ba tài khoản demo đăng nhập được qua API.
+- [x] Backend check/test thành công.
+- [x] Database dựng mới được từ tài liệu.
+- [x] Ba tài khoản demo đăng nhập được qua API.
 
 ---
 
