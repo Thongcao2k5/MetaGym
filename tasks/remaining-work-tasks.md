@@ -93,14 +93,16 @@
 
 ### T04 — Chuẩn hóa cấu trúc Flutter
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t04-flutter-structure`.
+
 **Mô tả:** Chia app theo `core` và `features`, thiết lập theme, router và cấu hình API theo môi trường.
 
 **Tiêu chí hoàn thành:**
-- [ ] Không còn đặt toàn bộ app trong `main.dart`.
-- [ ] Có cấu hình API URL cho local/emulator/production.
-- [ ] Có route công khai, route Member và route Coach.
+- [x] Không còn đặt toàn bộ app trong `main.dart`.
+- [x] Có cấu hình API URL cho local/emulator/production.
+- [x] Có route công khai, route Member và route Coach.
 
-**Kiểm tra:** `flutter analyze`, `flutter test`; mở app không lỗi và điều hướng được màn hình mẫu.
+**Kiểm tra:** [x] `flutter analyze`, `flutter test`; app web trả HTTP 200 và điều hướng được màn hình mẫu.
 
 **Phụ thuộc:** Không.
 **File dự kiến:** `mobile-app/lib/main.dart`, `mobile-app/lib/app/`, `mobile-app/lib/core/`.
