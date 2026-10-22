@@ -1,6 +1,10 @@
 # Meta Gym MVP — Task List
 
-> Chưa bắt đầu triển khai. Chỉ đánh dấu hoàn thành khi có code, kiểm thử và bằng chứng chạy thực tế.
+> Đã đối chiếu với `main` tại commit `92ca738` ngày 22/10/2026. Chỉ đánh dấu
+> hoàn thành khi toàn bộ nội dung của tiêu chí đã có code/test hoặc bằng chứng chạy.
+> Ký hiệu **Một phần** nghĩa là backend API đã có nhưng Flutter, provider thật hoặc
+> kiểm thử end-to-end vẫn còn thiếu. Các phần còn lại được chia nhỏ tại
+> [`remaining-work-tasks.md`](./remaining-work-tasks.md).
 
 ## Giai đoạn 1 — Nền tảng
 
@@ -11,9 +15,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Backend, Flutter và Admin web có cấu trúc theo module/feature thống nhất.
-- [ ] Có quy ước response lỗi, phân trang, tên endpoint và biến môi trường.
-- [ ] `.env.example` không chứa bí mật thật.
+- [ ] Backend, Flutter và Admin web có cấu trúc theo module/feature thống nhất. **Một phần:** Backend đã chia route/service và Admin đã tách asset; Flutter vẫn chỉ có `main.dart`.
+- [x] Có quy ước response lỗi, phân trang, tên endpoint và biến môi trường.
+- [x] `.env.example` không chứa bí mật thật.
 
 **Kiểm tra:** Backend check, Flutter analyze/test và Admin build đều chạy được.
 
@@ -47,8 +51,8 @@
 
 ### Checkpoint 1
 
-- [ ] Ba ứng dụng build/chạy được.
-- [ ] Database dựng lại được.
+- [x] Ba ứng dụng build/chạy được.
+- [x] Database dựng lại được.
 - [ ] Các tích hợp rủi ro đã được thử sớm.
 
 ## Giai đoạn 2 — Identity và Gym Content
@@ -60,9 +64,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member đăng ký và đăng nhập được.
-- [ ] Coach/Admin không thể tự đăng ký công khai.
-- [ ] JWT và trạng thái tài khoản được kiểm tra ở backend.
+- [x] Member đăng ký và đăng nhập được qua backend API và test.
+- [x] Coach/Admin không thể tự đăng ký công khai.
+- [x] JWT và trạng thái tài khoản được kiểm tra ở backend.
 
 **Kiểm tra:** Test thành công, sai mật khẩu, sai vai trò và tài khoản bị khóa.
 
@@ -74,8 +78,8 @@
 **Tiêu chí hoàn thành:**
 
 - [ ] Flutter lưu token an toàn và tự điều hướng đúng vai trò.
-- [ ] Member/Coach sửa được trường hồ sơ cho phép.
-- [ ] Người dùng đổi mật khẩu và phiên cũ được xử lý đúng.
+- [x] Member/Coach sửa được trường hồ sơ cho phép qua backend API.
+- [x] Người dùng đổi mật khẩu và phiên cũ được xử lý đúng ở backend.
 
 **Kiểm tra:** Khởi động lại ứng dụng, đăng xuất và đăng nhập lại.
 
@@ -86,9 +90,11 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Mã được băm, có hạn và chỉ dùng một lần.
-- [ ] Email không tồn tại không làm lộ thông tin tài khoản.
-- [ ] Mật khẩu mới đăng nhập được; mã cũ bị từ chối.
+- [x] Mã được băm, có hạn và chỉ dùng một lần.
+- [x] Email không tồn tại không làm lộ thông tin tài khoản.
+- [x] Mật khẩu mới đăng nhập được; mã cũ bị từ chối.
+
+**Còn thiếu:** Kết nối dịch vụ gửi email thật và giao diện Flutter.
 
 **Kiểm tra:** Test mã đúng, sai, hết hạn và dùng lại.
 
@@ -99,9 +105,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Admin xem Member và tạo Coach được.
-- [ ] Admin khóa/mở tài khoản với xác nhận.
-- [ ] Người không phải Admin bị API từ chối.
+- [x] Admin xem Member và tạo Coach được.
+- [x] Admin khóa/mở tài khoản với xác nhận.
+- [x] Người không phải Admin bị API từ chối.
 
 **Kiểm tra:** Build Admin web và test ma trận vai trò.
 
@@ -112,16 +118,16 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Admin quản lý thông tin gym và thiết bị.
-- [ ] Member/Coach tìm kiếm và xem hướng dẫn thiết bị.
-- [ ] Nội dung bị ẩn không xuất hiện trên Flutter.
+- [x] Admin quản lý thông tin gym và thiết bị.
+- [ ] Member/Coach tìm kiếm và xem hướng dẫn thiết bị. **Một phần:** API catalog đã có; Flutter chưa có.
+- [ ] Nội dung bị ẩn không xuất hiện trên Flutter. **Một phần:** API đã lọc; Flutter chưa có.
 
 **Kiểm tra:** Tạo/sửa/ẩn thiết bị và kiểm tra trên ứng dụng.
 
 ### Checkpoint 2
 
-- [ ] Identity hoạt động end-to-end.
-- [ ] Phân quyền backend được test.
+- [ ] Identity hoạt động end-to-end. **Một phần:** Backend và Admin hoạt động; Flutter chưa có.
+- [x] Phân quyền backend được test.
 - [ ] Gym Content chạy trên Admin web và Flutter.
 
 ## Giai đoạn 3 — Membership và Coaching
@@ -133,9 +139,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Admin tạo/sửa/ngừng áp dụng gói.
-- [ ] Member chỉ thấy gói đang áp dụng.
-- [ ] Gói đã có giao dịch không bị xóa vật lý.
+- [x] Admin tạo/sửa/ngừng áp dụng gói.
+- [x] Member chỉ thấy gói đang áp dụng qua API.
+- [x] Gói đã có giao dịch không bị xóa vật lý.
 
 **Kiểm tra:** CRUD có kiểm tra validation và quyền Admin.
 
@@ -146,10 +152,12 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member tạo giao dịch, nhận QR và tự xác nhận thanh toán mô phỏng thành công mà không cần Admin duyệt.
-- [ ] Gói đầu tiên kích hoạt ngay; gói mua thêm nối tiếp đúng ngày.
-- [ ] Xác nhận lặp không tạo hai membership.
-- [ ] Backend chỉ cho chủ giao dịch xác nhận và xử lý payment, membership, quyền theo gói trong cùng transaction.
+- [x] Member tạo giao dịch, nhận dữ liệu QR và tự xác nhận thanh toán mô phỏng qua API mà không cần Admin duyệt.
+- [x] Gói đầu tiên kích hoạt ngay; gói mua thêm nối tiếp đúng ngày.
+- [x] Xác nhận lặp không tạo hai membership.
+- [x] Backend chỉ cho chủ giao dịch xác nhận và xử lý payment, membership, quyền theo gói trong cùng transaction.
+
+**Còn thiếu:** Giao diện thanh toán Flutter.
 
 **Kiểm tra:** Test chủ sở hữu, transaction cho gói mới, gia hạn, xác nhận lặp và request đồng thời.
 
@@ -160,9 +168,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Admin tạo giao dịch cho đúng Member và gói.
-- [ ] Giao dịch lưu người tạo và phương thức `front_desk`.
-- [ ] Quy tắc nối tiếp giống thanh toán trên ứng dụng.
+- [x] Admin tạo giao dịch cho đúng Member và gói.
+- [x] Giao dịch lưu người tạo và phương thức `front_desk`.
+- [x] Quy tắc nối tiếp giống thanh toán trên ứng dụng.
 
 **Kiểm tra:** Test từ Admin web đến membership của Member.
 
@@ -173,9 +181,11 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member xem được Coach, chuyên môn và số suất còn lại.
-- [ ] Chỉ Member có gói hoạt động gửi yêu cầu được.
-- [ ] Mỗi Member chỉ có một yêu cầu đang chờ.
+- [x] Member xem được Coach, chuyên môn và số suất còn lại qua API.
+- [x] Chỉ Member có gói hoạt động gửi yêu cầu được.
+- [x] Mỗi Member chỉ có một yêu cầu đang chờ.
+
+**Còn thiếu:** Giao diện danh sách/yêu cầu Coach trên Flutter.
 
 **Kiểm tra:** Test Member chưa có gói, Coach đủ suất và yêu cầu trùng.
 
@@ -186,9 +196,11 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Coach chấp nhận/từ chối kèm lý do.
-- [ ] Chấp nhận tạo đúng một quan hệ và giữ giới hạn Coach.
-- [ ] Member xem được trạng thái và lý do từ chối.
+- [x] Coach chấp nhận/từ chối kèm lý do qua API.
+- [x] Chấp nhận tạo đúng một quan hệ và giữ giới hạn Coach.
+- [x] Member xem được trạng thái và lý do từ chối qua API.
+
+**Còn thiếu:** Giao diện Coach/Member trên Flutter.
 
 **Kiểm tra:** Test đồng thời hai yêu cầu tranh suất cuối cùng.
 
@@ -199,17 +211,17 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Hết hạn/tái kích hoạt cập nhật quan hệ đúng và giữ suất.
-- [ ] Coach gửi yêu cầu kết thúc; Admin duyệt/từ chối được.
-- [ ] Admin chuyển Coach có lý do, kiểm tra suất và giữ lịch sử.
+- [x] Hết hạn/tái kích hoạt cập nhật quan hệ đúng và giữ suất.
+- [x] Coach gửi yêu cầu kết thúc; Admin duyệt/từ chối được qua API/Admin web.
+- [x] Admin chuyển Coach có lý do, kiểm tra suất và giữ lịch sử.
 
 **Kiểm tra:** Test đầy đủ chuyển trạng thái và quyền truy cập sau mỗi trạng thái.
 
 ### Checkpoint 3
 
-- [ ] Luồng Member mua gói và chọn Coach chạy end-to-end.
-- [ ] Không thể vượt giới hạn Coach hoặc tạo quan hệ trùng.
-- [ ] Lịch sử được giữ khi kết thúc/chuyển Coach.
+- [ ] Luồng Member mua gói và chọn Coach chạy end-to-end. **Một phần:** Backend đã được test; Flutter chưa có.
+- [x] Không thể vượt giới hạn Coach hoặc tạo quan hệ trùng ở backend/database.
+- [x] Lịch sử được giữ khi kết thúc/chuyển Coach.
 
 ## Giai đoạn 4 — Hướng dẫn và tiến độ
 
@@ -220,9 +232,11 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Coach tạo bản nháp gồm ngày tập và bài tập.
-- [ ] Công bố kế hoạch lưu trữ bản cũ và chỉ để một bản hoạt động.
-- [ ] Member chỉ xem bản đã công bố.
+- [x] Coach tạo bản nháp gồm ngày tập và bài tập qua API.
+- [x] Công bố kế hoạch lưu trữ bản cũ và chỉ để một bản hoạt động.
+- [x] Member chỉ xem bản đã công bố qua API.
+
+**Còn thiếu:** Giao diện Flutter cho Coach và Member.
 
 **Kiểm tra:** Test quyền Coach khác, quan hệ tạm ngưng và lịch sử kế hoạch.
 
@@ -233,9 +247,11 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Coach công bố một hướng dẫn dinh dưỡng hoạt động.
-- [ ] Coach tạo/sửa buổi tập và cập nhật trạng thái.
-- [ ] Member xem được lịch và nội dung tương ứng.
+- [x] Coach công bố một hướng dẫn dinh dưỡng hoạt động qua API.
+- [x] Coach tạo/sửa buổi tập và cập nhật trạng thái qua API.
+- [x] Member xem được lịch và nội dung tương ứng qua API.
+
+**Còn thiếu:** Giao diện Flutter cho Coach và Member.
 
 **Kiểm tra:** Test trạng thái buổi tập và quyền khi quan hệ tạm ngưng.
 
@@ -246,9 +262,11 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member tạo/sửa nhật ký của mình.
-- [ ] Coach hiện tại xem được; Admin và Coach khác không xem được.
-- [ ] Danh sách được phân trang.
+- [x] Member tạo/sửa nhật ký của mình qua API.
+- [x] Coach hiện tại xem được; Admin và Coach khác không xem được.
+- [x] Danh sách được phân trang.
+
+**Còn thiếu:** Giao diện nhật ký Flutter.
 
 **Kiểm tra:** Test quyền sở hữu, tải ảnh và giới hạn kích thước.
 
@@ -259,16 +277,16 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member ghi số đo và ảnh theo ngày.
+- [x] Member ghi số đo và ảnh theo ngày qua API.
 - [ ] Flutter hiển thị biểu đồ cân nặng/số đo.
-- [ ] Coach nhận xét được; Coach cũ mất quyền sau khi quan hệ kết thúc.
+- [x] Coach nhận xét được; Coach cũ mất quyền sau khi quan hệ kết thúc qua API.
 
 **Kiểm tra:** Test chuỗi thời gian, giá trị rỗng và ma trận quyền.
 
 ### Checkpoint 4
 
-- [ ] Coach giao kế hoạch và Member ghi tiến độ end-to-end.
-- [ ] Dữ liệu riêng tư không lộ cho Admin hoặc Coach khác.
+- [ ] Coach giao kế hoạch và Member ghi tiến độ end-to-end. **Một phần:** Backend đã có; Flutter chưa có.
+- [x] Dữ liệu riêng tư không lộ cho Admin hoặc Coach khác ở backend.
 - [ ] Biểu đồ hiển thị đúng dữ liệu theo ngày.
 
 ## Giai đoạn 5 — Giao tiếp và AI
@@ -280,9 +298,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member/Coach trong quan hệ hoạt động gửi và nhận được tin nhắn.
-- [ ] Có phân trang, polling, đã đọc, chưa đọc và gửi lại khi lỗi.
-- [ ] Quan hệ tạm ngưng/kết thúc chỉ được đọc lịch sử.
+- [ ] Member/Coach trong quan hệ hoạt động gửi và nhận được tin nhắn. **Một phần:** API đã có; Flutter chưa có.
+- [ ] Có phân trang, polling, đã đọc, chưa đọc và gửi lại khi lỗi. **Một phần:** Backend có phân trang/đã đọc; polling/retry thuộc Flutter chưa có.
+- [x] Quan hệ tạm ngưng/kết thúc chỉ được đọc lịch sử ở backend.
 
 **Kiểm tra:** Test hai tài khoản, quyền truy cập và mất mạng tạm thời.
 
@@ -294,8 +312,10 @@
 **Tiêu chí hoàn thành:**
 
 - [ ] Hai người trong quan hệ hoạt động gọi thoại/video được.
-- [ ] Quan hệ không hợp lệ không lấy được token cuộc gọi.
-- [ ] Lịch sử lưu loại, trạng thái và thời lượng; không ghi nội dung.
+- [x] Quan hệ không hợp lệ không lấy được token cuộc gọi.
+- [x] Lịch sử lưu loại, trạng thái và thời lượng; không ghi nội dung.
+
+**Còn thiếu:** Provider RTC thật và màn hình gọi trên hai thiết bị.
 
 **Kiểm tra:** Demo trên hai thiết bị, từ chối, nhỡ và kết thúc cuộc gọi.
 
@@ -306,17 +326,17 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Member/Coach tạo cuộc trò chuyện và hỏi đáp văn bản được.
-- [ ] Lịch sử chỉ thuộc người dùng hiện tại; có đổi tên/xóa.
-- [ ] Có timeout, thử lại và thông báo giới hạn an toàn.
+- [ ] Member/Coach tạo cuộc trò chuyện và hỏi đáp văn bản được. **Một phần:** API đã có; Flutter và cấu hình OpenAI production chưa có.
+- [x] Lịch sử chỉ thuộc người dùng hiện tại; có đổi tên/xóa qua API.
+- [ ] Có timeout, thử lại và thông báo giới hạn an toàn. **Một phần:** Backend xử lý timeout/lỗi provider; Flutter chưa hiển thị.
 
 **Kiểm tra:** Test quyền sở hữu, API lỗi, nội dung nguy hiểm và không lưu phản hồi dang dở.
 
 ### Checkpoint 5
 
-- [ ] Messaging, call và AI hoạt động độc lập.
-- [ ] Dịch vụ ngoài lỗi không làm ứng dụng sập.
-- [ ] Không có khóa bí mật trong Flutter hoặc Git.
+- [ ] Messaging, call và AI hoạt động độc lập. **Một phần:** Các route/provider backend độc lập; Flutter chưa có.
+- [ ] Dịch vụ ngoài lỗi không làm ứng dụng sập. **Một phần:** Backend trả lỗi `503`; Flutter chưa có để xác minh.
+- [x] Không có khóa bí mật trong Flutter hoặc Git theo diff và cấu hình mẫu hiện tại.
 
 ## Giai đoạn 6 — Dashboard và hoàn thiện
 
@@ -327,9 +347,9 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Hiển thị đúng các thẻ số liệu và biểu đồ theo thời gian.
-- [ ] Có danh sách Coach gần đủ suất, gói sắp hết hạn và yêu cầu chờ.
-- [ ] Các liên kết mở đúng màn hình nghiệp vụ.
+- [x] Hiển thị đúng các thẻ số liệu và biểu đồ theo thời gian trên Admin web.
+- [x] Có danh sách Coach gần đủ suất, gói sắp hết hạn và yêu cầu chờ.
+- [x] Các liên kết mở đúng màn hình nghiệp vụ Admin.
 
 **Kiểm tra:** Đối chiếu số liệu với truy vấn database và dữ liệu seed.
 
@@ -341,8 +361,8 @@
 **Tiêu chí hoàn thành:**
 
 - [ ] Ba luồng Member, Coach, Admin chạy hoàn chỉnh.
-- [ ] Ma trận quyền theo vai trò và trạng thái quan hệ vượt qua kiểm thử.
-- [ ] Dữ liệu lịch sử còn nguyên sau hết hạn, đổi Coach và khóa tài khoản.
+- [ ] Ma trận quyền theo vai trò và trạng thái quan hệ vượt qua kiểm thử. **Một phần:** Backend có integration test; chưa có Flutter E2E.
+- [ ] Dữ liệu lịch sử còn nguyên sau hết hạn, đổi Coach và khóa tài khoản. **Một phần:** Backend đã test hết hạn/đổi Coach; vẫn cần E2E khi khóa tài khoản.
 
 **Kiểm tra:** Backend tests, Flutter tests, Admin build và checklist thủ công.
 
@@ -353,7 +373,7 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Có hướng dẫn cài đặt, biến môi trường và seed demo.
+- [ ] Có hướng dẫn cài đặt, biến môi trường và seed demo. **Một phần:** Hướng dẫn/biến môi trường đã có; demo seed chưa có.
 - [ ] Có ba tài khoản demo và kịch bản trình bày dự phòng.
 - [ ] Báo cáo, sơ đồ và slide khớp với hệ thống thực tế.
 
@@ -361,9 +381,17 @@
 
 ### Checkpoint cuối
 
-- [ ] `flutter analyze` và `flutter test` thành công.
-- [ ] Backend check/test thành công.
-- [ ] Admin web build thành công.
-- [ ] Không còn lỗi nghiêm trọng hoặc cao.
-- [ ] Người dùng review và duyệt kế hoạch trước khi bắt đầu code.
+- [x] `flutter analyze` và `flutter test` thành công với app khung hiện tại.
+- [x] Backend check/test thành công tại thời điểm merge `92ca738`.
+- [x] Admin web build thành công tại thời điểm merge `92ca738`.
+- [x] Không còn lỗi nghiêm trọng hoặc cao trong phạm vi code đã review.
+- [x] Người dùng review và duyệt kế hoạch trước khi bắt đầu code.
+
+## Bằng chứng đối chiếu trạng thái
+
+- Backend route được gắn tập trung tại `backend/src/app.js`; các module nghiệp vụ nằm trong `backend/src/routes/`.
+- Backend có integration/unit test trong `backend/test/`, bao gồm auth, user, database, catalog, payment/coaching, training, progress, media, password reset và membership lifecycle.
+- Admin web gọi các API dashboard, user, Coach, gói, payment, quan hệ, gym và thiết bị tại `admin-web/src/main.js`.
+- Flutter hiện chỉ có màn hình khung tại `mobile-app/lib/main.dart`; vì vậy mọi tiêu chí cần giao diện Member/Coach vẫn để chưa hoàn thành.
+- Các provider AI, email và RTC chỉ hoạt động khi có biến môi trường; chưa có bằng chứng thử nghiệm provider thật hoặc hai thiết bị.
 
