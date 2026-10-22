@@ -1,6 +1,8 @@
 # Meta Gym Database
 
-PostgreSQL schema cho MVP Meta Gym gồm 33 bảng nghiệp vụ và 1 bảng vận hành cho giới hạn đăng nhập. Migration được chia theo thứ tự phụ thuộc và có file rollback tương ứng.
+PostgreSQL schema cho MVP Meta Gym gồm 33 bảng nghiệp vụ và 2 bảng vận hành
+cho giới hạn đăng nhập/khôi phục mật khẩu. Migration được chia theo thứ tự phụ
+thuộc và có file rollback tương ứng.
 
 ## Yêu cầu
 
@@ -18,6 +20,7 @@ Chạy các file `*.up.sql` theo thứ tự:
 4. `0004_progress_tracking.up.sql`
 5. `0005_communication_ai_audit.up.sql`
 6. `0006_auth_rate_limits.up.sql`
+7. `0007_password_reset_limits.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 
@@ -47,6 +50,38 @@ psql $env:DATABASE_URL -v ON_ERROR_STOP=1 `
 
 Không đưa mật khẩu gốc vào câu lệnh hoặc file seed. `admin_password_hash` phải là hash bcrypt được tạo bên ngoài database.
 
+## Demo seed (chỉ development/test)
+
+Sau khi chạy migration và baseline seed, có thể tạo bộ dữ liệu demo riêng:
+
+```powershell
+psql $env:DATABASE_URL -v ON_ERROR_STOP=1 `
+  -v demo_seed_environment='development' `
+  -f database/seeds/0002_demo.sql
+```
+
+Seed này dùng UUID cố định và upsert nên có thể chạy lặp mà không tạo bản ghi
+trùng. Seed sẽ đặt lại tài khoản Admin hiện có và tạo một Coach, một Member,
+một gói tập, một thiết bị và một bài tập mẫu.
+
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Admin | `admin@metagym.local` | `MetaGymAdmin!2026` |
+| Coach | `coach@metagym.local` | `MetaGymCoach!2026` |
+| Member | `member@metagym.local` | `MetaGymMember!2026` |
+
+Các thông tin trên chỉ dành cho local/test demo, không được dùng ở production.
+File seed chỉ chứa bcrypt hash; không chứa khóa API hoặc thông tin production.
+Seed từ chối chạy nếu không truyền `demo_seed_environment` bằng `development`
+hoặc `test`.
+
+Kiểm tra riêng dữ liệu demo:
+
+```powershell
+psql $env:DATABASE_URL -v ON_ERROR_STOP=1 `
+  -f database/tests/demo_seed_assertions.sql
+```
+
 ## Kiểm tra schema
 
 Sau migration, chạy:
@@ -55,7 +90,10 @@ Sau migration, chạy:
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 ```
 
-Kiểm tra xác nhận đủ 33 bảng nghiệp vụ và bảng vận hành giới hạn đăng nhập, các FK sở hữu quan trọng, constraint chỉ cho phép tối đa một Admin và constraint chống chồng ngày membership. Sự tồn tại của Admin và `gym_profile` được kiểm tra khi chạy baseline seed.
+Kiểm tra xác nhận đủ 33 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
+nhập/khôi phục mật khẩu, các FK sở hữu quan trọng, constraint chỉ cho phép tối
+đa một Admin và constraint chống chồng ngày membership. Sự tồn tại của Admin
+và `gym_profile` được kiểm tra khi chạy baseline seed.
 
 ## Quy tắc nằm ở backend
 
