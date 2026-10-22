@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 
 typedef ApiDecoder<T> = T Function(Object? data);
 typedef ApiLogger = void Function(String message);
+typedef ApiAccessTokenProvider = FutureOr<String?> Function();
+typedef ApiSessionExpiredCallback = FutureOr<void> Function();
 
 class ApiResult<T> {
   const ApiResult({required this.data, this.pagination});
@@ -16,18 +20,39 @@ class ApiClient {
   ApiClient({
     required ApiConfig config,
     ApiLogger? logger,
-  }) : this._(_createDio(config), logger);
+    ApiAccessTokenProvider? accessTokenProvider,
+    ApiSessionExpiredCallback? onSessionExpired,
+  }) : this._(
+         _createDio(config),
+         logger,
+         accessTokenProvider,
+         onSessionExpired,
+       );
 
   ApiClient.withAdapter({
     required ApiConfig config,
     required HttpClientAdapter adapter,
     ApiLogger? logger,
-  }) : this._(_createDio(config)..httpClientAdapter = adapter, logger);
+    ApiAccessTokenProvider? accessTokenProvider,
+    ApiSessionExpiredCallback? onSessionExpired,
+  }) : this._(
+         _createDio(config)..httpClientAdapter = adapter,
+         logger,
+         accessTokenProvider,
+         onSessionExpired,
+       );
 
-  ApiClient._(this._dio, this._logger);
+  ApiClient._(
+    this._dio,
+    this._logger,
+    this._accessTokenProvider,
+    this._onSessionExpired,
+  );
 
   final Dio _dio;
   final ApiLogger? _logger;
+  final ApiAccessTokenProvider? _accessTokenProvider;
+  final ApiSessionExpiredCallback? _onSessionExpired;
 
   Future<ApiResult<T>> get<T>(
     String path, {
@@ -105,17 +130,32 @@ class ApiClient {
   }) async {
     _logger?.call('API $method started');
     try {
+      final requestHeaders = Map<String, dynamic>.of(headers ?? const {});
+      final token = await _accessTokenProvider?.call();
+      final hasAuthorization = requestHeaders.keys.any(
+        (key) => key.toLowerCase() == 'authorization',
+      );
+      if (!hasAuthorization && token != null && token.isNotEmpty) {
+        requestHeaders['authorization'] = 'Bearer $token';
+      }
       final response = await _dio.request<Object?>(
         path,
         data: body,
         queryParameters: queryParameters,
-        options: Options(method: method, headers: headers),
+        options: Options(method: method, headers: requestHeaders),
       );
       final result = _decodeResult(response.data, decode);
       _logger?.call('API $method completed (${response.statusCode})');
       return result;
     } on DioException catch (error) {
       final apiException = ApiException.fromDio(error);
+      if (apiException.kind == ApiExceptionKind.sessionExpired) {
+        try {
+          await _onSessionExpired?.call();
+        } catch (_) {
+          // Session cleanup must not replace the original API exception.
+        }
+      }
       _logger?.call(
         'API $method failed (${apiException.statusCode ?? 'network'}; '
         '${apiException.kind.name})',

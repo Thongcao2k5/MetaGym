@@ -24,7 +24,12 @@ void main() {
     });
 
     test('configures base URL, JSON headers, and timeouts centrally', () async {
-      adapter.respond(statusCode: 200, body: {'data': {'ok': true}});
+      adapter.respond(
+        statusCode: 200,
+        body: {
+          'data': {'ok': true},
+        },
+      );
 
       await client.get<Object?>('/health', decode: (data) => data);
 
@@ -59,41 +64,48 @@ void main() {
       expect(result.pagination, {'page': 1, 'totalItems': 1});
     });
 
-    test('maps a 422 response to a validation exception with field details', () async {
-      adapter.respond(
-        statusCode: 422,
-        body: {
-          'error': {
-            'code': 'VALIDATION_ERROR',
-            'message': 'Dữ liệu đăng nhập không hợp lệ',
-            'details': {
-              'fields': {
-                'email': ['Email không hợp lệ'],
+    test(
+      'maps a 422 response to a validation exception with field details',
+      () async {
+        adapter.respond(
+          statusCode: 422,
+          body: {
+            'error': {
+              'code': 'VALIDATION_ERROR',
+              'message': 'Dữ liệu đăng nhập không hợp lệ',
+              'details': {
+                'fields': {
+                  'email': ['Email không hợp lệ'],
+                },
               },
             },
           },
-        },
-      );
+        );
 
-      await expectLater(
-        client.post<Object?>(
-          '/auth/sessions',
-          body: {'email': 'sai', 'password': 'khong-duoc-log'},
-          decode: (data) => data,
-        ),
-        throwsA(
-          isA<ApiException>()
-              .having((error) => error.kind, 'kind', ApiExceptionKind.validation)
-              .having((error) => error.statusCode, 'statusCode', 422)
-              .having((error) => error.code, 'code', 'VALIDATION_ERROR')
-              .having(
-                (error) => error.details['fields'],
-                'details.fields',
-                isA<Map<String, dynamic>>(),
-              ),
-        ),
-      );
-    });
+        await expectLater(
+          client.post<Object?>(
+            '/auth/sessions',
+            body: {'email': 'sai', 'password': 'khong-duoc-log'},
+            decode: (data) => data,
+          ),
+          throwsA(
+            isA<ApiException>()
+                .having(
+                  (error) => error.kind,
+                  'kind',
+                  ApiExceptionKind.validation,
+                )
+                .having((error) => error.statusCode, 'statusCode', 422)
+                .having((error) => error.code, 'code', 'VALIDATION_ERROR')
+                .having(
+                  (error) => error.details['fields'],
+                  'details.fields',
+                  isA<Map<String, dynamic>>(),
+                ),
+          ),
+        );
+      },
+    );
 
     test('maps a 401 response to a session-expired exception', () async {
       adapter.respond(
@@ -119,25 +131,71 @@ void main() {
       );
     });
 
-    test('never writes authorization tokens or request bodies to logs', () async {
-      adapter.respond(statusCode: 200, body: {'data': {'ok': true}});
+    test(
+      'never writes authorization tokens or request bodies to logs',
+      () async {
+        adapter.respond(
+          statusCode: 200,
+          body: {
+            'data': {'ok': true},
+          },
+        );
 
-      await client.post<Object?>(
-        '/auth/sessions',
-        body: {'password': 'mat-khau-bi-mat'},
-        headers: {'authorization': 'Bearer access-token-bi-mat'},
-        decode: (data) => data,
+        await client.post<Object?>(
+          '/auth/sessions',
+          body: {'password': 'mat-khau-bi-mat'},
+          headers: {'authorization': 'Bearer access-token-bi-mat'},
+          decode: (data) => data,
+        );
+
+        final output = logs.join('\n');
+        expect(output, isNot(contains('mat-khau-bi-mat')));
+        expect(output, isNot(contains('access-token-bi-mat')));
+        expect(output, isNot(contains('authorization')));
+        expect(output, isNot(contains('password')));
+      },
+    );
+
+    test('adds a stored bearer token and reports an expired session', () async {
+      var expiryNotifications = 0;
+      client = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+        logger: logs.add,
+        accessTokenProvider: () => 'secure-token',
+        onSessionExpired: () async => expiryNotifications += 1,
+      );
+      adapter.respond(
+        statusCode: 401,
+        body: {
+          'error': {
+            'code': 'INVALID_SESSION',
+            'message': 'Phiên hết hạn',
+            'details': <String, dynamic>{},
+          },
+        },
       );
 
-      final output = logs.join('\n');
-      expect(output, isNot(contains('mat-khau-bi-mat')));
-      expect(output, isNot(contains('access-token-bi-mat')));
-      expect(output, isNot(contains('authorization')));
-      expect(output, isNot(contains('password')));
+      await expectLater(
+        client.get<Object?>('/users/me', decode: (data) => data),
+        throwsA(isA<ApiException>()),
+      );
+
+      expect(
+        adapter.lastRequest?.headers['authorization'],
+        'Bearer secure-token',
+      );
+      expect(expiryNotifications, 1);
+      expect(logs.join('\n'), isNot(contains('secure-token')));
     });
 
     test('supports PATCH and DELETE with the same response contract', () async {
-      adapter.respond(statusCode: 200, body: {'data': {'updated': true}});
+      adapter.respond(
+        statusCode: 200,
+        body: {
+          'data': {'updated': true},
+        },
+      );
       final updated = await client.patch<bool>(
         '/users/me',
         body: {'fullName': 'Tên mới'},
@@ -147,7 +205,12 @@ void main() {
       expect(updated.data, isTrue);
       expect(adapter.lastRequest?.method, 'PATCH');
 
-      adapter.respond(statusCode: 200, body: {'data': {'deleted': true}});
+      adapter.respond(
+        statusCode: 200,
+        body: {
+          'data': {'deleted': true},
+        },
+      );
       final deleted = await client.delete<bool>(
         '/ai/conversations/conversation-1',
         decode: (data) => (data as Map<String, dynamic>)['deleted'] as bool,

@@ -127,14 +127,18 @@
 
 ### T06 — Quản lý phiên và token an toàn
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Lưu access token bằng secure storage, khôi phục phiên khi mở app và xóa phiên khi hết hạn/đăng xuất.
 
 **Tiêu chí hoàn thành:**
-- [ ] Token không lưu trong SharedPreferences hoặc log.
-- [ ] Mở lại app khôi phục đúng vai trò.
-- [ ] Response 401 đưa người dùng về đăng nhập một lần, không lặp vô hạn.
+- [x] Token không lưu trong SharedPreferences hoặc log.
+- [x] Mở lại app khôi phục đúng vai trò.
+- [x] Response 401 đưa người dùng về đăng nhập một lần, không lặp vô hạn.
 
 **Kiểm tra:** Widget/unit test cho trạng thái chưa đăng nhập, đã đăng nhập và token hết hạn.
+
+**Đã kiểm tra:** `flutter analyze` và toàn bộ 21 test Flutter thành công; mutation test xác nhận test bắt được nhánh xử lý sai token hết hạn.
 
 **Phụ thuộc:** T05.
 **File dự kiến:** `mobile-app/lib/features/auth/`, `mobile-app/lib/core/storage/`.

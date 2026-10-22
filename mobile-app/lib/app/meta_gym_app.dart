@@ -1,17 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
+import 'package:meta_gym_app/core/config/api_config.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/features/auth/data/auth_api.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
-  const MetaGymApp({super.key});
+  const MetaGymApp({super.key, this.sessionController, this.apiClient});
+
+  final SessionController? sessionController;
+  final ApiClient? apiClient;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
 }
 
 class _MetaGymAppState extends State<MetaGymApp> {
-  late final GoRouter _router = createAppRouter();
+  late final SessionController _sessionController;
+  late final ApiClient _apiClient;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sessionController case final injected?) {
+      _sessionController = injected;
+      _apiClient =
+          widget.apiClient ??
+          ApiClient(
+            config: ApiConfig.fromEnvironment(),
+            accessTokenProvider: () => injected.accessToken,
+            onSessionExpired: injected.expire,
+          );
+    } else {
+      late final SessionController session;
+      _apiClient = ApiClient(
+        config: ApiConfig.fromEnvironment(),
+        accessTokenProvider: () => session.accessToken,
+        onSessionExpired: () => session.expire(),
+      );
+      final authApi = AuthApi(_apiClient);
+      session = SessionController(
+        const SecureTokenStorage(),
+        authApi.loadCurrentUser,
+      );
+      _sessionController = session;
+    }
+    _router = createAppRouter(sessionController: _sessionController);
+    _sessionController.restore();
+  }
 
   @override
   void dispose() {
@@ -21,11 +62,19 @@ class _MetaGymAppState extends State<MetaGymApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Meta Gym',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: _router,
+    return MultiProvider(
+      providers: [
+        Provider<ApiClient>.value(value: _apiClient),
+        ChangeNotifierProvider<SessionController>.value(
+          value: _sessionController,
+        ),
+      ],
+      child: MaterialApp.router(
+        title: 'Meta Gym',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        routerConfig: _router,
+      ),
     );
   }
 }
