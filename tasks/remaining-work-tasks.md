@@ -127,14 +127,18 @@
 
 ### T06 — Quản lý phiên và token an toàn
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Lưu access token bằng secure storage, khôi phục phiên khi mở app và xóa phiên khi hết hạn/đăng xuất.
 
 **Tiêu chí hoàn thành:**
-- [ ] Token không lưu trong SharedPreferences hoặc log.
-- [ ] Mở lại app khôi phục đúng vai trò.
-- [ ] Response 401 đưa người dùng về đăng nhập một lần, không lặp vô hạn.
+- [x] Token không lưu trong SharedPreferences hoặc log.
+- [x] Mở lại app khôi phục đúng vai trò.
+- [x] Response 401 đưa người dùng về đăng nhập một lần, không lặp vô hạn.
 
 **Kiểm tra:** Widget/unit test cho trạng thái chưa đăng nhập, đã đăng nhập và token hết hạn.
+
+**Đã kiểm tra:** `flutter analyze` và toàn bộ 21 test Flutter thành công; mutation test xác nhận test bắt được nhánh xử lý sai token hết hạn.
 
 **Phụ thuộc:** T05.
 **File dự kiến:** `mobile-app/lib/features/auth/`, `mobile-app/lib/core/storage/`.
@@ -142,14 +146,18 @@
 
 ### T07 — Màn hình đăng nhập và đăng ký Member
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Kết nối form đăng nhập/đăng ký với API và hiển thị lỗi xác thực bằng tiếng Việt.
 
 **Tiêu chí hoàn thành:**
-- [ ] Member đăng ký và đăng nhập được.
-- [ ] Coach/Admin đăng nhập được nhưng không thể tự đăng ký.
-- [ ] Form chặn dữ liệu sai cơ bản và tránh gửi lặp.
+- [x] Member đăng ký và đăng nhập được.
+- [x] Coach/Admin đăng nhập được nhưng không thể tự đăng ký.
+- [x] Form chặn dữ liệu sai cơ bản và tránh gửi lặp.
 
 **Kiểm tra:** Widget test form; thử thật với ba tài khoản demo.
+
+**Đã kiểm tra:** 26 test Flutter thành công, gồm validation form, điều hướng Coach theo vai trò và chống gửi lặp; `flutter analyze` sạch. Việc thử tài khoản demo thật được thay bằng API giả lập xác định vì môi trường hiện tại không có PostgreSQL demo đang chạy.
 
 **Phụ thuộc:** T06.
 **File dự kiến:** `mobile-app/lib/features/auth/`, `mobile-app/test/features/auth/`.
@@ -157,14 +165,18 @@
 
 ### T08 — Hồ sơ, đổi mật khẩu và quên mật khẩu
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Hoàn thiện màn hình hồ sơ, sửa thông tin, đổi mật khẩu và quy trình mã khôi phục.
 
 **Tiêu chí hoàn thành:**
-- [ ] Member/Coach chỉ sửa được trường backend cho phép.
-- [ ] Đổi mật khẩu làm phiên cũ mất hiệu lực theo contract.
-- [ ] Luồng yêu cầu mã → xác minh → đặt mật khẩu mới hoạt động.
+- [x] Member/Coach chỉ sửa được trường backend cho phép.
+- [x] Đổi mật khẩu làm phiên cũ mất hiệu lực theo contract.
+- [x] Luồng yêu cầu mã → xác minh → đặt mật khẩu mới hoạt động.
 
 **Kiểm tra:** Widget test và chạy thủ công toàn bộ luồng với backend local.
+
+**Đã kiểm tra:** 31 test Flutter thành công, gồm widget test ba bước khôi phục mật khẩu, payload hồ sơ theo vai trò và hủy phiên sau đổi mật khẩu; `flutter analyze` sạch. Backend local chưa có dịch vụ email/PostgreSQL demo đang chạy nên kiểm tra thật được thay bằng service giả lập xác định.
 
 **Phụ thuộc:** T07.
 **File dự kiến:** `mobile-app/lib/features/profile/`, `mobile-app/lib/features/auth/`.
@@ -182,14 +194,18 @@
 
 ### T09 — Trang chủ Member và nội dung phòng gym
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Tạo shell điều hướng Member, trang chủ, thông tin phòng gym, thiết bị và bài tập.
 
 **Tiêu chí hoàn thành:**
-- [ ] Có navigation nhất quán trên kích thước điện thoại phổ biến.
-- [ ] Danh sách có loading, empty, error và tìm kiếm cơ bản.
-- [ ] Nội dung bị ẩn không hiển thị.
+- [x] Có navigation nhất quán trên kích thước điện thoại phổ biến.
+- [x] Danh sách có loading, empty, error và tìm kiếm cơ bản.
+- [x] Nội dung bị ẩn không hiển thị.
 
 **Kiểm tra:** Widget test các trạng thái; thử với API demo.
+
+**Đã kiểm tra:** Unit/widget test bao phủ trạng thái ready, empty, error, tìm kiếm và lọc nội dung `HIDDEN`; `flutter analyze` sạch. API demo thật chưa chạy nên dùng catalog service giả lập xác định.
 
 **Phụ thuộc:** T07.
 **File dự kiến:** `mobile-app/lib/features/member_home/`, `mobile-app/lib/features/catalog/`.
@@ -197,14 +213,18 @@
 
 ### T10 — Gói tập và thanh toán QR mô phỏng
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Cho Member xem gói, tạo giao dịch, xem QR/thông tin thanh toán và xác nhận mô phỏng.
 
 **Tiêu chí hoàn thành:**
-- [ ] Chỉ hiển thị gói đang áp dụng.
-- [ ] Nút xác nhận chống gửi lặp.
-- [ ] Sau thành công hiển thị membership hiện tại và lịch sử.
+- [x] Chỉ hiển thị gói đang áp dụng.
+- [x] Nút xác nhận chống gửi lặp.
+- [x] Sau thành công hiển thị membership hiện tại và lịch sử.
 
 **Kiểm tra:** Chạy luồng mua gói đầu tiên và mua nối tiếp; xác nhận lặp không tạo hai membership.
+
+**Đã kiểm tra:** Unit/widget test bao phủ gói `ACTIVE`, mua lần đầu, mua nối tiếp bằng idempotency key mới, QR mô phỏng và xác nhận lặp; `flutter analyze` sạch.
 
 **Phụ thuộc:** T09.
 **File dự kiến:** `mobile-app/lib/features/membership/`, `mobile-app/test/features/membership/`.

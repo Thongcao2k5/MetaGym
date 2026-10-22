@@ -33,6 +33,8 @@ class ApiException implements Exception {
     final kind = switch (statusCode) {
       401 when error.code == 'INVALID_CREDENTIALS' =>
         ApiExceptionKind.authentication,
+      401 when error.code == 'INVALID_RESET_CODE' =>
+        ApiExceptionKind.validation,
       401 => ApiExceptionKind.sessionExpired,
       403 => ApiExceptionKind.forbidden,
       422 => ApiExceptionKind.validation,
@@ -47,9 +49,11 @@ class ApiException implements Exception {
       ApiExceptionKind.authentication => 'Thông tin đăng nhập không chính xác.',
       ApiExceptionKind.sessionExpired =>
         'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-      ApiExceptionKind.forbidden => 'Bạn không có quyền thực hiện thao tác này.',
+      ApiExceptionKind.forbidden =>
+        'Bạn không có quyền thực hiện thao tác này.',
       ApiExceptionKind.validation => 'Dữ liệu gửi lên không hợp lệ.',
-      ApiExceptionKind.server => 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.',
+      ApiExceptionKind.server =>
+        'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.',
       _ => 'Yêu cầu không thể thực hiện.',
     };
 

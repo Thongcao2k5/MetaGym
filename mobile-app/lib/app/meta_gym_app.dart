@@ -1,31 +1,144 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
+import 'package:meta_gym_app/core/config/api_config.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/features/auth/data/auth_api.dart';
+import 'package:meta_gym_app/features/auth/data/auth_service.dart';
+import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
+import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
+import 'package:meta_gym_app/features/catalog/presentation/catalog_controller.dart';
+import 'package:meta_gym_app/features/membership/data/membership_api.dart';
+import 'package:meta_gym_app/features/membership/data/membership_service.dart';
+import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
+import 'package:meta_gym_app/features/profile/data/profile_api.dart';
+import 'package:meta_gym_app/features/profile/data/profile_service.dart';
+import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
+import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
+import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
-  const MetaGymApp({super.key});
+  const MetaGymApp({
+    super.key,
+    this.sessionController,
+    this.apiClient,
+    this.authService,
+    this.profileService,
+    this.catalogService,
+    this.membershipService,
+  });
+
+  final SessionController? sessionController;
+  final ApiClient? apiClient;
+  final AuthService? authService;
+  final ProfileService? profileService;
+  final CatalogService? catalogService;
+  final MembershipService? membershipService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
 }
 
 class _MetaGymAppState extends State<MetaGymApp> {
-  late final GoRouter _router = createAppRouter();
+  late final SessionController _sessionController;
+  late final ApiClient _apiClient;
+  late final AuthService _authService;
+  late final AuthController _authController;
+  late final ProfileService _profileService;
+  late final ProfileController _profileController;
+  late final PasswordResetController _passwordResetController;
+  late final CatalogService _catalogService;
+  late final CatalogController _catalogController;
+  late final MembershipService _membershipService;
+  late final MembershipController _membershipController;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sessionController case final injected?) {
+      _sessionController = injected;
+      _apiClient =
+          widget.apiClient ??
+          ApiClient(
+            config: ApiConfig.fromEnvironment(),
+            accessTokenProvider: () => injected.accessToken,
+            onSessionExpired: injected.expire,
+          );
+    } else {
+      late final SessionController session;
+      _apiClient = ApiClient(
+        config: ApiConfig.fromEnvironment(),
+        accessTokenProvider: () => session.accessToken,
+        onSessionExpired: () => session.expire(),
+      );
+      final authApi = AuthApi(_apiClient);
+      session = SessionController(
+        const SecureTokenStorage(),
+        authApi.loadCurrentUser,
+      );
+      _sessionController = session;
+    }
+    _authService = widget.authService ?? AuthApi(_apiClient);
+    _authController = AuthController(_authService, _sessionController);
+    _profileService = widget.profileService ?? ProfileApi(_apiClient);
+    _profileController = ProfileController(_profileService, _sessionController);
+    _passwordResetController = PasswordResetController(_profileService);
+    _catalogService = widget.catalogService ?? CatalogApi(_apiClient);
+    _catalogController = CatalogController(_catalogService);
+    _membershipService = widget.membershipService ?? MembershipApi(_apiClient);
+    _membershipController = MembershipController(_membershipService);
+    _router = createAppRouter(sessionController: _sessionController);
+    _sessionController.restore();
+  }
 
   @override
   void dispose() {
     _router.dispose();
+    _authController.dispose();
+    _profileController.dispose();
+    _passwordResetController.dispose();
+    _catalogController.dispose();
+    _membershipController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Meta Gym',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: _router,
+    return MultiProvider(
+      providers: [
+        Provider<ApiClient>.value(value: _apiClient),
+        Provider<AuthService>.value(value: _authService),
+        ChangeNotifierProvider<AuthController>.value(value: _authController),
+        Provider<ProfileService>.value(value: _profileService),
+        ChangeNotifierProvider<ProfileController>.value(
+          value: _profileController,
+        ),
+        ChangeNotifierProvider<PasswordResetController>.value(
+          value: _passwordResetController,
+        ),
+        Provider<CatalogService>.value(value: _catalogService),
+        ChangeNotifierProvider<CatalogController>.value(
+          value: _catalogController,
+        ),
+        Provider<MembershipService>.value(value: _membershipService),
+        ChangeNotifierProvider<MembershipController>.value(
+          value: _membershipController,
+        ),
+        ChangeNotifierProvider<SessionController>.value(
+          value: _sessionController,
+        ),
+      ],
+      child: MaterialApp.router(
+        title: 'Meta Gym',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        routerConfig: _router,
+      ),
     );
   }
 }

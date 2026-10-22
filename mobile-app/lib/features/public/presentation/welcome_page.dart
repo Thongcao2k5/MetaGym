@@ -16,18 +16,21 @@ class WelcomePage extends StatelessWidget {
             children: [
               const Icon(Icons.fitness_center, size: 56),
               const SizedBox(height: 16),
-              Text('Meta Gym', style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                'Meta Gym',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 8),
-              const Text('Khung ứng dụng đã sẵn sàng để phát triển.'),
+              const Text('Đồng hành cùng hành trình luyện tập của bạn.'),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => context.push(AppRoutes.memberHome),
-                child: const Text('Khu vực Member'),
+                onPressed: () => context.go(AppRoutes.login),
+                child: const Text('Đăng nhập'),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => context.push(AppRoutes.coachHome),
-                child: const Text('Khu vực Coach'),
+                onPressed: () => context.go(AppRoutes.register),
+                child: const Text('Đăng ký Member'),
               ),
             ],
           ),
