@@ -1,8 +1,22 @@
 const today = `(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`;
+const reconciliationIntervalMs = 60_000;
+const inFlightByDatabase = new WeakMap();
+const lastRunByDatabase = new WeakMap();
 
-export async function reconcileMembershipLifecycles(database) {
-  if (typeof database.connect !== 'function') return;
+export function reconcileMembershipLifecycles(database) {
+  if (typeof database.connect !== 'function') return undefined;
+  const lastRun = lastRunByDatabase.get(database);
+  if (lastRun && Date.now() - lastRun < reconciliationIntervalMs) return undefined;
+  const current = inFlightByDatabase.get(database);
+  if (current) return current;
+  const reconciliation = runReconciliation(database)
+    .then(() => { lastRunByDatabase.set(database, Date.now()); })
+    .finally(() => { inFlightByDatabase.delete(database); });
+  inFlightByDatabase.set(database, reconciliation);
+  return reconciliation;
+}
 
+async function runReconciliation(database) {
   const client = await database.connect();
   try {
     await client.query('BEGIN');
