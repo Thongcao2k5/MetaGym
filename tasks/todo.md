@@ -30,7 +30,7 @@
 
 - [x] Migration tạo được 33 bảng nghiệp vụ và các ràng buộc quan trọng.
 - [x] Baseline seed chỉ tạo một Admin và một `gym_profile` hợp lệ, chạy lặp không tạo trùng.
-- [ ] Demo seed là lệnh riêng cho development/test; có thể tạo gói tập, Coach, thiết bị và bài tập mẫu.
+- [x] Demo seed là lệnh riêng cho development/test; tạo tài khoản, gói tập, Coach, thiết bị và bài tập mẫu; chạy lặp không tạo trùng.
 - [x] Có thể dựng lại database từ đầu bằng một quy trình được ghi lại.
 
 **Kiểm tra:** Chạy migration, schema assertions, constraint behavior tests và baseline seed hai lần trên database trống.
@@ -373,8 +373,8 @@
 
 **Tiêu chí hoàn thành:**
 
-- [ ] Có hướng dẫn cài đặt, biến môi trường và seed demo. **Một phần:** Hướng dẫn/biến môi trường đã có; demo seed chưa có.
-- [ ] Có ba tài khoản demo và kịch bản trình bày dự phòng.
+- [x] Có hướng dẫn cài đặt, biến môi trường và seed demo.
+- [ ] Có ba tài khoản demo và kịch bản trình bày dự phòng. **Một phần:** Ba tài khoản demo đã có; kịch bản dự phòng chưa có.
 - [ ] Báo cáo, sơ đồ và slide khớp với hệ thống thực tế.
 
 **Kiểm tra:** Một thành viên không phụ trách phần đó cài lại và chạy demo từ tài liệu.

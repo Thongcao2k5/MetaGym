@@ -49,14 +49,16 @@
 
 ### T02 — Tạo demo seed độc lập
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t02-demo-seed`.
+
 **Mô tả:** Tạo seed development/test có ba tài khoản Admin, Coach, Member và dữ liệu gói tập, thiết bị, bài tập mẫu.
 
 **Tiêu chí hoàn thành:**
-- [ ] Seed chạy lặp không tạo dữ liệu trùng.
-- [ ] Có thông tin đăng nhập demo không dùng trong production.
-- [ ] Baseline seed production không bị thay đổi mục đích.
+- [x] Seed chạy lặp không tạo dữ liệu trùng.
+- [x] Có thông tin đăng nhập demo không dùng trong production.
+- [x] Baseline seed production không bị thay đổi mục đích.
 
-**Kiểm tra:** Dựng database mới, chạy migration + baseline + demo seed hai lần và xác nhận dữ liệu hợp lệ.
+**Kiểm tra:** [x] Đã dựng database mới, chạy migration + baseline + demo seed hai lần và xác nhận dữ liệu hợp lệ.
 
 **Phụ thuộc:** Không.
 **File dự kiến:** `database/seeds/0002_demo.sql`, `database/README.md`.
