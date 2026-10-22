@@ -111,6 +111,12 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       assert.equal(comment.status, 201, JSON.stringify(comment.body));
       assert.equal((await call(base, '/progress-comments', member)).body.data[0].id,
         comment.body.data.id);
+      const reviewedUpdate = await call(base, `/workout-logs/${logId}`, member, 'PATCH', {
+        durationMinutes: 60,
+      });
+      assert.equal(reviewedUpdate.status, 409, JSON.stringify(reviewedUpdate.body));
+      assert.equal(reviewedUpdate.body.error.code, 'PROGRESS_ALREADY_REVIEWED');
+      assert.equal((await call(base, '/workout-logs', member)).body.data[0].durationMinutes, 45);
       await database.query(
         `UPDATE coach_relationships SET status = 'ENDED', ended_at = now(),
          ended_by = $1, end_reason = 'Test ending' WHERE id = $2`,

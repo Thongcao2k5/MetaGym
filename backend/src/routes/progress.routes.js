@@ -49,19 +49,23 @@ const photoSchema = z.strictObject({
 });
 const types = [
   { path: 'workout-logs', table: 'workout_logs', idParam: 'logId', time: 'performed_at',
+    commentColumn: 'workout_log_id',
     schema: workoutSchema, columns: { trainingSessionId: 'training_session_id',
       trainingPlanId: 'training_plan_id', performedAt: 'performed_at',
       durationMinutes: 'duration_minutes', completionLevel: 'completion_level', notes: 'notes' } },
   { path: 'meal-logs', table: 'meal_logs', idParam: 'logId', time: 'eaten_at',
+    commentColumn: 'meal_log_id',
     schema: mealSchema, columns: { eatenAt: 'eaten_at', mealType: 'meal_type',
       mealName: 'meal_name', description: 'description',
       estimatedCalories: 'estimated_calories', imageMediaId: 'image_media_id', notes: 'notes' } },
   { path: 'body-measurements', table: 'body_measurements', idParam: 'measurementId',
+    commentColumn: 'measurement_id',
     time: 'measured_at', schema: measurementSchema,
     columns: { measuredAt: 'measured_at', weightKg: 'weight_kg',
       bodyFatPercent: 'body_fat_percent', chestCm: 'chest_cm', waistCm: 'waist_cm',
       hipsCm: 'hips_cm', armCm: 'arm_cm', thighCm: 'thigh_cm', notes: 'notes' } },
   { path: 'progress-photos', table: 'progress_photos', idParam: 'photoId', time: 'taken_at',
+    commentColumn: 'progress_photo_id',
     schema: photoSchema, columns: { mediaId: 'media_id', takenAt: 'taken_at',
       pose: 'pose', notes: 'notes' } },
 ];
@@ -315,18 +319,29 @@ export function createProgressRouter({ database, jwtSecret }) {
         const client = await database.connect();
         try {
           await client.query('BEGIN');
+          await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [id]);
+          const existing = await client.query(
+            `SELECT * FROM ${config.table} WHERE id = $1 AND member_id = $2 FOR UPDATE`,
+            [id, request.authUser.id],
+          );
+          if (!existing.rows.length) {
+            await client.query('ROLLBACK');
+            return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy nhật ký');
+          }
+          const reviewed = await client.query(
+            `SELECT 1 FROM progress_comments WHERE ${config.commentColumn} = $1 LIMIT 1`,
+            [id],
+          );
+          if (reviewed.rows.length) {
+            await client.query('ROLLBACK');
+            return fail(response, 409, 'PROGRESS_ALREADY_REVIEWED',
+              'Không thể sửa nhật ký sau khi Coach đã nhận xét');
+          }
           const result = entries.length ? await client.query(
             `UPDATE ${config.table} SET ${entries.map(([, column], index) => `${column} = $${index + 1}`).join(', ')}
              WHERE id = $${entries.length + 1} AND member_id = $${entries.length + 2} RETURNING *`,
             [...entries.map(([key]) => parsed.data[key]), id, request.authUser.id],
-          ) : await client.query(
-            `SELECT * FROM ${config.table} WHERE id = $1 AND member_id = $2 FOR UPDATE`,
-            [id, request.authUser.id],
-          );
-          if (!result.rows.length) {
-            await client.query('ROLLBACK');
-            return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy nhật ký');
-          }
+          ) : existing;
           if (config.table === 'workout_logs' && parsed.data.exercises) {
             await replaceWorkoutExercises(client, id, parsed.data.exercises);
           }
@@ -417,15 +432,40 @@ export function createProgressRouter({ database, jwtSecret }) {
         parsed.data.memberId, true);
       if (!relationship) return fail(response, 403, 'RELATIONSHIP_REQUIRED', 'Quan hệ Coach–Member không hoạt động');
       const data = parsed.data;
-      const result = await database.query(
-        `INSERT INTO progress_comments
-         (id, member_id, coach_id, relationship_id, workout_log_id,
-          meal_log_id, measurement_id, progress_photo_id, content)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [randomUUID(), data.memberId, request.authUser.id, relationship.id,
-          data.workoutLogId ?? null, data.mealLogId ?? null,
-          data.measurementId ?? null, data.progressPhotoId ?? null, data.content],
-      );
+      const target = [
+        ['workoutLogId', 'workout_logs'], ['mealLogId', 'meal_logs'],
+        ['measurementId', 'body_measurements'], ['progressPhotoId', 'progress_photos'],
+      ].find(([key]) => data[key]);
+      const client = await database.connect();
+      let result;
+      try {
+        await client.query('BEGIN');
+        if (target) {
+          const [key, table] = target;
+          await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [data[key]]);
+          const owned = await client.query(
+            `SELECT 1 FROM ${table} WHERE id = $1 AND member_id = $2`,
+            [data[key], data.memberId],
+          );
+          if (!owned.rows.length) {
+            await client.query('ROLLBACK');
+            return fail(response, 422, 'VALIDATION_ERROR', 'Đối tượng nhận xét không hợp lệ');
+          }
+        }
+        result = await client.query(
+          `INSERT INTO progress_comments
+           (id, member_id, coach_id, relationship_id, workout_log_id,
+            meal_log_id, measurement_id, progress_photo_id, content)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+          [randomUUID(), data.memberId, request.authUser.id, relationship.id,
+            data.workoutLogId ?? null, data.mealLogId ?? null,
+            data.measurementId ?? null, data.progressPhotoId ?? null, data.content],
+        );
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw error;
+      } finally { client.release(); }
       const row = result.rows[0];
       return response.status(201).json({ data: {
         id: row.id, memberId: row.member_id, coachId: row.coach_id,
