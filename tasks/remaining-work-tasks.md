@@ -107,7 +107,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T15 — Kiểm chứng API nhắn tin Member–Coach
 
-**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Bổ sung test PostgreSQL cho quyền hai bên/người ngoài/Admin, tin ảnh đúng owner và `READY`, gửi đồng thời/retry, phân trang, unread/read cursor, quan hệ `PAUSED`/`ENDED`. Test tái hiện và sửa race gửi tin trong transaction kết thúc quan hệ. Backend check và 51/51 test đạt, không skip; smoke đạt 7/7. Contract đã ghi rõ idempotency và quy tắc trạng thái.
 
 **API hiện có:** `/conversations`, `/conversations/:relationshipId/messages`, `/conversations/:relationshipId/read-state` trong `backend/src/routes/messaging.routes.js`.
 
@@ -121,9 +121,9 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### Checkpoint B — Năm luồng API Member–Coach
 
-- [ ] T11–T15 đạt tiêu chí với test PostgreSQL thực sự chạy, không skip.
-- [ ] `npm run check`, `npm test` đạt; sửa code backend thì health và smoke test đạt.
-- [ ] Review quyền Member/Coach/Admin, dữ liệu riêng tư và diff trước khi gộp.
+- [x] T11–T15 đạt tiêu chí với test PostgreSQL thực sự chạy, không skip.
+- [x] `npm run check`, `npm test` đạt; sửa code backend thì health và smoke test đạt.
+- [x] Đã review quyền Member/Coach/Admin, dữ liệu riêng tư và diff của T11–T15 trước bước gộp.
 
 ### T16 — Kiểm thử luồng nghiệp vụ liên thông bằng API thật
 

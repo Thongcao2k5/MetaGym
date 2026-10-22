@@ -335,6 +335,7 @@ Admin không có API đọc nhật ký, số đo hoặc ảnh tiến trình chi 
 Upload nhận PNG/JPEG tối đa 5 MB với header `x-image-purpose` là `MESSAGE`, `PROGRESS_PHOTO` hoặc `MEAL_PHOTO`. Body quá 5 MB trả JSON `413 PAYLOAD_TOO_LARGE`; ảnh sai định dạng/purpose trả `422 VALIDATION_ERROR`; lưu trữ lỗi trả `502 STORAGE_ERROR` và asset ở trạng thái `FAILED`. Chỉ asset `READY` mới được cấp URL. URL có chữ ký hết hạn sau 5 phút; Coach không được cấp URL mới sau khi quan hệ với chủ ảnh kết thúc.
 
 Quan hệ `PAUSED` hoặc `ENDED` chỉ được đọc lịch sử. Admin không có API đọc nội dung tin nhắn.
+`POST /conversations/:relationshipId/messages` dùng `clientMessageId` theo người gửi: gửi lại cùng payload trả đúng tin cũ, tái dùng ID với payload khác trả `409 MESSAGE_ID_CONFLICT`. Backend khóa trạng thái quan hệ khi gửi, nên thao tác kết thúc quan hệ và gửi tin không thể cùng ghi thành công theo trạng thái cũ. Danh sách tin xếp theo `sentAt DESC, id DESC`; `read-state` chỉ tiến lên và không lùi cursor.
 
 ## 9. Voice & Video Call
 

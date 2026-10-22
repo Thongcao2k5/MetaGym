@@ -34,7 +34,7 @@ async function conversation(database, relationshipId, userId, lock = false) {
      FROM conversations c JOIN coach_relationships r ON r.id = c.relationship_id
      JOIN conversation_participants p ON p.conversation_id = c.id
      WHERE c.relationship_id = $1 AND p.user_id = $2
-     ${lock ? 'FOR UPDATE OF c' : ''}`, [relationshipId, userId],
+     ${lock ? 'FOR UPDATE OF c, r' : ''}`, [relationshipId, userId],
   );
   return found.rows[0];
 }
