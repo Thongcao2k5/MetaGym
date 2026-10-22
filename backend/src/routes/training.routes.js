@@ -164,8 +164,15 @@ export function createTrainingRouter({ database, jwtSecret }) {
     try {
       const found = await database.query('SELECT * FROM training_plans WHERE id = $1', [request.params.planId]);
       const row = found.rows[0];
-      if (!row || !((request.authUser.role === 'MEMBER' && row.member_id === request.authUser.id && row.status !== 'DRAFT') ||
-        (request.authUser.role === 'COACH' && row.coach_id === request.authUser.id))) {
+      const ownPublished = row && request.authUser.role === 'MEMBER' &&
+        row.member_id === request.authUser.id && row.status !== 'DRAFT';
+      const currentCoach = row && request.authUser.role === 'COACH' &&
+        row.coach_id === request.authUser.id && (await database.query(
+          `SELECT 1 FROM coach_relationships WHERE id = $1 AND coach_id = $2
+           AND status IN ('ACTIVE', 'PAUSED')`,
+          [row.relationship_id, request.authUser.id],
+        )).rows.length > 0;
+      if (!ownPublished && !currentCoach) {
         return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giáo trình');
       }
       return response.json({ data: await loadPlan(database, row.id) });
@@ -177,13 +184,14 @@ export function createTrainingRouter({ database, jwtSecret }) {
     if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
     try {
       const related = await database.query(
-        `SELECT 1 FROM coach_relationships WHERE member_id = $1 AND coach_id = $2 LIMIT 1`,
+        `SELECT id FROM coach_relationships WHERE member_id = $1 AND coach_id = $2
+         AND status IN ('ACTIVE', 'PAUSED') LIMIT 1`,
         [request.params.memberId, request.authUser.id],
       );
       if (!related.rows.length) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Member');
       const result = await database.query(
-        `SELECT * FROM training_plans WHERE member_id = $1 AND coach_id = $2 ORDER BY version DESC`,
-        [request.params.memberId, request.authUser.id],
+        `SELECT * FROM training_plans WHERE relationship_id = $1 ORDER BY version DESC`,
+        [related.rows[0].id],
       );
       return response.json({ data: result.rows.map((row) => planView(row, undefined)) });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được giáo trình'); }
@@ -364,13 +372,14 @@ export function createTrainingRouter({ database, jwtSecret }) {
     if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
     try {
       const related = await database.query(
-        `SELECT 1 FROM coach_relationships WHERE member_id = $1 AND coach_id = $2 LIMIT 1`,
+        `SELECT id FROM coach_relationships WHERE member_id = $1 AND coach_id = $2
+         AND status IN ('ACTIVE', 'PAUSED') LIMIT 1`,
         [request.params.memberId, request.authUser.id],
       );
       if (!related.rows.length) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Member');
       const result = await database.query(
-        `SELECT * FROM nutrition_guides WHERE member_id = $1 AND coach_id = $2 ORDER BY version DESC`,
-        [request.params.memberId, request.authUser.id],
+        `SELECT * FROM nutrition_guides WHERE relationship_id = $1 ORDER BY version DESC`,
+        [related.rows[0].id],
       );
       return response.json({ data: result.rows.map(guideView) });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được dinh dưỡng'); }

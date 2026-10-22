@@ -263,6 +263,7 @@ Quy tắc xác nhận `MOCK_QR`:
 
 Mỗi Member chỉ có một giáo trình `ACTIVE`. Nếu hai bản nháp được công bố đồng thời, API xử lý tuần tự: cả hai yêu cầu hợp lệ trả thành công, bản được xử lý sau trở thành `ACTIVE` và bản trước chuyển `ARCHIVED`. Thứ tự hoàn tất phụ thuộc lịch xử lý của server.
 Chỉ được công bố bản nháp thuộc đúng quan hệ Coach–Member đang `ACTIVE`; quan hệ mới với cùng Coach không cấp quyền công bố bản nháp của quan hệ đã kết thúc.
+Coach chỉ đọc giáo trình thuộc quan hệ hiện tại `ACTIVE` hoặc `PAUSED`; Member vẫn xem được giáo trình đã công bố từ quan hệ cũ trong lịch sử của mình.
 
 ### 6.2. Hướng dẫn dinh dưỡng
 
@@ -289,6 +290,8 @@ Quy tắc công bố đồng thời và chỉ một bản `ACTIVE` cũng áp d�
 | `GET` | `/exercises/:exerciseId` | Đã đăng nhập | Chi tiết bài tập |
 | `POST` | `/admin/exercises` | Admin | Tạo bài tập dùng chung |
 | `PATCH` | `/admin/exercises/:exerciseId` | Admin | Sửa hoặc ẩn bài tập |
+
+Coach chỉ đọc hướng dẫn dinh dưỡng và buổi tập thuộc quan hệ hiện tại `ACTIVE` hoặc `PAUSED`; dữ liệu của quan hệ `ENDED` không còn hiện cho Coach cũ, kể cả khi Member quay lại cùng Coach đó.
 
 ## 7. Progress Tracking
 

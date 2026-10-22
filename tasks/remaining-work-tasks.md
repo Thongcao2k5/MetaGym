@@ -137,7 +137,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T17 — Rà soát bảo mật, lỗi và vòng đời dữ liệu của API
 
-**Trạng thái:** Chưa thực hiện.
+**Trạng thái:** Hoàn thành rà soát backend MVP ngày 22/10/2026. Test tái hiện và sửa IDOR: Coach cũ đọc giáo trình/dinh dưỡng/buổi tập sau kết thúc quan hệ, kể cả khi Member quay lại cùng Coach. Thêm CORS allowlist HTTPS bắt buộc khi `NODE_ENV=production`, test origin được phép/bị chặn. Đã kiểm tra test hiện có cho khóa tài khoản, token cũ sau đổi mật khẩu, hết membership, provider thiếu cấu hình (`503`) và log chỉ ghi path không có query/body; cấu hình production còn cần TLS reverse proxy và secret riêng. Backend check và 53/53 test đạt, không skip; smoke đạt 7/7. Không phát hiện lỗi nghiêm trọng/cao còn lại trong các luồng được rà soát; đây không phải audit bảo mật toàn hệ thống.
 
 **Công việc:** Kiểm tra ma trận quyền, IDOR bằng cách đổi ID, trạng thái tài khoản bị khóa, token cũ sau đổi mật khẩu, hết hạn membership, Coach cũ sau kết thúc/chuyển quan hệ; validation, phân trang và lỗi provider chưa cấu hình. Xác nhận log không in token, mật khẩu, mã khôi phục; CORS/secret production cần cấu hình riêng trước khi triển khai Internet.
 

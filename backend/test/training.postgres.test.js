@@ -348,10 +348,24 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
          ended_by = $2, end_reason = 'Return later' WHERE id = $1`,
         [relationshipId, memberId],
       );
+      assert.equal((await call(app, `/training-plans/${planId}`, coach)).status, 404);
+      assert.equal((await call(app, `/coach/members/${memberId}/training-plans`,
+        coach)).status, 404);
+      assert.equal((await call(app, `/coach/members/${memberId}/nutrition-guides`,
+        coach)).status, 404);
+      assert.equal((await call(app, `/training-sessions/${sessionId}`, coach)).status, 404);
+      assert.equal((await call(app, '/coach/training-sessions', coach)).body.data.length, 0);
+      assert.equal((await call(app, `/training-plans/${planId}`, member)).status, 200);
       await database.query(
         `INSERT INTO coach_relationships (id, member_id, coach_id)
          VALUES ($1, $2, $3)`, [returnRelationshipId, memberId, coachId],
       );
+      assert.equal((await call(app, `/training-plans/${planId}`, coach)).status, 404);
+      assert.equal((await call(app, `/coach/members/${memberId}/training-plans`,
+        coach)).body.data.length, 0);
+      assert.equal((await call(app, `/coach/members/${memberId}/nutrition-guides`,
+        coach)).body.data.length, 0);
+      assert.equal((await call(app, `/training-sessions/${sessionId}`, coach)).status, 404);
       assert.equal((await call(app,
         `/coach/training-plans/${pausedPlan.body.data.id}/publications`,
         coach, 'POST', {})).status, 409);

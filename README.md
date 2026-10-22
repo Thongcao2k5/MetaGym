@@ -22,6 +22,8 @@ npm run dev
 
 Trước khi chạy backend, tạo database và chạy migration theo [hướng dẫn database](database/README.md). Backend mặc định chạy tại `http://localhost:3000`. Kiểm tra kết nối API và PostgreSQL bằng `GET /api/v1/health`.
 
+Khi `NODE_ENV=production`, backend yêu cầu `CORS_ALLOWED_ORIGINS` là danh sách origin HTTPS cách nhau bằng dấu phẩy (ví dụ `https://app.example.com,https://admin.example.com`); thiếu hoặc dùng origin không hợp lệ sẽ làm backend từ chối khởi động. Ở môi trường development/test, mặc định cho phép mọi origin để chạy local. Production cũng cần `JWT_SECRET` đủ mạnh, HTTPS/TLS ở reverse proxy, database và secret riêng; không dùng tài khoản demo hoặc cấu hình local để mở Internet.
+
 Các tích hợp bên ngoài chỉ được bật khi cấu hình đủ biến môi trường:
 
 - AI: `OPENAI_API_KEY` và `OPENAI_MODEL`; backend gọi OpenAI Responses API.

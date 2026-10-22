@@ -54,6 +54,7 @@ export function createSessionsRouter({ database, jwtSecret }) {
       const result = await database.query(
         `SELECT s.* FROM training_sessions s JOIN coach_relationships r
          ON r.id = s.relationship_id WHERE r.coach_id = $1
+         AND r.status IN ('ACTIVE', 'PAUSED')
          ORDER BY s.scheduled_start_at DESC, s.id DESC`, [request.authUser.id],
       );
       return response.json({ data: result.rows.map(view) });
@@ -64,11 +65,14 @@ export function createSessionsRouter({ database, jwtSecret }) {
     if (!uuid.safeParse(request.params.sessionId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã buổi tập không hợp lệ');
     try {
       const found = await database.query(
-        `SELECT s.*, r.coach_id FROM training_sessions s JOIN coach_relationships r
+        `SELECT s.*, r.coach_id, r.status AS relationship_status
+         FROM training_sessions s JOIN coach_relationships r
          ON r.id = s.relationship_id WHERE s.id = $1`, [request.params.sessionId],
       );
       const row = found.rows[0];
-      return row && (row.member_id === request.authUser.id || row.coach_id === request.authUser.id)
+      return row && (row.member_id === request.authUser.id ||
+        (row.coach_id === request.authUser.id &&
+         ['ACTIVE', 'PAUSED'].includes(row.relationship_status)))
         ? response.json({ data: view(row) })
         : fail(response, 404, 'NOT_FOUND', 'Không tìm thấy buổi tập');
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được buổi tập'); }

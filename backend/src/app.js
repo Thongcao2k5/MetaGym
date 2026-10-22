@@ -39,6 +39,23 @@ function validateJwtSecret(jwtSecret) {
   }
 }
 
+function allowedCorsOrigins(value, nodeEnv) {
+  const origins = value?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? [];
+  if (nodeEnv === 'production' && !origins.length) {
+    throw new Error('CORS_ALLOWED_ORIGINS is required in production');
+  }
+  for (const origin of origins) {
+    let parsed;
+    try { parsed = new URL(origin); }
+    catch { throw new Error('CORS_ALLOWED_ORIGINS contains an invalid origin'); }
+    if (parsed.origin !== origin ||
+        (nodeEnv === 'production' && parsed.protocol !== 'https:')) {
+      throw new Error('CORS_ALLOWED_ORIGINS contains an invalid origin');
+    }
+  }
+  return origins.length ? origins : '*';
+}
+
 export function createApp({
   database,
   jwtSecret = process.env.JWT_SECRET,
@@ -47,13 +64,16 @@ export function createApp({
   aiResponder,
   callTokenProvider,
   imageStorage,
+  corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS,
+  nodeEnv = process.env.NODE_ENV,
 }) {
   validateJwtSecret(jwtSecret);
+  const corsOrigin = allowedCorsOrigins(corsAllowedOrigins, nodeEnv);
 
   const app = express();
 
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({ origin: corsOrigin }));
   app.use(express.json());
   app.use(morgan((tokens, request, response) =>
     `${tokens.method(request, response)} ${request.originalUrl.split('?')[0]} ${tokens.status(request, response)} ${tokens['response-time'](request, response)} ms`));
