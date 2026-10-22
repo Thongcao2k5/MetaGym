@@ -43,6 +43,10 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
     const secondPaymentId = randomUUID();
     const secondMembershipId = randomUUID();
     const relationshipId = randomUUID();
+    const photoMediaId = randomUUID();
+    const wrongPurposeMediaId = randomUUID();
+    const pendingMediaId = randomUUID();
+    const foreignMediaId = randomUUID();
     const admin = token(adminId, 'ADMIN');
     const member = token(memberId, 'MEMBER');
     const secondMember = token(secondMemberId, 'MEMBER');
@@ -107,6 +111,27 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
         'INSERT INTO coach_relationships (id, member_id, coach_id) VALUES ($1, $2, $3)',
         [relationshipId, memberId, coachId],
       );
+      await database.query(
+        `INSERT INTO media_assets
+         (id, owner_id, purpose, access_scope, storage_key, original_name,
+          expires_at, status, mime_type, size_bytes, width, height, ready_at)
+         VALUES ($1, $2, 'PROGRESS_PHOTO', 'PRIVATE', $3, 'photo.png',
+                 now() + interval '15 minutes', 'READY', 'image/png', 10, 2, 2, now()),
+                ($4, $2, 'MEAL_PHOTO', 'PRIVATE', $5, 'meal.png',
+                 now() + interval '15 minutes', 'READY', 'image/png', 10, 2, 2, now()),
+                ($6, $7, 'PROGRESS_PHOTO', 'PRIVATE', $8, 'other.png',
+                 now() + interval '15 minutes', 'READY', 'image/png', 10, 2, 2, now())`,
+        [photoMediaId, memberId, randomUUID(), wrongPurposeMediaId,
+          randomUUID(), foreignMediaId, secondMemberId, randomUUID()],
+      );
+      await database.query(
+        `INSERT INTO media_assets
+         (id, owner_id, purpose, access_scope, storage_key, original_name, expires_at)
+         VALUES ($1, $2, 'PROGRESS_PHOTO', 'PRIVATE', $3, 'pending.png',
+                 now() + interval '15 minutes')`,
+        [pendingMediaId, memberId, randomUUID()],
+      );
+      assert.deepEqual((await call(base, '/progress/me/charts', member)).body.data, []);
       const log = await call(base, '/workout-logs', member, 'POST', {
         performedAt: '2026-10-20T08:00:00+07:00', durationMinutes: 45,
         exercises: [{ exerciseName: 'Squat', displayOrder: 1, setsCompleted: 3 }],
@@ -203,10 +228,47 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
         measuredAt: '2026-10-20T09:00:00+07:00', weightKg: 72.5,
       });
       assert.equal(measurement.status, 201, JSON.stringify(measurement.body));
+      assert.equal((await call(base, '/body-measurements', member, 'POST', {
+        measuredAt: '2026-10-21T09:00:00+07:00', weightKg: -1,
+      })).status, 422);
+      const secondMeasurement = await call(base, '/body-measurements', member, 'POST', {
+        measuredAt: '2026-10-21T09:00:00+07:00', weightKg: 71.5,
+      });
+      assert.equal(secondMeasurement.status, 201);
+      assert.equal((await call(base, `/body-measurements/${measurement.body.data.id}`,
+        secondMember, 'PATCH', { weightKg: 50 })).status, 404);
+      assert.equal((await call(base, `/body-measurements/${secondMeasurement.body.data.id}`,
+        member, 'PATCH', { weightKg: 71 })).status, 200);
       const charts = await call(base, '/progress/me/charts?from=2026-10-20&to=2026-10-20', member);
       assert.equal(charts.status, 200);
       assert.equal(charts.body.data.length, 1);
       assert.equal(Number(charts.body.data[0].weightKg), 72.5);
+      const allCharts = await call(base, '/progress/me/charts', member);
+      assert.deepEqual(allCharts.body.data.map((item) => Number(item.weightKg)),
+        [72.5, 71]);
+      assert.equal((await call(base, '/progress/me/charts?from=2026-10-22&to=2026-10-20',
+        member)).status, 422);
+      assert.deepEqual((await call(base, '/progress/me/charts', secondMember)).body.data, []);
+      for (const invalidId of [wrongPurposeMediaId, pendingMediaId, foreignMediaId]) {
+        assert.equal((await call(base, '/progress-photos', member, 'POST', {
+          mediaId: invalidId, takenAt: '2026-10-20T10:00:00+07:00',
+        })).status, 422);
+      }
+      const photo = await call(base, '/progress-photos', member, 'POST', {
+        mediaId: photoMediaId, takenAt: '2026-10-20T10:00:00+07:00',
+        pose: 'FRONT',
+      });
+      assert.equal(photo.status, 201, JSON.stringify(photo.body));
+      assert.equal((await call(base, '/progress-photos', member)).body.data[0].id,
+        photo.body.data.id);
+      assert.equal((await call(base, `/coach/members/${memberId}/progress-photos`,
+        coach)).body.data[0].id, photo.body.data.id);
+      assert.equal((await call(base, `/coach/members/${memberId}/progress-photos`,
+        outsider)).status, 404);
+      assert.equal((await call(base, `/progress-photos/${photo.body.data.id}`,
+        secondMember, 'PATCH', { pose: 'SIDE' })).status, 404);
+      assert.equal((await call(base, `/progress-photos/${photo.body.data.id}`,
+        member, 'PATCH', { pose: 'SIDE' })).body.data.pose, 'SIDE');
       assert.equal((await call(base, '/progress/me/summary', member)).body.data.workoutCount, 3);
       assert.equal((await call(base, '/progress/me/summary', member)).body.data.mealCount, 3);
       const comment = await call(base, '/coach/progress-comments', coach, 'POST', {
@@ -249,6 +311,9 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       await database.query('DELETE FROM workout_logs WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM meal_logs WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM body_measurements WHERE member_id = $1', [memberId]);
+      await database.query('DELETE FROM progress_photos WHERE member_id = $1', [memberId]);
+      await database.query('DELETE FROM media_assets WHERE owner_id IN ($1, $2)',
+        [memberId, secondMemberId]);
       await database.query('DELETE FROM coach_relationships WHERE id = $1', [relationshipId]);
       await database.query('DELETE FROM member_memberships WHERE id = $1', [membershipId]);
       await database.query('DELETE FROM member_memberships WHERE id = $1',

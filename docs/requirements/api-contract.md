@@ -329,6 +329,10 @@ Admin không có API đọc nhật ký, số đo hoặc ảnh tiến trình chi 
 | `POST` | `/conversations/:relationshipId/messages` | Hai bên, quan hệ `ACTIVE` | Gửi văn bản hoặc hình ảnh |
 | `PATCH` | `/conversations/:relationshipId/read-state` | Hai bên của quan hệ | Đánh dấu đã đọc đến một tin nhắn |
 | `POST` | `/media/images` | Member/Coach | Tải ảnh lên cho tin nhắn hoặc tiến trình |
+| `GET` | `/media/images/:mediaId/access-url` | Chủ ảnh/Coach còn quyền | Lấy URL ảnh có chữ ký |
+| `GET` | `/media/images/:mediaId?expires=...&signature=...` | URL có chữ ký | Tải ảnh trước khi URL hết hạn |
+
+Upload nhận PNG/JPEG tối đa 5 MB với header `x-image-purpose` là `MESSAGE`, `PROGRESS_PHOTO` hoặc `MEAL_PHOTO`. Body quá 5 MB trả JSON `413 PAYLOAD_TOO_LARGE`; ảnh sai định dạng/purpose trả `422 VALIDATION_ERROR`; lưu trữ lỗi trả `502 STORAGE_ERROR` và asset ở trạng thái `FAILED`. Chỉ asset `READY` mới được cấp URL. URL có chữ ký hết hạn sau 5 phút; Coach không được cấp URL mới sau khi quan hệ với chủ ảnh kết thúc.
 
 Quan hệ `PAUSED` hoặc `ENDED` chỉ được đọc lịch sử. Admin không có API đọc nội dung tin nhắn.
 

@@ -93,7 +93,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T14 — Kiểm chứng API số đo, ảnh và thống kê tiến độ
 
-**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Bổ sung test PostgreSQL cho số đo/biểu đồ rỗng và nhiều điểm, ảnh tiến độ đúng `READY`/purpose/owner, quyền của Coach, PNG/JPEG, URL có chữ ký và hết hạn, lỗi lưu trữ. Sửa upload quá 5 MB trả HTML thành JSON `413 PAYLOAD_TOO_LARGE`; cập nhật API contract. Backend check và 50/50 test đạt, không skip; smoke đạt 7/7.
 
 **API hiện có:** `/body-measurements`, `/progress-photos`, `/progress/me/summary`, `/progress/me/charts`, `/media/images` và access URL trong `progress.routes.js`, `media.routes.js`.
 

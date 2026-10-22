@@ -113,6 +113,13 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
       }
     });
 
+  router.use((error, _request, response, next) => {
+    if (error.type === 'entity.too.large') {
+      return fail(response, 413, 'PAYLOAD_TOO_LARGE', 'Ảnh vượt giới hạn 5 MB');
+    }
+    return next(error);
+  });
+
   router.get('/media/images/:mediaId/access-url', authenticate,
     async (request, response) => {
       if (!uuid.safeParse(request.params.mediaId).success) {
