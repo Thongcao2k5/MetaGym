@@ -110,14 +110,16 @@
 
 ### T05 — Xây API client và chuẩn hóa lỗi
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t05-api-client`.
+
 **Mô tả:** Bọc Dio thành client dùng chung, giải mã response/error, timeout và log an toàn.
 
 **Tiêu chí hoàn thành:**
-- [ ] Base URL, timeout và header được cấu hình tập trung.
-- [ ] Lỗi mạng, 401, 403, 422 và 5xx có kiểu lỗi rõ ràng.
-- [ ] Log không chứa token hoặc mật khẩu.
+- [x] Base URL, timeout và header được cấu hình tập trung.
+- [x] Lỗi mạng, 401, 403, 422 và 5xx có kiểu lỗi rõ ràng.
+- [x] Log không chứa token hoặc mật khẩu.
 
-**Kiểm tra:** Unit test client bằng mock adapter cho response thành công, validation và hết phiên.
+**Kiểm tra:** [x] Unit test client bằng mock adapter cho response thành công, validation và hết phiên.
 
 **Phụ thuộc:** T04.
 **File dự kiến:** `mobile-app/lib/core/network/`, `mobile-app/test/core/network/`.

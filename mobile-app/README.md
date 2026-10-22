@@ -3,7 +3,7 @@
 Ứng dụng Flutter được chia theo hai lớp chính:
 
 - `lib/app`: khai báo ứng dụng và router.
-- `lib/core`: cấu hình dùng chung như API URL và theme.
+- `lib/core`: cấu hình API, theme và API client dùng chung.
 - `lib/features`: mã theo từng nghiệp vụ công khai, Member và Coach.
 
 ## Chạy theo môi trường
@@ -29,6 +29,10 @@ F:\flutter\bin\flutter.bat run --release `
 ```
 
 Có thể truyền `API_BASE_URL` để ghi đè URL ở môi trường local hoặc emulator.
+
+API client chuẩn hóa response `{data, pagination?}` và chuyển lỗi mạng, xác
+thực, phân quyền, validation hoặc lỗi máy chủ thành `ApiException`. Log mạng
+chỉ chứa phương thức, trạng thái và loại lỗi; không ghi header hoặc body.
 
 ## Kiểm tra
 
