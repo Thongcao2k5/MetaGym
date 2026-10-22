@@ -16,20 +16,25 @@ void main() {
     setUp(() {
       adapter = _MockHttpClientAdapter();
       logs = [];
-      client = ApiClient(
+      client = ApiClient.withAdapter(
         config: ApiConfig.fromValues(environment: 'local'),
         adapter: adapter,
         logger: logs.add,
       );
     });
 
-    test('configures base URL, JSON headers, and timeouts centrally', () {
-      expect(client.options.baseUrl, 'http://127.0.0.1:3000/api/v1');
-      expect(client.options.connectTimeout, const Duration(seconds: 10));
-      expect(client.options.sendTimeout, const Duration(seconds: 15));
-      expect(client.options.receiveTimeout, const Duration(seconds: 15));
-      expect(client.options.headers[Headers.acceptHeader], Headers.jsonContentType);
-      expect(client.options.contentType, Headers.jsonContentType);
+    test('configures base URL, JSON headers, and timeouts centrally', () async {
+      adapter.respond(statusCode: 200, body: {'data': {'ok': true}});
+
+      await client.get<Object?>('/health', decode: (data) => data);
+
+      final request = adapter.lastRequest!;
+      expect(request.baseUrl, 'http://127.0.0.1:3000/api/v1');
+      expect(request.connectTimeout, const Duration(seconds: 10));
+      expect(request.sendTimeout, const Duration(seconds: 15));
+      expect(request.receiveTimeout, const Duration(seconds: 15));
+      expect(request.headers[Headers.acceptHeader], Headers.jsonContentType);
+      expect(request.contentType, Headers.jsonContentType);
     });
 
     test('decodes a successful API envelope and pagination', () async {

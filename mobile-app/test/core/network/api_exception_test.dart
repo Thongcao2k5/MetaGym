@@ -4,6 +4,19 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 
 void main() {
   group('ApiException.fromDio', () {
+    test('keeps invalid login credentials separate from an expired session', () {
+      final exception = ApiException.fromDio(
+        _responseError(
+          401,
+          code: 'INVALID_CREDENTIALS',
+          message: 'Email hoặc mật khẩu không đúng',
+        ),
+      );
+
+      expect(exception.kind, ApiExceptionKind.authentication);
+      expect(exception.message, 'Email hoặc mật khẩu không đúng');
+    });
+
     test('maps 403 to forbidden while preserving the safe API message', () {
       final exception = ApiException.fromDio(
         _responseError(

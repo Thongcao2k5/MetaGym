@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 enum ApiExceptionKind {
   network,
+  authentication,
   sessionExpired,
   forbidden,
   validation,
@@ -30,6 +31,8 @@ class ApiException implements Exception {
     final error = _errorPayload(exception.response?.data);
 
     final kind = switch (statusCode) {
+      401 when error.code == 'INVALID_CREDENTIALS' =>
+        ApiExceptionKind.authentication,
       401 => ApiExceptionKind.sessionExpired,
       403 => ApiExceptionKind.forbidden,
       422 => ApiExceptionKind.validation,
@@ -41,6 +44,7 @@ class ApiException implements Exception {
     final fallbackMessage = switch (kind) {
       ApiExceptionKind.network =>
         'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.',
+      ApiExceptionKind.authentication => 'Thông tin đăng nhập không chính xác.',
       ApiExceptionKind.sessionExpired =>
         'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
       ApiExceptionKind.forbidden => 'Bạn không có quyền thực hiện thao tác này.',

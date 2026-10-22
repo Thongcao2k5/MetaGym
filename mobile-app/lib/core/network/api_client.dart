@@ -15,25 +15,19 @@ class ApiResult<T> {
 class ApiClient {
   ApiClient({
     required ApiConfig config,
-    HttpClientAdapter? adapter,
-    this.logger,
-  }) : _dio = Dio(
-         BaseOptions(
-           baseUrl: config.baseUrl.toString(),
-           connectTimeout: const Duration(seconds: 10),
-           sendTimeout: const Duration(seconds: 15),
-           receiveTimeout: const Duration(seconds: 15),
-           contentType: Headers.jsonContentType,
-           headers: {Headers.acceptHeader: Headers.jsonContentType},
-         ),
-       ) {
-    if (adapter != null) _dio.httpClientAdapter = adapter;
-  }
+    ApiLogger? logger,
+  }) : this._(_createDio(config), logger);
+
+  ApiClient.withAdapter({
+    required ApiConfig config,
+    required HttpClientAdapter adapter,
+    ApiLogger? logger,
+  }) : this._(_createDio(config)..httpClientAdapter = adapter, logger);
+
+  ApiClient._(this._dio, this._logger);
 
   final Dio _dio;
-  final ApiLogger? logger;
-
-  BaseOptions get options => _dio.options;
+  final ApiLogger? _logger;
 
   Future<ApiResult<T>> get<T>(
     String path, {
@@ -109,7 +103,7 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
   }) async {
-    logger?.call('API $method started');
+    _logger?.call('API $method started');
     try {
       final response = await _dio.request<Object?>(
         path,
@@ -118,20 +112,33 @@ class ApiClient {
         options: Options(method: method, headers: headers),
       );
       final result = _decodeResult(response.data, decode);
-      logger?.call('API $method completed (${response.statusCode})');
+      _logger?.call('API $method completed (${response.statusCode})');
       return result;
     } on DioException catch (error) {
       final apiException = ApiException.fromDio(error);
-      logger?.call(
+      _logger?.call(
         'API $method failed (${apiException.statusCode ?? 'network'}; '
         '${apiException.kind.name})',
       );
       throw apiException;
     } on ApiException catch (error) {
-      logger?.call('API $method failed (${error.kind.name})');
+      _logger?.call('API $method failed (${error.kind.name})');
       rethrow;
     }
   }
+}
+
+Dio _createDio(ApiConfig config) {
+  return Dio(
+    BaseOptions(
+      baseUrl: config.baseUrl.toString(),
+      connectTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
+      contentType: Headers.jsonContentType,
+      headers: {Headers.acceptHeader: Headers.jsonContentType},
+    ),
+  );
 }
 
 ApiResult<T> _decodeResult<T>(Object? body, ApiDecoder<T> decode) {
