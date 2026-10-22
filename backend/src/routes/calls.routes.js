@@ -190,8 +190,14 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider }) {
          AND EXISTS (
            SELECT 1 FROM coach_relationships r
            WHERE r.id = call_logs.relationship_id AND r.status = 'ACTIVE'
+         )
+         AND EXISTS (
+           SELECT 1 FROM users u
+           WHERE u.id = $3 AND u.status = 'ACTIVE' AND u.role = $4
+           AND u.session_version = $5
          ) RETURNING id`,
-        [token.providerCallId, call.id],
+        [token.providerCallId, call.id, request.authUser.id,
+          request.authUser.role, request.authUser.session_version],
       );
       if (!updated.rows.length) return fail(response, 409, 'CALL_NOT_ACTIVE', 'Cuộc gọi không còn hoạt động');
       return response.json({ data: {

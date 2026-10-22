@@ -60,6 +60,18 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
           channelId: callId,
           expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() };
       } });
+    let signalProviderStarted;
+    let releaseProvider;
+    const providerStarted = new Promise((resolve) => { signalProviderStarted = resolve; });
+    const providerRelease = new Promise((resolve) => { releaseProvider = resolve; });
+    const revocationCallApp = createApp({ database, jwtSecret: secret,
+      callTokenProvider: async ({ callId }) => {
+        signalProviderStarted();
+        await providerRelease;
+        return { accessToken: 'must-not-be-returned', providerCallId: callId,
+          channelId: callId,
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() };
+      } });
     try {
       await database.query(
         `INSERT INTO users (id, email, password_hash, role, full_name)
@@ -240,6 +252,32 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       assert.equal((await call(app, '/calls', member, 'POST', {
         relationshipId, callType: 'VIDEO',
       })).status, 404);
+      await database.query(
+        `UPDATE coach_relationships SET status = 'ACTIVE', paused_at = NULL,
+         pause_reason = NULL WHERE id = $1`, [relationshipId],
+      );
+      result = await call(app, '/calls', member, 'POST', {
+        relationshipId, callType: 'VOICE',
+      });
+      assert.equal(result.status, 201);
+      const revokedCallId = result.body.data.id;
+      const pendingToken = call(revocationCallApp,
+        `/calls/${revokedCallId}/access-tokens`, member, 'POST', {});
+      await providerStarted;
+      try {
+        await database.query(
+          `UPDATE users SET status = 'DISABLED', disabled_at = now(),
+           disabled_reason = 'Integration test',
+           session_version = session_version + 1 WHERE id = $1`, [memberId],
+        );
+      } finally {
+        releaseProvider();
+      }
+      result = await pendingToken;
+      assert.equal(result.status, 409, JSON.stringify(result.body));
+      assert.equal((await database.query(
+        'SELECT provider_call_id FROM call_logs WHERE id = $1', [revokedCallId]))
+        .rows[0].provider_call_id, null);
     } finally {
       await database.query('DELETE FROM call_logs WHERE relationship_id = $1', [relationshipId]);
       await database.query(
