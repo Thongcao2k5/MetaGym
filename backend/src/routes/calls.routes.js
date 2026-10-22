@@ -182,29 +182,48 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider }) {
       const remaining = new Date(token.expiresAt).getTime() - Date.now();
       if (remaining <= 0 || remaining > 15 * 60 * 1000) throw new Error('INVALID_EXPIRY');
     } catch { return fail(response, 502, 'CALL_PROVIDER_ERROR', 'Dịch vụ gọi không trả token hợp lệ'); }
+    const client = await database.connect().catch(() => null);
+    if (!client) return fail(response, 502, 'CALL_PROVIDER_ERROR', 'Không ghi được thông tin dịch vụ gọi');
     try {
-      const updated = await database.query(
-        `UPDATE call_logs SET provider_call_id = $1 WHERE id = $2
-         AND (provider_call_id IS NULL OR provider_call_id = $1)
-         AND status IN ('CREATED', 'RINGING', 'ANSWERED')
-         AND EXISTS (
-           SELECT 1 FROM coach_relationships r
-           WHERE r.id = call_logs.relationship_id AND r.status = 'ACTIVE'
-         )
-         AND EXISTS (
-           SELECT 1 FROM users u
-           WHERE u.id = $3 AND u.status = 'ACTIVE' AND u.role = $4
-           AND u.session_version = $5
-         ) RETURNING id`,
-        [token.providerCallId, call.id, request.authUser.id,
-          request.authUser.role, request.authUser.session_version],
+      await client.query('BEGIN');
+      const account = await client.query(
+        `SELECT id FROM users WHERE id = $1 AND status = 'ACTIVE'
+         AND role = $2 AND session_version = $3 FOR SHARE`,
+        [request.authUser.id, request.authUser.role, request.authUser.session_version],
       );
-      if (!updated.rows.length) return fail(response, 409, 'CALL_NOT_ACTIVE', 'Cuộc gọi không còn hoạt động');
+      if (!account.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 409, 'CALL_NOT_ACTIVE', 'Cuộc gọi không còn hoạt động');
+      }
+      const relationship = await client.query(
+        `SELECT id FROM coach_relationships WHERE id = $1 AND status = 'ACTIVE'
+         FOR SHARE`, [call.relationship_id],
+      );
+      if (!relationship.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 409, 'CALL_NOT_ACTIVE', 'Cuộc gọi không còn hoạt động');
+      }
+      const updated = await client.query(
+        `UPDATE call_logs SET provider_call_id = $1 WHERE id = $2
+         AND relationship_id = $3
+         AND (caller_id = $4 OR receiver_id = $4)
+         AND (provider_call_id IS NULL OR provider_call_id = $1)
+         AND status IN ('CREATED', 'RINGING', 'ANSWERED') RETURNING id`,
+        [token.providerCallId, call.id, call.relationship_id, request.authUser.id],
+      );
+      if (!updated.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 409, 'CALL_NOT_ACTIVE', 'Cuộc gọi không còn hoạt động');
+      }
+      await client.query('COMMIT');
       return response.json({ data: {
         accessToken: token.accessToken, channelId: token.channelId,
         expiresAt: token.expiresAt,
       } });
-    } catch { return fail(response, 502, 'CALL_PROVIDER_ERROR', 'Không ghi được thông tin dịch vụ gọi'); }
+    } catch {
+      await client.query('ROLLBACK').catch(() => {});
+      return fail(response, 502, 'CALL_PROVIDER_ERROR', 'Không ghi được thông tin dịch vụ gọi');
+    } finally { client.release(); }
   });
   return router;
 }

@@ -264,14 +264,26 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       const pendingToken = call(revocationCallApp,
         `/calls/${revokedCallId}/access-tokens`, member, 'POST', {});
       await providerStarted;
+      const revocation = await database.connect();
       try {
-        await database.query(
+        await revocation.query('BEGIN');
+        await revocation.query(
           `UPDATE users SET status = 'DISABLED', disabled_at = now(),
            disabled_reason = 'Integration test',
            session_version = session_version + 1 WHERE id = $1`, [memberId],
         );
-      } finally {
         releaseProvider();
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        assert.equal(await Promise.race([
+          pendingToken.then(() => 'settled'),
+          new Promise((resolve) => setTimeout(() => resolve('blocked'), 25)),
+        ]), 'blocked');
+        await revocation.query('COMMIT');
+      } catch (error) {
+        await revocation.query('ROLLBACK').catch(() => {});
+        throw error;
+      } finally {
+        revocation.release();
       }
       result = await pendingToken;
       assert.equal(result.status, 409, JSON.stringify(result.body));
