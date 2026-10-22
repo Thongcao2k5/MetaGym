@@ -4,18 +4,34 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 
 void main() {
   group('ApiException.fromDio', () {
-    test('keeps invalid login credentials separate from an expired session', () {
+    test('maps an invalid password reset code to validation', () {
       final exception = ApiException.fromDio(
         _responseError(
           401,
-          code: 'INVALID_CREDENTIALS',
-          message: 'Email hoặc mật khẩu không đúng',
+          code: 'INVALID_RESET_CODE',
+          message: 'Mã không hợp lệ hoặc đã hết hạn',
         ),
       );
 
-      expect(exception.kind, ApiExceptionKind.authentication);
-      expect(exception.message, 'Email hoặc mật khẩu không đúng');
+      expect(exception.kind, ApiExceptionKind.validation);
+      expect(exception.message, 'Mã không hợp lệ hoặc đã hết hạn');
     });
+
+    test(
+      'keeps invalid login credentials separate from an expired session',
+      () {
+        final exception = ApiException.fromDio(
+          _responseError(
+            401,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Email hoặc mật khẩu không đúng',
+          ),
+        );
+
+        expect(exception.kind, ApiExceptionKind.authentication);
+        expect(exception.message, 'Email hoặc mật khẩu không đúng');
+      },
+    );
 
     test('maps 403 to forbidden while preserving the safe API message', () {
       final exception = ApiException.fromDio(
@@ -42,7 +58,10 @@ void main() {
 
       expect(exception.kind, ApiExceptionKind.server);
       expect(exception.code, 'DATABASE_UNAVAILABLE');
-      expect(exception.message, 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.');
+      expect(
+        exception.message,
+        'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.',
+      );
       expect(exception.message, isNot(contains('postgres')));
     });
 

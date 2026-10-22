@@ -73,6 +73,12 @@ class _LoginPageState extends State<LoginPage> {
           TextButton(
             onPressed: auth.isSubmitting
                 ? null
+                : () => context.push(AppRoutes.forgotPassword),
+            child: const Text('Quên mật khẩu?'),
+          ),
+          TextButton(
+            onPressed: auth.isSubmitting
+                ? null
                 : () => context.go(AppRoutes.register),
             child: const Text('Chưa có tài khoản? Đăng ký Member'),
           ),

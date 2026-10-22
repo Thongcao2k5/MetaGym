@@ -5,6 +5,7 @@ import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -86,6 +87,49 @@ void main() {
     expect(service.loginCalls, 1);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
   });
+
+  testWidgets('password reset completes all three steps', (tester) async {
+    const member = AuthUser(
+      id: 'member-1',
+      email: 'member@metagym.test',
+      fullName: 'Member Demo',
+      role: UserRole.member,
+      status: 'ACTIVE',
+    );
+    final controller = SessionController(
+      _MemoryTokenStorage(),
+      (_) async => member,
+    );
+    await tester.pumpWidget(
+      MetaGymApp(
+        sessionController: controller,
+        profileService: _FakeProfileService(member),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Đăng nhập'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quên mật khẩu?'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'member@metagym.test');
+    await tester.tap(find.text('Tiếp tục'));
+    await tester.pumpAndSettle();
+    expect(find.text('Xác minh mã'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('Tiếp tục'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đặt mật khẩu mới'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'NewPass1');
+    await tester.tap(find.text('Tiếp tục'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Mật khẩu đã được cập nhật. Hãy đăng nhập lại.'),
+      findsOneWidget,
+    );
+  });
 }
 
 class _FakeAuthService implements AuthService {
@@ -109,6 +153,40 @@ class _FakeAuthService implements AuthService {
     required String fullName,
     required String password,
   }) async => session.user;
+}
+
+class _FakeProfileService implements ProfileService {
+  _FakeProfileService(this.user);
+
+  final AuthUser user;
+
+  @override
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async => true;
+
+  @override
+  Future<AuthUser> getProfile() async => user;
+
+  @override
+  Future<String> requestPasswordReset(String email) async => 'request-1';
+
+  @override
+  Future<bool> resetPassword({
+    required String requestId,
+    required String code,
+    required String newPassword,
+  }) async => true;
+
+  @override
+  Future<AuthUser> updateProfile(Map<String, Object?> fields) async => user;
+
+  @override
+  Future<bool> verifyPasswordReset({
+    required String requestId,
+    required String code,
+  }) async => true;
 }
 
 class _MemoryTokenStorage implements TokenStorage {

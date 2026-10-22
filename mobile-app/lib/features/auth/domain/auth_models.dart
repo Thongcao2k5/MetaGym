@@ -18,6 +18,8 @@ class AuthUser {
     required this.fullName,
     required this.role,
     required this.status,
+    this.phone,
+    this.profile = const {},
   });
 
   factory AuthUser.fromJson(Object? value) {
@@ -28,6 +30,10 @@ class AuthUser {
       fullName: json['fullName'] as String,
       role: UserRole.fromApi(json['role']),
       status: json['status'] as String,
+      phone: json['phone'] as String?,
+      profile: json['profile'] is Map
+          ? Map<String, dynamic>.from(json['profile'] as Map)
+          : const {},
     );
   }
 
@@ -36,6 +42,8 @@ class AuthUser {
   final String fullName;
   final UserRole role;
   final String status;
+  final String? phone;
+  final Map<String, dynamic> profile;
 }
 
 class AuthSession {

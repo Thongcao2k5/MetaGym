@@ -165,14 +165,18 @@
 
 ### T08 — Hồ sơ, đổi mật khẩu và quên mật khẩu
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Hoàn thiện màn hình hồ sơ, sửa thông tin, đổi mật khẩu và quy trình mã khôi phục.
 
 **Tiêu chí hoàn thành:**
-- [ ] Member/Coach chỉ sửa được trường backend cho phép.
-- [ ] Đổi mật khẩu làm phiên cũ mất hiệu lực theo contract.
-- [ ] Luồng yêu cầu mã → xác minh → đặt mật khẩu mới hoạt động.
+- [x] Member/Coach chỉ sửa được trường backend cho phép.
+- [x] Đổi mật khẩu làm phiên cũ mất hiệu lực theo contract.
+- [x] Luồng yêu cầu mã → xác minh → đặt mật khẩu mới hoạt động.
 
 **Kiểm tra:** Widget test và chạy thủ công toàn bộ luồng với backend local.
+
+**Đã kiểm tra:** 31 test Flutter thành công, gồm widget test ba bước khôi phục mật khẩu, payload hồ sơ theo vai trò và hủy phiên sau đổi mật khẩu; `flutter analyze` sạch. Backend local chưa có dịch vụ email/PostgreSQL demo đang chạy nên kiểm tra thật được thay bằng service giả lập xác định.
 
 **Phụ thuộc:** T07.
 **File dự kiến:** `mobile-app/lib/features/profile/`, `mobile-app/lib/features/auth/`.

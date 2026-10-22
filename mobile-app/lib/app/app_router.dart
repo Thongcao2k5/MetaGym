@@ -6,6 +6,9 @@ import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
+import 'package:meta_gym_app/features/profile/presentation/change_password_page.dart';
+import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
+import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 
 abstract final class AppRoutes {
@@ -13,6 +16,9 @@ abstract final class AppRoutes {
   static const loading = '/loading';
   static const login = '/login';
   static const register = '/register';
+  static const forgotPassword = '/forgot-password';
+  static const profile = '/profile';
+  static const changePassword = '/profile/change-password';
   static const memberHome = '/member';
   static const coachHome = '/coach';
   static const adminHome = '/admin';
@@ -36,6 +42,7 @@ GoRouter createAppRouter({
           AppRoutes.welcome,
           AppRoutes.login,
           AppRoutes.register,
+          AppRoutes.forgotPassword,
         };
         return publicRoutes.contains(state.matchedLocation)
             ? null
@@ -43,7 +50,15 @@ GoRouter createAppRouter({
       }
 
       final home = _homeForRole(sessionController.user!.role);
-      return state.matchedLocation == home ? null : home;
+      const sharedProtectedRoutes = {
+        AppRoutes.profile,
+        AppRoutes.changePassword,
+      };
+      if (state.matchedLocation == home ||
+          sharedProtectedRoutes.contains(state.matchedLocation)) {
+        return null;
+      }
+      return home;
     },
     routes: [
       GoRoute(
@@ -62,6 +77,18 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.changePassword,
+        builder: (context, state) => const ChangePasswordPage(),
       ),
       GoRoute(
         path: AppRoutes.memberHome,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/app/app_router.dart';
 
 class MemberHomePage extends StatelessWidget {
   const MemberHomePage({super.key});
@@ -7,7 +9,18 @@ class MemberHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Member')),
-      body: const Center(child: Text('Không gian dành cho hội viên')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Không gian dành cho hội viên'),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.profile),
+              child: const Text('Hồ sơ của tôi'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -54,6 +54,12 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateUser(AuthUser user) {
+    if (_status != SessionStatus.authenticated || user.id != _user?.id) return;
+    _user = user;
+    notifyListeners();
+  }
+
   Future<void> signOut() => expire();
 
   Future<void> expire() {
