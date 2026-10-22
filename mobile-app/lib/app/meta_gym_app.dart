@@ -12,6 +12,9 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/presentation/catalog_controller.dart';
+import 'package:meta_gym_app/features/membership/data/membership_api.dart';
+import 'package:meta_gym_app/features/membership/data/membership_service.dart';
+import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
@@ -26,6 +29,7 @@ class MetaGymApp extends StatefulWidget {
     this.authService,
     this.profileService,
     this.catalogService,
+    this.membershipService,
   });
 
   final SessionController? sessionController;
@@ -33,6 +37,7 @@ class MetaGymApp extends StatefulWidget {
   final AuthService? authService;
   final ProfileService? profileService;
   final CatalogService? catalogService;
+  final MembershipService? membershipService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -48,6 +53,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final PasswordResetController _passwordResetController;
   late final CatalogService _catalogService;
   late final CatalogController _catalogController;
+  late final MembershipService _membershipService;
+  late final MembershipController _membershipController;
   late final GoRouter _router;
 
   @override
@@ -83,6 +90,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _passwordResetController = PasswordResetController(_profileService);
     _catalogService = widget.catalogService ?? CatalogApi(_apiClient);
     _catalogController = CatalogController(_catalogService);
+    _membershipService = widget.membershipService ?? MembershipApi(_apiClient);
+    _membershipController = MembershipController(_membershipService);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -94,6 +103,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileController.dispose();
     _passwordResetController.dispose();
     _catalogController.dispose();
+    _membershipController.dispose();
     super.dispose();
   }
 
@@ -114,6 +124,10 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<CatalogService>.value(value: _catalogService),
         ChangeNotifierProvider<CatalogController>.value(
           value: _catalogController,
+        ),
+        Provider<MembershipService>.value(value: _membershipService),
+        ChangeNotifierProvider<MembershipController>.value(
+          value: _membershipController,
         ),
         ChangeNotifierProvider<SessionController>.value(
           value: _sessionController,

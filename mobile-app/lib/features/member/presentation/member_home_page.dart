@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/features/catalog/presentation/catalog_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 
 class MemberHomePage extends StatefulWidget {
   const MemberHomePage({super.key});
@@ -18,6 +19,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
     final pages = [
       const Center(child: Text('Không gian dành cho hội viên')),
       const CatalogPage(),
+      const MembershipPage(),
       Center(
         child: FilledButton(
           onPressed: () => context.push(AppRoutes.profile),
@@ -39,6 +41,10 @@ class _MemberHomePageState extends State<MemberHomePage> {
           NavigationDestination(
             icon: Icon(Icons.fitness_center),
             label: 'Khám phá',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.card_membership),
+            label: 'Gói tập',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

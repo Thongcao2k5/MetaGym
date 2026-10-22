@@ -213,14 +213,18 @@
 
 ### T10 — Gói tập và thanh toán QR mô phỏng
 
+**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+
 **Mô tả:** Cho Member xem gói, tạo giao dịch, xem QR/thông tin thanh toán và xác nhận mô phỏng.
 
 **Tiêu chí hoàn thành:**
-- [ ] Chỉ hiển thị gói đang áp dụng.
-- [ ] Nút xác nhận chống gửi lặp.
-- [ ] Sau thành công hiển thị membership hiện tại và lịch sử.
+- [x] Chỉ hiển thị gói đang áp dụng.
+- [x] Nút xác nhận chống gửi lặp.
+- [x] Sau thành công hiển thị membership hiện tại và lịch sử.
 
 **Kiểm tra:** Chạy luồng mua gói đầu tiên và mua nối tiếp; xác nhận lặp không tạo hai membership.
+
+**Đã kiểm tra:** Unit/widget test bao phủ gói `ACTIVE`, mua lần đầu, mua nối tiếp bằng idempotency key mới, QR mô phỏng và xác nhận lặp; `flutter analyze` sạch.
 
 **Phụ thuộc:** T09.
 **File dự kiến:** `mobile-app/lib/features/membership/`, `mobile-app/test/features/membership/`.
