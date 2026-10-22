@@ -1,692 +1,179 @@
-# Meta Gym — Kế hoạch các phần còn lại
+# Meta Gym — Kế hoạch hoàn thiện luồng nghiệp vụ và API backend
 
-> Cập nhật: 22/10/2026
-> Điểm bắt đầu: `main` tại commit `92ca738`
-> Phạm vi: hoàn thiện Flutter Member/Coach, tích hợp dịch vụ thật, triển khai cloud, kiểm thử và demo.
-> Lưu ý: database, backend API MVP và admin web MVP đã có; không xây lại nếu API hiện tại đã đáp ứng.
+> Cập nhật: 22/10/2026. Mốc code để lập kế hoạch: `origin/main` tại `e8394dc`.
+> Phạm vi hiện tại: PostgreSQL, backend Node.js, API REST, kiểm thử nghiệp vụ và tài liệu API để chuẩn bị cho việc thiết kế frontend sau này.
 
-## Cách thực hiện
+## Ranh giới công việc
 
-- Làm theo thứ tự task và dependency bên dưới.
-- Mỗi task dùng một nhánh `codex/<mã-task>-<tên-ngắn>`.
-- Mỗi task chỉ được đánh dấu hoàn thành sau khi đạt toàn bộ tiêu chí và bước kiểm tra.
-- Sau mỗi checkpoint: review code, chạy lại test liên quan, rồi mới gộp vào `main`.
-- Không commit `.env`, khóa API, token hoặc mật khẩu thật.
+- Tập trung vào hành vi backend: trạng thái, quyền truy cập, transaction, dữ liệu trả về, lỗi và các trường hợp gửi yêu cầu lặp hoặc đồng thời.
+- Chỉ bổ sung hoặc sửa API khi kiểm thử và API contract cho thấy điểm thiếu hoặc sai. Backend MVP đã có nhiều route; sự tồn tại của route chưa đủ để đánh dấu luồng hoàn thành.
+- Không tạo trang Flutter/Dart, Admin Web, thiết kế màn hình hay APK trong các task đang hoạt động. Các phần frontend đã có trên `main` được giữ nguyên; việc thiết kế tiếp sẽ có kế hoạch riêng theo quyết định của chủ dự án.
+- Thanh toán `MOCK_QR`, media local và các provider AI/email/RTC chưa cấu hình chỉ dùng development/test. Tích hợp thật và triển khai production cần một đợt công việc riêng.
+- `docs/requirements/api-contract.md` là hợp đồng API gốc. Khi cần đổi contract, ghi rõ request/response, mã lỗi và tác động đến client trước khi sửa; tránh phá vỡ client hiện có nếu không cần thiết.
 
-## Tóm tắt thứ tự
+## Cách làm và điều kiện hoàn thành
 
-| Giai đoạn | Task | Kết quả |
-|---|---|---|
-| 0. Đồng bộ dự án | T01–T03 | Checklist đúng, dữ liệu demo, kiểm tra API nền |
-| 1. Flutter nền tảng | T04–T08 | App có cấu trúc, API client và xác thực |
-| 2. Luồng Member | T09–T16 | Member sử dụng được toàn bộ nghiệp vụ MVP |
-| 3. Luồng Coach | T17–T21 | Coach quản lý Member và nội dung huấn luyện |
-| 4. Hoàn thiện Admin | T22–T23 | Bổ sung nội dung và trạng thái lỗi/loading |
-| 5. Dịch vụ bên ngoài | T24–T27 | Email, AI, ảnh và RTC hoạt động thật |
-| 6. Cloud và CI | T28–T32 | Hệ thống có URL public và quy trình kiểm tra tự động |
-| 7. Kiểm thử và demo | T33–T36 | Ba vai trò chạy end-to-end, có APK và tài liệu bảo vệ |
+1. Đọc `AGENTS.md`, task hiện tại, API contract và test hiện có. Dùng checkout hiện tại; giữ nguyên thay đổi chưa commit. Tạo nhánh `codex/<mã-task>-<tên-ngắn>` từ `main` đã đồng bộ cho mỗi task.
+2. Viết test cho trường hợp còn thiếu trước khi đổi logic. Ưu tiên test API với PostgreSQL thật trên `TEST_DATABASE_URL` tách biệt. Dùng dữ liệu test có thể dọn dẹp; không reset database đang có dữ liệu.
+3. Chạy `npm run check` và `npm test` trong `backend/`; xác nhận test PostgreSQL thực sự chạy, không bị skip vì thiếu `TEST_DATABASE_URL`. Khi task chạm luồng chạy thực tế, chạy thêm health và `npm run smoke` trên database demo local.
+4. Review correctness, readability, architecture, security, performance; kiểm tra diff và không commit `.env`, secret, token, media, `node_modules` hoặc dữ liệu PostgreSQL. Chỉ đánh dấu task hoàn thành khi tiêu chí và test tương ứng đạt. Báo kết quả từng task bằng tiếng Việt trước khi chuyển task kế tiếp.
+5. Sau checkpoint, chạy lại bộ test liên quan và review hợp đồng API. Việc commit, push hoặc merge thực hiện theo yêu cầu của chủ dự án và quy trình Git trong `AGENTS.md`.
 
----
+Trong môi trường Codex Cloud, source `/workspace/setup-metagym/runtime.sh` trước khi chạy lệnh. Nếu shell đã export `JWT_SECRET`, chạy test trong subshell `(unset JWT_SECRET; npm test)` để test trường hợp thiếu secret hoạt động đúng; giữ `TEST_DATABASE_URL`.
 
-## Giai đoạn 0 — Đồng bộ trạng thái và dữ liệu nền
+## Trạng thái đã có trước kế hoạch này
 
-### T01 — Cập nhật checklist theo code hiện tại
+| Task | Kết quả đã ghi nhận trên `main` | Liên quan phạm vi hiện tại |
+| --- | --- | --- |
+| T01 | Đối chiếu checklist với code | Tài liệu nền |
+| T02 | Tạo demo seed Admin, Coach, Member | Dữ liệu kiểm thử API |
+| T03 | Tạo smoke test health, đăng nhập và API ba vai trò | Cổng kiểm tra backend |
+| T04 | Chuẩn hóa cấu trúc, router và cấu hình Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
+| T05 | API client và lỗi dùng chung trong Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
+| T06 | Lưu token và quản lý phiên trong Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
+| T07 | Luồng đăng nhập/đăng ký trong Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
+| T08 | Hồ sơ và khôi phục mật khẩu trong Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
+| T09 | Trang Member và danh mục trong Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
+| T10 | Gói tập và thanh toán QR mô phỏng trong Flutter | Lịch sử frontend, ngoài phạm vi hiện tại |
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t01-sync-checklist`.
+T01–T10 đã được đánh dấu hoàn thành trong phiên bản kế hoạch trước tại commit `e8394dc`; bảng này chỉ ghi lại lịch sử, không khẳng định các màn hình đã qua kiểm thử end-to-end với backend thật. Backend Node.js, schema và nhiều API nghiệp vụ đã tồn tại từ trước T11. Không suy ra phần API của T11–T15 đã đạt chỉ từ việc có route hoặc có một test tổng hợp.
 
-**Mô tả:** Đối chiếu `tasks/todo.md` với backend, admin web và kết quả test đã merge; chỉ đánh dấu những mục có bằng chứng trong code/test.
+## Thứ tự công việc backend
 
-**Tiêu chí hoàn thành:**
-- [x] Các mục backend/admin đã làm được đánh dấu đúng.
-- [x] Các mục chỉ mới có API nhưng chưa có Flutter được ghi chú rõ.
-- [x] Không đánh dấu hoàn thành dựa trên suy đoán.
+```text
+T11 Chọn Coach ───────────────┬─> T12 Giáo trình/dinh dưỡng/lịch
+                              └───────────────────┐
+T13 Nhật ký ──> T14 Ảnh/tiến độ ──────────────────┴─> T15 Nhắn tin
+T11–T15 ──> T16 Luồng liên thông ──> T17 Bảo mật & lỗi ──> T18 Chốt API contract
+```
 
-**Kiểm tra:** [x] Đã review diff của `tasks/todo.md` và đối chiếu từng mục với file hoặc test tương ứng.
+T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và route khác; không triển khai song song trên cùng checkout nếu có nguy cơ ghi đè. T15 cần quan hệ Coach từ T11 và media ảnh từ T14. Không đánh dấu task sau hoàn thành khi dependency chưa đạt.
 
-**Phụ thuộc:** Không.
-**File dự kiến:** `tasks/todo.md`, `README.md`.
-**Quy mô:** S.
+### T11 — Kiểm chứng API chọn Coach và vòng đời quan hệ
 
-### T02 — Tạo demo seed độc lập
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Đối chiếu contract, route và schema; không phát hiện sai lệch cần sửa logic. Bổ sung `backend/test/coaching-lifecycle.postgres.test.js` cho membership, quyền sở hữu, gửi trùng/đồng thời, hủy, từ chối, chấp nhận, hết suất và lịch sử sau kết thúc. Backend check và 50/50 test PostgreSQL/đơn vị đạt, không skip; smoke đạt 7/7.
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t02-demo-seed`.
+**API hiện có:** `GET /coaches`, `POST /coach-requests`, `GET /coach-requests/me`, `DELETE /coach-requests/:requestId`, `PATCH /coach/requests/:requestId`, `GET /relationships/me`, các API Coach/Admin liên quan trong `backend/src/routes/coaching.routes.js`.
 
-**Mô tả:** Tạo seed development/test có ba tài khoản Admin, Coach, Member và dữ liệu gói tập, thiết bị, bài tập mẫu.
+**Công việc:** Đối chiếu contract với route và dữ liệu thật. Kiểm tra Member có/không có membership đang hiệu lực; một yêu cầu `PENDING` hoặc quan hệ `ACTIVE`/`PAUSED`; hủy, chấp nhận, từ chối kèm lý do; giới hạn suất Coach; yêu cầu đồng thời; dữ liệu lịch sử sau kết thúc/chuyển Coach. Bổ sung test riêng cho khoảng trống, sửa logic nếu test chứng minh lỗi.
 
-**Tiêu chí hoàn thành:**
-- [x] Seed chạy lặp không tạo dữ liệu trùng.
-- [x] Có thông tin đăng nhập demo không dùng trong production.
-- [x] Baseline seed production không bị thay đổi mục đích.
+**Hoàn thành khi:** Một Member không thể có hai yêu cầu chờ hoặc hai Coach hiện hành; người sai vai trò/chủ thể không đọc hay đổi yêu cầu; trạng thái và suất Coach nhất quán sau mọi chuyển trạng thái; response và mã lỗi đúng contract.
 
-**Kiểm tra:** [x] Đã dựng database mới, chạy migration + baseline + demo seed hai lần và xác nhận dữ liệu hợp lệ.
+**Kiểm tra:** Test API với PostgreSQL thật cho gửi, gửi trùng/đồng thời, hủy, từ chối, chấp nhận, hết suất và quan hệ hiện tại/lịch sử. Chạy backend check/test và smoke khi sửa route.
 
-**Phụ thuộc:** Không.
-**File dự kiến:** `database/seeds/0002_demo.sql`, `database/README.md`.
-**Quy mô:** S.
+**Phụ thuộc:** Gói tập/membership và demo seed đã có từ T02/T03. **Quy mô:** M.
 
-### T03 — Tạo bộ smoke test cho API MVP
+### T12 — Kiểm chứng API giáo trình, dinh dưỡng và buổi tập
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t03-api-smoke-test`.
+**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
 
-**Mô tả:** Ghi lại và tự động hóa các yêu cầu API tối thiểu cho đăng nhập, health, Member, Coach và Admin để dùng sau mỗi lần triển khai.
+**API hiện có:** `/training-plans`, `/nutrition-guides`, `/training-sessions` trong `backend/src/routes/training.routes.js` và `sessions.routes.js`.
 
-**Tiêu chí hoàn thành:**
-- [x] Kiểm tra được health và đăng nhập ba vai trò.
-- [x] Mỗi vai trò có ít nhất một API nghiệp vụ được kiểm tra.
-- [x] Script thất bại với mã thoát khác 0 khi response sai.
+**Công việc:** Kiểm tra Coach chỉ tạo/sửa nội dung cho Member đang phụ trách; giáo trình/hướng dẫn `DRAFT` không lộ cho Member; công bố lưu phiên bản cũ và chỉ một bản `ACTIVE`; buổi tập cho phép đúng chuyển trạng thái, thời gian và quyền xem. Test Member có/không có quan hệ và Coach khác/Coach cũ.
 
-**Kiểm tra:** [x] Đã chạy smoke test trên database demo và backend local.
+**Hoàn thành khi:** Đọc bản hiện hành, lịch sử và chi tiết nhất quán; nội dung chưa công bố hoặc thuộc người khác bị chặn; lịch tập không nhận chuyển trạng thái trái phép. Mọi sửa contract được ghi vào tài liệu.
 
-**Phụ thuộc:** T02.
-**File dự kiến:** `backend/test/smoke/`, `backend/package.json`.
-**Quy mô:** M.
+**Kiểm tra:** Test với PostgreSQL thật cho draft → publish → archive, dữ liệu snapshot, lịch buổi tập và ma trận quyền. Chạy backend check/test.
 
-### Checkpoint A — Nền tảng dữ liệu
+**Phụ thuộc:** T11 cung cấp quan hệ Coach hợp lệ để kiểm thử. **Quy mô:** M.
 
-- [x] Backend check/test thành công.
-- [x] Database dựng mới được từ tài liệu.
-- [x] Ba tài khoản demo đăng nhập được qua API.
+### T13 — Kiểm chứng API nhật ký tập luyện và ăn uống
 
----
+**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
 
-## Giai đoạn 1 — Flutter nền tảng và xác thực
+**API hiện có:** `GET/POST/PATCH /workout-logs` và `/meal-logs` trong `backend/src/routes/progress.routes.js`.
 
-### T04 — Chuẩn hóa cấu trúc Flutter
+**Công việc:** Kiểm tra validation ngày, thời lượng, bài tập, loại bữa ăn và dữ liệu ảnh liên quan; điều kiện membership khi ghi/sửa; phân trang ổn định; ownership của Member; quyền đọc của Coach hiện tại so với Coach khác hoặc quan hệ đã kết thúc.
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t04-flutter-structure`.
+**Hoàn thành khi:** Không thể tạo/sửa nhật ký sai dữ liệu hoặc sửa của người khác; danh sách trả pagination đúng, không lặp/mất dữ liệu trong trường hợp kiểm thử; dữ liệu bài tập được lưu và trả nhất quán.
 
-**Mô tả:** Chia app theo `core` và `features`, thiết lập theme, router và cấu hình API theo môi trường.
+**Kiểm tra:** Test API create/edit/list nhiều trang và trường hợp 401/403/404/422 phù hợp contract; chạy backend check/test.
 
-**Tiêu chí hoàn thành:**
-- [x] Không còn đặt toàn bộ app trong `main.dart`.
-- [x] Có cấu hình API URL cho local/emulator/production.
-- [x] Có route công khai, route Member và route Coach.
+**Phụ thuộc:** T02/T03 và membership test fixture. Độc lập với T11/T12 về thứ tự triển khai. **Quy mô:** M.
 
-**Kiểm tra:** [x] `flutter analyze`, `flutter test`; app web trả HTTP 200 và điều hướng được màn hình mẫu.
+### T14 — Kiểm chứng API số đo, ảnh và thống kê tiến độ
 
-**Phụ thuộc:** Không.
-**File dự kiến:** `mobile-app/lib/main.dart`, `mobile-app/lib/app/`, `mobile-app/lib/core/`.
-**Quy mô:** M.
+**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
 
-### T05 — Xây API client và chuẩn hóa lỗi
+**API hiện có:** `/body-measurements`, `/progress-photos`, `/progress/me/summary`, `/progress/me/charts`, `/media/images` và access URL trong `progress.routes.js`, `media.routes.js`.
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t05-api-client`.
+**Công việc:** Kiểm tra số đo/đơn vị/ngày và dữ liệu biểu đồ rỗng, một điểm, nhiều điểm; upload chỉ PNG/JPEG trong giới hạn hiện hành, đúng `purpose` và owner; ảnh phải `READY` trước khi gắn; URL ảnh có hạn và chỉ cấp cho chủ sở hữu/Coach còn quyền. Local media dùng để kiểm thử, không xem đó là lưu trữ production.
 
-**Mô tả:** Bọc Dio thành client dùng chung, giải mã response/error, timeout và log an toàn.
+**Hoàn thành khi:** Ảnh của người khác hoặc sai purpose không thể gắn/xem; biểu đồ không lộ dữ liệu chéo, dùng đúng thời gian/đơn vị; lỗi upload/storage trả mã và trạng thái rõ ràng.
 
-**Tiêu chí hoàn thành:**
-- [x] Base URL, timeout và header được cấu hình tập trung.
-- [x] Lỗi mạng, 401, 403, 422 và 5xx có kiểu lỗi rõ ràng.
-- [x] Log không chứa token hoặc mật khẩu.
+**Kiểm tra:** Test API upload thành công/thất bại, quyền mở URL và hết hạn, CRUD số đo/ảnh, summary/charts; chạy backend check/test.
 
-**Kiểm tra:** [x] Unit test client bằng mock adapter cho response thành công, validation và hết phiên.
+**Phụ thuộc:** T13 cho dữ liệu tiến độ và quyền nhật ký; T11 cho quan hệ Coach khi kiểm thử quyền xem. **Quy mô:** M.
 
-**Phụ thuộc:** T04.
-**File dự kiến:** `mobile-app/lib/core/network/`, `mobile-app/test/core/network/`.
-**Quy mô:** M.
+### T15 — Kiểm chứng API nhắn tin Member–Coach
 
-### T06 — Quản lý phiên và token an toàn
+**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+**API hiện có:** `/conversations`, `/conversations/:relationshipId/messages`, `/conversations/:relationshipId/read-state` trong `backend/src/routes/messaging.routes.js`.
 
-**Mô tả:** Lưu access token bằng secure storage, khôi phục phiên khi mở app và xóa phiên khi hết hạn/đăng xuất.
+**Công việc:** Kiểm tra chỉ hai người trong quan hệ xem hội thoại; chỉ quan hệ `ACTIVE` được gửi; `PAUSED`/`ENDED` chỉ đọc lịch sử; tin ảnh phải là media `MESSAGE` đã sẵn sàng và thuộc người gửi; retry dùng cùng `clientMessageId` phải trả cùng một tin; cùng ID nhưng nội dung khác phải lỗi; read cursor không lùi.
 
-**Tiêu chí hoàn thành:**
-- [x] Token không lưu trong SharedPreferences hoặc log.
-- [x] Mở lại app khôi phục đúng vai trò.
-- [x] Response 401 đưa người dùng về đăng nhập một lần, không lặp vô hạn.
+**Hoàn thành khi:** Phân trang và số tin chưa đọc nhất quán, gửi lặp không tạo bản ghi mới, người ngoài/Admin không xem được nội dung, quan hệ đã kết thúc không gửi được tin mới.
 
-**Kiểm tra:** Widget/unit test cho trạng thái chưa đăng nhập, đã đăng nhập và token hết hạn.
+**Kiểm tra:** Test API hai tài khoản và người ngoài, gửi đồng thời/retry, phân trang, read-state và tin ảnh với PostgreSQL thật; chạy backend check/test.
 
-**Đã kiểm tra:** `flutter analyze` và toàn bộ 21 test Flutter thành công; mutation test xác nhận test bắt được nhánh xử lý sai token hết hạn.
+**Phụ thuộc:** T11 và T14. **Quy mô:** M.
 
-**Phụ thuộc:** T05.
-**File dự kiến:** `mobile-app/lib/features/auth/`, `mobile-app/lib/core/storage/`.
-**Quy mô:** M.
+### Checkpoint B — Năm luồng API Member–Coach
 
-### T07 — Màn hình đăng nhập và đăng ký Member
+- [ ] T11–T15 đạt tiêu chí với test PostgreSQL thực sự chạy, không skip.
+- [ ] `npm run check`, `npm test` đạt; sửa code backend thì health và smoke test đạt.
+- [ ] Review quyền Member/Coach/Admin, dữ liệu riêng tư và diff trước khi gộp.
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+### T16 — Kiểm thử luồng nghiệp vụ liên thông bằng API thật
 
-**Mô tả:** Kết nối form đăng nhập/đăng ký với API và hiển thị lỗi xác thực bằng tiếng Việt.
+**Trạng thái:** Chưa thực hiện.
 
-**Tiêu chí hoàn thành:**
-- [x] Member đăng ký và đăng nhập được.
-- [x] Coach/Admin đăng nhập được nhưng không thể tự đăng ký.
-- [x] Form chặn dữ liệu sai cơ bản và tránh gửi lặp.
+**Công việc:** Tự động hóa một kịch bản trên database test riêng: đăng ký/đăng nhập → mua gói `MOCK_QR` → chọn Coach → Coach chấp nhận → công bố giáo trình/dinh dưỡng → tạo buổi tập → Member ghi nhật ký/ảnh/số đo → hai bên nhắn tin → kết thúc hoặc chuyển quan hệ. Kiểm tra trạng thái và dữ liệu sau từng bước, kể cả gọi lại thao tác idempotent. Dùng fixture sạch và dọn dữ liệu; không dựa vào màn hình Flutter hay tài khoản production.
 
-**Kiểm tra:** Widget test form; thử thật với ba tài khoản demo.
+**Hoàn thành khi:** Kịch bản chạy lặp được trên PostgreSQL test; các trường hợp lỗi trọng yếu có assertion; không dùng test giả để thay thế API thật.
 
-**Đã kiểm tra:** 26 test Flutter thành công, gồm validation form, điều hướng Coach theo vai trò và chống gửi lặp; `flutter analyze` sạch. Việc thử tài khoản demo thật được thay bằng API giả lập xác định vì môi trường hiện tại không có PostgreSQL demo đang chạy.
+**Kiểm tra:** `npm run check`, `npm test`, health và smoke test với demo local. **Phụ thuộc:** T11–T15. **Quy mô:** M.
 
-**Phụ thuộc:** T06.
-**File dự kiến:** `mobile-app/lib/features/auth/`, `mobile-app/test/features/auth/`.
-**Quy mô:** M.
+### T17 — Rà soát bảo mật, lỗi và vòng đời dữ liệu của API
 
-### T08 — Hồ sơ, đổi mật khẩu và quên mật khẩu
+**Trạng thái:** Chưa thực hiện.
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+**Công việc:** Kiểm tra ma trận quyền, IDOR bằng cách đổi ID, trạng thái tài khoản bị khóa, token cũ sau đổi mật khẩu, hết hạn membership, Coach cũ sau kết thúc/chuyển quan hệ; validation, phân trang và lỗi provider chưa cấu hình. Xác nhận log không in token, mật khẩu, mã khôi phục; CORS/secret production cần cấu hình riêng trước khi triển khai Internet.
 
-**Mô tả:** Hoàn thiện màn hình hồ sơ, sửa thông tin, đổi mật khẩu và quy trình mã khôi phục.
+**Hoàn thành khi:** Không còn lỗi nghiêm trọng hoặc cao trong phạm vi backend MVP; các giới hạn/dependency bên ngoài được ghi rõ, không mô tả API 503 là tích hợp thật đã hoạt động.
 
-**Tiêu chí hoàn thành:**
-- [x] Member/Coach chỉ sửa được trường backend cho phép.
-- [x] Đổi mật khẩu làm phiên cũ mất hiệu lực theo contract.
-- [x] Luồng yêu cầu mã → xác minh → đặt mật khẩu mới hoạt động.
+**Kiểm tra:** Test hồi quy backend cho từng lỗi phát hiện, review code và chạy đầy đủ backend check/test. **Phụ thuộc:** T16. **Quy mô:** M.
 
-**Kiểm tra:** Widget test và chạy thủ công toàn bộ luồng với backend local.
+### T18 — Chốt tài liệu API để frontend tự thiết kế
 
-**Đã kiểm tra:** 31 test Flutter thành công, gồm widget test ba bước khôi phục mật khẩu, payload hồ sơ theo vai trò và hủy phiên sau đổi mật khẩu; `flutter analyze` sạch. Backend local chưa có dịch vụ email/PostgreSQL demo đang chạy nên kiểm tra thật được thay bằng service giả lập xác định.
+**Trạng thái:** Chưa thực hiện.
 
-**Phụ thuộc:** T07.
-**File dự kiến:** `mobile-app/lib/features/profile/`, `mobile-app/lib/features/auth/`.
-**Quy mô:** M.
+**Công việc:** Đối chiếu `docs/requirements/api-contract.md` với route/test thực tế; ghi rõ endpoint, vai trò, request/response mẫu, mã lỗi, pagination, timezone/ngày, quy tắc idempotency và media URL. Ghi rõ môi trường `MOCK_QR`, media local và provider 503. Tạo checklist tích hợp để frontend tự quyết định giao diện mà không đoán quy tắc backend.
 
-### Checkpoint B — Flutter xác thực
+**Hoàn thành khi:** Một người làm frontend có thể gọi từng luồng chỉ từ tài liệu và tài khoản test; mọi khác biệt tài liệu/code đã giải quyết hoặc ghi thành issue cụ thể. Không cần tạo màn hình để đóng task này.
 
-- [ ] `flutter analyze` và `flutter test` thành công.
-- [ ] Member, Coach và Admin được điều hướng đúng vai trò.
-- [ ] Đóng/mở app vẫn giữ hoặc hủy phiên đúng điều kiện.
+**Kiểm tra:** Review contract ↔ route ↔ test cho T11–T17, chạy backend check/test lần cuối. **Phụ thuộc:** T17. **Quy mô:** M.
 
----
+### Checkpoint cuối — Backend sẵn sàng cho frontend
 
-## Giai đoạn 2 — Luồng Member
+- [ ] T11–T18 có bằng chứng test và review, không chỉ có route tồn tại.
+- [ ] Schema assertions, backend check/test và smoke test API đạt; ghi rõ số test pass/fail/skip.
+- [ ] API contract khớp code về quyền, trạng thái, response, lỗi và dữ liệu riêng tư.
+- [ ] Mọi tích hợp mock/chưa cấu hình được ghi rõ để frontend không hiểu nhầm là production.
 
-### T09 — Trang chủ Member và nội dung phòng gym
+## Phân chia công việc gợi ý khi có nhóm
 
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
+| Người phụ trách | Task | Trọng tâm review chéo |
+| --- | --- | --- |
+| Backend nghiệp vụ Member–Coach | T11–T12 | Transaction, suất Coach, công bố nội dung |
+| Backend tiến độ và giao tiếp | T13–T15 | Ownership, phân trang, media, idempotency |
+| QA và hợp đồng API | T16–T18 | Luồng liên thông, ma trận quyền, tài liệu |
 
-**Mô tả:** Tạo shell điều hướng Member, trang chủ, thông tin phòng gym, thiết bị và bài tập.
+Thứ tự phụ thuộc ở trên vẫn áp dụng nếu các thành viên cùng làm. Mỗi task dùng nhánh riêng và review trước khi gộp; không dùng chung database test có dữ liệu đang thay đổi khi chạy song song.
 
-**Tiêu chí hoàn thành:**
-- [x] Có navigation nhất quán trên kích thước điện thoại phổ biến.
-- [x] Danh sách có loading, empty, error và tìm kiếm cơ bản.
-- [x] Nội dung bị ẩn không hiển thị.
+## Để dành cho giai đoạn sau
 
-**Kiểm tra:** Widget test các trạng thái; thử với API demo.
-
-**Đã kiểm tra:** Unit/widget test bao phủ trạng thái ready, empty, error, tìm kiếm và lọc nội dung `HIDDEN`; `flutter analyze` sạch. API demo thật chưa chạy nên dùng catalog service giả lập xác định.
-
-**Phụ thuộc:** T07.
-**File dự kiến:** `mobile-app/lib/features/member_home/`, `mobile-app/lib/features/catalog/`.
-**Quy mô:** M.
-
-### T10 — Gói tập và thanh toán QR mô phỏng
-
-**Trạng thái:** Hoàn thành ngày 22/10/2026 trên nhánh `codex/t06-t10-flutter`.
-
-**Mô tả:** Cho Member xem gói, tạo giao dịch, xem QR/thông tin thanh toán và xác nhận mô phỏng.
-
-**Tiêu chí hoàn thành:**
-- [x] Chỉ hiển thị gói đang áp dụng.
-- [x] Nút xác nhận chống gửi lặp.
-- [x] Sau thành công hiển thị membership hiện tại và lịch sử.
-
-**Kiểm tra:** Chạy luồng mua gói đầu tiên và mua nối tiếp; xác nhận lặp không tạo hai membership.
-
-**Đã kiểm tra:** Unit/widget test bao phủ gói `ACTIVE`, mua lần đầu, mua nối tiếp bằng idempotency key mới, QR mô phỏng và xác nhận lặp; `flutter analyze` sạch.
-
-**Phụ thuộc:** T09.
-**File dự kiến:** `mobile-app/lib/features/membership/`, `mobile-app/test/features/membership/`.
-**Quy mô:** M.
-
-### T11 — Danh sách Coach và yêu cầu chọn Coach
-
-**Mô tả:** Cho Member xem Coach, sức chứa còn lại, gửi/hủy yêu cầu và theo dõi kết quả.
-
-**Tiêu chí hoàn thành:**
-- [ ] Member không có gói hoạt động không gửi được yêu cầu.
-- [ ] Chỉ tạo được một yêu cầu chờ.
-- [ ] Hiển thị lý do từ chối và quan hệ đang hoạt động.
-
-**Kiểm tra:** Test luồng gửi, gửi trùng, hủy và xem kết quả.
-
-**Phụ thuộc:** T10.
-**File dự kiến:** `mobile-app/lib/features/coaching/`, `mobile-app/test/features/coaching/`.
-**Quy mô:** M.
-
-### T12 — Giáo trình, dinh dưỡng và lịch tập của Member
-
-**Mô tả:** Hiển thị giáo trình đã công bố, hướng dẫn dinh dưỡng và lịch buổi tập.
-
-**Tiêu chí hoàn thành:**
-- [ ] Member chỉ xem nội dung được phép và bản đã công bố.
-- [ ] Lịch phân biệt đúng trạng thái buổi tập.
-- [ ] Có lịch sử giáo trình/dinh dưỡng theo contract.
-
-**Kiểm tra:** Widget test và kiểm tra bằng tài khoản có/không có Coach.
-
-**Phụ thuộc:** T11.
-**File dự kiến:** `mobile-app/lib/features/training/`, `mobile-app/lib/features/nutrition/`, `mobile-app/lib/features/sessions/`.
-**Quy mô:** M.
-
-### T13 — Nhật ký tập luyện và ăn uống
-
-**Mô tả:** Cho Member tạo, sửa và phân trang nhật ký tập/ăn uống.
-
-**Tiêu chí hoàn thành:**
-- [ ] Form validate dữ liệu và ngày hợp lệ.
-- [ ] Danh sách phân trang không lặp/mất item.
-- [ ] Người dùng chỉ sửa dữ liệu của mình.
-
-**Kiểm tra:** Widget test create/edit/list và kiểm tra quyền qua API.
-
-**Phụ thuộc:** T09.
-**File dự kiến:** `mobile-app/lib/features/logs/`, `mobile-app/test/features/logs/`.
-**Quy mô:** M.
-
-### T14 — Số đo, ảnh và biểu đồ tiến bộ
-
-**Mô tả:** Cho Member nhập số đo, tải ảnh, xem lịch sử và biểu đồ theo thời gian.
-
-**Tiêu chí hoàn thành:**
-- [ ] Upload ảnh có giới hạn loại/kích thước và trạng thái tiến trình.
-- [ ] Biểu đồ dùng đúng đơn vị, ngày và xử lý dữ liệu trống.
-- [ ] Ảnh riêng tư chỉ mở bằng URL/quyền hợp lệ.
-
-**Kiểm tra:** Test dữ liệu trống, một điểm, nhiều điểm và upload lỗi/thành công.
-
-**Phụ thuộc:** T13.
-**File dự kiến:** `mobile-app/lib/features/progress/`, `mobile-app/test/features/progress/`.
-**Quy mô:** M.
-
-### T15 — Tin nhắn Member–Coach
-
-**Mô tả:** Hiển thị hội thoại, phân trang tin nhắn, gửi văn bản/ảnh và đánh dấu đã đọc.
-
-**Tiêu chí hoàn thành:**
-- [ ] Chỉ quan hệ hợp lệ được gửi tin.
-- [ ] Có trạng thái đang gửi, lỗi và gửi lại mà không tạo trùng.
-- [ ] Quan hệ kết thúc chỉ xem lịch sử.
-
-**Kiểm tra:** Test hai tài khoản, pagination, read-state và retry.
-
-**Phụ thuộc:** T11, T14.
-**File dự kiến:** `mobile-app/lib/features/messaging/`, `mobile-app/test/features/messaging/`.
-**Quy mô:** M.
-
-### T16 — AI Advisor trên Flutter
-
-**Mô tả:** Cho người dùng tạo/đổi tên/xóa cuộc trò chuyện và hỏi đáp AI dạng văn bản.
-
-**Tiêu chí hoàn thành:**
-- [ ] Lịch sử chỉ thuộc người dùng hiện tại.
-- [ ] UI xử lý timeout, giới hạn và provider chưa cấu hình.
-- [ ] Không hiển thị câu trả lời lỗi như câu trả lời thành công.
-
-**Kiểm tra:** Test provider mock thành công, timeout và 503.
-
-**Phụ thuộc:** T09.
-**File dự kiến:** `mobile-app/lib/features/ai_advisor/`, `mobile-app/test/features/ai_advisor/`.
-**Quy mô:** M.
-
-### Checkpoint C — Member MVP
-
-- [ ] Member đăng ký → mua gói → chọn Coach → xem nội dung → ghi tiến độ được.
-- [ ] Tin nhắn và AI lỗi độc lập, không làm app sập.
-- [ ] `flutter analyze`, `flutter test`, backend test đều thành công.
-
----
-
-## Giai đoạn 3 — Luồng Coach
-
-### T17 — Trang chủ Coach và danh sách Member
-
-**Mô tả:** Tạo shell Coach, thống kê cơ bản, danh sách Member hiện tại và trang chi tiết.
-
-**Tiêu chí hoàn thành:**
-- [ ] Coach chỉ thấy Member thuộc quan hệ hợp lệ.
-- [ ] Hiển thị rõ suất đang dùng/còn lại.
-- [ ] Không lộ dữ liệu của Coach khác.
-
-**Kiểm tra:** Widget test và thử hai Coach với dữ liệu tách biệt.
-
-**Phụ thuộc:** T07.
-**File dự kiến:** `mobile-app/lib/features/coach_home/`, `mobile-app/lib/features/coach_members/`.
-**Quy mô:** M.
-
-### T18 — Coach xử lý yêu cầu và kết thúc quan hệ
-
-**Mô tả:** Cho Coach chấp nhận/từ chối yêu cầu, xem trạng thái quan hệ và gửi/hủy yêu cầu kết thúc.
-
-**Tiêu chí hoàn thành:**
-- [ ] Từ chối/kết thúc bắt buộc có lý do khi contract yêu cầu.
-- [ ] Chấp nhận không vượt giới hạn Member.
-- [ ] UI làm mới đúng sau thay đổi trạng thái.
-
-**Kiểm tra:** Test chấp nhận, từ chối, quá sức chứa, gửi và hủy yêu cầu kết thúc.
-
-**Phụ thuộc:** T17.
-**File dự kiến:** `mobile-app/lib/features/coach_requests/`, `mobile-app/test/features/coach_requests/`.
-**Quy mô:** M.
-
-### T19 — Coach quản lý giáo trình và dinh dưỡng
-
-**Mô tả:** Tạo/sửa bản nháp, công bố giáo trình và hướng dẫn dinh dưỡng cho Member.
-
-**Tiêu chí hoàn thành:**
-- [ ] Có trình soạn ngày tập và bài tập với validation.
-- [ ] Công bố lưu lịch sử và chỉ có một bản hoạt động.
-- [ ] Coach cũ/không liên quan bị chặn.
-
-**Kiểm tra:** Test draft → edit → publish và kiểm tra Member nhận đúng bản.
-
-**Phụ thuộc:** T17.
-**File dự kiến:** `mobile-app/lib/features/coach_training/`, `mobile-app/lib/features/coach_nutrition/`.
-**Quy mô:** M.
-
-### T20 — Coach quản lý buổi tập
-
-**Mô tả:** Cho Coach tạo/sửa lịch và cập nhật trạng thái buổi tập.
-
-**Tiêu chí hoàn thành:**
-- [ ] Chỉ cho phép chuyển trạng thái hợp lệ.
-- [ ] Các timestamp/lý do kết quả hiển thị đúng.
-- [ ] Member thấy lịch cập nhật sau refresh.
-
-**Kiểm tra:** Test các chuyển trạng thái hợp lệ và bị cấm.
-
-**Phụ thuộc:** T17.
-**File dự kiến:** `mobile-app/lib/features/coach_sessions/`, `mobile-app/test/features/coach_sessions/`.
-**Quy mô:** M.
-
-### T21 — Coach xem tiến độ và nhận xét
-
-**Mô tả:** Cho Coach xem biểu đồ, nhật ký, số đo của Member và gửi nhận xét.
-
-**Tiêu chí hoàn thành:**
-- [ ] Chỉ Coach hiện tại truy cập được dữ liệu riêng tư.
-- [ ] Nhận xét gắn đúng bản ghi/Member.
-- [ ] Coach mất quyền sau khi quan hệ kết thúc.
-
-**Kiểm tra:** Test Coach hiện tại, Coach khác và Coach cũ.
-
-**Phụ thuộc:** T14, T17.
-**File dự kiến:** `mobile-app/lib/features/coach_progress/`, `mobile-app/test/features/coach_progress/`.
-**Quy mô:** M.
-
-### Checkpoint D — Coach MVP
-
-- [ ] Coach nhận Member, giao kế hoạch, xếp lịch và nhận xét tiến độ được.
-- [ ] Member thấy đúng dữ liệu Coach vừa công bố.
-- [ ] Ma trận quyền Member/Coach vượt qua test liên quan.
-
----
-
-## Giai đoạn 4 — Hoàn thiện Admin web
-
-### T22 — Bổ sung quản lý bài tập/nội dung còn thiếu
-
-**Mô tả:** Mở rộng Admin web để quản lý đầy đủ catalog backend hỗ trợ, đặc biệt bài tập và trạng thái ẩn/hiện.
-
-**Tiêu chí hoàn thành:**
-- [ ] Admin tạo/sửa/ẩn bài tập được.
-- [ ] Form có validation và xác nhận hành động ảnh hưởng dữ liệu.
-- [ ] Nội dung ẩn biến mất khỏi Flutter sau refresh.
-
-**Kiểm tra:** `npm run build`; kiểm tra CRUD và quyền bằng tài khoản Admin/non-Admin.
-
-**Phụ thuộc:** T09.
-**File dự kiến:** `admin-web/src/main.js`, `admin-web/src/style.css`, test mới nếu bổ sung framework.
-**Quy mô:** M.
-
-### T23 — Chuẩn hóa loading, lỗi và accessibility Admin
-
-**Mô tả:** Bổ sung trạng thái tải, lỗi mạng, xác nhận thao tác, focus/label và responsive cho các màn hình Admin.
-
-**Tiêu chí hoàn thành:**
-- [ ] Không có thao tác bất đồng bộ im lặng hoặc gửi lặp.
-- [ ] Có thể dùng bàn phím cho các hành động chính.
-- [ ] Màn hình dùng được ở chiều rộng tablet.
-
-**Kiểm tra:** `npm run build`; kiểm tra thủ công bằng bàn phím và responsive mode.
-
-**Phụ thuộc:** T22.
-**File dự kiến:** `admin-web/src/main.js`, `admin-web/src/style.css`.
-**Quy mô:** M.
-
----
-
-## Giai đoạn 5 — Dịch vụ bên ngoài
-
-### T24 — Kết nối dịch vụ gửi email thật
-
-**Mô tả:** Chọn một nhà cung cấp email, triển khai endpoint giao nhận phù hợp adapter hiện tại và cấu hình secret phía server.
-
-**Tiêu chí hoàn thành:**
-- [ ] Email mã khôi phục đến được hộp thư thử nghiệm.
-- [ ] Không tiết lộ email tồn tại hay không.
-- [ ] Có timeout, retry có giới hạn và log không chứa mã/mật khẩu.
-
-**Kiểm tra:** Gửi email thử nghiệm và hoàn tất đổi mật khẩu từ Flutter.
-
-**Phụ thuộc:** T08.
-**File dự kiến:** cấu hình triển khai dịch vụ email, `README.md`, tài liệu vận hành.
-**Quy mô:** M.
-
-### T25 — Kết nối OpenAI production
-
-**Mô tả:** Cấu hình model, secret, timeout và giới hạn an toàn cho AI responder hiện có.
-
-**Tiêu chí hoàn thành:**
-- [ ] Backend nhận được câu trả lời thật qua Responses API.
-- [ ] Khóa chỉ tồn tại ở secret store của backend.
-- [ ] 429/timeout/lỗi provider trả thông báo an toàn cho Flutter.
-
-**Kiểm tra:** Chạy một hội thoại thử, kiểm tra lỗi khóa sai và timeout.
-
-**Phụ thuộc:** T16.
-**File dự kiến:** cấu hình cloud, `README.md`, tài liệu vận hành.
-**Quy mô:** S.
-
-### T26 — Chuyển lưu trữ ảnh sang object storage
-
-**Mô tả:** Thêm provider lưu ảnh production tương thích API media hiện tại, giữ local storage cho development.
-
-**Tiêu chí hoàn thành:**
-- [ ] Ảnh không phụ thuộc filesystem tạm của server cloud.
-- [ ] Quyền truy cập và thời hạn URL tuân theo dữ liệu riêng tư.
-- [ ] Xóa/rollback lỗi không để rác ngoài ý muốn.
-
-**Kiểm tra:** Upload, mở ảnh có quyền, từ chối người không quyền và restart server vẫn còn ảnh.
-
-**Phụ thuộc:** T14.
-**File dự kiến:** `backend/src/storage/`, `backend/test/media.postgres.test.js`, `.env.example`.
-**Quy mô:** M.
-
-### T27 — Tích hợp RTC và màn hình gọi
-
-**Mô tả:** Chọn provider RTC, nối token service với backend và thêm màn hình gọi thoại/video trên Flutter.
-
-**Tiêu chí hoàn thành:**
-- [ ] Hai thiết bị trong quan hệ hoạt động gọi được.
-- [ ] Người không thuộc quan hệ không lấy/join token được.
-- [ ] Lịch sử lưu loại, trạng thái, thời lượng; không lưu nội dung.
-
-**Kiểm tra:** Thử hai thiết bị thật cho gọi thành công, từ chối, mất mạng và kết thúc.
-
-**Phụ thuộc:** T15.
-**File dự kiến:** `mobile-app/lib/features/calls/`, `backend/src/config/providers.js`, tài liệu RTC.
-**Quy mô:** M.
-
-### Checkpoint E — Tích hợp thật
-
-- [ ] Email, AI, ảnh và RTC dùng secret phía server.
-- [ ] Từng dịch vụ lỗi độc lập không làm app/backend sập.
-- [ ] Không có khóa bí mật trong Git hoặc Flutter bundle.
-
----
-
-## Giai đoạn 6 — Cloud và CI
-
-### T28 — Đóng gói backend để triển khai
-
-**Mô tả:** Tạo cấu hình chạy production có healthcheck, user không đặc quyền và quy trình migration rõ ràng.
-
-**Tiêu chí hoàn thành:**
-- [ ] Backend khởi động bằng một lệnh trong môi trường sạch.
-- [ ] Healthcheck phân biệt ứng dụng chạy và database sẵn sàng.
-- [ ] Image/config không chứa secret.
-
-**Kiểm tra:** Build và chạy container/config local; gọi `/api/v1/health`.
-
-**Phụ thuộc:** T03.
-**File dự kiến:** `backend/Dockerfile`, `.dockerignore`, tài liệu triển khai.
-**Quy mô:** S.
-
-### T29 — Tạo PostgreSQL cloud và chạy migration
-
-**Mô tả:** Tạo database production/staging, cấu hình SSL/backup và chạy migration bằng tài khoản phù hợp.
-
-**Tiêu chí hoàn thành:**
-- [ ] Có database staging và thông tin kết nối trong secret store.
-- [ ] Migration + baseline seed chạy thành công.
-- [ ] Có cách backup và khôi phục đã thử ít nhất một lần.
-
-**Kiểm tra:** Chạy schema assertions và phục hồi một bản backup thử nghiệm.
-
-**Phụ thuộc:** T28.
-**File dự kiến:** tài liệu triển khai/database; không commit credentials.
-**Quy mô:** M.
-
-### T30 — Triển khai backend và Admin web
-
-**Mô tả:** Đưa backend và Admin web lên cloud, cấu hình HTTPS, API URL, CORS và biến môi trường.
-
-**Tiêu chí hoàn thành:**
-- [ ] Có URL HTTPS cho API và Admin.
-- [ ] Admin đăng nhập và thực hiện nghiệp vụ trên database staging.
-- [ ] CORS chỉ cho phép origin dự kiến ở production.
-
-**Kiểm tra:** Chạy T03 trên URL cloud và smoke test Admin.
-
-**Phụ thuộc:** T23, T29.
-**File dự kiến:** cấu hình nền tảng cloud, `admin-web/.env.example`, tài liệu triển khai.
-**Quy mô:** M.
-
-### T31 — Cấu hình Flutter dùng backend cloud
-
-**Mô tả:** Tạo flavor/build config staging và production, trỏ app tới URL HTTPS phù hợp.
-
-**Tiêu chí hoàn thành:**
-- [ ] Không hard-code URL local trong bản release.
-- [ ] Bản staging và production phân biệt được cấu hình.
-- [ ] Android thiết bị thật đăng nhập được vào cloud.
-
-**Kiểm tra:** Build APK staging, cài lên điện thoại và hoàn thành đăng nhập + một API nghiệp vụ.
-
-**Phụ thuộc:** T30.
-**File dự kiến:** `mobile-app/lib/core/config/`, cấu hình Android/build.
-**Quy mô:** M.
-
-### T32 — Thiết lập CI kiểm tra tự động
-
-**Mô tả:** Tạo pipeline chạy backend check/test, Admin build và Flutter analyze/test cho pull request.
-
-**Tiêu chí hoàn thành:**
-- [ ] PR lỗi test/build bị báo thất bại.
-- [ ] Cache dependency hợp lý nhưng không cache secret.
-- [ ] Pipeline không triển khai production nếu chưa được phép.
-
-**Kiểm tra:** Mở PR thử thành công và một commit thử cố ý làm test lỗi rồi hoàn nguyên.
-
-**Phụ thuộc:** T28.
-**File dự kiến:** `.github/workflows/ci.yml` hoặc cấu hình CI tương đương.
-**Quy mô:** M.
-
-### Checkpoint F — Cloud
-
-- [ ] API, Admin và database staging hoạt động qua HTTPS.
-- [ ] APK staging kết nối được từ mạng ngoài.
-- [ ] CI xanh trên `main` và không lộ secret trong log.
-
----
-
-## Giai đoạn 7 — Kiểm thử, ổn định và demo
-
-### T33 — Kiểm thử end-to-end ba vai trò
-
-**Mô tả:** Tự động hóa hoặc ghi kịch bản lặp lại cho Member, Coach và Admin trên staging.
-
-**Tiêu chí hoàn thành:**
-- [ ] Luồng Member mua gói và chọn Coach hoàn chỉnh.
-- [ ] Coach nhận Member, giao kế hoạch và nhận xét hoàn chỉnh.
-- [ ] Admin quản lý tài khoản, thanh toán và chuyển Coach hoàn chỉnh.
-
-**Kiểm tra:** Chạy toàn bộ kịch bản từ database demo sạch và lưu kết quả.
-
-**Phụ thuộc:** T27, T31.
-**File dự kiến:** `docs/testing/`, test E2E phù hợp.
-**Quy mô:** M.
-
-### T34 — Kiểm thử bảo mật và vòng đời dữ liệu
-
-**Mô tả:** Kiểm tra ma trận quyền, IDOR, trạng thái tài khoản, hết hạn membership, chuyển/kết thúc Coach và dữ liệu lịch sử.
-
-**Tiêu chí hoàn thành:**
-- [ ] Không truy cập chéo dữ liệu bằng cách đổi ID.
-- [ ] Khóa tài khoản/hết hạn quan hệ thu hồi đúng quyền.
-- [ ] Lịch sử cần giữ không bị mất sau chuyển trạng thái.
-
-**Kiểm tra:** Backend test cho từng trường hợp và review không còn lỗi nghiêm trọng/cao.
-
-**Phụ thuộc:** T33.
-**File dự kiến:** `backend/test/`, `docs/testing/security-matrix.md`.
-**Quy mô:** M.
-
-### T35 — Hoàn thiện APK và kịch bản demo dự phòng
-
-**Mô tả:** Tạo APK release/staging ổn định, ba tài khoản demo và kịch bản dự phòng khi mạng/dịch vụ ngoài lỗi.
-
-**Tiêu chí hoàn thành:**
-- [ ] APK cài được trên ít nhất hai điện thoại mục tiêu.
-- [ ] Có dữ liệu reset được trước buổi demo.
-- [ ] Có video/ảnh/kịch bản dự phòng cho email, AI hoặc RTC.
-
-**Kiểm tra:** Diễn tập toàn bộ demo theo thời gian dự kiến hai lần.
-
-**Phụ thuộc:** T33, T34.
-**File dự kiến:** `docs/demo/`, artifact APK ngoài Git nếu dung lượng lớn.
-**Quy mô:** M.
-
-### T36 — Đồng bộ tài liệu, báo cáo và slide
-
-**Mô tả:** Cập nhật README, sơ đồ, API, hướng dẫn cài đặt và nội dung báo cáo/slide theo hệ thống đã chạy thật.
-
-**Tiêu chí hoàn thành:**
-- [ ] Một thành viên mới dựng được dự án từ hướng dẫn.
-- [ ] Sơ đồ/database/API trong báo cáo khớp code production.
-- [ ] Slide và kịch bản không tuyên bố tính năng chưa hoàn thành.
-
-**Kiểm tra:** Người khác làm dry-run cài đặt; review chéo code ↔ tài liệu ↔ slide.
-
-**Phụ thuộc:** T35.
-**File dự kiến:** `README.md`, `docs/`, báo cáo và slide của đồ án.
-**Quy mô:** M.
-
-### Checkpoint cuối — Sẵn sàng bảo vệ
-
-- [ ] Backend test/check thành công.
-- [ ] Admin web build thành công.
-- [ ] Flutter analyze/test và APK release thành công.
-- [ ] Không còn lỗi nghiêm trọng hoặc cao.
-- [ ] Ba luồng vai trò chạy end-to-end trên cloud.
-- [ ] Demo đã diễn tập và có phương án dự phòng.
-
----
-
-## Phân công gợi ý cho nhóm 3 người
-
-| Thành viên | Trọng tâm | Task chính |
-|---|---|---|
-| Thành viên 1 | Flutter Member | T04–T16, phối hợp T31 |
-| Thành viên 2 | Flutter Coach và Admin | T17–T23, phối hợp T27 |
-| Thành viên 3 | Backend, dịch vụ, cloud, QA | T01–T03, T24–T36 |
-
-Các task dùng chung API contract phải chốt kiểu dữ liệu/response trước khi làm song song. Tất cả thành viên cùng review tại mỗi checkpoint.
-
-## Thứ tự ưu tiên nếu thiếu thời gian
-
-1. Bắt buộc: T01–T15, T17–T21, T28–T35.
-2. Nên có: T16, T22–T27, T36.
-3. Nếu provider thật gây rủi ro: giữ adapter hiện có, trình bày rõ chế độ 503 và dùng video demo dự phòng; không nhúng token giả hoặc secret vào Flutter.
+- Chủ dự án quyết định thiết kế và thứ tự màn hình Flutter/Admin Web. Code Flutter T04–T10 hiện có được xem là lịch sử phát triển, không quyết định thiết kế tương lai.
+- Email thật, OpenAI, RTC, object storage, staging/production, CI, APK và demo trên điện thoại cần kế hoạch riêng sau khi API contract được chốt. Không lấy việc có adapter hoặc endpoint làm bằng chứng dịch vụ thật hoạt động.
+- Phiên bản kế hoạch cũ (T11–T36 thiên về Flutter và triển khai production) vẫn xem được trong Git history trước lần sửa file này; các task đó không còn là backlog đang thực hiện của giai đoạn backend.
