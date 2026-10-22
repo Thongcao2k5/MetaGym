@@ -261,6 +261,9 @@ Quy tắc xác nhận `MOCK_QR`:
 | `PATCH` | `/coach/training-plans/:planId` | Coach | Sửa nội dung hoặc trạng thái giáo trình |
 | `POST` | `/coach/training-plans/:planId/publications` | Coach | Công bố giáo trình và lưu bản cũ |
 
+Mỗi Member chỉ có một giáo trình `ACTIVE`. Nếu hai bản nháp được công bố đồng thời, API xử lý tuần tự: cả hai yêu cầu hợp lệ trả thành công, bản được xử lý sau trở thành `ACTIVE` và bản trước chuyển `ARCHIVED`. Thứ tự hoàn tất phụ thuộc lịch xử lý của server.
+Chỉ được công bố bản nháp thuộc đúng quan hệ Coach–Member đang `ACTIVE`; quan hệ mới với cùng Coach không cấp quyền công bố bản nháp của quan hệ đã kết thúc.
+
 ### 6.2. Hướng dẫn dinh dưỡng
 
 | Method | Endpoint | Quyền | Mục đích |
@@ -270,6 +273,8 @@ Quy tắc xác nhận `MOCK_QR`:
 | `GET` | `/coach/members/:memberId/nutrition-guides` | Coach | Danh sách hướng dẫn của Member |
 | `POST` | `/coach/members/:memberId/nutrition-guides` | Coach | Tạo hướng dẫn dinh dưỡng |
 | `PATCH` | `/coach/nutrition-guides/:guideId` | Coach | Sửa hoặc công bố hướng dẫn |
+
+Quy tắc công bố đồng thời và chỉ một bản `ACTIVE` cũng áp dụng cho hướng dẫn dinh dưỡng của cùng Member.
 
 ### 6.3. Lịch buổi tập và danh mục bài tập
 

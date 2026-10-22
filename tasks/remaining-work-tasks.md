@@ -65,7 +65,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T12 — Kiểm chứng API giáo trình, dinh dưỡng và buổi tập
 
-**Trạng thái:** Chưa hoàn thành theo phạm vi backend mới.
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Test PostgreSQL tái hiện và sửa lỗi công bố đồng thời trả `500`, cùng lỗi công bố bản nháp thuộc quan hệ Coach cũ. Đã kiểm tra quyền xem/sửa bản nháp, snapshot, lịch sử, trạng thái quan hệ và thời gian buổi tập. Backend check và 50/50 test đạt, không skip; smoke đạt 7/7. Contract đã ghi rõ quy tắc công bố.
 
 **API hiện có:** `/training-plans`, `/nutrition-guides`, `/training-sessions` trong `backend/src/routes/training.routes.js` và `sessions.routes.js`.
 

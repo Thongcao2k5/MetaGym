@@ -36,6 +36,7 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
     const secondMemberId = randomUUID();
     const coachId = randomUUID();
     const relationshipId = randomUUID();
+    const returnRelationshipId = randomUUID();
     const conversationId = randomUUID();
     const exerciseId = randomUUID();
     const app = createApp({ database, jwtSecret: secret });
@@ -157,6 +158,18 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       await database.query("UPDATE exercises SET name = 'Renamed Squat' WHERE id = $1", [exerciseId]);
       assert.equal((await call(app, `/training-plans/${planId}`, member)).body.data.days[0]
         .exercises[0].exerciseName, 'Squat');
+      const planDrafts = await Promise.all(['Second plan', 'Third plan'].map((title) =>
+        call(app, `/coach/members/${memberId}/training-plans`, coach,
+          'POST', { ...body, title })));
+      assert.deepEqual(planDrafts.map((item) => item.status), [201, 201]);
+      const planPublications = await Promise.all(planDrafts.map((item) =>
+        call(app, `/coach/training-plans/${item.body.data.id}/publications`, coach,
+          'POST', {})));
+      assert.deepEqual(planPublications.map((item) => item.status), [200, 200]);
+      assert.equal((await database.query(
+        `SELECT count(*)::int AS count FROM training_plans
+         WHERE member_id = $1 AND status = 'ACTIVE'`, [memberId])).rows[0].count, 1);
+      assert.equal((await call(app, '/training-plans/me/history', member)).body.data.length, 3);
       result = await call(app, `/coach/members/${memberId}/nutrition-guides`, coach,
         'POST', { title: 'Balanced meals', content: 'Eat sufficient protein.' });
       assert.equal(result.status, 201);
@@ -170,6 +183,23 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       assert.equal((await call(app, '/nutrition-guides/me/history', other)).body.data.length, 0);
       assert.equal((await call(app, `/coach/nutrition-guides/${guideId}`, coach,
         'PATCH', { content: 'Changed' })).status, 409);
+      const guideDrafts = await Promise.all(['Second guide', 'Third guide'].map((title) =>
+        call(app, `/coach/members/${memberId}/nutrition-guides`, coach,
+          'POST', { title, content: 'Eat well.' })));
+      assert.deepEqual(guideDrafts.map((item) => item.status), [201, 201]);
+      const guidePublications = await Promise.all(guideDrafts.map((item) =>
+        call(app, `/coach/nutrition-guides/${item.body.data.id}`, coach,
+          'PATCH', { publish: true })));
+      assert.deepEqual(guidePublications.map((item) => item.status), [200, 200]);
+      assert.equal((await database.query(
+        `SELECT count(*)::int AS count FROM nutrition_guides
+         WHERE member_id = $1 AND status = 'ACTIVE'`, [memberId])).rows[0].count, 1);
+      assert.equal((await call(app, '/nutrition-guides/me/history', member)).body.data.length, 3);
+      assert.equal((await call(app, '/coach/training-sessions', coach, 'POST', {
+        memberId, title: 'Invalid time',
+        scheduledStartAt: '2026-11-01T09:00:00+07:00',
+        scheduledEndAt: '2026-11-01T08:00:00+07:00',
+      })).status, 422);
       result = await call(app, '/coach/training-sessions', coach, 'POST', {
         memberId, title: 'Session one', scheduledStartAt: '2026-11-01T08:00:00+07:00',
         scheduledEndAt: '2026-11-01T09:00:00+07:00',
@@ -179,6 +209,12 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       assert.equal((await call(app, `/training-sessions/${sessionId}`, other)).status, 404);
       assert.equal((await call(app, '/training-sessions/me', member)).body.data.length, 1);
       assert.equal((await call(app, '/coach/training-sessions', coach)).body.data.length, 1);
+      assert.equal((await call(app, `/coach/training-sessions/${sessionId}`, coach,
+        'PATCH', { status: 'CANCELLED' })).status, 422);
+      assert.equal((await call(app, `/coach/training-sessions/${sessionId}`, coach,
+        'PATCH', { scheduledEndAt: '2026-11-01T07:00:00+07:00' })).status, 422);
+      assert.equal((await call(app, `/coach/training-sessions/${sessionId}`, member,
+        'PATCH', { status: 'COMPLETED' })).status, 403);
       result = await call(app, `/coach/training-sessions/${sessionId}`, coach,
         'PATCH', { status: 'COMPLETED' });
       assert.equal(result.status, 200);
@@ -238,10 +274,23 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         'PATCH', { status: 'ENDED' })).status, 200);
       assert.equal((await call(app, '/calls', other)).body.data.length, 0);
       assert.equal((await call(app, '/calls', coach)).body.data.length, 1);
+      const pausedPlan = await call(app, `/coach/members/${memberId}/training-plans`,
+        coach, 'POST', { ...body, title: 'Pending plan' });
+      const pausedGuide = await call(app, `/coach/members/${memberId}/nutrition-guides`,
+        coach, 'POST', { title: 'Pending guide', content: 'Pending content' });
+      assert.equal(pausedPlan.status, 201);
+      assert.equal(pausedGuide.status, 201);
       await database.query(
         `UPDATE coach_relationships SET status = 'PAUSED', paused_at = now(),
          pause_reason = 'MEMBERSHIP_EXPIRED' WHERE id = $1`, [relationshipId],
       );
+      assert.equal((await call(app, `/coach/training-plans/${pausedPlan.body.data.id}`,
+        coach, 'PATCH', { title: 'Edit after pause' })).status, 403);
+      assert.equal((await call(app,
+        `/coach/training-plans/${pausedPlan.body.data.id}/publications`,
+        coach, 'POST', {})).status, 409);
+      assert.equal((await call(app, `/coach/nutrition-guides/${pausedGuide.body.data.id}`,
+        coach, 'PATCH', { publish: true })).status, 403);
       assert.equal((await call(app, `/coach/members/${memberId}/training-plans`, coach,
         'POST', body)).status, 403);
       assert.equal((await call(app, '/coach/training-sessions', coach, 'POST', {
@@ -290,6 +339,24 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       assert.equal((await database.query(
         'SELECT provider_call_id FROM call_logs WHERE id = $1', [revokedCallId]))
         .rows[0].provider_call_id, null);
+      await database.query(
+        `UPDATE users SET status = 'ACTIVE', disabled_at = NULL,
+         disabled_reason = NULL, session_version = 0 WHERE id = $1`, [memberId],
+      );
+      await database.query(
+        `UPDATE coach_relationships SET status = 'ENDED', ended_at = now(),
+         ended_by = $2, end_reason = 'Return later' WHERE id = $1`,
+        [relationshipId, memberId],
+      );
+      await database.query(
+        `INSERT INTO coach_relationships (id, member_id, coach_id)
+         VALUES ($1, $2, $3)`, [returnRelationshipId, memberId, coachId],
+      );
+      assert.equal((await call(app,
+        `/coach/training-plans/${pausedPlan.body.data.id}/publications`,
+        coach, 'POST', {})).status, 409);
+      assert.equal((await call(app, `/coach/nutrition-guides/${pausedGuide.body.data.id}`,
+        coach, 'PATCH', { publish: true })).status, 403);
     } finally {
       await database.query('DELETE FROM call_logs WHERE relationship_id = $1', [relationshipId]);
       await database.query(
@@ -320,7 +387,8 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       );
       await database.query('DELETE FROM training_plans WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM exercises WHERE id = $1', [exerciseId]);
-      await database.query('DELETE FROM coach_relationships WHERE id = $1', [relationshipId]);
+      await database.query('DELETE FROM coach_relationships WHERE id IN ($1, $2)',
+        [relationshipId, returnRelationshipId]);
       await database.query('DELETE FROM users WHERE id IN ($1, $2, $3)',
         [memberId, secondMemberId, coachId]);
       await database.end();

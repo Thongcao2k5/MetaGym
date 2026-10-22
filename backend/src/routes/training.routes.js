@@ -292,6 +292,16 @@ export function createTrainingRouter({ database, jwtSecret }) {
     if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
     try {
       await client.query('BEGIN');
+      const owner = await client.query(
+        'SELECT member_id FROM training_plans WHERE id = $1 AND coach_id = $2',
+        [request.params.planId, request.authUser.id],
+      );
+      if (!owner.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giáo trình');
+      }
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE',
+        [owner.rows[0].member_id]);
       const found = await client.query(
         `SELECT * FROM training_plans WHERE id = $1 AND coach_id = $2 FOR UPDATE`,
         [request.params.planId, request.authUser.id],
@@ -301,7 +311,9 @@ export function createTrainingRouter({ database, jwtSecret }) {
         return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giáo trình');
       }
       const row = found.rows[0];
-      if (row.status !== 'DRAFT' || !await activeRelationship(client, request.authUser.id, row.member_id)) {
+      const relationship = await activeRelationship(client, request.authUser.id,
+        row.member_id, true);
+      if (row.status !== 'DRAFT' || relationship?.id !== row.relationship_id) {
         await client.query('ROLLBACK');
         return fail(response, 409, 'PUBLICATION_NOT_ALLOWED', 'Không thể công bố giáo trình');
       }
@@ -412,6 +424,16 @@ export function createTrainingRouter({ database, jwtSecret }) {
     if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
     try {
       await client.query('BEGIN');
+      const owner = await client.query(
+        'SELECT member_id FROM nutrition_guides WHERE id = $1 AND coach_id = $2',
+        [request.params.guideId, request.authUser.id],
+      );
+      if (!owner.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy hướng dẫn');
+      }
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE',
+        [owner.rows[0].member_id]);
       const found = await client.query(
         `SELECT * FROM nutrition_guides WHERE id = $1 AND coach_id = $2 FOR UPDATE`,
         [request.params.guideId, request.authUser.id],
