@@ -186,7 +186,11 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider }) {
       const updated = await database.query(
         `UPDATE call_logs SET provider_call_id = $1 WHERE id = $2
          AND (provider_call_id IS NULL OR provider_call_id = $1)
-         AND status IN ('CREATED', 'RINGING', 'ANSWERED') RETURNING id`,
+         AND status IN ('CREATED', 'RINGING', 'ANSWERED')
+         AND EXISTS (
+           SELECT 1 FROM coach_relationships r
+           WHERE r.id = call_logs.relationship_id AND r.status = 'ACTIVE'
+         ) RETURNING id`,
         [token.providerCallId, call.id],
       );
       if (!updated.rows.length) return fail(response, 409, 'CALL_NOT_ACTIVE', 'Cuộc gọi không còn hoạt động');

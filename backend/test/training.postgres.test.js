@@ -49,6 +49,17 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         channelId: callId,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       }) });
+    const racingCallApp = createApp({ database, jwtSecret: secret,
+      callTokenProvider: async ({ callId, relationshipId: activeRelationshipId }) => {
+        await database.query(
+          `UPDATE coach_relationships SET status = 'PAUSED', paused_at = now(),
+           pause_reason = 'MEMBERSHIP_EXPIRED' WHERE id = $1`,
+          [activeRelationshipId],
+        );
+        return { accessToken: 'must-not-be-returned', providerCallId: callId,
+          channelId: callId,
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() };
+      } });
     try {
       await database.query(
         `INSERT INTO users (id, email, password_hash, role, full_name)
@@ -189,6 +200,16 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         'POST', {})).status, 503);
       assert.equal((await call(callApp, `/calls/${callId}/access-tokens`, other,
         'POST', {})).status, 404);
+      result = await call(racingCallApp, `/calls/${callId}/access-tokens`, member,
+        'POST', {});
+      assert.equal(result.status, 409, JSON.stringify(result.body));
+      assert.equal((await database.query(
+        'SELECT provider_call_id FROM call_logs WHERE id = $1', [callId]))
+        .rows[0].provider_call_id, null);
+      await database.query(
+        `UPDATE coach_relationships SET status = 'ACTIVE', paused_at = NULL,
+         pause_reason = NULL WHERE id = $1`, [relationshipId],
+      );
       result = await call(callApp, `/calls/${callId}/access-tokens`, member,
         'POST', {});
       assert.equal(result.status, 200);
