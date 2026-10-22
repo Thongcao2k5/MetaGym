@@ -127,7 +127,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 ### T16 — Kiểm thử luồng nghiệp vụ liên thông bằng API thật
 
-**Trạng thái:** Chưa thực hiện.
+**Trạng thái:** Hoàn thành ngày 22/10/2026. Thêm `backend/test/api-journey.postgres.test.js`: đăng ký/đăng nhập thật, Admin tạo Coach/gói, Member mua và xác nhận `MOCK_QR`, chọn Coach, công bố giáo trình/dinh dưỡng, tạo buổi tập, ghi nhật ký/số đo/ảnh, nhắn tin, đánh dấu đọc và kết thúc quan hệ. Kiểm tra retry thanh toán/tin nhắn, lỗi trước/sau membership và dọn fixture; test chạy lại thành công trong suite. Backend check và 52/52 test đạt, không skip; health/smoke đạt 7/7.
 
 **Công việc:** Tự động hóa một kịch bản trên database test riêng: đăng ký/đăng nhập → mua gói `MOCK_QR` → chọn Coach → Coach chấp nhận → công bố giáo trình/dinh dưỡng → tạo buổi tập → Member ghi nhật ký/ảnh/số đo → hai bên nhắn tin → kết thúc hoặc chuyển quan hệ. Kiểm tra trạng thái và dữ liệu sau từng bước, kể cả gọi lại thao tác idempotent. Dùng fixture sạch và dọn dữ liệu; không dựa vào màn hình Flutter hay tài khoản production.
 
