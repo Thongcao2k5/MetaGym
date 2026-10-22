@@ -3,6 +3,8 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
+import { reconcileMembershipLifecycles } from '../services/membership-lifecycle.js';
+
 const audience = 'meta-gym-clients';
 const issuer = 'meta-gym-api';
 const passwordSchema = z.string().min(8).refine(
@@ -126,6 +128,7 @@ export function createAuthentication({ database, jwtSecret }) {
           user.session_version !== claims.sessionVersion) {
         return error(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
       }
+      await reconcileMembershipLifecycles(database);
       request.authUser = user;
       next();
     } catch {
