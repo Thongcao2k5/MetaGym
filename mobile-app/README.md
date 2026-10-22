@@ -1,17 +1,38 @@
-# meta_gym_app
+# Meta Gym mobile
 
-A new Flutter project.
+Ứng dụng Flutter được chia theo hai lớp chính:
 
-## Getting Started
+- `lib/app`: khai báo ứng dụng và router.
+- `lib/core`: cấu hình dùng chung như API URL và theme.
+- `lib/features`: mã theo từng nghiệp vụ công khai, Member và Coach.
 
-This project is a starting point for a Flutter application.
+## Chạy theo môi trường
 
-A few resources to get you started if this is your first Flutter project:
+Android emulator dùng địa chỉ backend `http://10.0.2.2:3000/api/v1`:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```powershell
+F:\flutter\bin\flutter.bat run --dart-define=APP_ENV=emulator
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Flutter web hoặc Windows chạy cùng máy backend dùng loopback:
+
+```powershell
+F:\flutter\bin\flutter.bat run -d chrome --dart-define=APP_ENV=local
+```
+
+Production bắt buộc truyền URL HTTPS, không có URL mặc định:
+
+```powershell
+F:\flutter\bin\flutter.bat run --release `
+  --dart-define=APP_ENV=production `
+  --dart-define=API_BASE_URL=https://api.your-domain.com/api/v1
+```
+
+Có thể truyền `API_BASE_URL` để ghi đè URL ở môi trường local hoặc emulator.
+
+## Kiểm tra
+
+```powershell
+F:\flutter\bin\flutter.bat analyze
+F:\flutter\bin\flutter.bat test
+```
