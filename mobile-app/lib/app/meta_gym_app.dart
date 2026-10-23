@@ -20,6 +20,7 @@ import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
+import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
@@ -64,6 +65,7 @@ class MetaGymApp extends StatefulWidget {
     this.coachProgressService,
     this.messagingService,
     this.callsService,
+    this.aiService,
   });
 
   final SessionController? sessionController;
@@ -89,6 +91,7 @@ class MetaGymApp extends StatefulWidget {
   final CoachProgressService? coachProgressService;
   final MessagingService? messagingService;
   final CallsService? callsService;
+  final AiService? aiService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -123,6 +126,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CoachProgressService _coachProgressService;
   late final MessagingService _messagingService;
   late final CallsService _callsService;
+  late final AiService _aiService;
   late final GoRouter _router;
 
   @override
@@ -191,6 +195,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.coachProgressService ?? CoachProgressApi(_apiClient);
     _messagingService = widget.messagingService ?? MessagingApi(_apiClient);
     _callsService = widget.callsService ?? CallsApi(_apiClient);
+    _aiService = widget.aiService ?? AiApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -244,6 +249,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<CoachProgressService>.value(value: _coachProgressService),
         Provider<MessagingService>.value(value: _messagingService),
         Provider<CallsService>.value(value: _callsService),
+        Provider<AiService>.value(value: _aiService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),

@@ -609,9 +609,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI26 — Danh sách và quản lý hội thoại AI
 
-- [ ] Member/Coach xem, tạo, đổi tên và xóa hội thoại AI của chính mình.
-- [ ] Có xác nhận xóa, trạng thái rỗng/lỗi và không lộ hội thoại người khác.
+- [x] Member/Coach xem, tạo, đổi tên và xóa hội thoại AI của chính mình.
+- [x] Có xác nhận xóa, trạng thái rỗng/lỗi và không lộ hội thoại người khác.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** tạo → đổi tên → xóa. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 130/130, `flutter analyze --no-pub` sạch và build web thành công. UI chỉ dùng API theo JWT hiện hành; backend ràng buộc `user_id` ở truy vấn. Test widget kiểm tra tạo/đổi tên/xác nhận xóa/lỗi; chưa thử tay với backend đang chạy.
 
 #### UI27 — Hỏi đáp AI cơ bản
 
