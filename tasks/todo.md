@@ -508,9 +508,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI13 — Member xem lịch buổi tập
 
-- [ ] Danh sách lịch và chi tiết buổi tập, thời gian/ghi chú/trạng thái.
-- [ ] Có trạng thái chưa có lịch, làm mới và định dạng giờ địa phương.
+- [x] Danh sách lịch và chi tiết buổi tập, thời gian/ghi chú/trạng thái.
+- [x] Có trạng thái chưa có lịch, làm mới và định dạng giờ địa phương.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** xem buổi Coach tạo. **Cỡ:** S–M.
+- **Bằng chứng:** `flutter test --no-pub` 83/83, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI14 — Coach quản lý buổi tập
 

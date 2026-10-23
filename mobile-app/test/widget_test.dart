@@ -29,6 +29,9 @@ import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
 import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
+import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
+import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
+import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -66,6 +69,7 @@ void main() {
         coachSelectionService: _EmptyCoachSelectionService(),
         memberTrainingService: _EmptyMemberTrainingService(),
         memberNutritionService: _EmptyMemberNutritionService(),
+        memberSessionsService: _EmptyMemberSessionsService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -96,6 +100,14 @@ void main() {
     expect(find.byType(MemberTrainingPage), findsOneWidget);
     expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
     await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/member/features/sessions');
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberSessionsPage), findsOneWidget);
+    expect(find.text('Bạn chưa có buổi tập nào.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberSessionsPage))).go('/member');
     await tester.pumpAndSettle();
 
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -438,4 +450,13 @@ class _EmptyCoachNutritionService implements CoachNutritionService {
     String content, {
     bool publish = false,
   }) => throw UnimplementedError('No guide in this fixture');
+}
+
+class _EmptyMemberSessionsService implements MemberSessionsService {
+  @override
+  Future<List<TrainingSession>> getMine() async => const [];
+
+  @override
+  Future<TrainingSession> getDetail(String id) =>
+      throw UnimplementedError('No session in this fixture');
 }
