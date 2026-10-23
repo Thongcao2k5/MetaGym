@@ -22,6 +22,8 @@ class CoachPlanDetailPage extends StatefulWidget {
 class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
   TrainingPlan? _plan;
   String? _error;
+  String? _actionError;
+  bool _busy = false;
 
   @override
   void initState() {
@@ -59,6 +61,52 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
     if (saved != null && mounted) await _load();
   }
 
+  Future<void> _publish() async {
+    if (_busy || _plan?.status != 'DRAFT') return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Công bố giáo trình?'),
+        content: const Text(
+          'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Quay lại'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Xác nhận công bố'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || _plan?.status != 'DRAFT') return;
+    setState(() {
+      _busy = true;
+      _actionError = null;
+    });
+    try {
+      await widget.service.publish(widget.id);
+      if (mounted) await _load();
+    } on ApiException catch (error) {
+      if (mounted) {
+        setState(
+          () => _actionError = error.code == 'PUBLICATION_NOT_ALLOWED'
+              ? 'Không thể công bố: bản nháp đã thay đổi hoặc quan hệ Coach–Member không còn hoạt động.'
+              : error.message,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionError = 'Không công bố được giáo trình.');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Chi tiết giáo trình')),
@@ -81,11 +129,23 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                 ],
                 if (_plan != null) ...[
                   TrainingPlanContent(plan: _plan!),
-                  if (_plan!.status == 'DRAFT')
-                    FilledButton(
-                      onPressed: _edit,
+                  if (_actionError != null)
+                    Text(
+                      _actionError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  if (_plan!.status == 'DRAFT') ...[
+                    OutlinedButton(
+                      onPressed: _busy ? null : _edit,
                       child: const Text('Sửa bản nháp'),
                     ),
+                    FilledButton(
+                      onPressed: _busy ? null : _publish,
+                      child: const Text('Công bố'),
+                    ),
+                  ],
                 ],
               ],
             ),

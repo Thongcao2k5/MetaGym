@@ -487,9 +487,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI10 — Coach công bố giáo trình
 
-- [ ] Từ chi tiết bản nháp có nút công bố kèm xác nhận; hiển thị trạng thái và phiên bản.
-- [ ] Sau công bố, bản cũ vào lịch sử và Member thấy bản mới; lỗi quan hệ hết hiệu lực rõ ràng.
+- [x] Từ chi tiết bản nháp có nút công bố kèm xác nhận; hiển thị trạng thái và phiên bản.
+- [x] Sau công bố, bản cũ vào lịch sử và Member thấy bản mới; lỗi quan hệ hết hiệu lực rõ ràng.
 - **Phụ thuộc:** UI09. **Kiểm thử tay:** công bố hai phiên bản liên tiếp. **Cỡ:** S–M.
+- **Bằng chứng:** `flutter test --no-pub` 76/76, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI11 — Member xem hướng dẫn dinh dưỡng
 

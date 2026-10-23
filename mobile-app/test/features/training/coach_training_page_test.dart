@@ -206,6 +206,10 @@ class _CoachTrainingFixture implements CoachTrainingService {
     return plan!;
   }
 
+  @override
+  Future<TrainingPlan> publish(String id) =>
+      throw UnimplementedError('Publication is tested separately');
+
   TrainingPlan _fromPayload(Map<String, Object?> payload) {
     final day = (payload['days'] as List).first as Map;
     final exercise = (day['exercises'] as List).first as Map;

@@ -381,4 +381,8 @@ class _EmptyCoachTrainingService implements CoachTrainingService {
   @override
   Future<TrainingPlan> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError('No plan in this fixture');
+
+  @override
+  Future<TrainingPlan> publish(String id) =>
+      throw UnimplementedError('No plan in this fixture');
 }

@@ -12,6 +12,7 @@ abstract interface class CoachTrainingService {
   Future<TrainingPlan> getPlan(String id);
   Future<TrainingPlan> create(String memberId, Map<String, Object?> payload);
   Future<TrainingPlan> update(String id, Map<String, Object?> payload);
+  Future<TrainingPlan> publish(String id);
 }
 
 class CoachTrainingApi implements CoachTrainingService {
@@ -55,6 +56,14 @@ class CoachTrainingApi implements CoachTrainingService {
       (await client.patch<TrainingPlan>(
         '/coach/training-plans/${Uri.encodeComponent(id)}',
         body: payload,
+        decode: TrainingPlan.fromJson,
+      )).data;
+
+  @override
+  Future<TrainingPlan> publish(String id) async =>
+      (await client.post<TrainingPlan>(
+        '/coach/training-plans/${Uri.encodeComponent(id)}/publications',
+        body: const <String, Object?>{},
         decode: TrainingPlan.fromJson,
       )).data;
 }
