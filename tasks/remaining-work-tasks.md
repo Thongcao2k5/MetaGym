@@ -1,6 +1,6 @@
 # Meta Gym — Kế hoạch hoàn thiện luồng nghiệp vụ và API backend
 
-> Cập nhật: 22/10/2026. Mốc code để lập kế hoạch: `origin/main` tại `e8394dc`.
+> Cập nhật: 23/10/2026. Mốc code để lập kế hoạch: `origin/main` tại `e8394dc`.
 > Phạm vi hiện tại: PostgreSQL, backend Node.js, API REST, kiểm thử nghiệp vụ và tài liệu API để chuẩn bị cho việc thiết kế frontend sau này.
 
 ## Ranh giới công việc
@@ -67,6 +67,8 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 
 **Trạng thái:** Hoàn thành ngày 22/10/2026. Test PostgreSQL tái hiện và sửa lỗi công bố đồng thời trả `500`, cùng lỗi công bố bản nháp thuộc quan hệ Coach cũ. Đã kiểm tra quyền xem/sửa bản nháp, snapshot, lịch sử, trạng thái quan hệ và thời gian buổi tập. Backend check và 50/50 test đạt, không skip; smoke đạt 7/7. Contract đã ghi rõ quy tắc công bố.
 
+**Bổ sung review 23/10:** Test hồi quy cho sửa bản nháp đồng thời với kết thúc quan hệ đã tái hiện lỗi; thao tác sửa nay khóa Member và quan hệ theo thứ tự transaction, nên Coach cũ không lưu được bản sửa sau khi quan hệ kết thúc.
+
 **API hiện có:** `/training-plans`, `/nutrition-guides`, `/training-sessions` trong `backend/src/routes/training.routes.js` và `sessions.routes.js`.
 
 **Công việc:** Kiểm tra Coach chỉ tạo/sửa nội dung cho Member đang phụ trách; giáo trình/hướng dẫn `DRAFT` không lộ cho Member; công bố lưu phiên bản cũ và chỉ một bản `ACTIVE`; buổi tập cho phép đúng chuyển trạng thái, thời gian và quyền xem. Test Member có/không có quan hệ và Coach khác/Coach cũ.
@@ -108,6 +110,8 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 ### T15 — Kiểm chứng API nhắn tin Member–Coach
 
 **Trạng thái:** Hoàn thành ngày 22/10/2026. Bổ sung test PostgreSQL cho quyền hai bên/người ngoài/Admin, tin ảnh đúng owner và `READY`, gửi đồng thời/retry, phân trang, unread/read cursor, quan hệ `PAUSED`/`ENDED`. Test tái hiện và sửa race gửi tin trong transaction kết thúc quan hệ. Backend check và 51/51 test đạt, không skip; smoke đạt 7/7. Contract đã ghi rõ idempotency và quy tắc trạng thái.
+
+**Bổ sung review 23/10:** `read-state` từ chối ID tin do chính người gọi gửi (`422 VALIDATION_ERROR`), tránh đánh dấu nhầm các tin đến là đã đọc; test kiểm tra `unreadCount` không đổi.
 
 **API hiện có:** `/conversations`, `/conversations/:relationshipId/messages`, `/conversations/:relationshipId/read-state` trong `backend/src/routes/messaging.routes.js`.
 
@@ -158,7 +162,7 @@ T13 có thể làm khi T11/T12 đang được review vì dùng dữ liệu và r
 ### Checkpoint cuối — Backend sẵn sàng cho frontend
 
 - [x] T11–T18 có bằng chứng test và review, không chỉ có route tồn tại.
-- [x] Schema assertions, backend check/test và smoke test API đạt: 53 pass, 0 fail, 0 skip; smoke 7/7.
+- [x] Schema assertions, backend check/test và smoke test API đạt sau review 23/10: 54 pass, 0 fail, 0 skip; smoke 7/7.
 - [x] Đã đối chiếu route/contract, quyền, trạng thái, response, lỗi và dữ liệu riêng tư của các luồng T11–T17.
 - [x] Mock QR, media local và provider chưa cấu hình được ghi rõ để frontend không hiểu nhầm là production.
 

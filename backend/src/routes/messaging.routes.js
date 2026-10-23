@@ -177,12 +177,16 @@ export function createMessagingRouter({ database, jwtSecret }) {
         return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy cuộc trò chuyện');
       }
       const cursor = await client.query(
-        `SELECT m.id, m.sent_at FROM messages m
+        `SELECT m.id, m.sent_at, m.sender_id FROM messages m
          WHERE m.id = $1 AND m.conversation_id = $2`, [parsed.data.messageId, found.id],
       );
       if (!cursor.rows.length) {
         await client.query('ROLLBACK');
         return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy tin nhắn');
+      }
+      if (cursor.rows[0].sender_id === request.authUser.id) {
+        await client.query('ROLLBACK');
+        return fail(response, 422, 'VALIDATION_ERROR', 'Chỉ đánh dấu đã đọc tin nhắn nhận được');
       }
       const updated = await client.query(
         `UPDATE conversation_participants p

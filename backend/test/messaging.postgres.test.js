@@ -121,6 +121,12 @@ test('PostgreSQL messaging enforces participants, retries, media and relationshi
       });
       assert.equal(image.status, 201);
       assert.equal(image.body.data.mediaId, imageId);
+      assert.equal((await call(base, '/conversations', member)).body.data[0]
+        .unreadCount, 1);
+      assert.equal((await call(base, readPath, member, 'PATCH',
+        { messageId: image.body.data.id })).status, 422);
+      assert.equal((await call(base, '/conversations', member)).body.data[0]
+        .unreadCount, 1);
       const pages = await Promise.all([1, 2].map((page) =>
         call(base, `${messagesPath}?page=${page}&pageSize=2`, member)));
       assert.deepEqual(pages.map((item) => item.body.data.length), [2, 1]);
