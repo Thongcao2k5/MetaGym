@@ -6,6 +6,7 @@ import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/login_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
@@ -126,6 +127,8 @@ GoRouter createAppRouter({
           builder: (context, state) =>
               destination.path == '/member/features/payments'
               ? const PaymentHistoryPage()
+              : destination.path == '/member/features/gym'
+              ? const GymEquipmentPage()
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.memberHome,
@@ -134,10 +137,12 @@ GoRouter createAppRouter({
       for (final destination in coachDestinations)
         GoRoute(
           path: destination.path,
-          builder: (context, state) => FeaturePlaceholderPage(
-            destination: destination,
-            homePath: AppRoutes.coachHome,
-          ),
+          builder: (context, state) => destination.path == '/coach/features/gym'
+              ? const GymEquipmentPage()
+              : FeaturePlaceholderPage(
+                  destination: destination,
+                  homePath: AppRoutes.coachHome,
+                ),
         ),
       GoRoute(
         path: AppRoutes.memberWorkbench,

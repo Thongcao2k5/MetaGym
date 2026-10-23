@@ -18,6 +18,13 @@ class CatalogApi implements CatalogService {
       _getItems('/equipment', search);
 
   @override
+  Future<CatalogItem> getEquipmentDetail(String id) async =>
+      (await _client.get<CatalogItem>(
+        '/equipment/${Uri.encodeComponent(id)}',
+        decode: CatalogItem.fromJson,
+      )).data;
+
+  @override
   Future<List<CatalogItem>> getExercises({String? search}) =>
       _getItems('/exercises', search);
 

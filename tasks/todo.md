@@ -429,9 +429,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI03 — Thông tin gym và chi tiết thiết bị
 
-- [ ] Member/Coach xem thông tin, giờ mở cửa, nội quy; tìm/lọc và mở chi tiết/hướng dẫn thiết bị.
-- [ ] Thiết bị ẩn không hiển thị; trạng thái rỗng/lỗi rõ ràng.
+- [x] Member/Coach xem thông tin, giờ mở cửa, nội quy; tìm/lọc và mở chi tiết/hướng dẫn thiết bị.
+- [x] Thiết bị ẩn không hiển thị; trạng thái rỗng/lỗi rõ ràng.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** tìm thiết bị seed và mở chi tiết. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 51/51, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend và dữ liệu seed đang chạy.
 
 **Checkpoint A:** UI01–UI03: điều hướng đúng vai trò; test/analyze và build đạt.
 

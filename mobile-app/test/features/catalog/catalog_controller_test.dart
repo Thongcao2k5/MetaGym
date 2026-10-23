@@ -52,6 +52,10 @@ class _FakeCatalogService implements CatalogService {
   String? exerciseSearch;
 
   @override
+  Future<CatalogItem> getEquipmentDetail(String id) async =>
+      CatalogItem(id: id, name: 'Thiết bị');
+
+  @override
   Future<List<CatalogItem>> getEquipment({String? search}) async {
     if (shouldFail) {
       throw const ApiException(

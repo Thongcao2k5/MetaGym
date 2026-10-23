@@ -1,0 +1,120 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
+import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
+import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
+
+void main() {
+  testWidgets('shows gym information and active equipment detail', (
+    tester,
+  ) async {
+    final service = _GymFixture();
+    await tester.pumpWidget(
+      MaterialApp(home: GymEquipmentPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Meta Gym'), findsOneWidget);
+    expect(find.textContaining('06:00-21:00'), findsOneWidget);
+    expect(find.text('Mang khăn tập.'), findsOneWidget);
+    expect(find.text('Máy chạy bộ'), findsOneWidget);
+    expect(find.text('Máy ẩn'), findsNothing);
+
+    await tester.tap(find.text('Máy chạy bộ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Khởi động trước khi chạy'), findsOneWidget);
+    expect(find.text('Giữ tay vịn khi lên máy'), findsOneWidget);
+    expect(service.detailId, 'equipment-1');
+  });
+
+  testWidgets('searches, filters and shows an empty result', (tester) async {
+    final service = _GymFixture();
+    await tester.pumpWidget(
+      MaterialApp(home: GymEquipmentPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tạ đơn'), findsOneWidget);
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cardio').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Tạ đơn'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('equipment-search')),
+      'không có',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(service.search, 'không có');
+    expect(find.text('Không có thiết bị phù hợp.'), findsOneWidget);
+  });
+
+  testWidgets('shows load error and retries', (tester) async {
+    final service = _GymFixture(failFirst: true);
+    await tester.pumpWidget(
+      MaterialApp(home: GymEquipmentPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Không tải được thông tin gym.'), findsOneWidget);
+
+    await tester.tap(find.text('Thử lại'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meta Gym'), findsOneWidget);
+    expect(service.profileLoads, 2);
+  });
+}
+
+class _GymFixture implements CatalogService {
+  _GymFixture({this.failFirst = false});
+
+  final bool failFirst;
+  int profileLoads = 0;
+  String? search;
+  String? detailId;
+
+  @override
+  Future<GymProfile> getGymProfile() async {
+    profileLoads++;
+    if (failFirst && profileLoads == 1) {
+      throw const ApiException(
+        kind: ApiExceptionKind.network,
+        message: 'Không tải được thông tin gym.',
+      );
+    }
+    return const GymProfile(
+      name: 'Meta Gym',
+      address: 'Quận 1',
+      openingHours: {'monday': '06:00-21:00'},
+      rules: 'Mang khăn tập.',
+    );
+  }
+
+  @override
+  Future<List<CatalogItem>> getEquipment({String? search}) async {
+    this.search = search;
+    if (search == 'không có') return const [];
+    return const [
+      CatalogItem(id: 'equipment-1', name: 'Máy chạy bộ', category: 'Cardio'),
+      CatalogItem(id: 'equipment-3', name: 'Tạ đơn', category: 'Sức mạnh'),
+      CatalogItem(id: 'equipment-2', name: 'Máy ẩn', status: 'HIDDEN'),
+    ];
+  }
+
+  @override
+  Future<CatalogItem> getEquipmentDetail(String id) async {
+    detailId = id;
+    return const CatalogItem(
+      id: 'equipment-1',
+      name: 'Máy chạy bộ',
+      category: 'Cardio',
+      usageSteps: ['Khởi động trước khi chạy'],
+      safetyNotes: 'Giữ tay vịn khi lên máy',
+    );
+  }
+
+  @override
+  Future<List<CatalogItem>> getExercises({String? search}) async => const [];
+}

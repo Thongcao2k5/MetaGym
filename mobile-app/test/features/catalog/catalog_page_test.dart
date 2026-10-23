@@ -27,6 +27,10 @@ void main() {
 
 class _CatalogFixture implements CatalogService {
   @override
+  Future<CatalogItem> getEquipmentDetail(String id) async =>
+      CatalogItem(id: id, name: 'Thiết bị');
+
+  @override
   Future<List<CatalogItem>> getEquipment({String? search}) async => const [
     CatalogItem(id: 'equipment-1', name: 'Máy chạy bộ', category: 'Cardio'),
   ];
