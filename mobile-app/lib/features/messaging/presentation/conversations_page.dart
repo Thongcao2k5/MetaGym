@@ -5,17 +5,21 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
+import 'package:meta_gym_app/features/messaging/presentation/chat_message_image.dart';
+import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
 
 class ConversationsPage extends StatefulWidget {
   const ConversationsPage({
     this.service,
     required this.currentUserId,
+    this.picker,
     super.key,
   });
 
   final MessagingService? service;
   final String currentUserId;
+  final ProgressPhotoPicker? picker;
 
   @override
   State<ConversationsPage> createState() => _ConversationsPageState();
@@ -138,6 +142,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                               conversation: item,
                               service: _service!,
                               currentUserId: widget.currentUserId,
+                              picker:
+                                  widget.picker ?? DeviceProgressPhotoPicker(),
                             ),
                           ),
                         );
@@ -161,11 +167,13 @@ class ConversationDetailPage extends StatefulWidget {
     required this.conversation,
     required this.service,
     required this.currentUserId,
+    required this.picker,
     super.key,
   });
   final Conversation conversation;
   final MessagingService service;
   final String currentUserId;
+  final ProgressPhotoPicker picker;
 
   @override
   State<ConversationDetailPage> createState() => _ConversationDetailPageState();
@@ -177,10 +185,15 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   bool _loading = true;
   bool _loadingMore = false;
   bool _sending = false;
+  bool _imageSending = false;
   String? _error;
   String? _sendError;
   String? _draftMessageId;
   String? _draftContent;
+  String? _imageError;
+  SelectedProgressImage? _pendingImage;
+  String? _pendingMediaId;
+  String? _pendingImageMessageId;
   String? _lastReadId;
   Timer? _pollTimer;
   bool _polling = false;
@@ -340,6 +353,57 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    if (_imageSending) return;
+    try {
+      final image = await widget.picker.pick();
+      if (image == null || !mounted) return;
+      final validation = validateProgressImage(image);
+      if (validation != null) throw FormatException(validation);
+      _pendingImage = image;
+      _pendingMediaId = null;
+      _pendingImageMessageId = newClientMessageId();
+      await _sendImage();
+    } on FormatException catch (error) {
+      if (mounted) setState(() => _imageError = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _imageError = 'Không chọn được ảnh.');
+    }
+  }
+
+  Future<void> _sendImage() async {
+    if (_imageSending || _pendingImage == null) return;
+    setState(() {
+      _imageSending = true;
+      _imageError = null;
+    });
+    try {
+      _pendingMediaId ??= await widget.service.uploadImage(_pendingImage!);
+      final message = await widget.service.sendImage(
+        widget.conversation.relationshipId,
+        _pendingMediaId!,
+        _pendingImageMessageId!,
+      );
+      if (mounted) {
+        setState(() {
+          _messages = [
+            message,
+            ..._messages.where((item) => item.id != message.id),
+          ];
+          _pendingImage = null;
+          _pendingMediaId = null;
+          _pendingImageMessageId = null;
+        });
+      }
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _imageError = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _imageError = 'Không gửi được ảnh.');
+    } finally {
+      if (mounted) setState(() => _imageSending = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Cuộc trò chuyện')),
@@ -374,7 +438,14 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 else
                   for (final message in _messages)
                     ListTile(
-                      title: Text(message.content ?? 'Ảnh'),
+                      title:
+                          message.messageType == 'IMAGE' &&
+                              message.mediaId != null
+                          ? ChatMessageImage(
+                              service: widget.service,
+                              mediaId: message.mediaId!,
+                            )
+                          : Text(message.content ?? ''),
                       subtitle: Text(message.sentAt),
                     ),
               ],
@@ -403,6 +474,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     onPressed: _sending ? null : _send,
                     child: const Text('Thử gửi lại'),
                   ),
+                if (_imageError != null)
+                  Text(
+                    _imageError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                if (_imageError != null && _pendingImage != null)
+                  TextButton(
+                    onPressed: _imageSending ? null : _sendImage,
+                    child: const Text('Thử gửi lại ảnh'),
+                  ),
                 Row(
                   children: [
                     Expanded(
@@ -420,6 +503,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                       child: const Text('Gửi'),
                     ),
                   ],
+                ),
+                OutlinedButton.icon(
+                  onPressed: _imageSending ? null : _pickImage,
+                  icon: const Icon(Icons.image_outlined),
+                  label: Text(_imageSending ? 'Đang gửi ảnh…' : 'Gửi ảnh'),
                 ),
               ],
             ),

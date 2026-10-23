@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
+import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 
 abstract interface class MessagingService {
   Future<List<Conversation>> getConversations(int page);
@@ -13,6 +15,13 @@ abstract interface class MessagingService {
     String clientMessageId,
   );
   Future<void> markRead(String relationshipId, String messageId);
+  Future<String> uploadImage(SelectedProgressImage image);
+  Future<ChatMessage> sendImage(
+    String relationshipId,
+    String mediaId,
+    String clientMessageId,
+  );
+  Future<Uri> getImageAccessUrl(String mediaId);
 }
 
 String newClientMessageId() {
@@ -71,5 +80,53 @@ class MessagingApi implements MessagingService {
       body: {'messageId': messageId},
       decode: (value) => Map<String, dynamic>.from(value as Map),
     );
+  }
+
+  @override
+  Future<String> uploadImage(SelectedProgressImage image) async {
+    final validation = validateProgressImage(image);
+    if (validation != null) throw FormatException(validation);
+    final response = await client.post<Map<String, dynamic>>(
+      '/media/images',
+      body: image.bytes,
+      headers: {
+        'content-type': image.mimeType,
+        'x-image-purpose': 'MESSAGE',
+        'x-file-name': image.name,
+      },
+      decode: (value) => Map<String, dynamic>.from(value as Map),
+    );
+    return response.data['id'] as String;
+  }
+
+  @override
+  Future<ChatMessage> sendImage(
+    String relationshipId,
+    String mediaId,
+    String clientMessageId,
+  ) async => (await client.post<ChatMessage>(
+    '/conversations/${Uri.encodeComponent(relationshipId)}/messages',
+    body: {
+      'messageType': 'IMAGE',
+      'clientMessageId': clientMessageId,
+      'mediaId': mediaId,
+    },
+    decode: ChatMessage.fromJson,
+  )).data;
+
+  @override
+  Future<Uri> getImageAccessUrl(String mediaId) async {
+    final response = await client.get<Map<String, dynamic>>(
+      '/media/images/${Uri.encodeComponent(mediaId)}/access-url',
+      decode: (value) => Map<String, dynamic>.from(value as Map),
+    );
+    final path = response.data['url'] as String;
+    if (!path.startsWith('/api/v1/media/images/')) {
+      throw const ApiException(
+        kind: ApiExceptionKind.invalidResponse,
+        message: 'URL ảnh không hợp lệ.',
+      );
+    }
+    return client.resolveServerPath(path);
   }
 }

@@ -595,9 +595,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI24 — Ảnh trong tin nhắn
 
-- [ ] Tái dùng upload ảnh UI19; gửi tin `IMAGE` và hiển thị ảnh qua URL có chữ ký.
-- [ ] Có trạng thái ảnh lỗi/hết hạn và thử tải lại; không hỗ trợ tệp khác.
+- [x] Tái dùng upload ảnh UI19; gửi tin `IMAGE` và hiển thị ảnh qua URL có chữ ký.
+- [x] Có trạng thái ảnh lỗi/hết hạn và thử tải lại; không hỗ trợ tệp khác.
 - **Phụ thuộc:** UI19, UI22. **Kiểm thử tay:** gửi và mở ảnh trên hai tài khoản. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 123/123, `flutter analyze --no-pub` sạch và build web thành công. Test adapter kiểm tra upload raw `MESSAGE`, payload gửi và URL có chữ ký; test widget kiểm tra lỗi URL/tải lại. Chưa thử ảnh thật trên backend và hai tài khoản.
 
 #### UI25 — Màn hình trạng thái và lịch sử cuộc gọi
 

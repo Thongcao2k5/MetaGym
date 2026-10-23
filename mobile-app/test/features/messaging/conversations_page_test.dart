@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 
 void main() {
   test('conversation parses unread count and relationship status', () {
@@ -144,6 +146,56 @@ void main() {
     expect(service.sentIds[0], service.sentIds[1]);
     expect(find.text('Xin chào Coach'), findsOneWidget);
   });
+
+  testWidgets('uploads an image and sends an image message', (tester) async {
+    final service = _Fixture(active: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConversationsPage(
+          service: service,
+          currentUserId: 'member-1',
+          picker: _ImageFixture(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Coach coach-1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gửi ảnh'));
+    await tester.pumpAndSettle();
+    expect(service.uploadCalls, 1);
+    expect(service.imageSends, 1);
+    expect(service.imageUrlLoads, greaterThan(0));
+  });
+
+  testWidgets('retries a failed signed image URL', (tester) async {
+    final service = _Fixture(
+      active: true,
+      imageHistory: true,
+      failImageUrlOnce: true,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConversationsPage(service: service, currentUserId: 'member-1'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Coach coach-1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Không mở được ảnh.'), findsOneWidget);
+    await tester.tap(find.text('Tải lại ảnh'));
+    await tester.pumpAndSettle();
+    expect(service.imageUrlLoads, 2);
+  });
+}
+
+class _ImageFixture implements ProgressPhotoPicker {
+  @override
+  Future<SelectedProgressImage?> pick() async => SelectedProgressImage(
+    name: 'chat.png',
+    mimeType: 'image/png',
+    bytes: Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10]),
+  );
 }
 
 class _Fixture implements MessagingService {
@@ -153,18 +205,56 @@ class _Fixture implements MessagingService {
     this.active = false,
     this.fullFirstPage = false,
     this.failSendOnce = false,
+    this.imageHistory = false,
+    this.failImageUrlOnce = false,
   });
   final bool failFirst;
   final bool empty;
   final bool active;
   final bool fullFirstPage;
   final bool failSendOnce;
+  final bool imageHistory;
+  final bool failImageUrlOnce;
   int loads = 0;
   int sendCalls = 0;
   final messagePages = <int>[];
   final readMessageIds = <String>[];
   final sentIds = <String>[];
+  int uploadCalls = 0;
+  int imageSends = 0;
+  int imageUrlLoads = 0;
   final _pendingSend = Completer<ChatMessage>();
+
+  @override
+  Future<String> uploadImage(SelectedProgressImage image) async {
+    uploadCalls++;
+    return 'media-1';
+  }
+
+  @override
+  Future<ChatMessage> sendImage(
+    String relationshipId,
+    String mediaId,
+    String clientMessageId,
+  ) async {
+    expect(relationshipId, 'relationship-1');
+    expect(mediaId, 'media-1');
+    imageSends++;
+    return const ChatMessage(
+      id: 'image-1',
+      senderId: 'member-1',
+      messageType: 'IMAGE',
+      mediaId: 'media-1',
+      sentAt: '2026-10-23T08:02:00Z',
+    );
+  }
+
+  @override
+  Future<Uri> getImageAccessUrl(String mediaId) async {
+    imageUrlLoads++;
+    if (failImageUrlOnce && imageUrlLoads == 1) throw StateError('expired');
+    return Uri.parse('https://example.invalid/chat.png');
+  }
 
   void completeSend() => _pendingSend.complete(
     const ChatMessage(
@@ -219,6 +309,17 @@ class _Fixture implements MessagingService {
   Future<List<ChatMessage>> getMessages(String relationshipId, int page) async {
     expect(relationshipId, 'relationship-1');
     messagePages.add(page);
+    if (imageHistory) {
+      return const [
+        ChatMessage(
+          id: 'image-1',
+          senderId: 'coach-1',
+          messageType: 'IMAGE',
+          mediaId: 'media-1',
+          sentAt: '2026-10-23T08:00:00Z',
+        ),
+      ];
+    }
     if (fullFirstPage && page == 1) {
       return List.generate(
         20,
