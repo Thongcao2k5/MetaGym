@@ -1,0 +1,71 @@
+class MemberCoachRequest {
+  const MemberCoachRequest({
+    required this.id,
+    required this.coachId,
+    required this.status,
+    this.message,
+    this.rejectionReason,
+    this.requestedAt,
+  });
+
+  factory MemberCoachRequest.fromJson(Object? value) {
+    final json = Map<String, dynamic>.from(value as Map);
+    return MemberCoachRequest(
+      id: json['id'] as String,
+      coachId: json['coachId'] as String,
+      status: json['status'] as String,
+      message: json['message'] as String?,
+      rejectionReason: json['rejectionReason'] as String?,
+      requestedAt: json['requestedAt'] as String?,
+    );
+  }
+
+  final String id;
+  final String coachId;
+  final String status;
+  final String? message;
+  final String? rejectionReason;
+  final String? requestedAt;
+
+  String get statusLabel => switch (status) {
+    'PENDING' => 'Đang chờ',
+    'ACCEPTED' => 'Đã chấp nhận',
+    'REJECTED' => 'Đã từ chối',
+    'CANCELLED' => 'Đã hủy',
+    _ => status,
+  };
+}
+
+class MemberCoachRelationship {
+  const MemberCoachRelationship({
+    required this.id,
+    required this.coachId,
+    required this.status,
+    this.startedAt,
+    this.endedAt,
+  });
+
+  factory MemberCoachRelationship.fromJson(Object? value) {
+    final json = Map<String, dynamic>.from(value as Map);
+    return MemberCoachRelationship(
+      id: json['id'] as String,
+      coachId: json['coachId'] as String,
+      status: json['status'] as String,
+      startedAt: json['startedAt'] as String?,
+      endedAt: json['endedAt'] as String?,
+    );
+  }
+
+  final String id;
+  final String coachId;
+  final String status;
+  final String? startedAt;
+  final String? endedAt;
+
+  String get statusLabel => switch (status) {
+    'ACTIVE' => 'Đang hoạt động',
+    'PAUSED' => 'Tạm dừng',
+    'ENDED' => 'Đã kết thúc',
+    _ => status,
+  };
+}

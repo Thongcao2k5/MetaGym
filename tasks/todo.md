@@ -447,9 +447,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI05 — Member theo dõi và kết thúc quan hệ
 
-- [ ] Trang yêu cầu chờ/lịch sử, hủy yêu cầu; Coach hiện tại/lịch sử và kết thúc kèm lý do.
-- [ ] Xác nhận thao tác kết thúc; giao diện làm mới đúng sau hủy hoặc kết thúc.
+- [x] Trang yêu cầu chờ/lịch sử, hủy yêu cầu; Coach hiện tại/lịch sử và kết thúc kèm lý do.
+- [x] Xác nhận thao tác kết thúc; giao diện làm mới đúng sau hủy hoặc kết thúc.
 - **Phụ thuộc:** UI04. **Kiểm thử tay:** gửi → hủy; gửi lại → được duyệt → kết thúc. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 61/61, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với hai tài khoản Member/Coach và backend đang chạy.
 
 #### UI06 — Coach xử lý yêu cầu
 

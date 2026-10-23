@@ -30,6 +30,12 @@ const memberDestinations = <FeatureDestination>[
     'Coach',
   ),
   FeatureDestination(
+    'Coach của tôi',
+    '/member/features/my-coach',
+    'UI05',
+    'Coach',
+  ),
+  FeatureDestination(
     'Giáo trình',
     '/member/features/training',
     'UI08',
