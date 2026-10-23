@@ -19,6 +19,7 @@ import 'package:meta_gym_app/features/membership/data/membership_api.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
@@ -62,6 +63,7 @@ class MetaGymApp extends StatefulWidget {
     this.memberPhotoService,
     this.coachProgressService,
     this.messagingService,
+    this.callsService,
   });
 
   final SessionController? sessionController;
@@ -86,6 +88,7 @@ class MetaGymApp extends StatefulWidget {
   final MemberPhotoService? memberPhotoService;
   final CoachProgressService? coachProgressService;
   final MessagingService? messagingService;
+  final CallsService? callsService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -119,6 +122,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final MemberPhotoService _memberPhotoService;
   late final CoachProgressService _coachProgressService;
   late final MessagingService _messagingService;
+  late final CallsService _callsService;
   late final GoRouter _router;
 
   @override
@@ -186,6 +190,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _coachProgressService =
         widget.coachProgressService ?? CoachProgressApi(_apiClient);
     _messagingService = widget.messagingService ?? MessagingApi(_apiClient);
+    _callsService = widget.callsService ?? CallsApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -238,6 +243,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<MemberPhotoService>.value(value: _memberPhotoService),
         Provider<CoachProgressService>.value(value: _coachProgressService),
         Provider<MessagingService>.value(value: _messagingService),
+        Provider<CallsService>.value(value: _callsService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),

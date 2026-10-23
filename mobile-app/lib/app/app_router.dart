@@ -15,6 +15,7 @@ import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
+import 'package:meta_gym_app/features/calls/presentation/calls_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/change_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
@@ -167,6 +168,8 @@ GoRouter createAppRouter({
               ? const MemberPhotoPage()
               : destination.path == '/member/features/messages'
               ? ConversationsPage(currentUserId: sessionController.user!.id)
+              : destination.path == '/member/features/calls'
+              ? CallsPage(currentUserId: sessionController.user!.id)
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.memberHome,
@@ -189,6 +192,8 @@ GoRouter createAppRouter({
               ? const CoachSessionsPage()
               : destination.path == '/coach/features/messages'
               ? ConversationsPage(currentUserId: sessionController.user!.id)
+              : destination.path == '/coach/features/calls'
+              ? CallsPage(currentUserId: sessionController.user!.id)
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.coachHome,

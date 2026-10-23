@@ -602,9 +602,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI25 — Màn hình trạng thái và lịch sử cuộc gọi
 
-- [ ] Có trang lịch sử, tạo cuộc gọi, cập nhật trạng thái và màn hình đang gọi/đã kết thúc ở mức metadata API.
-- [ ] Nếu token/provider RTC chưa cấu hình, hiển thị rõ không thể kết nối; **không** giả làm cuộc gọi thoại/video thật.
+- [x] Có trang lịch sử, tạo cuộc gọi, cập nhật trạng thái và màn hình đang gọi/đã kết thúc ở mức metadata API.
+- [x] Nếu token/provider RTC chưa cấu hình, hiển thị rõ không thể kết nối; **không** giả làm cuộc gọi thoại/video thật.
 - **Phụ thuộc:** UI05–UI07. **Kiểm thử tay:** tạo bản ghi → cập nhật → xem lịch sử. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 127/127, `flutter analyze --no-pub` sạch và build web thành công. Màn hình luôn cảnh báo chưa tích hợp RTC; không yêu cầu token hoặc giả lập kết nối. Danh sách quan hệ hoạt động dùng tối đa 100 hội thoại đầu tiên. Chưa thử tay với backend đang chạy.
 
 #### UI26 — Danh sách và quản lý hội thoại AI
 
