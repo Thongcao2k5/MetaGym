@@ -36,6 +36,7 @@ import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart'
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
@@ -551,6 +552,9 @@ class _EmptyMemberProgressService implements MemberProgressService {
   @override
   Future<List<WeightPoint>> getCharts({DateTime? from, DateTime? to}) async =>
       const [];
+
+  @override
+  Future<List<ProgressComment>> getComments() async => const [];
 }
 
 class _EmptyMemberWorkoutService implements MemberWorkoutService {

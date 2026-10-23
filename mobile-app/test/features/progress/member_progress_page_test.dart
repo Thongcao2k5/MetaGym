@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 
 void main() {
@@ -25,6 +26,10 @@ void main() {
     expect(find.text('Buổi tập: 2'), findsOneWidget);
     expect(find.text('Cân nặng mới nhất: 72.5 kg'), findsOneWidget);
     expect(find.text('Biểu đồ cân nặng'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Nhận xét của Coach'), 300);
+    await tester.tap(find.text('Nhận xét của Coach'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tập đều nhé'), findsOneWidget);
     await tester.tap(find.text('7 ngày'));
     await tester.pumpAndSettle();
     expect(service.from, isNotNull);
@@ -101,4 +106,15 @@ class _ProgressFixture implements MemberProgressService {
             WeightPoint(measuredAt: '2026-10-23T08:00:00Z', weightKg: 72.5),
           ];
   }
+
+  @override
+  Future<List<ProgressComment>> getComments() async => empty
+      ? const []
+      : const [
+          ProgressComment(
+            id: 'c-1',
+            content: 'Tập đều nhé',
+            createdAt: '2026-10-23T08:00:00Z',
+          ),
+        ];
 }

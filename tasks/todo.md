@@ -561,10 +561,11 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI20 — Coach xem tiến độ và gửi nhận xét
 
-- [ ] Từ chi tiết Member mở tổng quan, nhật ký, số đo, ảnh và nhận xét.
-- [ ] Gửi nhận xét theo Member hoặc một bản ghi; hết quan hệ thì mất quyền truy cập.
+- [x] Từ chi tiết Member mở tổng quan, nhật ký, số đo, ảnh và nhận xét.
+- [x] Gửi nhận xét theo Member hoặc một bản ghi; hết quan hệ thì mất quyền truy cập. Member đọc nhận xét ở UI15.
 - **Khoảng trống:** biểu đồ theo Member cho Coach trong đặc tả chưa có API riêng; tổng quan/số đo vẫn thử được.
 - **Phụ thuộc:** UI07, UI16–UI19. **Kiểm thử tay:** Member ghi → Coach xem/nhận xét → Member đọc. **Cỡ:** M; tách nếu vượt 5 file.
+- **Bằng chứng:** `flutter test --no-pub` 110/110, `flutter analyze --no-pub` sạch và build web thành công. Danh sách Coach hiện tải tối đa 100 bản ghi mới nhất mỗi mục; chưa kiểm thử tay với backend đang chạy.
 
 **Checkpoint D:** UI15–UI20: Member ghi tiến độ → Coach nhận xét; test/analyze/build đạt.
 

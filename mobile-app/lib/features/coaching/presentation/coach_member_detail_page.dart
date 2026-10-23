@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
+import 'package:meta_gym_app/features/progress/data/coach_progress_service.dart';
+import 'package:meta_gym_app/features/progress/presentation/coach_progress_page.dart';
+import 'package:provider/provider.dart';
 
 class CoachMemberDetailPage extends StatefulWidget {
   const CoachMemberDetailPage({
@@ -135,6 +138,19 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                     if (member.injuryNotes?.isNotEmpty == true)
                       Text('Chấn thương: ${member.injuryNotes}'),
                     const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => CoachProgressPage(
+                            memberId: member.memberId,
+                            memberName: member.memberFullName,
+                            service: context.read<CoachProgressService>(),
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.insights_outlined),
+                      label: const Text('Xem tiến độ'),
+                    ),
                     if (pending)
                       const Text('Yêu cầu đang chờ duyệt')
                     else

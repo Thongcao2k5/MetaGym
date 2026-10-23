@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:provider/provider.dart';
 
 class MemberProgressPage extends StatefulWidget {
@@ -17,6 +18,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
   MemberProgressService? _service;
   ProgressSummary? _summary;
   List<WeightPoint> _points = const [];
+  List<ProgressComment> _comments = const [];
   DateTime? _from;
   DateTime? _to;
   String _period = 'Toàn bộ';
@@ -39,14 +41,17 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
       _error = null;
       _summary = null;
       _points = const [];
+      _comments = const [];
     });
     try {
       final summary = await _service!.getSummary();
       final points = await _service!.getCharts(from: _from, to: _to);
+      final comments = await _service!.getComments();
       if (mounted) {
         setState(() {
           _summary = summary;
           _points = points;
+          _comments = comments;
         });
       }
     } on ApiException catch (error) {
@@ -204,6 +209,22 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                         ),
                       ),
                   ],
+                  ExpansionTile(
+                    title: const Text('Nhận xét của Coach'),
+                    children: _comments.isEmpty
+                        ? [const ListTile(title: Text('Chưa có nhận xét.'))]
+                        : [
+                            for (final comment in _comments)
+                              ListTile(
+                                title: Text(comment.content),
+                                subtitle: Text(
+                                  DateFormat('dd/MM/yyyy').format(
+                                    DateTime.parse(comment.createdAt).toLocal(),
+                                  ),
+                                ),
+                              ),
+                          ],
+                  ),
                 ],
               ],
             ),
