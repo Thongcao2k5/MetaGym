@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/app/feature_navigation.dart';
+import 'package:meta_gym_app/app/feature_placeholder_page.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/login_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
@@ -60,6 +62,14 @@ GoRouter createAppRouter({
         AppRoutes.changePassword,
       };
       if (state.matchedLocation == home ||
+          (home == AppRoutes.memberHome &&
+              memberDestinations.any(
+                (item) => item.path == state.matchedLocation,
+              )) ||
+          (home == AppRoutes.coachHome &&
+              coachDestinations.any(
+                (item) => item.path == state.matchedLocation,
+              )) ||
           (FlowWorkbenchConfig.enabled &&
               home == AppRoutes.memberHome &&
               state.matchedLocation == AppRoutes.memberWorkbench) ||
@@ -109,6 +119,22 @@ GoRouter createAppRouter({
         path: AppRoutes.coachHome,
         builder: (context, state) => const CoachHomePage(),
       ),
+      for (final destination in memberDestinations)
+        GoRoute(
+          path: destination.path,
+          builder: (context, state) => FeaturePlaceholderPage(
+            destination: destination,
+            homePath: AppRoutes.memberHome,
+          ),
+        ),
+      for (final destination in coachDestinations)
+        GoRoute(
+          path: destination.path,
+          builder: (context, state) => FeaturePlaceholderPage(
+            destination: destination,
+            homePath: AppRoutes.coachHome,
+          ),
+        ),
       GoRoute(
         path: AppRoutes.memberWorkbench,
         builder: (context, state) =>

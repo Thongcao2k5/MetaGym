@@ -415,9 +415,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI01 — Điều hướng nghiệp vụ theo vai trò
 
-- [ ] Member/Coach có danh mục trang riêng; không cần mở khung JSON để đi tới màn hình nghiệp vụ.
-- [ ] Chặn truy cập sai vai trò, giữ nút quay lại và trạng thái phiên; test điều hướng hai vai trò.
+- [x] Member/Coach có danh mục trang riêng; không cần mở khung JSON để đi tới đường dẫn màn hình nghiệp vụ. Trang chưa làm hiển thị rõ mã task, không giả là đã có chức năng.
+- [x] Chặn truy cập sai vai trò, giữ nút quay lại và trạng thái phiên; test điều hướng hai vai trò.
 - **Phụ thuộc:** Không. **Phạm vi file:** `mobile-app/lib/app/`, hai trang home và test router. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 44/44, `flutter analyze --no-pub` sạch và build web thành công; màn hình nghiệp vụ thật triển khai từ UI02.
 
 #### UI02 — Lịch sử và chi tiết thanh toán Member
 

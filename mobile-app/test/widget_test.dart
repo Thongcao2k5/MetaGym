@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
+import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
+import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
@@ -42,10 +45,28 @@ void main() {
 
     expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
+    expect(find.text('Chọn Coach'), findsOneWidget);
+    await tester.tap(find.text('Chọn Coach'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chọn Coach', findRichText: true), findsWidgets);
+    expect(find.textContaining('UI04'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
+
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/coach/features/requests');
+    await tester.pumpAndSettle();
+    expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
+    expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.text('Kiểm thử các luồng hội viên'),
+      300,
+    );
     await tester.tap(find.text('Kiểm thử các luồng hội viên'));
     await tester.pumpAndSettle();
     expect(find.text('Kiểm thử luồng hội viên'), findsOneWidget);
-    expect(find.text('Chọn Coach'), findsOneWidget);
   });
 
   testWidgets('login form validates locally and routes a Coach by role', (
@@ -90,9 +111,23 @@ void main() {
 
     expect(service.loginCalls, 1);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
+    expect(find.text('Yêu cầu chọn Coach'), findsOneWidget);
+    await tester.tap(find.text('Yêu cầu chọn Coach'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('UI06'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
     await tester.tap(find.text('Kiểm thử các luồng Coach'));
     await tester.pumpAndSettle();
     expect(find.text('Kiểm thử luồng Coach'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(CoachHomePage)))
+        .go('/member/features/coaching');
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachHomePage), findsOneWidget);
+    expect(find.byType(MemberHomePage), findsNothing);
   });
 
   testWidgets('password reset completes all three steps', (tester) async {

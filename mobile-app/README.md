@@ -49,6 +49,11 @@ chỉ kiểm thử được metadata cuộc gọi và URL ảnh. Chức năng AI
 trả 503 nếu backend chưa cấu hình dịch vụ tương ứng. Các biểu mẫu JSON là mẫu
 khởi đầu; mã UUID của Coach/Member/quan hệ/ảnh phải thay bằng mã thật.
 
+Trang chính Member và Coach có danh mục điều hướng theo vai trò. Các mục chưa
+được làm ở UI02–UI27 hiện mở trang giữ chỗ ghi mã task tương ứng, không gọi API
+và không được xem là tính năng đã hoàn thành. Khung JSON vẫn là công cụ phụ
+trong môi trường phát triển.
+
 ## Kiểm tra
 
 ```powershell

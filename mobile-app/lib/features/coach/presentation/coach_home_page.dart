@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
+import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 
 class CoachHomePage extends StatelessWidget {
@@ -10,22 +10,13 @@ class CoachHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Coach')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Không gian dành cho huấn luyện viên'),
-            if (FlowWorkbenchConfig.enabled)
-              FilledButton(
-                onPressed: () => context.push(AppRoutes.coachWorkbench),
-                child: const Text('Kiểm thử các luồng Coach'),
-              ),
-            TextButton(
-              onPressed: () => context.push(AppRoutes.profile),
-              child: const Text('Hồ sơ của tôi'),
-            ),
-          ],
-        ),
+      body: FeatureMenu(
+        heading: 'Không gian dành cho huấn luyện viên',
+        destinations: coachDestinations,
+        profilePath: AppRoutes.profile,
+        workbenchPath: FlowWorkbenchConfig.enabled
+            ? AppRoutes.coachWorkbench
+            : null,
       ),
     );
   }
