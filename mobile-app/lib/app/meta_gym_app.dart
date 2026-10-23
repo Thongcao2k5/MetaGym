@@ -24,6 +24,7 @@ import 'package:meta_gym_app/features/profile/presentation/password_reset_contro
 import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
+import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
@@ -48,6 +49,7 @@ class MetaGymApp extends StatefulWidget {
     this.coachNutritionService,
     this.memberSessionsService,
     this.coachSessionsService,
+    this.memberProgressService,
   });
 
   final SessionController? sessionController;
@@ -65,6 +67,7 @@ class MetaGymApp extends StatefulWidget {
   final CoachNutritionService? coachNutritionService;
   final MemberSessionsService? memberSessionsService;
   final CoachSessionsService? coachSessionsService;
+  final MemberProgressService? memberProgressService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -91,6 +94,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CoachNutritionService _coachNutritionService;
   late final MemberSessionsService _memberSessionsService;
   late final CoachSessionsService _coachSessionsService;
+  late final MemberProgressService _memberProgressService;
   late final GoRouter _router;
 
   @override
@@ -146,6 +150,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.memberSessionsService ?? MemberSessionsApi(_apiClient);
     _coachSessionsService =
         widget.coachSessionsService ?? CoachSessionsApi(_apiClient);
+    _memberProgressService =
+        widget.memberProgressService ?? MemberProgressApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -189,6 +195,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<CoachNutritionService>.value(value: _coachNutritionService),
         Provider<MemberSessionsService>.value(value: _memberSessionsService),
         Provider<CoachSessionsService>.value(value: _coachSessionsService),
+        Provider<MemberProgressService>.value(value: _memberProgressService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),

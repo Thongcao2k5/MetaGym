@@ -34,6 +34,9 @@ import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -72,6 +75,7 @@ void main() {
         memberTrainingService: _EmptyMemberTrainingService(),
         memberNutritionService: _EmptyMemberNutritionService(),
         memberSessionsService: _EmptyMemberSessionsService(),
+        memberProgressService: _EmptyMemberProgressService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -110,6 +114,13 @@ void main() {
     expect(find.byType(MemberSessionsPage), findsOneWidget);
     expect(find.text('Bạn chưa có buổi tập nào.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(MemberSessionsPage))).go('/member');
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/member/features/progress');
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberProgressPage), findsOneWidget);
+    expect(find.text('Chưa có số đo để vẽ biểu đồ.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberProgressPage))).go('/member');
     await tester.pumpAndSettle();
 
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -482,4 +493,17 @@ class _EmptyCoachSessionsService implements CoachSessionsService {
   @override
   Future<TrainingSession> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError('No session in this fixture');
+}
+
+class _EmptyMemberProgressService implements MemberProgressService {
+  @override
+  Future<ProgressSummary> getSummary() async => const ProgressSummary(
+    workoutCount: 0,
+    mealCount: 0,
+    progressPhotoCount: 0,
+  );
+
+  @override
+  Future<List<WeightPoint>> getCharts({DateTime? from, DateTime? to}) async =>
+      const [];
 }

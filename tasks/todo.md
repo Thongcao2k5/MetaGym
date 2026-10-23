@@ -526,9 +526,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI15 — Member xem tổng quan và biểu đồ
 
-- [ ] Tổng quan số liệu gần nhất và biểu đồ theo khoảng thời gian từ API tiến độ.
-- [ ] Có lọc khoảng ngày, trạng thái chưa có dữ liệu và test dữ liệu chuỗi thời gian.
+- [x] Tổng quan số liệu gần nhất và biểu đồ theo khoảng thời gian từ API tiến độ.
+- [x] Có lọc khoảng ngày, trạng thái chưa có dữ liệu và test dữ liệu chuỗi thời gian.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** thêm số đo rồi xem biểu đồ. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 91/91, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI16 — Member ghi nhật ký tập
 
