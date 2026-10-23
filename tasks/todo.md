@@ -588,9 +588,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI23 — Đã đọc, polling và gửi lại
 
-- [ ] Hội thoại tự làm mới bằng polling khi đang mở; cập nhật đã đọc và số tin chưa đọc.
-- [ ] Tin gửi lỗi có nút thử lại cùng `clientMessageId`; dừng polling khi rời trang.
+- [x] Hội thoại tự làm mới bằng polling khi đang mở; cập nhật đã đọc và số tin chưa đọc.
+- [x] Tin gửi lỗi có nút thử lại cùng `clientMessageId`; dừng polling khi rời trang.
 - **Phụ thuộc:** UI22. **Kiểm thử tay:** mất mạng tạm thời rồi gửi lại. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 119/119, `flutter analyze --no-pub` sạch và build web thành công. Test widget kiểm tra polling/dừng timer và gửi lại cùng ID; test adapter kiểm tra `read-state`. Chưa thử tay với hai tài khoản hoặc mất mạng thật.
 
 #### UI24 — Ảnh trong tin nhắn
 

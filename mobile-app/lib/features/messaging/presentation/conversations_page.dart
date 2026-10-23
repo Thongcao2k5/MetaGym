@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
@@ -129,14 +131,18 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       trailing: item.unreadCount > 0
                           ? Text('${item.unreadCount} tin chưa đọc')
                           : const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => ConversationDetailPage(
-                            conversation: item,
-                            service: _service!,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => ConversationDetailPage(
+                              conversation: item,
+                              service: _service!,
+                              currentUserId: widget.currentUserId,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                        if (mounted) _load();
+                      },
                     ),
                   ),
                 if (_hasMore)
@@ -154,10 +160,12 @@ class ConversationDetailPage extends StatefulWidget {
   const ConversationDetailPage({
     required this.conversation,
     required this.service,
+    required this.currentUserId,
     super.key,
   });
   final Conversation conversation;
   final MessagingService service;
+  final String currentUserId;
 
   @override
   State<ConversationDetailPage> createState() => _ConversationDetailPageState();
@@ -173,11 +181,15 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   String? _sendError;
   String? _draftMessageId;
   String? _draftContent;
+  String? _lastReadId;
+  Timer? _pollTimer;
+  bool _polling = false;
   int _page = 1;
   bool _hasMore = false;
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _textController.dispose();
     super.dispose();
   }
@@ -187,6 +199,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
+    });
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted) _refreshLatest();
     });
   }
 
@@ -206,6 +221,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           _page = 1;
           _hasMore = messages.length == 20;
         });
+        await _markLatestReceived(messages);
       }
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -213,6 +229,47 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       if (mounted) setState(() => _error = 'Không tải được tin nhắn.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _markLatestReceived(List<ChatMessage> messages) async {
+    for (final message in messages) {
+      if (message.senderId == widget.currentUserId) continue;
+      if (message.id == _lastReadId) return;
+      try {
+        await widget.service.markRead(
+          widget.conversation.relationshipId,
+          message.id,
+        );
+        _lastReadId = message.id;
+      } catch (_) {
+        // The next poll can retry this cursor without hiding the messages.
+      }
+      break;
+    }
+  }
+
+  Future<void> _refreshLatest() async {
+    if (_polling || _loading) return;
+    _polling = true;
+    try {
+      final latest = await widget.service.getMessages(
+        widget.conversation.relationshipId,
+        1,
+      );
+      if (!mounted) return;
+      final oldIds = _messages.map((item) => item.id).toSet();
+      setState(
+        () => _messages = [
+          ...latest.where((item) => !oldIds.contains(item.id)),
+          ..._messages,
+        ],
+      );
+      await _markLatestReceived(latest);
+    } catch (_) {
+      // Polling is best-effort; manual retry remains available.
+    } finally {
+      _polling = false;
     }
   }
 
@@ -340,6 +397,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
+                  ),
+                if (_sendError != null && _draftMessageId != null)
+                  TextButton(
+                    onPressed: _sending ? null : _send,
+                    child: const Text('Thử gửi lại'),
                   ),
                 Row(
                   children: [

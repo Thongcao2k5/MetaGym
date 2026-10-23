@@ -97,6 +97,53 @@ void main() {
     expect(service.messagePages, [1, 2]);
     expect(find.text('Tin cũ hơn'), findsOneWidget);
   });
+
+  testWidgets('marks received message read and stops polling after exit', (
+    tester,
+  ) async {
+    final service = _Fixture(active: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConversationsPage(service: service, currentUserId: 'member-1'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Coach coach-1'));
+    await tester.pumpAndSettle();
+    expect(service.readMessageIds, ['message-1']);
+    final before = service.messagePages.length;
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pump();
+    expect(service.messagePages.length, greaterThan(before));
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final afterExit = service.messagePages.length;
+    await tester.pump(const Duration(seconds: 11));
+    expect(service.messagePages.length, afterExit);
+  });
+
+  testWidgets('retries a failed text with the original client ID', (
+    tester,
+  ) async {
+    final service = _Fixture(active: true, failSendOnce: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConversationsPage(service: service, currentUserId: 'member-1'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Coach coach-1'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Xin chào Coach');
+    await tester.tap(find.text('Gửi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thử gửi lại'), findsOneWidget);
+    await tester.tap(find.text('Thử gửi lại'));
+    await tester.pumpAndSettle();
+    expect(service.sentIds, hasLength(2));
+    expect(service.sentIds[0], service.sentIds[1]);
+    expect(find.text('Xin chào Coach'), findsOneWidget);
+  });
 }
 
 class _Fixture implements MessagingService {
@@ -105,14 +152,18 @@ class _Fixture implements MessagingService {
     this.empty = false,
     this.active = false,
     this.fullFirstPage = false,
+    this.failSendOnce = false,
   });
   final bool failFirst;
   final bool empty;
   final bool active;
   final bool fullFirstPage;
+  final bool failSendOnce;
   int loads = 0;
   int sendCalls = 0;
   final messagePages = <int>[];
+  final readMessageIds = <String>[];
+  final sentIds = <String>[];
   final _pendingSend = Completer<ChatMessage>();
 
   void completeSend() => _pendingSend.complete(
@@ -142,7 +193,26 @@ class _Fixture implements MessagingService {
       ),
     );
     sendCalls++;
+    sentIds.add(clientMessageId);
+    if (failSendOnce) {
+      if (sendCalls == 1) throw StateError('offline');
+      return Future.value(
+        const ChatMessage(
+          id: 'sent-1',
+          senderId: 'member-1',
+          messageType: 'TEXT',
+          content: 'Xin chào Coach',
+          sentAt: '2026-10-23T08:01:00Z',
+        ),
+      );
+    }
     return _pendingSend.future;
+  }
+
+  @override
+  Future<void> markRead(String relationshipId, String messageId) async {
+    expect(relationshipId, 'relationship-1');
+    readMessageIds.add(messageId);
   }
 
   @override

@@ -28,6 +28,10 @@ void main() {
         'clientMessageId': id,
         'content': 'Xin chào',
       });
+      await api.markRead('relationship-1', 'received-1');
+      expect(adapter.request?.method, 'PATCH');
+      expect(adapter.request?.path, '/conversations/relationship-1/read-state');
+      expect(adapter.payload, {'messageId': 'received-1'});
     },
   );
 }
@@ -52,15 +56,20 @@ class _MessagingAdapter implements HttpClientAdapter {
     );
     return ResponseBody.fromString(
       jsonEncode({
-        'data': {
-          'id': 'message-1',
-          'senderId': 'member-1',
-          'messageType': 'TEXT',
-          'content': 'Xin chào',
-          'sentAt': '2026-10-23T08:00:00Z',
-        },
+        'data': options.method == 'PATCH'
+            ? {
+                'lastReadMessageId': 'received-1',
+                'lastReadAt': '2026-10-23T08:00:00Z',
+              }
+            : {
+                'id': 'message-1',
+                'senderId': 'member-1',
+                'messageType': 'TEXT',
+                'content': 'Xin chào',
+                'sentAt': '2026-10-23T08:00:00Z',
+              },
       }),
-      201,
+      options.method == 'PATCH' ? 200 : 201,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },

@@ -12,6 +12,7 @@ abstract interface class MessagingService {
     String content,
     String clientMessageId,
   );
+  Future<void> markRead(String relationshipId, String messageId);
 }
 
 String newClientMessageId() {
@@ -62,4 +63,13 @@ class MessagingApi implements MessagingService {
     },
     decode: ChatMessage.fromJson,
   )).data;
+
+  @override
+  Future<void> markRead(String relationshipId, String messageId) async {
+    await client.patch<Map<String, dynamic>>(
+      '/conversations/${Uri.encodeComponent(relationshipId)}/read-state',
+      body: {'messageId': messageId},
+      decode: (value) => Map<String, dynamic>.from(value as Map),
+    );
+  }
 }
