@@ -5,6 +5,8 @@
 > Ký hiệu **Một phần** nghĩa là backend API đã có nhưng Flutter, provider thật hoặc
 > kiểm thử end-to-end vẫn còn thiếu. Các phần còn lại được chia nhỏ tại
 > [`remaining-work-tasks.md`](./remaining-work-tasks.md).
+> Các nhận định trạng thái T01–T24 bên dưới là ảnh chụp tại mốc commit nêu trên,
+> không phản ánh toàn bộ code Flutter ngày 23/10. Phần UI mới ở cuối file.
 
 ## Giai đoạn 1 — Nền tảng
 
@@ -392,6 +394,216 @@
 - Backend route được gắn tập trung tại `backend/src/app.js`; các module nghiệp vụ nằm trong `backend/src/routes/`.
 - Backend có integration/unit test trong `backend/test/`, bao gồm auth, user, database, catalog, payment/coaching, training, progress, media, password reset và membership lifecycle.
 - Admin web gọi các API dashboard, user, Coach, gói, payment, quan hệ, gym và thiết bị tại `admin-web/src/main.js`.
-- Flutter hiện chỉ có màn hình khung tại `mobile-app/lib/main.dart`; vì vậy mọi tiêu chí cần giao diện Member/Coach vẫn để chưa hoàn thành.
+- Tại mốc đối chiếu `92ca738`, Flutter chỉ có màn hình khung tại `mobile-app/lib/main.dart`; nhận định này là lịch sử, không phải trạng thái hiện tại.
 - Các provider AI, email và RTC chỉ hoạt động khi có biến môi trường; chưa có bằng chứng thử nghiệm provider thật hoặc hai thiết bị.
+
+## Bổ sung 23/10/2026 — Task giao diện Flutter cơ bản để thử API
+
+Đây là phần mở rộng của kế hoạch MVP, **không thay thế** trạng thái T01–T24 ở
+trên. Mã `UI` chỉ áp dụng cho Member/Coach Flutter; Admin dùng web riêng. Mỗi
+task dưới đây tạo trang hoặc lát cắt nhỏ có điều hướng, dữ liệu API thật, trạng
+thái tải/rỗng/lỗi và test. Dùng giao diện Material tối giản, chưa làm design.
+Khung nhập JSON hiện tại chỉ là công cụ đối chiếu, không tính là trang đã xong.
+
+**Kiểm tra chung cho từng task:** `flutter test --no-pub` (test liên quan và
+toàn bộ), `flutter analyze --no-pub`; kiểm thử tay với backend demo khi chạy
+được. Nếu không có backend, báo rõ chỉ mới test bằng fake API. Mỗi task nên
+chạm khoảng 3–5 file: trang, service/controller, router và test; nếu lớn hơn,
+chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge.
+
+### Nền điều hướng và phần đã có
+
+#### UI01 — Điều hướng nghiệp vụ theo vai trò
+
+- [ ] Member/Coach có danh mục trang riêng; không cần mở khung JSON để đi tới màn hình nghiệp vụ.
+- [ ] Chặn truy cập sai vai trò, giữ nút quay lại và trạng thái phiên; test điều hướng hai vai trò.
+- **Phụ thuộc:** Không. **Phạm vi file:** `mobile-app/lib/app/`, hai trang home và test router. **Cỡ:** M.
+
+#### UI02 — Lịch sử và chi tiết thanh toán Member
+
+- [ ] Danh sách giao dịch, chi tiết, kết quả thanh toán và gói hiện tại dùng `/payments/me`, `/payments/:paymentId`, `/memberships/me`.
+- [ ] Có trạng thái chưa mua/chưa trả và thử lại khi lỗi; không phá luồng mua QR đã có.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** mua QR → xác nhận → xem lịch sử/chi tiết. **Cỡ:** M.
+
+#### UI03 — Thông tin gym và chi tiết thiết bị
+
+- [ ] Member/Coach xem thông tin, giờ mở cửa, nội quy; tìm/lọc và mở chi tiết/hướng dẫn thiết bị.
+- [ ] Thiết bị ẩn không hiển thị; trạng thái rỗng/lỗi rõ ràng.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** tìm thiết bị seed và mở chi tiết. **Cỡ:** M.
+
+**Checkpoint A:** UI01–UI03: điều hướng đúng vai trò; test/analyze và build đạt.
+
+### Quan hệ Member–Coach
+
+#### UI04 — Member xem Coach và gửi yêu cầu
+
+- [ ] Danh sách, chi tiết, suất trống Coach; biểu mẫu gửi yêu cầu có lời nhắn qua `/coaches` và `/coach-requests`.
+- [ ] Khóa nút khi gửi, hiển thị lỗi thiếu gói/đã có yêu cầu/hết suất; test các trạng thái.
+- **Phụ thuộc:** UI01–UI02. **Kiểm thử tay:** chọn Coach bằng tài khoản Member có gói. **Cỡ:** M.
+
+#### UI05 — Member theo dõi và kết thúc quan hệ
+
+- [ ] Trang yêu cầu chờ/lịch sử, hủy yêu cầu; Coach hiện tại/lịch sử và kết thúc kèm lý do.
+- [ ] Xác nhận thao tác kết thúc; giao diện làm mới đúng sau hủy hoặc kết thúc.
+- **Phụ thuộc:** UI04. **Kiểm thử tay:** gửi → hủy; gửi lại → được duyệt → kết thúc. **Cỡ:** M.
+
+#### UI06 — Coach xử lý yêu cầu
+
+- [ ] Danh sách, chi tiết yêu cầu; chấp nhận hoặc từ chối kèm lý do bắt buộc.
+- [ ] Sau quyết định, danh sách và số suất cập nhật; lỗi yêu cầu hết hiệu lực được hiển thị.
+- **Phụ thuộc:** UI04. **Kiểm thử tay:** Coach duyệt yêu cầu Member vừa gửi. **Cỡ:** M.
+
+#### UI07 — Coach xem Member và xin ngừng phụ trách
+
+- [ ] Danh sách/chi tiết Member đang phụ trách; gửi lý do và xem trạng thái yêu cầu ngừng phụ trách.
+- [ ] Member không còn thuộc quyền thì không giữ dữ liệu riêng trên màn hình.
+- **Khoảng trống:** lịch sử Member Coach từng phụ trách trong đặc tả chưa có API riêng; không dùng API Member để thay thế.
+- **Phụ thuộc:** UI06. **Kiểm thử tay:** duyệt → xem Member → gửi yêu cầu ngừng. **Cỡ:** M.
+
+**Checkpoint B:** UI04–UI07: Member chọn Coach → Coach duyệt → hai bên thấy quan hệ; test/analyze/build đạt.
+
+### Giáo trình, dinh dưỡng và lịch tập
+
+#### UI08 — Member xem giáo trình
+
+- [ ] Trang kế hoạch hiện hành/lịch sử; chi tiết ngày tập, bài tập và trạng thái công bố.
+- [ ] Không hiện bản nháp; có thông báo khi chưa được giao kế hoạch.
+- **Phụ thuộc:** UI06. **Kiểm thử tay:** Coach công bố, Member xem đúng bản. **Cỡ:** M.
+
+#### UI09 — Coach tạo và sửa giáo trình nháp
+
+- [ ] Danh sách kế hoạch theo Member; biểu mẫu tiêu đề, mục tiêu, ngày tập và bài tập cơ bản.
+- [ ] Tạo/sửa bản nháp, xem trước dữ liệu đã nhập; test validation tối thiểu.
+- **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo kế hoạch một ngày, một bài tập. **Cỡ:** M.
+
+#### UI10 — Coach công bố giáo trình
+
+- [ ] Từ chi tiết bản nháp có nút công bố kèm xác nhận; hiển thị trạng thái và phiên bản.
+- [ ] Sau công bố, bản cũ vào lịch sử và Member thấy bản mới; lỗi quan hệ hết hiệu lực rõ ràng.
+- **Phụ thuộc:** UI09. **Kiểm thử tay:** công bố hai phiên bản liên tiếp. **Cỡ:** S–M.
+
+#### UI11 — Member xem hướng dẫn dinh dưỡng
+
+- [ ] Trang hướng dẫn hiện hành và lịch sử qua API dinh dưỡng.
+- [ ] Hiển thị nội dung, ngày công bố và trạng thái chưa có hướng dẫn.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** xem hướng dẫn Coach đã công bố. **Cỡ:** S–M.
+
+#### UI12 — Coach tạo và công bố hướng dẫn dinh dưỡng
+
+- [ ] Theo từng Member, Coach xem danh sách, tạo/sửa nội dung và công bố.
+- [ ] Member chỉ thấy bản đã công bố; lỗi khi quan hệ không hoạt động được xử lý.
+- **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo → sửa → công bố → kiểm tra ở UI11. **Cỡ:** M.
+
+#### UI13 — Member xem lịch buổi tập
+
+- [ ] Danh sách lịch và chi tiết buổi tập, thời gian/ghi chú/trạng thái.
+- [ ] Có trạng thái chưa có lịch, làm mới và định dạng giờ địa phương.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** xem buổi Coach tạo. **Cỡ:** S–M.
+
+#### UI14 — Coach quản lý buổi tập
+
+- [ ] Tạo/sửa lịch cho Member; đổi trạng thái hoàn thành, vắng hoặc hủy theo API.
+- [ ] Kiểm tra thời gian và lý do hủy; sau cập nhật Member thấy trạng thái mới.
+- **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo → đổi lịch → hoàn thành/hủy. **Cỡ:** M.
+
+**Checkpoint C:** UI08–UI14: Coach giao giáo trình/dinh dưỡng/lịch → Member xem; test/analyze/build đạt.
+
+### Tiến độ và ảnh
+
+#### UI15 — Member xem tổng quan và biểu đồ
+
+- [ ] Tổng quan số liệu gần nhất và biểu đồ theo khoảng thời gian từ API tiến độ.
+- [ ] Có lọc khoảng ngày, trạng thái chưa có dữ liệu và test dữ liệu chuỗi thời gian.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** thêm số đo rồi xem biểu đồ. **Cỡ:** M.
+
+#### UI16 — Member ghi nhật ký tập
+
+- [ ] Danh sách, chi tiết tóm tắt, tạo và sửa nhật ký tập; chọn ngày, thời lượng, bài tập cơ bản.
+- [ ] Validation và lỗi quyền/quan hệ; danh sách cập nhật sau lưu.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** tạo → sửa → mở lại. **Cỡ:** M.
+
+#### UI17 — Member ghi nhật ký ăn
+
+- [ ] Danh sách, tạo/sửa bữa ăn với thời gian, tên, loại và calo tùy chọn.
+- [ ] Có trạng thái rỗng/lỗi và test dữ liệu nhập hợp lệ/không hợp lệ.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** tạo → sửa → mở lại. **Cỡ:** M.
+
+#### UI18 — Member cập nhật số đo
+
+- [ ] Lịch sử, thêm/sửa cân nặng và số đo cơ bản theo ngày.
+- [ ] Không gửi giá trị sai/âm; sau lưu UI15 làm mới được.
+- **Phụ thuộc:** UI15. **Kiểm thử tay:** thêm hai lần đo và đối chiếu biểu đồ. **Cỡ:** M.
+
+#### UI19 — Member tải và xem ảnh tiến trình
+
+- [ ] Chọn ảnh, tải multipart qua `/media/images`, tạo bản ghi ảnh tiến trình và xem ảnh qua URL có chữ ký.
+- [ ] Giới hạn loại/dung lượng, trạng thái đang tải/lỗi/thử lại; không xem được ảnh người khác.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** chọn ảnh thật → tải → mở lại ảnh. **Cỡ:** M; tách tiếp nếu vượt 5 file.
+
+#### UI20 — Coach xem tiến độ và gửi nhận xét
+
+- [ ] Từ chi tiết Member mở tổng quan, nhật ký, số đo, ảnh và nhận xét.
+- [ ] Gửi nhận xét theo Member hoặc một bản ghi; hết quan hệ thì mất quyền truy cập.
+- **Khoảng trống:** biểu đồ theo Member cho Coach trong đặc tả chưa có API riêng; tổng quan/số đo vẫn thử được.
+- **Phụ thuộc:** UI07, UI16–UI19. **Kiểm thử tay:** Member ghi → Coach xem/nhận xét → Member đọc. **Cỡ:** M; tách nếu vượt 5 file.
+
+**Checkpoint D:** UI15–UI20: Member ghi tiến độ → Coach nhận xét; test/analyze/build đạt.
+
+### Giao tiếp và AI
+
+#### UI21 — Danh sách cuộc trò chuyện
+
+- [ ] Member/Coach thấy các cuộc trò chuyện và số tin chưa đọc, mở đúng quan hệ.
+- [ ] Danh sách rỗng/lỗi, quan hệ kết thúc vẫn mở được lịch sử chỉ đọc.
+- **Phụ thuộc:** UI05–UI07. **Kiểm thử tay:** hai tài khoản cùng quan hệ mở hội thoại. **Cỡ:** S–M.
+
+#### UI22 — Chat văn bản cơ bản
+
+- [ ] Tải tin theo trang, gửi văn bản với `clientMessageId` ổn định; hiển thị tin mới.
+- [ ] Chặn gửi khi quan hệ không hoạt động; chống gửi trùng do chạm nhiều lần.
+- **Phụ thuộc:** UI21. **Kiểm thử tay:** Member gửi, Coach đọc và trả lời. **Cỡ:** M.
+
+#### UI23 — Đã đọc, polling và gửi lại
+
+- [ ] Hội thoại tự làm mới bằng polling khi đang mở; cập nhật đã đọc và số tin chưa đọc.
+- [ ] Tin gửi lỗi có nút thử lại cùng `clientMessageId`; dừng polling khi rời trang.
+- **Phụ thuộc:** UI22. **Kiểm thử tay:** mất mạng tạm thời rồi gửi lại. **Cỡ:** M.
+
+#### UI24 — Ảnh trong tin nhắn
+
+- [ ] Tái dùng upload ảnh UI19; gửi tin `IMAGE` và hiển thị ảnh qua URL có chữ ký.
+- [ ] Có trạng thái ảnh lỗi/hết hạn và thử tải lại; không hỗ trợ tệp khác.
+- **Phụ thuộc:** UI19, UI22. **Kiểm thử tay:** gửi và mở ảnh trên hai tài khoản. **Cỡ:** M.
+
+#### UI25 — Màn hình trạng thái và lịch sử cuộc gọi
+
+- [ ] Có trang lịch sử, tạo cuộc gọi, cập nhật trạng thái và màn hình đang gọi/đã kết thúc ở mức metadata API.
+- [ ] Nếu token/provider RTC chưa cấu hình, hiển thị rõ không thể kết nối; **không** giả làm cuộc gọi thoại/video thật.
+- **Phụ thuộc:** UI05–UI07. **Kiểm thử tay:** tạo bản ghi → cập nhật → xem lịch sử. **Cỡ:** M.
+
+#### UI26 — Danh sách và quản lý hội thoại AI
+
+- [ ] Member/Coach xem, tạo, đổi tên và xóa hội thoại AI của chính mình.
+- [ ] Có xác nhận xóa, trạng thái rỗng/lỗi và không lộ hội thoại người khác.
+- **Phụ thuộc:** UI01. **Kiểm thử tay:** tạo → đổi tên → xóa. **Cỡ:** M.
+
+#### UI27 — Hỏi đáp AI cơ bản
+
+- [ ] Trang tin nhắn AI, gửi câu hỏi với `clientRequestId` ổn định, hiển thị câu trả lời và cảnh báo tham khảo.
+- [ ] API 503/timeout có thông báo và thử lại; không hiển thị phản hồi dang dở như thành công.
+- **Phụ thuộc:** UI26. **Kiểm thử tay:** hỏi thật khi provider sẵn; nếu chưa, xác nhận 503. **Cỡ:** M.
+
+**Checkpoint E:** UI21–UI27: chat/AI xử lý lỗi tốt; call chỉ metadata nếu chưa có RTC; test/analyze/build đạt.
+
+### Tích hợp
+
+#### UI28 — Kiểm thử liên thông và dọn khung tạm
+
+- [ ] Chạy kịch bản Member mua gói → chọn Coach → Coach giao kế hoạch → Member ghi tiến độ → Coach nhận xét/chat.
+- [ ] Mọi chức năng cơ bản đi được qua trang nghiệp vụ; khung JSON chỉ còn chế độ developer hoặc được gỡ sau khi đối chiếu độ phủ.
+- **Phụ thuộc:** UI01–UI27. **Kiểm thử:** hai tài khoản demo, backend thật, toàn bộ test/analyze/build và ma trận quyền. **Cỡ:** M; chia lỗi phát hiện thành task riêng.
+
+**Ngoài phạm vi đợt UI cơ bản:** tích hợp RTC thoại/video thật trên hai thiết
+bị, email provider thật, thiết kế hình ảnh cuối và phát hành production. Các
+phần này vẫn thuộc kế hoạch MVP chung, không được đánh dấu hoàn thành nhờ UI25.
 

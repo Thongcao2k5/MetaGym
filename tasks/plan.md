@@ -141,3 +141,40 @@ Mỗi module phải có một người sở hữu và một người review. Kh�
 - Ba thử nghiệm email, AI và voice/video có kết quả.
 - `tasks/todo.md` được dùng làm danh sách công việc chung.
 
+## Bổ sung 23/10/2026 — Giao diện Flutter cơ bản để thử API
+
+Phần này bổ sung cho kế hoạch MVP phía trên, không thay đổi trạng thái các task
+cũ. Danh sách thực hiện chi tiết mang mã `UI01`–`UI28` nằm ở cuối
+[`todo.md`](./todo.md). Phạm vi chỉ là app Flutter Member/Coach; Admin tiếp tục
+dùng `admin-web`. Khung JSON trên nhánh `codex/functional-ui-scaffold` là công
+cụ thử API tạm thời, **không được xem là trang nghiệp vụ hoàn chỉnh**.
+
+**Quyết định triển khai:** Mỗi trang dùng danh sách/chi tiết/biểu mẫu tối giản,
+gọi API qua `ApiClient` hiện có; có tải, rỗng, lỗi, thử lại và chống gửi lặp.
+Không làm màu sắc, hình ảnh thương hiệu, animation hoặc bố cục cuối. Mỗi task
+chỉ hoàn thành khi widget/controller test đạt và kiểm thử thủ công với backend
+demo nếu môi trường sẵn sàng. Nếu backend chưa chạy, ghi rõ `chưa xác nhận E2E`.
+
+**Thứ tự phụ thuộc:** UI01 điều hướng → UI04–UI07 quan hệ Coach → UI08–UI14
+giáo trình/dinh dưỡng/lịch và UI15–UI20 tiến độ → UI21–UI25 giao tiếp;
+UI26–UI27 AI độc lập sau UI01. UI02–UI03 có thể làm ngay sau UI01. UI28 là
+kiểm thử liên thông sau toàn bộ trang cơ bản.
+
+**Checkpoint:** Sau UI03 kiểm tra nền điều hướng; sau UI07 kiểm tra Member chọn
+Coach → Coach duyệt; sau UI14 kiểm tra Coach giao kế hoạch → Member xem; sau
+UI20 kiểm tra Member ghi tiến độ → Coach nhận xét; sau UI27 kiểm tra giao tiếp
+và xử lý dịch vụ ngoài không khả dụng. Mỗi checkpoint chạy toàn bộ `flutter
+test`, `flutter analyze` và build web/Android phù hợp.
+
+**Ranh giới:** UI25 chỉ thử API metadata và trạng thái cuộc gọi. Gọi thoại/video
+trực tiếp cần provider/SDK và thử trên hai thiết bị — đây là công việc tích hợp
+riêng, không đánh dấu hoàn thành nhờ khung API. UI19/UI24 bao gồm chọn và tải ảnh
+multipart; không dùng ảnh giả để đánh dấu luồng hoàn thành. Thiết kế cuối cùng
+và rà soát UX chuyên sâu làm sau đợt kiểm thử API này.
+
+**Khoảng trống API cần quyết định khi tới UI07/UI20:** đặc tả có lịch sử Member
+Coach từng phụ trách và biểu đồ tiến độ theo từng Member cho Coach, nhưng route
+hiện tại chỉ có danh sách quan hệ `ACTIVE`/`PAUSED` và tổng quan tiến độ. Không
+tự hiển thị dữ liệu riêng qua API Member hoặc đánh dấu hai màn hình đó xong;
+nếu vẫn cần, tạo task backend nhỏ bổ sung contract/quyền trước khi làm UI.
+
