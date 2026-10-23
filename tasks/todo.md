@@ -616,9 +616,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI27 — Hỏi đáp AI cơ bản
 
-- [ ] Trang tin nhắn AI, gửi câu hỏi với `clientRequestId` ổn định, hiển thị câu trả lời và cảnh báo tham khảo.
-- [ ] API 503/timeout có thông báo và thử lại; không hiển thị phản hồi dang dở như thành công.
+- [x] Trang tin nhắn AI, gửi câu hỏi với `clientRequestId` ổn định, hiển thị câu trả lời và cảnh báo tham khảo.
+- [x] API 503/timeout có thông báo và thử lại; không hiển thị phản hồi dang dở như thành công.
 - **Phụ thuộc:** UI26. **Kiểm thử tay:** hỏi thật khi provider sẵn; nếu chưa, xác nhận 503. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 136/136, `flutter analyze --no-pub` sạch và build web thành công. Test widget kiểm tra gửi lại cùng ID, HTTP 503 và trạng thái `PROCESSING`/`FAILED`; test adapter kiểm tra payload và HTTP 202. Khi backend báo `FAILED`, thử lại dùng ID mới theo ngữ nghĩa idempotency. Chưa hỏi provider thật hoặc thử 503 với backend đang chạy.
 
 **Checkpoint E:** UI21–UI27: chat/AI xử lý lỗi tốt; call chỉ metadata nếu chưa có RTC; test/analyze/build đạt.
 

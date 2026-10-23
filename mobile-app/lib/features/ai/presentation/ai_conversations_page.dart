@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
+import 'package:meta_gym_app/features/ai/presentation/ai_messages_page.dart';
 import 'package:provider/provider.dart';
 
 class AiConversationsPage extends StatefulWidget {
@@ -233,11 +234,9 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                       subtitle: Text(item.updatedAt),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => Scaffold(
-                            appBar: AppBar(title: Text(item.title)),
-                            body: const Center(
-                              child: Text('Hỏi đáp AI sẽ có ở UI27.'),
-                            ),
+                          builder: (_) => AiMessagesPage(
+                            service: _service!,
+                            conversation: item,
                           ),
                         ),
                       ),

@@ -1,11 +1,18 @@
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
+import 'package:meta_gym_app/features/ai/domain/ai_message.dart';
 
 abstract interface class AiService {
   Future<List<AiConversation>> getConversations(int page);
   Future<AiConversation> create();
   Future<AiConversation> rename(String id, String title);
   Future<void> delete(String id);
+  Future<List<AiMessage>> getMessages(String conversationId, int page);
+  Future<AiAnswerResult> sendQuestion(
+    String conversationId,
+    String content,
+    String clientRequestId,
+  );
 }
 
 class AiApi implements AiService {
@@ -43,4 +50,23 @@ class AiApi implements AiService {
       decode: (value) => Map<String, dynamic>.from(value as Map),
     );
   }
+
+  @override
+  Future<List<AiMessage>> getMessages(String conversationId, int page) async =>
+      (await client.get<List<AiMessage>>(
+        '/ai-conversations/${Uri.encodeComponent(conversationId)}/messages',
+        queryParameters: {'page': page, 'pageSize': 20},
+        decode: (value) => (value as List).map(AiMessage.fromJson).toList(),
+      )).data;
+
+  @override
+  Future<AiAnswerResult> sendQuestion(
+    String conversationId,
+    String content,
+    String clientRequestId,
+  ) async => (await client.post<AiAnswerResult>(
+    '/ai-conversations/${Uri.encodeComponent(conversationId)}/messages',
+    body: {'content': content, 'clientRequestId': clientRequestId},
+    decode: AiAnswerResult.fromJson,
+  )).data;
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
+import 'package:meta_gym_app/features/ai/domain/ai_message.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
 
 void main() {
@@ -50,14 +52,161 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Bạn chưa có hội thoại AI nào.'), findsOneWidget);
   });
+
+  testWidgets('retries the AI question with one stable request ID', (
+    tester,
+  ) async {
+    final service = _AiFixture(failAnswerOnce: true);
+    service.conversation = const AiConversation(
+      id: 'ai-1',
+      title: 'Tập luyện',
+      createdAt: '2026-10-23T08:00:00Z',
+      updatedAt: '2026-10-23T08:00:00Z',
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AiConversationsPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tập luyện'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('chỉ để tham khảo'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'Tôi nên tập gì?');
+    await tester.tap(find.text('Hỏi AI'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thử lại câu hỏi'), findsOneWidget);
+    await tester.tap(find.text('Thử lại câu hỏi'));
+    await tester.pumpAndSettle();
+    expect(service.requestIds, hasLength(2));
+    expect(service.requestIds[0], service.requestIds[1]);
+    expect(find.text('Tập nhẹ hôm nay.'), findsOneWidget);
+  });
+
+  testWidgets('does not present a processing reply as completed', (
+    tester,
+  ) async {
+    final service = _AiFixture(processing: true);
+    service.conversation = const AiConversation(
+      id: 'ai-1',
+      title: 'Tập luyện',
+      createdAt: '2026-10-23T08:00:00Z',
+      updatedAt: '2026-10-23T08:00:00Z',
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AiConversationsPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tập luyện'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Tôi nên tập gì?');
+    await tester.tap(find.text('Hỏi AI'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('đang xử lý'), findsOneWidget);
+    expect(find.text('Tập nhẹ hôm nay.'), findsNothing);
+  });
+
+  testWidgets('explains unavailable AI provider and offers retry', (
+    tester,
+  ) async {
+    final service = _AiFixture(providerUnavailable: true);
+    service.conversation = const AiConversation(
+      id: 'ai-1',
+      title: 'Tập luyện',
+      createdAt: '2026-10-23T08:00:00Z',
+      updatedAt: '2026-10-23T08:00:00Z',
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AiConversationsPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tập luyện'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Tôi nên tập gì?');
+    await tester.tap(find.text('Hỏi AI'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Dịch vụ AI chưa sẵn sàng'), findsOneWidget);
+    expect(find.text('Thử lại câu hỏi'), findsOneWidget);
+  });
+
+  testWidgets('uses a new request ID after backend marks the old one failed', (
+    tester,
+  ) async {
+    final service = _AiFixture(failedResultOnce: true);
+    service.conversation = const AiConversation(
+      id: 'ai-1',
+      title: 'Tập luyện',
+      createdAt: '2026-10-23T08:00:00Z',
+      updatedAt: '2026-10-23T08:00:00Z',
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AiConversationsPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tập luyện'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Tôi nên tập gì?');
+    await tester.tap(find.text('Hỏi AI'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('đã thất bại'), findsOneWidget);
+    await tester.tap(find.text('Thử lại câu hỏi'));
+    await tester.pumpAndSettle();
+    expect(service.requestIds, hasLength(2));
+    expect(service.requestIds[0], isNot(service.requestIds[1]));
+    expect(find.text('Tập nhẹ hôm nay.'), findsOneWidget);
+  });
 }
 
 class _AiFixture implements AiService {
-  _AiFixture({this.failFirst = false});
+  _AiFixture({
+    this.failFirst = false,
+    this.failAnswerOnce = false,
+    this.processing = false,
+    this.providerUnavailable = false,
+    this.failedResultOnce = false,
+  });
   final bool failFirst;
+  final bool failAnswerOnce;
+  final bool processing;
+  final bool providerUnavailable;
+  final bool failedResultOnce;
   AiConversation? conversation;
   bool deleted = false;
   int loads = 0;
+  final requestIds = <String>[];
+
+  @override
+  Future<List<AiMessage>> getMessages(String conversationId, int page) async =>
+      [];
+
+  @override
+  Future<AiAnswerResult> sendQuestion(
+    String conversationId,
+    String content,
+    String clientRequestId,
+  ) async {
+    requestIds.add(clientRequestId);
+    if (providerUnavailable) {
+      throw const ApiException(
+        kind: ApiExceptionKind.server,
+        statusCode: 503,
+        message: 'Máy chủ đang gặp sự cố.',
+      );
+    }
+    if (failedResultOnce && requestIds.length == 1) {
+      return const AiAnswerResult(requestId: 'request-1', status: 'FAILED');
+    }
+    if (failAnswerOnce && requestIds.length == 1) throw StateError('offline');
+    return AiAnswerResult(
+      requestId: 'request-1',
+      status: processing ? 'PROCESSING' : 'COMPLETED',
+      reply: processing
+          ? null
+          : const AiReply(
+              id: 'reply-1',
+              content: 'Tập nhẹ hôm nay.',
+              createdAt: '2026-10-23T08:02:00Z',
+            ),
+    );
+  }
 
   @override
   Future<List<AiConversation>> getConversations(int page) async {
