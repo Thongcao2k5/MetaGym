@@ -480,9 +480,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI09 — Coach tạo và sửa giáo trình nháp
 
-- [ ] Danh sách kế hoạch theo Member; biểu mẫu tiêu đề, mục tiêu, ngày tập và bài tập cơ bản.
-- [ ] Tạo/sửa bản nháp, xem trước dữ liệu đã nhập; test validation tối thiểu.
+- [x] Danh sách kế hoạch theo Member; biểu mẫu tiêu đề, mục tiêu, ngày tập và bài tập cơ bản.
+- [x] Tạo/sửa bản nháp, xem trước dữ liệu đã nhập; test validation tối thiểu.
 - **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo kế hoạch một ngày, một bài tập. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 74/74, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI10 — Coach công bố giáo trình
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
+import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
@@ -21,6 +22,8 @@ import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
+import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -119,6 +122,7 @@ void main() {
         authService: service,
         coachRequestsService: _EmptyCoachRequestsService(),
         coachMembersService: _EmptyCoachMembersService(),
+        coachTrainingService: _EmptyCoachTrainingService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -153,6 +157,13 @@ void main() {
     await tester.tap(find.text('Hội viên của tôi'));
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
+    expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Giáo trình'), 250);
+    await tester.tap(find.text('Giáo trình'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachTrainingPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -346,5 +357,28 @@ class _EmptyMemberTrainingService implements MemberTrainingService {
 
   @override
   Future<TrainingPlan> getPlan(String id) =>
+      throw UnimplementedError('No plan in this fixture');
+}
+
+class _EmptyCoachTrainingService implements CoachTrainingService {
+  @override
+  Future<List<CoachMemberSummary>> getMembers() async => const [];
+
+  @override
+  Future<List<CatalogItem>> getExercises() async => const [];
+
+  @override
+  Future<List<TrainingPlan>> getPlans(String memberId) async => const [];
+
+  @override
+  Future<TrainingPlan> getPlan(String id) =>
+      throw UnimplementedError('No plan in this fixture');
+
+  @override
+  Future<TrainingPlan> create(String memberId, Map<String, Object?> payload) =>
+      throw UnimplementedError('No member in this fixture');
+
+  @override
+  Future<TrainingPlan> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError('No plan in this fixture');
 }

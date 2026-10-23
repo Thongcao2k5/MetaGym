@@ -23,6 +23,7 @@ import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
+import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
@@ -38,6 +39,7 @@ class MetaGymApp extends StatefulWidget {
     this.coachRequestsService,
     this.coachMembersService,
     this.memberTrainingService,
+    this.coachTrainingService,
   });
 
   final SessionController? sessionController;
@@ -50,6 +52,7 @@ class MetaGymApp extends StatefulWidget {
   final CoachRequestsService? coachRequestsService;
   final CoachMembersService? coachMembersService;
   final MemberTrainingService? memberTrainingService;
+  final CoachTrainingService? coachTrainingService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -71,6 +74,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CoachRequestsService _coachRequestsService;
   late final CoachMembersService _coachMembersService;
   late final MemberTrainingService _memberTrainingService;
+  late final CoachTrainingService _coachTrainingService;
   late final GoRouter _router;
 
   @override
@@ -116,6 +120,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.coachMembersService ?? CoachMembersApi(_apiClient);
     _memberTrainingService =
         widget.memberTrainingService ?? MemberTrainingApi(_apiClient);
+    _coachTrainingService =
+        widget.coachTrainingService ?? CoachTrainingApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -154,6 +160,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<CoachRequestsService>.value(value: _coachRequestsService),
         Provider<CoachMembersService>.value(value: _coachMembersService),
         Provider<MemberTrainingService>.value(value: _memberTrainingService),
+        Provider<CoachTrainingService>.value(value: _coachTrainingService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),
