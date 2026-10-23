@@ -22,6 +22,7 @@ import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
+import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
@@ -36,6 +37,7 @@ class MetaGymApp extends StatefulWidget {
     this.coachSelectionService,
     this.coachRequestsService,
     this.coachMembersService,
+    this.memberTrainingService,
   });
 
   final SessionController? sessionController;
@@ -47,6 +49,7 @@ class MetaGymApp extends StatefulWidget {
   final CoachSelectionService? coachSelectionService;
   final CoachRequestsService? coachRequestsService;
   final CoachMembersService? coachMembersService;
+  final MemberTrainingService? memberTrainingService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -67,6 +70,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CoachSelectionService _coachSelectionService;
   late final CoachRequestsService _coachRequestsService;
   late final CoachMembersService _coachMembersService;
+  late final MemberTrainingService _memberTrainingService;
   late final GoRouter _router;
 
   @override
@@ -110,6 +114,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.coachRequestsService ?? CoachRequestsApi(_apiClient);
     _coachMembersService =
         widget.coachMembersService ?? CoachMembersApi(_apiClient);
+    _memberTrainingService =
+        widget.memberTrainingService ?? MemberTrainingApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -147,6 +153,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<CoachSelectionService>.value(value: _coachSelectionService),
         Provider<CoachRequestsService>.value(value: _coachRequestsService),
         Provider<CoachMembersService>.value(value: _coachMembersService),
+        Provider<MemberTrainingService>.value(value: _memberTrainingService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),

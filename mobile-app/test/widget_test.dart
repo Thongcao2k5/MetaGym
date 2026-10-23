@@ -18,6 +18,9 @@ import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
+import 'package:meta_gym_app/features/training/data/member_training_service.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -53,6 +56,7 @@ void main() {
       MetaGymApp(
         sessionController: controller,
         coachSelectionService: _EmptyCoachSelectionService(),
+        memberTrainingService: _EmptyMemberTrainingService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -69,10 +73,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
 
+    await tester.scrollUntilVisible(find.text('Giáo trình'), 250);
+    await tester.tap(find.text('Giáo trình'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberTrainingPage), findsOneWidget);
+    expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/coach/features/requests');
     await tester.pumpAndSettle();
-    expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
+    expect(find.byType(MemberHomePage), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
 
     await tester.scrollUntilVisible(
@@ -323,4 +335,16 @@ class _EmptyCoachMembersService implements CoachMembersService {
   @override
   Future<void> requestTermination(String relationshipId, String reason) =>
       throw UnimplementedError('No relationship in this fixture');
+}
+
+class _EmptyMemberTrainingService implements MemberTrainingService {
+  @override
+  Future<TrainingPlan?> getActive() async => null;
+
+  @override
+  Future<List<TrainingPlan>> getHistory() async => const [];
+
+  @override
+  Future<TrainingPlan> getPlan(String id) =>
+      throw UnimplementedError('No plan in this fixture');
 }

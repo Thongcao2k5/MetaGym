@@ -473,9 +473,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI08 — Member xem giáo trình
 
-- [ ] Trang kế hoạch hiện hành/lịch sử; chi tiết ngày tập, bài tập và trạng thái công bố.
-- [ ] Không hiện bản nháp; có thông báo khi chưa được giao kế hoạch.
+- [x] Trang kế hoạch hiện hành/lịch sử; chi tiết ngày tập, bài tập và trạng thái công bố.
+- [x] Không hiện bản nháp; có thông báo khi chưa được giao kế hoạch.
 - **Phụ thuộc:** UI06. **Kiểm thử tay:** Coach công bố, Member xem đúng bản. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 72/72, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với Coach/Member và backend đang chạy.
 
 #### UI09 — Coach tạo và sửa giáo trình nháp
 
