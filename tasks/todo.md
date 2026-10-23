@@ -554,9 +554,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI19 — Member tải và xem ảnh tiến trình
 
-- [ ] Chọn ảnh, tải multipart qua `/media/images`, tạo bản ghi ảnh tiến trình và xem ảnh qua URL có chữ ký.
-- [ ] Giới hạn loại/dung lượng, trạng thái đang tải/lỗi/thử lại; không xem được ảnh người khác.
+- [x] Chọn ảnh, tải byte thô qua `/media/images` theo hợp đồng backend hiện tại, tạo bản ghi ảnh tiến trình và xem ảnh qua URL có chữ ký.
+- [x] Giới hạn loại/dung lượng, trạng thái đang tải/lỗi/thử lại; quyền cấp URL ảnh được backend kiểm tra theo chủ sở hữu/quan hệ Coach.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** chọn ảnh thật → tải → mở lại ảnh. **Cỡ:** M; tách tiếp nếu vượt 5 file.
+- **Bằng chứng:** `flutter test --no-pub` 105/105, `flutter analyze --no-pub` sạch và build web thành công. API `/media/images` hiện nhận `image/png`/`image/jpeg` dạng raw body, **không phải multipart** như mô tả ban đầu. Chưa kiểm thử tay ảnh thật với backend đang chạy.
 
 #### UI20 — Coach xem tiến độ và gửi nhận xét
 

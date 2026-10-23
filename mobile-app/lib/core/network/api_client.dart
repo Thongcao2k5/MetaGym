@@ -54,6 +54,18 @@ class ApiClient {
   final ApiAccessTokenProvider? _accessTokenProvider;
   final ApiSessionExpiredCallback? _onSessionExpired;
 
+  Uri resolveServerPath(String path) {
+    final uri = Uri.parse(path);
+    if (uri.hasScheme || uri.hasAuthority || !path.startsWith('/')) {
+      throw ArgumentError.value(
+        path,
+        'path',
+        'Cần đường dẫn tương đối cùng máy chủ',
+      );
+    }
+    return Uri.parse(_dio.options.baseUrl).resolveUri(uri);
+  }
+
   Future<ApiResult<T>> get<T>(
     String path, {
     required ApiDecoder<T> decode,

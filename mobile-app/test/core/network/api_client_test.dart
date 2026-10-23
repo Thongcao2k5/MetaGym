@@ -42,6 +42,17 @@ void main() {
       expect(request.contentType, Headers.jsonContentType);
     });
 
+    test('resolves signed media paths only on the configured API host', () {
+      expect(
+        client.resolveServerPath('/api/v1/media/images/id?signature=abc').host,
+        '127.0.0.1',
+      );
+      expect(
+        () => client.resolveServerPath('https://other.test/image'),
+        throwsArgumentError,
+      );
+    });
+
     test('decodes a successful API envelope and pagination', () async {
       adapter.respond(
         statusCode: 200,

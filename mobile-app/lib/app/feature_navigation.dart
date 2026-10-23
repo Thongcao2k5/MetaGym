@@ -68,6 +68,12 @@ const memberDestinations = <FeatureDestination>[
     'Tiến độ',
   ),
   FeatureDestination(
+    'Ảnh tiến trình',
+    '/member/features/photos',
+    'UI19',
+    'Tiến độ',
+  ),
+  FeatureDestination(
     'Tin nhắn',
     '/member/features/messages',
     'UI21–UI24',

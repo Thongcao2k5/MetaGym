@@ -46,6 +46,9 @@ import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dar
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -88,6 +91,7 @@ void main() {
         memberWorkoutService: _EmptyMemberWorkoutService(),
         memberMealService: _EmptyMemberMealService(),
         memberMeasurementService: _EmptyMemberMeasurementService(),
+        memberPhotoService: _EmptyMemberPhotoService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -155,6 +159,13 @@ void main() {
     expect(find.text('Bạn chưa có số đo nào.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(MemberMeasurementPage)))
         .go('/member');
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/member/features/photos');
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberPhotoPage), findsOneWidget);
+    expect(find.text('Bạn chưa có ảnh tiến trình.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberPhotoPage))).go('/member');
     await tester.pumpAndSettle();
 
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -573,4 +584,17 @@ class _EmptyMemberMeasurementService implements MemberMeasurementService {
   @override
   Future<BodyMeasurement> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError();
+}
+
+class _EmptyMemberPhotoService implements MemberPhotoService {
+  @override
+  Future<List<ProgressPhoto>> getPage(int page) async => const [];
+  @override
+  Future<String> upload(SelectedProgressImage image) =>
+      throw UnimplementedError();
+  @override
+  Future<ProgressPhoto> create(Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<Uri> getAccessUrl(String mediaId) => throw UnimplementedError();
 }
