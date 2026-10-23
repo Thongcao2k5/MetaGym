@@ -454,9 +454,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI06 — Coach xử lý yêu cầu
 
-- [ ] Danh sách, chi tiết yêu cầu; chấp nhận hoặc từ chối kèm lý do bắt buộc.
-- [ ] Sau quyết định, danh sách và số suất cập nhật; lỗi yêu cầu hết hiệu lực được hiển thị.
+- [x] Danh sách, chi tiết yêu cầu; chấp nhận hoặc từ chối kèm lý do bắt buộc.
+- [x] Sau quyết định, danh sách và số suất cập nhật; lỗi yêu cầu hết hiệu lực được hiển thị.
 - **Phụ thuộc:** UI04. **Kiểm thử tay:** Coach duyệt yêu cầu Member vừa gửi. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 65/65, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với hai tài khoản Member/Coach và backend đang chạy.
 
 #### UI07 — Coach xem Member và xin ngừng phụ trách
 

@@ -5,7 +5,10 @@ import 'package:meta_gym_app/app/meta_gym_app.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
@@ -96,7 +99,11 @@ void main() {
       const AuthSession(accessToken: 'coach-token', user: coach),
     );
     await tester.pumpWidget(
-      MetaGymApp(sessionController: controller, authService: service),
+      MetaGymApp(
+        sessionController: controller,
+        authService: service,
+        coachRequestsService: _EmptyCoachRequestsService(),
+      ),
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Đăng nhập'));
@@ -123,7 +130,8 @@ void main() {
     expect(find.text('Yêu cầu chọn Coach'), findsOneWidget);
     await tester.tap(find.text('Yêu cầu chọn Coach'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('UI06'), findsOneWidget);
+    expect(find.byType(CoachRequestsPage), findsOneWidget);
+    expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
@@ -266,4 +274,26 @@ class _EmptyCoachSelectionService implements CoachSelectionService {
   @override
   Future<CoachRequest> sendRequest(String coachId, String? message) =>
       throw UnimplementedError('No coach in this fixture');
+}
+
+class _EmptyCoachRequestsService implements CoachRequestsService {
+  @override
+  Future<List<CoachIncomingRequest>> getRequests() async => const [];
+
+  @override
+  Future<CoachProfile> getCoach(String id) async => const CoachProfile(
+    id: 'coach-1',
+    fullName: 'Coach Demo',
+    memberLimit: 1,
+    usedSlots: 0,
+    availableSlots: 1,
+  );
+
+  @override
+  Future<CoachIncomingRequest> getRequest(String requestId) =>
+      throw UnimplementedError('No request in this fixture');
+
+  @override
+  Future<void> decide(String id, String decision, {String? reason}) =>
+      throw UnimplementedError('No request in this fixture');
 }

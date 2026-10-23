@@ -13,6 +13,7 @@ import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/presentation/catalog_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
 import 'package:meta_gym_app/features/membership/data/membership_api.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
@@ -32,6 +33,7 @@ class MetaGymApp extends StatefulWidget {
     this.catalogService,
     this.membershipService,
     this.coachSelectionService,
+    this.coachRequestsService,
   });
 
   final SessionController? sessionController;
@@ -41,6 +43,7 @@ class MetaGymApp extends StatefulWidget {
   final CatalogService? catalogService;
   final MembershipService? membershipService;
   final CoachSelectionService? coachSelectionService;
+  final CoachRequestsService? coachRequestsService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -59,6 +62,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final MembershipService _membershipService;
   late final MembershipController _membershipController;
   late final CoachSelectionService _coachSelectionService;
+  late final CoachRequestsService _coachRequestsService;
   late final GoRouter _router;
 
   @override
@@ -98,6 +102,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _membershipController = MembershipController(_membershipService);
     _coachSelectionService =
         widget.coachSelectionService ?? CoachSelectionApi(_apiClient);
+    _coachRequestsService =
+        widget.coachRequestsService ?? CoachRequestsApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -133,6 +139,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         ),
         Provider<MembershipService>.value(value: _membershipService),
         Provider<CoachSelectionService>.value(value: _coachSelectionService),
+        Provider<CoachRequestsService>.value(value: _coachRequestsService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),
