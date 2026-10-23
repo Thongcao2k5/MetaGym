@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
@@ -40,7 +43,12 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(MetaGymApp(sessionController: controller));
+    await tester.pumpWidget(
+      MetaGymApp(
+        sessionController: controller,
+        coachSelectionService: _EmptyCoachSelectionService(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
@@ -49,7 +57,8 @@ void main() {
     await tester.tap(find.text('Chọn Coach'));
     await tester.pumpAndSettle();
     expect(find.text('Chọn Coach', findRichText: true), findsWidgets);
-    expect(find.textContaining('UI04'), findsOneWidget);
+    expect(find.byType(CoachSelectionPage), findsOneWidget);
+    expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
@@ -244,4 +253,17 @@ class _MemoryTokenStorage implements TokenStorage {
 
   @override
   Future<void> write(String token) async => value = token;
+}
+
+class _EmptyCoachSelectionService implements CoachSelectionService {
+  @override
+  Future<List<CoachProfile>> getCoaches() async => const [];
+
+  @override
+  Future<CoachProfile> getCoach(String id) =>
+      throw UnimplementedError('No coach in this fixture');
+
+  @override
+  Future<CoachRequest> sendRequest(String coachId, String? message) =>
+      throw UnimplementedError('No coach in this fixture');
 }

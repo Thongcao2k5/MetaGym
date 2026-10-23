@@ -440,9 +440,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI04 — Member xem Coach và gửi yêu cầu
 
-- [ ] Danh sách, chi tiết, suất trống Coach; biểu mẫu gửi yêu cầu có lời nhắn qua `/coaches` và `/coach-requests`.
-- [ ] Khóa nút khi gửi, hiển thị lỗi thiếu gói/đã có yêu cầu/hết suất; test các trạng thái.
+- [x] Danh sách, chi tiết, suất trống Coach; biểu mẫu gửi yêu cầu có lời nhắn qua `/coaches` và `/coach-requests`.
+- [x] Khóa nút khi gửi, hiển thị lỗi thiếu gói/đã có yêu cầu/hết suất; test các trạng thái.
 - **Phụ thuộc:** UI01–UI02. **Kiểm thử tay:** chọn Coach bằng tài khoản Member có gói. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 57/57, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend và tài khoản Member có gói đang chạy.
 
 #### UI05 — Member theo dõi và kết thúc quan hệ
 
