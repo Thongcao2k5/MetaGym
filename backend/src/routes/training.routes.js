@@ -248,6 +248,16 @@ export function createTrainingRouter({ database, jwtSecret }) {
     if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
     try {
       await client.query('BEGIN');
+      const owner = await client.query(
+        'SELECT member_id FROM training_plans WHERE id = $1 AND coach_id = $2',
+        [request.params.planId, request.authUser.id],
+      );
+      if (!owner.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giáo trình');
+      }
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE',
+        [owner.rows[0].member_id]);
       const found = await client.query(
         `SELECT * FROM training_plans WHERE id = $1 AND coach_id = $2 FOR UPDATE`,
         [request.params.planId, request.authUser.id],
@@ -260,7 +270,8 @@ export function createTrainingRouter({ database, jwtSecret }) {
         await client.query('ROLLBACK');
         return fail(response, 409, 'PLAN_PUBLISHED', 'Chỉ sửa được bản nháp');
       }
-      const relationship = await activeRelationship(client, request.authUser.id, found.rows[0].member_id);
+      const relationship = await activeRelationship(client, request.authUser.id,
+        found.rows[0].member_id, true);
       if (!relationship || relationship.id !== found.rows[0].relationship_id) {
         await client.query('ROLLBACK');
         return fail(response, 403, 'RELATIONSHIP_REQUIRED', 'Quan hệ Coach–Member không hoạt động');

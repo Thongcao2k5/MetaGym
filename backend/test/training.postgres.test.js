@@ -408,3 +408,72 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       await database.end();
     }
   });
+
+test('editing a draft waits for relationship termination and rejects the former Coach',
+  { skip: !databaseUrl }, async () => {
+    const database = new pg.Pool({ connectionString: databaseUrl });
+    const memberId = randomUUID();
+    const coachId = randomUUID();
+    const relationshipId = randomUUID();
+    const planId = randomUUID();
+    const app = createApp({ database, jwtSecret: secret });
+    let locked;
+    let pendingPatch;
+    try {
+      await database.query(
+        `INSERT INTO users (id, email, password_hash, role, full_name)
+         VALUES ($1, $2, 'hash', 'MEMBER', 'Member'),
+                ($3, $4, 'hash', 'COACH', 'Coach')`,
+        [memberId, `${memberId}@example.com`, coachId, `${coachId}@example.com`],
+      );
+      await database.query(
+        `INSERT INTO coach_relationships (id, member_id, coach_id)
+         VALUES ($1, $2, $3)`, [relationshipId, memberId, coachId],
+      );
+      await database.query(
+        `INSERT INTO training_plans
+         (id, relationship_id, member_id, coach_id, title, version)
+         VALUES ($1, $2, $3, $4, 'Original', 1)`,
+        [planId, relationshipId, memberId, coachId],
+      );
+
+      locked = await database.connect();
+      await locked.query('BEGIN');
+      await locked.query('SELECT id FROM users WHERE id = $1 FOR UPDATE',
+        [memberId]);
+      await locked.query('SELECT id FROM coach_relationships WHERE id = $1 FOR UPDATE',
+        [relationshipId]);
+      pendingPatch = call(app, `/coach/training-plans/${planId}`,
+        token(coachId, 'COACH'), 'PATCH', { title: 'Too late' });
+      const settledWhileLocked = await Promise.race([
+        pendingPatch.then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), 150)),
+      ]);
+      assert.equal(settledWhileLocked, false,
+        'Draft editing must wait for the relationship state transaction');
+      await locked.query(
+        `UPDATE coach_relationships SET status = 'ENDED', ended_at = now(),
+         ended_by = $1, end_reason = 'Finished' WHERE id = $2`,
+        [memberId, relationshipId],
+      );
+      await locked.query('COMMIT');
+      locked.release();
+      locked = null;
+      assert.equal((await pendingPatch).status, 403);
+      assert.equal((await database.query(
+        'SELECT title FROM training_plans WHERE id = $1', [planId])).rows[0].title,
+      'Original');
+    } finally {
+      if (locked) {
+        await locked.query('ROLLBACK').catch(() => {});
+        locked.release();
+      }
+      await pendingPatch?.catch(() => {});
+      await database.query('DELETE FROM training_plans WHERE id = $1', [planId]);
+      await database.query('DELETE FROM coach_relationships WHERE id = $1',
+        [relationshipId]);
+      await database.query('DELETE FROM users WHERE id IN ($1, $2)',
+        [memberId, coachId]);
+      await database.end();
+    }
+  });
