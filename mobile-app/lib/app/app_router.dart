@@ -20,6 +20,7 @@ import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
 import 'package:meta_gym_app/features/workbench/flow_action.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_page.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
@@ -141,6 +142,8 @@ GoRouter createAppRouter({
               ? const MemberCoachingPage()
               : destination.path == '/member/features/training'
               ? const MemberTrainingPage()
+              : destination.path == '/member/features/nutrition'
+              ? const MemberNutritionPage()
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.memberHome,

@@ -494,9 +494,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI11 — Member xem hướng dẫn dinh dưỡng
 
-- [ ] Trang hướng dẫn hiện hành và lịch sử qua API dinh dưỡng.
-- [ ] Hiển thị nội dung, ngày công bố và trạng thái chưa có hướng dẫn.
+- [x] Trang hướng dẫn hiện hành và lịch sử qua API dinh dưỡng.
+- [x] Hiển thị nội dung, ngày công bố và trạng thái chưa có hướng dẫn.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** xem hướng dẫn Coach đã công bố. **Cỡ:** S–M.
+- **Bằng chứng:** `flutter test --no-pub` 78/78, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI12 — Coach tạo và công bố hướng dẫn dinh dưỡng
 

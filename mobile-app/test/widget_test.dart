@@ -24,6 +24,9 @@ import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
+import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
+import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -60,6 +63,7 @@ void main() {
         sessionController: controller,
         coachSelectionService: _EmptyCoachSelectionService(),
         memberTrainingService: _EmptyMemberTrainingService(),
+        memberNutritionService: _EmptyMemberNutritionService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -74,9 +78,17 @@ void main() {
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('Giáo trình'), 250);
+    await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
+    await tester.tap(find.text('Dinh dưỡng'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberNutritionPage), findsOneWidget);
+    expect(find.text('Bạn chưa có hướng dẫn dinh dưỡng.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberHomePage), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('Giáo trình'), -250);
     await tester.tap(find.text('Giáo trình'));
     await tester.pumpAndSettle();
     expect(find.byType(MemberTrainingPage), findsOneWidget);
@@ -385,4 +397,12 @@ class _EmptyCoachTrainingService implements CoachTrainingService {
   @override
   Future<TrainingPlan> publish(String id) =>
       throw UnimplementedError('No plan in this fixture');
+}
+
+class _EmptyMemberNutritionService implements MemberNutritionService {
+  @override
+  Future<NutritionGuide?> getActive() async => null;
+
+  @override
+  Future<List<NutritionGuide>> getHistory() async => const [];
 }
