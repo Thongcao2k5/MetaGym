@@ -73,57 +73,41 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   }
 
   Future<void> _changeStatus(TrainingSession session, String status) async {
-    final reason = TextEditingController();
-    String? validation;
-    final submitted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(
-            status == 'CANCELLED' ? 'Hủy buổi tập' : 'Đổi trạng thái',
+    String? reason;
+    if (status == 'CANCELLED') {
+      reason = await showDialog<String>(
+        context: context,
+        builder: (_) => const _CancellationDialog(),
+      );
+      if (reason == null || !mounted) return;
+    } else {
+      final submitted = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Đổi trạng thái'),
+          content: Text(
+            status == 'COMPLETED'
+                ? 'Đánh dấu hoàn thành?'
+                : 'Đánh dấu hội viên vắng?',
           ),
-          content: status == 'CANCELLED'
-              ? TextField(
-                  controller: reason,
-                  key: const Key('session-cancellation-reason'),
-                  maxLength: 2000,
-                  decoration: InputDecoration(
-                    labelText: 'Lý do hủy',
-                    errorText: validation,
-                  ),
-                )
-              : Text(
-                  status == 'COMPLETED'
-                      ? 'Đánh dấu hoàn thành?'
-                      : 'Đánh dấu hội viên vắng?',
-                ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Đóng'),
             ),
             FilledButton(
-              onPressed: () {
-                if (status == 'CANCELLED' && reason.text.trim().isEmpty) {
-                  setDialogState(() => validation = 'Vui lòng nhập lý do hủy.');
-                  return;
-                }
-                Navigator.pop(dialogContext, true);
-              },
-              child: Text(status == 'CANCELLED' ? 'Xác nhận hủy' : 'Xác nhận'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Xác nhận'),
             ),
           ],
         ),
-      ),
-    );
-    if (submitted != true || !mounted) {
-      reason.dispose();
-      return;
+      );
+      if (submitted != true || !mounted) return;
     }
     try {
       await _service!.update(session.id, {
         'status': status,
-        if (status == 'CANCELLED') 'cancellationReason': reason.text.trim(),
+        if (status == 'CANCELLED') 'cancellationReason': reason,
       });
       if (mounted) await _load();
     } on ApiException catch (error) {
@@ -137,8 +121,6 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
           const SnackBar(content: Text('Không cập nhật được buổi tập.')),
         );
       }
-    } finally {
-      reason.dispose();
     }
   }
 
@@ -232,6 +214,54 @@ class _SessionFormPage extends StatefulWidget {
   final TrainingSession? session;
   @override
   State<_SessionFormPage> createState() => _SessionFormPageState();
+}
+
+class _CancellationDialog extends StatefulWidget {
+  const _CancellationDialog();
+  @override
+  State<_CancellationDialog> createState() => _CancellationDialogState();
+}
+
+class _CancellationDialogState extends State<_CancellationDialog> {
+  final _reason = TextEditingController();
+  bool _invalid = false;
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Hủy buổi tập'),
+    content: TextField(
+      controller: _reason,
+      key: const Key('session-cancellation-reason'),
+      maxLength: 2000,
+      decoration: InputDecoration(
+        labelText: 'Lý do hủy',
+        errorText: _invalid ? 'Vui lòng nhập lý do hủy.' : null,
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Đóng'),
+      ),
+      FilledButton(
+        onPressed: () {
+          final reason = _reason.text.trim();
+          if (reason.isEmpty) {
+            setState(() => _invalid = true);
+            return;
+          }
+          Navigator.pop(context, reason);
+        },
+        child: const Text('Xác nhận hủy'),
+      ),
+    ],
+  );
 }
 
 class _SessionFormPageState extends State<_SessionFormPage> {

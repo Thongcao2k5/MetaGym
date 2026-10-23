@@ -519,6 +519,7 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 - [x] Kiểm tra thời gian và lý do hủy; sau cập nhật Member thấy trạng thái mới qua API lịch.
 - **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo → đổi lịch → hoàn thành/hủy. **Cỡ:** M.
 - **Bằng chứng:** `flutter test --no-pub` 87/87, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
+- **Hồi quy:** đã sửa lỗi giải phóng ô nhập lý do quá sớm khi xác nhận hủy; kiểm thử bổ sung đạt, toàn bộ 111/111 test, analyze sạch và build web thành công.
 
 **Checkpoint C:** UI08–UI14: Coach giao giáo trình/dinh dưỡng/lịch → Member xem; test/analyze/build đạt.
 

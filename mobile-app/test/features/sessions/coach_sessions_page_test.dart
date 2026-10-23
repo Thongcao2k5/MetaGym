@@ -92,6 +92,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(sessions.updated, {'status': 'COMPLETED'});
   });
+
+  testWidgets(
+    'cancels a session with a reason without disposing an active field',
+    (tester) async {
+      final sessions = _SessionsFixture(seed: true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CoachSessionsPage(
+            service: sessions,
+            membersService: _MembersFixture(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hủy buổi'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('session-cancellation-reason')),
+        'Bận đột xuất',
+      );
+      await tester.tap(find.text('Xác nhận hủy'));
+      await tester.pumpAndSettle();
+      expect(sessions.updated?['cancellationReason'], 'Bận đột xuất');
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _MembersFixture implements CoachMembersService {
