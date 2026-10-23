@@ -6,9 +6,12 @@ import 'package:meta_gym_app/features/member/presentation/member_home_page.dart'
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
@@ -103,6 +106,7 @@ void main() {
         sessionController: controller,
         authService: service,
         coachRequestsService: _EmptyCoachRequestsService(),
+        coachMembersService: _EmptyCoachMembersService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -132,6 +136,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CoachRequestsPage), findsOneWidget);
     expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hội viên của tôi'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachMembersPage), findsOneWidget);
+    expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
@@ -296,4 +306,21 @@ class _EmptyCoachRequestsService implements CoachRequestsService {
   @override
   Future<void> decide(String id, String decision, {String? reason}) =>
       throw UnimplementedError('No request in this fixture');
+}
+
+class _EmptyCoachMembersService implements CoachMembersService {
+  @override
+  Future<List<CoachMemberSummary>> getMembers() async => const [];
+
+  @override
+  Future<CoachMemberDetail> getMember(String memberId) =>
+      throw UnimplementedError('No member in this fixture');
+
+  @override
+  Future<List<CoachTerminationRequest>> getTerminationRequests() async =>
+      const [];
+
+  @override
+  Future<void> requestTermination(String relationshipId, String reason) =>
+      throw UnimplementedError('No relationship in this fixture');
 }

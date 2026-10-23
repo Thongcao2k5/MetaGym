@@ -461,10 +461,11 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI07 — Coach xem Member và xin ngừng phụ trách
 
-- [ ] Danh sách/chi tiết Member đang phụ trách; gửi lý do và xem trạng thái yêu cầu ngừng phụ trách.
-- [ ] Member không còn thuộc quyền thì không giữ dữ liệu riêng trên màn hình.
+- [x] Danh sách/chi tiết Member đang phụ trách; gửi lý do và xem trạng thái yêu cầu ngừng phụ trách.
+- [x] Member không còn thuộc quyền thì không giữ dữ liệu riêng trên màn hình.
 - **Khoảng trống:** lịch sử Member Coach từng phụ trách trong đặc tả chưa có API riêng; không dùng API Member để thay thế.
 - **Phụ thuộc:** UI06. **Kiểm thử tay:** duyệt → xem Member → gửi yêu cầu ngừng. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 70/70, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với hai tài khoản Member/Coach và backend đang chạy.
 
 **Checkpoint B:** UI04–UI07: Member chọn Coach → Coach duyệt → hai bên thấy quan hệ; test/analyze/build đạt.
 

@@ -10,6 +10,7 @@ import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.da
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
@@ -148,6 +149,8 @@ GoRouter createAppRouter({
               ? const GymEquipmentPage()
               : destination.path == '/coach/features/requests'
               ? CoachRequestsPage(coachId: sessionController.user!.id)
+              : destination.path == '/coach/features/members'
+              ? const CoachMembersPage()
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.coachHome,
