@@ -40,6 +40,9 @@ import 'package:meta_gym_app/features/progress/presentation/member_progress_page
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_workout_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
+import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -80,6 +83,7 @@ void main() {
         memberSessionsService: _EmptyMemberSessionsService(),
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
+        memberMealService: _EmptyMemberMealService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -132,6 +136,13 @@ void main() {
     expect(find.byType(MemberWorkoutPage), findsOneWidget);
     expect(find.text('Bạn chưa có nhật ký tập.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(MemberWorkoutPage))).go('/member');
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/member/features/meals');
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberMealPage), findsOneWidget);
+    expect(find.text('Bạn chưa có nhật ký ăn.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberMealPage))).go('/member');
     await tester.pumpAndSettle();
 
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -527,5 +538,16 @@ class _EmptyMemberWorkoutService implements MemberWorkoutService {
       throw UnimplementedError();
   @override
   Future<WorkoutLog> update(String id, Map<String, Object?> payload) =>
+      throw UnimplementedError();
+}
+
+class _EmptyMemberMealService implements MemberMealService {
+  @override
+  Future<List<MealLog>> getPage(int page) async => const [];
+  @override
+  Future<MealLog> create(Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<MealLog> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError();
 }

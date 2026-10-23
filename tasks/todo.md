@@ -540,9 +540,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI17 — Member ghi nhật ký ăn
 
-- [ ] Danh sách, tạo/sửa bữa ăn với thời gian, tên, loại và calo tùy chọn.
-- [ ] Có trạng thái rỗng/lỗi và test dữ liệu nhập hợp lệ/không hợp lệ.
+- [x] Danh sách, tạo/sửa bữa ăn với thời gian, tên, loại và calo tùy chọn.
+- [x] Có trạng thái rỗng/lỗi và test dữ liệu nhập hợp lệ/không hợp lệ.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** tạo → sửa → mở lại. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 97/97, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI18 — Member cập nhật số đo
 

@@ -60,6 +60,7 @@ const memberDestinations = <FeatureDestination>[
     'UI16',
     'Tiến độ',
   ),
+  FeatureDestination('Nhật ký ăn', '/member/features/meals', 'UI17', 'Tiến độ'),
   FeatureDestination(
     'Tin nhắn',
     '/member/features/messages',
