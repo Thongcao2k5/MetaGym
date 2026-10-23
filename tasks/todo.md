@@ -501,9 +501,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI12 — Coach tạo và công bố hướng dẫn dinh dưỡng
 
-- [ ] Theo từng Member, Coach xem danh sách, tạo/sửa nội dung và công bố.
-- [ ] Member chỉ thấy bản đã công bố; lỗi khi quan hệ không hoạt động được xử lý.
+- [x] Theo từng Member, Coach xem danh sách, tạo/sửa nội dung và công bố.
+- [x] Member chỉ thấy bản đã công bố; lỗi khi quan hệ không hoạt động được xử lý.
 - **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo → sửa → công bố → kiểm tra ở UI11. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 80/80, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI13 — Member xem lịch buổi tập
 

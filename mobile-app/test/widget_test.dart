@@ -27,6 +27,8 @@ import 'package:meta_gym_app/features/training/presentation/coach_training_page.
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
+import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -135,6 +137,7 @@ void main() {
         coachRequestsService: _EmptyCoachRequestsService(),
         coachMembersService: _EmptyCoachMembersService(),
         coachTrainingService: _EmptyCoachTrainingService(),
+        coachNutritionService: _EmptyCoachNutritionService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -172,7 +175,14 @@ void main() {
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Giáo trình'), 250);
+    await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
+    await tester.tap(find.text('Dinh dưỡng'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachNutritionPage), findsOneWidget);
+    expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Giáo trình'), -250);
     await tester.tap(find.text('Giáo trình'));
     await tester.pumpAndSettle();
     expect(find.byType(CoachTrainingPage), findsOneWidget);
@@ -405,4 +415,27 @@ class _EmptyMemberNutritionService implements MemberNutritionService {
 
   @override
   Future<List<NutritionGuide>> getHistory() async => const [];
+}
+
+class _EmptyCoachNutritionService implements CoachNutritionService {
+  @override
+  Future<List<CoachMemberSummary>> getMembers() async => const [];
+
+  @override
+  Future<List<NutritionGuide>> getGuides(String memberId) async => const [];
+
+  @override
+  Future<NutritionGuide> create(
+    String memberId,
+    String title,
+    String content,
+  ) => throw UnimplementedError('No member in this fixture');
+
+  @override
+  Future<NutritionGuide> update(
+    String id,
+    String title,
+    String content, {
+    bool publish = false,
+  }) => throw UnimplementedError('No guide in this fixture');
 }

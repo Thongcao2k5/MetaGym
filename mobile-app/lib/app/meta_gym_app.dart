@@ -25,6 +25,7 @@ import 'package:meta_gym_app/features/profile/presentation/profile_controller.da
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart';
 import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
@@ -42,6 +43,7 @@ class MetaGymApp extends StatefulWidget {
     this.memberTrainingService,
     this.coachTrainingService,
     this.memberNutritionService,
+    this.coachNutritionService,
   });
 
   final SessionController? sessionController;
@@ -56,6 +58,7 @@ class MetaGymApp extends StatefulWidget {
   final MemberTrainingService? memberTrainingService;
   final CoachTrainingService? coachTrainingService;
   final MemberNutritionService? memberNutritionService;
+  final CoachNutritionService? coachNutritionService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -79,6 +82,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final MemberTrainingService _memberTrainingService;
   late final CoachTrainingService _coachTrainingService;
   late final MemberNutritionService _memberNutritionService;
+  late final CoachNutritionService _coachNutritionService;
   late final GoRouter _router;
 
   @override
@@ -128,6 +132,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.coachTrainingService ?? CoachTrainingApi(_apiClient);
     _memberNutritionService =
         widget.memberNutritionService ?? MemberNutritionApi(_apiClient);
+    _coachNutritionService =
+        widget.coachNutritionService ?? CoachNutritionApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -168,6 +174,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<MemberTrainingService>.value(value: _memberTrainingService),
         Provider<CoachTrainingService>.value(value: _coachTrainingService),
         Provider<MemberNutritionService>.value(value: _memberNutritionService),
+        Provider<CoachNutritionService>.value(value: _coachNutritionService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),
