@@ -574,9 +574,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI21 — Danh sách cuộc trò chuyện
 
-- [ ] Member/Coach thấy các cuộc trò chuyện và số tin chưa đọc, mở đúng quan hệ.
-- [ ] Danh sách rỗng/lỗi, quan hệ kết thúc vẫn mở được lịch sử chỉ đọc.
+- [x] Member/Coach thấy các cuộc trò chuyện và số tin chưa đọc, mở đúng quan hệ.
+- [x] Danh sách rỗng/lỗi, quan hệ kết thúc vẫn mở được lịch sử chỉ đọc.
 - **Phụ thuộc:** UI05–UI07. **Kiểm thử tay:** hai tài khoản cùng quan hệ mở hội thoại. **Cỡ:** S–M.
+- **Bằng chứng:** `flutter test --no-pub` 114/114, `flutter analyze --no-pub` sạch và build web thành công. Danh sách và trang lịch sử gọi API thật, có test fixture; chưa kiểm thử tay với hai tài khoản và backend đang chạy. API danh sách chưa trả tên người đối thoại nên UI hiện mã người dùng.
 
 #### UI22 — Chat văn bản cơ bản
 

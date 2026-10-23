@@ -18,6 +18,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/membership/data/membership_api.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
+import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
@@ -60,6 +61,7 @@ class MetaGymApp extends StatefulWidget {
     this.memberMeasurementService,
     this.memberPhotoService,
     this.coachProgressService,
+    this.messagingService,
   });
 
   final SessionController? sessionController;
@@ -83,6 +85,7 @@ class MetaGymApp extends StatefulWidget {
   final MemberMeasurementService? memberMeasurementService;
   final MemberPhotoService? memberPhotoService;
   final CoachProgressService? coachProgressService;
+  final MessagingService? messagingService;
 
   @override
   State<MetaGymApp> createState() => _MetaGymAppState();
@@ -115,6 +118,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final MemberMeasurementService _memberMeasurementService;
   late final MemberPhotoService _memberPhotoService;
   late final CoachProgressService _coachProgressService;
+  late final MessagingService _messagingService;
   late final GoRouter _router;
 
   @override
@@ -181,6 +185,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.memberPhotoService ?? MemberPhotoApi(_apiClient);
     _coachProgressService =
         widget.coachProgressService ?? CoachProgressApi(_apiClient);
+    _messagingService = widget.messagingService ?? MessagingApi(_apiClient);
     _router = createAppRouter(sessionController: _sessionController);
     _sessionController.restore();
   }
@@ -232,6 +237,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         ),
         Provider<MemberPhotoService>.value(value: _memberPhotoService),
         Provider<CoachProgressService>.value(value: _coachProgressService),
+        Provider<MessagingService>.value(value: _messagingService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
         ),
