@@ -34,6 +34,21 @@ API client chuẩn hóa response `{data, pagination?}` và chuyển lỗi mạng
 thực, phân quyền, validation hoặc lỗi máy chủ thành `ApiException`. Log mạng
 chỉ chứa phương thức, trạng thái và loại lỗi; không ghi header hoặc body.
 
+## Khung kiểm thử luồng Member và Coach
+
+Ở môi trường `local` hoặc `emulator`, sau khi đăng nhập hãy mở nút **Kiểm thử
+các luồng** trên trang chính. Các nhóm chức năng dẫn tới biểu mẫu gọi API thật:
+điền mã đối tượng lấy từ phản hồi bước trước, chỉnh JSON theo hợp đồng API tại
+`docs/requirements/api-contract.md`, rồi bấm **Thực hiện**. Màn hình thể hiện
+đang tải, lỗi, dữ liệu rỗng và phản hồi có phân trang. Thao tác xóa có xác nhận.
+Khung này tự ẩn và không thể mở qua router trong `APP_ENV=production`.
+
+Khung ưu tiên kiểm thử tích hợp, chưa phải giao diện sản phẩm cuối. Phần tải ảnh
+multipart lên `/media/images` và gọi thoại/video trực tiếp qua SDK chưa có;
+chỉ kiểm thử được metadata cuộc gọi và URL ảnh. Chức năng AI/token cuộc gọi sẽ
+trả 503 nếu backend chưa cấu hình dịch vụ tương ứng. Các biểu mẫu JSON là mẫu
+khởi đầu; mã UUID của Coach/Member/quan hệ/ảnh phải thay bằng mã thật.
+
 ## Kiểm tra
 
 ```powershell

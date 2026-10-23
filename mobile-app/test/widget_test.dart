@@ -42,6 +42,10 @@ void main() {
 
     expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
+    await tester.tap(find.text('Kiểm thử các luồng hội viên'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kiểm thử luồng hội viên'), findsOneWidget);
+    expect(find.text('Chọn Coach'), findsOneWidget);
   });
 
   testWidgets('login form validates locally and routes a Coach by role', (
@@ -86,6 +90,9 @@ void main() {
 
     expect(service.loginCalls, 1);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
+    await tester.tap(find.text('Kiểm thử các luồng Coach'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kiểm thử luồng Coach'), findsOneWidget);
   });
 
   testWidgets('password reset completes all three steps', (tester) async {

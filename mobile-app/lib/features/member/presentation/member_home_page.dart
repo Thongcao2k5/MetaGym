@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/features/catalog/presentation/catalog_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
+import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 
 class MemberHomePage extends StatefulWidget {
   const MemberHomePage({super.key});
@@ -17,7 +18,20 @@ class _MemberHomePageState extends State<MemberHomePage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const Center(child: Text('Không gian dành cho hội viên')),
+      Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Không gian dành cho hội viên'),
+            const SizedBox(height: 16),
+            if (FlowWorkbenchConfig.enabled)
+              FilledButton(
+                onPressed: () => context.push(AppRoutes.memberWorkbench),
+                child: const Text('Kiểm thử các luồng hội viên'),
+              ),
+          ],
+        ),
+      ),
       const CatalogPage(),
       const MembershipPage(),
       Center(

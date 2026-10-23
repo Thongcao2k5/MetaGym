@@ -10,6 +10,9 @@ import 'package:meta_gym_app/features/profile/presentation/change_password_page.
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
+import 'package:meta_gym_app/features/workbench/flow_action.dart';
+import 'package:meta_gym_app/features/workbench/flow_workbench_page.dart';
+import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 
 abstract final class AppRoutes {
   static const welcome = '/';
@@ -21,6 +24,8 @@ abstract final class AppRoutes {
   static const changePassword = '/profile/change-password';
   static const memberHome = '/member';
   static const coachHome = '/coach';
+  static const memberWorkbench = '/member/test-flows';
+  static const coachWorkbench = '/coach/test-flows';
   static const adminHome = '/admin';
 }
 
@@ -55,6 +60,12 @@ GoRouter createAppRouter({
         AppRoutes.changePassword,
       };
       if (state.matchedLocation == home ||
+          (FlowWorkbenchConfig.enabled &&
+              home == AppRoutes.memberHome &&
+              state.matchedLocation == AppRoutes.memberWorkbench) ||
+          (FlowWorkbenchConfig.enabled &&
+              home == AppRoutes.coachHome &&
+              state.matchedLocation == AppRoutes.coachWorkbench) ||
           sharedProtectedRoutes.contains(state.matchedLocation)) {
         return null;
       }
@@ -97,6 +108,16 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.coachHome,
         builder: (context, state) => const CoachHomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.memberWorkbench,
+        builder: (context, state) =>
+            const FlowWorkbenchPage(role: FlowRole.member),
+      ),
+      GoRoute(
+        path: AppRoutes.coachWorkbench,
+        builder: (context, state) =>
+            const FlowWorkbenchPage(role: FlowRole.coach),
       ),
       GoRoute(
         path: AppRoutes.adminHome,
