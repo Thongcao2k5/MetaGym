@@ -53,10 +53,11 @@ const memberDestinations = <FeatureDestination>[
     'UI13',
     'Tập luyện',
   ),
+  FeatureDestination('Tiến độ', '/member/features/progress', 'UI15', 'Tiến độ'),
   FeatureDestination(
-    'Tiến độ',
-    '/member/features/progress',
-    'UI15–UI19',
+    'Nhật ký tập',
+    '/member/features/workouts',
+    'UI16',
     'Tiến độ',
   ),
   FeatureDestination(

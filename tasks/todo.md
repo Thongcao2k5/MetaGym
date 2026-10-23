@@ -533,9 +533,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI16 — Member ghi nhật ký tập
 
-- [ ] Danh sách, chi tiết tóm tắt, tạo và sửa nhật ký tập; chọn ngày, thời lượng, bài tập cơ bản.
-- [ ] Validation và lỗi quyền/quan hệ; danh sách cập nhật sau lưu.
+- [x] Danh sách, chi tiết tóm tắt, tạo và sửa nhật ký tập; chọn ngày, thời lượng, bài tập cơ bản.
+- [x] Validation và lỗi quyền/quan hệ; danh sách cập nhật sau lưu.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** tạo → sửa → mở lại. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 94/94, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI17 — Member ghi nhật ký ăn
 
