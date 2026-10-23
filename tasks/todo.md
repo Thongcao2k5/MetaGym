@@ -547,9 +547,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI18 — Member cập nhật số đo
 
-- [ ] Lịch sử, thêm/sửa cân nặng và số đo cơ bản theo ngày.
-- [ ] Không gửi giá trị sai/âm; sau lưu UI15 làm mới được.
+- [x] Lịch sử, thêm/sửa cân nặng và số đo cơ bản theo ngày.
+- [x] Không gửi giá trị sai/âm; sau lưu UI15 làm mới được.
 - **Phụ thuộc:** UI15. **Kiểm thử tay:** thêm hai lần đo và đối chiếu biểu đồ. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 100/100, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 #### UI19 — Member tải và xem ảnh tiến trình
 

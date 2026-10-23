@@ -23,6 +23,7 @@ import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_workout_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
@@ -158,6 +159,8 @@ GoRouter createAppRouter({
               ? const MemberWorkoutPage()
               : destination.path == '/member/features/meals'
               ? const MemberMealPage()
+              : destination.path == '/member/features/measurements'
+              ? const MemberMeasurementPage()
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.memberHome,

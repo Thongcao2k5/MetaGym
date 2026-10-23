@@ -43,6 +43,9 @@ import 'package:meta_gym_app/features/progress/presentation/member_workout_page.
 import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
 import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
+import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -84,6 +87,7 @@ void main() {
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
         memberMealService: _EmptyMemberMealService(),
+        memberMeasurementService: _EmptyMemberMeasurementService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -143,6 +147,14 @@ void main() {
     expect(find.byType(MemberMealPage), findsOneWidget);
     expect(find.text('Bạn chưa có nhật ký ăn.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(MemberMealPage))).go('/member');
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/member/features/measurements');
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberMeasurementPage), findsOneWidget);
+    expect(find.text('Bạn chưa có số đo nào.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberMeasurementPage)))
+        .go('/member');
     await tester.pumpAndSettle();
 
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -549,5 +561,16 @@ class _EmptyMemberMealService implements MemberMealService {
       throw UnimplementedError();
   @override
   Future<MealLog> update(String id, Map<String, Object?> payload) =>
+      throw UnimplementedError();
+}
+
+class _EmptyMemberMeasurementService implements MemberMeasurementService {
+  @override
+  Future<List<BodyMeasurement>> getPage(int page) async => const [];
+  @override
+  Future<BodyMeasurement> create(Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<BodyMeasurement> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError();
 }
