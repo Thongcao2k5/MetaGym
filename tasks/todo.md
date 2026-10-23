@@ -581,9 +581,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI22 — Chat văn bản cơ bản
 
-- [ ] Tải tin theo trang, gửi văn bản với `clientMessageId` ổn định; hiển thị tin mới.
-- [ ] Chặn gửi khi quan hệ không hoạt động; chống gửi trùng do chạm nhiều lần.
+- [x] Tải tin theo trang, gửi văn bản với `clientMessageId` ổn định; hiển thị tin mới.
+- [x] Chặn gửi khi quan hệ không hoạt động; chống gửi trùng do chạm nhiều lần.
 - **Phụ thuộc:** UI21. **Kiểm thử tay:** Member gửi, Coach đọc và trả lời. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 117/117, `flutter analyze --no-pub` sạch và build web thành công. Test widget kiểm tra gửi một lần, test adapter kiểm tra payload API, test phân trang; chưa thử tay với hai tài khoản và backend đang chạy.
 
 #### UI23 — Đã đọc, polling và gửi lại
 

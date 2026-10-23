@@ -164,9 +164,23 @@ class ConversationDetailPage extends StatefulWidget {
 }
 
 class _ConversationDetailPageState extends State<ConversationDetailPage> {
+  final _textController = TextEditingController();
   List<ChatMessage> _messages = const [];
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _sending = false;
   String? _error;
+  String? _sendError;
+  String? _draftMessageId;
+  String? _draftContent;
+  int _page = 1;
+  bool _hasMore = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -186,7 +200,13 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         widget.conversation.relationshipId,
         1,
       );
-      if (mounted) setState(() => _messages = messages);
+      if (mounted) {
+        setState(() {
+          _messages = messages;
+          _page = 1;
+          _hasMore = messages.length == 20;
+        });
+      }
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
@@ -196,35 +216,152 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     }
   }
 
+  Future<void> _loadMore() async {
+    setState(() {
+      _loadingMore = true;
+      _error = null;
+    });
+    try {
+      final messages = await widget.service.getMessages(
+        widget.conversation.relationshipId,
+        _page + 1,
+      );
+      if (mounted) {
+        setState(() {
+          _messages = [..._messages, ...messages];
+          _page++;
+          _hasMore = messages.length == 20;
+        });
+      }
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Không tải thêm được tin nhắn.');
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  Future<void> _send() async {
+    if (_sending || !widget.conversation.canSend) return;
+    final content = _textController.text.trim();
+    if (content.isEmpty || content.length > 5000) {
+      setState(() => _sendError = 'Tin nhắn phải dài từ 1 đến 5000 ký tự.');
+      return;
+    }
+    if (_draftContent != content) {
+      _draftContent = content;
+      _draftMessageId = newClientMessageId();
+    }
+    setState(() {
+      _sending = true;
+      _sendError = null;
+    });
+    try {
+      final message = await widget.service.sendText(
+        widget.conversation.relationshipId,
+        content,
+        _draftMessageId!,
+      );
+      if (mounted) {
+        setState(() {
+          _messages = [
+            message,
+            ..._messages.where((item) => item.id != message.id),
+          ];
+          _textController.clear();
+          _draftContent = null;
+          _draftMessageId = null;
+        });
+      }
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _sendError = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _sendError = 'Không gửi được tin nhắn.');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Cuộc trò chuyện')),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
+    body: Column(
       children: [
-        Text(
-          'Quan hệ ${widget.conversation.relationshipId}',
-          style: Theme.of(context).textTheme.titleMedium,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'Quan hệ ${widget.conversation.relationshipId}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                widget.conversation.canSend
+                    ? 'Quan hệ đang hoạt động.'
+                    : 'Quan hệ đã kết thúc; lịch sử chỉ đọc.',
+              ),
+              if (_loading)
+                const Center(child: CircularProgressIndicator())
+              else ...[
+                if (_error != null) ...[
+                  Text(_error!),
+                  TextButton(
+                    onPressed: _messages.isEmpty ? _load : _loadMore,
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+                if (_messages.isEmpty && _error == null)
+                  const ListTile(title: Text('Chưa có tin nhắn.'))
+                else
+                  for (final message in _messages)
+                    ListTile(
+                      title: Text(message.content ?? 'Ảnh'),
+                      subtitle: Text(message.sentAt),
+                    ),
+              ],
+              if (_hasMore)
+                TextButton(
+                  onPressed: _loadingMore ? null : _loadMore,
+                  child: Text(_loadingMore ? 'Đang tải…' : 'Tải tin cũ'),
+                ),
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          widget.conversation.canSend
-              ? 'Tin nhắn văn bản sẽ được bổ sung ở UI22.'
-              : 'Quan hệ đã kết thúc; lịch sử chỉ đọc.',
-        ),
-        if (_loading)
-          const Center(child: CircularProgressIndicator())
-        else if (_error != null) ...[
-          Text(_error!),
-          TextButton(onPressed: _load, child: const Text('Thử lại')),
-        ] else if (_messages.isEmpty)
-          const ListTile(title: Text('Chưa có tin nhắn.'))
-        else
-          for (final message in _messages)
-            ListTile(
-              title: Text(message.content ?? 'Ảnh'),
-              subtitle: Text(message.sentAt),
+        if (widget.conversation.canSend)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                if (_sendError != null)
+                  Text(
+                    _sendError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        maxLength: 5000,
+                        decoration: const InputDecoration(
+                          labelText: 'Tin nhắn',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _sending ? null : _send,
+                      child: const Text('Gửi'),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
       ],
     ),
   );
