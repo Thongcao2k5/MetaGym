@@ -19,6 +19,7 @@ import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
@@ -166,6 +167,8 @@ GoRouter createAppRouter({
               ? const CoachTrainingPage()
               : destination.path == '/coach/features/nutrition'
               ? const CoachNutritionPage()
+              : destination.path == '/coach/features/sessions'
+              ? const CoachSessionsPage()
               : FeaturePlaceholderPage(
                   destination: destination,
                   homePath: AppRoutes.coachHome,

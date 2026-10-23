@@ -4,6 +4,7 @@ class TrainingSession {
     required this.title,
     required this.scheduledStartAt,
     required this.status,
+    this.memberId,
     this.scheduledEndAt,
     this.notes,
     this.cancellationReason,
@@ -14,6 +15,7 @@ class TrainingSession {
   final String scheduledStartAt;
   final String? scheduledEndAt;
   final String status;
+  final String? memberId;
   final String? notes;
   final String? cancellationReason;
 
@@ -25,6 +27,7 @@ class TrainingSession {
       scheduledStartAt: json['scheduledStartAt'] as String,
       scheduledEndAt: json['scheduledEndAt'] as String?,
       status: json['status'] as String,
+      memberId: json['memberId'] as String?,
       notes: json['notes'] as String?,
       cancellationReason: json['cancellationReason'] as String?,
     );

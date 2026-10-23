@@ -32,6 +32,8 @@ import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
+import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 
 void main() {
   testWidgets('shows the public page when no session is stored', (
@@ -150,6 +152,7 @@ void main() {
         coachMembersService: _EmptyCoachMembersService(),
         coachTrainingService: _EmptyCoachTrainingService(),
         coachNutritionService: _EmptyCoachNutritionService(),
+        coachSessionsService: _EmptyCoachSessionsService(),
       ),
     );
     await tester.pumpAndSettle();
@@ -200,6 +203,13 @@ void main() {
     expect(find.byType(CoachTrainingPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
+    await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(CoachHomePage)))
+        .go('/coach/features/sessions');
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachSessionsPage), findsOneWidget);
+    expect(find.text('Chưa có buổi tập nào.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
     await tester.tap(find.text('Kiểm thử các luồng Coach'));
@@ -458,5 +468,18 @@ class _EmptyMemberSessionsService implements MemberSessionsService {
 
   @override
   Future<TrainingSession> getDetail(String id) =>
+      throw UnimplementedError('No session in this fixture');
+}
+
+class _EmptyCoachSessionsService implements CoachSessionsService {
+  @override
+  Future<List<TrainingSession>> getAll() async => const [];
+
+  @override
+  Future<TrainingSession> create(Map<String, Object?> payload) =>
+      throw UnimplementedError('No member in this fixture');
+
+  @override
+  Future<TrainingSession> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError('No session in this fixture');
 }

@@ -515,9 +515,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI14 — Coach quản lý buổi tập
 
-- [ ] Tạo/sửa lịch cho Member; đổi trạng thái hoàn thành, vắng hoặc hủy theo API.
-- [ ] Kiểm tra thời gian và lý do hủy; sau cập nhật Member thấy trạng thái mới.
+- [x] Tạo/sửa lịch cho Member; đổi trạng thái hoàn thành, vắng hoặc hủy theo API.
+- [x] Kiểm tra thời gian và lý do hủy; sau cập nhật Member thấy trạng thái mới qua API lịch.
 - **Phụ thuộc:** UI07. **Kiểm thử tay:** tạo → đổi lịch → hoàn thành/hủy. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 87/87, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay với backend đang chạy.
 
 **Checkpoint C:** UI08–UI14: Coach giao giáo trình/dinh dưỡng/lịch → Member xem; test/analyze/build đạt.
 
