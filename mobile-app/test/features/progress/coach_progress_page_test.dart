@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/progress/data/coach_progress_service.dart';
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
@@ -14,6 +15,26 @@ import 'package:meta_gym_app/features/progress/presentation/coach_progress_page.
 import 'package:provider/provider.dart';
 
 void main() {
+  testWidgets('opens Member progress directly from the Coach progress menu', (
+    tester,
+  ) async {
+    final members = _DetailFixture();
+    await tester.pumpWidget(
+      Provider<CoachProgressService>.value(
+        value: _CoachProgressFixture(),
+        child: MaterialApp(
+          home: CoachMembersPage(service: members, progressOnly: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(members.terminationRequestLoads, 0);
+    await tester.tap(find.text('Nguyễn An'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachProgressPage), findsOneWidget);
+    expect(find.text('Buổi tập: 1'), findsOneWidget);
+  });
+
   testWidgets('opens progress from a Coach Member detail', (tester) async {
     await tester.pumpWidget(
       Provider<CoachProgressService>.value(
@@ -90,11 +111,19 @@ void main() {
     expect(find.text('Không còn quyền xem tiến độ.'), findsOneWidget);
   });
 
-  testWidgets('requires text and targets a workout when commenting', (tester) async {
+  testWidgets('requires text and targets a workout when commenting', (
+    tester,
+  ) async {
     final service = _CoachProgressFixture();
-    await tester.pumpWidget(MaterialApp(home: CoachProgressPage(
-      memberId: 'member-1', memberName: 'Nguyễn An', service: service,
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CoachProgressPage(
+          memberId: 'member-1',
+          memberName: 'Nguyễn An',
+          service: service,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nhật ký tập'));
     await tester.pumpAndSettle();
@@ -104,7 +133,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Vui lòng nhập nhận xét.'), findsOneWidget);
     expect(service.sent, isNull);
-    await tester.enterText(find.byKey(const Key('progress-comment')), 'Tăng mức tạ dần');
+    await tester.enterText(
+      find.byKey(const Key('progress-comment')),
+      'Tăng mức tạ dần',
+    );
     await tester.tap(find.text('Gửi nhận xét').last);
     await tester.pumpAndSettle();
     expect(service.sent?['workoutLogId'], 'w-1');
@@ -112,6 +144,7 @@ void main() {
 }
 
 class _DetailFixture implements CoachMembersService {
+  int terminationRequestLoads = 0;
   @override
   Future<CoachMemberDetail> getMember(String memberId) async =>
       const CoachMemberDetail(
@@ -122,10 +155,20 @@ class _DetailFixture implements CoachMembersService {
         email: 'member@test.local',
       );
   @override
-  Future<List<CoachTerminationRequest>> getTerminationRequests() async =>
-      const [];
+  Future<List<CoachTerminationRequest>> getTerminationRequests() async {
+    terminationRequestLoads++;
+    return const [];
+  }
+
   @override
-  Future<List<CoachMemberSummary>> getMembers() async => const [];
+  Future<List<CoachMemberSummary>> getMembers() async => const [
+    CoachMemberSummary(
+      relationshipId: 'r-1',
+      memberId: 'member-1',
+      memberFullName: 'Nguyễn An',
+      status: 'ACTIVE',
+    ),
+  ];
   @override
   Future<void> requestTermination(String id, String reason) =>
       throw UnimplementedError();

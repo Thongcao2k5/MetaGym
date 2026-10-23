@@ -247,6 +247,15 @@ void main() {
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
+    GoRouter.of(tester.element(find.byType(CoachHomePage)))
+        .go('/coach/features/progress');
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachMembersPage), findsOneWidget);
+    expect(find.text('Tiến độ hội viên'), findsOneWidget);
+    expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
+    expect(find.text('Yêu cầu ngừng phụ trách'), findsNothing);
+    GoRouter.of(tester.element(find.byType(CoachMembersPage))).go('/coach');
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
     await tester.pumpAndSettle();

@@ -3,12 +3,14 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/coach_progress_page.dart';
 import 'package:provider/provider.dart';
 
 class CoachMembersPage extends StatefulWidget {
-  const CoachMembersPage({this.service, super.key});
+  const CoachMembersPage({this.service, this.progressOnly = false, super.key});
 
   final CoachMembersService? service;
+  final bool progressOnly;
 
   @override
   State<CoachMembersPage> createState() => _CoachMembersPageState();
@@ -40,7 +42,9 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
     });
     try {
       final members = await _service!.getMembers();
-      final requests = await _service!.getTerminationRequests();
+      final requests = widget.progressOnly
+          ? <CoachTerminationRequest>[]
+          : await _service!.getTerminationRequests();
       if (!mounted) return;
       setState(() {
         _members = members;
@@ -58,10 +62,15 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
   Future<void> _openMember(CoachMemberSummary member) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => CoachMemberDetailPage(
-          memberId: member.memberId,
-          service: _service!,
-        ),
+        builder: (_) => widget.progressOnly
+            ? CoachProgressPage(
+                memberId: member.memberId,
+                memberName: member.memberFullName,
+              )
+            : CoachMemberDetailPage(
+                memberId: member.memberId,
+                service: _service!,
+              ),
       ),
     );
     if (mounted) await _load();
@@ -69,7 +78,11 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Hội viên của tôi')),
+    appBar: AppBar(
+      title: Text(
+        widget.progressOnly ? 'Tiến độ hội viên' : 'Hội viên của tôi',
+      ),
+    ),
     body: _loading && _members.isEmpty && _requests.isEmpty
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
@@ -103,17 +116,19 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                       onTap: () => _openMember(member),
                     ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Yêu cầu ngừng phụ trách',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (_requests.isEmpty)
-                    const ListTile(title: Text('Chưa có yêu cầu nào.')),
-                  for (final request in _requests)
-                    ListTile(
-                      title: Text(request.reason),
-                      subtitle: Text(request.statusLabel),
+                  if (!widget.progressOnly) ...[
+                    Text(
+                      'Yêu cầu ngừng phụ trách',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
+                    if (_requests.isEmpty)
+                      const ListTile(title: Text('Chưa có yêu cầu nào.')),
+                    for (final request in _requests)
+                      ListTile(
+                        title: Text(request.reason),
+                        subtitle: Text(request.statusLabel),
+                      ),
+                  ],
                 ],
               ],
             ),

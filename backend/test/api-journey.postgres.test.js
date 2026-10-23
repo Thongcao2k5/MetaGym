@@ -163,11 +163,25 @@ test('PostgreSQL API journey from registration through coaching and termination'
       assert.equal(progress.workoutCount, 1);
       assert.equal(progress.mealCount, 1);
       assert.equal(progress.progressPhotoCount, 1);
+      const comment = expected(await call(base, '/coach/progress-comments', coach,
+        'POST', { memberId, workoutLogId: workout.id,
+          content: 'Good work on your first session.' }), 201);
+      assert.equal(comment.workoutLogId, workout.id);
+      assert.equal((expected(await call(base, '/progress-comments', member)))[0].id,
+        comment.id);
+      assert.equal((await call(base, '/coach/progress-comments', member, 'POST',
+        { memberId, content: 'Not a coach' })).status, 403);
 
       const message = { messageType: 'TEXT', clientMessageId: randomUUID(),
         content: 'How did I do?' };
       const sent = expected(await call(base,
         `/conversations/${relationshipId}/messages`, member, 'POST', message), 201);
+      const reply = expected(await call(base,
+        `/conversations/${relationshipId}/messages`, coach, 'POST', {
+          messageType: 'TEXT', clientMessageId: randomUUID(),
+          content: 'I left feedback on your workout.',
+        }), 201);
+      assert.equal(reply.senderId, coachId);
       assert.equal(expected(await call(base,
         `/conversations/${relationshipId}/messages`, member, 'POST', message), 200)
         .id, sent.id);
@@ -209,6 +223,8 @@ test('PostgreSQL API journey from registration through coaching and termination'
           [relationshipId]);
       }
       if (memberId) {
+        await database.query('DELETE FROM progress_comments WHERE member_id = $1',
+          [memberId]);
         await database.query('DELETE FROM progress_photos WHERE member_id = $1',
           [memberId]);
         await database.query('DELETE FROM media_assets WHERE owner_id = $1',

@@ -627,9 +627,12 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI28 — Kiểm thử liên thông và dọn khung tạm
 
-- [ ] Chạy kịch bản Member mua gói → chọn Coach → Coach giao kế hoạch → Member ghi tiến độ → Coach nhận xét/chat.
-- [ ] Mọi chức năng cơ bản đi được qua trang nghiệp vụ; khung JSON chỉ còn chế độ developer hoặc được gỡ sau khi đối chiếu độ phủ.
+- [x] Chạy kịch bản Member mua gói → chọn Coach → Coach giao kế hoạch → Member ghi tiến độ → Coach nhận xét/chat.
+- [x] Mọi chức năng cơ bản đi được qua trang nghiệp vụ; khung JSON chỉ còn chế độ developer hoặc được gỡ sau khi đối chiếu độ phủ.
+- [ ] Xác nhận thao tác tay trên hai phiên Flutter với backend demo trước khi chấp nhận phát hành.
 - **Phụ thuộc:** UI01–UI27. **Kiểm thử:** hai tài khoản demo, backend thật, toàn bộ test/analyze/build và ma trận quyền. **Cỡ:** M; chia lỗi phát hiện thành task riêng.
+- **Bằng chứng:** `api-journey.postgres.test.js` chạy trên PostgreSQL thật với Member/Coach/Admin, bao gồm mua gói, chọn Coach, công bố giáo trình, ghi nhật ký, Coach nhận xét đúng nhật ký, chat hai chiều và chặn Member gọi API Coach. `npm test` 54/54, smoke API tài khoản demo 7/7; `flutter test --no-pub` 137/137, `flutter analyze --no-pub` sạch, build Flutter web production và admin web thành công. Mục tiến độ Coach đã nối tới trang thật và có test đi từ menu tới dữ liệu tiến độ; không còn `FeaturePlaceholderPage`; JSON workbench bị chặn khi `APP_ENV=production`.
+- **Chưa xác minh bằng thao tác tay:** luồng xuyên suốt trên hai phiên đăng nhập Flutter. Trình duyệt trong Work bị tắt quyền điều khiển khi thử nghiệm; cần chạy checklist trên thiết bị/trình duyệt trước khi chấp nhận phát hành.
 
 **Ngoài phạm vi đợt UI cơ bản:** tích hợp RTC thoại/video thật trên hai thiết
 bị, email provider thật, thiết kế hình ảnh cuối và phát hành production. Các
