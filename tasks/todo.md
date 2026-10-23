@@ -422,9 +422,10 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 
 #### UI02 — Lịch sử và chi tiết thanh toán Member
 
-- [ ] Danh sách giao dịch, chi tiết, kết quả thanh toán và gói hiện tại dùng `/payments/me`, `/payments/:paymentId`, `/memberships/me`.
-- [ ] Có trạng thái chưa mua/chưa trả và thử lại khi lỗi; không phá luồng mua QR đã có.
+- [x] Danh sách giao dịch, chi tiết, kết quả thanh toán và gói hiện tại dùng `/payments/me`, `/payments/:paymentId`, `/memberships/me`.
+- [x] Có trạng thái chưa mua/chưa trả và thử lại khi lỗi; không phá luồng mua QR đã có.
 - **Phụ thuộc:** UI01. **Kiểm thử tay:** mua QR → xác nhận → xem lịch sử/chi tiết. **Cỡ:** M.
+- **Bằng chứng:** `flutter test --no-pub` 47/47, `flutter analyze --no-pub` sạch và build web thành công. Chưa kiểm thử tay luồng mua QR với backend đang chạy.
 
 #### UI03 — Thông tin gym và chi tiết thiết bị
 

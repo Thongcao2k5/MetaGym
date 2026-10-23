@@ -8,6 +8,7 @@ import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/change_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
@@ -122,10 +123,13 @@ GoRouter createAppRouter({
       for (final destination in memberDestinations)
         GoRoute(
           path: destination.path,
-          builder: (context, state) => FeaturePlaceholderPage(
-            destination: destination,
-            homePath: AppRoutes.memberHome,
-          ),
+          builder: (context, state) =>
+              destination.path == '/member/features/payments'
+              ? const PaymentHistoryPage()
+              : FeaturePlaceholderPage(
+                  destination: destination,
+                  homePath: AppRoutes.memberHome,
+                ),
         ),
       for (final destination in coachDestinations)
         GoRoute(
