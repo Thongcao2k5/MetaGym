@@ -339,6 +339,18 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(await bcrypt.compare(result.body.data.temporaryPassword,
         resetHash.rows[0].password_hash), true);
       assert.equal((await request(app, '/users/me', token(coachId, 'COACH'))).status, 401);
+
+      result = await request(app, `/admin/users/${memberId}/status`, adminToken,
+        'PATCH', { status: 'DISABLED', reason: 'Security regression' });
+      assert.equal(result.status, 200);
+      for (const path of ['/users/me', '/workout-logs', '/progress/me/summary',
+        '/payments/me']) {
+        assert.equal((await request(app, path, memberToken)).status, 401, path);
+      }
+      result = await request(app, `/admin/users/${memberId}/status`, adminToken,
+        'PATCH', { status: 'ACTIVE' });
+      assert.equal(result.status, 200);
+      assert.equal((await request(app, '/workout-logs', memberToken)).status, 401);
     } finally {
       await database.query('DELETE FROM progress_comments WHERE member_id = $1', [memberId]);
       await database.query(
@@ -386,6 +398,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         await database.query('DELETE FROM coach_profiles WHERE user_id = $1', [secondCoachId]);
         await database.query('DELETE FROM users WHERE id = $1', [secondCoachId]);
       }
+      await database.query('DELETE FROM admin_audit_logs WHERE entity_id = $1', [memberId]);
       await database.query('DELETE FROM member_profiles WHERE user_id = $1', [memberId]);
       await database.query('DELETE FROM users WHERE id IN ($1, $2)', [adminId, memberId]);
       await database.end();
