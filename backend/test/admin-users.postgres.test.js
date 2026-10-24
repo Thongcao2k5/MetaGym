@@ -272,6 +272,18 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.body.data.newCoachId, secondCoachId);
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data.coachId, secondCoachId);
       assert.equal((await request(app, '/admin/coach-transfers', adminToken)).body.data.length, 1);
+      assert.equal((await request(app, `/coach/members/${memberId}/workout-logs`,
+        token(coachId, 'COACH'))).status, 404);
+      assert.equal((await request(app, `/coach/members/${memberId}/progress/summary`,
+        token(coachId, 'COACH'))).status, 404);
+      const transferredLogs = await request(app, `/coach/members/${memberId}/workout-logs`,
+        token(secondCoachId, 'COACH'));
+      assert.equal(transferredLogs.status, 200);
+      assert.equal(transferredLogs.body.data.some((entry) => entry.id === workoutId), true);
+      assert.equal((await request(app, `/coach/members/${memberId}/progress/summary`,
+        token(secondCoachId, 'COACH'))).status, 200);
+      assert.equal((await request(app, '/workout-logs', memberToken)).body.data
+        .some((entry) => entry.id === workoutId), true);
 
       paymentId = randomUUID();
       await database.query(
