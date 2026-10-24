@@ -687,8 +687,8 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 ### T23-E — Hồi quy và chốt Task 23
 
-- [ ] Tự động hóa ít nhất một luồng UI/role hoặc trạng thái vòng đời chưa được test tương đương; không thay test thật bằng mock cho quyền backend.
-- [ ] Chạy lại backend test không skip, Flutter test/analyze và Admin build sau mọi sửa lỗi.
+- [x] Tự động hóa ít nhất một luồng UI/role hoặc trạng thái vòng đời chưa được test tương đương; test PostgreSQL thật kiểm tra Coach cũ mất quyền đọc tiến độ sau chuyển Coach, Coach mới và Member vẫn đọc được nhật ký.
+- [x] Chạy lại backend test không skip, Flutter test/analyze và Admin build sau mọi sửa lỗi; APK debug cũng build đạt.
 - [ ] Chỉ đánh dấu ba tiêu chí Task 23 ở trên khi có bằng chứng ba vai trò, ma trận quyền và lịch sử sau thay đổi trạng thái.
 
 **Kiểm tra:** test/build log và biên bản E2E gắn commit cuối.
@@ -696,4 +696,13 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 **Ngoài Task 23:** RTC hai thiết bị, email/AI provider thật, thiết kế cuối và
 triển khai production vẫn là việc riêng; không đóng các mục đó bằng test mock.
+
+### Kiểm chứng bổ sung 24/10/2026 — chưa đóng T23-C/D
+
+- Backend khóa `body-parser` 2.4.0 thay cho 2.3.0 trong lockfile; `npm audit --omit=dev` còn 0 cảnh báo và 111 package có chữ ký registry xác minh. Test trên PostgreSQL UTF-8 riêng mới `meta_gym_test_20261024b`: 54 pass, 0 fail, 0 skip. Không dùng database demo cho suite vì baseline Admin của demo xung đột fixture chỉ-một-Admin.
+- Flutter: 138 widget/unit test pass, `flutter analyze` không có issue, `flutter build apk --debug` đạt. Đã tắt Kotlin incremental trong Gradle vì dự án ở ổ F: còn Pub cache ở ổ C: làm hỏng cache đường dẫn plugin trên Windows.
+- Browser trên backend test/demo riêng: Admin đăng nhập, xem dashboard, Coach, gói, giao dịch; Member đăng nhập và nhìn đúng gói `Gói Demo 30 Ngày` giá 500.000 ₫; Coach đăng nhập, xem danh sách hội viên và bị điều hướng khỏi route Admin. Không thực hiện mua gói hay tạo/khóa tài khoản bằng UI trong lượt này.
+- Mở Hồ sơ Member lần đầu phát hiện Flutter báo `setState() or markNeedsBuild() called during build`. Test widget tái hiện lỗi trước sửa; sau khi chuyển tải hồ sơ sang post-frame, test pass, Hồ sơ Coach tải trên Flutter Web thật và console Coach sạch.
+- Bổ sung assertion PostgreSQL cho trạng thái quan hệ `PAUSED` do hết hạn gói: Member vẫn đọc được giáo trình đã công bố, lịch sử dinh dưỡng và buổi tập cũ, trong khi Coach không được sửa/công bố/tạo mới. Suite backend chạy lại sau bổ sung: 54 pass, 0 fail, 0 skip.
+- T23-C vẫn cần thao tác UI nối tiếp Admin tạo Coach/gói → Member mua gói → Coach nhận và giao kế hoạch trên cùng dữ liệu; T23-D vẫn cần E2E thao tác tay hết hạn/tạm ngưng/khóa tài khoản và đối chiếu lịch sử. Các integration test backend đã bao phủ nhiều nhánh quyền nhưng không thay thế bằng chứng UI này.
 
