@@ -131,7 +131,18 @@ async function accounts(role, page = 1) {
   document.querySelectorAll('.toggle').forEach((button) => button.onclick = async () => {
     const status = button.dataset.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
     if (!confirm(`Xác nhận ${status === 'DISABLED' ? 'khóa' : 'mở'} tài khoản?`)) return;
-    try { await api(`/admin/users/${button.dataset.id}/status`, 'PATCH', { status });
+    const body = { status };
+    if (status === 'DISABLED') {
+      const reason = prompt('Lý do khóa tài khoản:');
+      if (reason === null) return;
+      const trimmedReason = reason.trim();
+      if (!trimmedReason || trimmedReason.length > 500) {
+        notice('Lý do khóa tài khoản phải có từ 1 đến 500 ký tự.', 'danger');
+        return;
+      }
+      body.reason = trimmedReason;
+    }
+    try { await api(`/admin/users/${button.dataset.id}/status`, 'PATCH', body);
       await accounts(role, page); notice('Đã cập nhật trạng thái.'); }
     catch (error) { notice(error.message, 'danger'); }
   });
