@@ -25,7 +25,9 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_initialized) return;
     _initialized = true;
     _fillFields(context.read<SessionController>().user!);
-    _reloadProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reloadProfile();
+    });
   }
 
   Future<void> _reloadProfile() async {

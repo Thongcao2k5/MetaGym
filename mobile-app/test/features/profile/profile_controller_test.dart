@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
@@ -5,6 +6,8 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
+import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   const member = AuthUser(
@@ -32,6 +35,24 @@ void main() {
       'fitnessGoal': 'Tăng sức bền',
     });
     expect(service.lastUpdate, isNot(contains('biography')));
+  });
+
+  testWidgets('opening a profile does not notify its provider during build',
+      (tester) async {
+    final session = await _session(member);
+    final controller = ProfileController(_FakeProfileService(member), session);
+
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<SessionController>.value(value: session),
+        ChangeNotifierProvider<ProfileController>.value(value: controller),
+      ],
+      child: const MaterialApp(home: ProfilePage()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('member@metagym.test'), findsOneWidget);
   });
 
   test('changing password clears the invalidated session', () async {
