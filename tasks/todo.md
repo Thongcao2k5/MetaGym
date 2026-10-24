@@ -638,3 +638,62 @@ chia tiếp trước khi code. Giữ nguyên các thay đổi/nhánh chưa merge
 bị, email provider thật, thiết kế hình ảnh cuối và phát hành production. Các
 phần này vẫn thuộc kế hoạch MVP chung, không được đánh dấu hoàn thành nhờ UI25.
 
+## Đối chiếu 24/10/2026 — Bắt đầu Task 23
+
+Các dòng T01–T24 phía trên là ảnh chụp tại `92ca738`, không sửa ngược lịch sử.
+Sau khi UI01–UI28 vào `main`, các nhận định “Flutter chưa có” về điều hướng,
+Gym Content, mua gói/chọn Coach, giáo trình, nhật ký/biểu đồ, nhắn tin và
+trang AI không còn đúng ở mức **có giao diện cơ bản**. Bằng chứng tương ứng:
+`SecureTokenStorage` và widget test khôi phục phiên; test tìm kiếm/lọc thiết
+bị ẩn; test biểu đồ tiến độ; test polling/read-state/chat; test trạng thái lỗi
+AI; kịch bản UI28 Member–Coach trên hai phiên thật. Điều đó **không** xác nhận
+toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài đã chạy E2E.
+
+### T23-A — Chốt trạng thái hiện tại và cổng kiểm thử
+
+- [x] Phân biệt checklist lịch sử với bằng chứng UI01–UI28 trên `main`.
+- [x] Liệt kê rõ phần đã có UI nhưng chưa qua E2E và phần provider/RTC thật còn thiếu.
+- [x] Xác nhận `npm run check` đạt ngày 24/10/2026; lần `npm test` gần nhất đạt 37/54, 17 test PostgreSQL bị skip vì thiếu `TEST_DATABASE_URL` trong shell. Bằng chứng 54/54 trước đó được giữ riêng, không ghi lần chạy hiện tại là 54/54.
+
+**Kiểm tra:** đối chiếu source/test với các dòng trên; `git diff --check`.
+**Phụ thuộc:** UI28. **Cỡ:** S. **Tệp:** `tasks/plan.md`, `tasks/todo.md`.
+
+### T23-B — Chạy lại backend trên PostgreSQL test riêng
+
+- [ ] Cấu hình `TEST_DATABASE_URL` chỉ trong môi trường chạy, trỏ tới database test đã migration; không dùng database demo hoặc ghi secret vào Git.
+- [ ] Chạy `npm run check` và `npm test`; xác nhận 54 pass, 0 fail, 0 skip hoặc xử lý mọi sai khác thực tế.
+- [ ] Ghi lại tên kịch bản, thời điểm, commit, số pass/skip và cách dọn dữ liệu test mà không lộ credential.
+
+**Kiểm tra:** output test PostgreSQL thật và trạng thái sạch của database demo.
+**Phụ thuộc:** T23-A. **Cỡ:** S.
+
+### T23-C — Luồng Admin và liên thông ba vai trò
+
+- [ ] Admin tạo/quản lý Coach và gói; Member nhìn đúng dữ liệu, mua gói; Coach nhận quan hệ và giao kế hoạch trên cùng backend demo.
+- [ ] Admin xem dashboard, giao dịch và dữ liệu được phép; Member/Coach không mở được route Admin bằng UI hoặc API.
+- [ ] Ghi kết quả trên hai trình duyệt/thiết bị và dữ liệu đối chiếu API; tách lỗi phát hiện thành task sửa cụ thể.
+
+**Kiểm tra:** checklist thao tác tay, API/DB đối chiếu, console sạch.
+**Phụ thuộc:** T23-B. **Cỡ:** M.
+
+### T23-D — Vòng đời quan hệ và lịch sử riêng tư
+
+- [ ] Kiểm tra hết hạn/tạm ngưng gói: quyền tạo mới bị chặn, dữ liệu lịch sử còn đọc được theo contract.
+- [ ] Kiểm tra đổi Coach/kết thúc quan hệ: Coach cũ mất quyền, Coach mới có đúng quyền và lịch sử không mất.
+- [ ] Kiểm tra khóa tài khoản: phiên cũ không tiếp tục dùng API; người khác không đọc được dữ liệu riêng tư.
+
+**Kiểm tra:** PostgreSQL integration test cho trường hợp thiếu; thao tác tay Member/Coach/Admin với dữ liệu test dọn được.
+**Phụ thuộc:** T23-B–C. **Cỡ:** M.
+
+### T23-E — Hồi quy và chốt Task 23
+
+- [ ] Tự động hóa ít nhất một luồng UI/role hoặc trạng thái vòng đời chưa được test tương đương; không thay test thật bằng mock cho quyền backend.
+- [ ] Chạy lại backend test không skip, Flutter test/analyze và Admin build sau mọi sửa lỗi.
+- [ ] Chỉ đánh dấu ba tiêu chí Task 23 ở trên khi có bằng chứng ba vai trò, ma trận quyền và lịch sử sau thay đổi trạng thái.
+
+**Kiểm tra:** test/build log và biên bản E2E gắn commit cuối.
+**Phụ thuộc:** T23-C–D. **Cỡ:** M.
+
+**Ngoài Task 23:** RTC hai thiết bị, email/AI provider thật, thiết kế cuối và
+triển khai production vẫn là việc riêng; không đóng các mục đó bằng test mock.
+

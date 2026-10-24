@@ -178,3 +178,32 @@ hiện tại chỉ có danh sách quan hệ `ACTIVE`/`PAUSED` và tổng quan ti
 tự hiển thị dữ liệu riêng qua API Member hoặc đánh dấu hai màn hình đó xong;
 nếu vẫn cần, tạo task backend nhỏ bổ sung contract/quyền trước khi làm UI.
 
+## Bổ sung 24/10/2026 — Task 23: kiểm thử hệ thống sau UI28
+
+`UI01`–`UI28` đã được merge vào `main`. Checklist `T01`–`T24` ở đầu
+`todo.md` là ảnh chụp cũ; không dùng các câu “Flutter chưa có” ở đó làm trạng
+thái hiện tại. Đối chiếu mới và các tiêu chí kiểm thử nằm trong mục T23-A–E
+ở cuối `todo.md`.
+
+**Phạm vi:** hoàn thiện bằng chứng chất lượng cho ba vai trò và các chuyển
+trạng thái có nguy cơ lộ dữ liệu. Không coi UI cuộc gọi metadata là RTC thật,
+không coi xử lý lỗi AI/email là tích hợp provider thật và không phát hành
+production trong Task 23.
+
+**Thứ tự thực hiện:** T23-A đối chiếu trạng thái → T23-B chạy lại PostgreSQL
+test trên database riêng → T23-C kiểm thử Admin và liên thông ba vai trò →
+T23-D kiểm thử hết hạn/đổi Coach/khóa tài khoản → T23-E tự động hóa các luồng
+hồi quy khả thi và chốt ma trận quyền. Mỗi bước ghi bằng chứng, lỗi và dữ liệu
+đã tạo; không đánh dấu bước sau khi bước trước chỉ có test bị skip.
+
+**Rủi ro môi trường:** test PostgreSQL dùng `TEST_DATABASE_URL` trỏ tới
+database test tách khỏi demo. Phiên shell ngày 24/10 chưa có biến này; lần
+`npm test` gần nhất đạt 37, bỏ qua 17 test PostgreSQL. Bằng chứng 54/54 và
+smoke 7/7 ở UI28 vẫn có giá trị cho commit đã kiểm tra, nhưng không thay thế
+cho việc chạy lại trên môi trường hiện tại. Không in hoặc commit connection
+string, không reset database demo để lấy chỗ chạy test.
+
+**Checkpoint Task 23:** backend check/test không skip, Flutter test/analyze,
+Admin build đạt; ba vai trò và các trạng thái quan hệ có bằng chứng thực tế;
+mọi lỗi mức cao được sửa và kiểm thử hồi quy trước khi chuyển Task 24.
+
