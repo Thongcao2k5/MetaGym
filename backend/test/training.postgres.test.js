@@ -284,6 +284,9 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         `UPDATE coach_relationships SET status = 'PAUSED', paused_at = now(),
          pause_reason = 'MEMBERSHIP_EXPIRED' WHERE id = $1`, [relationshipId],
       );
+      assert.equal((await call(app, `/training-plans/${planId}`, member)).status, 200);
+      assert.equal((await call(app, '/nutrition-guides/me/history', member)).body.data.length, 3);
+      assert.equal((await call(app, `/training-sessions/${sessionId}`, member)).status, 200);
       assert.equal((await call(app, `/coach/training-plans/${pausedPlan.body.data.id}`,
         coach, 'PATCH', { title: 'Edit after pause' })).status, 403);
       assert.equal((await call(app,
