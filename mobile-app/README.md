@@ -49,14 +49,20 @@ chỉ kiểm thử được metadata cuộc gọi và URL ảnh. Chức năng AI
 trả 503 nếu backend chưa cấu hình dịch vụ tương ứng. Các biểu mẫu JSON là mẫu
 khởi đầu; mã UUID của Coach/Member/quan hệ/ảnh phải thay bằng mã thật.
 
-Trang chính Member và Coach có danh mục điều hướng theo vai trò. Các mục chưa
-được làm ở UI02–UI27 hiện mở trang giữ chỗ ghi mã task tương ứng, không gọi API
-và không được xem là tính năng đã hoàn thành. Khung JSON vẫn là công cụ phụ
-trong môi trường phát triển.
+Trang chính Member và Coach có danh mục điều hướng theo vai trò. Các trang
+UI02–UI27 đã có giao diện cơ bản để gọi API và kiểm thử luồng; đây chưa phải
+thiết kế sản phẩm cuối. Khung JSON vẫn là công cụ phụ trong môi trường phát
+triển.
 
 ## Kiểm tra
 
 ```powershell
 F:\flutter\bin\flutter.bat analyze
 F:\flutter\bin\flutter.bat test
+F:\flutter\bin\flutter.bat build apk --debug
 ```
+
+Trên Windows, nếu dự án và Pub cache ở hai ổ đĩa khác nhau, Kotlin incremental
+cache của plugin có thể lỗi khi tính đường dẫn tương đối. Dự án tắt Kotlin
+incremental trong `android/gradle.properties` để APK vẫn build được trong cấu
+hình này; đổi lại thời gian build Android có thể tăng.
