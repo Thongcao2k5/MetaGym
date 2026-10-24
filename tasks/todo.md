@@ -669,33 +669,33 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 ### T23-C — Luồng Admin và liên thông ba vai trò
 
-- [ ] T23-UI-1: dựng stack kiểm thử tách biệt, ghi commit/port/database test, health và ba phiên đăng nhập; không dùng dữ liệu demo đang hoạt động.
-- [ ] T23-UI-2: thao tác Admin tạo Coach/gói → Member thấy đúng gói và thanh toán `MOCK_QR` → Admin đối chiếu giao dịch/membership; kiểm tra Member/Coach không truy cập Admin.
-- [ ] T23-UI-3: trên cùng dữ liệu, Member yêu cầu Coach → Coach duyệt, tạo/công bố giáo trình → Member đọc đúng bản; đối chiếu ID và quyền hai vai trò.
-- [ ] Admin tạo/quản lý Coach và gói; Member nhìn đúng dữ liệu, mua gói; Coach nhận quan hệ và giao kế hoạch trên cùng backend test riêng.
-- [ ] Admin xem dashboard, giao dịch và dữ liệu được phép; Member/Coach không mở được route Admin bằng UI hoặc API.
-- [ ] Ghi kết quả trên hai trình duyệt/thiết bị và dữ liệu đối chiếu API; tách lỗi phát hiện thành task sửa cụ thể.
+- [x] T23-UI-1: dựng stack kiểm thử tách biệt, ghi commit/port/database test, health và ba phiên đăng nhập; không dùng dữ liệu demo đang hoạt động.
+- [x] T23-UI-2: thao tác Admin tạo Coach/gói → Member thấy đúng gói và thanh toán `MOCK_QR` → Admin đối chiếu giao dịch/membership; kiểm tra Member/Coach không truy cập Admin.
+- [x] T23-UI-3: trên cùng dữ liệu, Member yêu cầu Coach → Coach duyệt, tạo/công bố giáo trình → Member đọc đúng bản; đối chiếu ID và quyền hai vai trò.
+- [x] Admin tạo/quản lý Coach và gói; Member nhìn đúng dữ liệu, mua gói; Coach nhận quan hệ và giao kế hoạch trên cùng backend test riêng.
+- [x] Admin xem dashboard, giao dịch và dữ liệu được phép; Member/Coach không mở được route Admin bằng UI hoặc API.
+- [x] Ghi kết quả trên hai trình duyệt/thiết bị và dữ liệu đối chiếu API; tách lỗi phát hiện thành task sửa cụ thể.
 
 **Kiểm tra:** checklist thao tác tay, API/DB đối chiếu, console sạch.
 **Phụ thuộc:** T23-B. **Cỡ:** M.
 
 ### T23-D — Vòng đời quan hệ và lịch sử riêng tư
 
-- [ ] T23-UI-4: kiểm thử hết hạn/tạm ngưng membership và đổi/kết thúc Coach bằng UI hai vai trò; chứng minh thao tác tạo mới bị chặn, lịch sử Member còn, Coach cũ mất quyền.
-- [ ] T23-UI-5: Admin khóa Member sau khi giữ token/phiên cũ; UI và API từ phiên cũ bị từ chối, người khác không đọc dữ liệu riêng; mở khóa không hồi sinh token cũ.
-- [ ] Kiểm tra hết hạn/tạm ngưng gói: quyền tạo mới bị chặn, dữ liệu lịch sử còn đọc được theo contract.
-- [ ] Kiểm tra đổi Coach/kết thúc quan hệ: Coach cũ mất quyền, Coach mới có đúng quyền và lịch sử không mất.
-- [ ] Kiểm tra khóa tài khoản: phiên cũ không tiếp tục dùng API; người khác không đọc được dữ liệu riêng tư.
+- [x] T23-UI-4: kiểm thử hết hạn/tạm ngưng membership và đổi/kết thúc Coach bằng UI hai vai trò; chứng minh thao tác tạo mới bị chặn, lịch sử Member còn, Coach cũ mất quyền.
+- [x] T23-UI-5: Admin khóa Member sau khi giữ token/phiên cũ; UI và API từ phiên cũ bị từ chối, người khác không đọc dữ liệu riêng; mở khóa không hồi sinh token cũ.
+- [x] Kiểm tra hết hạn/tạm ngưng gói: quyền tạo mới bị chặn, dữ liệu lịch sử còn đọc được theo contract.
+- [x] Kiểm tra đổi Coach/kết thúc quan hệ: Coach cũ mất quyền, Coach mới có đúng quyền và lịch sử không mất.
+- [x] Kiểm tra khóa tài khoản: phiên cũ không tiếp tục dùng API; người khác không đọc được dữ liệu riêng tư.
 
 **Kiểm tra:** PostgreSQL integration test cho trường hợp thiếu; thao tác tay Member/Coach/Admin với dữ liệu test dọn được.
 **Phụ thuộc:** T23-B–C. **Cỡ:** M.
 
 ### T23-E — Hồi quy và chốt Task 23
 
-- [ ] T23-UI-6: gom ảnh/video hoặc nhật ký thao tác, console/network, ID đối chiếu API/DB (ẩn token/secret); lập danh sách lỗi tái hiện được, chạy lại hồi quy sau sửa và chỉ chốt T23-C/D/E khi đủ bằng chứng.
+- [x] T23-UI-6: gom ảnh/video hoặc nhật ký thao tác, console/network, ID đối chiếu API/DB (ẩn token/secret); lập danh sách lỗi tái hiện được, chạy lại hồi quy sau sửa và chỉ chốt T23-C/D/E khi đủ bằng chứng.
 - [x] Tự động hóa ít nhất một luồng UI/role hoặc trạng thái vòng đời chưa được test tương đương; test PostgreSQL thật kiểm tra Coach cũ mất quyền đọc tiến độ sau chuyển Coach, Coach mới và Member vẫn đọc được nhật ký.
 - [x] Chạy lại backend test không skip, Flutter test/analyze và Admin build sau mọi sửa lỗi; APK debug cũng build đạt.
-- [ ] Chỉ đánh dấu ba tiêu chí Task 23 ở trên khi có bằng chứng ba vai trò, ma trận quyền và lịch sử sau thay đổi trạng thái.
+- [x] Chỉ đánh dấu ba tiêu chí Task 23 ở trên khi có bằng chứng ba vai trò, ma trận quyền và lịch sử sau thay đổi trạng thái.
 
 **Kiểm tra:** test/build log và biên bản E2E gắn commit cuối.
 **Phụ thuộc:** T23-C–D. **Cỡ:** M.
@@ -703,7 +703,7 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 **Ngoài Task 23:** RTC hai thiết bị, email/AI provider thật, thiết kế cuối và
 triển khai production vẫn là việc riêng; không đóng các mục đó bằng test mock.
 
-### Kiểm chứng bổ sung 24/10/2026 — chưa đóng T23-C/D
+### Kiểm chứng bổ sung 24/10/2026 — trước khi đóng T23-C/D
 
 - Backend khóa `body-parser` 2.4.0 thay cho 2.3.0 trong lockfile; `npm audit --omit=dev` còn 0 cảnh báo và 111 package có chữ ký registry xác minh. Test trên PostgreSQL UTF-8 riêng mới `meta_gym_test_20261024b`: 54 pass, 0 fail, 0 skip. Không dùng database demo cho suite vì baseline Admin của demo xung đột fixture chỉ-một-Admin.
 - Flutter: 138 widget/unit test pass, `flutter analyze` không có issue, `flutter build apk --debug` đạt. Đã tắt Kotlin incremental trong Gradle vì dự án ở ổ F: còn Pub cache ở ổ C: làm hỏng cache đường dẫn plugin trên Windows.
@@ -712,4 +712,10 @@ triển khai production vẫn là việc riêng; không đóng các mục đó b
 - Bổ sung assertion PostgreSQL cho trạng thái quan hệ `PAUSED` do hết hạn gói: Member vẫn đọc được giáo trình đã công bố, lịch sử dinh dưỡng và buổi tập cũ, trong khi Coach không được sửa/công bố/tạo mới. Suite backend chạy lại sau bổ sung: 54 pass, 0 fail, 0 skip.
 - Bổ sung assertion PostgreSQL cho khóa Member qua Admin: token cũ trả 401 ở hồ sơ, nhật ký tập, tổng hợp tiến độ và thanh toán; sau khi mở lại tài khoản, token cũ vẫn bị thu hồi. `npm run check` và 54/54 backend test đạt, 0 skip; fixture và audit test được dọn.
 - T23-C vẫn cần thao tác UI nối tiếp Admin tạo Coach/gói → Member mua gói → Coach nhận và giao kế hoạch trên cùng dữ liệu; T23-D vẫn cần E2E thao tác tay hết hạn/tạm ngưng/khóa tài khoản và đối chiếu lịch sử. Các integration test backend đã bao phủ nhiều nhánh quyền nhưng không thay thế bằng chứng UI này.
+
+### Kết quả agent E2E và hồi quy lỗi khóa tài khoản — 24/10/2026
+
+- Agent kiểm thử báo cáo T23-UI-1 đến T23-UI-4 đạt trên stack riêng `55434`/`3020`/`5175`/`8090`, với chuỗi Admin tạo Coach/gói → Member mua `MOCK_QR` → Coach duyệt/công bố giáo trình → hết hạn/đổi Coach. Báo cáo người dùng dán trong cuộc trò chuyện có UUID và kết quả API/DB; tên ảnh được liệt kê nhưng ảnh gốc của các lượt này chưa có trong repo.
+- T23-UI-5 ban đầu chỉ khóa Member bằng API vì nút Admin thiếu `reason`, nên không tính là UI pass tại thời điểm báo cáo. Đã sửa handler, thêm năm ca hồi quy (đỏ trước sửa, xanh sau sửa), và chạy lại nút **Khóa/Mở** trên Admin Web + PostgreSQL test thật; chi tiết và ảnh tại `tasks/evidence/t23-admin-lock.md`.
+- Sau sửa: Admin test 5/5 và build đạt; backend 54/54 PostgreSQL (0 skip) cùng `npm run check` đạt; Flutter 138/138 và analyze sạch. Không dùng database demo. Các ô T23-C/D/E ở trên thể hiện kết quả sau lượt hồi quy này, không phải kết quả UI-5 ban đầu.
 

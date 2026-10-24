@@ -16,7 +16,11 @@ JavaScript gửi tới trình duyệt. Access token Admin chỉ được giữ t
 
 ```bash
 npm run build
+npm test
 ```
+
+`npm test` kiểm tra thao tác khóa/mở tài khoản và payload gửi tới API, gồm
+lý do khóa bắt buộc và các trường hợp hủy nhập.
 
 Tài khoản đăng nhập phải có vai trò `ADMIN`. Backend chịu trách nhiệm kiểm tra
 vai trò và trạng thái tài khoản ở mỗi yêu cầu.
