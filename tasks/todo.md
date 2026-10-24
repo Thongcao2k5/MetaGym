@@ -669,7 +669,10 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 ### T23-C — Luồng Admin và liên thông ba vai trò
 
-- [ ] Admin tạo/quản lý Coach và gói; Member nhìn đúng dữ liệu, mua gói; Coach nhận quan hệ và giao kế hoạch trên cùng backend demo.
+- [ ] T23-UI-1: dựng stack kiểm thử tách biệt, ghi commit/port/database test, health và ba phiên đăng nhập; không dùng dữ liệu demo đang hoạt động.
+- [ ] T23-UI-2: thao tác Admin tạo Coach/gói → Member thấy đúng gói và thanh toán `MOCK_QR` → Admin đối chiếu giao dịch/membership; kiểm tra Member/Coach không truy cập Admin.
+- [ ] T23-UI-3: trên cùng dữ liệu, Member yêu cầu Coach → Coach duyệt, tạo/công bố giáo trình → Member đọc đúng bản; đối chiếu ID và quyền hai vai trò.
+- [ ] Admin tạo/quản lý Coach và gói; Member nhìn đúng dữ liệu, mua gói; Coach nhận quan hệ và giao kế hoạch trên cùng backend test riêng.
 - [ ] Admin xem dashboard, giao dịch và dữ liệu được phép; Member/Coach không mở được route Admin bằng UI hoặc API.
 - [ ] Ghi kết quả trên hai trình duyệt/thiết bị và dữ liệu đối chiếu API; tách lỗi phát hiện thành task sửa cụ thể.
 
@@ -678,6 +681,8 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 ### T23-D — Vòng đời quan hệ và lịch sử riêng tư
 
+- [ ] T23-UI-4: kiểm thử hết hạn/tạm ngưng membership và đổi/kết thúc Coach bằng UI hai vai trò; chứng minh thao tác tạo mới bị chặn, lịch sử Member còn, Coach cũ mất quyền.
+- [ ] T23-UI-5: Admin khóa Member sau khi giữ token/phiên cũ; UI và API từ phiên cũ bị từ chối, người khác không đọc dữ liệu riêng; mở khóa không hồi sinh token cũ.
 - [ ] Kiểm tra hết hạn/tạm ngưng gói: quyền tạo mới bị chặn, dữ liệu lịch sử còn đọc được theo contract.
 - [ ] Kiểm tra đổi Coach/kết thúc quan hệ: Coach cũ mất quyền, Coach mới có đúng quyền và lịch sử không mất.
 - [ ] Kiểm tra khóa tài khoản: phiên cũ không tiếp tục dùng API; người khác không đọc được dữ liệu riêng tư.
@@ -687,6 +692,7 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 ### T23-E — Hồi quy và chốt Task 23
 
+- [ ] T23-UI-6: gom ảnh/video hoặc nhật ký thao tác, console/network, ID đối chiếu API/DB (ẩn token/secret); lập danh sách lỗi tái hiện được, chạy lại hồi quy sau sửa và chỉ chốt T23-C/D/E khi đủ bằng chứng.
 - [x] Tự động hóa ít nhất một luồng UI/role hoặc trạng thái vòng đời chưa được test tương đương; test PostgreSQL thật kiểm tra Coach cũ mất quyền đọc tiến độ sau chuyển Coach, Coach mới và Member vẫn đọc được nhật ký.
 - [x] Chạy lại backend test không skip, Flutter test/analyze và Admin build sau mọi sửa lỗi; APK debug cũng build đạt.
 - [ ] Chỉ đánh dấu ba tiêu chí Task 23 ở trên khi có bằng chứng ba vai trò, ma trận quyền và lịch sử sau thay đổi trạng thái.

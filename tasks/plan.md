@@ -208,3 +208,11 @@ liệu trong `%TEMP%` chưa xóa được do chính sách công cụ và không 
 Admin build đạt; ba vai trò và các trạng thái quan hệ có bằng chứng thực tế;
 mọi lỗi mức cao được sửa và kiểm thử hồi quy trước khi chuyển Task 24.
 
+**Bàn giao cho agent kiểm thử UI:** chia phần T23-C/D còn mở thành sáu lượt
+T23-UI-1 → T23-UI-6 tại `tasks/t23-ui-test-handoff.md`. Lượt đầu dựng môi
+trường riêng; bốn lượt sau kiểm thử chuỗi Admin/Member/Coach và vòng đời trên
+cùng bộ dữ liệu có thể dọn; lượt cuối đối chiếu bằng chứng và chạy hồi quy sau
+nếu có sửa lỗi. Chỉ tích ô T23-C/D/E khi có thao tác UI thật và đối chiếu
+API/DB, không suy diễn từ integration test đã đạt. Không đụng database demo,
+không push hoặc merge trong lượt kiểm thử.
+
