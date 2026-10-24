@@ -653,16 +653,16 @@ toàn bộ luồng Admin, trạng thái vòng đời hoặc provider bên ngoài
 
 - [x] Phân biệt checklist lịch sử với bằng chứng UI01–UI28 trên `main`.
 - [x] Liệt kê rõ phần đã có UI nhưng chưa qua E2E và phần provider/RTC thật còn thiếu.
-- [x] Xác nhận `npm run check` đạt ngày 24/10/2026; lần `npm test` gần nhất đạt 37/54, 17 test PostgreSQL bị skip vì thiếu `TEST_DATABASE_URL` trong shell. Bằng chứng 54/54 trước đó được giữ riêng, không ghi lần chạy hiện tại là 54/54.
+- [x] Xác nhận `npm run check` đạt ngày 24/10/2026; lần chạy đầu trong shell thiếu `TEST_DATABASE_URL` nên 37 pass/17 skip, đã được thay bằng lần chạy PostgreSQL thật tại T23-B.
 
 **Kiểm tra:** đối chiếu source/test với các dòng trên; `git diff --check`.
 **Phụ thuộc:** UI28. **Cỡ:** S. **Tệp:** `tasks/plan.md`, `tasks/todo.md`.
 
 ### T23-B — Chạy lại backend trên PostgreSQL test riêng
 
-- [ ] Cấu hình `TEST_DATABASE_URL` chỉ trong môi trường chạy, trỏ tới database test đã migration; không dùng database demo hoặc ghi secret vào Git.
-- [ ] Chạy `npm run check` và `npm test`; xác nhận 54 pass, 0 fail, 0 skip hoặc xử lý mọi sai khác thực tế.
-- [ ] Ghi lại tên kịch bản, thời điểm, commit, số pass/skip và cách dọn dữ liệu test mà không lộ credential.
+- [x] Cấu hình `TEST_DATABASE_URL` chỉ trong shell chạy test, trỏ tới database UTF-8 riêng trên cluster PostgreSQL 17 tạm ở `127.0.0.1:55433`; bảy migration đạt, không dùng database demo hoặc ghi secret vào Git.
+- [x] Chạy `npm run check` và `npm test` trên mã nguồn tại `b29e8e8`: 54 pass, 0 fail, 0 skip (24/10/2026).
+- [x] Test `api-journey.postgres.test.js` cùng toàn bộ suite PostgreSQL thực sự chạy; fixture được test dọn theo kịch bản và cluster tạm đã dừng. Thư mục trong `%TEMP%` chưa xóa được do chính sách công cụ; không lưu credential trong Git.
 
 **Kiểm tra:** output test PostgreSQL thật và trạng thái sạch của database demo.
 **Phụ thuộc:** T23-A. **Cỡ:** S.

@@ -196,12 +196,13 @@ T23-D kiểm thử hết hạn/đổi Coach/khóa tài khoản → T23-E tự đ
 hồi quy khả thi và chốt ma trận quyền. Mỗi bước ghi bằng chứng, lỗi và dữ liệu
 đã tạo; không đánh dấu bước sau khi bước trước chỉ có test bị skip.
 
-**Rủi ro môi trường:** test PostgreSQL dùng `TEST_DATABASE_URL` trỏ tới
-database test tách khỏi demo. Phiên shell ngày 24/10 chưa có biến này; lần
-`npm test` gần nhất đạt 37, bỏ qua 17 test PostgreSQL. Bằng chứng 54/54 và
-smoke 7/7 ở UI28 vẫn có giá trị cho commit đã kiểm tra, nhưng không thay thế
-cho việc chạy lại trên môi trường hiện tại. Không in hoặc commit connection
-string, không reset database demo để lấy chỗ chạy test.
+**Môi trường kiểm thử:** test PostgreSQL dùng `TEST_DATABASE_URL` trỏ tới
+database test tách khỏi demo. Phiên shell ban đầu không có biến này nên 17
+test bị skip; ngày 24/10 đã dựng cluster PostgreSQL 17 tạm trên localhost
+`55433`, tạo database UTF-8 riêng, chạy bảy migration và xác nhận 54/54 test
+đạt, 0 skip. Không in hoặc commit connection string, không reset database demo
+để lấy chỗ chạy test. Cluster tạm đã dừng sau khi lấy bằng chứng; thư mục dữ
+liệu trong `%TEMP%` chưa xóa được do chính sách công cụ và không được commit.
 
 **Checkpoint Task 23:** backend check/test không skip, Flutter test/analyze,
 Admin build đạt; ba vai trò và các trạng thái quan hệ có bằng chứng thực tế;
