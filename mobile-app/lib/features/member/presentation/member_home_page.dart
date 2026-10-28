@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:meta_gym_app/app/app_router.dart';
-import 'package:meta_gym_app/app/feature_navigation.dart';
-import 'package:meta_gym_app/features/catalog/presentation/catalog_page.dart';
-import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
-import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/member/presentation/member_dashboard_view.dart';
+import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
+import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
+import 'package:provider/provider.dart';
 
 class MemberHomePage extends StatefulWidget {
   const MemberHomePage({super.key});
@@ -18,47 +20,34 @@ class _MemberHomePageState extends State<MemberHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId =
+        context.watch<SessionController>().user?.id ?? '';
+
+    // 5 tabs in exact order: Trang chủ · Tập luyện · AI · Tin nhắn · Hồ sơ
     final pages = [
-      FeatureMenu(
-        heading: 'Không gian dành cho hội viên',
-        destinations: memberDestinations,
-        workbenchPath: FlowWorkbenchConfig.enabled
-            ? AppRoutes.memberWorkbench
-            : null,
+      MemberDashboardView(
+        onNavigateTab: (index) => setState(() => _index = index),
+        bottomPadding: MetaGymBottomNav.contentBottomPadding(context),
       ),
-      const CatalogPage(),
-      const MembershipPage(),
-      Center(
-        child: FilledButton(
-          onPressed: () => context.push(AppRoutes.profile),
-          child: const Text('Mở hồ sơ của tôi'),
-        ),
-      ),
+      const MemberTrainingPage(),
+      const AiConversationsPage(),
+      ConversationsPage(currentUserId: currentUserId),
+      const ProfilePage(),
     ];
-    return Scaffold(
-      appBar: AppBar(title: const Text('Meta Gym')),
-      body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            label: 'Trang chủ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center),
-            label: 'Khám phá',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.card_membership),
-            label: 'Gói tập',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Hồ sơ',
-          ),
-        ],
+
+    return RepaintBoundary(
+      child: Scaffold(
+        backgroundColor: _index == 0
+            ? const Color(0xFF11151C)
+            : Theme.of(context).scaffoldBackgroundColor,
+        body: IndexedStack(
+          index: _index,
+          children: pages,
+        ),
+        bottomNavigationBar: MetaGymBottomNav(
+          currentIndex: _index,
+          onTap: (value) => setState(() => _index = value),
+        ),
       ),
     );
   }

@@ -19,6 +19,10 @@ import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
+import 'package:meta_gym_app/app/app_router.dart';
+import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
+import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
+import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
@@ -97,32 +101,57 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Không gian dành cho hội viên'), findsOneWidget);
+    // Bottom navigation renders the 5 tabs in exact order
+    expect(find.text('Trang chủ'), findsOneWidget);
+    expect(find.text('Tập luyện'), findsWidgets);
+    expect(find.text('AI'), findsOneWidget);
+    expect(find.text('Tin nhắn'), findsWidgets);
+    expect(find.text('Hồ sơ'), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
-    expect(find.text('Chọn Coach'), findsOneWidget);
-    await tester.tap(find.text('Chọn Coach'));
+
+    // Quick access Coach opens CoachSelectionPage
+    await tester.tap(find.text('Coach'));
     await tester.pumpAndSettle();
     expect(find.text('Chọn Coach', findRichText: true), findsWidgets);
     expect(find.byType(CoachSelectionPage), findsOneWidget);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
-    await tester.tap(find.text('Dinh dưỡng'));
-    await tester.pumpAndSettle();
-    expect(find.byType(MemberNutritionPage), findsOneWidget);
-    expect(find.text('Bạn chưa có hướng dẫn dinh dưỡng.'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('Giáo trình'), -250);
-    await tester.tap(find.text('Giáo trình'));
+    // Tapping bottom nav tab 1: Tập luyện -> MemberTrainingPage
+    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
     await tester.pumpAndSettle();
     expect(find.byType(MemberTrainingPage), findsOneWidget);
     expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
-    await tester.pageBack();
+
+    // Tapping bottom nav tab 2: AI -> AiConversationsPage
+    await tester.tap(find.byIcon(Icons.auto_awesome_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byType(AiConversationsPage), findsOneWidget);
+
+    // Tapping bottom nav tab 3: Tin nhắn -> ConversationsPage
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byType(ConversationsPage), findsOneWidget);
+
+    // Tapping bottom nav tab 4: Hồ sơ -> ProfilePage
+    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfilePage), findsOneWidget);
+
+    // Tapping bottom nav tab 0: Trang chủ -> Return to MemberDashboardView
+    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberHomePage), findsOneWidget);
+
+    // Direct routing to nutrition
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go('/member/features/nutrition');
+    await tester.pumpAndSettle();
+    expect(find.byType(MemberNutritionPage), findsOneWidget);
+    expect(find.text('Bạn chưa có hướng dẫn dinh dưỡng.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberNutritionPage))).go('/member');
     await tester.pumpAndSettle();
 
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -175,11 +204,8 @@ void main() {
     expect(find.byType(MemberHomePage), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
 
-    await tester.scrollUntilVisible(
-      find.text('Kiểm thử các luồng hội viên'),
-      300,
-    );
-    await tester.tap(find.text('Kiểm thử các luồng hội viên'));
+    GoRouter.of(tester.element(find.byType(MemberHomePage)))
+        .go(AppRoutes.memberWorkbench);
     await tester.pumpAndSettle();
     expect(find.text('Kiểm thử luồng hội viên'), findsOneWidget);
   });
