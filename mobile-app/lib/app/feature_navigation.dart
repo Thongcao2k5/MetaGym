@@ -12,7 +12,13 @@ class FeatureDestination {
 
 const memberDestinations = <FeatureDestination>[
   FeatureDestination(
-    'Thanh toán',
+    'Gói tập',
+    '/member/features/membership',
+    'UI02',
+    'Tài khoản',
+  ),
+  FeatureDestination(
+    'Lịch sử thanh toán',
     '/member/features/payments',
     'UI02',
     'Tài khoản',

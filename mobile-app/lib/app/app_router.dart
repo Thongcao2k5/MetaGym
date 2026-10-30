@@ -13,6 +13,7 @@ import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.d
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/calls/presentation/calls_page.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
@@ -142,7 +143,9 @@ GoRouter createAppRouter({
         GoRoute(
           path: destination.path,
           builder: (context, state) =>
-              destination.path == '/member/features/payments'
+              destination.path == '/member/features/membership'
+              ? const MembershipPage()
+              : destination.path == '/member/features/payments'
               ? const PaymentHistoryPage()
               : destination.path == '/member/features/gym'
               ? const GymEquipmentPage()

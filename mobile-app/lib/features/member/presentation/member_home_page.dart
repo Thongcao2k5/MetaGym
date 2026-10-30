@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -20,8 +21,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId =
-        context.watch<SessionController>().user?.id ?? '';
+    final currentUserId = context.watch<SessionController>().user?.id ?? '';
 
     // 5 tabs in exact order: Trang chủ · Tập luyện · AI · Tin nhắn · Hồ sơ
     final pages = [
@@ -37,13 +37,11 @@ class _MemberHomePageState extends State<MemberHomePage> {
 
     return RepaintBoundary(
       child: Scaffold(
+        extendBody: _index == 0,
         backgroundColor: _index == 0
-            ? const Color(0xFF11151C)
+            ? MetaGymTheme.darkCanvas
             : Theme.of(context).scaffoldBackgroundColor,
-        body: IndexedStack(
-          index: _index,
-          children: pages,
-        ),
+        body: IndexedStack(index: _index, children: pages),
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,
           onTap: (value) => setState(() => _index = value),

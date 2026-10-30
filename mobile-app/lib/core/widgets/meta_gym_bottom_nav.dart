@@ -1,263 +1,282 @@
-import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 
-/// Floating bottom navigation bar matching the Meta Gym design mockup.
+import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+
+/// Level 2 Performance Glass bottom navigation bar for Meta Gym Member & Coach.
 ///
-/// Features:
-/// - 5 tabs in exact order: Trang chủ · Tập luyện · AI · Tin nhắn · Hồ sơ.
-/// - Floating compact dock with dark graphite background and rounded corners.
-/// - Protruding circular AI button in the center with coral gradient and glow.
-/// - Thin outline icons and legible labels for standard tabs.
-/// - Smooth sliding active indicator that glides between tabs.
-/// - Respects device reduce motion settings (`MediaQuery.disableAnimations`).
-/// - Minimum 44×44 px touch targets for all items and bottom safe area support.
+/// Order of items: Trang chủ · Tập luyện · AI · Tin nhắn · Hồ sơ.
+/// Follows DESIGN.md §3.2 & §5.3:
+/// - Background: `rgba(18, 23, 30, 0.78)` (`MetaGymTheme.performanceGlass`)
+/// - Backdrop blur: `12px` clipped inside `24px` radius (`RepaintBoundary` isolated)
+/// - Border: `1px` `rgba(212, 228, 255, 0.18)` + cool top-edge specular highlight
+/// - Active tab: `#FF5A36` (`MetaGymTheme.brandOrange`), inactive: `#B8C2D0`
 class MetaGymBottomNav extends StatelessWidget {
   const MetaGymBottomNav({
+    super.key,
     required this.currentIndex,
     required this.onTap,
-    super.key,
-  });
+    this.useSolidFallback = false,
+  }) : assert(currentIndex >= 0 && currentIndex < 5);
 
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  /// Nominal height of the floating bar itself (excluding protrusion & bottom margin).
-  static const double barHeight = 64.0;
+  /// Optional solid surface fallback for low-power / frame-drop environments.
+  final bool useSolidFallback;
 
-  /// Upward protrusion of the center AI button.
-  static const double aiProtrusion = 14.0;
+  static const double _barHeight = 68.0;
+  static const double _aiProtrusion = 14.0;
+  static const double _horizontalMargin = 16.0;
+  static const double _bottomMargin = 12.0;
 
-  /// Bottom margin from screen bottom / safe area.
-  static const double bottomMargin = 12.0;
-
-  /// Returns total safe bottom inset needed so scrollable content is never obscured.
+  /// Safe bottom padding so scrollable content is never obscured by the floating dock.
   static double contentBottomPadding(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    return barHeight + aiProtrusion + bottomMargin + bottomInset + 16.0;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    return _barHeight + _aiProtrusion + _bottomMargin + safeBottom + 16.0;
+  }
+
+  Alignment _indicatorAlignmentForIndex(int index) {
+    final x = -1.0 + (index * 0.5);
+    return Alignment(x, -1.0);
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final animDuration =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 250);
-    const animCurve = Curves.easeOutCubic;
+    final mediaQuery = MediaQuery.of(context);
+    final disableAnimations = mediaQuery.disableAnimations;
+    final safeBottom = mediaQuery.padding.bottom;
+    final duration = disableAnimations
+        ? Duration.zero
+        : MetaGymTheme.localStateDuration;
+    final useGlassSurface = !useSolidFallback && !disableAnimations;
+    final enableBlur =
+        useGlassSurface && !MetaGymTheme.isFlutterTestEnvironment;
 
-    // Alignment X in [-1.0, 1.0] for 5 items:
-    // Slot 0: -0.80, Slot 1: -0.40, Slot 2: 0.0, Slot 3: 0.40, Slot 4: 0.80
-    final indicatorAlignmentX = -0.8 + (currentIndex.clamp(0, 4) * 0.4);
+    final pillDecoration = BoxDecoration(
+      color: useGlassSurface
+          ? MetaGymTheme.performanceGlass
+          : MetaGymTheme.darkSurface,
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+      border: Border.all(
+        color: MetaGymTheme.performanceGlassBorder,
+        width: 1.0,
+      ),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x47000000), // rgba(0, 0, 0, 0.28)
+          blurRadius: 36,
+          offset: Offset(0, -12),
+        ),
+      ],
+    );
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomMargin + bottomInset),
-      child: SizedBox(
-        height: barHeight + aiProtrusion,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            // Floating Dock Bar Background
-            Container(
-              height: barHeight,
-              decoration: BoxDecoration(
-                color: const Color(0xFF14181F),
-                borderRadius: BorderRadius.circular(34),
-                border: Border.all(
-                  color: const Color(0xFF282F3B),
-                  width: 1.2,
+    final pillContent = Container(
+      height: _barHeight,
+      decoration: pillDecoration,
+      child: Stack(
+        children: [
+          // Cool specular top-edge highlight (DESIGN.md §3.2)
+          const Positioned(
+            top: 0,
+            left: 24,
+            right: 24,
+            child: IgnorePointer(
+              child: SizedBox(
+                height: 1,
+                child: ColoredBox(
+                  color: MetaGymTheme.performanceGlassTopHighlight,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    blurRadius: 22,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
-              child: Stack(
-                children: [
-                  // Sliding Active Indicator Underneath Tab
-                  AnimatedAlign(
-                    alignment: Alignment(indicatorAlignmentX, 1.0),
-                    duration: animDuration,
-                    curve: animCurve,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.2, // 1/5 of the bar width
-                      child: Center(
-                        child: AnimatedOpacity(
-                          opacity: currentIndex == 2 ? 0.0 : 1.0,
-                          duration: animDuration,
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            width: 26,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF5E3A),
-                              borderRadius: BorderRadius.circular(2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFF5E3A).withValues(alpha: 0.6),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+            ),
+          ),
+          // Sliding active indicator bar
+          AnimatedAlign(
+            alignment: _indicatorAlignmentForIndex(currentIndex),
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: FractionallySizedBox(
+              widthFactor: 1 / 5,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: duration,
+                  curve: Curves.easeOutCubic,
+                  width: currentIndex == 2 ? 0.0 : 28.0,
+                  height: 3.0,
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.brandOrange,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(3.0),
                     ),
-                  ),
-
-                  // 5 Tab items row
-                  Row(
-                    children: [
-                      // 0: Trang chủ
-                      Expanded(
-                        child: _NavItem(
-                          icon: Icons.home_outlined,
-                          activeIcon: Icons.home_rounded,
-                          label: 'Trang chủ',
-                          isSelected: currentIndex == 0,
-                          animDuration: animDuration,
-                          onTap: () => onTap(0),
-                        ),
-                      ),
-                      // 1: Tập luyện
-                      Expanded(
-                        child: _NavItem(
-                          icon: Icons.fitness_center_outlined,
-                          activeIcon: Icons.fitness_center_rounded,
-                          label: 'Tập luyện',
-                          isSelected: currentIndex == 1,
-                          animDuration: animDuration,
-                          onTap: () => onTap(1),
-                        ),
-                      ),
-                      // 2: Spacer for the protruding AI button in the center
-                      const Expanded(
-                        child: SizedBox(
-                          height: barHeight,
-                          width: double.infinity,
-                        ),
-                      ),
-                      // 3: Tin nhắn
-                      Expanded(
-                        child: _NavItem(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          activeIcon: Icons.chat_bubble_rounded,
-                          label: 'Tin nhắn',
-                          isSelected: currentIndex == 3,
-                          animDuration: animDuration,
-                          onTap: () => onTap(3),
-                        ),
-                      ),
-                      // 4: Hồ sơ
-                      Expanded(
-                        child: _NavItem(
-                          icon: Icons.person_outline_rounded,
-                          activeIcon: Icons.person_rounded,
-                          label: 'Hồ sơ',
-                          isSelected: currentIndex == 4,
-                          animDuration: animDuration,
-                          onTap: () => onTap(4),
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
+                        blurRadius: 6.0,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
+          ),
+          // 5 navigation items
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _NavTabItem(
+                  label: 'Trang chủ',
+                  icon: Icons.home_outlined,
+                  selected: currentIndex == 0,
+                  duration: duration,
+                  onTap: () => onTap(0),
+                ),
+              ),
+              Expanded(
+                child: _NavTabItem(
+                  label: 'Tập luyện',
+                  icon: Icons.fitness_center_outlined,
+                  selected: currentIndex == 1,
+                  duration: duration,
+                  onTap: () => onTap(1),
+                ),
+              ),
+              const Expanded(child: SizedBox()),
+              Expanded(
+                child: _NavTabItem(
+                  label: 'Tin nhắn',
+                  icon: Icons.chat_bubble_outline_rounded,
+                  selected: currentIndex == 3,
+                  duration: duration,
+                  onTap: () => onTap(3),
+                ),
+              ),
+              Expanded(
+                child: _NavTabItem(
+                  label: 'Hồ sơ',
+                  icon: Icons.person_outline_rounded,
+                  selected: currentIndex == 4,
+                  duration: duration,
+                  onTap: () => onTap(4),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
 
-            // Center Protruding AI Button
-            Positioned(
-              top: 0,
-              child: _AiCenterButton(
-                isSelected: currentIndex == 2,
-                animDuration: animDuration,
-                onTap: () => onTap(2),
+    return RepaintBoundary(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          _horizontalMargin,
+          0,
+          _horizontalMargin,
+          _bottomMargin + safeBottom,
+        ),
+        child: SizedBox(
+          height: _barHeight + _aiProtrusion,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Clipped Level 2 Backdrop Blur container
+              ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  MetaGymTheme.radiusGlassDock,
+                ),
+                child: enableBlur
+                    ? BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: MetaGymTheme.performanceGlassBlur,
+                          sigmaY: MetaGymTheme.performanceGlassBlur,
+                        ),
+                        child: pillContent,
+                      )
+                    : pillContent,
               ),
-            ),
-          ],
+              // Center protruding AI button
+              Positioned(
+                top: 0,
+                bottom: 0,
+                child: _AiCenterButton(
+                  label: 'AI',
+                  selected: currentIndex == 2,
+                  duration: duration,
+                  onTap: () => onTap(2),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
+class _NavTabItem extends StatelessWidget {
+  const _NavTabItem({
     required this.label,
-    required this.isSelected,
-    required this.animDuration,
+    required this.icon,
+    required this.selected,
+    required this.duration,
     required this.onTap,
   });
 
-  final IconData icon;
-  final IconData activeIcon;
   final String label;
-  final bool isSelected;
-  final Duration animDuration;
+  final IconData icon;
+  final bool selected;
+  final Duration duration;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color(0xFFFF5E3A);
-    const inactiveColor = Color(0xFF8B94A0);
+    final color = selected
+        ? MetaGymTheme.brandOrange
+        : MetaGymTheme.darkTextSecondary;
 
     return Semantics(
       button: true,
-      selected: isSelected,
+      selected: selected,
       label: label,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          splashColor: activeColor.withValues(alpha: 0.12),
-          highlightColor: Colors.transparent,
           onTap: onTap,
+          borderRadius: BorderRadius.circular(16.0),
+          splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.12),
+          highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.06),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: 44,
-              minHeight: 44,
-            ),
-            child: SizedBox(
-              height: MetaGymBottomNav.barHeight,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 2),
-                  AnimatedSwitcher(
-                    duration: animDuration,
-                    transitionBuilder: (child, anim) => FadeTransition(
-                      opacity: anim,
-                      child: ScaleTransition(
-                        scale: Tween<double>(begin: 0.9, end: 1.0).animate(anim),
-                        child: child,
-                      ),
-                    ),
-                    child: Icon(
-                      isSelected ? activeIcon : icon,
-                      key: ValueKey<bool>(isSelected),
-                      size: 23,
-                      color: isSelected ? activeColor : inactiveColor,
-                    ),
+            constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedScale(
+                  scale: selected ? 1.06 : 1.0,
+                  duration: duration,
+                  curve: Curves.easeOutBack,
+                  child: Icon(icon, size: 22.0, color: color),
+                ),
+                const SizedBox(height: 4.0),
+                AnimatedDefaultTextStyle(
+                  duration: duration,
+                  curve: Curves.easeOutCubic,
+                  style: TextStyle(
+                    fontFamily: MetaGymTheme.fontFamily,
+                    color: color,
+                    fontSize: 11.0,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    letterSpacing: 0.1,
+                    height: 1.15,
                   ),
-                  Text(
+                  child: Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? activeColor : inactiveColor,
-                      letterSpacing: 0.1,
-                      height: 1.1,
-                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -268,88 +287,89 @@ class _NavItem extends StatelessWidget {
 
 class _AiCenterButton extends StatelessWidget {
   const _AiCenterButton({
-    required this.isSelected,
-    required this.animDuration,
+    required this.label,
+    required this.selected,
+    required this.duration,
     required this.onTap,
   });
 
-  final bool isSelected;
-  final Duration animDuration;
+  final String label;
+  final bool selected;
+  final Duration duration;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    const buttonSize = 58.0;
-
     return Semantics(
       button: true,
-      selected: isSelected,
-      label: 'AI',
-      child: Material(
-        color: Colors.transparent,
-        child: InkResponse(
-          onTap: onTap,
-          radius: buttonSize / 2 + 6,
-          highlightShape: BoxShape.circle,
-          splashColor: Colors.white.withValues(alpha: 0.2),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: 44,
-              minHeight: 44,
-            ),
-            child: AnimatedContainer(
-              duration: animDuration,
-              width: buttonSize,
-              height: buttonSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFFFF7E58),
-                    Color(0xFFFF4820),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(
-                  color: isSelected
-                      ? Colors.white.withValues(alpha: 0.9)
-                      : Colors.white.withValues(alpha: 0.35),
-                  width: isSelected ? 2.2 : 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF5E3A).withValues(
-                      alpha: isSelected ? 0.65 : 0.42,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 68.0, minHeight: 68.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              AnimatedScale(
+                scale: selected ? 1.06 : 1.0,
+                duration: duration,
+                curve: Curves.easeOutBack,
+                child: Container(
+                  width: 52.0,
+                  height: 52.0,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFFF7E58), Color(0xFFFF4820)],
                     ),
-                    blurRadius: isSelected ? 20 : 14,
-                    spreadRadius: isSelected ? 2.5 : 1.0,
-                    offset: const Offset(0, 4),
+                    border: Border.all(
+                      color: selected
+                          ? MetaGymTheme.darkTextPrimary
+                          : const Color(0x40FFFFFF),
+                      width: selected ? 2.0 : 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: MetaGymTheme.brandOrange.withValues(
+                          alpha: selected ? 0.50 : 0.30,
+                        ),
+                        blurRadius: selected ? 16.0 : 10.0,
+                        spreadRadius: selected ? 1.0 : 0.0,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Colors.white,
-                    size: 21,
-                  ),
-                  SizedBox(height: 1),
-                  Text(
-                    'AI',
-                    style: TextStyle(
+                  child: const Center(
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
                       color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      height: 1.0,
+                      size: 24.0,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 4.0),
+              AnimatedDefaultTextStyle(
+                duration: duration,
+                curve: Curves.easeOutCubic,
+                style: TextStyle(
+                  fontFamily: MetaGymTheme.fontFamily,
+                  color: selected
+                      ? MetaGymTheme.brandOrange
+                      : MetaGymTheme.darkTextPrimary,
+                  fontSize: 11.0,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                  height: 1.15,
+                ),
+                child: Text(label),
+              ),
+            ],
           ),
         ),
       ),
