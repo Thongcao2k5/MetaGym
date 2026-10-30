@@ -1,0 +1,145 @@
+:root,
+[data-bs-theme="light"] {
+  color-scheme: light;
+
+  --meta-primary: #ff5a36;
+  --meta-primary-hover: #e84729;
+  --meta-on-primary: #090b0e;
+  --meta-secondary: #70aee8;
+  --meta-accent: #23c997;
+  --meta-background: #f5f7fa;
+  --meta-surface: #ffffff;
+  --meta-surface-raised: #edf1f5;
+  --meta-text-primary: #11151a;
+  --meta-text-secondary: #4d5968;
+  --meta-border: #cbd4df;
+  --meta-focus: #8dbcf0;
+  --meta-success: #23c997;
+  --meta-warning: #f2a93b;
+  --meta-danger: #f15b64;
+  --meta-info: #70aee8;
+  --meta-radius-sm: 0.625rem;
+  --meta-radius-md: 0.875rem;
+  --meta-radius-lg: 1.25rem;
+
+  --bs-body-font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bs-body-bg: var(--meta-background);
+  --bs-body-color: var(--meta-text-primary);
+  --bs-secondary-color: var(--meta-text-secondary);
+  --bs-border-color: var(--meta-border);
+  --bs-primary: var(--meta-primary);
+  --bs-primary-rgb: 255, 90, 54;
+  --bs-secondary: var(--meta-secondary);
+  --bs-secondary-rgb: 112, 174, 232;
+  --bs-success: var(--meta-success);
+  --bs-warning: var(--meta-warning);
+  --bs-danger: var(--meta-danger);
+  --bs-info: var(--meta-info);
+  --bs-border-radius: var(--meta-radius-sm);
+  --bs-border-radius-lg: var(--meta-radius-md);
+  --bs-focus-ring-color: rgb(141 188 240 / 35%);
+}
+
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  --meta-background: #080a0d;
+  --meta-surface: #11161c;
+  --meta-surface-raised: #181f27;
+  --meta-text-primary: #f7f9fc;
+  --meta-text-secondary: #b8c2d0;
+  --meta-border: #3a4654;
+
+  --bs-body-bg: var(--meta-background);
+  --bs-body-color: var(--meta-text-primary);
+  --bs-secondary-color: var(--meta-text-secondary);
+  --bs-border-color: var(--meta-border);
+  --bs-tertiary-bg: var(--meta-surface);
+}
+
+body {
+  font-variant-numeric: proportional-nums;
+}
+
+h1,
+h2,
+h3,
+.display-1,
+.display-2,
+.display-3,
+.display-4,
+.display-5,
+.display-6 {
+  font-family: "Be Vietnam Pro", system-ui, sans-serif;
+  font-weight: 700;
+}
+
+.font-data,
+table,
+.chart-label {
+  font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  --bs-btn-border-radius: var(--meta-radius-sm);
+  --bs-btn-font-weight: 600;
+  min-block-size: 44px;
+}
+
+.btn-primary {
+  --bs-btn-color: var(--meta-on-primary);
+  --bs-btn-bg: var(--meta-primary);
+  --bs-btn-border-color: var(--meta-primary);
+  --bs-btn-hover-color: var(--meta-on-primary);
+  --bs-btn-hover-bg: var(--meta-primary-hover);
+  --bs-btn-hover-border-color: var(--meta-primary-hover);
+  --bs-btn-active-color: var(--meta-on-primary);
+  --bs-btn-active-bg: var(--meta-primary-hover);
+  --bs-btn-active-border-color: var(--meta-primary-hover);
+}
+
+.form-control,
+.form-select {
+  min-block-size: 44px;
+  background-color: var(--meta-surface);
+  border-color: var(--meta-border);
+}
+
+.form-control:focus,
+.form-select:focus,
+.btn:focus-visible,
+.nav-link:focus-visible {
+  border-color: var(--meta-focus);
+  box-shadow: 0 0 0 0.2rem rgb(141 188 240 / 35%);
+  outline: 2px solid transparent;
+}
+
+.card,
+.modal-content,
+.offcanvas,
+.dropdown-menu {
+  color: var(--meta-text-primary);
+  background-color: var(--meta-surface);
+  border-color: var(--meta-border);
+}
+
+.card {
+  --bs-card-border-radius: var(--meta-radius-md);
+  box-shadow: none;
+}
+
+.modal-content,
+.offcanvas {
+  --bs-modal-border-radius: var(--meta-radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
