@@ -67,6 +67,41 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     }
   }
 
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF162232),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Đăng xuất',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy', style: TextStyle(color: Colors.white60)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF453A),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await context.read<SessionController>().signOut();
+    }
+  }
+
   Future<void> _loadFrame3Data() async {
     MemberCoachingService? coachingService;
     MemberNutritionService? nutritionService;
@@ -568,6 +603,13 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               icon: Icons.search_rounded,
               semanticLabel: 'Tìm kiếm phòng gym và thiết bị',
               onTap: () => context.push('/member/features/gym'),
+            ),
+            const SizedBox(width: 8),
+            _CircleHeaderGlassButton(
+              icon: Icons.logout_rounded,
+              iconColor: const Color(0xFFFF6961),
+              semanticLabel: 'Đăng xuất',
+              onTap: _confirmSignOut,
             ),
             const SizedBox(width: 8),
             Semantics(
@@ -1850,6 +1892,28 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           ),
                         ),
                       ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFF6961),
+                            side: const BorderSide(color: Color(0x4DFF453A)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: _confirmSignOut,
+                          icon: const Icon(Icons.logout_rounded, size: 18),
+                          label: const Text(
+                            'Đăng xuất',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1864,14 +1928,15 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 class _CircleHeaderGlassButton extends StatelessWidget {
   const _CircleHeaderGlassButton({
     required this.icon,
+    this.iconColor,
     required this.semanticLabel,
     required this.onTap,
   });
 
   final IconData icon;
+  final Color? iconColor;
   final String semanticLabel;
   final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -1900,7 +1965,7 @@ class _CircleHeaderGlassButton extends StatelessWidget {
                   ),
                   child: Icon(
                     icon,
-                    color: MetaGymTheme.darkTextPrimary,
+                    color: iconColor ?? MetaGymTheme.darkTextPrimary,
                     size: 20,
                   ),
                 ),
@@ -1912,3 +1977,4 @@ class _CircleHeaderGlassButton extends StatelessWidget {
     );
   }
 }
+
