@@ -53,20 +53,22 @@ class MetaGymBottomNav extends StatelessWidget {
     final enableBlur =
         useGlassSurface && !MetaGymTheme.isFlutterTestEnvironment;
 
+    const capsuleRadius = BorderRadius.all(Radius.circular(34.0));
+
     final pillDecoration = BoxDecoration(
       color: useGlassSurface
-          ? MetaGymTheme.performanceGlass
+          ? const Color(0x66101622) // Translucent optical glass (~40% tint)
           : MetaGymTheme.darkSurface,
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+      borderRadius: capsuleRadius,
       border: Border.all(
-        color: MetaGymTheme.performanceGlassBorder,
+        color: const Color(0x38D4E4FF),
         width: 1.0,
       ),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x47000000), // rgba(0, 0, 0, 0.28)
-          blurRadius: 36,
-          offset: Offset(0, -12),
+          color: Color(0x33000000), // rgba(0, 0, 0, 0.20)
+          blurRadius: 24,
+          offset: Offset(0, -4),
         ),
       ],
     );
@@ -79,13 +81,13 @@ class MetaGymBottomNav extends StatelessWidget {
           // Cool specular top-edge highlight (DESIGN.md §3.2)
           const Positioned(
             top: 0,
-            left: 24,
-            right: 24,
+            left: 28,
+            right: 28,
             child: IgnorePointer(
               child: SizedBox(
                 height: 1,
                 child: ColoredBox(
-                  color: MetaGymTheme.performanceGlassTopHighlight,
+                  color: Color(0x33FFFFFF),
                 ),
               ),
             ),
@@ -181,11 +183,9 @@ class MetaGymBottomNav extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
-              // Clipped Level 2 Backdrop Blur container
+              // Clipped Level 2 Backdrop Blur container (rounded-full capsule)
               ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  MetaGymTheme.radiusGlassDock,
-                ),
+                borderRadius: capsuleRadius,
                 child: enableBlur
                     ? BackdropFilter(
                         filter: ImageFilter.blur(
@@ -336,11 +336,18 @@ class _AiCenterButton extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.50 : 0.30,
+                          alpha: selected ? 0.65 : 0.40,
                         ),
-                        blurRadius: selected ? 16.0 : 10.0,
-                        spreadRadius: selected ? 1.0 : 0.0,
-                        offset: const Offset(0, 4),
+                        blurRadius: selected ? 20.0 : 14.0,
+                        spreadRadius: selected ? 2.0 : 0.5,
+                        offset: const Offset(0, 3),
+                      ),
+                      BoxShadow(
+                        color: MetaGymTheme.brandOrange.withValues(
+                          alpha: selected ? 0.35 : 0.20,
+                        ),
+                        blurRadius: selected ? 32.0 : 24.0,
+                        spreadRadius: selected ? 4.0 : 1.0,
                       ),
                     ],
                   ),
@@ -357,11 +364,9 @@ class _AiCenterButton extends StatelessWidget {
               AnimatedDefaultTextStyle(
                 duration: duration,
                 curve: Curves.easeOutCubic,
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: MetaGymTheme.fontFamily,
-                  color: selected
-                      ? MetaGymTheme.brandOrange
-                      : MetaGymTheme.darkTextPrimary,
+                  color: MetaGymTheme.brandOrange,
                   fontSize: 11.0,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.2,

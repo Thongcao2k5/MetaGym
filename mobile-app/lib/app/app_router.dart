@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/features/admin/presentation/admin_home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
@@ -214,9 +215,7 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.adminHome,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Không gian dành cho quản trị viên')),
-        ),
+        builder: (context, state) => const AdminHomePage(),
       ),
     ],
     errorBuilder: (context, state) =>
@@ -229,3 +228,5 @@ String _homeForRole(UserRole role) => switch (role) {
   UserRole.coach => AppRoutes.coachHome,
   UserRole.admin => AppRoutes.adminHome,
 };
+
+
