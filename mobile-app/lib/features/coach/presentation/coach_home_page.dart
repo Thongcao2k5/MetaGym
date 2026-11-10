@@ -158,8 +158,9 @@ class CoachHomePage extends StatelessWidget {
                                 vertical: 2.5,
                               ),
                               decoration: BoxDecoration(
-                                color: MetaGymTheme.brandOrange
-                                    .withValues(alpha: 0.2),
+                                color: MetaGymTheme.brandOrange.withValues(
+                                  alpha: 0.2,
+                                ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text(
@@ -185,9 +186,9 @@ class CoachHomePage extends StatelessWidget {
                   child: Text(
                     'Không gian dành cho huấn luyện viên',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
 
@@ -198,10 +199,10 @@ class CoachHomePage extends StatelessWidget {
                     child: Text(
                       section,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   for (final destination in coachDestinations.where(
@@ -213,8 +214,9 @@ class CoachHomePage extends StatelessWidget {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: MetaGymTheme.brandOrange
-                                .withValues(alpha: 0.18),
+                            color: MetaGymTheme.brandOrange.withValues(
+                              alpha: 0.18,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(

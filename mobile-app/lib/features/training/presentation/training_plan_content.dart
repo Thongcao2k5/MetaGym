@@ -39,7 +39,10 @@ class TrainingPlanContent extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0x26FF5A36),
                       borderRadius: BorderRadius.circular(20),
@@ -56,7 +59,10 @@ class TrainingPlanContent extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0x14A9C7E8),
                       borderRadius: BorderRadius.circular(8),
@@ -120,7 +126,9 @@ class TrainingPlanContent extends StatelessWidget {
                   ],
                 ),
               ],
-              if (plan.startDate != null || plan.endDate != null || plan.publishedAt != null) ...[
+              if (plan.startDate != null ||
+                  plan.endDate != null ||
+                  plan.publishedAt != null) ...[
                 const SizedBox(height: 14),
                 const Divider(color: MetaGymTheme.darkDividerSubtle, height: 1),
                 const SizedBox(height: 12),
@@ -169,7 +177,10 @@ class TrainingPlanContent extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0x1FA9C7E8),
                         borderRadius: BorderRadius.circular(10),
@@ -236,10 +247,7 @@ class TrainingPlanContent extends StatelessWidget {
                   )
                 else
                   for (var i = 0; i < day.exercises.length; i++)
-                    _ExerciseCard(
-                      exercise: day.exercises[i],
-                      index: i + 1,
-                    ),
+                    _ExerciseCard(exercise: day.exercises[i], index: i + 1),
               ],
             ),
           ),
@@ -276,10 +284,7 @@ class _MetaInfoPill extends StatelessWidget {
 }
 
 class _ExerciseCard extends StatelessWidget {
-  const _ExerciseCard({
-    required this.exercise,
-    required this.index,
-  });
+  const _ExerciseCard({required this.exercise, required this.index});
 
   final TrainingExercise exercise;
   final int index;

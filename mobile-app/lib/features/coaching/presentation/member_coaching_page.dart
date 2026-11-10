@@ -148,7 +148,8 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
         children: [
           const MetaGymBackground(),
           SafeArea(
-            child: _loading &&
+            child:
+                _loading &&
                     _requests.isEmpty &&
                     _history.isEmpty &&
                     _current == null
@@ -237,9 +238,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Yêu cầu đang chờ',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -304,8 +303,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                     ),
                                     TextButton(
                                       style: TextButton.styleFrom(
-                                        foregroundColor:
-                                            const Color(0xFFFF6961),
+                                        foregroundColor: const Color(
+                                          0xFFFF6961,
+                                        ),
                                       ),
                                       onPressed: _busy
                                           ? null
@@ -328,9 +328,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Coach hiện tại',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -394,8 +392,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                   ),
                                   TextButton(
                                     style: TextButton.styleFrom(
-                                      foregroundColor:
-                                          const Color(0xFFFF6961),
+                                      foregroundColor: const Color(0xFFFF6961),
                                     ),
                                     onPressed: _busy ? null : _terminate,
                                     child: const Text('Kết thúc quan hệ'),
@@ -408,9 +405,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Text(
                               'Lịch sử yêu cầu',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -471,9 +466,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Text(
                               'Lịch sử quan hệ',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

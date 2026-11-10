@@ -57,18 +57,15 @@ class MetaGymBottomNav extends StatelessWidget {
 
     final pillDecoration = BoxDecoration(
       color: useGlassSurface
-          ? const Color(0x66101622) // Translucent optical glass (~40% tint)
-          : MetaGymTheme.darkSurface,
+          ? MetaGymTheme.cardSurface.withValues(alpha: 0.92)
+          : MetaGymTheme.cardSurface,
       borderRadius: capsuleRadius,
-      border: Border.all(
-        color: const Color(0x38D4E4FF),
-        width: 1.0,
-      ),
+      border: Border.all(color: MetaGymTheme.cardBorder, width: 1.0),
       boxShadow: const [
         BoxShadow(
           color: Color(0x33000000), // rgba(0, 0, 0, 0.20)
-          blurRadius: 24,
-          offset: Offset(0, -4),
+          blurRadius: 20,
+          offset: Offset(0, -3),
         ),
       ],
     );
@@ -86,9 +83,7 @@ class MetaGymBottomNav extends StatelessWidget {
             child: IgnorePointer(
               child: SizedBox(
                 height: 1,
-                child: ColoredBox(
-                  color: Color(0x33FFFFFF),
-                ),
+                child: ColoredBox(color: Color(0x1FFFFFFF)),
               ),
             ),
           ),
@@ -106,13 +101,13 @@ class MetaGymBottomNav extends StatelessWidget {
                   width: currentIndex == 2 ? 0.0 : 28.0,
                   height: 3.0,
                   decoration: BoxDecoration(
-                    color: MetaGymTheme.brandOrange,
+                    color: MetaGymTheme.primary,
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(3.0),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
+                        color: MetaGymTheme.primary.withValues(alpha: 0.45),
                         blurRadius: 6.0,
                         offset: const Offset(0, 1),
                       ),
@@ -232,9 +227,7 @@ class _NavTabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected
-        ? MetaGymTheme.brandOrange
-        : MetaGymTheme.darkTextSecondary;
+    final color = selected ? MetaGymTheme.primary : MetaGymTheme.textSecondary;
 
     return Semantics(
       button: true,
@@ -245,8 +238,8 @@ class _NavTabItem extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16.0),
-          splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.12),
-          highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.06),
+          splashColor: MetaGymTheme.primary.withValues(alpha: 0.12),
+          highlightColor: MetaGymTheme.primary.withValues(alpha: 0.06),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
             child: Column(
@@ -266,7 +259,7 @@ class _NavTabItem extends StatelessWidget {
                     fontFamily: MetaGymTheme.fontFamily,
                     color: color,
                     fontSize: 11.0,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     letterSpacing: 0.1,
                     height: 1.15,
                   ),
@@ -300,6 +293,8 @@ class _AiCenterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelColor = selected ? Colors.white : MetaGymTheme.textSecondary;
+
     return Semantics(
       button: true,
       selected: selected,
@@ -322,39 +317,43 @@ class _AiCenterButton extends StatelessWidget {
                   height: 52.0,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFF7E58), Color(0xFFFF4820)],
-                    ),
+                    color: selected ? null : MetaGymTheme.elevatedSurface,
+                    gradient: selected
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF7E58), Color(0xFFFF4820)],
+                          )
+                        : null,
                     border: Border.all(
                       color: selected
-                          ? MetaGymTheme.darkTextPrimary
-                          : const Color(0x40FFFFFF),
-                      width: selected ? 2.0 : 1.2,
+                          ? MetaGymTheme.cardBorder
+                          : MetaGymTheme.cardBorder,
+                      width: selected ? 1.5 : 1.2,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.65 : 0.40,
-                        ),
-                        blurRadius: selected ? 20.0 : 14.0,
-                        spreadRadius: selected ? 2.0 : 0.5,
-                        offset: const Offset(0, 3),
-                      ),
-                      BoxShadow(
-                        color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.35 : 0.20,
-                        ),
-                        blurRadius: selected ? 32.0 : 24.0,
-                        spreadRadius: selected ? 4.0 : 1.0,
-                      ),
-                    ],
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: MetaGymTheme.primary.withValues(
+                                alpha: 0.45,
+                              ),
+                              blurRadius: 16.0,
+                              spreadRadius: 1.0,
+                              offset: const Offset(0, 3),
+                            ),
+                          ]
+                        : const [
+                            BoxShadow(
+                              color: Color(0x33000000),
+                              blurRadius: 10.0,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Icons.auto_awesome_rounded,
-                      color: Colors.white,
+                      color: selected ? Colors.white : MetaGymTheme.primary,
                       size: 24.0,
                     ),
                   ),
@@ -364,11 +363,11 @@ class _AiCenterButton extends StatelessWidget {
               AnimatedDefaultTextStyle(
                 duration: duration,
                 curve: Curves.easeOutCubic,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: MetaGymTheme.fontFamily,
-                  color: MetaGymTheme.brandOrange,
+                  color: labelColor,
                   fontSize: 11.0,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   letterSpacing: 0.2,
                   height: 1.15,
                 ),

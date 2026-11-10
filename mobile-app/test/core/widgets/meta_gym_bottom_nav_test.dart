@@ -82,46 +82,52 @@ void main() {
       expect(tappedIndex, equals(0));
     });
 
-    testWidgets('guarantees touch target area of at least 44x44 px for every item', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            bottomNavigationBar: MetaGymBottomNav(
-              currentIndex: 0,
-              onTap: (_) {},
+    testWidgets(
+      'guarantees touch target area of at least 44x44 px for every item',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              bottomNavigationBar: MetaGymBottomNav(
+                currentIndex: 0,
+                onTap: (_) {},
+              ),
             ),
           ),
-        ),
-      );
-
-      final navItemSemantics = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            widget.properties.button == true &&
-            widget.properties.label != null &&
-            ['Trang chủ', 'Tập luyện', 'AI', 'Tin nhắn', 'Hồ sơ']
-                .contains(widget.properties.label),
-      );
-
-      expect(navItemSemantics, findsNWidgets(5));
-
-      for (final element in tester.widgetList<Semantics>(navItemSemantics)) {
-        final itemFinder = find.byWidget(element);
-        final size = tester.getSize(itemFinder);
-        expect(
-          size.width,
-          greaterThanOrEqualTo(44.0),
-          reason: '${element.properties.label} width must be >= 44',
         );
-        expect(
-          size.height,
-          greaterThanOrEqualTo(44.0),
-          reason: '${element.properties.label} height must be >= 44',
+
+        final navItemSemantics = find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.button == true &&
+              widget.properties.label != null &&
+              [
+                'Trang chủ',
+                'Tập luyện',
+                'AI',
+                'Tin nhắn',
+                'Hồ sơ',
+              ].contains(widget.properties.label),
         );
-      }
-    });
+
+        expect(navItemSemantics, findsNWidgets(5));
+
+        for (final element in tester.widgetList<Semantics>(navItemSemantics)) {
+          final itemFinder = find.byWidget(element);
+          final size = tester.getSize(itemFinder);
+          expect(
+            size.width,
+            greaterThanOrEqualTo(44.0),
+            reason: '${element.properties.label} width must be >= 44',
+          );
+          expect(
+            size.height,
+            greaterThanOrEqualTo(44.0),
+            reason: '${element.properties.label} height must be >= 44',
+          );
+        }
+      },
+    );
 
     testWidgets('AI button protrudes and uses coral gradient and glow', (
       tester,
@@ -160,44 +166,46 @@ void main() {
       expect(decoration.boxShadow!.isNotEmpty, isTrue);
     });
 
-    testWidgets('respects reduce motion (disableAnimations) by setting duration to zero', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(disableAnimations: true),
-          child: MaterialApp(
-            home: Scaffold(
-              bottomNavigationBar: MetaGymBottomNav(
-                currentIndex: 0,
-                onTap: (_) {},
+    testWidgets(
+      'respects reduce motion (disableAnimations) by setting duration to zero',
+      (tester) async {
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MaterialApp(
+              home: Scaffold(
+                bottomNavigationBar: MetaGymBottomNav(
+                  currentIndex: 0,
+                  onTap: (_) {},
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // With disableAnimations: true, animated align should be rendered with Duration.zero
-      final animatedAlignFinder = find.byType(AnimatedAlign);
-      expect(animatedAlignFinder, findsOneWidget);
-      final animatedAlign = tester.widget<AnimatedAlign>(animatedAlignFinder);
-      expect(animatedAlign.duration, equals(Duration.zero));
-    });
+        // With disableAnimations: true, animated align should be rendered with Duration.zero
+        final animatedAlignFinder = find.byType(AnimatedAlign);
+        expect(animatedAlignFinder, findsOneWidget);
+        final animatedAlign = tester.widget<AnimatedAlign>(animatedAlignFinder);
+        expect(animatedAlign.duration, equals(Duration.zero));
+      },
+    );
 
-    testWidgets('provides contentBottomPadding helper to prevent obscuring content', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              final padding = MetaGymBottomNav.contentBottomPadding(context);
-              expect(padding, greaterThan(80.0));
-              return const SizedBox();
-            },
+    testWidgets(
+      'provides contentBottomPadding helper to prevent obscuring content',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) {
+                final padding = MetaGymBottomNav.contentBottomPadding(context);
+                expect(padding, greaterThan(80.0));
+                return const SizedBox();
+              },
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_message.dart';
@@ -181,92 +182,268 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.conversation.title)),
+    backgroundColor: MetaGymTheme.scaffoldBackground,
+    appBar: AppBar(
+      title: Text(
+        widget.conversation.title,
+        style: const TextStyle(
+          color: MetaGymTheme.textPrimary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    ),
     body: Column(
       children: [
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text(
-                'Nội dung AI chỉ để tham khảo; không thay thế tư vấn '
-                'y tế hoặc huấn luyện cá nhân.',
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: MetaGymTheme.cardSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: MetaGymTheme.cardBorder),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: MetaGymTheme.reflectionBlue,
+                      size: 18,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Nội dung AI chỉ để tham khảo; không thay thế tư vấn y tế hoặc huấn luyện cá nhân.',
+                        style: TextStyle(
+                          color: MetaGymTheme.textSecondary,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               if (_loading)
-                const Center(child: CircularProgressIndicator())
+                const Center(
+                  child: CircularProgressIndicator(color: MetaGymTheme.primary),
+                )
               else ...[
                 if (_error != null) ...[
-                  Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0x1FF15B64),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0x4DF15B64)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: MetaGymTheme.dangerCoral,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _messages.isEmpty ? _load : _loadMore,
+                          child: const Text(
+                            'Thử lại',
+                            style: TextStyle(color: MetaGymTheme.primary),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: _messages.isEmpty ? _load : _loadMore,
-                    child: const Text('Thử lại'),
-                  ),
+                  const SizedBox(height: 12),
                 ],
                 if (_messages.isEmpty && _error == null)
-                  const ListTile(title: Text('Chưa có câu hỏi nào.')),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: MetaGymTheme.cardSurface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: MetaGymTheme.cardBorder),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Chưa có câu hỏi nào.',
+                        style: TextStyle(color: MetaGymTheme.textSecondary),
+                      ),
+                    ),
+                  ),
                 for (final message in _messages)
-                  Card(
-                    child: ListTile(
-                      title: Text(
-                        message.role == 'ASSISTANT' ? 'Trợ lý AI' : 'Bạn',
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: message.role == 'ASSISTANT'
+                          ? MetaGymTheme.cardSurface
+                          : MetaGymTheme.elevatedSurface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: message.role == 'ASSISTANT'
+                            ? const Color(0x33FF5E36)
+                            : MetaGymTheme.cardBorder,
                       ),
-                      subtitle: Text(
-                        message.role == 'ASSISTANT' &&
-                                message.status != 'COMPLETED'
-                            ? 'Phản hồi chưa hoàn tất.'
-                            : message.content,
-                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              message.role == 'ASSISTANT'
+                                  ? Icons.auto_awesome_rounded
+                                  : Icons.person_rounded,
+                              size: 16,
+                              color: message.role == 'ASSISTANT'
+                                  ? MetaGymTheme.primary
+                                  : MetaGymTheme.reflectionBlue,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              message.role == 'ASSISTANT' ? 'Trợ lý AI' : 'Bạn',
+                              style: TextStyle(
+                                color: message.role == 'ASSISTANT'
+                                    ? MetaGymTheme.primary
+                                    : MetaGymTheme.textPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          message.role == 'ASSISTANT' &&
+                                  message.status != 'COMPLETED'
+                              ? 'Phản hồi chưa hoàn tất.'
+                              : message.content,
+                          style: const TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 if (_hasMore)
                   TextButton(
                     onPressed: _loadingMore ? null : _loadMore,
-                    child: Text(_loadingMore ? 'Đang tải…' : 'Tải thêm'),
+                    child: const Text(
+                      'Tải thêm',
+                      style: TextStyle(color: MetaGymTheme.primary),
+                    ),
                   ),
               ],
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              if (_sendError != null)
-                Text(
-                  _sendError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              if (_notice != null) Text(_notice!),
-              if ((_sendError != null || _notice != null) &&
-                  _question.text.trim().isNotEmpty)
-                TextButton(
-                  onPressed: _sending ? null : _send,
-                  child: const Text('Thử lại câu hỏi'),
-                ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _question,
-                      maxLength: 10000,
-                      maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'Câu hỏi'),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          decoration: const BoxDecoration(
+            color: MetaGymTheme.cardSurface,
+            border: Border(top: BorderSide(color: MetaGymTheme.cardBorder)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                if (_sendError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      _sendError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: _sending ? null : _send,
-                    child: Text(_sending ? 'Đang hỏi…' : 'Hỏi AI'),
+                if (_notice != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      _notice!,
+                      style: const TextStyle(color: MetaGymTheme.textSecondary),
+                    ),
                   ),
-                ],
-              ),
-            ],
+                if ((_sendError != null || _notice != null) &&
+                    _question.text.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: TextButton(
+                      onPressed: _sending ? null : _send,
+                      child: const Text(
+                        'Thử lại câu hỏi',
+                        style: TextStyle(color: MetaGymTheme.primary),
+                      ),
+                    ),
+                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _question,
+                        maxLength: 10000,
+                        maxLines: 2,
+                        style: const TextStyle(color: MetaGymTheme.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Câu hỏi',
+                          counterText: '',
+                          labelStyle: const TextStyle(
+                            color: MetaGymTheme.textSecondary,
+                          ),
+                          filled: true,
+                          fillColor: MetaGymTheme.elevatedSurface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: MetaGymTheme.cardBorder,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: MetaGymTheme.cardBorder,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(80, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _sending ? null : _send,
+                      child: Text(_sending ? 'Đang hỏi…' : 'Hỏi AI'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],

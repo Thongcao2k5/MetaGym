@@ -33,4 +33,3 @@ void main() {
 
   runApp(MetaGymApp(sessionController: sessionController));
 }
-

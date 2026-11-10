@@ -31,7 +31,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
         bottomPadding: bottomPadding,
       ),
       MemberTrainingPage(bottomPadding: bottomPadding),
-      const AiConversationsPage(),
+      AiConversationsPage(bottomPadding: bottomPadding),
       ConversationsPage(
         currentUserId: currentUserId,
         bottomPadding: bottomPadding,
