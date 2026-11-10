@@ -53,12 +53,13 @@ abstract final class MetaGymTheme {
   static const Color darkTextTertiary = Color(0xFF6B7280);
 
   // Dark Mode — Borders & Dividers (DESIGN.md §2.3 & §5.3)
-  static const Color darkCardBorderSubtle = cardBorder;
-  static const Color darkBorderSubtle = cardBorder;
-  static const Color darkBorderStrong = Color(0xFF343A48);
+  /// Card border at ~10% opacity (within 8–12% rule).
+  static const Color darkCardBorderSubtle = Color(0x1ACFE2FF);
+  static const Color darkBorderSubtle = Color(0xFF222B35);
+  static const Color darkBorderStrong = Color(0xFF3A4654);
 
-  /// Vertical/inner divider at ~12% opacity
-  static const Color darkDividerSubtle = Color(0x1FD4E4FF);
+  /// Vertical/inner divider at ~9% opacity (within 8–10% rule).
+  static const Color darkDividerSubtle = Color(0x17D4E4FF);
 
   // Light Mode — Daylight Studio Surfaces (DESIGN.md §2.2)
   static const Color _lightBackground = Color(0xFFF5F7FA);
@@ -66,23 +67,25 @@ abstract final class MetaGymTheme {
   static const Color _lightText = Color(0xFF11151A);
 
   /// Level 2 Performance Glass (DESIGN.md §3.2 & Step 3/4).
-  /// Controlled glass for Quick-action dock and Bottom navigation.
+  /// `rgba(18, 23, 30, 0.72)` with `14–16px` blur and `rgba(212, 228, 255, 0.18)` border.
   static const Color performanceGlass = Color(
-    0xE6181B22,
-  ); // High-opacity 90%+ dark surface
-  static const Color performanceGlassBorder = cardBorder;
-  static const Color performanceGlassTopHighlight = Color(0x24FFFFFF);
-  static const double performanceGlassBlur = 12;
-  static const double bottomNavGlassBlur = 14;
+    0xB812171E,
+  ); // rgba(18, 23, 30, 0.72)
+  static const Color performanceGlassBorder = Color(
+    0x2ED4E4FF,
+  ); // rgba(212, 228, 255, 0.18)
+  static const Color performanceGlassTopHighlight = Color(0x38E6F1FF);
+  static const double performanceGlassBlur = 14;
+  static const double bottomNavGlassBlur = 16;
 
   /// Circular header icon glass (`search`, `avatar`) with cool reflective border.
-  static const Color headerCircleGlass = Color(0xE6181B22);
-  static const Color headerCircleBorder = cardBorder;
+  static const Color headerCircleGlass = Color(0xB812171E);
+  static const Color headerCircleBorder = Color(0x38A9C7E8);
 
   /// Level 3 Modal / Overlay Glass (DESIGN.md §3.2).
-  static const Color overlayGlass = Color(0xF2181B22);
-  static const Color overlayGlassBorder = cardBorder;
-  static const double overlayGlassBlur = 16;
+  static const Color overlayGlass = Color(0xE60E1218);
+  static const Color overlayGlassBorder = Color(0x52EBF6FF);
+  static const double overlayGlassBlur = 18;
 
   // Radius Tokens (DESIGN.md §5.3)
   static const double radiusInput = 14;
