@@ -720,7 +720,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         .where((e) => e.isNotEmpty)
         .toList();
     final coachInitialStr = coachParts.length >= 2
-        ? '${coachParts[0][0]}${coachParts[1][0]}'.toUpperCase()
+        ? '${coachParts.first[0]}${coachParts.last[0]}'.toUpperCase()
         : (coachName.isNotEmpty
               ? coachName
                     .substring(0, coachName.length >= 2 ? 2 : 1)
@@ -990,7 +990,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         .where((e) => e.isNotEmpty)
         .toList();
     final coachInitialStr = coachParts.length >= 2
-        ? '${coachParts[0][0]}${coachParts[1][0]}'.toUpperCase()
+        ? '${coachParts.first[0]}${coachParts.last[0]}'.toUpperCase()
         : (displayCoachName.isNotEmpty
               ? displayCoachName
                     .substring(0, displayCoachName.length >= 2 ? 2 : 1)
