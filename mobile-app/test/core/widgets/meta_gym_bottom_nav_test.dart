@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 
 void main() {
@@ -129,9 +130,7 @@ void main() {
       },
     );
 
-    testWidgets('AI button protrudes and uses coral gradient and glow', (
-      tester,
-    ) async {
+    testWidgets('AI button uses coral only while selected', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -143,27 +142,41 @@ void main() {
         ),
       );
 
-      // Verify AI button container properties
       final aiFinder = find.byWidgetPredicate(
         (widget) =>
             widget is Container &&
             widget.decoration is BoxDecoration &&
-            (widget.decoration as BoxDecoration).gradient is LinearGradient,
+            (widget.decoration as BoxDecoration).shape == BoxShape.circle &&
+            (widget.decoration as BoxDecoration).color ==
+                MetaGymTheme.brandOrange,
       );
 
       expect(aiFinder, findsOneWidget);
       final container = tester.widget<Container>(aiFinder);
       final decoration = container.decoration! as BoxDecoration;
-
       expect(decoration.shape, equals(BoxShape.circle));
-      final gradient = decoration.gradient! as LinearGradient;
-      // Uses coral orange gradient
-      expect(gradient.colors.first, equals(const Color(0xFFFF7E58)));
-      expect(gradient.colors.last, equals(const Color(0xFFFF4820)));
-
-      // Has box shadow glow
       expect(decoration.boxShadow, isNotNull);
       expect(decoration.boxShadow!.isNotEmpty, isTrue);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: MetaGymBottomNav(
+              currentIndex: 0,
+              onTap: (_) {},
+            ),
+          ),
+        ),
+      );
+      final inactiveAi = find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).shape == BoxShape.circle &&
+            (widget.decoration as BoxDecoration).color ==
+                MetaGymTheme.darkSurfaceRaised,
+      );
+      expect(inactiveAi, findsOneWidget);
     });
 
     testWidgets(

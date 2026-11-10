@@ -57,10 +57,10 @@ class MetaGymBottomNav extends StatelessWidget {
 
     final pillDecoration = BoxDecoration(
       color: useGlassSurface
-          ? const Color(0x66101622) // Translucent optical glass (~40% tint)
+          ? const Color(0xDE181B22)
           : MetaGymTheme.darkSurface,
       borderRadius: capsuleRadius,
-      border: Border.all(color: const Color(0x38D4E4FF), width: 1.0),
+      border: Border.all(color: MetaGymTheme.cardBorder, width: 1.0),
       boxShadow: const [
         BoxShadow(
           color: Color(0x33000000), // rgba(0, 0, 0, 0.20)
@@ -317,21 +317,19 @@ class _AiCenterButton extends StatelessWidget {
                   height: 52.0,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFF7E58), Color(0xFFFF4820)],
-                    ),
+                    color: selected
+                        ? MetaGymTheme.brandOrange
+                        : MetaGymTheme.darkSurfaceRaised,
                     border: Border.all(
                       color: selected
-                          ? MetaGymTheme.darkTextPrimary
-                          : const Color(0x40FFFFFF),
-                      width: selected ? 2.0 : 1.2,
+                          ? MetaGymTheme.brandOrange
+                          : MetaGymTheme.cardBorder,
+                      width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.65 : 0.40,
+                          alpha: selected ? 0.35 : 0.05,
                         ),
                         blurRadius: selected ? 20.0 : 14.0,
                         spreadRadius: selected ? 2.0 : 0.5,
@@ -339,17 +337,17 @@ class _AiCenterButton extends StatelessWidget {
                       ),
                       BoxShadow(
                         color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.35 : 0.20,
+                          alpha: selected ? 0.15 : 0.0,
                         ),
                         blurRadius: selected ? 32.0 : 24.0,
                         spreadRadius: selected ? 4.0 : 1.0,
                       ),
                     ],
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Icons.auto_awesome_rounded,
-                      color: Colors.white,
+                      color: selected ? Colors.white : MetaGymTheme.brandOrange,
                       size: 24.0,
                     ),
                   ),
@@ -359,11 +357,13 @@ class _AiCenterButton extends StatelessWidget {
               AnimatedDefaultTextStyle(
                 duration: duration,
                 curve: Curves.easeOutCubic,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: MetaGymTheme.fontFamily,
-                  color: MetaGymTheme.brandOrange,
+                  color: selected
+                      ? MetaGymTheme.brandOrange
+                      : MetaGymTheme.darkTextSecondary,
                   fontSize: 11.0,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   letterSpacing: 0.2,
                   height: 1.15,
                 ),
