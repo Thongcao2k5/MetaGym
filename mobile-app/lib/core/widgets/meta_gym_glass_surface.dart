@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 
@@ -18,20 +16,14 @@ class MetaGymBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const Image(
-            image: bannerAsset,
-            fit: BoxFit.cover,
-          ),
+          const Image(image: bannerAsset, fit: BoxFit.cover),
           // Ambient glow: Cool blue ở góc trên bên phải
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
                 center: Alignment(0.85, -0.75),
                 radius: 0.9,
-                colors: [
-                  Color(0x2E8EB9E5),
-                  Colors.transparent,
-                ],
+                colors: [Color(0x2E8EB9E5), Colors.transparent],
               ),
             ),
           ),
@@ -41,23 +33,20 @@ class MetaGymBackground extends StatelessWidget {
               gradient: RadialGradient(
                 center: Alignment(-0.85, 0.75),
                 radius: 0.8,
-                colors: [
-                  Color(0x24FF5A36),
-                  Colors.transparent,
-                ],
+                colors: [Color(0x24FF5A36), Colors.transparent],
               ),
             ),
           ),
-          // Lớp phủ scrim obsidian để đảm bảo độ tương phản cho văn bản
+          // Lớp phủ scrim obsidian 65-70% để bảo đảm độ tương phản tối đa cho chữ
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0x4D080A0D),
-                  Color(0x26080A0D),
-                  Color(0x4D080A0D),
+                  Color(0xB30F1115), // 70% scrim
+                  Color(0x9E0F1115), // 62% scrim
+                  Color(0xB30F1115), // 70% scrim
                 ],
                 stops: [0.0, 0.48, 1.0],
               ),
@@ -69,12 +58,11 @@ class MetaGymBackground extends StatelessWidget {
   }
 }
 
-/// Thẻ Kính Kỹ Thuật Số (Liquid Frosted Glass Card) chuẩn Design System Meta Gym:
-/// - Nền kính hun khói (Smoked Glass): 26% – 35% độ mờ quang học
-/// - Viền phản quang vi mô: Border 1px Color(0x38D4E4FF)
-/// - Vệt sáng specular highlight cạnh trên: Color(0x59FFFFFF)
-/// - Đổ bóng nhẹ: blur 14px
-/// - Mờ quang học: sigma 5.0 (tắt trong môi trường test để tối ưu hiệu năng)
+/// Thẻ Card chuẩn Dark Performance UI cho Meta Gym:
+/// - Nền tối ổn định: Color(0xFF181B22) (MetaGymTheme.cardSurface)
+/// - Viền 1px chuẩn: Color(0xFF262A34) (MetaGymTheme.cardBorder)
+/// - Vệt sáng cạnh trên tinh tế: Color(0x1AFFFFFF)
+/// - Không dùng blur đại trà để tối ưu hóa hiệu năng và độ sắc nét chữ
 class MetaGymGlassCard extends StatelessWidget {
   const MetaGymGlassCard({
     required this.child,
@@ -93,72 +81,51 @@ class MetaGymGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-    final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
+    final radius =
+        borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
 
-    final cardBody = Container(
+    return Container(
       margin: margin,
-      padding: padding,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment(-0.8, -0.6),
-          end: Alignment(0.8, 0.6),
-          colors: [
-            Color(0x59162232), // rgba(22, 34, 50, 0.35)
-            Color(0x420E1520), // rgba(14, 21, 32, 0.26)
-          ],
-        ),
         borderRadius: radius,
-        border: Border.all(
-          color: const Color(0x38D4E4FF),
-          width: 1.0,
-        ),
+        border: Border.all(color: MetaGymTheme.cardBorder, width: 1.0),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
-            blurRadius: 14,
+            blurRadius: 12,
             offset: Offset(0, 4),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 16,
-            right: 16,
-            height: 1,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0x00FFFFFF),
-                    Color(0x59FFFFFF),
-                    Color(0x00FFFFFF),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          child,
-        ],
-      ),
-    );
-
-    if (!enableBlur) {
-      return ClipRRect(
+      child: Material(
+        color: MetaGymTheme.cardSurface,
         borderRadius: radius,
         clipBehavior: clipBehavior,
-        child: cardBody,
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: radius,
-      clipBehavior: clipBehavior,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-        child: cardBody,
+        child: Container(
+          padding: padding,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 16,
+                right: 16,
+                height: 1,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x00FFFFFF),
+                        Color(0x1AFFFFFF),
+                        Color(0x00FFFFFF),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              child,
+            ],
+          ),
+        ),
       ),
     );
   }

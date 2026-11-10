@@ -96,8 +96,7 @@ class AdminApi implements AdminService {
       '/api/v1/admin/users/$userId/status',
       body: {
         'status': status,
-        if (reason != null && reason.trim().isNotEmpty)
-          'reason': reason.trim(),
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
       },
       decode: (_) {},
     );

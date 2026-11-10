@@ -76,8 +76,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     final scheduled = _memberships.where((item) => item.status == 'SCHEDULED');
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
-      extendBodyBehindAppBar: true,
+      backgroundColor: MetaGymTheme.scaffoldBackground,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
         title: const Text(
           'Thanh toán',
@@ -92,260 +92,242 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const MetaGymBackground(),
-          SafeArea(
-            child: _loading && _payments.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: MetaGymTheme.brandOrange,
-                    ),
-                  )
-                : RefreshIndicator(
-                    color: MetaGymTheme.brandOrange,
-                    onRefresh: _load,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      children: [
-                        if (_error != null) ...[
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0x33FF453A),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0x66FF453A),
+      body: SafeArea(
+        child: _loading && _payments.isEmpty
+            ? const Center(
+                child: CircularProgressIndicator(color: MetaGymTheme.primary),
+              )
+            : RefreshIndicator(
+                color: MetaGymTheme.primary,
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  children: [
+                    if (_error != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33FF453A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0x66FF453A)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Color(0xFFFF6961),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _error!,
+                                style: const TextStyle(
+                                  color: Color(0xFFFF857D),
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  color: Color(0xFFFF6961),
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _error!,
-                                    style: const TextStyle(
-                                      color: Color(0xFFFF857D),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: _load,
-                            style: TextButton.styleFrom(
-                              foregroundColor: MetaGymTheme.brandOrange,
-                            ),
-                            child: const Text('Thử lại'),
-                          ),
-                        ],
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12, top: 4),
-                          child: Text(
-                            'Gói đang hoạt động',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
+                          ],
                         ),
-                        if (active.isEmpty)
-                          MetaGymGlassCard(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
-                            child: const Text(
-                              'Chưa có gói đang hoạt động.',
-                              style: TextStyle(color: Colors.white60),
+                      ),
+                      TextButton(
+                        onPressed: _load,
+                        style: TextButton.styleFrom(
+                          foregroundColor: MetaGymTheme.brandOrange,
+                        ),
+                        child: const Text('Thử lại'),
+                      ),
+                    ],
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12, top: 4),
+                      child: Text(
+                        'Gói đang hoạt động',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ),
-                        for (final item in active)
-                          MetaGymGlassCard(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(14),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x3334C759),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.check_circle_outline,
-                                    color: Color(0xFF34C759),
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _membershipName(item),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${item.startDate} → ${item.endDate}',
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                      ),
+                    ),
+                    if (active.isEmpty)
+                      MetaGymGlassCard(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        child: const Text(
+                          'Chưa có gói đang hoạt động.',
+                          style: TextStyle(color: Colors.white60),
+                        ),
+                      ),
+                    for (final item in active)
+                      MetaGymGlassCard(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0x3334C759),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_outline,
+                                color: Color(0xFF34C759),
+                                size: 20,
+                              ),
                             ),
-                          ),
-                        if (scheduled.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              'Gói sắp tới',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ),
-                          for (final item in scheduled)
-                            MetaGymGlassCard(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              padding: const EdgeInsets.all(14),
-                              child: Row(
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0x268EB9E5),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(
-                                      Icons.schedule,
-                                      color: Color(0xFF8EB9E5),
-                                      size: 20,
+                                  Text(
+                                    _membershipName(item),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _membershipName(item),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '${item.startDate} → ${item.endDate}',
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${item.startDate} → ${item.endDate}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                        ],
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            'Lịch sử giao dịch',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                          ],
+                        ),
+                      ),
+                    if (scheduled.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Gói sắp tới',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ),
+                      for (final item in scheduled)
+                        MetaGymGlassCard(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x268EB9E5),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
+                                child: const Icon(
+                                  Icons.schedule,
+                                  color: Color(0xFF8EB9E5),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _membershipName(item),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${item.startDate} → ${item.endDate}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (_payments.isEmpty)
-                          MetaGymGlassCard(
-                            padding: const EdgeInsets.all(16),
-                            child: const Text(
-                              'Chưa có giao dịch.',
-                              style: TextStyle(color: Colors.white60),
+                    ],
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        'Lịch sử giao dịch',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ),
-                        for (final payment in _payments)
-                          MetaGymGlassCard(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 4,
-                              ),
-                              title: Text(
-                                payment.planName ?? 'Giao dịch',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              subtitle: Text(
-                                '${payment.amount == null ? '' : money.format(payment.amount)} '
-                                '• ${payment.statusLabel}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              trailing: const Icon(
-                                Icons.chevron_right,
-                                color: Colors.white54,
-                              ),
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => PaymentDetailPage(
-                                    paymentId: payment.id,
-                                    service: _service!,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
-                  ),
-          ),
-        ],
+                    if (_payments.isEmpty)
+                      MetaGymGlassCard(
+                        padding: const EdgeInsets.all(16),
+                        child: const Text(
+                          'Chưa có giao dịch.',
+                          style: TextStyle(color: Colors.white60),
+                        ),
+                      ),
+                    for (final payment in _payments)
+                      MetaGymGlassCard(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          title: Text(
+                            payment.planName ?? 'Giao dịch',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${payment.amount == null ? '' : money.format(payment.amount)} '
+                            '• ${payment.statusLabel}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white54,
+                          ),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => PaymentDetailPage(
+                                paymentId: payment.id,
+                                service: _service!,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
       ),
     );
   }

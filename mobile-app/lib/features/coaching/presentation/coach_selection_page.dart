@@ -51,179 +51,174 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          title: const Text(
-            'Chọn Coach',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.3,
-            ),
-          ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          iconTheme: const IconThemeData(color: Colors.white),
+    backgroundColor: MetaGymTheme.darkCanvas,
+    extendBodyBehindAppBar: true,
+    appBar: AppBar(
+      title: const Text(
+        'Chọn Coach',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.3,
         ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            const MetaGymBackground(),
-            SafeArea(
-              child: _loading && _coaches.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: MetaGymTheme.brandOrange,
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: MetaGymTheme.brandOrange,
-                      onRefresh: _load,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        children: [
-                          if (_error != null) ...[
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0x33FF453A),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0x66FF453A),
+      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      iconTheme: const IconThemeData(color: Colors.white),
+    ),
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        const MetaGymBackground(),
+        SafeArea(
+          child: _loading && _coaches.isEmpty
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: MetaGymTheme.brandOrange,
+                  ),
+                )
+              : RefreshIndicator(
+                  color: MetaGymTheme.brandOrange,
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    children: [
+                      if (_error != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0x33FF453A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0x66FF453A)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFFF6961),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: const TextStyle(
+                                    color: Color(0xFFFF857D),
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: Color(0xFFFF6961),
-                                    size: 20,
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _load,
+                          style: TextButton.styleFrom(
+                            foregroundColor: MetaGymTheme.brandOrange,
+                          ),
+                          child: const Text('Thử lại'),
+                        ),
+                      ] else if (_coaches.isEmpty)
+                        const MetaGymGlassCard(
+                          padding: EdgeInsets.all(16),
+                          child: Text(
+                            'Chưa có Coach để lựa chọn.',
+                            style: TextStyle(color: Colors.white60),
+                          ),
+                        ),
+                      if (_error == null)
+                        for (final coach in _coaches)
+                          MetaGymGlassCard(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              leading: CircleAvatar(
+                                radius: 22,
+                                backgroundColor: MetaGymTheme.brandOrange
+                                    .withValues(alpha: 0.2),
+                                child: Text(
+                                  coach.fullName.isNotEmpty
+                                      ? coach.fullName[0].toUpperCase()
+                                      : 'C',
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.brandOrange,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
+                                ),
+                              ),
+                              title: Text(
+                                coach.fullName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  coach.specialties.join(', '),
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: coach.availableSlots > 0
+                                          ? const Color(0x3334C759)
+                                          : const Color(0x33FF453A),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                     child: Text(
-                                      _error!,
-                                      style: const TextStyle(
-                                        color: Color(0xFFFF857D),
-                                        fontSize: 13,
+                                      coach.availableSlots > 0
+                                          ? 'Còn ${coach.availableSlots} suất'
+                                          : 'Đã hết suất',
+                                      style: TextStyle(
+                                        color: coach.availableSlots > 0
+                                            ? const Color(0xFF34C759)
+                                            : const Color(0xFFFF6961),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            TextButton(
-                              onPressed: _load,
-                              style: TextButton.styleFrom(
-                                foregroundColor: MetaGymTheme.brandOrange,
-                              ),
-                              child: const Text('Thử lại'),
-                            ),
-                          ] else if (_coaches.isEmpty)
-                            const MetaGymGlassCard(
-                              padding: EdgeInsets.all(16),
-                              child: Text(
-                                'Chưa có Coach để lựa chọn.',
-                                style: TextStyle(color: Colors.white60),
-                              ),
-                            ),
-                          if (_error == null)
-                            for (final coach in _coaches)
-                              MetaGymGlassCard(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
-                                  ),
-                                  leading: CircleAvatar(
-                                    radius: 22,
-                                    backgroundColor: MetaGymTheme.brandOrange
-                                        .withValues(alpha: 0.2),
-                                    child: Text(
-                                      coach.fullName.isNotEmpty
-                                          ? coach.fullName[0].toUpperCase()
-                                          : 'C',
-                                      style: const TextStyle(
-                                        color: MetaGymTheme.brandOrange,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    coach.fullName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      coach.specialties.join(', '),
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                  trailing: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: coach.availableSlots > 0
-                                              ? const Color(0x3334C759)
-                                              : const Color(0x33FF453A),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          coach.availableSlots > 0
-                                              ? 'Còn ${coach.availableSlots} suất'
-                                              : 'Đã hết suất',
-                                          style: TextStyle(
-                                            color: coach.availableSlots > 0
-                                                ? const Color(0xFF34C759)
-                                                : const Color(0xFFFF6961),
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => CoachDetailPage(
-                                        coachId: coach.id,
-                                        service: _service!,
-                                      ),
-                                    ),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => CoachDetailPage(
+                                    coachId: coach.id,
+                                    service: _service!,
                                   ),
                                 ),
                               ),
-                        ],
-                      ),
-                    ),
-            ),
-          ],
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
         ),
-      );
+      ],
+    ),
+  );
 }

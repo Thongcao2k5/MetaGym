@@ -126,8 +126,9 @@ class _AdminHomePageState extends State<AdminHomePage>
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF162232),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           title: const Row(
             children: [
               Icon(Icons.person_add_alt_1, color: MetaGymTheme.brandOrange),
@@ -171,8 +172,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                       labelText: 'Họ và tên *',
                       labelStyle: TextStyle(color: Colors.white60),
                     ),
-                    validator: (v) =>
-                        (v == null || v.trim().length < 2) ? 'Nhập họ tên' : null,
+                    validator: (v) => (v == null || v.trim().length < 2)
+                        ? 'Nhập họ tên'
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -183,8 +185,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                       labelText: 'Email *',
                       labelStyle: TextStyle(color: Colors.white60),
                     ),
-                    validator: (v) =>
-                        (v == null || !v.contains('@')) ? 'Email không hợp lệ' : null,
+                    validator: (v) => (v == null || !v.contains('@'))
+                        ? 'Email không hợp lệ'
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -192,11 +195,16 @@ class _AdminHomePageState extends State<AdminHomePage>
                     style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
-                      labelText: 'Mật khẩu (ít nhất 8 ký tự: Hoa, thường, số) *',
-                      labelStyle: TextStyle(color: Colors.white60, fontSize: 12),
+                      labelText:
+                          'Mật khẩu (ít nhất 8 ký tự: Hoa, thường, số) *',
+                      labelStyle: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                      ),
                     ),
-                    validator: (v) =>
-                        (v == null || v.length < 8) ? 'Tối thiểu 8 ký tự' : null,
+                    validator: (v) => (v == null || v.length < 8)
+                        ? 'Tối thiểu 8 ký tự'
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -281,8 +289,9 @@ class _AdminHomePageState extends State<AdminHomePage>
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF162232),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           title: const Row(
             children: [
               Icon(Icons.card_membership, color: MetaGymTheme.brandOrange),
@@ -338,8 +347,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                       labelText: 'Giá tiền (VNĐ) *',
                       labelStyle: TextStyle(color: Colors.white60),
                     ),
-                    validator: (v) =>
-                        (v == null || int.tryParse(v) == null) ? 'Nhập giá hợp lệ' : null,
+                    validator: (v) => (v == null || int.tryParse(v) == null)
+                        ? 'Nhập giá hợp lệ'
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -350,8 +360,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                       labelText: 'Thời hạn (Số ngày) *',
                       labelStyle: TextStyle(color: Colors.white60),
                     ),
-                    validator: (v) =>
-                        (v == null || int.tryParse(v) == null) ? 'Nhập số ngày' : null,
+                    validator: (v) => (v == null || int.tryParse(v) == null)
+                        ? 'Nhập số ngày'
+                        : null,
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -431,7 +442,10 @@ class _AdminHomePageState extends State<AdminHomePage>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           '$actionName?',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
           'Bạn có chắc chắn muốn $actionName của ${user.fullName} (${user.email})?',
@@ -444,8 +458,9 @@ class _AdminHomePageState extends State<AdminHomePage>
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor:
-                  user.isActive ? const Color(0xFFFF453A) : const Color(0xFF34C759),
+              backgroundColor: user.isActive
+                  ? const Color(0xFFFF453A)
+                  : const Color(0xFF34C759),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(actionName),
@@ -496,7 +511,8 @@ class _AdminHomePageState extends State<AdminHomePage>
     final filteredUsers = _users.where((u) {
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        final match = u.fullName.toLowerCase().contains(query) ||
+        final match =
+            u.fullName.toLowerCase().contains(query) ||
             u.email.toLowerCase().contains(query);
         if (!match) return false;
       }
@@ -541,11 +557,17 @@ class _AdminHomePageState extends State<AdminHomePage>
           indicatorWeight: 3,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white60,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
           tabs: const [
             Tab(icon: Icon(Icons.people_alt, size: 20), text: 'Người dùng'),
             Tab(icon: Icon(Icons.card_membership, size: 20), text: 'Gói tập'),
-            Tab(icon: Icon(Icons.dashboard_customize, size: 20), text: 'Hệ thống'),
+            Tab(
+              icon: Icon(Icons.dashboard_customize, size: 20),
+              text: 'Hệ thống',
+            ),
           ],
         ),
       ),
@@ -680,7 +702,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                               style: FilledButton.styleFrom(
                                 backgroundColor: MetaGymTheme.brandOrange,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -707,8 +731,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                     style: const TextStyle(color: Colors.white),
                                     decoration: InputDecoration(
                                       hintText: 'Tìm theo tên hoặc email…',
-                                      hintStyle:
-                                          const TextStyle(color: Colors.white38),
+                                      hintStyle: const TextStyle(
+                                        color: Colors.white38,
+                                      ),
                                       prefixIcon: const Icon(
                                         Icons.search,
                                         color: MetaGymTheme.brandOrange,
@@ -731,7 +756,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                         label: const Text('Tất cả'),
                                         selected: _roleFilter == null,
                                         selectedColor: MetaGymTheme.brandOrange,
-                                        backgroundColor: const Color(0x33162232),
+                                        backgroundColor: const Color(
+                                          0x33162232,
+                                        ),
                                         labelStyle: TextStyle(
                                           color: _roleFilter == null
                                               ? Colors.white
@@ -749,7 +776,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                         label: const Text('HLV'),
                                         selected: _roleFilter == 'COACH',
                                         selectedColor: MetaGymTheme.brandOrange,
-                                        backgroundColor: const Color(0x33162232),
+                                        backgroundColor: const Color(
+                                          0x33162232,
+                                        ),
                                         labelStyle: TextStyle(
                                           color: _roleFilter == 'COACH'
                                               ? Colors.white
@@ -767,7 +796,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                         label: const Text('Hội viên'),
                                         selected: _roleFilter == 'MEMBER',
                                         selectedColor: MetaGymTheme.brandOrange,
-                                        backgroundColor: const Color(0x33162232),
+                                        backgroundColor: const Color(
+                                          0x33162232,
+                                        ),
                                         labelStyle: TextStyle(
                                           color: _roleFilter == 'MEMBER'
                                               ? Colors.white
@@ -776,7 +807,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                           fontWeight: FontWeight.w600,
                                         ),
                                         onSelected: (_) {
-                                          setState(() => _roleFilter = 'MEMBER');
+                                          setState(
+                                            () => _roleFilter = 'MEMBER',
+                                          );
                                           _loadAll();
                                         },
                                       ),
@@ -808,7 +841,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                         radius: 20,
                                         backgroundColor: u.isCoach
                                             ? MetaGymTheme.brandOrange
-                                                .withValues(alpha: 0.2)
+                                                  .withValues(alpha: 0.2)
                                             : const Color(0x3334C759),
                                         child: Text(
                                           u.fullName.isNotEmpty
@@ -847,24 +880,31 @@ class _AdminHomePageState extends State<AdminHomePage>
                                                 Container(
                                                   padding:
                                                       const EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
                                                   decoration: BoxDecoration(
                                                     color: u.isCoach
-                                                        ? const Color(0x33FF5A36)
-                                                        : const Color(0x3334C759),
+                                                        ? const Color(
+                                                            0x33FF5A36,
+                                                          )
+                                                        : const Color(
+                                                            0x3334C759,
+                                                          ),
                                                     borderRadius:
-                                                        BorderRadius.circular(6),
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
                                                   ),
                                                   child: Text(
                                                     u.roleLabel,
                                                     style: TextStyle(
                                                       color: u.isCoach
                                                           ? MetaGymTheme
-                                                              .brandOrange
+                                                                .brandOrange
                                                           : const Color(
-                                                              0xFF34C759),
+                                                              0xFF34C759,
+                                                            ),
                                                       fontSize: 11,
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -929,7 +969,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                               style: FilledButton.styleFrom(
                                 backgroundColor: MetaGymTheme.brandOrange,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 13,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -968,8 +1010,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                           color: plan.isActive
                                               ? const Color(0x26FF5A36)
                                               : const Color(0x26FFFFFF),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Icon(
                                           Icons.fitness_center,
@@ -1025,8 +1068,10 @@ class _AdminHomePageState extends State<AdminHomePage>
                                       ),
                                       Switch(
                                         value: plan.isActive,
-                                        activeThumbColor: MetaGymTheme.brandOrange,
-                                        onChanged: (_) => _togglePlanStatus(plan),
+                                        activeThumbColor:
+                                            MetaGymTheme.brandOrange,
+                                        onChanged: (_) =>
+                                            _togglePlanStatus(plan),
                                       ),
                                     ],
                                   ),
@@ -1088,8 +1133,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                         decoration: BoxDecoration(
                                           color: MetaGymTheme.brandOrange
                                               .withValues(alpha: 0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: const Text(
                                           'HỆ THỐNG QUẢN TRỊ VIÊN',
@@ -1182,4 +1228,3 @@ class _AdminHomePageState extends State<AdminHomePage>
     );
   }
 }
-
