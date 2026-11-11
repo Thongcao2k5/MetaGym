@@ -244,6 +244,11 @@ test('PostgreSQL API journey from registration through coaching and termination'
         await database.query('DELETE FROM nutrition_guides WHERE member_id = $1',
           [memberId]);
         await database.query(
+        `DELETE FROM training_plan_day_meals WHERE plan_day_id IN
+         (SELECT id FROM training_plan_days WHERE plan_id IN
+          (SELECT id FROM training_plans WHERE member_id = $1))`, [memberId],
+      );
+      await database.query(
           `DELETE FROM training_plan_exercises WHERE plan_day_id IN
            (SELECT id FROM training_plan_days WHERE plan_id IN
             (SELECT id FROM training_plans WHERE member_id = $1))`, [memberId],

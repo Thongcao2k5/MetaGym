@@ -50,6 +50,15 @@ void main() {
     );
     await tester.enterText(find.byKey(const Key('plan-goal')), 'Tăng cơ');
     await tester.scrollUntilVisible(
+      find.byKey(const Key('day-date-0')),
+      250,
+      scrollable: formScroll,
+    );
+    await tester.tap(find.byKey(const Key('day-date-0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
       find.byKey(const Key('day-title-0')),
       250,
       scrollable: formScroll,
@@ -65,6 +74,20 @@ void main() {
     await tester.tap(find.text('Squat').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('exercise-reps-0-0')), '12');
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('day-meal-0-0')),
+      250,
+      scrollable: formScroll,
+    );
+    await tester.enterText(
+      find
+          .descendant(
+            of: find.byKey(const Key('day-meal-0-0')),
+            matching: find.byType(TextField),
+          )
+          .at(1),
+      'Ức gà và cơm',
+    );
     await tester.scrollUntilVisible(
       find.text('Xem trước'),
       250,
@@ -84,6 +107,9 @@ void main() {
     await tester.tap(find.text('Lưu bản nháp'));
     await tester.pumpAndSettle();
     expect(service.lastPayload?['title'], 'Sức mạnh cơ bản');
+    final savedDay = (service.lastPayload!['days'] as List).first as Map;
+    expect(savedDay['scheduledDate'], isNotNull);
+    expect(((savedDay['meals'] as List).first as Map)['title'], 'Ức gà và cơm');
     expect(find.text('Sức mạnh cơ bản'), findsOneWidget);
     expect(find.text('Ngày 1: Toàn thân'), findsOneWidget);
     await tester.tap(find.text('Sửa bản nháp'));
@@ -116,6 +142,7 @@ void main() {
       days: [
         TrainingDay(
           dayNumber: 1,
+          scheduledDate: '2026-11-16',
           title: 'Ngày một',
           exercises: [
             TrainingExercise(
@@ -213,6 +240,7 @@ class _CoachTrainingFixture implements CoachTrainingService {
   TrainingPlan _fromPayload(Map<String, Object?> payload) {
     final day = (payload['days'] as List).first as Map;
     final exercise = (day['exercises'] as List).first as Map;
+    final meal = (day['meals'] as List).first as Map;
     return TrainingPlan(
       id: 'plan-1',
       title: payload['title'] as String,
@@ -222,6 +250,7 @@ class _CoachTrainingFixture implements CoachTrainingService {
       days: [
         TrainingDay(
           dayNumber: 1,
+          scheduledDate: day['scheduledDate'] as String?,
           title: day['title'] as String,
           exercises: [
             TrainingExercise(
@@ -229,6 +258,13 @@ class _CoachTrainingFixture implements CoachTrainingService {
               exerciseName: 'Squat',
               displayOrder: 1,
               reps: exercise['reps'] as String?,
+            ),
+          ],
+          meals: [
+            PlannedMeal(
+              displayOrder: 1,
+              mealType: meal['mealType'] as String,
+              title: meal['title'] as String,
             ),
           ],
         ),

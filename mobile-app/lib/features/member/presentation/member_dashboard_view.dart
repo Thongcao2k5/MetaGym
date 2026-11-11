@@ -17,7 +17,10 @@ import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/features/training/presentation/member_day_plan_page.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 import 'package:provider/provider.dart';
 
@@ -54,6 +57,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   MemberCoachRelationship? _activeRelationship;
   Map<String, String> _coachNames = const {};
   NutritionGuide? _activeNutrition;
+  TrainingPlan? _activePlan;
   List<TrainingSession> _sessions = const [];
   ProgressSummary? _progressSummary;
 
@@ -107,6 +111,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Future<void> _loadFrame3Data() async {
     MemberCoachingService? coachingService;
     MemberNutritionService? nutritionService;
+    MemberTrainingService? trainingService;
     MemberSessionsService? sessionsService;
     MembershipService? membershipService;
     MemberProgressService? progressService;
@@ -122,6 +127,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       nutritionService = context.read<MemberNutritionService>();
     } catch (_) {}
     try {
+      trainingService = context.read<MemberTrainingService>();
+    } catch (_) {}
+    try {
       sessionsService = context.read<MemberSessionsService>();
     } catch (_) {}
     try {
@@ -134,6 +142,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     MemberCoachRelationship? relationship;
     Map<String, String> coachNames = const {};
     NutritionGuide? activeNutrition;
+    TrainingPlan? activePlan;
     List<TrainingSession> sessions = const [];
     List<Membership> memberships = const [];
     List<MemberCoachRequest> coachRequests = const [];
@@ -166,6 +175,14 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       }
     }
 
+    if (trainingService != null) {
+      try {
+        activePlan = await trainingService.getActive();
+      } catch (error) {
+        firstError ??= error;
+      }
+    }
+
     if (sessionsService != null) {
       try {
         sessions = await sessionsService.getMine();
@@ -193,6 +210,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       _activeRelationship = relationship;
       _coachNames = coachNames;
       _activeNutrition = activeNutrition;
+      _activePlan = activePlan;
       _sessions = sessions;
       _memberships = memberships;
       _coachRequests = coachRequests;
@@ -234,6 +252,57 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           parsed.day == now.day) {
         return session;
       }
+    }
+    return null;
+  }
+
+  TrainingDay? get _todayPlanDay {
+    if (widget.previewMode) {
+      final now = DateTime.now();
+      final date =
+          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      return TrainingDay(
+        dayNumber: 1,
+        scheduledDate: date,
+        title: 'Upper Body & Core',
+        notes: 'Kế hoạch do Coach Lê Hoàng Nam chuẩn bị.',
+        exercises: const [
+          TrainingExercise(
+            exerciseId: 'preview-1',
+            exerciseName: 'Incline Press',
+            displayOrder: 1,
+            sets: 4,
+            reps: '10',
+          ),
+          TrainingExercise(
+            exerciseId: 'preview-2',
+            exerciseName: 'Lat Pulldown',
+            displayOrder: 2,
+            sets: 3,
+            reps: '12',
+          ),
+        ],
+        meals: const [
+          PlannedMeal(
+            displayOrder: 1,
+            mealType: 'BREAKFAST',
+            title: 'Yến mạch, trứng và chuối',
+            scheduledTime: '07:30',
+          ),
+          PlannedMeal(
+            displayOrder: 2,
+            mealType: 'LUNCH',
+            title: 'Ức gà, cơm gạo lứt và rau',
+            scheduledTime: '12:00',
+          ),
+        ],
+      );
+    }
+    final now = DateTime.now();
+    final date =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    for (final day in _activePlan?.days ?? const <TrainingDay>[]) {
+      if (day.scheduledDate == date) return day;
     }
     return null;
   }
@@ -653,264 +722,177 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Widget _buildTodaySection(BuildContext context) {
     if (_isLoading) {
       return _buildLiquidGlassCard(
-        child: Container(
+        child: const SizedBox(
           height: 110,
-          alignment: Alignment.center,
-          child: const CircularProgressIndicator(
-            color: MetaGymTheme.brandOrange,
-            strokeWidth: 2.4,
+          child: Center(
+            child: CircularProgressIndicator(color: MetaGymTheme.brandOrange),
           ),
         ),
       );
     }
 
-    final todaySession = _todaySession;
-    final timeText = todaySession != null
-        ? _extractTimeHHmm(todaySession.scheduledStartAt)
-        : '17:30';
-    final titleText = todaySession != null && todaySession.title.isNotEmpty
-        ? todaySession.title
-        : 'Upper Body & Core';
-    final coachName = _hasCoach ? _displayCoachName : 'Lê Hoàng Nam';
-    final coachParts = coachName
-        .split(RegExp(r'\s+'))
-        .where((e) => e.isNotEmpty)
-        .toList();
-    final coachInitialStr = coachParts.length >= 2
-        ? '${coachParts.first[0]}${coachParts.last[0]}'.toUpperCase()
-        : (coachName.isNotEmpty
-              ? coachName
-                    .substring(0, coachName.length >= 2 ? 2 : 1)
-                    .toUpperCase()
-              : 'LN');
+    final day = _todayPlanDay;
+    final session =
+        day != null &&
+            _todaySession?.title.trim().toLowerCase() ==
+                day.title.trim().toLowerCase()
+        ? _todaySession
+        : null;
+    final status = day == null
+        ? 'Chưa có lịch'
+        : session?.statusLabel ?? 'Đã lên lịch';
+    final statusColor = switch (session?.status) {
+      'COMPLETED' => MetaGymTheme.progressGreen,
+      'CANCELLED' || 'MEMBER_ABSENT' => MetaGymTheme.warningAmber,
+      _ =>
+        day == null
+            ? MetaGymTheme.darkTextSecondary
+            : MetaGymTheme.progressGreen,
+    };
+    final action = day == null
+        ? 'Xem lịch'
+        : session?.status == 'COMPLETED'
+        ? 'Kết quả'
+        : session?.status == 'CANCELLED' || session?.status == 'MEMBER_ABSENT'
+        ? 'Chi tiết'
+        : 'Xem ngay';
+
+    Future<void> openDay() async {
+      if (day == null) {
+        await _pushAndReload('/member/features/training');
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => MemberDayPlanPage(
+            day: day,
+            session: session,
+            planTitle: widget.previewMode
+                ? 'Giáo trình tăng cơ'
+                : _activePlan?.title,
+          ),
+        ),
+      );
+      if (mounted) await _loadFrame3Data();
+    }
 
     return _buildLiquidGlassCard(
       featured: true,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              onTap: () => _pushAndReload('/member/features/sessions'),
-              borderRadius: BorderRadius.circular(8),
-              child: Row(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const Key('member-today-plan-card'),
+          onTap: openDay,
+          child: Semantics(
+            button: true,
+            label: action,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.access_time_rounded,
-                    color: MetaGymTheme.brandOrange,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Hôm nay',
-                    style: TextStyle(
-                      color: Color(0xFFF7F9FC),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(
-                        0x262ECC71,
-                      ), // rgba(35, 201, 151, 0.15)
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(
-                          0x4D2ECC71,
-                        ), // rgba(35, 201, 151, 0.30)
-                        width: 0.5,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.event_note_rounded,
+                        size: 18,
+                        color: MetaGymTheme.brandOrange,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: const BoxDecoration(
-                            color: MetaGymTheme.progressGreen,
-                            shape: BoxShape.circle,
-                          ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Hôm nay',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(width: 5),
-                        const Text(
-                          'Sắp diễn ra',
-                          style: TextStyle(
-                            color: MetaGymTheme.progressGreen,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: MetaGymTheme.darkTextSecondary,
+                        size: 20,
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFF8E9AA8),
-                    size: 20,
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              day?.title ??
+                                  'Coach chưa xếp kế hoạch cho hôm nay',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              day == null
+                                  ? 'Xem các ngày đã lên lịch'
+                                  : '${day.exercises.length} bài tập · ${day.meals.length} bữa ăn${session == null ? '' : ' · ${_extractTimeHHmm(session.scheduledStartAt)}'}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: MetaGymTheme.darkTextSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 86,
+                          minHeight: 42,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: MetaGymTheme.brandOrange,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          action,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Cột trái: Giờ
-                Container(
-                  width: 56,
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  decoration: BoxDecoration(
-                    color: const Color(0x2E162232),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0x59DCEBFF),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        timeText,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        "60'",
-                        style: TextStyle(
-                          color: Color(0xFF9EAAB8),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 9),
-                // Giữa: Tiêu đề + HLV
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        titleText,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: MetaGymTheme.coachAvatarBackground,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              coachInitialStr,
-                              style: const TextStyle(
-                                color: MetaGymTheme.coachAvatarForeground,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              'HLV $coachName',
-                              style: const TextStyle(
-                                color: Color(0xFFC8D2DF),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                // Phải: Nút CTA cam
-                Semantics(
-                  button: true,
-                  label: 'Bắt đầu buổi tập',
-                  child: Material(
-                    color: MetaGymTheme.brandOrange,
-                    borderRadius: BorderRadius.circular(24),
-                    child: InkWell(
-                      onTap: () => _pushAndReload('/member/features/sessions'),
-                      borderRadius: BorderRadius.circular(24),
-                      child: const SizedBox(
-                        height: 48,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Bắt đầu',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(
-                                Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 17,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   String _extractTimeHHmm(String rawIso) {
-    final parsed = DateTime.tryParse(rawIso)?.toLocal();
-    if (parsed == null) return '--:--';
-    final hh = parsed.hour.toString().padLeft(2, '0');
-    final mm = parsed.minute.toString().padLeft(2, '0');
-    return '$hh:$mm';
+    final time = DateTime.tryParse(rawIso)?.toLocal();
+    if (time == null) return '--:--';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildMembershipGlassCard({required Widget child}) {

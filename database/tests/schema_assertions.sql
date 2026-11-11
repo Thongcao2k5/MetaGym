@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 35 THEN
-    RAISE EXCEPTION 'Expected 35 public tables, found %', table_count;
+  IF table_count <> 36 THEN
+    RAISE EXCEPTION 'Expected 36 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -22,7 +22,8 @@ DECLARE
     'membership_plans', 'payments', 'member_memberships', 'coach_requests',
     'coach_relationships', 'coach_termination_requests', 'coach_transfer_history',
     'gym_profile', 'equipment', 'exercises', 'training_plans',
-    'training_plan_days', 'training_plan_exercises', 'nutrition_guides',
+    'training_plan_days', 'training_plan_exercises',
+    'training_plan_day_meals', 'nutrition_guides',
     'training_sessions', 'media_assets', 'workout_logs',
     'workout_log_exercises', 'meal_logs', 'body_measurements',
     'progress_photos', 'progress_comments', 'conversations',
