@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
@@ -10,12 +12,15 @@ import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dar
 import 'package:meta_gym_app/features/member/presentation/member_explore_articles.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
-import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
-import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
+import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/features/training/presentation/member_day_plan_page.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 import 'package:provider/provider.dart';
 
@@ -26,12 +31,14 @@ class MemberDashboardView extends StatefulWidget {
     required this.onNavigateTab,
     this.bottomPadding = 24.0,
     this.useSolidGlassFallback = false,
+    this.previewMode = false,
     super.key,
   });
 
   final ValueChanged<int> onNavigateTab;
   final double bottomPadding;
   final bool useSolidGlassFallback;
+  final bool previewMode;
 
   @override
   State<MemberDashboardView> createState() => _MemberDashboardViewState();
@@ -50,8 +57,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   MemberCoachRelationship? _activeRelationship;
   Map<String, String> _coachNames = const {};
   NutritionGuide? _activeNutrition;
+  TrainingPlan? _activePlan;
   List<TrainingSession> _sessions = const [];
-  List<WorkoutLog> _workouts = const [];
+  ProgressSummary? _progressSummary;
 
   @override
   void didChangeDependencies() {
@@ -103,9 +111,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Future<void> _loadFrame3Data() async {
     MemberCoachingService? coachingService;
     MemberNutritionService? nutritionService;
+    MemberTrainingService? trainingService;
     MemberSessionsService? sessionsService;
-    MemberWorkoutService? workoutService;
     MembershipService? membershipService;
+    MemberProgressService? progressService;
 
     try {
       coachingService = context.read<MemberCoachingService>();
@@ -118,22 +127,26 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       nutritionService = context.read<MemberNutritionService>();
     } catch (_) {}
     try {
+      trainingService = context.read<MemberTrainingService>();
+    } catch (_) {}
+    try {
       sessionsService = context.read<MemberSessionsService>();
     } catch (_) {}
     try {
-      workoutService = context.read<MemberWorkoutService>();
+      membershipService = context.read<MembershipService>();
     } catch (_) {}
     try {
-      membershipService = context.read<MembershipService>();
+      progressService = context.read<MemberProgressService>();
     } catch (_) {}
 
     MemberCoachRelationship? relationship;
     Map<String, String> coachNames = const {};
     NutritionGuide? activeNutrition;
+    TrainingPlan? activePlan;
     List<TrainingSession> sessions = const [];
     List<Membership> memberships = const [];
     List<MemberCoachRequest> coachRequests = const [];
-    List<WorkoutLog> workouts = const [];
+    ProgressSummary? progressSummary;
     Object? firstError;
 
     if (coachingService != null) {
@@ -162,17 +175,17 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       }
     }
 
-    if (sessionsService != null) {
+    if (trainingService != null) {
       try {
-        sessions = await sessionsService.getMine();
+        activePlan = await trainingService.getActive();
       } catch (error) {
         firstError ??= error;
       }
     }
 
-    if (workoutService != null) {
+    if (sessionsService != null) {
       try {
-        workouts = await workoutService.getPage(1);
+        sessions = await sessionsService.getMine();
       } catch (error) {
         firstError ??= error;
       }
@@ -186,15 +199,22 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       }
     }
 
+    if (progressService != null) {
+      try {
+        progressSummary = await progressService.getSummary();
+      } catch (_) {}
+    }
+
     if (!mounted) return;
     setState(() {
       _activeRelationship = relationship;
       _coachNames = coachNames;
       _activeNutrition = activeNutrition;
+      _activePlan = activePlan;
       _sessions = sessions;
       _memberships = memberships;
       _coachRequests = coachRequests;
-      _workouts = workouts;
+      _progressSummary = progressSummary;
       _isLoading = false;
       _loadError = firstError == null
           ? null
@@ -236,6 +256,57 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     return null;
   }
 
+  TrainingDay? get _todayPlanDay {
+    if (widget.previewMode) {
+      final now = DateTime.now();
+      final date =
+          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      return TrainingDay(
+        dayNumber: 1,
+        scheduledDate: date,
+        title: 'Upper Body & Core',
+        notes: 'Kế hoạch do Coach Lê Hoàng Nam chuẩn bị.',
+        exercises: const [
+          TrainingExercise(
+            exerciseId: 'preview-1',
+            exerciseName: 'Incline Press',
+            displayOrder: 1,
+            sets: 4,
+            reps: '10',
+          ),
+          TrainingExercise(
+            exerciseId: 'preview-2',
+            exerciseName: 'Lat Pulldown',
+            displayOrder: 2,
+            sets: 3,
+            reps: '12',
+          ),
+        ],
+        meals: const [
+          PlannedMeal(
+            displayOrder: 1,
+            mealType: 'BREAKFAST',
+            title: 'Yến mạch, trứng và chuối',
+            scheduledTime: '07:30',
+          ),
+          PlannedMeal(
+            displayOrder: 2,
+            mealType: 'LUNCH',
+            title: 'Ức gà, cơm gạo lứt và rau',
+            scheduledTime: '12:00',
+          ),
+        ],
+      );
+    }
+    final now = DateTime.now();
+    final date =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    for (final day in _activePlan?.days ?? const <TrainingDay>[]) {
+      if (day.scheduledDate == date) return day;
+    }
+    return null;
+  }
+
   Future<void> _pushAndReload(String route) async {
     await context.push(route);
     if (mounted) {
@@ -243,97 +314,51 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     }
   }
 
-  /// Thẻ Kính Liquid Glass trong suốt (Crystal-Clear Glossy Optical Glass):
-  /// - Luôn trong suốt rõ nét (không bị đục/mờ sương), thấy rõ nền phòng gym phía sau
-  /// - Bề mặt bóng kính (glossy diagonal sheen) + viền phản quang sắc nét nổi khối
+  /// Bề mặt nội dung tối giúp chữ rõ trên ảnh nền phòng gym.
   Widget _buildLiquidGlassCard({
     required Widget child,
     BorderRadius? borderRadius,
     Clip clipBehavior = Clip.antiAlias,
+    bool featured = false,
   }) {
     final radius =
         borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-
-    return ClipRRect(
-      borderRadius: radius,
+    final surface = Container(
       clipBehavior: clipBehavior,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment(-0.9, -0.8),
-            end: Alignment(0.9, 0.8),
-            stops: [0.0, 0.32, 0.70, 1.0],
-            colors: [
-              Color(0x4728384D), // Phản xạ bóng kính góc trên trái
-              Color(0x29141E2C), // Trong suốt quang học ở tâm
-              Color(0x240F1722), // Trong suốt sâu
-              Color(0x381B283A), // Ánh viền kính góc dưới phải
-            ],
-          ),
-          borderRadius: radius,
-          border: Border.all(
-            color: const Color(
-              0x80DCEBFF,
-            ), // Viền kính sáng rõ, nổi bật không bị chìm
-            width: 1.35,
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x66000000),
-              blurRadius: 18,
-              offset: Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Color(0x1FDCEBFF),
-              blurRadius: 4,
-              spreadRadius: 0.4,
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Lớp bóng gương chéo (Glossy Specular Sheen) tạo hiệu ứng kính bóng
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: const Alignment(-1.0, -1.0),
-                      end: const Alignment(0.6, 0.8),
-                      stops: const [0.0, 0.22, 0.50, 1.0],
-                      colors: [
-                        Colors.white.withValues(alpha: 0.16),
-                        Colors.white.withValues(alpha: 0.05),
-                        Colors.transparent,
-                        const Color(0x148EB9E5),
-                      ],
-                    ),
+      decoration: BoxDecoration(
+        color: featured ? const Color(0xB82D2824) : const Color(0xC42B2622),
+        borderRadius: radius,
+        border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
+      ),
+      child: featured
+          ? Stack(
+              children: [
+                const Positioned(
+                  top: 0,
+                  left: 18,
+                  right: 18,
+                  child: SizedBox(
+                    height: 1,
+                    child: ColoredBox(color: Color(0x70FFF6EA)),
                   ),
                 ),
-              ),
-            ),
-            // Highlight cạnh trên sáng sắc nét giúp tách biệt hoàn toàn với nền
-            Positioned(
-              top: 0,
-              left: 10,
-              right: 10,
-              height: 1.4,
-              child: IgnorePointer(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0x1AFFFFFF),
-                        Color(0xB3FFFFFF),
-                        Color(0x1AFFFFFF),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            child,
-          ],
+                child,
+              ],
+            )
+          : child,
+    );
+    if (!featured ||
+        widget.useSolidGlassFallback ||
+        MediaQuery.disableAnimationsOf(context) ||
+        MetaGymTheme.isFlutterTestEnvironment) {
+      return surface;
+    }
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: surface,
         ),
       ),
     );
@@ -388,11 +413,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0x52080A0D), // Bảo vệ thanh trạng thái
-                          Color(
-                            0x1F080A0D,
-                          ), // Trong suốt ở giữa, thấy rõ nền gym
-                          Color(0x66080A0D), // Đáy dịu mắt
+                          Color(0x9E0F1115),
+                          Color(0x900F1115),
+                          Color(0xAA0F1115),
                         ],
                         stops: [0.0, 0.48, 1.0],
                       ),
@@ -416,7 +439,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   MetaGymTheme.pageGutter,
                   0,
                   MetaGymTheme.pageGutter,
-                  widget.bottomPadding,
+                  widget.bottomPadding + 32,
                 ),
                 children: [
                   Column(
@@ -428,7 +451,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       const SizedBox(height: 14),
 
                       // 2. Quick Action Dock (4 nút squircle đối xứng)
-                      _buildQuickActionDock(context),
+                      _buildQuickActionDock(),
                       const SizedBox(height: 14),
 
                       if (_loadError != null) ...[
@@ -436,17 +459,25 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         const SizedBox(height: 12),
                       ],
 
-                      // 3. Thẻ "Gói tập & Coach" (Bố cục 50/50 đối xứng)
+                      // 3. Gói tập; chỉ hiện Coach khi đang được phụ trách.
                       _buildMembershipAndCoachCard(context),
                       const SizedBox(height: 14),
 
-                      // 4. Thẻ "Hôm nay [Sắp diễn ra]"
-                      _buildTodaySection(context),
-                      const SizedBox(height: 14),
-
-                      // 5. Cặp Bento 2 cột (Dinh dưỡng & Tiến độ tuần)
-                      _buildBentoSection(context),
-                      const SizedBox(height: 14),
+                      if (_isLoading ||
+                          widget.previewMode ||
+                          (_activeMembership != null && _hasCoach)) ...[
+                        _buildTodaySection(context),
+                        const SizedBox(height: 14),
+                        _buildBentoSection(context),
+                        const SizedBox(height: 14),
+                      ],
+                      if (!_isLoading &&
+                          !widget.previewMode &&
+                          _activeMembership != null &&
+                          !_hasCoach) ...[
+                        _buildSelfWorkoutCard(),
+                        const SizedBox(height: 14),
+                      ],
 
                       // 6. Thẻ "Khám phá phòng gym & kiến thức"
                       _buildExploreSection(context),
@@ -512,19 +543,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   Widget _buildHeader(BuildContext context, String userName) {
-    final cleanName = userName.trim();
-    final parts = cleanName
-        .split(RegExp(r'\s+'))
-        .where((e) => e.isNotEmpty)
-        .toList();
-    final initials = parts.length >= 2
-        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
-        : (cleanName.isNotEmpty
-              ? cleanName
-                    .substring(0, cleanName.length >= 2 ? 2 : 1)
-                    .toUpperCase()
-              : 'MQ');
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -554,7 +572,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             child: const Text(
               'MG',
               style: TextStyle(
-                color: Color(0xFF111317),
+                color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
@@ -592,18 +610,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Sẵn sàng bứt phá hôm nay?',
-                  style: TextStyle(
-                    color: Color(0xFF8E9AA8),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w400,
-                    height: 1.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
           ),
@@ -613,85 +619,21 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             semanticLabel: 'Tìm kiếm phòng gym và thiết bị',
             onTap: () => context.push('/member/features/gym'),
           ),
-          const SizedBox(width: 8),
-          _CircleHeaderGlassButton(
-            icon: Icons.logout_rounded,
-            iconColor: const Color(0xFFFF6961),
-            semanticLabel: 'Đăng xuất',
-            onTap: _confirmSignOut,
-          ),
-          const SizedBox(width: 8),
-          Semantics(
-            button: true,
-            label: 'Mở hồ sơ hội viên $userName',
-            child: Tooltip(
-              message: 'Hồ sơ',
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => widget.onNavigateTab(4),
-                  customBorder: const CircleBorder(),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFFF7E58), Color(0xFFFF4820)],
-                          ),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0x40FFFFFF),
-                            width: 1.2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x38FF5A36),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
-                            color: Color(0xFF111317),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
   // ===========================================================================
-  // 2. QUICK ACTION DOCK (4 SQUIRCLE BUTTONS)
+  // 2. QUICK ACTIONS: FOUR EQUAL NAVIGATION TILES
   // ===========================================================================
-  Widget _buildQuickActionDock(BuildContext context) {
+  Widget _buildQuickActionDock() {
     return Row(
       children: [
         Expanded(
           child: _buildQuickActionButton(
             label: 'Lịch tập',
             icon: Icons.calendar_today_rounded,
-            isActive: true,
             onTap: () => _pushAndReload('/member/features/sessions'),
           ),
         ),
@@ -700,7 +642,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Giáo trình',
             icon: Icons.description_outlined,
-            isActive: false,
             onTap: () => _pushAndReload('/member/features/training'),
           ),
         ),
@@ -709,7 +650,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Dinh dưỡng',
             icon: Icons.spa_outlined,
-            isActive: false,
             onTap: () => _pushAndReload('/member/features/nutrition'),
           ),
         ),
@@ -718,7 +658,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Coach',
             icon: Icons.groups_outlined,
-            isActive: false,
             onTap: () => _pushAndReload(
               _hasCoach || _hasPendingCoachRequest
                   ? '/member/features/my-coach'
@@ -733,97 +672,52 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Widget _buildQuickActionButton({
     required String label,
     required IconData icon,
-    required bool isActive,
     required VoidCallback onTap,
   }) {
-    final buttonBody = Container(
-      height: 76,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: const Alignment(-0.85, -0.85),
-          end: const Alignment(0.85, 0.85),
-          colors: isActive
-              ? const [Color(0x52FF6A42), Color(0x2EFF4520)]
-              : const [Color(0x3D26374D), Color(0x21121B28)],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isActive ? MetaGymTheme.brandOrange : const Color(0x6BDCEBFF),
-          width: isActive ? 1.5 : 1.2,
-        ),
-        boxShadow: isActive
-            ? const [
-                BoxShadow(
-                  color: Color(0x52FF5A36),
-                  blurRadius: 12,
-                  spreadRadius: 0.5,
-                ),
-              ]
-            : const [
-                BoxShadow(
-                  color: Color(0x47000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 10,
-            right: 10,
-            height: 1.2,
-            child: IgnorePointer(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0x00FFFFFF),
-                      Color(0x8CFFFFFF),
-                      Color(0x00FFFFFF),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isActive
-                        ? const Color(0xFFF7F9FC)
-                        : const Color(0xFFD6E0EC),
-                    fontSize: 11.5,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-
     return Semantics(
       button: true,
       label: label,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: ClipRRect(
+        child: Ink(
+          decoration: BoxDecoration(
+            color: widget.useSolidGlassFallback
+                ? const Color(0xFF302923)
+                : null,
+            gradient: widget.useSolidGlassFallback
+                ? null
+                : const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xC637302A), Color(0xBB2C2621)],
+                  ),
             borderRadius: BorderRadius.circular(18),
-            child: buttonBody,
+            border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            splashColor: const Color(0x20FFFFFF),
+            child: SizedBox(
+              height: 72,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
+                  const SizedBox(height: 5),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -836,270 +730,253 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Widget _buildTodaySection(BuildContext context) {
     if (_isLoading) {
       return _buildLiquidGlassCard(
-        child: Container(
+        child: const SizedBox(
           height: 110,
-          alignment: Alignment.center,
-          child: const CircularProgressIndicator(
-            color: MetaGymTheme.brandOrange,
-            strokeWidth: 2.4,
+          child: Center(
+            child: CircularProgressIndicator(color: MetaGymTheme.brandOrange),
           ),
         ),
       );
     }
 
-    final todaySession = _todaySession;
-    final timeText = todaySession != null
-        ? _extractTimeHHmm(todaySession.scheduledStartAt)
-        : '17:30';
-    final titleText = todaySession != null && todaySession.title.isNotEmpty
-        ? todaySession.title
-        : 'Upper Body & Core';
-    final coachName = _hasCoach ? _displayCoachName : 'Lê Hoàng Nam';
-    final coachParts = coachName
-        .split(RegExp(r'\s+'))
-        .where((e) => e.isNotEmpty)
-        .toList();
-    final coachInitialStr = coachParts.length >= 2
-        ? '${coachParts[0][0]}${coachParts[1][0]}'.toUpperCase()
-        : (coachName.isNotEmpty
-              ? coachName
-                    .substring(0, coachName.length >= 2 ? 2 : 1)
-                    .toUpperCase()
-              : 'LN');
+    final day = _todayPlanDay;
+    final session =
+        day != null &&
+            _todaySession?.title.trim().toLowerCase() ==
+                day.title.trim().toLowerCase()
+        ? _todaySession
+        : null;
+    final status = day == null
+        ? 'Chưa có lịch'
+        : session?.statusLabel ?? 'Đã lên lịch';
+    final statusColor = switch (session?.status) {
+      'COMPLETED' => MetaGymTheme.progressGreen,
+      'CANCELLED' || 'MEMBER_ABSENT' => MetaGymTheme.warningAmber,
+      _ =>
+        day == null
+            ? MetaGymTheme.darkTextSecondary
+            : MetaGymTheme.progressGreen,
+    };
+    final action = day == null
+        ? 'Xem lịch'
+        : session?.status == 'COMPLETED'
+        ? 'Kết quả'
+        : session?.status == 'CANCELLED' || session?.status == 'MEMBER_ABSENT'
+        ? 'Chi tiết'
+        : 'Xem ngay';
+
+    Future<void> openDay() async {
+      if (day == null) {
+        await _pushAndReload('/member/features/training');
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => MemberDayPlanPage(
+            day: day,
+            session: session,
+            planTitle: widget.previewMode
+                ? 'Giáo trình tăng cơ'
+                : _activePlan?.title,
+          ),
+        ),
+      );
+      if (mounted) await _loadFrame3Data();
+    }
 
     return _buildLiquidGlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              onTap: () => _pushAndReload('/member/features/sessions'),
-              borderRadius: BorderRadius.circular(8),
-              child: Row(
+      featured: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const Key('member-today-plan-card'),
+          onTap: openDay,
+          child: Semantics(
+            button: true,
+            label: action,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.access_time_rounded,
-                    color: MetaGymTheme.brandOrange,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Hôm nay',
-                    style: TextStyle(
-                      color: Color(0xFFF7F9FC),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(
-                        0x2623C997,
-                      ), // rgba(35, 201, 151, 0.15)
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(
-                          0x4D23C997,
-                        ), // rgba(35, 201, 151, 0.30)
-                        width: 0.5,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.event_note_rounded,
+                        size: 18,
+                        color: MetaGymTheme.brandOrange,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF23C997),
-                            shape: BoxShape.circle,
-                          ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Hôm nay',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(width: 5),
-                        const Text(
-                          'Sắp diễn ra',
-                          style: TextStyle(
-                            color: Color(0xFF23C997),
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: MetaGymTheme.darkTextSecondary,
+                        size: 20,
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFF8E9AA8),
-                    size: 20,
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              day?.title ??
+                                  'Coach chưa xếp kế hoạch cho hôm nay',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              day == null
+                                  ? 'Xem các ngày đã lên lịch'
+                                  : '${day.exercises.length} bài tập · ${day.meals.length} bữa ăn${session == null ? '' : ' · ${_extractTimeHHmm(session.scheduledStartAt)}'}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: MetaGymTheme.darkTextSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 86,
+                          minHeight: 42,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: MetaGymTheme.brandOrange,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          action,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Cột trái: Giờ
-                Container(
-                  width: 56,
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  decoration: BoxDecoration(
-                    color: const Color(0x2E162232),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0x59DCEBFF),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        timeText,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        "60'",
-                        style: TextStyle(
-                          color: Color(0xFF9EAAB8),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 9),
-                // Giữa: Tiêu đề + HLV
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        titleText,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: const Color(0x332A1510),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: MetaGymTheme.brandOrange,
-                                width: 1,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              coachInitialStr,
-                              style: const TextStyle(
-                                color: MetaGymTheme.brandOrange,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              'HLV $coachName',
-                              style: const TextStyle(
-                                color: Color(0xFFC8D2DF),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                // Phải: Nút CTA cam
-                GestureDetector(
-                  onTap: () => _pushAndReload('/member/features/sessions'),
-                  child: Container(
-                    height: 33,
-                    padding: const EdgeInsets.symmetric(horizontal: 11),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFFF6A42), Color(0xFFFF4520)],
-                      ),
-                      borderRadius: BorderRadius.circular(17),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x4DFF5A36),
-                          blurRadius: 10,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Bắt đầu ▶',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   String _extractTimeHHmm(String rawIso) {
-    final parsed = DateTime.tryParse(rawIso)?.toLocal();
-    if (parsed == null) return '--:--';
-    final hh = parsed.hour.toString().padLeft(2, '0');
-    final mm = parsed.minute.toString().padLeft(2, '0');
-    return '$hh:$mm';
+    final time = DateTime.tryParse(rawIso)?.toLocal();
+    if (time == null) return '--:--';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildMembershipGlassCard({required Widget child}) {
+    final radius = BorderRadius.circular(24);
+    final surface = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xCD342D28), Color(0xC829241F)],
+        ),
+        borderRadius: radius,
+        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            left: 20,
+            right: 20,
+            top: 0,
+            child: SizedBox(
+              height: 1,
+              child: ColoredBox(color: Color(0x75FFF5E9)),
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+    if (widget.useSolidGlassFallback ||
+        MediaQuery.disableAnimationsOf(context) ||
+        MetaGymTheme.isFlutterTestEnvironment) {
+      return surface;
+    }
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: surface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMembershipMetricPanel({
+    required VoidCallback onTap,
+    required Widget child,
+  }) {
+    return Material(
+      color: const Color(0x80211E1C),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(17),
+        side: const BorderSide(color: Color(0x9A8C8176), width: 1),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 82),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: child,
+          ),
+        ),
+      ),
+    );
   }
 
   // ===========================================================================
-  // 3. THẺ "GÓI TẬP & COACH" (BỐ CỤC 50/50 ĐỐI XỨNG - LIQUID GLASS)
+  // 3. THẺ "GÓI TẬP & COACH"
   // ===========================================================================
   Widget _buildMembershipAndCoachCard(BuildContext context) {
     if (_isLoading) {
-      return _buildLiquidGlassCard(
+      return _buildMembershipGlassCard(
         child: Container(
           height: 90,
           alignment: Alignment.center,
@@ -1117,29 +994,52 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         : DateTime.tryParse(membership.endDate)?.toLocal();
     final now = DateTime.now();
     final daysRemaining = endDate == null
-        ? 112
+        ? null
         : DateTime(endDate.year, endDate.month, endDate.day)
               .difference(DateTime(now.year, now.month, now.day))
               .inDays
               .clamp(0, 99999);
-    final displayDays = daysRemaining == 0 ? 112 : daysRemaining;
-    final displayCoachName = _hasCoach ? _displayCoachName : 'Lê Hoàng Nam';
+    final displayDays = widget.previewMode
+        ? '112'
+        : (daysRemaining?.toString() ?? '—');
+    final displayCoachName = _hasCoach
+        ? _displayCoachName
+        : (widget.previewMode ? 'Lê Hoàng Nam' : 'Chưa có Coach');
+    final workoutLabel = widget.previewMode
+        ? '24 ngày đã tập'
+        : _progressSummary == null
+        ? 'Chưa có nhật ký tập'
+        : '${_progressSummary!.workoutCount} buổi đã tập';
+    if (!widget.previewMode && (membership == null || !_hasCoach)) {
+      return _buildMembershipOnlyCard(
+        hasMembership: membership != null,
+        daysRemaining: displayDays,
+        workoutLabel: workoutLabel,
+      );
+    }
+    final upcomingSessions = _sessions
+        .where((session) => session.status == 'SCHEDULED')
+        .length;
+    final coachSessionLabel = widget.previewMode
+        ? '6 buổi'
+        : _hasCoach
+        ? '$upcomingSessions buổi đã lên lịch'
+        : 'Chưa chọn Coach';
     final coachParts = displayCoachName
         .split(RegExp(r'\s+'))
         .where((e) => e.isNotEmpty)
         .toList();
     final coachInitialStr = coachParts.length >= 2
-        ? '${coachParts[0][0]}${coachParts[1][0]}'.toUpperCase()
+        ? '${coachParts.first[0]}${coachParts.last[0]}'.toUpperCase()
         : (displayCoachName.isNotEmpty
               ? displayCoachName
                     .substring(0, displayCoachName.length >= 2 ? 2 : 1)
                     .toUpperCase()
               : 'LN');
-    final workoutCount = _workouts.isNotEmpty ? _workouts.length : 24;
 
-    return _buildLiquidGlassCard(
+    return _buildMembershipGlassCard(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -1155,16 +1055,15 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       Icon(
                         Icons.fitness_center_rounded,
                         color: MetaGymTheme.brandOrange,
-                        size: 13,
+                        size: 18,
                       ),
-                      SizedBox(width: 5),
+                      SizedBox(width: 9),
                       Text(
-                        'GÓI TẬP & COACH',
+                        'Gói tập & Coach',
                         style: TextStyle(
                           color: Color(0xFFF7F9FC),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -1172,199 +1071,163 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   Icon(
                     Icons.chevron_right_rounded,
                     color: Color(0xFF8E9AA8),
-                    size: 16,
+                    size: 21,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Ô trái: Gói tập
                   Expanded(
-                    child: InkWell(
+                    child: _buildMembershipMetricPanel(
                       onTap: () =>
                           _pushAndReload('/member/features/membership'),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0x2E162232),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: const Color(0x59DCEBFF),
-                            width: 1.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            displayDays,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFFF7F9FC),
+                              fontSize: 27,
+                              fontWeight: FontWeight.w700,
+                              height: 1.1,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$displayDays',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFF7F9FC),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                height: 1.1,
-                                fontFeatures: [FontFeature.tabularFigures()],
-                              ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'ngày còn lại',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFFB7B2AF),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
                             ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'ngày còn lại',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFF9EAAB8),
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w400,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.show_chart_rounded,
+                                color: MetaGymTheme.brandOrange,
+                                size: 14,
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.show_chart_rounded,
-                                  color: MetaGymTheme.brandOrange,
-                                  size: 13,
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    '$workoutCount ngày đã tập',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Color(0xFFF7F9FC),
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  workoutLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFFEAE6E2),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Ô phải: Coach
                   Expanded(
-                    child: InkWell(
+                    child: _buildMembershipMetricPanel(
                       onTap: () => _pushAndReload(
                         _hasCoach || _hasPendingCoachRequest
                             ? '/member/features/my-coach'
                             : '/member/features/coaching',
                       ),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0x2E162232),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: const Color(0x59DCEBFF),
-                            width: 1.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: MetaGymTheme.coachAvatarBackground,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  coachInitialStr,
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.coachAvatarForeground,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      displayCoachName,
+                                      style: const TextStyle(
+                                        color: Color(0xFFF7F9FC),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.15,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 1),
+                                    const Text(
+                                      'Coach cá nhân',
+                                      style: TextStyle(
+                                        color: Color(0xFFB7B2AF),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x332A1510),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: MetaGymTheme.brandOrange,
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    coachInitialStr,
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.brandOrange,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                          const SizedBox(height: 9),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  coachSessionLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFFEAE6E2),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                              ),
+                              if (widget.previewMode) ...[
                                 const SizedBox(width: 6),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        displayCoachName,
-                                        style: const TextStyle(
-                                          color: Color(0xFFF7F9FC),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.15,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 1),
-                                      const Text(
-                                        'Coach cá nhân',
-                                        style: TextStyle(
-                                          color: Color(0xFF9EAAB8),
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
+                                const Icon(
+                                  Icons.all_inclusive_rounded,
+                                  size: 17,
+                                  color: MetaGymTheme.brandOrange,
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 6),
-                            const Row(
-                              children: [
-                                Text(
-                                  '6 buổi',
-                                  style: TextStyle(
-                                    color: Color(0xFFF7F9FC),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  ' · ',
-                                  style: TextStyle(
-                                    color: Color(0xFF9EAAB8),
-                                    fontSize: 10,
-                                  ),
-                                ),
-                                Text(
-                                  '∞',
-                                  style: TextStyle(
-                                    color: MetaGymTheme.brandOrange,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1377,11 +1240,163 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     );
   }
 
+  Widget _buildMembershipOnlyCard({
+    required bool hasMembership,
+    required String daysRemaining,
+    required String workoutLabel,
+  }) {
+    return _buildMembershipGlassCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _pushAndReload('/member/features/membership'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.fitness_center_rounded,
+                      color: MetaGymTheme.brandOrange,
+                      size: 18,
+                    ),
+                    SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        'Gói tập',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: Color(0xFF8E9AA8)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (hasMembership)
+                  Row(
+                    children: [
+                      Text(
+                        daysRemaining,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'ngày còn lại',
+                        style: TextStyle(
+                          color: Color(0xFFB7B2AF),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const Spacer(),
+                      Flexible(
+                        child: Text(
+                          workoutLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFEAE6E2),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  const Text(
+                    'Chưa có gói tập · Chạm để khám phá gói',
+                    style: TextStyle(color: Color(0xFFEAE6E2), fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelfWorkoutCard() {
+    return _buildLiquidGlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.fitness_center_rounded,
+                  color: MetaGymTheme.brandOrange,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Nhật ký tập luyện',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final description = const Text(
+                  'Lưu lại hành trình và kết quả tập luyện',
+                  style: TextStyle(
+                    color: MetaGymTheme.darkTextSecondary,
+                    fontSize: 12,
+                  ),
+                );
+                final action = FilledButton.icon(
+                  onPressed: () => _pushAndReload('/member/features/workouts'),
+                  icon: const Icon(Icons.calendar_month_rounded, size: 17),
+                  label: const Text('Mở nhật ký'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.brandOrange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                  ),
+                );
+                if (constraints.maxWidth < 440) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [description, const SizedBox(height: 8), action],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: description),
+                    const SizedBox(width: 12),
+                    action,
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ===========================================================================
   // 5. CẶP BENTO 2 CỘT (DINH DƯỠNG & TIẾN ĐỘ TẬP LUYỆN - LIQUID GLASS)
   // ===========================================================================
   Widget _buildBentoSection(BuildContext context) {
-    return IntrinsicHeight(
+    return SizedBox(
+      height: 128,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1416,32 +1431,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x2623C997),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0x4D23C997),
-                                width: 0.6,
-                              ),
-                            ),
-                            child: const Text(
-                              'Từ HLV',
-                              style: TextStyle(
-                                color: Color(0xFF23C997),
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Text(
                         _activeNutrition?.title ?? 'Thực đơn tăng cơ',
                         style: const TextStyle(
@@ -1464,7 +1456,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Spacer(),
-                      const SizedBox(height: 10),
                       Row(
                         children: [
                           const Expanded(
@@ -1486,13 +1477,13 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                               vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x2423C997),
+                              color: const Color(0x242ECC71),
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: const Text(
                               '85%',
                               style: TextStyle(
-                                color: Color(0xFF23C997),
+                                color: MetaGymTheme.progressGreen,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1508,7 +1499,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           minHeight: 3,
                           backgroundColor: Color(0x26FFFFFF),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF23C997),
+                            MetaGymTheme.progressGreen,
                           ),
                         ),
                       ),
@@ -1557,17 +1548,17 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x2623C997),
+                              color: const Color(0x262ECC71),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0x4D23C997),
+                                color: const Color(0x4D2ECC71),
                                 width: 0.6,
                               ),
                             ),
                             child: const Text(
                               '3/7 buổi',
                               style: TextStyle(
-                                color: Color(0xFF23C997),
+                                color: MetaGymTheme.progressGreen,
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1576,7 +1567,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1594,7 +1585,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         ],
                       ),
                       const Spacer(),
-                      const SizedBox(height: 10),
                       Row(
                         children: [
                           const Expanded(
@@ -1616,13 +1606,13 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                               vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x2423C997),
+                              color: const Color(0x242ECC71),
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: const Text(
                               'Tốt',
                               style: TextStyle(
-                                color: Color(0xFF23C997),
+                                color: MetaGymTheme.progressGreen,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1638,7 +1628,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           minHeight: 3,
                           backgroundColor: Color(0x26FFFFFF),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF23C997),
+                            MetaGymTheme.progressGreen,
                           ),
                         ),
                       ),
@@ -1942,13 +1932,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 class _CircleHeaderGlassButton extends StatelessWidget {
   const _CircleHeaderGlassButton({
     required this.icon,
-    this.iconColor,
     required this.semanticLabel,
     required this.onTap,
   });
 
   final IconData icon;
-  final Color? iconColor;
   final String semanticLabel;
   final VoidCallback onTap;
   @override
@@ -1970,16 +1958,16 @@ class _CircleHeaderGlassButton extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: MetaGymTheme.headerCircleGlass,
+                    color: const Color(0x9E2F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: MetaGymTheme.headerCircleBorder,
+                      color: const Color(0x95ADA295),
                       width: 1,
                     ),
                   ),
                   child: Icon(
                     icon,
-                    color: iconColor ?? MetaGymTheme.darkTextPrimary,
+                    color: MetaGymTheme.darkTextPrimary,
                     size: 20,
                   ),
                 ),

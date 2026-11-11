@@ -210,6 +210,16 @@ class TrainingPlanContent extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (day.scheduledDate != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lịch ngày ${day.scheduledDate!.substring(8, 10)}/${day.scheduledDate!.substring(5, 7)}/${day.scheduledDate!.substring(0, 4)}',
+                    style: const TextStyle(
+                      color: MetaGymTheme.darkTextSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
                 if (day.notes?.isNotEmpty == true) ...[
                   const SizedBox(height: 8),
                   Padding(
@@ -248,6 +258,70 @@ class TrainingPlanContent extends StatelessWidget {
                 else
                   for (var i = 0; i < day.exercises.length; i++)
                     _ExerciseCard(exercise: day.exercises[i], index: i + 1),
+                const SizedBox(height: 10),
+                const Text(
+                  'Lịch ăn',
+                  style: TextStyle(
+                    color: MetaGymTheme.darkTextPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (day.meals.isEmpty)
+                  const Text(
+                    'Coach chưa xếp lịch ăn cho ngày này.',
+                    style: TextStyle(
+                      color: MetaGymTheme.darkTextTertiary,
+                      fontSize: 13,
+                    ),
+                  )
+                else
+                  for (final meal in day.meals)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.restaurant_outlined,
+                            size: 18,
+                            color: MetaGymTheme.progressGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.darkTextSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  meal.title,
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.darkTextPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (meal.notes?.isNotEmpty == true)
+                                  Text(
+                                    meal.notes!,
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.darkTextTertiary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
               ],
             ),
           ),

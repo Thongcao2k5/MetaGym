@@ -108,6 +108,10 @@ void main() {
     expect(find.text('Tin nhắn'), findsWidgets);
     expect(find.text('Hồ sơ'), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
+    expect(find.text('Gói tập & Coach'), findsNothing);
+    expect(find.text('Chưa có gói tập · Chạm để khám phá gói'), findsOneWidget);
+    expect(find.byKey(const Key('member-today-plan-card')), findsNothing);
+    expect(find.text('Tiến độ'), findsNothing);
 
     // Quick access Coach opens CoachSelectionPage
     await tester.tap(find.text('Coach'));
