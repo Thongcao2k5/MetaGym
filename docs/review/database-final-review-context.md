@@ -475,7 +475,7 @@ UNIQUE `(member_id, version)` và chỉ một dòng `ACTIVE` cho mỗi Member. `
 
 `scheduled_end_at` phải sau `scheduled_start_at`. Index `(relationship_id, scheduled_start_at)`.
 
-Chuyển trạng thái hợp lệ: `SCHEDULED → COMPLETED`, `SCHEDULED → MEMBER_ABSENT` hoặc `SCHEDULED → CANCELLED`. Trạng thái kết thúc không được khôi phục về `SCHEDULED`; quan hệ chuyển `PAUSED` hoặc `ENDED` phải hủy các buổi tương lai còn `SCHEDULED`. `COMPLETED` bắt buộc có `completed_at`; `CANCELLED` bắt buộc có `cancelled_at` và `cancellation_reason`.
+Chuyển trạng thái hợp lệ: `SCHEDULED → COMPLETED`, `SCHEDULED → MEMBER_ABSENT` hoặc `SCHEDULED → CANCELLED`. Trạng thái kết thúc không được khôi phục về `SCHEDULED`. Khi quan hệ chuyển `PAUSED` do gói hết hạn, buổi tương lai vẫn `SCHEDULED` và giáo án đã công bố được giữ nguyên nhưng khóa thao tác cho đến khi gia hạn có hiệu lực; ngày hẹn đã qua phải được Coach xếp lại, không tự dời lịch. Quan hệ chuyển `ENDED` mới hủy các buổi tương lai còn `SCHEDULED`. `COMPLETED` bắt buộc có `completed_at`; `CANCELLED` bắt buộc có `cancelled_at` và `cancellation_reason`.
 
 ## 9. Tệp và hình ảnh
 

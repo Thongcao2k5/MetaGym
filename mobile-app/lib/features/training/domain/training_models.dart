@@ -124,6 +124,7 @@ class TrainingPlan {
     required this.title,
     required this.status,
     required this.version,
+    this.accessLocked = false,
     this.goal,
     this.startDate,
     this.endDate,
@@ -138,6 +139,7 @@ class TrainingPlan {
       title: json['title'] as String,
       status: json['status'] as String,
       version: json['version'] as int,
+      accessLocked: json['accessLocked'] as bool? ?? false,
       goal: json['goal'] as String?,
       startDate: json['startDate'] as String?,
       endDate: json['endDate'] as String?,
@@ -152,16 +154,19 @@ class TrainingPlan {
   final String title;
   final String status;
   final int version;
+  final bool accessLocked;
   final String? goal;
   final String? startDate;
   final String? endDate;
   final String? publishedAt;
   final List<TrainingDay> days;
 
-  String get statusLabel => switch (status) {
-    'ACTIVE' => 'Đã công bố',
-    'ARCHIVED' => 'Đã lưu trữ',
-    'DRAFT' => 'Bản nháp',
-    _ => status,
-  };
+  String get statusLabel => accessLocked && status == 'ACTIVE'
+      ? 'Tạm khóa · Chờ gia hạn gói'
+      : switch (status) {
+          'ACTIVE' => 'Đã công bố',
+          'ARCHIVED' => 'Đã lưu trữ',
+          'DRAFT' => 'Bản nháp',
+          _ => status,
+        };
 }

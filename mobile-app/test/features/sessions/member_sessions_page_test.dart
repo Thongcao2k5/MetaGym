@@ -23,6 +23,17 @@ void main() {
     );
   });
 
+  test('shows a scheduled session as locked during membership expiry', () {
+    final session = TrainingSession.fromJson({
+      'id': 'session-locked',
+      'title': 'Tập chân',
+      'scheduledStartAt': '2026-11-15T08:30:00Z',
+      'status': 'SCHEDULED',
+      'accessLocked': true,
+    });
+    expect(session.statusLabel, 'Tạm khóa · Chờ gia hạn gói');
+  });
+
   testWidgets('shows schedule, loads detail, and refreshes the list', (
     tester,
   ) async {

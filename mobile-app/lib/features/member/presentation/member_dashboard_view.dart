@@ -1010,6 +1010,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         : _progressSummary == null
         ? 'Chưa có nhật ký tập'
         : '${_progressSummary!.workoutCount} buổi đã tập';
+    if (!widget.previewMode && _activeRelationship?.status == 'PAUSED') {
+      return _buildPausedMembershipCard();
+    }
     if (!widget.previewMode && (membership == null || !_hasCoach)) {
       return _buildMembershipOnlyCard(
         hasMembership: membership != null,
@@ -1235,6 +1238,63 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPausedMembershipCard() {
+    return _buildMembershipGlassCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _pushAndReload('/member/features/membership'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.lock_clock_rounded,
+                      color: MetaGymTheme.brandOrange,
+                      size: 18,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Gói tập đã hết hạn',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: Color(0xFFB7B2AF)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Coach $_displayCoachName đang tạm ngưng. Buổi tập và giáo án đã tạo được giữ nguyên.',
+                  style: const TextStyle(
+                    color: MetaGymTheme.darkTextSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Gia hạn gói để tiếp tục',
+                  style: TextStyle(
+                    color: MetaGymTheme.brandOrange,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

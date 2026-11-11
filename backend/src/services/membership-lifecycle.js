@@ -53,7 +53,7 @@ async function runReconciliation(database, businessDate) {
        WHERE status = 'SCHEDULED' AND start_date <= $1::date
        AND end_date >= $1::date`, [businessDate],
     );
-    const paused = await client.query(
+    await client.query(
       `UPDATE coach_relationships r SET status = 'PAUSED', paused_at = now(),
        pause_reason = 'MEMBERSHIP_EXPIRED'
        WHERE r.status = 'ACTIVE'
@@ -63,17 +63,8 @@ async function runReconciliation(database, businessDate) {
          SELECT 1 FROM member_memberships m WHERE m.member_id = r.member_id
          AND m.status = 'ACTIVE' AND m.start_date <= $1::date
          AND m.end_date >= $1::date
-       ) RETURNING r.id`, [businessDate],
+       )`, [businessDate],
     );
-    if (paused.rows.length) {
-      await client.query(
-        `UPDATE training_sessions SET status = 'CANCELLED', cancelled_at = now(),
-         cancellation_reason = 'Gói tập của Member đã hết hạn'
-         WHERE relationship_id = ANY($1::uuid[]) AND status = 'SCHEDULED'
-         AND scheduled_start_at > now()`,
-        [paused.rows.map((row) => row.id)],
-      );
-    }
     await client.query(
       `UPDATE coach_relationships r SET status = 'ACTIVE', paused_at = NULL,
        pause_reason = NULL

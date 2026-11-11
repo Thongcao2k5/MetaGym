@@ -297,6 +297,8 @@ Quy tắc công bố đồng thời và chỉ một bản `ACTIVE` cũng áp d�
 
 Coach chỉ đọc hướng dẫn dinh dưỡng và buổi tập thuộc quan hệ hiện tại `ACTIVE` hoặc `PAUSED`; dữ liệu của quan hệ `ENDED` không còn hiện cho Coach cũ, kể cả khi Member quay lại cùng Coach đó.
 
+Khi gói hết hạn và quan hệ chuyển `PAUSED`, giáo án đã công bố vẫn có `status = ACTIVE`, buổi tập tương lai vẫn có `status = SCHEDULED`. API đọc giáo án và buổi tập trả thêm `accessLocked: true` để client hiển thị tạm khóa; Coach không thể tạo, sửa hoặc chấm buổi tập cho đến khi gói mới có hiệu lực. Khi quan hệ trở lại `ACTIVE`, `accessLocked` trở về `false` mà không tạo lại dữ liệu hoặc tự dời ngày hẹn.
+
 ## 7. Progress Tracking
 
 | Method | Endpoint | Quyền | Mục đích |

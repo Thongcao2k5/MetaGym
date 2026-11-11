@@ -55,7 +55,9 @@ function planView(row, days) {
     coachId: row.coach_id, title: row.title, goal: row.goal,
     startDate: row.start_date, endDate: row.end_date,
     version: row.version, status: row.status, publishedAt: row.published_at,
-    archivedAt: row.archived_at, days };
+    archivedAt: row.archived_at,
+    accessLocked: row.status === 'ACTIVE' && row.relationship_status === 'PAUSED',
+    days };
 }
 
 function guideView(row) {
@@ -66,7 +68,9 @@ function guideView(row) {
 }
 
 async function loadPlan(database, id) {
-  const found = await database.query('SELECT * FROM training_plans WHERE id = $1', [id]);
+  const found = await database.query(
+    `SELECT p.*, r.status AS relationship_status FROM training_plans p
+     JOIN coach_relationships r ON r.id = p.relationship_id WHERE p.id = $1`, [id]);
   if (!found.rows.length) return null;
   const rows = await database.query(
     `SELECT d.id AS day_id, d.day_number,

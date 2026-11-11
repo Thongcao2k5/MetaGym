@@ -38,19 +38,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
   });
+
+  testWidgets('keeps a paused plan visible with a renewal message', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MemberTrainingPage(service: _TrainingFixture(locked: true)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Sức bền cơ bản'), findsOneWidget);
+    expect(find.text('Tạm khóa'), findsOneWidget);
+    expect(find.textContaining('Gia hạn gói để tiếp tục'), findsOneWidget);
+  });
 }
 
 class _TrainingFixture implements MemberTrainingService {
-  _TrainingFixture({this.empty = false, this.failFirst = false});
+  _TrainingFixture({
+    this.empty = false,
+    this.failFirst = false,
+    this.locked = false,
+  });
 
   final bool empty;
   final bool failFirst;
+  final bool locked;
   int loads = 0;
 
-  TrainingPlan get active => const TrainingPlan(
+  TrainingPlan get active => TrainingPlan(
     id: 'plan-2',
     title: 'Sức bền cơ bản',
     status: 'ACTIVE',
+    accessLocked: locked,
     version: 2,
     days: [
       TrainingDay(

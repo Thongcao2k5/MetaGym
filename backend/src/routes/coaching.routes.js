@@ -334,8 +334,10 @@ export function createCoachingRouter({ database, jwtSecret }) {
     if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
     try {
       const result = await database.query(
-        `SELECT r.*, u.full_name, u.email::text, m.fitness_goal,
-                m.health_notes, m.injury_notes
+        `SELECT r.*, u.full_name, u.email::text,
+                CASE WHEN r.status = 'ACTIVE' THEN m.fitness_goal END AS fitness_goal,
+                CASE WHEN r.status = 'ACTIVE' THEN m.health_notes END AS health_notes,
+                CASE WHEN r.status = 'ACTIVE' THEN m.injury_notes END AS injury_notes
          FROM coach_relationships r JOIN users u ON u.id = r.member_id
          JOIN member_profiles m ON m.user_id = r.member_id
          WHERE r.coach_id = $1 AND r.member_id = $2

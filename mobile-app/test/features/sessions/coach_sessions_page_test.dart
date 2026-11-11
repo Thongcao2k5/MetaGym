@@ -93,6 +93,28 @@ void main() {
     expect(sessions.updated, {'status': 'COMPLETED'});
   });
 
+  testWidgets('keeps a paused session visible without edit or status actions', (
+    tester,
+  ) async {
+    final sessions = _SessionsFixture(seed: true, locked: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CoachSessionsPage(
+          service: sessions,
+          membersService: _MembersFixture(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Tạm khóa · Chờ gia hạn gói'), findsOneWidget);
+    expect(find.text('Hoàn thành'), findsNothing);
+    expect(find.text('Hủy buổi'), findsNothing);
+    await tester.tap(find.text('Buổi cũ'));
+    await tester.pumpAndSettle();
+    expect(sessions.updated, isNull);
+    expect(find.byKey(const Key('session-title')), findsNothing);
+  });
+
   testWidgets(
     'cancels a session with a reason without disposing an active field',
     (tester) async {
@@ -141,18 +163,20 @@ class _MembersFixture implements CoachMembersService {
 }
 
 class _SessionsFixture implements CoachSessionsService {
-  _SessionsFixture({this.seed = false});
+  _SessionsFixture({this.seed = false, this.locked = false});
   final bool seed;
+  final bool locked;
   Map<String, Object?>? created;
   Map<String, Object?>? updated;
   @override
   Future<List<TrainingSession>> getAll() async => [
     if (seed)
-      const TrainingSession(
+      TrainingSession(
         id: 's-1',
         title: 'Buổi cũ',
         scheduledStartAt: '2026-10-23T08:00:00Z',
         status: 'SCHEDULED',
+        accessLocked: locked,
       ),
     if (created != null)
       TrainingSession(

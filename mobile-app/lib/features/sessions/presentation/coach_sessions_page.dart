@@ -162,11 +162,14 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                             subtitle: Text(
                               '${_memberName(session.memberId)} · ${formatSessionLocalTime(session.scheduledStartAt)} · ${session.statusLabel}',
                             ),
-                            onTap: session.status == 'SCHEDULED'
+                            onTap:
+                                session.status == 'SCHEDULED' &&
+                                    !session.accessLocked
                                 ? () => _edit(session)
                                 : null,
                           ),
-                          if (session.status == 'SCHEDULED')
+                          if (session.status == 'SCHEDULED' &&
+                              !session.accessLocked)
                             Wrap(
                               spacing: 4,
                               children: [

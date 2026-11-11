@@ -499,7 +499,7 @@ UNIQUE `(member_id, version)` và chỉ một dòng `ACTIVE` cho mỗi Member. `
 
 `scheduled_end_at` phải sau `scheduled_start_at`. `(relationship_id, member_id)` phải tham chiếu `(id, member_id)` của `coach_relationships`; UNIQUE `(id, member_id)` phục vụ FK ownership của nhật ký tập. Index `(relationship_id, scheduled_start_at)`.
 
-Chuyển trạng thái hợp lệ: `SCHEDULED → COMPLETED`, `SCHEDULED → MEMBER_ABSENT` hoặc `SCHEDULED → CANCELLED`. Trạng thái kết thúc không được khôi phục về `SCHEDULED`; quan hệ chuyển `PAUSED` hoặc `ENDED` phải hủy các buổi tương lai còn `SCHEDULED`. `COMPLETED` bắt buộc có `completed_at`; `MEMBER_ABSENT` bắt buộc có `absent_at`; `CANCELLED` bắt buộc có `cancelled_at` và `cancellation_reason`. Các timestamp kết quả khác phải trống.
+Chuyển trạng thái hợp lệ: `SCHEDULED → COMPLETED`, `SCHEDULED → MEMBER_ABSENT` hoặc `SCHEDULED → CANCELLED`. Trạng thái kết thúc không được khôi phục về `SCHEDULED`. Khi quan hệ chuyển `PAUSED` do gói hết hạn, giữ nguyên các buổi tương lai `SCHEDULED` và giáo án đã công bố; chỉ khóa thao tác cho đến khi gia hạn có hiệu lực. Khi quan hệ chuyển `ENDED`, hủy các buổi tương lai còn `SCHEDULED`. Nếu ngày hẹn đã qua trong thời gian tạm ngưng, Coach phải xếp lại lịch sau khi quan hệ hoạt động trở lại; hệ thống không tự dời ngày. `COMPLETED` bắt buộc có `completed_at`; `MEMBER_ABSENT` bắt buộc có `absent_at`; `CANCELLED` bắt buộc có `cancelled_at` và `cancellation_reason`. Các timestamp kết quả khác phải trống.
 
 ## 9. Tệp và hình ảnh
 

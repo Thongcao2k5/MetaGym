@@ -308,8 +308,10 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                                           color: const Color(0x59FF5A36),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Đang áp dụng',
+                                      child: Text(
+                                        _active!.accessLocked
+                                            ? 'Tạm khóa'
+                                            : 'Đang áp dụng',
                                         style: TextStyle(
                                           color: MetaGymTheme.brandOrange,
                                           fontSize: 12,
@@ -328,6 +330,17 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                                     ),
                                   ],
                                 ),
+                                if (_active!.accessLocked) ...[
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Giáo trình được giữ nguyên. Gia hạn gói để tiếp tục tập luyện.',
+                                    style: TextStyle(
+                                      color: MetaGymTheme.darkTextSecondary,
+                                      fontSize: 12,
+                                      fontFamily: MetaGymTheme.fontFamily,
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 12),
                                 Text(
                                   _active!.title,
@@ -717,6 +730,19 @@ class _MemberTrainingDetailPageState extends State<_MemberTrainingDetailPage> {
                         ],
                       ),
                     ),
+                  ],
+                  if (_plan?.accessLocked == true) ...[
+                    const ListTile(
+                      leading: Icon(
+                        Icons.lock_clock_outlined,
+                        color: MetaGymTheme.brandOrange,
+                      ),
+                      title: Text('Giáo trình đang tạm khóa'),
+                      subtitle: Text(
+                        'Nội dung được giữ nguyên và sẽ mở lại khi gói tập có hiệu lực.',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                   ],
                   if (_plan != null) TrainingPlanContent(plan: _plan!),
                   const SizedBox(height: 32),

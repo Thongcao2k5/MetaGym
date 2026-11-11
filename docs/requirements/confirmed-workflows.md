@@ -136,6 +136,7 @@ Khi gói tập hết hạn:
 - Quan hệ với Coach chuyển sang `Tạm ngưng`.
 - Member vẫn chiếm một suất của Coach.
 - Toàn bộ dữ liệu và lịch sử được giữ lại.
+- Buổi tập tương lai và giáo án Coach đã tạo được giữ nguyên, hiển thị tạm khóa; không tự đổi lịch hoặc hủy khi gói hết hạn.
 - Member chỉ được xem lịch sử, không được tạo nhật ký chính thức mới.
 - Nhắn tin và cuộc gọi với Coach bị tạm khóa.
 - Member vẫn được dùng AI và xem thông tin chung.
@@ -145,6 +146,7 @@ Khi Member thanh toán gia hạn thành công:
 - Gói tập được kích hoạt lại.
 - Quan hệ với Coach tự động trở lại trạng thái hoạt động.
 - Các chức năng tập luyện và liên lạc được mở lại.
+- Buổi tập và giáo án đã giữ được mở lại trên quan hệ Coach cũ; buổi có ngày hẹn đã qua cần Coach xếp lại lịch.
 
 ### 4.6. Đổi Coach
 

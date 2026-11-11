@@ -29,6 +29,7 @@ function view(row) {
   return { id: row.id, relationshipId: row.relationship_id, memberId: row.member_id,
     title: row.title, scheduledStartAt: row.scheduled_start_at,
     scheduledEndAt: row.scheduled_end_at, status: row.status, notes: row.notes,
+    accessLocked: row.status === 'SCHEDULED' && row.relationship_status === 'PAUSED',
     cancellationReason: row.cancellation_reason, cancelledAt: row.cancelled_at,
     completedAt: row.completed_at, absentAt: row.absent_at };
 }
@@ -41,8 +42,10 @@ export function createSessionsRouter({ database, jwtSecret }) {
     if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được xem');
     try {
       const result = await database.query(
-        `SELECT * FROM training_sessions WHERE member_id = $1
-         ORDER BY scheduled_start_at DESC, id DESC`, [request.authUser.id],
+        `SELECT s.*, r.status AS relationship_status FROM training_sessions s
+         JOIN coach_relationships r ON r.id = s.relationship_id
+         WHERE s.member_id = $1 ORDER BY s.scheduled_start_at DESC, s.id DESC`,
+        [request.authUser.id],
       );
       return response.json({ data: result.rows.map(view) });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được lịch tập'); }
@@ -52,7 +55,7 @@ export function createSessionsRouter({ database, jwtSecret }) {
     if (request.authUser.role !== 'COACH') return fail(response, 403, 'FORBIDDEN', 'Chỉ Coach được xem');
     try {
       const result = await database.query(
-        `SELECT s.* FROM training_sessions s JOIN coach_relationships r
+        `SELECT s.*, r.status AS relationship_status FROM training_sessions s JOIN coach_relationships r
          ON r.id = s.relationship_id WHERE r.coach_id = $1
          AND r.status IN ('ACTIVE', 'PAUSED')
          ORDER BY s.scheduled_start_at DESC, s.id DESC`, [request.authUser.id],

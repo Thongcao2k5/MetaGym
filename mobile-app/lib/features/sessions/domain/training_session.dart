@@ -4,6 +4,7 @@ class TrainingSession {
     required this.title,
     required this.scheduledStartAt,
     required this.status,
+    this.accessLocked = false,
     this.memberId,
     this.scheduledEndAt,
     this.notes,
@@ -15,6 +16,7 @@ class TrainingSession {
   final String scheduledStartAt;
   final String? scheduledEndAt;
   final String status;
+  final bool accessLocked;
   final String? memberId;
   final String? notes;
   final String? cancellationReason;
@@ -27,19 +29,22 @@ class TrainingSession {
       scheduledStartAt: json['scheduledStartAt'] as String,
       scheduledEndAt: json['scheduledEndAt'] as String?,
       status: json['status'] as String,
+      accessLocked: json['accessLocked'] as bool? ?? false,
       memberId: json['memberId'] as String?,
       notes: json['notes'] as String?,
       cancellationReason: json['cancellationReason'] as String?,
     );
   }
 
-  String get statusLabel => switch (status) {
-    'SCHEDULED' => 'Đã lên lịch',
-    'COMPLETED' => 'Hoàn thành',
-    'MEMBER_ABSENT' => 'Hội viên vắng',
-    'CANCELLED' => 'Đã hủy',
-    _ => status,
-  };
+  String get statusLabel => accessLocked && status == 'SCHEDULED'
+      ? 'Tạm khóa · Chờ gia hạn gói'
+      : switch (status) {
+          'SCHEDULED' => 'Đã lên lịch',
+          'COMPLETED' => 'Hoàn thành',
+          'MEMBER_ABSENT' => 'Hội viên vắng',
+          'CANCELLED' => 'Đã hủy',
+          _ => status,
+        };
 }
 
 String formatSessionLocalTime(String isoTime) {
