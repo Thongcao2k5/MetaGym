@@ -257,9 +257,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: featured ? const Color(0xD0202224) : const Color(0xE6202124),
+        color: featured ? const Color(0xB82D2824) : const Color(0xC42B2622),
         borderRadius: radius,
-        border: Border.all(color: const Color(0x665F5B57)),
+        border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
       ),
       child: featured
           ? Stack(
@@ -270,7 +270,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   right: 18,
                   child: SizedBox(
                     height: 1,
-                    child: ColoredBox(color: Color(0x38FFF6ED)),
+                    child: ColoredBox(color: Color(0x70FFF6EA)),
                   ),
                 ),
                 child,
@@ -344,9 +344,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xB80F1115),
-                          Color(0xA60F1115),
-                          Color(0xC40F1115),
+                          Color(0x9E0F1115),
+                          Color(0x900F1115),
+                          Color(0xAA0F1115),
                         ],
                         stops: [0.0, 0.48, 1.0],
                       ),
@@ -601,10 +601,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xDC28292A), Color(0xC8202124)],
+          colors: [Color(0xC637302A), Color(0xBB2C2621)],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0x805F5B57)),
+        border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
       ),
       child: Stack(
         children: [
@@ -614,7 +614,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             right: 16,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: Color(0x45FFF6ED)),
+              child: ColoredBox(color: Color(0x75FFF5E8)),
             ),
           ),
           Padding(padding: const EdgeInsets.all(5), child: actions),
@@ -971,10 +971,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xDC39332F), Color(0xE62A2725)],
+          colors: [Color(0xCD342D28), Color(0xC829241F)],
         ),
         borderRadius: radius,
-        border: Border.all(color: const Color(0xA3938B83), width: 1.2),
+        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
       ),
       child: Stack(
         children: [
@@ -984,7 +984,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             top: 0,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: Color(0x5CFFF5E9)),
+              child: ColoredBox(color: Color(0x75FFF5E9)),
             ),
           ),
           child,
@@ -1012,10 +1012,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     required Widget child,
   }) {
     return Material(
-      color: const Color(0x75211E1C),
+      color: const Color(0x80211E1C),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(17),
-        side: const BorderSide(color: Color(0x806F6963), width: 1),
+        side: const BorderSide(color: Color(0x9A8C8176), width: 1),
       ),
       child: InkWell(
         onTap: onTap,
@@ -1861,10 +1861,10 @@ class _CircleHeaderGlassButton extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: MetaGymTheme.headerCircleGlass,
+                    color: const Color(0x9E2F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: MetaGymTheme.headerCircleBorder,
+                      color: const Color(0x95ADA295),
                       width: 1,
                     ),
                   ),

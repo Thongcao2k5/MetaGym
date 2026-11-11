@@ -76,7 +76,11 @@ class _PreviewAppState extends State<_PreviewApp> {
               ),
             ],
           ),
-          bottomNavigationBar: MetaGymBottomNav(currentIndex: 0, onTap: (_) {}),
+          bottomNavigationBar: MetaGymBottomNav(
+            currentIndex: 0,
+            warmGlass: true,
+            onTap: (_) {},
+          ),
         ),
       ),
       GoRoute(

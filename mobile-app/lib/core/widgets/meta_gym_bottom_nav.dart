@@ -17,6 +17,7 @@ class MetaGymBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.useSolidFallback = false,
+    this.warmGlass = false,
   }) : assert(currentIndex >= 0 && currentIndex < 5);
 
   final int currentIndex;
@@ -24,6 +25,7 @@ class MetaGymBottomNav extends StatelessWidget {
 
   /// Optional solid surface fallback for low-power / frame-drop environments.
   final bool useSolidFallback;
+  final bool warmGlass;
 
   static const double _barHeight = 68.0;
   static const double _aiProtrusion = 14.0;
@@ -56,11 +58,18 @@ class MetaGymBottomNav extends StatelessWidget {
     const capsuleRadius = BorderRadius.all(Radius.circular(34.0));
 
     final pillDecoration = BoxDecoration(
-      color: useGlassSurface
-          ? const Color(0xDE181B22)
-          : MetaGymTheme.darkSurface,
+      color: warmGlass
+          ? (useGlassSurface
+                ? const Color(0xBF302923)
+                : const Color(0xFF292420))
+          : (useGlassSurface
+                ? const Color(0xDE181B22)
+                : MetaGymTheme.darkSurface),
       borderRadius: capsuleRadius,
-      border: Border.all(color: MetaGymTheme.cardBorder, width: 1.0),
+      border: Border.all(
+        color: warmGlass ? const Color(0xA3A79D92) : MetaGymTheme.cardBorder,
+        width: 1.0,
+      ),
       boxShadow: const [
         BoxShadow(
           color: Color(0x33000000), // rgba(0, 0, 0, 0.20)
@@ -76,14 +85,18 @@ class MetaGymBottomNav extends StatelessWidget {
       child: Stack(
         children: [
           // Cool specular top-edge highlight (DESIGN.md §3.2)
-          const Positioned(
+          Positioned(
             top: 0,
             left: 28,
             right: 28,
             child: IgnorePointer(
               child: SizedBox(
                 height: 1,
-                child: ColoredBox(color: Color(0x33FFFFFF)),
+                child: ColoredBox(
+                  color: warmGlass
+                      ? const Color(0x70FFF5E9)
+                      : const Color(0x33FFFFFF),
+                ),
               ),
             ),
           ),
@@ -198,6 +211,7 @@ class MetaGymBottomNav extends StatelessWidget {
                 child: _AiCenterButton(
                   label: 'AI',
                   selected: currentIndex == 2,
+                  warmGlass: warmGlass,
                   duration: duration,
                   onTap: () => onTap(2),
                 ),
@@ -284,12 +298,14 @@ class _AiCenterButton extends StatelessWidget {
   const _AiCenterButton({
     required this.label,
     required this.selected,
+    required this.warmGlass,
     required this.duration,
     required this.onTap,
   });
 
   final String label;
   final bool selected;
+  final bool warmGlass;
   final Duration duration;
   final VoidCallback onTap;
 
@@ -317,11 +333,11 @@ class _AiCenterButton extends StatelessWidget {
                   height: 52.0,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: selected
+                    color: selected || warmGlass
                         ? MetaGymTheme.brandOrange
                         : MetaGymTheme.darkSurfaceRaised,
                     border: Border.all(
-                      color: selected
+                      color: selected || warmGlass
                           ? MetaGymTheme.brandOrange
                           : MetaGymTheme.cardBorder,
                       width: 1.0,
@@ -329,7 +345,7 @@ class _AiCenterButton extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.35 : 0.05,
+                          alpha: selected ? 0.35 : (warmGlass ? 0.22 : 0.05),
                         ),
                         blurRadius: selected ? 20.0 : 14.0,
                         spreadRadius: selected ? 2.0 : 0.5,
@@ -347,7 +363,9 @@ class _AiCenterButton extends StatelessWidget {
                   child: Center(
                     child: Icon(
                       Icons.auto_awesome_rounded,
-                      color: selected ? Colors.white : MetaGymTheme.brandOrange,
+                      color: selected || warmGlass
+                          ? Colors.white
+                          : MetaGymTheme.brandOrange,
                       size: 24.0,
                     ),
                   ),
