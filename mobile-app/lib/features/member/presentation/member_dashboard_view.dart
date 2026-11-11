@@ -382,7 +382,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       const SizedBox(height: 14),
 
                       // 2. Quick Action Dock (4 nút squircle đối xứng)
-                      _buildQuickActionDock(context),
+                      _buildQuickActionDock(),
                       const SizedBox(height: 14),
 
                       if (_loadError != null) ...[
@@ -548,44 +548,39 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   // ===========================================================================
-  // 2. QUICK ACTION DOCK (4 SQUIRCLE BUTTONS)
+  // 2. QUICK ACTIONS: FOUR EQUAL NAVIGATION TILES
   // ===========================================================================
-  Widget _buildQuickActionDock(BuildContext context) {
-    final actions = Row(
+  Widget _buildQuickActionDock() {
+    return Row(
       children: [
         Expanded(
           child: _buildQuickActionButton(
             label: 'Lịch tập',
             icon: Icons.calendar_today_rounded,
-            iconColor: MetaGymTheme.brandOrange,
-            isActive: true,
             onTap: () => _pushAndReload('/member/features/sessions'),
           ),
         ),
+        const SizedBox(width: 8),
         Expanded(
           child: _buildQuickActionButton(
             label: 'Giáo trình',
             icon: Icons.description_outlined,
-            iconColor: MetaGymTheme.infoSteelBlue,
-            isActive: false,
             onTap: () => _pushAndReload('/member/features/training'),
           ),
         ),
+        const SizedBox(width: 8),
         Expanded(
           child: _buildQuickActionButton(
             label: 'Dinh dưỡng',
             icon: Icons.spa_outlined,
-            iconColor: MetaGymTheme.progressGreen,
-            isActive: false,
             onTap: () => _pushAndReload('/member/features/nutrition'),
           ),
         ),
+        const SizedBox(width: 8),
         Expanded(
           child: _buildQuickActionButton(
             label: 'Coach',
             icon: Icons.groups_outlined,
-            iconColor: MetaGymTheme.warningAmber,
-            isActive: false,
             onTap: () => _pushAndReload(
               _hasCoach || _hasPendingCoachRequest
                   ? '/member/features/my-coach'
@@ -595,102 +590,57 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         ),
       ],
     );
-    final dock = Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xC637302A), Color(0xBB2C2621)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            top: 0,
-            left: 16,
-            right: 16,
-            child: SizedBox(
-              height: 1,
-              child: ColoredBox(color: Color(0x75FFF5E8)),
-            ),
-          ),
-          Padding(padding: const EdgeInsets.all(5), child: actions),
-        ],
-      ),
-    );
-    if (widget.useSolidGlassFallback ||
-        MediaQuery.disableAnimationsOf(context) ||
-        MetaGymTheme.isFlutterTestEnvironment) {
-      return dock;
-    }
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: dock,
-        ),
-      ),
-    );
   }
 
   Widget _buildQuickActionButton({
     required String label,
     required IconData icon,
-    required Color iconColor,
-    required bool isActive,
     required VoidCallback onTap,
   }) {
-    final buttonBody = Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: isActive
-            ? MetaGymTheme.brandOrange.withValues(alpha: 0.18)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isActive
-              ? MetaGymTheme.brandOrange.withValues(alpha: 0.66)
-              : Colors.transparent,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 21, color: iconColor),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive
-                    ? const Color(0xFFF7F9FC)
-                    : const Color(0xFFD6E0EC),
-                fontSize: 11.5,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-
     return Semantics(
       button: true,
       label: label,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: ClipRRect(
+        child: Ink(
+          decoration: BoxDecoration(
+            color: widget.useSolidGlassFallback
+                ? const Color(0xFF302923)
+                : null,
+            gradient: widget.useSolidGlassFallback
+                ? null
+                : const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xC637302A), Color(0xBB2C2621)],
+                  ),
             borderRadius: BorderRadius.circular(18),
-            child: buttonBody,
+            border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            splashColor: const Color(0x20FFFFFF),
+            child: SizedBox(
+              height: 72,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
+                  const SizedBox(height: 5),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
