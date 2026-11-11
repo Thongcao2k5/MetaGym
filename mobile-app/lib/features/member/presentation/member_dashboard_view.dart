@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
@@ -231,18 +233,48 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     required Widget child,
     BorderRadius? borderRadius,
     Clip clipBehavior = Clip.antiAlias,
+    bool featured = false,
   }) {
     final radius =
         borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-
-    return Container(
+    final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: MetaGymTheme.darkSurface.withValues(alpha: 0.94),
+        color: featured ? const Color(0xD0202224) : const Color(0xE6202124),
         borderRadius: radius,
-        border: Border.all(color: MetaGymTheme.cardBorder),
+        border: Border.all(color: const Color(0x665F5B57)),
       ),
-      child: child,
+      child: featured
+          ? Stack(
+              children: [
+                const Positioned(
+                  top: 0,
+                  left: 18,
+                  right: 18,
+                  child: SizedBox(
+                    height: 1,
+                    child: ColoredBox(color: Color(0x38FFF6ED)),
+                  ),
+                ),
+                child,
+              ],
+            )
+          : child,
+    );
+    if (!featured ||
+        widget.useSolidGlassFallback ||
+        MediaQuery.disableAnimationsOf(context) ||
+        MetaGymTheme.isFlutterTestEnvironment) {
+      return surface;
+    }
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: surface,
+        ),
+      ),
     );
   }
 
@@ -497,18 +529,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Sẵn sàng bứt phá hôm nay?',
-                  style: TextStyle(
-                    color: Color(0xFF8E9AA8),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w400,
-                    height: 1.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
           ),
@@ -583,7 +603,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   // 2. QUICK ACTION DOCK (4 SQUIRCLE BUTTONS)
   // ===========================================================================
   Widget _buildQuickActionDock(BuildContext context) {
-    return Row(
+    final actions = Row(
       children: [
         Expanded(
           child: _buildQuickActionButton(
@@ -594,7 +614,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             onTap: () => _pushAndReload('/member/features/sessions'),
           ),
         ),
-        const SizedBox(width: 8),
         Expanded(
           child: _buildQuickActionButton(
             label: 'Giáo trình',
@@ -604,7 +623,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             onTap: () => _pushAndReload('/member/features/training'),
           ),
         ),
-        const SizedBox(width: 8),
         Expanded(
           child: _buildQuickActionButton(
             label: 'Dinh dưỡng',
@@ -614,7 +632,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             onTap: () => _pushAndReload('/member/features/nutrition'),
           ),
         ),
-        const SizedBox(width: 8),
         Expanded(
           child: _buildQuickActionButton(
             label: 'Coach',
@@ -630,6 +647,46 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         ),
       ],
     );
+    final dock = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xDC28292A), Color(0xC8202124)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0x805F5B57)),
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            top: 0,
+            left: 16,
+            right: 16,
+            child: SizedBox(
+              height: 1,
+              child: ColoredBox(color: Color(0x45FFF6ED)),
+            ),
+          ),
+          Padding(padding: const EdgeInsets.all(5), child: actions),
+        ],
+      ),
+    );
+    if (widget.useSolidGlassFallback ||
+        MediaQuery.disableAnimationsOf(context) ||
+        MetaGymTheme.isFlutterTestEnvironment) {
+      return dock;
+    }
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: dock,
+        ),
+      ),
+    );
   }
 
   Widget _buildQuickActionButton({
@@ -640,14 +697,16 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     required VoidCallback onTap,
   }) {
     final buttonBody = Container(
-      height: 62,
+      height: 64,
       decoration: BoxDecoration(
         color: isActive
-            ? MetaGymTheme.brandOrange.withValues(alpha: 0.16)
-            : MetaGymTheme.darkSurface.withValues(alpha: 0.70),
-        borderRadius: BorderRadius.circular(15),
+            ? MetaGymTheme.brandOrange.withValues(alpha: 0.18)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isActive ? MetaGymTheme.brandOrange : MetaGymTheme.cardBorder,
+          color: isActive
+              ? MetaGymTheme.brandOrange.withValues(alpha: 0.66)
+              : Colors.transparent,
         ),
       ),
       child: Center(
@@ -662,8 +721,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 color: isActive
                     ? const Color(0xFFF7F9FC)
                     : const Color(0xFFD6E0EC),
-                fontSize: 10.5,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 11.5,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -728,6 +787,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               : 'LN');
 
     return _buildLiquidGlassCard(
+      featured: true,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -999,7 +1059,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 
     return _buildLiquidGlassCard(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -1015,14 +1075,14 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       Icon(
                         Icons.fitness_center_rounded,
                         color: MetaGymTheme.brandOrange,
-                        size: 13,
+                        size: 15,
                       ),
-                      SizedBox(width: 5),
+                      SizedBox(width: 7),
                       Text(
                         'Gói tập & Coach',
                         style: TextStyle(
                           color: Color(0xFFF7F9FC),
-                          fontSize: 11.5,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1031,12 +1091,12 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   Icon(
                     Icons.chevron_right_rounded,
                     color: Color(0xFF8E9AA8),
-                    size: 16,
+                    size: 18,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 2),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1049,7 +1109,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           _pushAndReload('/member/features/membership'),
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(minHeight: 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
@@ -1063,7 +1127,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Color(0xFFF7F9FC),
-                                fontSize: 20,
+                                fontSize: 24,
                                 fontWeight: FontWeight.w700,
                                 height: 1.1,
                                 fontFeatures: [FontFeature.tabularFigures()],
@@ -1075,7 +1139,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Color(0xFF9EAAB8),
-                                fontSize: 9.5,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -1084,7 +1148,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   // Tên Coach cần đủ khoảng trống để đọc trọn vẹn.
                   Expanded(
                     flex: 6,
@@ -1096,7 +1160,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       ),
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(minHeight: 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
@@ -1108,8 +1176,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                             Row(
                               children: [
                                 Container(
-                                  width: 24,
-                                  height: 24,
+                                  width: 26,
+                                  height: 26,
                                   decoration: BoxDecoration(
                                     color: MetaGymTheme.coachAvatarBackground,
                                     shape: BoxShape.circle,
@@ -1119,12 +1187,12 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                                     coachInitialStr,
                                     style: const TextStyle(
                                       color: MetaGymTheme.coachAvatarForeground,
-                                      fontSize: 9,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 7),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -1135,8 +1203,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                                         displayCoachName,
                                         style: const TextStyle(
                                           color: Color(0xFFF7F9FC),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
                                           height: 1.15,
                                         ),
                                         maxLines: 1,
@@ -1147,7 +1215,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                                         'Coach cá nhân',
                                         style: TextStyle(
                                           color: Color(0xFF9EAAB8),
-                                          fontSize: 9,
+                                          fontSize: 10.5,
                                           fontWeight: FontWeight.w400,
                                         ),
                                         maxLines: 1,

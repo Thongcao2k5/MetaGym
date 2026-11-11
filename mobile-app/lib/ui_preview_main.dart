@@ -91,6 +91,7 @@ class _PreviewAppState extends State<_PreviewApp> {
   @override
   Widget build(BuildContext context) => MaterialApp.router(
     title: 'Meta Gym · UI Preview',
+    debugShowCheckedModeBanner: false,
     theme: MetaGymTheme.dark,
     routerConfig: _router,
   );
