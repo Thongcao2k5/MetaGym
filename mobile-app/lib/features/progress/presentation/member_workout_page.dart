@@ -3,6 +3,7 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_time.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 import 'package:provider/provider.dart';
 
 class MemberWorkoutPage extends StatefulWidget {
@@ -76,7 +77,18 @@ class _MemberWorkoutPageState extends State<MemberWorkoutPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Nhật ký tập')),
+    appBar: AppBar(
+      title: const Text('Nhật ký tập luyện'),
+      actions: [
+        IconButton(
+          tooltip: 'Ảnh thành quả',
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const MemberPhotoPage()),
+          ),
+          icon: const Icon(Icons.photo_library_outlined),
+        ),
+      ],
+    ),
     floatingActionButton: FloatingActionButton.extended(
       onPressed: _create,
       icon: const Icon(Icons.add),

@@ -1324,7 +1324,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   Widget _buildSelfWorkoutCard() {
-    final workoutCount = _progressSummary?.workoutCount ?? 0;
     return _buildLiquidGlassCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1351,36 +1350,40 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              workoutCount == 0
-                  ? 'Ghi lại buổi tập đầu tiên của bạn.'
-                  : 'Đã ghi $workoutCount buổi tập · Tiếp tục theo dõi thành quả.',
-              style: const TextStyle(
-                color: MetaGymTheme.darkTextSecondary,
-                fontSize: 12,
-              ),
-            ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _pushAndReload('/member/features/workouts'),
-                    icon: const Icon(Icons.edit_note_rounded, size: 17),
-                    label: const Text('Ghi buổi tập'),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final description = const Text(
+                  'Lưu lại hành trình và kết quả tập luyện',
+                  style: TextStyle(
+                    color: MetaGymTheme.darkTextSecondary,
+                    fontSize: 12,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _pushAndReload('/member/features/photos'),
-                    icon: const Icon(Icons.photo_camera_outlined, size: 17),
-                    label: const Text('Ảnh thành quả'),
+                );
+                final action = FilledButton.icon(
+                  onPressed: () => _pushAndReload('/member/features/workouts'),
+                  icon: const Icon(Icons.calendar_month_rounded, size: 17),
+                  label: const Text('Mở nhật ký'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.brandOrange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                   ),
-                ),
-              ],
+                );
+                if (constraints.maxWidth < 440) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [description, const SizedBox(height: 8), action],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: description),
+                    const SizedBox(width: 12),
+                    action,
+                  ],
+                );
+              },
             ),
           ],
         ),
