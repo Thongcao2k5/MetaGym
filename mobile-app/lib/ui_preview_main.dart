@@ -59,6 +59,7 @@ class _PreviewAppState extends State<_PreviewApp> {
               MemberDashboardView(
                 onNavigateTab: (_) {},
                 bottomPadding: MetaGymBottomNav.contentBottomPadding(context),
+                previewMode: true,
               ),
               const Positioned(
                 top: 0,
