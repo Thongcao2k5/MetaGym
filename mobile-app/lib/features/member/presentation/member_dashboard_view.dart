@@ -459,17 +459,25 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         const SizedBox(height: 12),
                       ],
 
-                      // 3. Thẻ "Gói tập & Coach" (Bố cục 50/50 đối xứng)
+                      // 3. Gói tập; chỉ hiện Coach khi đang được phụ trách.
                       _buildMembershipAndCoachCard(context),
                       const SizedBox(height: 14),
 
-                      // 4. Thẻ "Hôm nay [Sắp diễn ra]"
-                      _buildTodaySection(context),
-                      const SizedBox(height: 14),
-
-                      // 5. Cặp Bento 2 cột (Dinh dưỡng & Tiến độ tuần)
-                      _buildBentoSection(context),
-                      const SizedBox(height: 14),
+                      if (_isLoading ||
+                          widget.previewMode ||
+                          (_activeMembership != null && _hasCoach)) ...[
+                        _buildTodaySection(context),
+                        const SizedBox(height: 14),
+                        _buildBentoSection(context),
+                        const SizedBox(height: 14),
+                      ],
+                      if (!_isLoading &&
+                          !widget.previewMode &&
+                          _activeMembership != null &&
+                          !_hasCoach) ...[
+                        _buildSelfWorkoutCard(),
+                        const SizedBox(height: 14),
+                      ],
 
                       // 6. Thẻ "Khám phá phòng gym & kiến thức"
                       _buildExploreSection(context),
@@ -1002,6 +1010,13 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         : _progressSummary == null
         ? 'Chưa có nhật ký tập'
         : '${_progressSummary!.workoutCount} buổi đã tập';
+    if (!widget.previewMode && (membership == null || !_hasCoach)) {
+      return _buildMembershipOnlyCard(
+        hasMembership: membership != null,
+        daysRemaining: displayDays,
+        workoutLabel: workoutLabel,
+      );
+    }
     final upcomingSessions = _sessions
         .where((session) => session.status == 'SCHEDULED')
         .length;
@@ -1218,6 +1233,154 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMembershipOnlyCard({
+    required bool hasMembership,
+    required String daysRemaining,
+    required String workoutLabel,
+  }) {
+    return _buildMembershipGlassCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _pushAndReload('/member/features/membership'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.fitness_center_rounded,
+                      color: MetaGymTheme.brandOrange,
+                      size: 18,
+                    ),
+                    SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        'Gói tập',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: Color(0xFF8E9AA8)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (hasMembership)
+                  Row(
+                    children: [
+                      Text(
+                        daysRemaining,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'ngày còn lại',
+                        style: TextStyle(
+                          color: Color(0xFFB7B2AF),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const Spacer(),
+                      Flexible(
+                        child: Text(
+                          workoutLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFEAE6E2),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  const Text(
+                    'Chưa có gói tập · Chạm để khám phá gói',
+                    style: TextStyle(color: Color(0xFFEAE6E2), fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelfWorkoutCard() {
+    final workoutCount = _progressSummary?.workoutCount ?? 0;
+    return _buildLiquidGlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.fitness_center_rounded,
+                  color: MetaGymTheme.brandOrange,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Nhật ký tập luyện',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              workoutCount == 0
+                  ? 'Ghi lại buổi tập đầu tiên của bạn.'
+                  : 'Đã ghi $workoutCount buổi tập · Tiếp tục theo dõi thành quả.',
+              style: const TextStyle(
+                color: MetaGymTheme.darkTextSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        _pushAndReload('/member/features/workouts'),
+                    icon: const Icon(Icons.edit_note_rounded, size: 17),
+                    label: const Text('Ghi buổi tập'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _pushAndReload('/member/features/photos'),
+                    icon: const Icon(Icons.photo_camera_outlined, size: 17),
+                    label: const Text('Ảnh thành quả'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

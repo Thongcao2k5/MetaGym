@@ -292,7 +292,10 @@ class _WorkoutFormPageState extends State<_WorkoutFormPage> {
           controller: _notes,
           maxLength: 5000,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Ghi chú'),
+          decoration: const InputDecoration(
+            labelText: 'Ghi chú thành quả',
+            hintText: 'Ví dụ: kéo lưng 40 kg, tập đúng kỹ thuật hơn',
+          ),
         ),
         if (_error != null)
           Text(
