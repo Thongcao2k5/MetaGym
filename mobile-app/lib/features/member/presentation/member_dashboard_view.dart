@@ -1229,7 +1229,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   // 5. CẶP BENTO 2 CỘT (DINH DƯỠNG & TIẾN ĐỘ TẬP LUYỆN - LIQUID GLASS)
   // ===========================================================================
   Widget _buildBentoSection(BuildContext context) {
-    return IntrinsicHeight(
+    return SizedBox(
+      height: 128,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1266,7 +1267,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Text(
                         _activeNutrition?.title ?? 'Thực đơn tăng cơ',
                         style: const TextStyle(
@@ -1289,7 +1290,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Spacer(),
-                      const SizedBox(height: 10),
                       Row(
                         children: [
                           const Expanded(
@@ -1401,7 +1401,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1419,7 +1419,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         ],
                       ),
                       const Spacer(),
-                      const SizedBox(height: 10),
                       Row(
                         children: [
                           const Expanded(
