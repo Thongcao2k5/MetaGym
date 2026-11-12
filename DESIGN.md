@@ -1,426 +1,157 @@
 ---
-version: beta
 name: Meta Gym
-description: Futuristic Performance Glass design system for the Flutter Member and Coach app and the Bootstrap Admin application.
+description: Futuristic Performance Glass for the Member and Coach app, with stable graphite work surfaces and restrained warm optical glass.
 colors:
-  primary: "#FF5A36"
-  on-primary: "#090B0E"
-  primary-hover: "#E84729"
-  on-primary-hover: "#090B0E"
+  canvas: "#0F1115"
+  card: "#181B22"
+  elevated-card: "#1F242D"
+  card-border: "#262A34"
+  primary: "#FF5E36"
+  on-primary: "#FFFFFF"
+  text-primary: "#FFFFFF"
+  text-secondary: "#8E95A5"
+  success: "#2ECC71"
+  warning: "#F39C12"
+  coach-avatar: "#F5B041"
+  on-coach-avatar: "#181B22"
   reflection: "#A9C7E8"
-  background-dark: "#080A0D"
-  surface-dark: "#11161C"
-  surface-raised-dark: "#181F27"
-  glass-dark: "rgba(18, 23, 30, 0.78)"
-  glass-strong-dark: "rgba(14, 18, 24, 0.90)"
-  glass-border-dark: "rgba(212, 228, 255, 0.18)"
-  glass-highlight-dark: "rgba(235, 246, 255, 0.32)"
-  text-primary-dark: "#F7F9FC"
-  text-secondary-dark: "#B8C2D0"
-  text-tertiary-dark: "#818C9C"
-  background-light: "#F5F7FA"
-  surface-light: "#FFFFFF"
-  surface-raised-light: "#EDF1F5"
-  text-primary-light: "#11151A"
-  text-secondary-light: "#4D5968"
-  border-light: "#CBD4DF"
-  success: "#23C997"
-  on-success: "#06261D"
-  warning: "#F2A93B"
-  on-warning: "#2A1900"
-  error: "#F15B64"
-  on-error: "#2C080B"
-  info: "#70AEE8"
-  on-info: "#071A2C"
-  focus: "#8DBCF0"
-  scrim: "rgba(4, 6, 9, 0.72)"
 typography:
-  display-lg:
-    fontFamily: Be Vietnam Pro
-    fontSize: 40px
-    fontWeight: 800
-    lineHeight: 1.1
-    letterSpacing: -0.02em
-  headline-lg:
-    fontFamily: Be Vietnam Pro
-    fontSize: 30px
-    fontWeight: 700
-    lineHeight: 1.2
-    letterSpacing: -0.015em
-  headline-md:
+  heading:
     fontFamily: Be Vietnam Pro
     fontSize: 24px
     fontWeight: 700
     lineHeight: 1.25
-  title-lg:
-    fontFamily: Be Vietnam Pro
-    fontSize: 20px
-    fontWeight: 700
-    lineHeight: 1.3
-  title-md:
+  title:
     fontFamily: Be Vietnam Pro
     fontSize: 17px
     fontWeight: 600
-    lineHeight: 1.4
-  body-lg:
-    fontFamily: Be Vietnam Pro
-    fontSize: 16px
-    fontWeight: 400
-    lineHeight: 1.5
-  body-md:
-    fontFamily: Be Vietnam Pro
-    fontSize: 14px
-    fontWeight: 400
-    lineHeight: 1.5
-  label-lg:
-    fontFamily: Be Vietnam Pro
-    fontSize: 14px
-    fontWeight: 600
     lineHeight: 1.35
-  label-md:
+  body:
+    fontFamily: Be Vietnam Pro
+    fontSize: 14px
+    fontWeight: 400
+    lineHeight: 1.5
+  label:
     fontFamily: Be Vietnam Pro
     fontSize: 12px
     fontWeight: 600
     lineHeight: 1.35
-    letterSpacing: 0.01em
-  data-lg:
-    fontFamily: Be Vietnam Pro
-    fontSize: 28px
-    fontWeight: 700
-    lineHeight: 1.15
-    fontFeature: "tnum"
 rounded:
-  xs: 6px
-  sm: 10px
-  md: 14px
-  lg: 20px
-  xl: 24px
-  full: 999px
+  control: 14px
+  card: 20px
+  glass-dock: 24px
 spacing:
-  0: 0
-  1: 4px
-  2: 8px
-  3: 12px
-  4: 16px
-  5: 20px
-  6: 24px
-  8: 32px
-  10: 40px
-  12: 48px
-  16: 64px
+  base: 4px
+  rhythm: 8px
+  phone-gutter: 16px
+  section: 20px
 components:
-  app-canvas-dark:
-    backgroundColor: "{colors.background-dark}"
-    textColor: "{colors.text-primary-dark}"
-  solid-surface-dark:
-    backgroundColor: "{colors.surface-dark}"
-    textColor: "{colors.text-primary-dark}"
-    rounded: "{rounded.lg}"
-  performance-glass-dark:
-    backgroundColor: "{colors.glass-dark}"
-    textColor: "{colors.text-primary-dark}"
-    rounded: "{rounded.xl}"
-  overlay-glass-dark:
-    backgroundColor: "{colors.glass-strong-dark}"
-    textColor: "{colors.text-primary-dark}"
-    rounded: "{rounded.xl}"
-  glass-border-swatch:
-    backgroundColor: "{colors.glass-border-dark}"
-  glass-highlight-swatch:
-    backgroundColor: "{colors.glass-highlight-dark}"
-  reflection-highlight:
-    backgroundColor: "{colors.reflection}"
-  raised-surface-dark:
-    backgroundColor: "{colors.surface-raised-dark}"
-    textColor: "{colors.text-primary-dark}"
-    rounded: "{rounded.lg}"
-  secondary-copy-dark:
-    backgroundColor: "{colors.surface-dark}"
-    textColor: "{colors.text-secondary-dark}"
-    typography: "{typography.body-md}"
-  tertiary-copy-dark:
-    backgroundColor: "{colors.surface-dark}"
-    textColor: "{colors.text-tertiary-dark}"
-    typography: "{typography.label-md}"
-  app-canvas-light:
-    backgroundColor: "{colors.background-light}"
-    textColor: "{colors.text-primary-light}"
-  solid-surface-light:
-    backgroundColor: "{colors.surface-light}"
-    textColor: "{colors.text-primary-light}"
-    rounded: "{rounded.lg}"
-  raised-surface-light:
-    backgroundColor: "{colors.surface-raised-light}"
-    textColor: "{colors.text-primary-light}"
-    rounded: "{rounded.lg}"
-  secondary-copy-light:
-    backgroundColor: "{colors.surface-light}"
-    textColor: "{colors.text-secondary-light}"
-    typography: "{typography.body-md}"
-  divider-light:
-    backgroundColor: "{colors.border-light}"
-    height: 1px
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
-    typography: "{typography.label-lg}"
-    rounded: "{rounded.md}"
-    padding: 12px
+    rounded: "{rounded.control}"
     height: 48px
-  button-primary-hover:
-    backgroundColor: "{colors.primary-hover}"
-    textColor: "{colors.on-primary-hover}"
-  card-dark:
-    backgroundColor: "{colors.surface-dark}"
-    textColor: "{colors.text-primary-dark}"
-    rounded: "{rounded.lg}"
-    padding: 16px
+  card-default:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.text-primary}"
+    rounded: "{rounded.card}"
+  card-elevated:
+    backgroundColor: "{colors.elevated-card}"
+    textColor: "{colors.text-primary}"
+    rounded: "{rounded.card}"
+  card-divider:
+    backgroundColor: "{colors.card-border}"
+    height: 1px
+  secondary-copy:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.text-secondary}"
+    typography: "{typography.body}"
   status-success:
     backgroundColor: "{colors.success}"
-    textColor: "{colors.on-success}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.full}"
-    padding: 8px
+    textColor: "{colors.canvas}"
   status-warning:
     backgroundColor: "{colors.warning}"
-    textColor: "{colors.on-warning}"
-    typography: "{typography.label-md}"
-    rounded: "{rounded.full}"
-    padding: 8px
-  info-banner:
-    backgroundColor: "{colors.info}"
-    textColor: "{colors.on-info}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.md}"
-    padding: 12px
-  focus-indicator:
-    backgroundColor: "{colors.focus}"
-    size: 3px
-  modal-scrim:
-    backgroundColor: "{colors.scrim}"
+    textColor: "{colors.canvas}"
+  reflection-icon:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.reflection}"
+  app-canvas:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.text-primary}"
+  coach-avatar:
+    backgroundColor: "{colors.coach-avatar}"
+    textColor: "{colors.on-coach-avatar}"
 ---
 
-# Meta Gym Design System
+# Meta Gym — Design Rules
 
-## 1. Brand direction
+## Overview
 
-Meta Gym uses **Futuristic Performance Glass**: the visual precision of premium spatial-computing products combined with the energy and discipline of high-performance training.
+**Futuristic Performance Glass**: hiện đại, sang trọng, mạnh mẽ và rõ ràng khi sử dụng. Member và Coach là giao diện dark-first. Kính màu ấm tạo chiều sâu ở Trang chủ, thanh điều hướng và một số card nổi bật; màn nhập liệu, danh sách dài, lịch sử và biểu đồ dùng bề mặt graphite ổn định. Admin ưu tiên bề mặt đặc để đọc dữ liệu nhanh.
 
-The experience must feel:
+Đây là rule thiết kế cho sản phẩm, không phải lệnh đổi toàn bộ màn hiện có. Bản thiết kế người dùng đã chốt và luồng nghiệp vụ đã xác nhận được giữ nguyên khi chỉ tinh chỉnh một thành phần. Trước khi thiết kế, đọc màn hiện tại, trạng thái dữ liệu và yêu cầu cụ thể của màn đó.
 
-- **Modern:** clear structure, current technology, purposeful motion.
-- **Luxurious:** controlled light, refined materials, generous spacing.
-- **Powerful:** decisive typography, high contrast, confident orange accents.
-- **Trustworthy:** workout and health information stays readable and actionable.
+## Colors
 
-The product must not look like a gaming HUD, a cyberpunk dashboard, or a glassmorphism showcase. Effects support hierarchy; they are never the content.
+| Vai trò | Màu | Cách dùng |
+| --- | --- | --- |
+| Canvas | `#0F1115` | Nền mặc định |
+| Card | `#181B22` | Nội dung và danh sách |
+| Card nâng | `#1F242D` | Phân cấp bề mặt khi cần |
+| Viền card | `#262A34`, 1px | Ngăn cách nhẹ |
+| Cam chính | `#FF5E36` | CTA chính, mục active, tiến trình quan trọng |
+| Trên nền cam | `#FFFFFF` | **Mọi chữ và icon trên nút cam** |
+| Chữ chính | `#FFFFFF` | Tiêu đề và dữ liệu quan trọng |
+| Chữ phụ | `#8E95A5` | Mô tả, metadata, trạng thái chưa diễn ra |
+| Hoàn thành/hiệu lực | `#2ECC71` | Trạng thái tích cực và dinh dưỡng |
+| Cảnh báo | `#F39C12` | Trạng thái cần chú ý |
+| Avatar Coach LN | nền `#F5B041`, chữ `#181B22` đậm | Đồng nhất trên mọi màn |
 
-### Product dials
+Cam không dùng làm màu nền cho nhiều card cùng lúc. Mỗi vùng quyết định chỉ có một CTA nổi bật. Trạng thái luôn có chữ hoặc biểu tượng đi kèm màu. Không đưa chữ đen lên nền cam. Màu ảnh nền không được làm đổi nghĩa các token semantic.
 
-- Variance: **5/10** — balanced composition, occasional asymmetric emphasis.
-- Motion: **4/10** — short, functional transitions.
-- Density: **6/10** — efficient fitness dashboard with comfortable touch targets.
-- Visual effects: **4/10** — noticeable at first glance, restrained during daily use.
+Chữ trắng trên cam này đạt khoảng 3:1, phù hợp cho nhãn lớn/đậm và icon nhưng chưa đạt 4.5:1 cho chữ nhỏ. Vì vậy nút cam đặc dùng nhãn tối thiểu khoảng 19px đậm; hành động nhỏ dùng chữ cam trên nền graphite hoặc nút viền. Giữ đúng cặp màu người dùng đã chốt.
 
-## 2. The 80/20 material rule
+## Typography
 
-At least **80% of the visible interface uses stable, dark surfaces**. No more than **20% uses true backdrop glass**.
+Dùng **Be Vietnam Pro** đã đóng gói trong ứng dụng. Cấp độ tham khảo: tiêu đề màn 24px/700; tên card 17px/600; nội dung 14–16px/400; nhãn phụ 12–13px/400–600. Số liệu chính có thể lớn hơn nhưng chỉ khi thực sự là trọng tâm. Không in đậm toàn bộ card. Dùng chữ thường theo câu, giữ nguyên dấu tiếng Việt, và tabular figures cho thời gian, cân nặng, mức tạ, giá, số buổi.
 
-### Level 0 — Canvas
+Văn bản ưu tiên ngắn, chính xác với luồng thật. Một card trả lời một câu hỏi chính. Tên Coach, thời hạn gói và CTA không được cắt mất nghĩa; cho xuống dòng hoặc mở chi tiết thay vì cố nhét một hàng.
 
-- Obsidian background `#080A0D`.
-- Background photography is optional and must be dimmed with a 72–84% dark scrim.
-- Photography never runs behind dense text without a solid or strong-glass layer.
+## Layout
 
-### Level 1 — Solid performance surface
+Lề điện thoại 16px; khoảng cách cùng nhóm 8–12px; khoảng cách giữa các section 20–24px; padding card 16–20px. Một màn có một điểm nhìn chính, sau đó là các bước tiếp theo theo thứ tự sử dụng. Card cùng hàng phải cân chiều cao và mật độ thông tin. Không tạo card cao chỉ để chứa ít chữ, không lồng nhiều viền/card khi một divider hoặc khoảng trắng là đủ.
 
-- Default for workout cards, nutrition content, forms, tables, and long text.
-- Use `#11161C` or `#181F27`; no backdrop blur.
-- Separation comes from tonal contrast and a subtle one-pixel border, not a heavy shadow.
-- This level should represent most of the screen.
+Nút điều hướng Member giữ đúng năm mục: Trang chủ, Tập luyện, AI, Tin nhắn, Hồ sơ. Card mở trang khác không được tô như trạng thái chọn lâu dài. Nội dung cuộn phải chừa khoảng cho thanh điều hướng, safe area và bàn phím.
 
-### Level 2 — Performance glass
+## Elevation & Depth
 
-- Reserved for quick-action docks, compact summaries, floating filters, and bottom navigation.
-- Target fill: `rgba(18, 23, 30, 0.78)` with **12px blur**.
-- Use a cool one-pixel border at 18% opacity and one restrained top-edge highlight.
-- Maximum: one dominant glass group per viewport region. Do not nest another blurred glass object inside it.
+Bề mặt mặc định là graphite đặc. **Warm smoked glass** chỉ dùng khi có ảnh nền thực sự nhìn qua và hiệu ứng giúp tạo phân cấp: Trang chủ, thanh điều hướng, card nổi bật. Giữ ảnh phòng gym đủ nhận ra nhưng tăng độ đục của card trước khi hy sinh độ rõ của chữ. Màu kính ấm phải cùng tông với ánh đèn và sàn trong ảnh nền, có viền sáng mảnh và một highlight trên cạnh trên; tránh lớp xám bạc đục hoặc nền quá trong.
 
-### Level 3 — Overlay glass
+Mẫu tham chiếu hiện tại trên Trang chủ Flutter: fill `0xC42B2622` cho card thường, `0xB82D2824` cho card nổi bật, viền ấm `0xA3A79D92`; kính nổi bật dùng blur khoảng 10–12px và có fallback không blur. Đây là giá trị của màn đã duyệt, không phải lệnh sao chép blur sang mọi card. Không lồng hai vùng blur. Không animate blur. Ảnh nền phải có lớp tối và fallback màu canvas.
 
-- Reserved for dialogs, bottom sheets, AI Coach panels, and high-priority floating controls.
-- Target fill: `rgba(14, 18, 24, 0.90)` with **18px blur**.
-- Always pair with the scrim token and verify text contrast over the real background.
-- Never use as a standard content card.
+## Shapes
 
-### Glass performance rules
+Control khoảng 14px; card tiêu chuẩn 20px; dock/sheet kính 24px. Viền thường 1px; viền chọn hoặc focus được tăng rõ khi cần. Icon dùng cùng một họ vector, nét 1.75–2px; không dùng emoji làm icon chức năng. Avatar Coach LN luôn giữ đúng cặp màu đã chốt.
 
-- Never animate blur radius, large shadows, or background filters.
-- Animate only opacity and transform for routine transitions.
-- Keep blur bounds clipped to the component; avoid full-screen blur while scrolling.
-- Isolate animated or blurred regions with `RepaintBoundary` in Flutter when profiling shows repaint spill.
-- Replace blur with a precomposed translucent gradient on low-performance devices or during the capstone demo if frame time is unstable.
-- Use compressed WebP/AVIF background images sized near their rendered dimensions.
+## Components
 
-## 3. Color system
+- **CTA chính:** cam, chữ/icon trắng, mục đích rõ. Các trạng thái pressed, loading, disabled và lỗi phải nhận biết được.
+- **Card thông tin:** nền graphite hoặc kính theo vai trò của màn; toàn card chỉ bấm được khi có đúng một đích.
+- **Chips:** nhỏ, dễ đọc; màu xanh chỉ cho trạng thái hoàn thành/hiệu lực, màu vàng cho cảnh báo. Đừng biến mọi nhãn thành nút.
+- **Form, bảng, lịch, biểu đồ:** bề mặt đặc, độ tương phản ổn định, thứ tự đọc rõ. Kính không nằm sau đoạn văn dài hoặc ô nhập liệu.
+- **Thanh điều hướng:** kính có giới hạn blur, mục active rõ bằng cả icon và nhãn; AI có thể nổi bật nhưng không che bốn mục còn lại.
+- **Ảnh và nền:** dùng asset thật của dự án, crop có chủ ý, che tối đủ đọc; không dùng hình minh họa không liên quan chỉ để lấp chỗ trống.
 
-### Brand colors
+## Do's and Don'ts
 
-- **Energy Orange `#FF5A36`:** primary action, active navigation, selected workout state, and key progress.
-- **Cool Reflection `#A9C7E8`:** glass edges, focus support, and restrained technological highlights.
-- **Obsidian `#080A0D`:** primary mobile canvas.
-- **Graphite `#11161C`:** default content surface.
+**Làm:** kiểm tra màn ở 375px, điện thoại lớn và landscape; kiểm tra loading, empty, error, disabled, offline và trạng thái nghiệp vụ tương ứng; giữ touch target tối thiểu 48dp trên Android; kiểm tra chữ thường tối thiểu 4.5:1 và thành phần tương tác 3:1 trên ảnh đã ghép; tôn trọng text scaling và reduced motion; chụp giao diện thật để so với bản người dùng đã chốt.
 
-Orange is not ambient decoration. In a typical viewport, it should occupy roughly **5–10%** of pixels. Use orange glow only around a selected or primary control; never around every card.
+**Tránh:** cyberpunk, neon nhiều màu, HUD/game, kính trên mọi card, glow quanh mọi CTA, chữ quá đậm, icon không đồng bộ, màu hex tùy tiện, nút thật sự không có tác dụng, dữ liệu hoặc trạng thái bịa cho đẹp. Không đưa các thành phần người dùng đã yêu cầu bỏ trở lại màn chỉ để lấp khoảng trống.
 
-### Semantic colors
+**Hiệu năng demo:** ảnh nền nén và precache, vùng blur được clip, không blur toàn màn khi cuộn, không parallax hoặc hiệu ứng chạy liên tục. Nếu hiệu năng giảm, dùng fallback kính đặc; giữ độ rõ chữ và bố cục trước hiệu ứng.
 
-- Success `#23C997`
-- Warning `#F2A93B`
-- Error `#F15B64`
-- Information `#70AEE8`
+## Source of truth and review
 
-Every status includes text, an icon, or shape in addition to color. Do not use orange for warnings because it is already the brand action color.
+`DESIGN.md` là rule toàn dự án. `mobile-app/lib/core/theme/app_theme.dart` là token đã triển khai trong Flutter; khi hai nơi lệch nhau, đối chiếu quyết định mới nhất của người dùng rồi đồng bộ, không âm thầm dùng giá trị cũ. `design-system/meta-gym/MASTER.md` là bản tóm tắt. Các adapter mẫu cũ không được copy trực tiếp vào app.
 
-### Contrast
-
-- Normal text: minimum **4.5:1**.
-- Large text and meaningful non-text controls: minimum **3:1**.
-- Secondary text on glass must be tested against the composed background, not only against the glass fill token.
-- When contrast varies due to photography, strengthen the surface opacity before adding text shadow.
-
-## 4. Typography
-
-Use **Be Vietnam Pro** as the single product family. It supports Vietnamese clearly, feels geometric and modern, and reduces font-loading complexity.
-
-- Display and performance values: 700–800 weight.
-- Screen and section titles: 600–700 weight.
-- Body: 400 weight.
-- Labels and controls: 600 weight.
-- Use tabular figures for time, weight, repetitions, prices, attendance, and charts.
-- Sentence case is the default. Uppercase is limited to short brand marks and micro-labels.
-- Mobile body copy starts at 16px when it carries instructions; 14px is acceptable for compact metadata.
-- Support system text scaling without truncating primary actions.
-
-## 5. Layout and spacing
-
-- Use a 4px base unit and an 8px default rhythm.
-- Phone horizontal gutter: 16px; large phone/tablet: 24px.
-- Internal card padding: 16px compact, 20px standard, 24px featured.
-- Space between related items: 8–12px.
-- Space between sections: 20–24px.
-- Avoid cards inside cards. Use spacing, dividers, or tonal groups before adding another container.
-- A screen should have one obvious visual entry point and one dominant action per decision area.
-- Fixed navigation must reserve safe-area and scroll insets.
-
-## 6. Shape, border, and depth
-
-- Compact controls: 10px radius.
-- Buttons and inputs: 14px radius.
-- Standard cards: 20px radius.
-- Glass docks, sheets, and featured panels: 24px radius.
-- Full radius is limited to chips, avatars, progress dots, and circular controls.
-- Borders are normally 1px. Use 2px only for keyboard focus or a selected state that needs additional clarity.
-- Prefer cool edge light and tonal separation to large drop shadows.
-- One component may have either a strong glow or a strong shadow, never both.
-
-## 7. Iconography and imagery
-
-- Use one vector icon family with consistent 1.75–2px strokes.
-- Use outline icons for navigation and routine actions; reserve filled icons for selected states.
-- Default icon sizes: 16, 20, 24, and 28px.
-- Every icon button has a 44pt iOS or 48dp Android hit area and an accessible name.
-- Do not use emoji as structural icons.
-- Photography should show premium, realistic training environments with controlled warm highlights.
-- Avoid generic bodybuilding clichés, exaggerated neon, fake holograms, and sci-fi HUD decorations.
-
-## 8. Components
-
-### Buttons
-
-- One orange primary button per decision area.
-- Secondary buttons use graphite or restrained glass without orange fill.
-- Press feedback begins within 80–150ms and must not shift layout bounds.
-- Disabled controls retain readable labels, expose disabled semantics, and do not respond to taps.
-
-### Cards
-
-- Standard information cards are solid Level 1 surfaces.
-- Use imagery in no more than one featured card per viewport.
-- A whole card is tappable only when it performs one clear action; otherwise use explicit controls.
-- Repeated cards in one list share the same radius, padding, and hierarchy.
-
-### Chips and status
-
-- Chips are compact labels, not miniature buttons unless they visibly support interaction.
-- Success green is for completed or healthy progress, not general decoration.
-- Selected filters may use an orange outline or low-opacity fill; avoid full orange fills across a large chip row.
-
-### Bottom navigation
-
-- Maximum five destinations.
-- Use Level 2 glass for the navigation container.
-- Selected destination combines icon treatment and label emphasis; color alone is insufficient.
-- The central AI action may be elevated, but its glow must remain inside a bounded area and must not obscure adjacent labels.
-
-### Forms and feedback
-
-- Persistent labels, nearby helper/error text, and validation on blur.
-- Async actions expose loading, success, and recovery states and prevent duplicate submission.
-- Every data surface includes loading, empty, error, offline, disabled, and success behavior where applicable.
-
-## 9. Motion
-
-- Press feedback: 80–150ms.
-- Local state change: 180–240ms.
-- Page transition, sheet, or dialog: 240–320ms.
-- Enter easing: decelerating; exit is slightly faster than enter.
-- Animate opacity and transform. Avoid animating layout dimensions, blur, or large shadows.
-- Motion is interruptible and respects reduced-motion preferences.
-- Do not stagger dense workout logs, tables, or chart marks merely for decoration.
-
-## 10. Mobile and Admin relationship
-
-The Flutter Member/Coach experience is **dark-first** and carries the full Futuristic Performance Glass identity. The Bootstrap Admin application shares typography, orange brand actions, semantic states, and spacing, but uses mostly solid surfaces. Admin data density and readability take priority over glass effects.
-
-Material 3 is the Flutter foundation. Bootstrap 5.3 is the Admin foundation. Do not mix a second component system into either surface.
-
-## 11. Explicit anti-patterns
-
-- No cyberpunk, gaming HUD, rainbow neon, or decorative scan lines.
-- No glass on every card.
-- No blur behind long text or dense form content.
-- No more than one glowing primary focal point in a viewport.
-- No random radii, icon families, or ad-hoc hex colors.
-- No low-contrast gray text on transparent gray surfaces.
-- No nested card borders when spacing or a divider can establish hierarchy.
-- No motion that delays interaction or makes the demo fragile.
-
-## 12. Screen review checklist
-
-Before accepting a screen, confirm:
-
-- [ ] The first focal point is obvious within three seconds.
-- [ ] At least 80% of the visible surface is stable and non-blurred.
-- [ ] Orange is reserved for actions, selection, or meaningful progress.
-- [ ] No glass layer contains another blurred glass layer.
-- [ ] Normal text reaches 4.5:1 contrast on the composed background.
-- [ ] Touch targets meet 44pt iOS or 48dp Android minimums.
-- [ ] Spacing follows the 4/8px system and sections have visible breathing room.
-- [ ] Loading, empty, error, offline, disabled, and success states are covered.
-- [ ] Press feedback is immediate and motion respects reduced motion.
-- [ ] The screen remains usable when background photography or blur is disabled.
-- [ ] Content is not hidden behind the status bar, keyboard, bottom navigation, or gesture area.
-- [ ] The screen is tested on a 375px-wide phone and in landscape.
-
-## 13. Capstone demo mode
-
-For a reliable live demonstration:
-
-- Precache the hero/background image before entering the home screen.
-- Keep one static background image per main screen.
-- Use Level 2 glass only for the quick-action dock and bottom navigation.
-- Use solid Level 1 cards for scrolling content.
-- Disable nonessential particle, parallax, and continuous glow animations.
-- Profile on the actual demo device, not only an emulator.
-- If frame stability drops, remove blur from scrolling regions before reducing typography or spacing quality.
+Với mỗi màn mới: xác định vai trò và trạng thái của màn → phác bố cục → dựng preview nếu người dùng yêu cầu duyệt trước → xem ảnh render ở kích thước thiết bị → triển khai bằng token chung → kiểm tra các trạng thái và hiệu năng. Thay đổi được chấp nhận khi giữ đúng nghiệp vụ, đọc rõ, đồng nhất với Trang chủ đã chốt và vận hành mượt trên thiết bị demo.

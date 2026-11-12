@@ -1,10 +1,10 @@
 # Meta Gym Theme Adapters
 
-These files translate the tokens in the repository root `DESIGN.md` into the two planned UI stacks. `DESIGN.md` remains the source of truth.
+These are historical starter adapters. They predate the current Flutter app and may contain older colors. Do not copy them into the application. The current visual rule is the repository root `DESIGN.md`; the live Flutter tokens are in `mobile-app/lib/core/theme/app_theme.dart`.
 
 ## Flutter
 
-Copy `meta_gym_theme.dart` into the Flutter app theme directory, then configure the app:
+The app already has a Flutter theme. For new screens, import that existing theme rather than this sample adapter. The following example describes the original starter setup only:
 
 ```dart
 MaterialApp.router(
