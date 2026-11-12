@@ -152,6 +152,6 @@ Control khoảng 14px; card tiêu chuẩn 20px; dock/sheet kính 24px. Viền th
 
 ## Source of truth and review
 
-`DESIGN.md` là rule toàn dự án. `mobile-app/lib/core/theme/app_theme.dart` là token đã triển khai trong Flutter; khi hai nơi lệch nhau, đối chiếu quyết định mới nhất của người dùng rồi đồng bộ, không âm thầm dùng giá trị cũ. `design-system/meta-gym/MASTER.md` là bản tóm tắt. Các adapter mẫu cũ không được copy trực tiếp vào app.
+`DESIGN.md` là nguồn token và hình thái. [`docs/requirements/ui-design-spec.md`](docs/requirements/ui-design-spec.md) quy định cách áp dụng và kiểm tra trên mọi màn; coding agent phải đọc cả hai trước khi làm giao diện. `mobile-app/lib/core/theme/app_theme.dart` là token đã triển khai trong Flutter; khi các nơi lệch nhau, đối chiếu quyết định mới nhất của người dùng rồi đồng bộ, không âm thầm dùng giá trị cũ. `design-system/meta-gym/MASTER.md` là bản tóm tắt. Các adapter mẫu cũ không được copy trực tiếp vào app.
 
 Với mỗi màn mới: xác định vai trò và trạng thái của màn → phác bố cục → dựng preview nếu người dùng yêu cầu duyệt trước → xem ảnh render ở kích thước thiết bị → triển khai bằng token chung → kiểm tra các trạng thái và hiệu năng. Thay đổi được chấp nhận khi giữ đúng nghiệp vụ, đọc rõ, đồng nhất với Trang chủ đã chốt và vận hành mượt trên thiết bị demo.

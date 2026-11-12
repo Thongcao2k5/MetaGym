@@ -2,7 +2,7 @@
 
 Before any UI/UX design, critique, preview, or implementation in this repository:
 
-1. Read [DESIGN.md](DESIGN.md) for the approved visual direction and exact tokens.
+1. Read [the UI design specification](docs/requirements/ui-design-spec.md) and [DESIGN.md](DESIGN.md) before making any design decision. This applies even to a small UI refinement.
 2. Read the current screen, shared theme, relevant product flow in `docs/requirements/confirmed-workflows.md`, and any page brief in `design-system/meta-gym/pages/`. Treat old page briefs as references when they differ from the current screen or a newer user decision.
 3. Use the installed Impeccable skill when it fits the task. Its generic aesthetic advice cannot override the user's approved Meta Gym style or interaction requirements.
 4. For Flutter, use `mobile-app/lib/core/theme/app_theme.dart` and shared components. Do not copy the historical sample adapter from `design-system/meta-gym/adapters/` into the app.
