@@ -8,6 +8,19 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 
 void main() {
+  test('starts a direct conversation without a Coach relationship', () async {
+    final adapter = _MessagingAdapter();
+    final api = MessagingApi(ApiClient.withAdapter(
+      config: ApiConfig.fromValues(environment: 'local'), adapter: adapter,
+    ));
+    final conversation = await api.startConversation(coachId: 'coach-1');
+    expect(adapter.request?.path, '/conversations');
+    expect(adapter.payload, {'coachId': 'coach-1'});
+    expect(conversation.relationshipId, isNull);
+    expect(conversation.messageKey, 'conversation-1');
+    expect(conversation.canSend, isTrue);
+  });
+
   test(
     'sends a text message with the same client ID supplied by the UI',
     () async {
@@ -56,7 +69,13 @@ class _MessagingAdapter implements HttpClientAdapter {
     );
     return ResponseBody.fromString(
       jsonEncode({
-        'data': options.method == 'PATCH'
+        'data': options.path == '/conversations'
+            ? {
+                'id': 'conversation-1', 'relationshipId': null,
+                'memberId': 'member-1', 'coachId': 'coach-1',
+                'status': 'NONE', 'unreadCount': 0,
+              }
+            : options.method == 'PATCH'
             ? {
                 'lastReadMessageId': 'received-1',
                 'lastReadAt': '2026-10-23T08:00:00Z',

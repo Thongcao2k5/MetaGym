@@ -154,7 +154,7 @@ test('PostgreSQL messaging enforces participants, retries, media and relationshi
       assert.equal((await call(base, messagesPath, member)).status, 200);
       assert.equal((await call(base, messagesPath, member, 'POST', {
         messageType: 'TEXT', clientMessageId: randomUUID(), content: 'Paused',
-      })).body.error.code, 'RELATIONSHIP_INACTIVE');
+      })).status, 201);
       await database.query(
         `UPDATE coach_relationships SET status = 'ACTIVE', paused_at = NULL,
          pause_reason = NULL WHERE id = $1`, [relationshipId],
@@ -184,11 +184,11 @@ test('PostgreSQL messaging enforces participants, retries, media and relationshi
       } finally { locked.release(); }
       assert.equal(settledWhileLocked, false,
         'Sending must wait for the relationship state transaction');
-      assert.equal((await lateSend).body.error.code, 'RELATIONSHIP_INACTIVE');
+      assert.equal((await lateSend).status, 201);
       assert.equal((await call(base, messagesPath, coach)).status, 200);
       assert.equal((await call(base, messagesPath, coach, 'POST', {
         messageType: 'TEXT', clientMessageId: randomUUID(), content: 'Ended',
-      })).status, 403);
+      })).status, 201);
     } finally {
       await database.query(
         `UPDATE conversation_participants SET last_read_message_id = NULL

@@ -8,13 +8,21 @@ import { createAdminUsersRouter } from './routes/admin-users.routes.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
 import { createMembershipPlansRouter } from './routes/membership-plans.routes.js';
+import { createCoachPackagesRouter } from './routes/coach-packages.routes.js';
+import { createCoachScheduleRouter } from './routes/coach-schedule.routes.js';
+import { createCoachPaymentHoldsRouter } from './routes/coach-payment-holds.routes.js';
+import { createCoachBookingsRouter } from './routes/coach-bookings.routes.js';
 import { createPaymentsRouter } from './routes/payments.routes.js';
 import { createCoachingRouter } from './routes/coaching.routes.js';
 import { createCatalogRouter } from './routes/catalog.routes.js';
 import { createTrainingRouter } from './routes/training.routes.js';
+import { retireLegacyWrites } from './routes/legacy-v1.routes.js';
+import { createStructuredNutritionRouter } from './routes/structured-nutrition.routes.js';
 import { createSessionsRouter } from './routes/sessions.routes.js';
 import { createMessagingRouter } from './routes/messaging.routes.js';
 import { createProgressRouter } from './routes/progress.routes.js';
+import { createJournalRouter } from './routes/journal.routes.js';
+import { createGymVisitsRouter } from './routes/gym-visits.routes.js';
 import { createDashboardRouter } from './routes/dashboard.routes.js';
 import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
 import { createCallsRouter } from './routes/calls.routes.js';
@@ -66,6 +74,7 @@ export function createApp({
   imageStorage,
   corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS,
   nodeEnv = process.env.NODE_ENV,
+  enableLegacyWrites = false,
 }) {
   validateJwtSecret(jwtSecret);
   const corsOrigin = allowedCorsOrigins(corsAllowedOrigins, nodeEnv);
@@ -82,17 +91,25 @@ export function createApp({
     '/api/v1/auth',
     createAuthRouter({ database, jwtSecret, loginRateLimiter }),
   );
+  if (!enableLegacyWrites) app.use('/api/v1', retireLegacyWrites());
   app.use('/api/v1/health', createHealthRouter({ database }));
   app.use('/api/v1', createPasswordResetsRouter({ database, sendPasswordResetCode }));
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachPaymentHoldsRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachBookingsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCatalogRouter({ database, jwtSecret }));
+  app.use('/api/v1', createStructuredNutritionRouter({ database, jwtSecret }));
   app.use('/api/v1', createTrainingRouter({ database, jwtSecret }));
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));
   app.use('/api/v1', createMessagingRouter({ database, jwtSecret }));
   app.use('/api/v1', createProgressRouter({ database, jwtSecret }));
+  app.use('/api/v1', createJournalRouter({ database, jwtSecret }));
+  app.use('/api/v1', createGymVisitsRouter({ database, jwtSecret }));
   app.use('/api/v1', createDashboardRouter({ database, jwtSecret }));
   app.use('/api/v1', createAiConversationsRouter({ database, jwtSecret, aiResponder }));
   app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider }));

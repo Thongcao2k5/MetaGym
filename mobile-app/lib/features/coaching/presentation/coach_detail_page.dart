@@ -1,3 +1,10 @@
+import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -9,11 +16,15 @@ class CoachDetailPage extends StatefulWidget {
   const CoachDetailPage({
     required this.coachId,
     required this.service,
+    this.messagingService,
+    this.currentUserId,
     super.key,
   });
 
   final String coachId;
   final CoachSelectionService service;
+  final MessagingService? messagingService;
+  final String? currentUserId;
 
   @override
   State<CoachDetailPage> createState() => _CoachDetailPageState();
@@ -26,6 +37,46 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
   String? _submitError;
   bool _sending = false;
   bool _sent = false;
+  bool _openingChat = false;
+  String? _chatError;
+
+  Future<void> _openChat() async {
+    if (_openingChat) return;
+    final messaging =
+        widget.messagingService ?? context.read<MessagingService>();
+    final currentUserId =
+        widget.currentUserId ?? context.read<SessionController>().user!.id;
+    setState(() {
+      _openingChat = true;
+      _chatError = null;
+    });
+    try {
+      final conversation = await messaging.startConversation(
+        coachId: widget.coachId,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConversationDetailPage(
+            conversation: conversation,
+            service: messaging,
+            currentUserId: currentUserId,
+            picker: DeviceProgressPhotoPicker(),
+          ),
+        ),
+      );
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _chatError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _chatError = 'Không mở được cuộc trò chuyện.');
+      }
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
+  }
+
+
 
   @override
   void initState() {
@@ -329,7 +380,13 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (_sent)
+                        OutlinedButton(onPressed: _openingChat ? null : _openChat, child: const Text('Nhắn tin với Coach')),
+                        if (_chatError != null) Text(_chatError!),
+                        if (context.read<ApiClient?>() != null)
+                          FilledButton(onPressed: () => Navigator.of(context).push<void>(MaterialPageRoute(
+                            builder: (_) => CoachOffersPage(coachId: widget.coachId),
+                          )), child: const Text('Xem gói Coach'))
+                        else if (_sent)
                           MetaGymGlassCard(
                             padding: const EdgeInsets.all(16),
                             child: const Row(

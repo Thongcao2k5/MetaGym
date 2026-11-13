@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
@@ -43,8 +44,12 @@ import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
+import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
+import 'package:meta_gym_app/features/progress/domain/journal_entry.dart';
+import 'package:meta_gym_app/features/membership/data/membership_service.dart';
+import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_workout_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
 import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
@@ -88,12 +93,14 @@ void main() {
     await tester.pumpWidget(
       MetaGymApp(
         sessionController: controller,
+        membershipService: _EmptyMembershipService(),
         coachSelectionService: _EmptyCoachSelectionService(),
         memberTrainingService: _EmptyMemberTrainingService(),
         memberNutritionService: _EmptyMemberNutritionService(),
         memberSessionsService: _EmptyMemberSessionsService(),
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
+        memberJournalService: _EmptyMemberJournalService(),
         memberMealService: _EmptyMemberMealService(),
         memberMeasurementService: _EmptyMemberMeasurementService(),
         memberPhotoService: _EmptyMemberPhotoService(),
@@ -124,7 +131,12 @@ void main() {
     expect(find.byType(MemberHomePage), findsOneWidget);
 
     // Tapping bottom nav tab 1: Tập luyện -> MemberTrainingPage
-    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MetaGymBottomNav),
+        matching: find.byIcon(Icons.fitness_center_outlined),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(MemberTrainingPage), findsOneWidget);
     expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
@@ -175,9 +187,9 @@ void main() {
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/workouts');
     await tester.pumpAndSettle();
-    expect(find.byType(MemberWorkoutPage), findsOneWidget);
-    expect(find.text('Bạn chưa có nhật ký tập.'), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(MemberWorkoutPage))).go('/member');
+    expect(find.byType(MemberJournalPage), findsOneWidget);
+    expect(find.text('Chưa có nhật ký tập.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberJournalPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/meals');
@@ -264,8 +276,8 @@ void main() {
 
     expect(service.loginCalls, 1);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
-    expect(find.text('Yêu cầu chọn Coach'), findsOneWidget);
-    await tester.tap(find.text('Yêu cầu chọn Coach'));
+    expect(find.text('Yêu cầu chọn Coach'), findsNothing);
+    GoRouter.of(tester.element(find.byType(CoachHomePage))).push<void>('/coach/features/requests');
     await tester.pumpAndSettle();
     expect(find.byType(CoachRequestsPage), findsOneWidget);
     expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
@@ -276,15 +288,6 @@ void main() {
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
-    await tester.pumpAndSettle();
-    GoRouter.of(tester.element(find.byType(CoachHomePage)))
-        .go('/coach/features/progress');
-    await tester.pumpAndSettle();
-    expect(find.byType(CoachMembersPage), findsOneWidget);
-    expect(find.text('Tiến độ hội viên'), findsOneWidget);
-    expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    expect(find.text('Yêu cầu ngừng phụ trách'), findsNothing);
-    GoRouter.of(tester.element(find.byType(CoachMembersPage))).go('/coach');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
@@ -308,7 +311,10 @@ void main() {
     GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
-    await tester.tap(find.text('Kiểm thử các luồng Coach'));
+    final workbenchButton = find.widgetWithText(OutlinedButton, 'Kiểm thử các luồng Coach');
+    await tester.ensureVisible(workbenchButton);
+    await tester.pumpAndSettle();
+    await tester.tap(workbenchButton);
     await tester.pumpAndSettle();
     expect(find.text('Kiểm thử luồng Coach'), findsOneWidget);
     await tester.pageBack();
@@ -604,6 +610,36 @@ class _EmptyMemberWorkoutService implements MemberWorkoutService {
       throw UnimplementedError();
   @override
   Future<WorkoutLog> update(String id, Map<String, Object?> payload) =>
+      throw UnimplementedError();
+}
+
+class _EmptyMemberJournalService implements MemberJournalService {
+  @override
+  Future<List<JournalEntry>> getPage(int page) async => const [];
+  @override
+  Future<List<JournalChartPoint>> getChart() async => const [];
+  @override
+  Future<JournalEntry> create(Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<JournalEntry> update(String id, Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<void> delete(String id) => throw UnimplementedError();
+}
+
+class _EmptyMembershipService implements MembershipService {
+  @override
+  Future<List<MembershipPlan>> getPlans() async => const [];
+  @override
+  Future<List<Membership>> getCurrentMemberships() async => const [];
+  @override
+  Future<List<Membership>> getMembershipHistory() async => const [];
+  @override
+  Future<Payment> createPayment({required String planId,
+      required String idempotencyKey}) => throw UnimplementedError();
+  @override
+  Future<PurchaseResult> confirmMockPayment(String paymentId) =>
       throw UnimplementedError();
 }
 

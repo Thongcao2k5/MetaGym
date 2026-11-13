@@ -1,6 +1,6 @@
 # Meta Gym Database
 
-PostgreSQL schema cho MVP Meta Gym gồm 34 bảng nghiệp vụ và 2 bảng vận hành
+PostgreSQL schema cho MVP Meta Gym gồm 46 bảng nghiệp vụ và 2 bảng vận hành
 cho giới hạn đăng nhập/khôi phục mật khẩu. Migration được chia theo thứ tự phụ
 thuộc và có file rollback tương ứng.
 
@@ -21,7 +21,19 @@ Chạy các file `*.up.sql` theo thứ tự:
 5. `0005_communication_ai_audit.up.sql`
 6. `0006_auth_rate_limits.up.sql`
 7. `0007_password_reset_limits.up.sql`
-8. `0008_daily_training_meals.up.sql`
+8. `0008_member_journal.up.sql`
+9. `0009_direct_conversations.up.sql`
+10. `0010_coach_package_catalog.up.sql`
+11. `0011_coach_weekly_schedule.up.sql`
+12. `0012_coach_payment_holds.up.sql`
+13. `0013_coach_entitlements.up.sql`
+14. `0014_coach_slot_blocks.up.sql`
+15. `0015_coach_notifications.up.sql`
+16. `0016_structured_nutrition.up.sql`
+17. `0017_coach_expiry_reminders.up.sql`
+18. `0018_daily_training_meals.up.sql`
+19. `0019_backfill_member_journal.up.sql`
+20. `0020_gym_checkins.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 
@@ -33,6 +45,26 @@ Get-ChildItem database/migrations/*.up.sql |
 ```
 
 Rollback chạy các file `*.down.sql` theo thứ tự ngược lại.
+
+## Đồng bộ database giữa hai máy sau khi cập nhật Git
+
+Git chỉ đồng bộ mã nguồn và migration, không chuyển dữ liệu PostgreSQL hay ảnh đã tải lên. Trước khi nâng cấp một database đang dùng, sao lưu bằng `pg_dump --format=custom`; giữ `DATABASE_URL` trong cấu hình riêng của từng máy.
+
+- **Đã chạy V2 đến `0019`:** chỉ chạy `0020_gym_checkins.up.sql`, rồi chạy `database/tests/schema_assertions.sql`.
+- **Database từ `main` cũ (đến `0008_daily_training_meals`):** chạy các file `0008_member_journal.up.sql` đến `0020_gym_checkins.up.sql` theo tên tăng dần. `0018_daily_training_meals` tương thích với bảng ngày tập và bữa ăn của bản cũ. Sau đó chạy schema assertions.
+- **Database mới hoàn toàn:** chạy toàn bộ migration `*.up.sql` theo thứ tự, rồi baseline seed và schema assertions.
+
+Ví dụ khi database đã ở V2 đến `0019`:
+
+```powershell
+pg_dump --dbname=$env:DATABASE_URL --format=custom --file=meta_gym_before_0020.dump
+psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/migrations/0020_gym_checkins.up.sql
+psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
+```
+
+Không chạy lại toàn bộ migration hoặc seed trên database đã có dữ liệu. Repository hiện chưa lưu lịch sử migration đã chạy trong database, vì vậy cần xác nhận điểm xuất phát trước khi nâng cấp. Nếu muốn **hai máy có cùng cả dữ liệu**, xuất một bản `pg_dump` và phục hồi vào database trống của máy còn lại; sao chép thêm thư mục `MEDIA_STORAGE_DIR` nếu có ảnh. Hai database tách rời sẽ tiếp tục khác nhau sau đó. Nếu cả hai cần cùng dữ liệu theo thời gian thực, hãy trỏ backend của hai máy tới cùng một PostgreSQL server.
+
+Mã QR tĩnh ở migration `0020` được tạo ngẫu nhiên trên từng database. Sau khi nâng cấp, Admin mở trang Phòng gym để in mã của đúng database mà ứng dụng Member đang kết nối.
 
 ## Baseline seed
 
@@ -91,7 +123,7 @@ Sau migration, chạy:
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 ```
 
-Kiểm tra xác nhận đủ 33 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
+Kiểm tra xác nhận đủ 46 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
 nhập/khôi phục mật khẩu, các FK sở hữu quan trọng, constraint chỉ cho phép tối
 đa một Admin và constraint chống chồng ngày membership. Sự tồn tại của Admin
 và `gym_profile` được kiểm tra khi chạy baseline seed.

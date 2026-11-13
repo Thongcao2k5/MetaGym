@@ -39,7 +39,7 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
     const returnRelationshipId = randomUUID();
     const conversationId = randomUUID();
     const exerciseId = randomUUID();
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     const aiApp = createApp({ database, jwtSecret: secret,
       aiResponder: async ({ content }) => ({
         content: `Test reply: ${content}`, provider: 'TEST', modelName: 'mock',
@@ -177,6 +177,13 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         `SELECT count(*)::int AS count FROM training_plans
          WHERE member_id = $1 AND status = 'ACTIVE'`, [memberId])).rows[0].count, 1);
       assert.equal((await call(app, '/training-plans/me/history', member)).body.data.length, 3);
+      const currentPath = `/coach/members/${memberId}/training-plans/current`;
+      const before = (await call(app, '/training-plans/me/active', member)).body.data;
+      result = await call(app, currentPath, coach, 'PUT', { ...body, title: 'Current V2 plan' });
+      assert.equal(result.status, 200, JSON.stringify(result.body));
+      assert.equal(result.body.data.id, before.id);
+      assert.equal((await call(app, '/training-plans/me/active', member)).body.data.title,
+        'Current V2 plan');
       result = await call(app, `/coach/members/${memberId}/nutrition-guides`, coach,
         'POST', { title: 'Balanced meals', content: 'Eat sufficient protein.' });
       assert.equal(result.status, 201);
@@ -307,7 +314,7 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         memberId, title: 'Denied', scheduledStartAt: '2026-11-02T08:00:00+07:00',
       })).status, 403);
       assert.equal((await call(app, `/conversations/${relationshipId}/messages`, coach,
-        'POST', { ...message, clientMessageId: randomUUID() })).status, 403);
+        'POST', { ...message, clientMessageId: randomUUID() })).status, 201);
       assert.equal((await call(app, '/calls', member, 'POST', {
         relationshipId, callType: 'VIDEO',
       })).status, 404);
@@ -431,7 +438,7 @@ test('editing a draft waits for relationship termination and rejects the former 
     const coachId = randomUUID();
     const relationshipId = randomUUID();
     const planId = randomUUID();
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     let locked;
     let pendingPatch;
     try {

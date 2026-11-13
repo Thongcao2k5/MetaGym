@@ -206,7 +206,7 @@ class CoachHomePage extends StatelessWidget {
                     ),
                   ),
                   for (final destination in coachDestinations.where(
-                    (item) => item.section == section,
+                    (item) => item.section == section && item.task != 'UI06',
                   ))
                     MetaGymGlassCard(
                       margin: const EdgeInsets.only(bottom: 8),

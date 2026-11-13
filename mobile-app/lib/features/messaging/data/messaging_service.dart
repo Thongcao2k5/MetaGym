@@ -7,6 +7,7 @@ import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 
 abstract interface class MessagingService {
+  Future<Conversation> startConversation({String? coachId, String? memberId});
   Future<List<Conversation>> getConversations(int page);
   Future<List<ChatMessage>> getMessages(String relationshipId, int page);
   Future<ChatMessage> sendText(
@@ -39,6 +40,14 @@ String newClientMessageId() {
 class MessagingApi implements MessagingService {
   const MessagingApi(this.client);
   final ApiClient client;
+
+  @override
+  Future<Conversation> startConversation({String? coachId, String? memberId}) async =>
+      (await client.post<Conversation>(
+        '/conversations',
+        body: coachId == null ? {'memberId': memberId} : {'coachId': coachId},
+        decode: Conversation.fromJson,
+      )).data;
 
   @override
   Future<List<Conversation>> getConversations(int page) async =>

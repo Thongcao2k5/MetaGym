@@ -23,9 +23,10 @@ import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_workout_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
@@ -157,13 +158,13 @@ GoRouter createAppRouter({
               : destination.path == '/member/features/training'
               ? const MemberTrainingPage()
               : destination.path == '/member/features/nutrition'
-              ? const MemberNutritionPage()
+              ? const MemberNutritionPage(structured: true)
               : destination.path == '/member/features/sessions'
-              ? const MemberSessionsPage()
+              ? const MemberSessionsPage(coachBooking: CoachBookingPage())
               : destination.path == '/member/features/progress'
               ? const MemberProgressPage()
               : destination.path == '/member/features/workouts'
-              ? const MemberWorkoutPage()
+              ? const MemberJournalPage()
               : destination.path == '/member/features/meals'
               ? const MemberMealPage()
               : destination.path == '/member/features/measurements'
@@ -187,14 +188,16 @@ GoRouter createAppRouter({
               ? CoachRequestsPage(coachId: sessionController.user!.id)
               : destination.path == '/coach/features/members'
               ? const CoachMembersPage()
-              : destination.path == '/coach/features/progress'
-              ? const CoachMembersPage(progressOnly: true)
               : destination.path == '/coach/features/training'
               ? const CoachTrainingPage()
               : destination.path == '/coach/features/nutrition'
-              ? const CoachNutritionPage()
+              ? const CoachNutritionPage(structured: true)
               : destination.path == '/coach/features/sessions'
-              ? const CoachSessionsPage()
+              ? CoachSessionsPage(
+                  coachBooking: CoachBookingPage(
+                    coachId: sessionController.user!.id,
+                  ),
+                )
               : destination.path == '/coach/features/messages'
               ? ConversationsPage(currentUserId: sessionController.user!.id)
               : destination.path == '/coach/features/calls'

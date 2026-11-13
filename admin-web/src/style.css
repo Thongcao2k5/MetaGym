@@ -19,3 +19,10 @@ body { min-width: 320px; background: #f5f7f6; }
   .admin-sidebar .nav { flex-direction: row !important; flex-wrap: wrap; gap: .2rem; }
   .admin-sidebar .nav-link { font-size: .875rem; }
 }
+@media print {
+  .admin-sidebar, .admin-main > .container-fluid > header, #notice,
+  #gym-form, .no-print { display: none !important; }
+  .admin-shell, .admin-main, .container-fluid { display: block !important;
+    background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  #checkin-print { border: 0 !important; box-shadow: none !important; }
+}

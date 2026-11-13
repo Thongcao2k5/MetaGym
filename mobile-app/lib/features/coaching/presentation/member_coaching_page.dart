@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -130,6 +131,14 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        actions: [
+          if (_current != null && context.read<ApiClient?>() != null)
+            IconButton(tooltip: 'Xem gói Coach', icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: () {
+                final coachId = _current!.coachId;
+                Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => CoachOffersPage(coachId: coachId)));
+              }),
+        ],
         title: const Text(
           'Coach của tôi',
           style: TextStyle(

@@ -6,10 +6,13 @@ import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_nutrition_editor_page.dart';
 import 'package:provider/provider.dart';
 
+import 'meal_plans_page.dart';
+
 class CoachNutritionPage extends StatefulWidget {
-  const CoachNutritionPage({this.service, super.key});
+  const CoachNutritionPage({this.service, this.structured = false, super.key});
 
   final CoachNutritionService? service;
+  final bool structured;
 
   @override
   State<CoachNutritionPage> createState() => _CoachNutritionPageState();
@@ -84,10 +87,15 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                       onTap: () async {
                         await Navigator.of(context).push<void>(
                           MaterialPageRoute(
-                            builder: (_) => _MemberGuidesPage(
-                              member: member,
-                              service: _service!,
-                            ),
+                            builder: (_) => widget.structured
+                                ? MealPlansPage(
+                                    memberId: member.memberId,
+                                    editable: member.status == 'ACTIVE',
+                                  )
+                                : _MemberGuidesPage(
+                                    member: member,
+                                    service: _service!,
+                                  ),
                           ),
                         );
                         if (mounted) await _load();

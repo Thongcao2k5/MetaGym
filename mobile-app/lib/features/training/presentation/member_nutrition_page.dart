@@ -1,3 +1,4 @@
+import 'meal_plans_page.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -7,9 +8,10 @@ import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:provider/provider.dart';
 
 class MemberNutritionPage extends StatefulWidget {
-  const MemberNutritionPage({this.service, super.key});
+  const MemberNutritionPage({this.service, this.structured = false, super.key});
 
   final MemberNutritionService? service;
+  final bool structured;
 
   @override
   State<MemberNutritionPage> createState() => _MemberNutritionPageState();
@@ -27,6 +29,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
     super.didChangeDependencies();
     if (_service != null) return;
     _service = widget.service ?? context.read<MemberNutritionService>();
+    if (widget.structured && _service is MemberNutritionApi) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
     });
@@ -61,7 +64,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => widget.structured && _service is MemberNutritionApi ? const MealPlansPage() : Scaffold(
     backgroundColor: MetaGymTheme.scaffoldBackground,
     extendBodyBehindAppBar: false,
     appBar: AppBar(

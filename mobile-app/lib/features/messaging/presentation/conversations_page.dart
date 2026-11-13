@@ -1332,7 +1332,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         Expanded(
                           child: Text(
                             item.canSend
-                                ? 'Đang hoạt động'
+                                ? 'Có thể nhắn tin'
                                 : 'Quan hệ đã kết thúc · chỉ đọc',
                             style: const TextStyle(
                               color: MetaGymTheme.darkTextSecondary,
@@ -1580,7 +1580,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     });
     try {
       final messages = await widget.service!.getMessages(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         1,
       );
       if (mounted) {
@@ -1605,7 +1605,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     _polling = true;
     try {
       final latest = await widget.service!.getMessages(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         1,
       );
       if (!mounted) return;
@@ -1631,7 +1631,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     });
     try {
       final messages = await widget.service!.getMessages(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         _page + 1,
       );
       if (mounted) {
@@ -1657,7 +1657,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           message.id != _lastReadId) {
         _lastReadId = message.id;
         await widget.service!.markRead(
-          widget.conversation.relationshipId,
+          widget.conversation.messageKey,
           message.id,
         );
         return;
@@ -1711,7 +1711,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     });
     try {
       final created = await widget.service!.sendText(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         text,
         clientMessageId,
       );
@@ -1766,7 +1766,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           _pendingMediaId ?? await widget.service!.uploadImage(image);
       _pendingMediaId = mediaId;
       final created = await widget.service!.sendImage(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         mediaId,
         _pendingImageMessageId!,
       );
@@ -1838,7 +1838,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                 Expanded(
                                   child: Text(
                                     widget.mockContextTitle ??
-                                        'Quan hệ ${widget.conversation.relationshipId}',
+                                        'Trò chuyện riêng tư',
                                     style: const TextStyle(
                                       color: MetaGymTheme.darkTextPrimary,
                                       fontSize: 13.5,
@@ -1853,8 +1853,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                               widget.conversation.canSend
                                   ? (_isMockMode
                                         ? 'Kết nối trực tiếp với huấn luyện viên'
-                                        : 'Quan hệ đang hoạt động.')
-                                  : 'Quan hệ đã kết thúc; lịch sử chỉ đọc.',
+                                        : (widget.conversation.status == 'ENDED'
+                                              ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
+                                              : 'Có thể nhắn tin.'))
+                                  : 'Không thể gửi tin nhắn.',
                               style: const TextStyle(
                                 color: MetaGymTheme.darkTextSecondary,
                                 fontSize: 12,

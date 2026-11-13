@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 36 THEN
-    RAISE EXCEPTION 'Expected 36 public tables, found %', table_count;
+  IF table_count <> 48 THEN
+    RAISE EXCEPTION 'Expected 48 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -22,14 +22,17 @@ DECLARE
     'membership_plans', 'payments', 'member_memberships', 'coach_requests',
     'coach_relationships', 'coach_termination_requests', 'coach_transfer_history',
     'gym_profile', 'equipment', 'exercises', 'training_plans',
-    'training_plan_days', 'training_plan_exercises',
-    'training_plan_day_meals', 'nutrition_guides',
+    'training_plan_days', 'training_plan_exercises', 'nutrition_guides',
     'training_sessions', 'media_assets', 'workout_logs',
     'workout_log_exercises', 'meal_logs', 'body_measurements',
     'progress_photos', 'progress_comments', 'conversations',
     'conversation_participants', 'messages', 'call_logs', 'ai_conversations',
     'ai_messages', 'admin_audit_logs', 'auth_login_rate_limits',
-    'auth_password_reset_rate_limits'
+    'auth_password_reset_rate_limits', 'member_journal_entries',
+    'member_journal_photos', 'coach_package_plans', 'coach_weekly_slots',
+    'coach_payment_holds', 'coach_entitlements', 'coach_bookings', 'coach_slot_blocks',
+    'coach_notifications', 'nutrition_foods', 'training_plan_day_meals',
+    'gym_checkin_code', 'gym_visits'
   ];
   missing_tables text[];
 BEGIN
@@ -54,7 +57,11 @@ DECLARE
     'fk_workout_plan_member',
     'fk_message_sender_participant',
     'fk_participant_read_cursor',
-    'fk_ai_reply_conversation'
+    'fk_ai_reply_conversation', 'uq_member_journal_day',
+    'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner',
+    'ck_direct_conversation_pair', 'ck_coach_package_fixed_terms',
+    'ex_coach_weekly_slot_overlap', 'uq_coach_hold_request',
+    'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap'
   ];
   missing_constraints text[];
 BEGIN
@@ -89,6 +96,13 @@ BEGIN
        AND indexname = 'ex_memberships_no_overlap'
   ) THEN
     RAISE EXCEPTION 'Missing membership overlap exclusion constraint';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_direct_conversation_pair'
+  ) THEN
+    RAISE EXCEPTION 'Missing direct conversation pair index';
   END IF;
 END
 $$;

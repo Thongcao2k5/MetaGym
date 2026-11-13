@@ -98,6 +98,12 @@ class ApiClient {
     );
   }
 
+  Future<ApiResult<T>> put<T>(
+    String path, {
+    required ApiDecoder<T> decode,
+    required Object body,
+  }) => _request('PUT', path, decode: decode, body: body);
+
   Future<ApiResult<T>> patch<T>(
     String path, {
     required ApiDecoder<T> decode,

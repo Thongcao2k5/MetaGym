@@ -43,7 +43,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
     let secondCoachId;
     let planId;
     let paymentId;
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     try {
       await database.query(
         `INSERT INTO users (id, email, password_hash, role, full_name)
@@ -210,13 +210,13 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data.coachId, coachId);
       assert.equal((await request(app, '/coach/members', token(coachId, 'COACH'))).body.data.length, 1);
       assert.equal((await request(app, `/coach/members/${memberId}/progress/summary`,
-        token(coachId, 'COACH'))).body.data.mealCount, 1);
+        token(coachId, 'COACH'))).status, 403);
       assert.equal((await request(app, `/coach/members/${memberId}/body-measurements`,
-        token(coachId, 'COACH'))).body.data.length, 1);
+        token(coachId, 'COACH'))).status, 403);
       result = await request(app, '/coach/progress-comments', token(coachId, 'COACH'),
         'POST', { memberId, measurementId, content: 'Good progress' });
-      assert.equal(result.status, 201);
-      assert.equal((await request(app, '/progress-comments', memberToken)).body.data.length, 1);
+      assert.equal(result.status, 403);
+      assert.equal((await request(app, '/progress-comments', memberToken)).body.data.length, 0);
       assert.equal((await request(app, '/progress-comments', adminToken)).status, 403);
       const conversation = await database.query(
         `SELECT c.id FROM conversations c JOIN coach_relationships r
@@ -273,15 +273,14 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data.coachId, secondCoachId);
       assert.equal((await request(app, '/admin/coach-transfers', adminToken)).body.data.length, 1);
       assert.equal((await request(app, `/coach/members/${memberId}/workout-logs`,
-        token(coachId, 'COACH'))).status, 404);
+        token(coachId, 'COACH'))).status, 403);
       assert.equal((await request(app, `/coach/members/${memberId}/progress/summary`,
-        token(coachId, 'COACH'))).status, 404);
+        token(coachId, 'COACH'))).status, 403);
       const transferredLogs = await request(app, `/coach/members/${memberId}/workout-logs`,
         token(secondCoachId, 'COACH'));
-      assert.equal(transferredLogs.status, 200);
-      assert.equal(transferredLogs.body.data.some((entry) => entry.id === workoutId), true);
+      assert.equal(transferredLogs.status, 403);
       assert.equal((await request(app, `/coach/members/${memberId}/progress/summary`,
-        token(secondCoachId, 'COACH'))).status, 200);
+        token(secondCoachId, 'COACH'))).status, 403);
       assert.equal((await request(app, '/workout-logs', memberToken)).body.data
         .some((entry) => entry.id === workoutId), true);
 

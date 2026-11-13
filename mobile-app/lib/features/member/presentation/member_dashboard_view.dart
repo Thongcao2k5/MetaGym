@@ -13,8 +13,10 @@ import 'package:meta_gym_app/features/member/presentation/member_explore_article
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
+import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
@@ -115,6 +117,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     MemberSessionsService? sessionsService;
     MembershipService? membershipService;
     MemberProgressService? progressService;
+    final journalService = context.read<MemberJournalService?>();
 
     try {
       coachingService = context.read<MemberCoachingService>();
@@ -186,6 +189,20 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     if (sessionsService != null) {
       try {
         sessions = await sessionsService.getMine();
+        if (sessionsService is MemberSessionsApi) {
+          final bookings = await CoachV2Api(sessionsService.client).list('/coach-bookings');
+          sessions = [
+            ...sessions,
+            for (final booking in bookings)
+              TrainingSession(
+                id: booking['id'] as String,
+                title: 'Buổi tập với Coach',
+                scheduledStartAt: booking['startsAt'] as String,
+                scheduledEndAt: booking['endsAt'] as String,
+                status: booking['status'] == 'BOOKED' ? 'SCHEDULED' : booking['status'] as String,
+              ),
+          ];
+        }
       } catch (error) {
         firstError ??= error;
       }
@@ -199,7 +216,15 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       }
     }
 
-    if (progressService != null) {
+    if (journalService is MemberJournalApi) {
+      try {
+        progressSummary = ProgressSummary(
+          workoutCount: await journalService.getCount(),
+          mealCount: 0,
+          progressPhotoCount: 0,
+        );
+      } catch (_) {}
+    } else if (progressService != null) {
       try {
         progressSummary = await progressService.getSummary();
       } catch (_) {}
@@ -1018,7 +1043,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       );
     }
     final upcomingSessions = _sessions
-        .where((session) => session.status == 'SCHEDULED')
+        .where((session) => session.status == 'SCHEDULED' &&
+          DateTime.parse(session.scheduledStartAt).isAfter(DateTime.now()))
         .length;
     final coachSessionLabel = widget.previewMode
         ? '6 buổi'
@@ -1514,7 +1540,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           Expanded(
             child: _buildLiquidGlassCard(
               child: InkWell(
-                onTap: () => _pushAndReload('/member/features/progress'),
+                onTap: () => _pushAndReload('/member/features/workouts'),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -1860,7 +1886,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 color: Colors.transparent,
                 child: Column(
                   children: [
-                    for (final destination in memberDestinations)
+                    for (final destination in memberDestinations.where(
+                      (item) => !const {'UI15', 'UI17', 'UI18', 'UI19'}.contains(item.task),
+                    ))
                       ListTile(
                         title: Text(
                           destination.title,

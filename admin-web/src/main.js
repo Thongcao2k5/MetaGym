@@ -1,6 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Chart from 'chart.js/auto';
+import QRCode from 'qrcode';
 import './style.css';
 
 const root = document.querySelector('#app');
@@ -40,9 +41,9 @@ function notice(text, kind = 'success') {
 
 function layout(section, content) {
   const links = [ ['dashboard', 'Tổng quan'], ['members', 'Member'],
-    ['coaches', 'Coach'], ['plans', 'Gói tập'], ['payments', 'Thanh toán'],
+    ['coaches', 'Coach'], ['plans', 'Gói tập'], ['coach-packages', 'Gói Coach'], ['payments', 'Thanh toán'],
     ['relationships', 'Quan hệ'], ['terminations', 'Yêu cầu kết thúc'],
-    ['gym', 'Phòng gym'], ['equipment', 'Thiết bị'], ['profile', 'Hồ sơ'] ];
+    ['gym', 'Phòng gym'], ['equipment', 'Thiết bị'], ['nutrition-foods', 'Thực phẩm'], ['profile', 'Hồ sơ'] ];
   root.innerHTML = `<div class="admin-shell"><aside class="admin-sidebar bg-dark text-white p-3">
     <a class="brand text-white text-decoration-none" href="#/admin/dashboard">META GYM <span>ADMIN</span></a>
     <nav class="nav flex-column mt-4" aria-label="Quản trị">${links.map(([id, label]) =>
@@ -154,6 +155,80 @@ async function accounts(role, page = 1) {
   });
 }
 
+async function nutritionFoods() {
+  const { data } = await api('/admin/nutrition-foods');
+  const entries = [...data, { name: '', kcalPer100g: '', active: true }];
+  layout('nutrition-foods', `<div class="row g-3">${entries.map((row, index) => `
+    <div class="col-md-6 col-xl-4"><form class="card card-body food-entry" data-index="${index}">
+      <h2 class="h5">${row.id ? esc(row.name) : 'Thêm thực phẩm'}</h2>
+      <label class="form-label">Tên<input class="form-control" name="name" maxlength="150" value="${esc(row.name)}" required></label>
+      <label class="form-label">kcal mỗi 100 g<input class="form-control" name="kcal" type="number" min="0" max="1000" step="0.01" value="${esc(row.kcalPer100g)}" required></label>
+      <label class="form-check"><input class="form-check-input" type="checkbox" name="active" ${row.active ? 'checked' : ''}> Cho phép chọn</label>
+      <button class="btn btn-primary mt-2">Lưu</button>
+    </form></div>`).join('')}</div>`);
+  document.querySelectorAll('.food-entry').forEach((form) => {
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      const row = entries[Number(form.dataset.index)];
+      const values = new FormData(form);
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const { data: saved } = await api(row.id ? `/admin/nutrition-foods/${encodeURIComponent(row.id)}` : '/admin/nutrition-foods',
+          row.id ? 'PATCH' : 'POST', {
+            name: values.get('name').trim(), kcalPer100g: Number(values.get('kcal')), active: values.has('active'),
+          });
+        entries[Number(form.dataset.index)] = saved;
+        form.querySelector('h2').textContent = saved.name;
+        if (!row.id && location.hash === '#/admin/nutrition-foods') await nutritionFoods();
+        notice('Đã lưu thực phẩm.');
+      } catch (error) {
+        notice(error.message, 'danger');
+      } finally {
+        button.disabled = false;
+      }
+    };
+  });
+}
+
+async function coachPackages() {
+  const { data } = await api('/admin/coach-packages');
+  layout('coach-packages', `<div class="row g-3">${data.map((row, index) => `
+    <div class="col-md-6 col-xl-4"><form class="card card-body coach-package" data-index="${index}">
+      <h2 class="h5">${esc(row.name)}</h2>
+      <p>${esc(row.sessionCount)} buổi · ${esc(row.durationDays)} ngày</p>
+      <label class="form-label">Giá (VNĐ)
+        <input class="form-control" name="price" type="number" min="0" max="${Number.MAX_SAFE_INTEGER}" step="1" value="${esc(row.price)}" required>
+      </label>
+      <label class="form-label">Trạng thái
+        <select class="form-select" name="status">
+          <option value="ACTIVE" ${row.status === 'ACTIVE' ? 'selected' : ''}>Đang bán</option>
+          <option value="INACTIVE" ${row.status === 'INACTIVE' ? 'selected' : ''}>Ngừng bán</option>
+        </select>
+      </label>
+      <button class="btn btn-primary mt-2">Lưu gói</button>
+    </form></div>`).join('')}</div>`);
+  document.querySelectorAll('.coach-package').forEach((form) => {
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      const values = new FormData(form);
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const { code } = data[Number(form.dataset.index)];
+        await api(`/admin/coach-packages/${encodeURIComponent(code)}`, 'PATCH', {
+          price: Number(values.get('price')), status: values.get('status'),
+        });
+        notice('Đã lưu gói Coach.');
+      } catch (error) {
+        notice(error.message, 'danger');
+      } finally {
+        button.disabled = false;
+      }
+    };
+  });
+}
+
 async function plans() {
   const { data } = await api('/admin/membership-plans?pageSize=100');
   layout('plans', `<button id="create" class="btn btn-success mb-3">Tạo gói</button>${table(['Tên', 'Giá', 'Ngày', 'Trạng thái', ''], data.map((row) =>
@@ -255,7 +330,28 @@ async function gym() {
   const { data } = await api('/gym-profile');
   layout('gym', `<form id="gym-form" class="card card-body"><label class="form-label">Tên phòng gym<input class="form-control" name="name" value="${esc(data.name)}" required></label>
     <label class="form-label">Địa chỉ<input class="form-control" name="address" value="${esc(data.address)}" required></label>
-    <button class="btn btn-success align-self-start">Lưu</button></form>`);
+    <button class="btn btn-success align-self-start">Lưu</button></form>
+    <section class="card card-body mt-3" id="checkin-print"><h2 class="h5">Mã QR điểm danh tại quầy</h2>
+      <p class="text-secondary">In mã này và đặt tại quầy. Mỗi hội viên có gói tập còn hiệu lực quét để ghi nhận một ngày đến gym.</p>
+      <div id="checkin-qr" aria-live="polite">Đang tải mã…</div>
+      <div class="d-flex gap-2 mt-3 no-print"><button id="print-checkin" class="btn btn-primary" disabled>In mã QR</button>
+      <button id="rotate-checkin" class="btn btn-outline-danger">Đổi mã</button></div>
+      <p class="small text-secondary mt-2 no-print">Đổi mã sẽ làm các bản in cũ hết hiệu lực.</p></section>`);
+  async function showCode(payload) {
+    const dataUrl = await QRCode.toDataURL(payload, { width: 320, margin: 2,
+      errorCorrectionLevel: 'M', color: { dark: '#0F1115', light: '#FFFFFF' } });
+    document.querySelector('#checkin-qr').innerHTML = `<img src="${dataUrl}" alt="Mã QR điểm danh Meta Gym" width="320" height="320"><p class="fw-semibold mt-2">${esc(data.name)}</p><p>${esc(data.address)}</p>`;
+    document.querySelector('#print-checkin').disabled = false;
+  }
+  try { await showCode((await api('/admin/gym-checkin-code')).data.payload); }
+  catch (error) { document.querySelector('#checkin-qr').textContent = error.message; }
+  document.querySelector('#print-checkin').onclick = () => window.print();
+  document.querySelector('#rotate-checkin').onclick = async () => {
+    if (!confirm('Đổi mã sẽ vô hiệu mọi bản đã in. Tiếp tục?')) return;
+    try { await showCode((await api('/admin/gym-checkin-code/rotate', 'POST')).data.payload);
+      notice('Đã đổi mã. Hãy in bản mới.'); }
+    catch (error) { notice(error.message, 'danger'); }
+  };
   document.querySelector('#gym-form').onsubmit = async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     try { await api('/admin/gym-profile', 'PATCH', { name: form.get('name'), address: form.get('address') });
@@ -314,7 +410,8 @@ async function route() {
     }
     chart?.destroy(); chart = null;
     const pages = { dashboard, members: () => accounts('MEMBER'),
-      coaches: () => accounts('COACH'), plans, payments, relationships,
+      coaches: () => accounts('COACH'), plans, 'coach-packages': coachPackages, payments, relationships,
+      'nutrition-foods': nutritionFoods,
       terminations, gym, equipment, profile };
     if (!pages[section]) { location.hash = '/admin/dashboard'; return; }
     root.innerHTML = '<div class="p-5 text-secondary" role="status">Đang tải…</div>';

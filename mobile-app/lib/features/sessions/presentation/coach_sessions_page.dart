@@ -7,9 +7,15 @@ import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:provider/provider.dart';
 
 class CoachSessionsPage extends StatefulWidget {
-  const CoachSessionsPage({this.service, this.membersService, super.key});
+  const CoachSessionsPage({
+    this.service,
+    this.membersService,
+    this.coachBooking,
+    super.key,
+  });
   final CoachSessionsService? service;
   final CoachMembersService? membersService;
+  final Widget? coachBooking;
 
   @override
   State<CoachSessionsPage> createState() => _CoachSessionsPageState();
@@ -126,8 +132,20 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Quản lý buổi tập')),
-    floatingActionButton: _loading || !_members.any((m) => m.status == 'ACTIVE')
+    appBar: AppBar(
+      title: const Text('Quản lý buổi tập'),
+      actions: [
+        if (widget.coachBooking != null)
+          IconButton(
+            tooltip: 'Lịch Coach',
+            icon: const Icon(Icons.event_available_outlined),
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => widget.coachBooking!),
+            ),
+          ),
+      ],
+    ),
+    floatingActionButton: widget.coachBooking != null || _loading || !_members.any((m) => m.status == 'ACTIVE')
         ? null
         : FloatingActionButton.extended(
             onPressed: () => _edit(),
@@ -162,11 +180,11 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                             subtitle: Text(
                               '${_memberName(session.memberId)} · ${formatSessionLocalTime(session.scheduledStartAt)} · ${session.statusLabel}',
                             ),
-                            onTap: session.status == 'SCHEDULED'
+                            onTap: widget.coachBooking == null && session.status == 'SCHEDULED'
                                 ? () => _edit(session)
                                 : null,
                           ),
-                          if (session.status == 'SCHEDULED')
+                          if (widget.coachBooking == null && session.status == 'SCHEDULED')
                             Wrap(
                               spacing: 4,
                               children: [

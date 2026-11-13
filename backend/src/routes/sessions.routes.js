@@ -4,6 +4,20 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from './users.routes.js';
+import { hasCoachCapacity } from '../services/coach-capacity.js';
+
+async function preservesCoachCommitments(client, coachId, startsAt, endsAt) {
+  const { rows: [state] } = await client.query(
+    `SELECT EXISTS (
+      SELECT 1 FROM coach_entitlements WHERE coach_id = $1 AND status IN ('ACTIVE', 'QUEUED')
+    ) AS has_packages, EXISTS (
+      SELECT 1 FROM coach_bookings WHERE coach_id = $1 AND status IN ('BOOKED', 'COMPLETED')
+        AND starts_at < COALESCE($3::timestamptz, $2::timestamptz + interval '90 minutes')
+        AND ends_at > $2::timestamptz
+    ) AS overlaps`, [coachId, startsAt, endsAt],
+  );
+  return !state.overlaps && (!state.has_packages || await hasCoachCapacity(client, coachId));
+}
 
 const uuid = z.uuid();
 const input = z.strictObject({
@@ -89,6 +103,7 @@ export function createSessionsRouter({ database, jwtSecret }) {
     if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
     try {
       await client.query('BEGIN');
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.authUser.id]);
       const relationship = await client.query(
         `SELECT id FROM coach_relationships WHERE coach_id = $1 AND member_id = $2
          AND status = 'ACTIVE' FOR UPDATE`, [request.authUser.id, parsed.data.memberId],
@@ -107,6 +122,11 @@ export function createSessionsRouter({ database, jwtSecret }) {
         [id, relationship.rows[0].id, data.memberId, data.title,
           data.scheduledStartAt, data.scheduledEndAt ?? null, data.notes ?? null],
       );
+      if (!await preservesCoachCommitments(client, request.authUser.id,
+        data.scheduledStartAt, data.scheduledEndAt ?? null)) {
+        await client.query('ROLLBACK');
+        return fail(response, 409, 'CAPACITY_UNAVAILABLE', 'Thay đổi ảnh hưởng lịch Coach đã cam kết');
+      }
       await client.query('COMMIT');
       return response.status(201).json({ data: view(result.rows[0]) });
     } catch {
@@ -128,6 +148,7 @@ export function createSessionsRouter({ database, jwtSecret }) {
     if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
     try {
       await client.query('BEGIN');
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [request.authUser.id]);
       const found = await client.query(
         `SELECT s.*, r.coach_id, r.status AS relationship_status
          FROM training_sessions s JOIN coach_relationships r ON r.id = s.relationship_id
@@ -167,6 +188,11 @@ export function createSessionsRouter({ database, jwtSecret }) {
           data.status === 'COMPLETED' ? new Date() : null,
           data.status === 'MEMBER_ABSENT' ? new Date() : null, row.id],
       );
+      if (result.rows[0].status === 'SCHEDULED' &&
+        !await preservesCoachCommitments(client, request.authUser.id, start, end)) {
+        await client.query('ROLLBACK');
+        return fail(response, 409, 'CAPACITY_UNAVAILABLE', 'Thay đổi ảnh hưởng lịch Coach đã cam kết');
+      }
       await client.query('COMMIT');
       return response.json({ data: view(result.rows[0]) });
     } catch {

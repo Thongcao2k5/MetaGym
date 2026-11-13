@@ -29,15 +29,6 @@ async function allowed(database, user, media) {
     );
     return found.rows.length > 0;
   }
-  if (['PROGRESS_PHOTO', 'MEAL_PHOTO'].includes(media.purpose) &&
-    user.role === 'COACH') {
-    const found = await database.query(
-      `SELECT 1 FROM coach_relationships WHERE member_id = $1 AND coach_id = $2
-       AND status IN ('ACTIVE', 'PAUSED') LIMIT 1`,
-      [media.owner_id, user.id],
-    );
-    return found.rows.length > 0;
-  }
   return false;
 }
 

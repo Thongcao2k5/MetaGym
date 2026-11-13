@@ -144,7 +144,11 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
   Future<void> _openPlan(String id) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => CoachPlanDetailPage(id: id, service: widget.service),
+        builder: (_) => CoachPlanDetailPage(
+          id: id,
+          service: widget.service,
+          memberId: widget.member.memberId,
+        ),
       ),
     );
     if (mounted) await _load();
@@ -184,13 +188,19 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
                   ),
                   TextButton(onPressed: _load, child: const Text('Thử lại')),
                 ] else ...[
-                  FilledButton(
-                    onPressed: _create,
-                    child: const Text('Tạo giáo trình'),
-                  ),
+                  if (widget.service is! CoachTrainingApi ||
+                      !_plans.any((plan) => plan.status == 'ACTIVE'))
+                    FilledButton(
+                      onPressed: _create,
+                      child: const Text('Tạo giáo trình'),
+                    ),
                   if (_plans.isEmpty)
                     const ListTile(title: Text('Chưa có giáo trình nào.')),
-                  for (final plan in _plans)
+                  for (final plan in _plans.where(
+                    (plan) =>
+                        widget.service is! CoachTrainingApi ||
+                        plan.status != 'DRAFT',
+                  ))
                     ListTile(
                       title: Text(plan.title),
                       subtitle: Text(
