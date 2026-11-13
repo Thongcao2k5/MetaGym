@@ -22,6 +22,7 @@ Chạy các file `*.up.sql` theo thứ tự:
 6. `0006_auth_rate_limits.up.sql`
 7. `0007_password_reset_limits.up.sql`
 8. `0008_member_journal.up.sql`
+9. `0009_direct_conversations.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 

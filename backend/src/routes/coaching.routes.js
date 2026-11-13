@@ -49,6 +49,29 @@ async function activeMembership(client, memberId) {
   return result.rows.length === 1;
 }
 
+async function ensureConversation(client, memberId, coachId, relationshipId) {
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1::text), hashtext($2::text))',
+    [memberId, coachId]);
+  const existing = await client.query(
+    `SELECT c.id FROM conversations c
+     LEFT JOIN coach_relationships r ON r.id = c.relationship_id
+     WHERE COALESCE(c.member_id, r.member_id) = $1
+       AND COALESCE(c.coach_id, r.coach_id) = $2 LIMIT 1`,
+    [memberId, coachId],
+  );
+  if (existing.rows.length) return existing.rows[0].id;
+  const id = randomUUID();
+  await client.query(
+    `INSERT INTO conversations (id, relationship_id, member_id, coach_id)
+     VALUES ($1, $2, $3, $4)`, [id, relationshipId, memberId, coachId],
+  );
+  await client.query(
+    `INSERT INTO conversation_participants (conversation_id, user_id)
+     VALUES ($1, $2), ($1, $3)`, [id, memberId, coachId],
+  );
+  return id;
+}
+
 export function createCoachingRouter({ database, jwtSecret }) {
   const router = Router();
   router.use(createAuthentication({ database, jwtSecret }));
@@ -270,16 +293,8 @@ export function createCoachingRouter({ database, jwtSecret }) {
          VALUES ($1, $2, $3, $4)`,
         [relationshipId, item.member_id, request.authUser.id, item.id],
       );
-      const conversationId = randomUUID();
-      await client.query(
-        `INSERT INTO conversations (id, relationship_id) VALUES ($1, $2)`,
-        [conversationId, relationshipId],
-      );
-      await client.query(
-        `INSERT INTO conversation_participants (conversation_id, user_id)
-         VALUES ($1, $2), ($1, $3)`,
-        [conversationId, item.member_id, request.authUser.id],
-      );
+      await ensureConversation(client, item.member_id, request.authUser.id,
+        relationshipId);
       await client.query('COMMIT');
       return response.json({ data: {
         request: requestView({ ...item, status: 'ACCEPTED', decided_at: new Date() }),
@@ -658,16 +673,7 @@ export function createCoachingRouter({ database, jwtSecret }) {
         [newId, memberId, newCoachId, paused ? 'PAUSED' : 'ACTIVE',
           paused ? new Date() : null, paused ? old.pause_reason : null],
       );
-      const conversationId = randomUUID();
-      await client.query(
-        `INSERT INTO conversations (id, relationship_id) VALUES ($1, $2)`,
-        [conversationId, newId],
-      );
-      await client.query(
-        `INSERT INTO conversation_participants (conversation_id, user_id)
-         VALUES ($1, $2), ($1, $3)`,
-        [conversationId, memberId, newCoachId],
-      );
+      await ensureConversation(client, memberId, newCoachId, newId);
       await client.query(
         `INSERT INTO coach_transfer_history
          (id, member_id, old_relationship_id, new_relationship_id,

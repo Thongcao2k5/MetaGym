@@ -30,12 +30,18 @@ function view(row) {
 
 async function conversation(database, relationshipId, userId, lock = false) {
   const found = await database.query(
-    `SELECT c.id, c.relationship_id, r.status, r.member_id, r.coach_id
-     FROM conversations c JOIN coach_relationships r ON r.id = c.relationship_id
+    `SELECT c.id, c.relationship_id, COALESCE(r.status, 'NONE') AS status,
+            COALESCE(c.member_id, r.member_id) AS member_id,
+            COALESCE(c.coach_id, r.coach_id) AS coach_id
+     FROM conversations c LEFT JOIN coach_relationships r ON r.id = c.relationship_id
      JOIN conversation_participants p ON p.conversation_id = c.id
-     WHERE c.relationship_id = $1 AND p.user_id = $2
-     ${lock ? 'FOR UPDATE OF c, r' : ''}`, [relationshipId, userId],
+     WHERE (c.id = $1 OR c.relationship_id = $1) AND p.user_id = $2
+     ${lock ? 'FOR UPDATE OF c' : ''}`, [relationshipId, userId],
   );
+  if (lock && found.rows[0]?.relationship_id) {
+    await database.query('SELECT 1 FROM coach_relationships WHERE id = $1 FOR UPDATE',
+      [found.rows[0].relationship_id]);
+  }
   return found.rows[0];
 }
 
@@ -45,6 +51,63 @@ export function createMessagingRouter({ database, jwtSecret }) {
   router.use('/conversations', (request, response, next) =>
     ['MEMBER', 'COACH'].includes(request.authUser.role) ? next()
       : fail(response, 403, 'FORBIDDEN', 'Chỉ Member và Coach được nhắn tin'));
+
+  router.post('/conversations', async (request, response) => {
+    const member = request.authUser.role === 'MEMBER';
+    const parsed = z.strictObject(member ? { coachId: uuid } : { memberId: uuid })
+      .safeParse(request.body);
+    if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Người nhận không hợp lệ');
+    const memberId = member ? request.authUser.id : parsed.data.memberId;
+    const coachId = member ? parsed.data.coachId : request.authUser.id;
+    const client = await database.connect().catch(() => null);
+    if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
+    try {
+      await client.query('BEGIN');
+      const target = await client.query(
+        `SELECT 1 FROM users WHERE id = $1 AND role = $2 AND status = 'ACTIVE'`,
+        [member ? coachId : memberId, member ? 'COACH' : 'MEMBER'],
+      );
+      if (!target.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy người nhận');
+      }
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1::text), hashtext($2::text))',
+        [memberId, coachId]);
+      const existing = await client.query(
+        `SELECT c.id, c.relationship_id, COALESCE(r.status, 'NONE') AS status,
+                COALESCE(c.member_id, r.member_id) AS member_id,
+                COALESCE(c.coach_id, r.coach_id) AS coach_id,
+                c.last_message_at
+         FROM conversations c LEFT JOIN coach_relationships r ON r.id = c.relationship_id
+         WHERE COALESCE(c.member_id, r.member_id) = $1
+           AND COALESCE(c.coach_id, r.coach_id) = $2
+         ORDER BY c.last_message_at DESC NULLS LAST, c.created_at DESC LIMIT 1`,
+        [memberId, coachId],
+      );
+      if (existing.rows.length) {
+        await client.query('COMMIT');
+        const row = existing.rows[0];
+        return response.json({ data: { id: row.id, relationshipId: row.relationship_id,
+          status: row.status, memberId: row.member_id, coachId: row.coach_id,
+          lastMessageAt: row.last_message_at, unreadCount: 0 } });
+      }
+      const id = randomUUID();
+      await client.query(
+        `INSERT INTO conversations (id, member_id, coach_id) VALUES ($1, $2, $3)`,
+        [id, memberId, coachId],
+      );
+      await client.query(
+        `INSERT INTO conversation_participants (conversation_id, user_id)
+         VALUES ($1, $2), ($1, $3)`, [id, memberId, coachId],
+      );
+      await client.query('COMMIT');
+      return response.status(201).json({ data: { id, relationshipId: null, status: 'NONE',
+        memberId, coachId, lastMessageAt: null, unreadCount: 0 } });
+    } catch {
+      await client.query('ROLLBACK').catch(() => {});
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không mở được cuộc trò chuyện');
+    } finally { client.release(); }
+  });
 
   router.get('/conversations', async (request, response) => {
     const parsed = paging.safeParse(request.query);
@@ -56,15 +119,17 @@ export function createMessagingRouter({ database, jwtSecret }) {
         [request.authUser.id],
       );
       const result = await database.query(
-        `SELECT c.id, c.relationship_id, c.last_message_at, r.status,
-                r.member_id, r.coach_id,
+        `SELECT c.id, c.relationship_id, c.last_message_at,
+                COALESCE(r.status, 'NONE') AS status,
+                COALESCE(c.member_id, r.member_id) AS member_id,
+                COALESCE(c.coach_id, r.coach_id) AS coach_id,
                 (SELECT count(*)::int FROM messages m
                  LEFT JOIN messages last_read ON last_read.id = p.last_read_message_id
                  WHERE m.conversation_id = c.id AND m.sender_id <> $1
                  AND (last_read.id IS NULL OR
                       (m.sent_at, m.id) > (last_read.sent_at, last_read.id))) AS unread_count
          FROM conversation_participants p JOIN conversations c ON c.id = p.conversation_id
-         JOIN coach_relationships r ON r.id = c.relationship_id
+         LEFT JOIN coach_relationships r ON r.id = c.relationship_id
          WHERE p.user_id = $1
          ORDER BY c.last_message_at DESC NULLS LAST, c.id DESC
          LIMIT $2 OFFSET $3`, [request.authUser.id, pageSize, (page - 1) * pageSize],

@@ -24,7 +24,7 @@ test('existing Member–Coach chat accepts messages while paused and ended', asy
   const messages = [];
   const client = {
     async query(sql, values) {
-      if (sql.includes('FROM conversations c JOIN coach_relationships r')) {
+      if (sql.includes('FROM conversations c LEFT JOIN coach_relationships r')) {
         return { rows: [{ id: conversationId, relationship_id: relationshipId,
           status, member_id: memberId, coach_id: coachId }] };
       }

@@ -38,7 +38,7 @@ void main() {
       expect(find.text('2 tin chưa đọc'), findsOneWidget);
       await tester.tap(find.text('Coach coach-1'));
       await tester.pumpAndSettle();
-      expect(find.text('Quan hệ relationship-1'), findsOneWidget);
+      expect(find.text('Trò chuyện riêng tư'), findsOneWidget);
       expect(find.textContaining('tiếp tục nhắn tin'), findsOneWidget);
       expect(find.text('Gửi'), findsOneWidget);
       expect(find.text('Tin nhắn cũ'), findsOneWidget);
@@ -225,6 +225,10 @@ class _Fixture implements MessagingService {
   int imageSends = 0;
   int imageUrlLoads = 0;
   final _pendingSend = Completer<ChatMessage>();
+
+  @override
+  Future<Conversation> startConversation({String? coachId, String? memberId}) async =>
+      throw UnimplementedError();
 
   @override
   Future<String> uploadImage(SelectedProgressImage image) async {

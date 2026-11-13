@@ -221,7 +221,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     });
     try {
       final messages = await widget.service.getMessages(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         1,
       );
       if (mounted) {
@@ -247,7 +247,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       if (message.id == _lastReadId) return;
       try {
         await widget.service.markRead(
-          widget.conversation.relationshipId,
+          widget.conversation.messageKey,
           message.id,
         );
         _lastReadId = message.id;
@@ -263,7 +263,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     _polling = true;
     try {
       final latest = await widget.service.getMessages(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         1,
       );
       if (!mounted) return;
@@ -289,7 +289,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     });
     try {
       final messages = await widget.service.getMessages(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         _page + 1,
       );
       if (mounted) {
@@ -325,7 +325,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     });
     try {
       final message = await widget.service.sendText(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         content,
         _draftMessageId!,
       );
@@ -376,7 +376,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     try {
       _pendingMediaId ??= await widget.service.uploadImage(_pendingImage!);
       final message = await widget.service.sendImage(
-        widget.conversation.relationshipId,
+        widget.conversation.messageKey,
         _pendingMediaId!,
         _pendingImageMessageId!,
       );
@@ -409,10 +409,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(
-                'Quan hệ ${widget.conversation.relationshipId}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('Trò chuyện riêng tư',
+                style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               const Text('Bạn có thể tiếp tục nhắn tin sau khi gói Coach kết thúc.'),
               if (_loading)

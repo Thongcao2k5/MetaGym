@@ -6,8 +6,35 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_detail_page.dart';
+import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
+import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
 
 void main() {
+  testWidgets('Member can open a direct chat even when Coach has no slot',
+      (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final messaging = _DirectChatFixture();
+    await tester.pumpWidget(MaterialApp(home: CoachDetailPage(
+      coachId: 'coach-2', service: _CoachFixture(),
+      messagingService: messaging, currentUserId: 'member-1',
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('Đã hết suất'), findsOneWidget);
+    await tester.tap(find.text('Nhắn tin với Coach'));
+    await tester.pumpAndSettle();
+    expect(messaging.coachId, 'coach-2');
+    expect(messaging.messageKey, 'direct-chat-1');
+    expect(find.text('Trò chuyện riêng tư'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('lists coaches, opens detail and sends a trimmed message', (
     tester,
   ) async {
@@ -93,6 +120,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Đã có Coach hoặc yêu cầu đang chờ'), findsOneWidget);
   });
+}
+
+class _DirectChatFixture implements MessagingService {
+  String? coachId;
+  String? messageKey;
+
+  @override
+  Future<Conversation> startConversation({String? coachId, String? memberId}) async {
+    this.coachId = coachId;
+    return const Conversation(id: 'direct-chat-1', relationshipId: null,
+      memberId: 'member-1', coachId: 'coach-2', status: 'NONE', unreadCount: 0);
+  }
+
+  @override
+  Future<List<ChatMessage>> getMessages(String relationshipId, int page) async {
+    messageKey = relationshipId;
+    return const [];
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _CoachFixture implements CoachSelectionService {

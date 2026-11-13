@@ -55,7 +55,8 @@ DECLARE
     'fk_message_sender_participant',
     'fk_participant_read_cursor',
     'fk_ai_reply_conversation', 'uq_member_journal_day',
-    'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner'
+    'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner',
+    'ck_direct_conversation_pair'
   ];
   missing_constraints text[];
 BEGIN
@@ -90,6 +91,13 @@ BEGIN
        AND indexname = 'ex_memberships_no_overlap'
   ) THEN
     RAISE EXCEPTION 'Missing membership overlap exclusion constraint';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_direct_conversation_pair'
+  ) THEN
+    RAISE EXCEPTION 'Missing direct conversation pair index';
   END IF;
 END
 $$;
