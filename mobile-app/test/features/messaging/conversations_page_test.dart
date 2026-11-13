@@ -22,11 +22,11 @@ void main() {
       'lastMessageAt': null,
     });
     expect(item.unreadCount, 2);
-    expect(item.canSend, isFalse);
+    expect(item.canSend, isTrue);
   });
 
   testWidgets(
-    'opens the selected relationship and marks ended history read-only',
+    'opens an ended relationship and keeps messaging available',
     (tester) async {
       final service = _Fixture();
       await tester.pumpWidget(
@@ -39,7 +39,8 @@ void main() {
       await tester.tap(find.text('Coach coach-1'));
       await tester.pumpAndSettle();
       expect(find.text('Quan hệ relationship-1'), findsOneWidget);
-      expect(find.textContaining('chỉ đọc'), findsOneWidget);
+      expect(find.textContaining('tiếp tục nhắn tin'), findsOneWidget);
+      expect(find.text('Gửi'), findsOneWidget);
       expect(find.text('Tin nhắn cũ'), findsOneWidget);
     },
   );

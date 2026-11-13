@@ -127,11 +127,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             ? 'Coach ${item.coachId}'
                             : 'Hội viên ${item.memberId}',
                       ),
-                      subtitle: Text(
-                        item.canSend
-                            ? 'Đang hoạt động'
-                            : 'Quan hệ đã kết thúc · chỉ đọc',
-                      ),
+                      subtitle: const Text('Có thể nhắn tin'),
                       trailing: item.unreadCount > 0
                           ? Text('${item.unreadCount} tin chưa đọc')
                           : const Icon(Icons.chevron_right),
@@ -418,11 +414,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
-              Text(
-                widget.conversation.canSend
-                    ? 'Quan hệ đang hoạt động.'
-                    : 'Quan hệ đã kết thúc; lịch sử chỉ đọc.',
-              ),
+              const Text('Bạn có thể tiếp tục nhắn tin sau khi gói Coach kết thúc.'),
               if (_loading)
                 const Center(child: CircularProgressIndicator())
               else ...[

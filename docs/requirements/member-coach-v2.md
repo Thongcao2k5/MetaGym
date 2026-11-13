@@ -53,4 +53,5 @@ Mỗi bước chỉ được đánh dấu hoàn thành khi code, migration, test
 ## Trạng thái triển khai hiện tại
 
 - Bước 1 đang hoàn thiện: backend từ chối Coach/Admin đọc nhật ký, số đo, ảnh, biểu đồ và tạo nhận xét; Coach cũng không thể xin URL ảnh tiến trình của Member. Lối vào màn Coach xem tiến độ đã được gỡ khỏi Flutter. Test độc lập PostgreSQL chứng minh các quyền này; test PostgreSQL vẫn cần chạy trên database test biệt lập.
+- Bước 5 mới thực hiện một phần: cuộc trò chuyện đã tồn tại tiếp tục gửi và nhận sau khi quan hệ `PAUSED` hoặc `ENDED`; route và giao diện đã có test cho hai trạng thái này. Việc mở chat với Coach bất kỳ chưa có quan hệ cần migration và API khởi tạo cuộc trò chuyện độc lập với `relationship_id`.
 - Các bước 2–8 chưa triển khai. Những màn và API cũ khác vẫn phục vụ luồng V1, nên chưa thể coi ứng dụng là bản V2 hoặc dùng nó để chứng minh các quy tắc thanh toán, công suất và đặt lịch trong PDF.

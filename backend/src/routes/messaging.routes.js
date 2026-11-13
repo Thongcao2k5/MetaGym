@@ -130,10 +130,6 @@ export function createMessagingRouter({ database, jwtSecret }) {
         await client.query('COMMIT');
         return response.json({ data: view(old) });
       }
-      if (found.status !== 'ACTIVE') {
-        await client.query('ROLLBACK');
-        return fail(response, 403, 'RELATIONSHIP_INACTIVE', 'Quan hệ không hoạt động');
-      }
       if (data.messageType === 'IMAGE') {
         const media = await client.query(
           `SELECT 1 FROM media_assets WHERE id = $1 AND owner_id = $2

@@ -300,7 +300,7 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         memberId, title: 'Denied', scheduledStartAt: '2026-11-02T08:00:00+07:00',
       })).status, 403);
       assert.equal((await call(app, `/conversations/${relationshipId}/messages`, coach,
-        'POST', { ...message, clientMessageId: randomUUID() })).status, 403);
+        'POST', { ...message, clientMessageId: randomUUID() })).status, 201);
       assert.equal((await call(app, '/calls', member, 'POST', {
         relationshipId, callType: 'VIDEO',
       })).status, 404);

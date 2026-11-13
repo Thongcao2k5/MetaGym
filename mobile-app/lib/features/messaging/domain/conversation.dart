@@ -17,7 +17,7 @@ class Conversation {
   final int unreadCount;
   final String? lastMessageAt;
 
-  bool get canSend => status == 'ACTIVE';
+  bool get canSend => const {'ACTIVE', 'PAUSED', 'ENDED'}.contains(status);
 
   factory Conversation.fromJson(dynamic value) {
     final json = Map<String, dynamic>.from(value as Map);
