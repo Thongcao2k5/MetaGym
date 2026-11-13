@@ -52,10 +52,12 @@ Mỗi bước chỉ được đánh dấu hoàn thành khi code, migration, test
 
 ## Trạng thái triển khai hiện tại
 
+- Migration `0012` thêm API giữ suất 15 phút `POST /coach-payment-holds` (Member có gói Gym còn hạn, gửi mã Coach, mã gói và header `Idempotency-Key` dạng UUID) và hủy `POST /coach-payment-holds/:id/cancel`. Giữ suất ghi lại giá và điều khoản tại thời điểm bắt đầu, tự hết hiệu lực khi quá hạn. Số suất đã dùng trên danh sách Coach tính cả lượt giữ còn hạn. Đây là bước giữ suất cho lần thuê đầu tiên, chưa có xác nhận thanh toán, gói chờ hoặc tính công suất theo số buổi đã bán.
+
 - Bước 1 đang hoàn thiện: backend từ chối Coach/Admin đọc nhật ký, số đo, ảnh, biểu đồ và tạo nhận xét; Coach cũng không thể xin URL ảnh tiến trình của Member. Lối vào màn Coach xem tiến độ đã được gỡ khỏi Flutter. Các kiểm thử PostgreSQL đã chạy trên database test biệt lập.
 - Bước 5 đã có chat 1–1 độc lập: migration `0009` giữ lịch sử chat cũ, cho phép Member và Coach mở trò chuyện với nhau không cần quan hệ qua `POST /conversations`; trang hồ sơ Coach có nút nhắn tin kể cả khi hết suất. Gửi/đọc theo mã cuộc trò chuyện, vẫn chấp nhận mã quan hệ của luồng cũ. Quyền gọi tiếp tục dựa trên quan hệ `ACTIVE`. Cần kiểm tra lại các màn Coach sau khi các luồng thuê/đặt lịch V2 hoàn thành.
 - Bước 7 đã có luồng nhật ký V2 mới: migration `0008`, API `/journal`, màn Member và kiểm thử trên PostgreSQL. Một Member ghi tối đa một bản/ngày theo ngày server, có thành tích, ba số đo tùy chọn, tối đa ba ảnh; gói Gym hết hạn thì chỉ đọc. Dữ liệu `workout_logs` V1 chưa chuyển sang bảng mới; các trang nhật ký ăn, ảnh và tiến độ V1 vẫn còn trong menu/Home để tránh làm hỏng các tệp giao diện đang được thiết kế lại.
-- Bước 2 đã bắt đầu ở migration `0010`: ba gói Coach cố định 10/20/30 buổi và 30/60/90 ngày; giá do Admin cấu hình qua `/admin/coach-packages`, gói chỉ hiện công khai khi được kích hoạt. Chưa có giao dịch mua, giữ slot thanh toán, buổi đặt hoặc chụp giá tại thời điểm mua.
+- Migration `0010` thêm ba gói Coach cố định 10/20/30 buổi và 30/60/90 ngày. Admin cấu hình giá qua `/admin/coach-packages`. Danh sách công khai chỉ hiển thị các gói đã kích hoạt.
 - Migration `0011` và API `/coach/work-slots` lưu lịch làm việc cố định của Coach: tối thiểu sáu ngày/tuần, mỗi ngày bốn khung 90 phút liên tiếp; database ngăn khung chồng lấn. `GET /coaches/:coachId/work-slots` chỉ là lịch cố định, chưa phải danh sách giờ có thể đặt. Chưa có cơ chế khóa giờ hoặc bảo vệ công suất khi Coach sửa lịch sau khi đã bán gói.
 - Các phần còn lại của bước 2–4, bước 6 và phần còn lại của bước 7–8 chưa triển khai. Các màn và API cũ khác vẫn phục vụ luồng V1, nên chưa thể coi ứng dụng là bản V2 hoặc dùng nó để chứng minh các quy tắc thanh toán, công suất và đặt lịch trong PDF.
 
