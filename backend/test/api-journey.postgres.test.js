@@ -163,12 +163,10 @@ test('PostgreSQL API journey from registration through coaching and termination'
       assert.equal(progress.workoutCount, 1);
       assert.equal(progress.mealCount, 1);
       assert.equal(progress.progressPhotoCount, 1);
-      const comment = expected(await call(base, '/coach/progress-comments', coach,
+      assert.equal((await call(base, '/coach/progress-comments', coach,
         'POST', { memberId, workoutLogId: workout.id,
-          content: 'Good work on your first session.' }), 201);
-      assert.equal(comment.workoutLogId, workout.id);
-      assert.equal((expected(await call(base, '/progress-comments', member)))[0].id,
-        comment.id);
+          content: 'Good work on your first session.' })).status, 403);
+      assert.deepEqual(expected(await call(base, '/progress-comments', member)), []);
       assert.equal((await call(base, '/coach/progress-comments', member, 'POST',
         { memberId, content: 'Not a coach' })).status, 403);
 

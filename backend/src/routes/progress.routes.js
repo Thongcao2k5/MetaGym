@@ -140,15 +140,6 @@ async function activeMembership(database, memberId) {
   return result.rows.length > 0;
 }
 
-async function relatedCoach(database, coachId, memberId, active = false) {
-  const result = await database.query(
-    `SELECT id FROM coach_relationships WHERE coach_id = $1 AND member_id = $2
-     AND status ${active ? "= 'ACTIVE'" : "IN ('ACTIVE', 'PAUSED')"} LIMIT 1`,
-    [coachId, memberId],
-  );
-  return result.rows[0];
-}
-
 async function validMedia(database, mediaId, memberId, purpose) {
   if (!mediaId) return true;
   const result = await database.query(
@@ -221,16 +212,9 @@ export function createProgressRouter({ database, jwtSecret }) {
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được biểu đồ'); }
   });
 
-  router.get('/coach/members/:memberId/progress/summary', async (request, response) => {
-    if (request.authUser.role !== 'COACH') return fail(response, 403, 'FORBIDDEN', 'Chỉ Coach được xem');
-    if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
-    try {
-      if (!await relatedCoach(database, request.authUser.id, request.params.memberId)) {
-        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Member');
-      }
-      return response.json({ data: await summary(database, request.params.memberId) });
-    } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được tiến độ'); }
-  });
+  // The personal journal and its chart are private even from the current Coach.
+  router.get('/coach/members/:memberId/progress/summary', (_request, response) =>
+    fail(response, 403, 'FORBIDDEN', 'Nhật ký cá nhân chỉ Member được xem'));
 
   for (const config of types) {
     router.get(`/${config.path}`, async (request, response) => {
@@ -242,19 +226,8 @@ export function createProgressRouter({ database, jwtSecret }) {
       catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được nhật ký'); }
     });
 
-    router.get(`/coach/members/:memberId/${config.path}`, async (request, response) => {
-      if (request.authUser.role !== 'COACH') return fail(response, 403, 'FORBIDDEN', 'Chỉ Coach được xem');
-      if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
-      const parsed = paging.safeParse(request.query);
-      if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Phân trang không hợp lệ');
-      try {
-        if (!await relatedCoach(database, request.authUser.id, request.params.memberId)) {
-          return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Member');
-        }
-        return response.json(await list(database, config, request.params.memberId,
-          parsed.data.page, parsed.data.pageSize));
-      } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được nhật ký'); }
-    });
+    router.get(`/coach/members/:memberId/${config.path}`, (_request, response) =>
+      fail(response, 403, 'FORBIDDEN', 'Nhật ký cá nhân chỉ Member được xem'));
 
     router.post(`/${config.path}`, async (request, response) => {
       if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được ghi');
@@ -328,15 +301,6 @@ export function createProgressRouter({ database, jwtSecret }) {
             await client.query('ROLLBACK');
             return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy nhật ký');
           }
-          const reviewed = await client.query(
-            `SELECT 1 FROM progress_comments WHERE ${config.commentColumn} = $1 LIMIT 1`,
-            [id],
-          );
-          if (reviewed.rows.length) {
-            await client.query('ROLLBACK');
-            return fail(response, 409, 'PROGRESS_ALREADY_REVIEWED',
-              'Không thể sửa nhật ký sau khi Coach đã nhận xét');
-          }
           const result = entries.length ? await client.query(
             `UPDATE ${config.table} SET ${entries.map(([, column], index) => `${column} = $${index + 1}`).join(', ')}
              WHERE id = $${entries.length + 1} AND member_id = $${entries.length + 2} RETURNING *`,
@@ -361,8 +325,8 @@ export function createProgressRouter({ database, jwtSecret }) {
   }
 
   router.get('/progress-comments', async (request, response) => {
-    if (!['MEMBER', 'COACH'].includes(request.authUser.role)) {
-      return fail(response, 403, 'FORBIDDEN', 'Không có quyền xem nhận xét');
+    if (request.authUser.role !== 'MEMBER') {
+      return fail(response, 403, 'FORBIDDEN', 'Nhật ký cá nhân chỉ Member được xem');
     }
     const parsed = paging.extend({
       memberId: uuid.optional(), workoutLogId: uuid.optional(),
@@ -370,25 +334,15 @@ export function createProgressRouter({ database, jwtSecret }) {
       progressPhotoId: uuid.optional(),
     }).safeParse(request.query);
     if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Bộ lọc không hợp lệ');
-    const memberId = request.authUser.role === 'MEMBER'
-      ? request.authUser.id : parsed.data.memberId;
-    if (!memberId || (request.authUser.role === 'MEMBER' &&
-      parsed.data.memberId && parsed.data.memberId !== memberId)) {
+    const memberId = request.authUser.id;
+    if (parsed.data.memberId && parsed.data.memberId !== memberId) {
       return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
     }
     try {
-      if (request.authUser.role === 'COACH' &&
-        !await relatedCoach(database, request.authUser.id, memberId)) {
-        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Member');
-      }
       const filters = { workoutLogId: 'workout_log_id', mealLogId: 'meal_log_id',
         measurementId: 'measurement_id', progressPhotoId: 'progress_photo_id' };
       const args = [memberId];
       let where = 'member_id = $1';
-      if (request.authUser.role === 'COACH') {
-        args.push(request.authUser.id);
-        where += ` AND coach_id = $${args.length}`;
-      }
       for (const [key, column] of Object.entries(filters)) {
         if (parsed.data[key]) {
           args.push(parsed.data[key]);
@@ -416,68 +370,7 @@ export function createProgressRouter({ database, jwtSecret }) {
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được nhận xét'); }
   });
 
-  router.post('/coach/progress-comments', async (request, response) => {
-    if (request.authUser.role !== 'COACH') return fail(response, 403, 'FORBIDDEN', 'Chỉ Coach được nhận xét');
-    const parsed = z.strictObject({
-      memberId: uuid, content: z.string().trim().min(1).max(5000),
-      workoutLogId: uuid.optional(), mealLogId: uuid.optional(),
-      measurementId: uuid.optional(), progressPhotoId: uuid.optional(),
-    }).safeParse(request.body);
-    if (!parsed.success || ['workoutLogId', 'mealLogId', 'measurementId', 'progressPhotoId']
-      .filter((key) => parsed.data[key]).length > 1) {
-      return fail(response, 422, 'VALIDATION_ERROR', 'Nhận xét không hợp lệ');
-    }
-    try {
-      const relationship = await relatedCoach(database, request.authUser.id,
-        parsed.data.memberId, true);
-      if (!relationship) return fail(response, 403, 'RELATIONSHIP_REQUIRED', 'Quan hệ Coach–Member không hoạt động');
-      const data = parsed.data;
-      const target = [
-        ['workoutLogId', 'workout_logs'], ['mealLogId', 'meal_logs'],
-        ['measurementId', 'body_measurements'], ['progressPhotoId', 'progress_photos'],
-      ].find(([key]) => data[key]);
-      const client = await database.connect();
-      let result;
-      try {
-        await client.query('BEGIN');
-        if (target) {
-          const [key, table] = target;
-          await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [data[key]]);
-          const owned = await client.query(
-            `SELECT 1 FROM ${table} WHERE id = $1 AND member_id = $2`,
-            [data[key], data.memberId],
-          );
-          if (!owned.rows.length) {
-            await client.query('ROLLBACK');
-            return fail(response, 422, 'VALIDATION_ERROR', 'Đối tượng nhận xét không hợp lệ');
-          }
-        }
-        result = await client.query(
-          `INSERT INTO progress_comments
-           (id, member_id, coach_id, relationship_id, workout_log_id,
-            meal_log_id, measurement_id, progress_photo_id, content)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-          [randomUUID(), data.memberId, request.authUser.id, relationship.id,
-            data.workoutLogId ?? null, data.mealLogId ?? null,
-            data.measurementId ?? null, data.progressPhotoId ?? null, data.content],
-        );
-        await client.query('COMMIT');
-      } catch (error) {
-        await client.query('ROLLBACK').catch(() => {});
-        throw error;
-      } finally { client.release(); }
-      const row = result.rows[0];
-      return response.status(201).json({ data: {
-        id: row.id, memberId: row.member_id, coachId: row.coach_id,
-        relationshipId: row.relationship_id, workoutLogId: row.workout_log_id,
-        mealLogId: row.meal_log_id, measurementId: row.measurement_id,
-        progressPhotoId: row.progress_photo_id, content: row.content,
-        createdAt: row.created_at,
-      } });
-    } catch (error) {
-      return error.code === '23503' ? fail(response, 422, 'VALIDATION_ERROR', 'Đối tượng nhận xét không hợp lệ')
-        : fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không lưu được nhận xét');
-    }
-  });
+  router.post('/coach/progress-comments', (_request, response) =>
+    fail(response, 403, 'FORBIDDEN', 'Coach không có quyền nhận xét nhật ký cá nhân'));
   return router;
 }

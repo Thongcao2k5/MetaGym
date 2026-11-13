@@ -219,9 +219,9 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       assert.equal((await call(base, '/workout-logs?page=1&pageSize=1', member))
         .body.pagination.totalItems, 3);
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, coach))
-        .body.data.some((entry) => entry.id === logId), true);
+        .status, 403);
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, outsider))
-        .status, 404);
+        .status, 403);
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, admin))
         .status, 403);
       const measurement = await call(base, '/body-measurements', member, 'POST', {
@@ -262,9 +262,9 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       assert.equal((await call(base, '/progress-photos', member)).body.data[0].id,
         photo.body.data.id);
       assert.equal((await call(base, `/coach/members/${memberId}/progress-photos`,
-        coach)).body.data[0].id, photo.body.data.id);
+        coach)).status, 403);
       assert.equal((await call(base, `/coach/members/${memberId}/progress-photos`,
-        outsider)).status, 404);
+        outsider)).status, 403);
       assert.equal((await call(base, `/progress-photos/${photo.body.data.id}`,
         secondMember, 'PATCH', { pose: 'SIDE' })).status, 404);
       assert.equal((await call(base, `/progress-photos/${photo.body.data.id}`,
@@ -274,16 +274,14 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
       const comment = await call(base, '/coach/progress-comments', coach, 'POST', {
         memberId, workoutLogId: logId, content: 'Good form',
       });
-      assert.equal(comment.status, 201, JSON.stringify(comment.body));
-      assert.equal((await call(base, '/progress-comments', member)).body.data[0].id,
-        comment.body.data.id);
+      assert.equal(comment.status, 403);
+      assert.deepEqual((await call(base, '/progress-comments', member)).body.data, []);
       const reviewedUpdate = await call(base, `/workout-logs/${logId}`, member, 'PATCH', {
         durationMinutes: 60,
       });
-      assert.equal(reviewedUpdate.status, 409, JSON.stringify(reviewedUpdate.body));
-      assert.equal(reviewedUpdate.body.error.code, 'PROGRESS_ALREADY_REVIEWED');
+      assert.equal(reviewedUpdate.status, 200, JSON.stringify(reviewedUpdate.body));
       assert.equal((await call(base, '/workout-logs', member)).body.data.find(
-        (entry) => entry.id === logId).durationMinutes, 45);
+        (entry) => entry.id === logId).durationMinutes, 60);
       await database.query(
         `UPDATE member_memberships SET status = 'EXPIRED', expired_at = now()
          WHERE id = $1`, [membershipId],
@@ -300,11 +298,11 @@ test('PostgreSQL progress logs stay private, paginate and survive relationship e
         [memberId, relationshipId],
       );
       assert.equal((await call(base, `/coach/members/${memberId}/workout-logs`, coach))
-        .status, 404);
+        .status, 403);
       assert.equal((await call(base, '/coach/progress-comments', coach, 'POST', {
         memberId, workoutLogId: logId, content: 'Too late',
       })).status, 403);
-      assert.equal((await call(base, '/progress-comments', member)).body.data.length, 1);
+      assert.equal((await call(base, '/progress-comments', member)).body.data.length, 0);
     } finally {
       await database.query('DELETE FROM progress_comments WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM workout_log_exercises WHERE workout_log_id IN (SELECT id FROM workout_logs WHERE member_id = $1)', [memberId]);

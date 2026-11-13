@@ -106,7 +106,7 @@ test('PostgreSQL media API validates images and issues short-lived owner URLs',
         assert.equal(otherAccess.status, 404);
         assert.equal((await fetch(`${base}/api/v1/media/images/${image.id}/access-url`, {
           headers: { authorization: `Bearer ${token(coachId, 'COACH')}` },
-        })).status, 200);
+        })).status, 404);
         const access = await fetch(`${base}/api/v1/media/images/${image.id}/access-url`, {
           headers: { authorization: `Bearer ${token(memberId)}` },
         });

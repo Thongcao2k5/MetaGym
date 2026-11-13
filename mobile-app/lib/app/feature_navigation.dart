@@ -126,12 +126,6 @@ const coachDestinations = <FeatureDestination>[
     'Hướng dẫn',
   ),
   FeatureDestination(
-    'Tiến độ hội viên',
-    '/coach/features/progress',
-    'UI20',
-    'Theo dõi',
-  ),
-  FeatureDestination(
     'Tin nhắn',
     '/coach/features/messages',
     'UI21–UI24',

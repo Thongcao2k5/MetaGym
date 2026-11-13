@@ -186,8 +186,6 @@ GoRouter createAppRouter({
               ? CoachRequestsPage(coachId: sessionController.user!.id)
               : destination.path == '/coach/features/members'
               ? const CoachMembersPage()
-              : destination.path == '/coach/features/progress'
-              ? const CoachMembersPage(progressOnly: true)
               : destination.path == '/coach/features/training'
               ? const CoachTrainingPage()
               : destination.path == '/coach/features/nutrition'

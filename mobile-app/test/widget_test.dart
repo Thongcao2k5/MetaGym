@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
@@ -120,7 +121,12 @@ void main() {
     expect(find.byType(MemberHomePage), findsOneWidget);
 
     // Tapping bottom nav tab 1: Tập luyện -> MemberTrainingPage
-    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MetaGymBottomNav),
+        matching: find.byIcon(Icons.fitness_center_outlined),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(MemberTrainingPage), findsOneWidget);
     expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
@@ -272,15 +278,6 @@ void main() {
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
     await tester.pageBack();
-    await tester.pumpAndSettle();
-    GoRouter.of(tester.element(find.byType(CoachHomePage)))
-        .go('/coach/features/progress');
-    await tester.pumpAndSettle();
-    expect(find.byType(CoachMembersPage), findsOneWidget);
-    expect(find.text('Tiến độ hội viên'), findsOneWidget);
-    expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    expect(find.text('Yêu cầu ngừng phụ trách'), findsNothing);
-    GoRouter.of(tester.element(find.byType(CoachMembersPage))).go('/coach');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
