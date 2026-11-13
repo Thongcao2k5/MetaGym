@@ -52,6 +52,20 @@ Mỗi bước chỉ được đánh dấu hoàn thành khi code, migration, test
 
 ## Trạng thái triển khai hiện tại
 
-- Bước 1 đang hoàn thiện: backend từ chối Coach/Admin đọc nhật ký, số đo, ảnh, biểu đồ và tạo nhận xét; Coach cũng không thể xin URL ảnh tiến trình của Member. Lối vào màn Coach xem tiến độ đã được gỡ khỏi Flutter. Test độc lập PostgreSQL chứng minh các quyền này; test PostgreSQL vẫn cần chạy trên database test biệt lập.
+- Bước 1 đang hoàn thiện: backend từ chối Coach/Admin đọc nhật ký, số đo, ảnh, biểu đồ và tạo nhận xét; Coach cũng không thể xin URL ảnh tiến trình của Member. Lối vào màn Coach xem tiến độ đã được gỡ khỏi Flutter. Các kiểm thử PostgreSQL đã chạy trên database test biệt lập.
 - Bước 5 mới thực hiện một phần: cuộc trò chuyện đã tồn tại tiếp tục gửi và nhận sau khi quan hệ `PAUSED` hoặc `ENDED`; route và giao diện đã có test cho hai trạng thái này. Việc mở chat với Coach bất kỳ chưa có quan hệ cần migration và API khởi tạo cuộc trò chuyện độc lập với `relationship_id`.
-- Các bước 2–8 chưa triển khai. Những màn và API cũ khác vẫn phục vụ luồng V1, nên chưa thể coi ứng dụng là bản V2 hoặc dùng nó để chứng minh các quy tắc thanh toán, công suất và đặt lịch trong PDF.
+- Bước 7 đã có luồng nhật ký V2 mới: migration `0008`, API `/journal`, màn Member và kiểm thử trên PostgreSQL. Một Member ghi tối đa một bản/ngày theo ngày server, có thành tích, ba số đo tùy chọn, tối đa ba ảnh; gói Gym hết hạn thì chỉ đọc. Dữ liệu `workout_logs` V1 chưa chuyển sang bảng mới; các trang nhật ký ăn, ảnh và tiến độ V1 vẫn còn trong menu/Home để tránh làm hỏng các tệp giao diện đang được thiết kế lại.
+- Các bước 2–4, 6 và phần còn lại của bước 5, 7–8 chưa triển khai. Các màn và API cũ khác vẫn phục vụ luồng V1, nên chưa thể coi ứng dụng là bản V2 hoặc dùng nó để chứng minh các quy tắc thanh toán, công suất và đặt lịch trong PDF.
+
+## API nhật ký V2 hiện có
+
+| Route | Vai trò | Ý nghĩa |
+|---|---|---|
+| `GET /api/v1/journal` | Member | Phân trang nhật ký của chính mình, kể cả khi gói Gym hết hạn |
+| `GET /api/v1/journal/:id` | Member | Xem một bản ghi của chính mình |
+| `GET /api/v1/journal/charts` | Member | Trả ngày và số đo ngực/eo/mông, bỏ ngày không có số đo |
+| `POST /api/v1/journal` | Member có gói Gym ACTIVE | Tạo bản ghi hôm nay; trùng ngày trả `JOURNAL_EXISTS` |
+| `PATCH /api/v1/journal/:id` | Member có gói Gym ACTIVE | Sửa nội dung, không đổi ngày ghi |
+| `DELETE /api/v1/journal/:id` | Member có gói Gym ACTIVE | Xóa bản ghi và liên kết ảnh |
+
+Body tạo/sửa hỗ trợ `notes`, `chestCm`, `waistCm`, `hipsCm`, `achievements: [{title, result}]` và `photoMediaIds` tối đa ba ảnh đã tải lên bằng mục đích `PROGRESS_PHOTO`. API không nhận ngày ghi từ client. Mọi truy vấn nhật ký lọc theo Member trong JWT; Coach/Admin nhận 403.

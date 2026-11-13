@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 35 THEN
-    RAISE EXCEPTION 'Expected 35 public tables, found %', table_count;
+  IF table_count <> 37 THEN
+    RAISE EXCEPTION 'Expected 37 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -28,7 +28,8 @@ DECLARE
     'progress_photos', 'progress_comments', 'conversations',
     'conversation_participants', 'messages', 'call_logs', 'ai_conversations',
     'ai_messages', 'admin_audit_logs', 'auth_login_rate_limits',
-    'auth_password_reset_rate_limits'
+    'auth_password_reset_rate_limits', 'member_journal_entries',
+    'member_journal_photos'
   ];
   missing_tables text[];
 BEGIN
@@ -53,7 +54,8 @@ DECLARE
     'fk_workout_plan_member',
     'fk_message_sender_participant',
     'fk_participant_read_cursor',
-    'fk_ai_reply_conversation'
+    'fk_ai_reply_conversation', 'uq_member_journal_day',
+    'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner'
   ];
   missing_constraints text[];
 BEGIN

@@ -44,8 +44,12 @@ import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
+import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
+import 'package:meta_gym_app/features/progress/domain/journal_entry.dart';
+import 'package:meta_gym_app/features/membership/data/membership_service.dart';
+import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_workout_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
 import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
@@ -89,12 +93,14 @@ void main() {
     await tester.pumpWidget(
       MetaGymApp(
         sessionController: controller,
+        membershipService: _EmptyMembershipService(),
         coachSelectionService: _EmptyCoachSelectionService(),
         memberTrainingService: _EmptyMemberTrainingService(),
         memberNutritionService: _EmptyMemberNutritionService(),
         memberSessionsService: _EmptyMemberSessionsService(),
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
+        memberJournalService: _EmptyMemberJournalService(),
         memberMealService: _EmptyMemberMealService(),
         memberMeasurementService: _EmptyMemberMeasurementService(),
         memberPhotoService: _EmptyMemberPhotoService(),
@@ -177,9 +183,9 @@ void main() {
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/workouts');
     await tester.pumpAndSettle();
-    expect(find.byType(MemberWorkoutPage), findsOneWidget);
-    expect(find.text('Bạn chưa có nhật ký tập.'), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(MemberWorkoutPage))).go('/member');
+    expect(find.byType(MemberJournalPage), findsOneWidget);
+    expect(find.text('Chưa có nhật ký tập.'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(MemberJournalPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/meals');
@@ -597,6 +603,36 @@ class _EmptyMemberWorkoutService implements MemberWorkoutService {
       throw UnimplementedError();
   @override
   Future<WorkoutLog> update(String id, Map<String, Object?> payload) =>
+      throw UnimplementedError();
+}
+
+class _EmptyMemberJournalService implements MemberJournalService {
+  @override
+  Future<List<JournalEntry>> getPage(int page) async => const [];
+  @override
+  Future<List<JournalChartPoint>> getChart() async => const [];
+  @override
+  Future<JournalEntry> create(Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<JournalEntry> update(String id, Map<String, Object?> payload) =>
+      throw UnimplementedError();
+  @override
+  Future<void> delete(String id) => throw UnimplementedError();
+}
+
+class _EmptyMembershipService implements MembershipService {
+  @override
+  Future<List<MembershipPlan>> getPlans() async => const [];
+  @override
+  Future<List<Membership>> getCurrentMemberships() async => const [];
+  @override
+  Future<List<Membership>> getMembershipHistory() async => const [];
+  @override
+  Future<Payment> createPayment({required String planId,
+      required String idempotencyKey}) => throw UnimplementedError();
+  @override
+  Future<PurchaseResult> confirmMockPayment(String paymentId) =>
       throw UnimplementedError();
 }
 

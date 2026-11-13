@@ -30,6 +30,7 @@ import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
+import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
@@ -60,6 +61,7 @@ class MetaGymApp extends StatefulWidget {
     this.coachSessionsService,
     this.memberProgressService,
     this.memberWorkoutService,
+    this.memberJournalService,
     this.memberMealService,
     this.memberMeasurementService,
     this.memberPhotoService,
@@ -86,6 +88,7 @@ class MetaGymApp extends StatefulWidget {
   final CoachSessionsService? coachSessionsService;
   final MemberProgressService? memberProgressService;
   final MemberWorkoutService? memberWorkoutService;
+  final MemberJournalService? memberJournalService;
   final MemberMealService? memberMealService;
   final MemberMeasurementService? memberMeasurementService;
   final MemberPhotoService? memberPhotoService;
@@ -121,6 +124,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CoachSessionsService _coachSessionsService;
   late final MemberProgressService _memberProgressService;
   late final MemberWorkoutService _memberWorkoutService;
+  late final MemberJournalService _memberJournalService;
   late final MemberMealService _memberMealService;
   late final MemberMeasurementService _memberMeasurementService;
   late final MemberPhotoService _memberPhotoService;
@@ -188,6 +192,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.memberProgressService ?? MemberProgressApi(_apiClient);
     _memberWorkoutService =
         widget.memberWorkoutService ?? MemberWorkoutApi(_apiClient);
+    _memberJournalService =
+        widget.memberJournalService ?? MemberJournalApi(_apiClient);
     _memberMealService = widget.memberMealService ?? MemberMealApi(_apiClient);
     _memberMeasurementService =
         widget.memberMeasurementService ?? MemberMeasurementApi(_apiClient);
@@ -242,6 +248,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<CoachSessionsService>.value(value: _coachSessionsService),
         Provider<MemberProgressService>.value(value: _memberProgressService),
         Provider<MemberWorkoutService>.value(value: _memberWorkoutService),
+        Provider<MemberJournalService>.value(value: _memberJournalService),
         Provider<MemberMealService>.value(value: _memberMealService),
         Provider<MemberMeasurementService>.value(
           value: _memberMeasurementService,
