@@ -8,6 +8,7 @@ import { createAdminUsersRouter } from './routes/admin-users.routes.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
 import { createMembershipPlansRouter } from './routes/membership-plans.routes.js';
+import { createCoachPackagesRouter } from './routes/coach-packages.routes.js';
 import { createPaymentsRouter } from './routes/payments.routes.js';
 import { createCoachingRouter } from './routes/coaching.routes.js';
 import { createCatalogRouter } from './routes/catalog.routes.js';
@@ -89,6 +90,7 @@ export function createApp({
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCatalogRouter({ database, jwtSecret }));
   app.use('/api/v1', createTrainingRouter({ database, jwtSecret }));
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));
