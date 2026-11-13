@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 46 THEN
-    RAISE EXCEPTION 'Expected 46 public tables, found %', table_count;
+  IF table_count <> 48 THEN
+    RAISE EXCEPTION 'Expected 48 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -31,7 +31,8 @@ DECLARE
     'auth_password_reset_rate_limits', 'member_journal_entries',
     'member_journal_photos', 'coach_package_plans', 'coach_weekly_slots',
     'coach_payment_holds', 'coach_entitlements', 'coach_bookings', 'coach_slot_blocks',
-    'coach_notifications', 'nutrition_foods', 'training_plan_day_meals'
+    'coach_notifications', 'nutrition_foods', 'training_plan_day_meals',
+    'gym_checkin_code', 'gym_visits'
   ];
   missing_tables text[];
 BEGIN
