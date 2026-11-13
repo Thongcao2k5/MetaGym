@@ -106,6 +106,27 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
               _error!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Khi gói Gym hết hạn, bạn tạm dừng đặt lịch với Coach. '
+                      'Thời hạn gói Coach vẫn tiếp tục tính.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (hold != null)
             Card(
               child: Padding(
