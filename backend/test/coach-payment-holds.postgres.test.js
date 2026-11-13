@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import pg from 'pg';
 
 import { createApp } from '../src/app.js';
+import { settleCoachHold } from '../src/services/coach-entitlements.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const secret = 'coach-hold-integration-secret-32-characters';
@@ -20,7 +21,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
     const planId = randomUUID();
     const endpoint = '/coach-payment-holds';
     async function call(member, path, method = 'GET', body, key) {
-      const bearer = jwt.sign({ role: 'MEMBER', sessionVersion: 0 }, secret, {
+      const bearer = jwt.sign({ role: member === coach ? 'COACH' : 'MEMBER', sessionVersion: 0 }, secret, {
         algorithm: 'HS256', audience: 'meta-gym-clients', issuer: 'meta-gym-api',
         subject: member, expiresIn: 3600,
       });
@@ -112,9 +113,95 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       const cancel = `${endpoint}/${secondHold.body.data.id}/cancel`;
       assert.equal((await call(loser, cancel, 'POST')).body.data.status, 'CANCELLED');
       assert.equal((await call(loser, cancel, 'POST')).body.data.status, 'CANCELLED');
-      assert.equal((await call(winner, endpoint, 'POST', offer, randomUUID())).status, 201);
+      const lastHold = await call(winner, endpoint, 'POST', offer, randomUUID());
+      assert.equal(lastHold.status, 201);
+      const settled = await Promise.all([1, 2].map(() =>
+        settleCoachHold(database, lastHold.body.data.id, { paid: true, amount: 456000 })));
+      assert.equal(settled[0].status, 'CONSUMED');
+      assert.deepEqual(settled[0], settled[1]);
+      const { rows: [slot] } = await database.query(
+        `SELECT ((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + day
+           + time '06:00') AT TIME ZONE 'Asia/Ho_Chi_Minh' AS starts_at
+         FROM generate_series(2, 8) day
+         WHERE EXTRACT(ISODOW FROM (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + day) <= 6
+         ORDER BY day LIMIT 1`,
+      );
+      const bookingPath = '/coach-bookings';
+      const localDate = new Date(slot.starts_at.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+      const free = await call(winner,
+        `${bookingPath}/available-slots?entitlementId=${settled[0].entitlementId}&date=${localDate}`);
+      assert.equal(free.body.data.length, 4);
+      const blocks = `${bookingPath}/blocks`;
+      const startsAt = slot.starts_at.toISOString();
+      assert.equal((await call(coach, blocks, 'PUT', { startsAt, blocked: true, reason: 'Bận' })).status, 200);
+      assert.equal((await call(winner, bookingPath, 'POST', {
+        entitlementId: settled[0].entitlementId, startsAt,
+      })).body.error.code, 'SLOT_UNAVAILABLE');
+      assert.equal((await call(coach, blocks, 'PUT', { startsAt, blocked: false })).status, 200);
+      const booked = await call(winner, bookingPath, 'POST', {
+        entitlementId: settled[0].entitlementId, startsAt: slot.starts_at.toISOString(),
+      });
+      assert.equal(booked.status, 201, JSON.stringify(booked.body));
+      const duplicate = await call(winner, bookingPath, 'POST', {
+        entitlementId: settled[0].entitlementId, startsAt: slot.starts_at.toISOString(),
+      });
+      assert.equal(duplicate.status, 409);
+      assert.equal((await call(loser, bookingPath)).body.data.length, 0);
+      const cancelled = await call(winner, `${bookingPath}/${booked.body.data.id}`, 'PATCH',
+        { action: 'CANCEL' });
+      assert.equal(cancelled.body.data.status, 'CANCELLED');
+      assert.equal(cancelled.body.data.chargedAt, null);
+      const completedFixture = await call(winner, bookingPath, 'POST', {
+        entitlementId: settled[0].entitlementId, startsAt: slot.starts_at.toISOString(),
+      });
+      assert.equal(completedFixture.status, 201);
+      await database.query(
+        `UPDATE coach_bookings SET starts_at = now() - interval '2 hours',
+           ends_at = now() - interval '30 minutes' WHERE id = $1`, [completedFixture.body.data.id],
+      );
+      const completions = await Promise.all(Array.from({length: 2}, () =>
+        call(coach, `${bookingPath}/${completedFixture.body.data.id}`, 'PATCH', { action: 'COMPLETE' })));
+      assert.deepEqual(completions.map(({ status }) => status), [200, 200]);
+      const { rows: [balance] } = await database.query(
+        'SELECT remaining_sessions FROM coach_entitlements WHERE id = $1', [settled[0].entitlementId],
+      );
+      assert.equal(balance.remaining_sessions, 9);
+      await database.query(
+        `UPDATE coach_entitlements SET remaining_sessions = 1,
+           starts_on = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - 27,
+           original_ends_on = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 2,
+           ends_on = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 2 WHERE id = $1`,
+        [settled[0].entitlementId],
+      );
+      const renewal = await call(winner, endpoint, 'POST', offer, randomUUID());
+      assert.equal(renewal.status, 201);
+      assert.equal((await call(loser, `/coaches/${coach}`)).body.data.usedSlots, 8);
+      const queued = await settleCoachHold(database, renewal.body.data.id, { paid: true, amount: 456000 });
+      assert.equal(queued.status, 'CONSUMED', JSON.stringify(queued));
+      assert.equal((await call(winner, endpoint, 'POST', offer, randomUUID())).body.error.code, 'QUEUED_EXISTS');
+      await database.query(
+        `UPDATE coach_entitlements SET starts_on = CURRENT_DATE - 38,
+           original_ends_on = CURRENT_DATE - 9, ends_on = CURRENT_DATE - 2 WHERE id = $1`,
+        [settled[0].entitlementId],
+      );
+      const { reconcileMembershipLifecycles } = await import('../src/services/membership-lifecycle.js');
+      const lifecyclePool = new pg.Pool({ connectionString: databaseUrl });
+      try {
+        await reconcileMembershipLifecycles(lifecyclePool);
+      } finally {
+        await lifecyclePool.end();
+      }
+      const { rows: [ended] } = await database.query('SELECT status FROM coach_entitlements WHERE id = $1',
+        [settled[0].entitlementId]);
+      assert.equal(ended.status, 'ENDED');
+      const { rows: [activated] } = await database.query('SELECT status FROM coach_entitlements WHERE id = $1',
+        [queued.entitlementId]);
+      assert.equal(activated.status, 'ACTIVE');
     } finally {
       await database.query("UPDATE coach_package_plans SET status = 'INACTIVE', price = 0 WHERE code = 'BASIC'");
+      await database.query('DELETE FROM coach_bookings WHERE coach_id = $1', [coach]);
+      await database.query('DELETE FROM coach_slot_blocks WHERE coach_id = $1', [coach]);
+      await database.query('DELETE FROM coach_entitlements WHERE coach_id = $1', [coach]);
       await database.query('DELETE FROM coach_payment_holds WHERE coach_id = $1', [coach]);
       await database.query('DELETE FROM coach_weekly_slots WHERE coach_id = $1', [coach]);
       await database.query('DELETE FROM coach_relationships WHERE coach_id = $1', [coach]);

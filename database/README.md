@@ -1,6 +1,6 @@
 # Meta Gym Database
 
-PostgreSQL schema cho MVP Meta Gym gồm 38 bảng nghiệp vụ và 2 bảng vận hành
+PostgreSQL schema cho MVP Meta Gym gồm 41 bảng nghiệp vụ và 2 bảng vận hành
 cho giới hạn đăng nhập/khôi phục mật khẩu. Migration được chia theo thứ tự phụ
 thuộc và có file rollback tương ứng.
 
@@ -26,6 +26,8 @@ Chạy các file `*.up.sql` theo thứ tự:
 10. `0010_coach_package_catalog.up.sql`
 11. `0011_coach_weekly_schedule.up.sql`
 12. `0012_coach_payment_holds.up.sql`
+13. `0013_coach_entitlements.up.sql`
+14. `0014_coach_slot_blocks.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 

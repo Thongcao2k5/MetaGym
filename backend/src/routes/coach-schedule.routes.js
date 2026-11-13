@@ -95,6 +95,15 @@ export function createCoachScheduleRouter({ database, jwtSecret }) {
           await client.query('ROLLBACK');
           return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
         }
+        const commitments = await client.query(
+          `SELECT 1 FROM coach_entitlements WHERE coach_id = $1
+           AND status IN ('ACTIVE', 'QUEUED') LIMIT 1`, [request.authUser.id],
+        );
+        if (commitments.rowCount) {
+          await client.query('ROLLBACK');
+          return fail(response, 409, 'SCHEDULE_HAS_COMMITMENTS',
+            'Chưa thể đổi lịch cố định trong khi có gói Coach đang hiệu lực hoặc đang chờ');
+        }
         await client.query('DELETE FROM coach_weekly_slots WHERE coach_id = $1',
           [request.authUser.id]);
         for (const day of parsed.data.days) {

@@ -84,21 +84,27 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
       if (!eligible) return fail(response, 409, 'MEMBERSHIP_REQUIRED', 'Cần có gói Gym đang hoạt động');
 
       const unavailable = (await client.query(
-        `SELECT EXISTS (
-           SELECT 1 FROM coach_relationships WHERE member_id = $1
+        `SELECT (
+           SELECT coach_id FROM coach_relationships WHERE member_id = $1
              AND status IN ('ACTIVE', 'PAUSED')
-         ) AS has_coach, EXISTS (
+         ) AS current_coach, EXISTS (
+           SELECT 1 FROM coach_entitlements WHERE member_id = $1 AND status = 'ACTIVE'
+         ) AS has_package, EXISTS (
+           SELECT 1 FROM coach_entitlements WHERE member_id = $1 AND status = 'QUEUED'
+         ) AS has_queued, EXISTS (
            SELECT 1 FROM coach_payment_holds WHERE member_id = $1 AND status = 'HELD'
              AND expires_at > statement_timestamp()
          ) AS has_hold`, [memberId],
       )).rows[0];
-      if (unavailable.has_coach) return fail(response, 409, 'RELATIONSHIP_EXISTS', 'Member đã có Coach');
+      const renewal = unavailable.current_coach === coachId && unavailable.has_package;
+      if (unavailable.current_coach && !renewal) return fail(response, 409, 'RELATIONSHIP_EXISTS', 'Member đã có Coach');
+      if (unavailable.has_queued) return fail(response, 409, 'QUEUED_EXISTS', 'Member đã có gói Coach đang chờ');
       if (unavailable.has_hold) return fail(response, 409, 'HOLD_EXISTS', 'Member đã có suất đang giữ');
 
       const occupied = (await client.query(
         'SELECT coach_occupied_seats($1) AS count', [coachId],
       )).rows[0].count;
-      if (occupied >= Math.min(8, coach.member_limit)) {
+      if (!renewal && occupied >= Math.min(8, coach.member_limit)) {
         return fail(response, 409, 'COACH_FULL', 'Coach đã đủ Member');
       }
       const workdays = (await client.query(
@@ -137,6 +143,23 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
     } finally {
       if (transactionOpen) await client.query('ROLLBACK').catch(() => {});
       client.release();
+    }
+  });
+
+  router.get('/coach-payment-holds/:id', async (request, response) => {
+    const id = uuid.safeParse(request.params.id);
+    if (!id.success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã giữ suất không hợp lệ');
+    try {
+      const { rows: [hold] } = await database.query(
+        `SELECT *, CASE WHEN status = 'HELD' AND expires_at <= statement_timestamp()
+                         THEN 'EXPIRED' ELSE status END AS effective_status
+         FROM coach_payment_holds WHERE id = $1 AND member_id = $2`,
+        [id.data, request.authUser.id],
+      );
+      if (!hold) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy suất đang giữ');
+      return response.json({ data: view(hold) });
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không đọc được trạng thái giữ suất');
     }
   });
 
