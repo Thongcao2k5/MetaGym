@@ -228,5 +228,3 @@ String _homeForRole(UserRole role) => switch (role) {
   UserRole.coach => AppRoutes.coachHome,
   UserRole.admin => AppRoutes.adminHome,
 };
-
-

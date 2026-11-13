@@ -6,10 +6,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
 import 'package:provider/provider.dart';
 
-enum ExploreArticleType {
-  gymIntroduction,
-  beginnerGuide,
-}
+enum ExploreArticleType { gymIntroduction, beginnerGuide }
 
 class ExploreArticleItem {
   const ExploreArticleItem({
@@ -46,20 +43,17 @@ const List<ExploreArticleItem> kMemberExploreArticles = [
     categoryLabel: 'Cơ sở & Thiết bị',
     readTimeLabel: '3 phút đọc',
     imageAsset: 'assets/images/gym_banner.png',
-    illustrationNotice:
-        'Ảnh minh họa mẫu (assets/images/gym_banner.png) — cần thay bằng ảnh chụp thực tế không gian Meta Gym trước khi phát hành.',
+    illustrationNotice: 'Ảnh minh họa mẫu (assets/images/gym_banner.png) — cần thay bằng ảnh chụp thực tế không gian Meta Gym trước khi phát hành.',
   ),
   ExploreArticleItem(
     id: 'beginner-training-guide',
     type: ExploreArticleType.beginnerGuide,
     title: 'Hướng dẫn tập luyện cho người mới',
-    shortDescription:
-        'Nguyên tắc khởi động, chọn mức tạ an toàn và xây dựng lịch tập tuần đầu.',
+    shortDescription: 'Nguyên tắc khởi động, chọn mức tạ an toàn và xây dựng lịch tập tuần đầu.',
     categoryLabel: 'Cẩm nang người mới',
     readTimeLabel: '4 phút đọc',
     imageAsset: 'assets/images/gym_banner.png',
-    illustrationNotice:
-        'Ảnh minh họa mẫu (assets/images/gym_banner.png) — cần thay bằng ảnh biên tập chuyên đề hướng dẫn tập luyện trước khi phát hành.',
+    illustrationNotice: 'Ảnh minh họa mẫu (assets/images/gym_banner.png) — cần thay bằng ảnh biên tập chuyên đề hướng dẫn tập luyện trước khi phát hành.',
   ),
 ];
 
@@ -97,9 +91,8 @@ class MemberExploreListPage extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push<void>(
                   MaterialPageRoute(
-                    builder: (_) => MemberExploreArticleDetailPage(
-                      article: article,
-                    ),
+                    builder: (_) =>
+                        MemberExploreArticleDetailPage(article: article),
                   ),
                 );
               },
@@ -165,10 +158,7 @@ class MemberExploreListPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: _subColor,
-                    ),
+                    const Icon(Icons.chevron_right_rounded, color: _subColor),
                   ],
                 ),
               ),
@@ -187,10 +177,7 @@ class MemberExploreListPage extends StatelessWidget {
 ///   tên, ảnh hay thành tích của PT khi chưa có dữ liệu xác thực.
 /// - Với bài "Hướng dẫn tập luyện cho người mới": hiển thị nội dung hướng dẫn biên tập đầy đủ.
 class MemberExploreArticleDetailPage extends StatefulWidget {
-  const MemberExploreArticleDetailPage({
-    required this.article,
-    super.key,
-  });
+  const MemberExploreArticleDetailPage({required this.article, super.key});
 
   final ExploreArticleItem article;
 
@@ -452,11 +439,7 @@ class _MemberExploreArticleDetailPageState
             else
               const Text(
                 'Chưa có dữ liệu giờ mở cửa xác thực trên hệ thống. Vui lòng kiểm tra trực tiếp tại trang Phòng gym và thiết bị.',
-                style: TextStyle(
-                  color: _subColor,
-                  fontSize: 13,
-                  height: 1.45,
-                ),
+                style: TextStyle(color: _subColor, fontSize: 13, height: 1.45),
               ),
           ],
         ),
@@ -589,11 +572,7 @@ class _MemberExploreArticleDetailPageState
           children: const [
             Text(
               'Bắt đầu bằng 5 phút làm nóng toàn thân (đi bộ nhanh, xoay khớp vai, hông, cổ chân) và 1–2 hiệp khởi động nhẹ với chính bài tập chính trong ngày để cơ bắp và hệ thần kinh sẵn sàng.',
-              style: TextStyle(
-                color: _bodyColor,
-                fontSize: 13.5,
-                height: 1.5,
-              ),
+              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
             ),
           ],
         ),
@@ -603,11 +582,7 @@ class _MemberExploreArticleDetailPageState
           children: const [
             Text(
               'Trong 2–4 tuần đầu tiên, hãy chọn mức tạ mà bạn kiểm soát được trọn vẹn biên độ chuyển động từ 10–12 lần mỗi hiệp. Giữ nhịp thở đều (thở ra khi phát lực, hít vào khi hạ tạ) và đọc kỹ hướng dẫn an toàn của từng thiết bị.',
-              style: TextStyle(
-                color: _bodyColor,
-                fontSize: 13.5,
-                height: 1.5,
-              ),
+              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
             ),
           ],
         ),
@@ -617,11 +592,7 @@ class _MemberExploreArticleDetailPageState
           children: const [
             Text(
               'Người mới nên bắt đầu với 3 buổi/tuần cách ngày (ví dụ Thứ 2 – Thứ 4 – Thứ 6) để cơ bắp có 48 giờ phục hồi. Mỗi buổi chỉ cần 4–6 bài tập cơ bản tác động vào các nhóm cơ lớn (Ngực, Lưng, Chân, Vai, Core).',
-              style: TextStyle(
-                color: _bodyColor,
-                fontSize: 13.5,
-                height: 1.5,
-              ),
+              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
             ),
           ],
         ),
@@ -631,11 +602,7 @@ class _MemberExploreArticleDetailPageState
           children: const [
             Text(
               'Sau mỗi buổi tập và bữa ăn, hãy ghi lại thời lượng, số bài hoàn thành và các bữa ăn trong mục "Nhật ký của bạn". Việc theo dõi đều đặn giúp bạn và Coach dễ dàng điều chỉnh khối lượng vận động phù hợp nhất.',
-              style: TextStyle(
-                color: _bodyColor,
-                fontSize: 13.5,
-                height: 1.5,
-              ),
+              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
             ),
           ],
         ),

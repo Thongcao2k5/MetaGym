@@ -39,7 +39,10 @@ class TrainingPlanContent extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0x26FF5A36),
                       borderRadius: BorderRadius.circular(20),
@@ -56,7 +59,10 @@ class TrainingPlanContent extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0x14A9C7E8),
                       borderRadius: BorderRadius.circular(8),
@@ -120,7 +126,9 @@ class TrainingPlanContent extends StatelessWidget {
                   ],
                 ),
               ],
-              if (plan.startDate != null || plan.endDate != null || plan.publishedAt != null) ...[
+              if (plan.startDate != null ||
+                  plan.endDate != null ||
+                  plan.publishedAt != null) ...[
                 const SizedBox(height: 14),
                 const Divider(color: MetaGymTheme.darkDividerSubtle, height: 1),
                 const SizedBox(height: 12),
@@ -169,7 +177,10 @@ class TrainingPlanContent extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0x1FA9C7E8),
                         borderRadius: BorderRadius.circular(10),
@@ -199,6 +210,16 @@ class TrainingPlanContent extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (day.scheduledDate != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lịch ngày ${day.scheduledDate!.substring(8, 10)}/${day.scheduledDate!.substring(5, 7)}/${day.scheduledDate!.substring(0, 4)}',
+                    style: const TextStyle(
+                      color: MetaGymTheme.darkTextSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
                 if (day.notes?.isNotEmpty == true) ...[
                   const SizedBox(height: 8),
                   Padding(
@@ -236,9 +257,70 @@ class TrainingPlanContent extends StatelessWidget {
                   )
                 else
                   for (var i = 0; i < day.exercises.length; i++)
-                    _ExerciseCard(
-                      exercise: day.exercises[i],
-                      index: i + 1,
+                    _ExerciseCard(exercise: day.exercises[i], index: i + 1),
+                const SizedBox(height: 10),
+                const Text(
+                  'Lịch ăn',
+                  style: TextStyle(
+                    color: MetaGymTheme.darkTextPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (day.meals.isEmpty)
+                  const Text(
+                    'Coach chưa xếp lịch ăn cho ngày này.',
+                    style: TextStyle(
+                      color: MetaGymTheme.darkTextTertiary,
+                      fontSize: 13,
+                    ),
+                  )
+                else
+                  for (final meal in day.meals)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.restaurant_outlined,
+                            size: 18,
+                            color: MetaGymTheme.progressGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.darkTextSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  meal.title,
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.darkTextPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (meal.notes?.isNotEmpty == true)
+                                  Text(
+                                    meal.notes!,
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.darkTextTertiary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
               ],
             ),
@@ -276,10 +358,7 @@ class _MetaInfoPill extends StatelessWidget {
 }
 
 class _ExerciseCard extends StatelessWidget {
-  const _ExerciseCard({
-    required this.exercise,
-    required this.index,
-  });
+  const _ExerciseCard({required this.exercise, required this.index});
 
   final TrainingExercise exercise;
   final int index;

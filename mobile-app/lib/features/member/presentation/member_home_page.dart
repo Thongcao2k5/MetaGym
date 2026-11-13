@@ -31,7 +31,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
         bottomPadding: bottomPadding,
       ),
       MemberTrainingPage(bottomPadding: bottomPadding),
-      const AiConversationsPage(),
+      AiConversationsPage(bottomPadding: bottomPadding),
       ConversationsPage(
         currentUserId: currentUserId,
         bottomPadding: bottomPadding,
@@ -46,6 +46,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
         body: IndexedStack(index: _index, children: pages),
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,
+          warmGlass: true,
           onTap: (value) => setState(() => _index = value),
         ),
       ),

@@ -18,20 +18,14 @@ class MetaGymBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const Image(
-            image: bannerAsset,
-            fit: BoxFit.cover,
-          ),
+          const Image(image: bannerAsset, fit: BoxFit.cover),
           // Ambient glow: Cool blue ở góc trên bên phải
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
                 center: Alignment(0.85, -0.75),
                 radius: 0.9,
-                colors: [
-                  Color(0x2E8EB9E5),
-                  Colors.transparent,
-                ],
+                colors: [Color(0x2E8EB9E5), Colors.transparent],
               ),
             ),
           ),
@@ -41,10 +35,7 @@ class MetaGymBackground extends StatelessWidget {
               gradient: RadialGradient(
                 center: Alignment(-0.85, 0.75),
                 radius: 0.8,
-                colors: [
-                  Color(0x24FF5A36),
-                  Colors.transparent,
-                ],
+                colors: [Color(0x24FF5A36), Colors.transparent],
               ),
             ),
           ),
@@ -93,7 +84,8 @@ class MetaGymGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
+    final radius =
+        borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
     final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
 
     final cardBody = Container(
@@ -109,10 +101,7 @@ class MetaGymGlassCard extends StatelessWidget {
           ],
         ),
         borderRadius: radius,
-        border: Border.all(
-          color: const Color(0x38D4E4FF),
-          width: 1.0,
-        ),
+        border: Border.all(color: const Color(0x38D4E4FF), width: 1.0),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),

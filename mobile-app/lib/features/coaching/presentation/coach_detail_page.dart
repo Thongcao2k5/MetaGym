@@ -122,9 +122,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                           decoration: BoxDecoration(
                             color: const Color(0x33FF453A),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0x66FF453A),
-                            ),
+                            border: Border.all(color: const Color(0x66FF453A)),
                           ),
                           child: Row(
                             children: [
@@ -203,8 +201,9 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                             color: coach.availableSlots > 0
                                                 ? const Color(0x3334C759)
                                                 : const Color(0x33FF453A),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: Text(
                                             coach.availableSlots > 0
@@ -369,11 +368,13 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                   style: const TextStyle(color: Colors.white),
                                   decoration: const InputDecoration(
                                     labelText: 'Lời nhắn (không bắt buộc)',
-                                    labelStyle:
-                                        TextStyle(color: Colors.white70),
+                                    labelStyle: TextStyle(
+                                      color: Colors.white70,
+                                    ),
                                     enabledBorder: UnderlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Color(0x38D4E4FF)),
+                                      borderSide: BorderSide(
+                                        color: Color(0x38D4E4FF),
+                                      ),
                                     ),
                                     focusedBorder: UnderlineInputBorder(
                                       borderSide: BorderSide(

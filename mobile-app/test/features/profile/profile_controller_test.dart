@@ -37,18 +37,21 @@ void main() {
     expect(service.lastUpdate, isNot(contains('biography')));
   });
 
-  testWidgets('opening a profile does not notify its provider during build',
-      (tester) async {
+  testWidgets('opening a profile does not notify its provider during build', (
+    tester,
+  ) async {
     final session = await _session(member);
     final controller = ProfileController(_FakeProfileService(member), session);
 
-    await tester.pumpWidget(MultiProvider(
-      providers: [
-        ChangeNotifierProvider<SessionController>.value(value: session),
-        ChangeNotifierProvider<ProfileController>.value(value: controller),
-      ],
-      child: const MaterialApp(home: ProfilePage()),
-    ));
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SessionController>.value(value: session),
+          ChangeNotifierProvider<ProfileController>.value(value: controller),
+        ],
+        child: const MaterialApp(home: ProfilePage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);

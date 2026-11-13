@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/training_plan_content.dart';
 import 'package:provider/provider.dart';
 
 class MemberTrainingPage extends StatefulWidget {
-  const MemberTrainingPage({
-    this.service,
-    this.bottomPadding,
-    super.key,
-  });
+  const MemberTrainingPage({this.service, this.bottomPadding, super.key});
 
   final MemberTrainingService? service;
   final double? bottomPadding;
@@ -76,17 +71,17 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBottomPadding = widget.bottomPadding ??
-        MetaGymBottomNav.contentBottomPadding(context);
+    final effectiveBottomPadding =
+        widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.scaffoldBackground,
       extendBody: true,
       appBar: AppBar(
         title: const Text(
           'Giáo trình',
           style: TextStyle(
-            color: MetaGymTheme.darkTextPrimary,
+            color: MetaGymTheme.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
             fontFamily: MetaGymTheme.fontFamily,
@@ -100,7 +95,7 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
           IconButton(
             icon: const Icon(
               Icons.refresh_rounded,
-              color: MetaGymTheme.darkTextSecondary,
+              color: MetaGymTheme.textSecondary,
               size: 22,
             ),
             tooltip: 'Làm mới',
@@ -108,13 +103,10 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: MetaGymBackground()),
-          _loading && _active == null && _history.isEmpty
+      body: _loading && _active == null && _history.isEmpty
           ? const Center(
               child: CircularProgressIndicator(
-                color: MetaGymTheme.brandOrange,
+                color: MetaGymTheme.primary,
                 strokeWidth: 2.5,
               ),
             )
@@ -137,7 +129,9 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: const Color(0x1FF15B64),
-                        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusCard,
+                        ),
                         border: Border.all(color: const Color(0x4DF15B64)),
                       ),
                       child: Column(
@@ -199,7 +193,8 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                         const SizedBox(width: 8),
                         Text(
                           'Hiện hành',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 color: MetaGymTheme.darkTextPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
@@ -215,8 +210,12 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: MetaGymTheme.darkSurface,
-                          borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-                          border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
+                          borderRadius: BorderRadius.circular(
+                            MetaGymTheme.radiusCard,
+                          ),
+                          border: Border.all(
+                            color: MetaGymTheme.darkCardBorderSubtle,
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -226,7 +225,9 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                               decoration: BoxDecoration(
                                 color: const Color(0x14A9C7E8),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0x2EA9C7E8)),
+                                border: Border.all(
+                                  color: const Color(0x2EA9C7E8),
+                                ),
                               ),
                               child: const Icon(
                                 Icons.event_note_outlined,
@@ -263,14 +264,22 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                       Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                          borderRadius: BorderRadius.circular(
+                            MetaGymTheme.radiusCard,
+                          ),
                           onTap: () => _openPlan(_active!.id),
                           child: Container(
-                            padding: const EdgeInsets.all(MetaGymTheme.cardPadding),
+                            padding: const EdgeInsets.all(
+                              MetaGymTheme.cardPadding,
+                            ),
                             decoration: BoxDecoration(
                               color: MetaGymTheme.darkSurface,
-                              borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-                              border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
+                              borderRadius: BorderRadius.circular(
+                                MetaGymTheme.radiusCard,
+                              ),
+                              border: Border.all(
+                                color: MetaGymTheme.darkCardBorderSubtle,
+                              ),
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -284,7 +293,8 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -343,7 +353,8 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                                         child: Text(
                                           _active!.goal!,
                                           style: const TextStyle(
-                                            color: MetaGymTheme.darkTextSecondary,
+                                            color:
+                                                MetaGymTheme.darkTextSecondary,
                                             fontSize: 13,
                                             fontFamily: MetaGymTheme.fontFamily,
                                           ),
@@ -354,7 +365,8 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                                 ],
                                 const SizedBox(height: 14),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -421,7 +433,8 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                         const SizedBox(width: 8),
                         Text(
                           'Lịch sử',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 color: MetaGymTheme.darkTextPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
@@ -459,8 +472,12 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: MetaGymTheme.darkSurface,
-                          borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-                          border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
+                          borderRadius: BorderRadius.circular(
+                            MetaGymTheme.radiusCard,
+                          ),
+                          border: Border.all(
+                            color: MetaGymTheme.darkCardBorderSubtle,
+                          ),
                         ),
                         child: const Center(
                           child: Text(
@@ -512,24 +529,29 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                                     const SizedBox(width: 14),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             plan.title,
                                             style: const TextStyle(
-                                              color: MetaGymTheme.darkTextPrimary,
+                                              color:
+                                                  MetaGymTheme.darkTextPrimary,
                                               fontSize: 15,
                                               fontWeight: FontWeight.w600,
-                                              fontFamily: MetaGymTheme.fontFamily,
+                                              fontFamily:
+                                                  MetaGymTheme.fontFamily,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             '${plan.statusLabel} · Phiên bản ${plan.version}',
                                             style: const TextStyle(
-                                              color: MetaGymTheme.darkTextTertiary,
+                                              color:
+                                                  MetaGymTheme.darkTextTertiary,
                                               fontSize: 12.5,
-                                              fontFamily: MetaGymTheme.fontFamily,
+                                              fontFamily:
+                                                  MetaGymTheme.fontFamily,
                                             ),
                                           ),
                                         ],
@@ -551,8 +573,6 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                 ],
               ),
             ),
-        ],
-      ),
     );
   }
 }
@@ -632,13 +652,10 @@ class _MemberTrainingDetailPageState extends State<_MemberTrainingDetailPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: MetaGymBackground()),
-          _loading
+      body: _loading
           ? const Center(
               child: CircularProgressIndicator(
-                color: MetaGymTheme.brandOrange,
+                color: MetaGymTheme.primary,
                 strokeWidth: 2.5,
               ),
             )
@@ -656,7 +673,9 @@ class _MemberTrainingDetailPageState extends State<_MemberTrainingDetailPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: const Color(0x1FF15B64),
-                        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusCard,
+                        ),
                         border: Border.all(color: const Color(0x4DF15B64)),
                       ),
                       child: Column(
@@ -704,8 +723,6 @@ class _MemberTrainingDetailPageState extends State<_MemberTrainingDetailPage> {
                 ],
               ),
             ),
-        ],
-      ),
     );
   }
 }
