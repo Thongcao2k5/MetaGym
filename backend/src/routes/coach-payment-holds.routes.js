@@ -146,6 +146,19 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
     }
   });
 
+  router.get('/coach-payment-holds', async (request, response) => {
+    try {
+      const { rows } = await database.query(
+        `SELECT * FROM coach_payment_holds WHERE member_id = $1
+         AND status = 'HELD' AND expires_at > statement_timestamp()`,
+        [request.authUser.id],
+      );
+      return response.json({ data: rows.map(view) });
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được suất đang giữ');
+    }
+  });
+
   router.get('/coach-payment-holds/:id', async (request, response) => {
     const id = uuid.safeParse(request.params.id);
     if (!id.success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã giữ suất không hợp lệ');

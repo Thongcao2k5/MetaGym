@@ -3,6 +3,7 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/termination_reason_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -124,7 +125,24 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
       (item) => item.id != _current?.id,
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Coach của tôi')),
+      appBar: AppBar(
+        title: const Text('Coach của tôi'),
+        actions: [
+          if (_current != null && context.read<ApiClient?>() != null)
+            IconButton(
+              tooltip: 'Xem gói Coach',
+              icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: () {
+                final coachId = _current!.coachId;
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => CoachOffersPage(coachId: coachId),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
       body:
           _loading && _requests.isEmpty && _history.isEmpty && _current == null
           ? const Center(child: CircularProgressIndicator())

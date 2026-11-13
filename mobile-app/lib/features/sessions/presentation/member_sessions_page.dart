@@ -5,9 +5,10 @@ import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:provider/provider.dart';
 
 class MemberSessionsPage extends StatefulWidget {
-  const MemberSessionsPage({this.service, super.key});
+  const MemberSessionsPage({this.service, this.coachBooking, super.key});
 
   final MemberSessionsService? service;
+  final Widget? coachBooking;
 
   @override
   State<MemberSessionsPage> createState() => _MemberSessionsPageState();
@@ -49,7 +50,19 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Lịch buổi tập')),
+    appBar: AppBar(
+      title: const Text('Lịch buổi tập'),
+      actions: [
+        if (widget.coachBooking != null)
+          IconButton(
+            tooltip: 'Lịch Coach',
+            icon: const Icon(Icons.event_available_outlined),
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => widget.coachBooking!),
+            ),
+          ),
+      ],
+    ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(

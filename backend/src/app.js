@@ -16,6 +16,7 @@ import { createPaymentsRouter } from './routes/payments.routes.js';
 import { createCoachingRouter } from './routes/coaching.routes.js';
 import { createCatalogRouter } from './routes/catalog.routes.js';
 import { createTrainingRouter } from './routes/training.routes.js';
+import { createStructuredNutritionRouter } from './routes/structured-nutrition.routes.js';
 import { createSessionsRouter } from './routes/sessions.routes.js';
 import { createMessagingRouter } from './routes/messaging.routes.js';
 import { createProgressRouter } from './routes/progress.routes.js';
@@ -98,6 +99,7 @@ export function createApp({
   app.use('/api/v1', createCoachPaymentHoldsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachBookingsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCatalogRouter({ database, jwtSecret }));
+  app.use('/api/v1', createStructuredNutritionRouter({ database, jwtSecret }));
   app.use('/api/v1', createTrainingRouter({ database, jwtSecret }));
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));
   app.use('/api/v1', createMessagingRouter({ database, jwtSecret }));

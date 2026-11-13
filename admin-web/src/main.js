@@ -40,9 +40,9 @@ function notice(text, kind = 'success') {
 
 function layout(section, content) {
   const links = [ ['dashboard', 'Tổng quan'], ['members', 'Member'],
-    ['coaches', 'Coach'], ['plans', 'Gói tập'], ['payments', 'Thanh toán'],
+    ['coaches', 'Coach'], ['plans', 'Gói tập'], ['coach-packages', 'Gói Coach'], ['payments', 'Thanh toán'],
     ['relationships', 'Quan hệ'], ['terminations', 'Yêu cầu kết thúc'],
-    ['gym', 'Phòng gym'], ['equipment', 'Thiết bị'], ['profile', 'Hồ sơ'] ];
+    ['gym', 'Phòng gym'], ['equipment', 'Thiết bị'], ['nutrition-foods', 'Thực phẩm'], ['profile', 'Hồ sơ'] ];
   root.innerHTML = `<div class="admin-shell"><aside class="admin-sidebar bg-dark text-white p-3">
     <a class="brand text-white text-decoration-none" href="#/admin/dashboard">META GYM <span>ADMIN</span></a>
     <nav class="nav flex-column mt-4" aria-label="Quản trị">${links.map(([id, label]) =>
@@ -151,6 +151,80 @@ async function accounts(role, page = 1) {
     try { const result = await api(`/admin/coaches/${button.dataset.id}/password-resets`, 'POST', {});
       document.querySelector('#editor').innerHTML = `<div class="alert alert-warning mt-3" role="status">Mật khẩu tạm, chỉ hiển thị một lần: <code>${esc(result.data.temporaryPassword)}</code></div>`; }
     catch (error) { notice(error.message, 'danger'); }
+  });
+}
+
+async function nutritionFoods() {
+  const { data } = await api('/admin/nutrition-foods');
+  const entries = [...data, { name: '', kcalPer100g: '', active: true }];
+  layout('nutrition-foods', `<div class="row g-3">${entries.map((row, index) => `
+    <div class="col-md-6 col-xl-4"><form class="card card-body food-entry" data-index="${index}">
+      <h2 class="h5">${row.id ? esc(row.name) : 'Thêm thực phẩm'}</h2>
+      <label class="form-label">Tên<input class="form-control" name="name" maxlength="150" value="${esc(row.name)}" required></label>
+      <label class="form-label">kcal mỗi 100 g<input class="form-control" name="kcal" type="number" min="0" max="1000" step="0.01" value="${esc(row.kcalPer100g)}" required></label>
+      <label class="form-check"><input class="form-check-input" type="checkbox" name="active" ${row.active ? 'checked' : ''}> Cho phép chọn</label>
+      <button class="btn btn-primary mt-2">Lưu</button>
+    </form></div>`).join('')}</div>`);
+  document.querySelectorAll('.food-entry').forEach((form) => {
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      const row = entries[Number(form.dataset.index)];
+      const values = new FormData(form);
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const { data: saved } = await api(row.id ? `/admin/nutrition-foods/${encodeURIComponent(row.id)}` : '/admin/nutrition-foods',
+          row.id ? 'PATCH' : 'POST', {
+            name: values.get('name').trim(), kcalPer100g: Number(values.get('kcal')), active: values.has('active'),
+          });
+        entries[Number(form.dataset.index)] = saved;
+        form.querySelector('h2').textContent = saved.name;
+        if (!row.id && location.hash === '#/admin/nutrition-foods') await nutritionFoods();
+        notice('Đã lưu thực phẩm.');
+      } catch (error) {
+        notice(error.message, 'danger');
+      } finally {
+        button.disabled = false;
+      }
+    };
+  });
+}
+
+async function coachPackages() {
+  const { data } = await api('/admin/coach-packages');
+  layout('coach-packages', `<div class="row g-3">${data.map((row, index) => `
+    <div class="col-md-6 col-xl-4"><form class="card card-body coach-package" data-index="${index}">
+      <h2 class="h5">${esc(row.name)}</h2>
+      <p>${esc(row.sessionCount)} buổi · ${esc(row.durationDays)} ngày</p>
+      <label class="form-label">Giá (VNĐ)
+        <input class="form-control" name="price" type="number" min="0" max="${Number.MAX_SAFE_INTEGER}" step="1" value="${esc(row.price)}" required>
+      </label>
+      <label class="form-label">Trạng thái
+        <select class="form-select" name="status">
+          <option value="ACTIVE" ${row.status === 'ACTIVE' ? 'selected' : ''}>Đang bán</option>
+          <option value="INACTIVE" ${row.status === 'INACTIVE' ? 'selected' : ''}>Ngừng bán</option>
+        </select>
+      </label>
+      <button class="btn btn-primary mt-2">Lưu gói</button>
+    </form></div>`).join('')}</div>`);
+  document.querySelectorAll('.coach-package').forEach((form) => {
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      const values = new FormData(form);
+      const button = form.querySelector('button');
+      button.disabled = true;
+      try {
+        const { code } = data[Number(form.dataset.index)];
+        await api(`/admin/coach-packages/${encodeURIComponent(code)}`, 'PATCH', {
+          price: Number(values.get('price')), status: values.get('status'),
+        });
+        notice('Đã lưu gói Coach.');
+      } catch (error) {
+        notice(error.message, 'danger');
+      } finally {
+        button.disabled = false;
+      }
+    };
   });
 }
 
@@ -314,7 +388,8 @@ async function route() {
     }
     chart?.destroy(); chart = null;
     const pages = { dashboard, members: () => accounts('MEMBER'),
-      coaches: () => accounts('COACH'), plans, payments, relationships,
+      coaches: () => accounts('COACH'), plans, 'coach-packages': coachPackages, payments, relationships,
+      'nutrition-foods': nutritionFoods,
       terminations, gym, equipment, profile };
     if (!pages[section]) { location.hash = '/admin/dashboard'; return; }
     root.innerHTML = '<div class="p-5 text-secondary" role="status">Đang tải…</div>';

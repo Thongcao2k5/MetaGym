@@ -21,7 +21,8 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
     const planId = randomUUID();
     const endpoint = '/coach-payment-holds';
     async function call(member, path, method = 'GET', body, key) {
-      const bearer = jwt.sign({ role: member === coach ? 'COACH' : 'MEMBER', sessionVersion: 0 }, secret, {
+      const role = member === coach ? 'COACH' : member === admin ? 'ADMIN' : 'MEMBER';
+      const bearer = jwt.sign({ role, sessionVersion: 0 }, secret, {
         algorithm: 'HS256', audience: 'meta-gym-clients', issuer: 'meta-gym-api',
         subject: member, expiresIn: 3600,
       });
@@ -119,6 +120,27 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         settleCoachHold(database, lastHold.body.data.id, { paid: true, amount: 456000 })));
       assert.equal(settled[0].status, 'CONSUMED');
       assert.deepEqual(settled[0], settled[1]);
+      const foodCreate = await call(admin, '/admin/nutrition-foods', 'POST', {
+        name: 'Fixture food', kcalPer100g: 100, active: true,
+      });
+      assert.equal(foodCreate.status, 201, JSON.stringify(foodCreate.body));
+      const foodId = foodCreate.body.data.id;
+      const mealPath = `/coach/meal-plans/${winner}`;
+      const savedMeal = await call(coach, mealPath, 'PUT', {
+        title: 'Thực đơn V2', items: [{ day: 1, meal: 'BREAKFAST', foodId, grams: 120 }],
+      });
+      assert.equal(savedMeal.status, 200, JSON.stringify(savedMeal.body));
+      assert.deepEqual((await call(loser, '/meal-plans/me')).body.data, []);
+      assert.equal((await call(admin, `/admin/nutrition-foods/${foodId}`, 'PATCH', {
+        name: 'Fixture food', kcalPer100g: 150, active: false,
+      })).status, 200);
+      assert.equal((await call(winner, '/meal-plans/me')).body.data[0].items[0].kcalPer100g, 150);
+      await database.query(
+        `UPDATE nutrition_guides SET status = 'ARCHIVED', archived_at = now() WHERE id = $1`,
+        [savedMeal.body.data.id],
+      );
+      await database.query('UPDATE nutrition_foods SET kcal_per_100g = 200 WHERE id = $1', [foodId]);
+      assert.equal((await call(winner, '/meal-plans/me')).body.data[0].items[0].kcalPer100g, 150);
       const { rows: [slot] } = await database.query(
         `SELECT ((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + day
            + time '06:00') AT TIME ZONE 'Asia/Ho_Chi_Minh' AS starts_at
@@ -142,6 +164,12 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         entitlementId: settled[0].entitlementId, startsAt: slot.starts_at.toISOString(),
       });
       assert.equal(booked.status, 201, JSON.stringify(booked.body));
+      const inbox = await call(coach, '/coach-notifications');
+      const bookingNotice = inbox.body.data.find((row) => row.subjectId === booked.body.data.id);
+      assert.equal(bookingNotice.kind, 'BOOKED');
+      const markRead = `/coach-notifications/${bookingNotice.id}/read`;
+      assert.equal((await call(loser, markRead, 'PATCH')).status, 404);
+      assert.ok((await call(coach, markRead, 'PATCH')).body.data.readAt);
       const duplicate = await call(winner, bookingPath, 'POST', {
         entitlementId: settled[0].entitlementId, startsAt: slot.starts_at.toISOString(),
       });
@@ -174,6 +202,11 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         [settled[0].entitlementId],
       );
       const renewal = await call(winner, endpoint, 'POST', offer, randomUUID());
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const reminders = (await call(winner, '/coach-notifications')).body.data
+          .filter((item) => item.kind === 'PACKAGE_EXPIRING');
+        assert.equal(reminders.length, 1);
+      }
       assert.equal(renewal.status, 201);
       assert.equal((await call(loser, `/coaches/${coach}`)).body.data.usedSlots, 8);
       const queued = await settleCoachHold(database, renewal.body.data.id, { paid: true, amount: 456000 });
@@ -198,6 +231,10 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         [queued.entitlementId]);
       assert.equal(activated.status, 'ACTIVE');
     } finally {
+      await database.query('DELETE FROM nutrition_guides WHERE coach_id = $1', [coach]);
+      await database.query("DELETE FROM nutrition_foods WHERE name = 'Fixture food'");
+      await database.query('DELETE FROM coach_notifications WHERE user_id = ANY($1::uuid[])',
+        [[coach, ...members]]);
       await database.query("UPDATE coach_package_plans SET status = 'INACTIVE', price = 0 WHERE code = 'BASIC'");
       await database.query('DELETE FROM coach_bookings WHERE coach_id = $1', [coach]);
       await database.query('DELETE FROM coach_slot_blocks WHERE coach_id = $1', [coach]);

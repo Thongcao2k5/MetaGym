@@ -170,14 +170,17 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     });
     try {
       final payload = _payload();
-      final saved = widget.plan == null
+      final service = widget.service;
+      final saved = service is CoachTrainingApi
+          ? await service.saveCurrent(widget.memberId, payload)
+          : widget.plan == null
           ? await widget.service.create(widget.memberId, payload)
           : await widget.service.update(widget.plan!.id, payload);
       if (mounted) Navigator.pop(context, saved.id);
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không lưu được bản nháp.');
+      if (mounted) setState(() => _error = 'Không lưu được giáo trình.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -329,7 +332,11 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
               ),
               FilledButton(
                 onPressed: _busy ? null : _save,
-                child: const Text('Lưu bản nháp'),
+                child: Text(
+                  widget.service is CoachTrainingApi
+                      ? 'Lưu giáo trình'
+                      : 'Lưu bản nháp',
+                ),
               ),
             ],
           ),

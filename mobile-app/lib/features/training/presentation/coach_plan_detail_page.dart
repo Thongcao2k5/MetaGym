@@ -9,11 +9,13 @@ class CoachPlanDetailPage extends StatefulWidget {
   const CoachPlanDetailPage({
     required this.id,
     required this.service,
+    this.memberId,
     super.key,
   });
 
   final String id;
   final CoachTrainingService service;
+  final String? memberId;
 
   @override
   State<CoachPlanDetailPage> createState() => _CoachPlanDetailPageState();
@@ -48,11 +50,16 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
 
   Future<void> _edit() async {
     final plan = _plan;
-    if (plan == null || plan.status != 'DRAFT') return;
+    if (plan == null ||
+        (widget.service is CoachTrainingApi
+            ? plan.status != 'ACTIVE'
+            : plan.status != 'DRAFT')) {
+      return;
+    }
     final saved = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => CoachPlanFormPage(
-          memberId: '',
+          memberId: widget.memberId ?? '',
           plan: plan,
           service: widget.service,
         ),
@@ -136,7 +143,14 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                  if (_plan!.status == 'DRAFT') ...[
+                  if (widget.service is CoachTrainingApi &&
+                      _plan!.status == 'ACTIVE')
+                    OutlinedButton(
+                      onPressed: _busy ? null : _edit,
+                      child: const Text('Sửa giáo trình'),
+                    ),
+                  if (widget.service is! CoachTrainingApi &&
+                      _plan!.status == 'DRAFT') ...[
                     OutlinedButton(
                       onPressed: _busy ? null : _edit,
                       child: const Text('Sửa bản nháp'),

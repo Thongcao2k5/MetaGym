@@ -125,16 +125,51 @@ async function charge(client, entitlementId, actorId) {
 
 export function createCoachBookingsRouter({ database, jwtSecret }) {
   const router = Router();
-  router.use(['/coach-bookings', '/coach-entitlements'], createAuthentication({ database, jwtSecret }));
+  router.use(['/coach-bookings', '/coach-entitlements', '/coach-notifications'],
+    createAuthentication({ database, jwtSecret }));
+
+  router.get('/coach-notifications', async (request, response) => {
+    return transact(database, response, async (client) => {
+      await client.query(
+        `INSERT INTO coach_notifications (user_id, kind, subject_id)
+         SELECT member_id, 'PACKAGE_EXPIRING', id FROM coach_entitlements
+         WHERE member_id = $1 AND status = 'ACTIVE'
+           AND ends_on BETWEEN (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+             AND (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date + 7
+         ON CONFLICT DO NOTHING`, [request.authUser.id],
+      );
+      const { rows } = await client.query(
+        `SELECT id, kind, subject_id AS "subjectId", event_at AS "eventAt", read_at AS "readAt"
+         FROM coach_notifications WHERE user_id = $1 ORDER BY id DESC LIMIT 100`,
+        [request.authUser.id],
+      );
+      return { data: rows };
+    });
+  });
+
+  router.patch('/coach-notifications/:id/read', async (request, response) => {
+    const id = request.params.id;
+    if (!/^\d{1,18}$/.test(id)) return error(response, 422, 'VALIDATION_ERROR', 'Mã thông báo không hợp lệ');
+    return transact(database, response, async (client) => {
+      const { rows: [item] } = await client.query(
+        `UPDATE coach_notifications SET read_at = COALESCE(read_at, statement_timestamp())
+         WHERE id = $1 AND user_id = $2 RETURNING id, read_at AS "readAt"`, [id, request.authUser.id],
+      );
+      if (!item) reject(404, 'NOT_FOUND', 'Không tìm thấy thông báo');
+      return { data: item };
+    });
+  });
 
   router.get('/coach-entitlements', async (request, response) => {
     if (request.authUser.role !== 'MEMBER') return error(response, 403, 'FORBIDDEN', 'Chỉ Member xem gói của mình');
     return transact(database, response, async (client) => {
       const { rows } = await client.query(
         `SELECT e.id, e.coach_id AS "coachId", h.plan_name AS "planName", e.status,
+           r.status AS "relationshipStatus",
            e.remaining_sessions AS "remainingSessions", e.total_sessions AS "totalSessions",
            e.starts_on::text AS "startsOn", e.ends_on::text AS "endsOn"
          FROM coach_entitlements e JOIN coach_payment_holds h ON h.id = e.hold_id
+         JOIN coach_relationships r ON r.id = e.relationship_id
          WHERE e.member_id = $1 ORDER BY h.created_at DESC LIMIT 100`, [request.authUser.id],
       );
       return { data: rows };
@@ -154,12 +189,17 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
 
   router.get('/coach-bookings/available-slots', async (request, response) => {
     if (request.authUser.role !== 'MEMBER') return error(response, 403, 'FORBIDDEN', 'Chỉ Member xem giờ đặt');
-    const parsed = z.strictObject({ entitlementId: uuid, date: z.iso.date() }).safeParse(request.query);
+    const parsed = z.strictObject({ entitlementId: uuid, date: z.iso.date(), bookingId: uuid.optional() }).safeParse(request.query);
     if (!parsed.success) return error(response, 422, 'VALIDATION_ERROR', 'Gói hoặc ngày tập không hợp lệ');
     return transact(database, response, async (client) => {
-      const { entitlementId, date } = parsed.data;
+      const { entitlementId, date, bookingId } = parsed.data;
       const { rows } = await client.query(
-        `SELECT slot.starts_at AS "startsAt",
+        `WITH replacement AS (
+           SELECT id, starts_at, starts_at < statement_timestamp() + interval '12 hours' AS late
+           FROM coach_bookings WHERE id = $4 AND entitlement_id = $1 AND member_id = $2
+             AND status = 'BOOKED' AND starts_at > statement_timestamp()
+         )
+         SELECT slot.starts_at AS "startsAt",
            slot.starts_at + interval '90 minutes' AS "endsAt"
          FROM coach_entitlements e JOIN coach_relationships r ON r.id = e.relationship_id
          JOIN coach_weekly_slots s ON s.coach_id = e.coach_id AND s.weekday = EXTRACT(ISODOW FROM $3::date)
@@ -172,22 +212,27 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
            AND NOT EXISTS (
              SELECT 1 FROM coach_slot_blocks WHERE coach_id = e.coach_id AND starts_at = slot.starts_at
            )
-           AND e.remaining_sessions > (
+           AND ($4::uuid IS NULL OR EXISTS (SELECT 1 FROM replacement))
+           AND NOT EXISTS (SELECT 1 FROM replacement x WHERE x.starts_at = slot.starts_at)
+           AND e.remaining_sessions - COALESCE((SELECT late::int FROM replacement), 0) > (
              SELECT count(*) FROM coach_bookings b WHERE b.entitlement_id = e.id AND b.status = 'BOOKED'
+               AND NOT EXISTS (SELECT 1 FROM replacement x WHERE x.id = b.id)
            )
            AND NOT EXISTS (
-             SELECT 1 FROM coach_bookings b WHERE
+             SELECT 1 FROM coach_bookings b WHERE NOT EXISTS (
+               SELECT 1 FROM replacement x WHERE x.id = b.id AND NOT x.late
+             ) AND (
                (b.member_id = e.member_id AND b.booking_date = $3::date
                  AND (b.status IN ('BOOKED', 'COMPLETED') OR b.charged_at IS NOT NULL))
                OR (b.coach_id = e.coach_id AND b.status IN ('BOOKED', 'COMPLETED')
-                 AND b.starts_at < slot.starts_at + interval '90 minutes' AND b.ends_at > slot.starts_at)
+                 AND b.starts_at < slot.starts_at + interval '90 minutes' AND b.ends_at > slot.starts_at))
            ) AND NOT EXISTS (
              SELECT 1 FROM training_sessions t JOIN coach_relationships old ON old.id = t.relationship_id
              WHERE old.coach_id = e.coach_id AND t.status = 'SCHEDULED'
                AND t.scheduled_start_at < slot.starts_at + interval '90 minutes'
                AND COALESCE(t.scheduled_end_at, t.scheduled_start_at + interval '90 minutes') > slot.starts_at
            )
-         ORDER BY slot.starts_at`, [entitlementId, request.authUser.id, date],
+         ORDER BY slot.starts_at`, [entitlementId, request.authUser.id, date, bookingId ?? null],
       );
       return { data: rows };
     });
@@ -300,6 +345,9 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
       if (booking.status !== 'BOOKED') {
         if (action === 'RESCHEDULE') reject(409, 'BOOKING_RESOLVED', 'Lịch cũ đã được xử lý');
         return { data: view(booking) };
+      }
+      if (action === 'RESCHEDULE' && Date.parse(startsAt) === booking.starts_at.getTime()) {
+        reject(422, 'VALIDATION_ERROR', 'Giờ mới phải khác giờ đã đặt');
       }
       const completion = ['COMPLETE', 'NO_SHOW'].includes(action);
       if ((completion && !booking.finished) || (!completion && !booking.future)) {

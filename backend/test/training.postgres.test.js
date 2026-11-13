@@ -170,6 +170,13 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
         `SELECT count(*)::int AS count FROM training_plans
          WHERE member_id = $1 AND status = 'ACTIVE'`, [memberId])).rows[0].count, 1);
       assert.equal((await call(app, '/training-plans/me/history', member)).body.data.length, 3);
+      const currentPath = `/coach/members/${memberId}/training-plans/current`;
+      const before = (await call(app, '/training-plans/me/active', member)).body.data;
+      result = await call(app, currentPath, coach, 'PUT', { ...body, title: 'Current V2 plan' });
+      assert.equal(result.status, 200, JSON.stringify(result.body));
+      assert.equal(result.body.data.id, before.id);
+      assert.equal((await call(app, '/training-plans/me/active', member)).body.data.title,
+        'Current V2 plan');
       result = await call(app, `/coach/members/${memberId}/nutrition-guides`, coach,
         'POST', { title: 'Balanced meals', content: 'Eat sufficient protein.' });
       assert.equal(result.status, 201);

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
@@ -38,23 +40,35 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
 
   Future<void> _openChat() async {
     if (_openingChat) return;
-    final messaging = widget.messagingService ?? context.read<MessagingService>();
-    final currentUserId = widget.currentUserId ??
-        context.read<SessionController>().user!.id;
-    setState(() { _openingChat = true; _chatError = null; });
+    final messaging =
+        widget.messagingService ?? context.read<MessagingService>();
+    final currentUserId =
+        widget.currentUserId ?? context.read<SessionController>().user!.id;
+    setState(() {
+      _openingChat = true;
+      _chatError = null;
+    });
     try {
-      final conversation = await messaging.startConversation(coachId: widget.coachId);
+      final conversation = await messaging.startConversation(
+        coachId: widget.coachId,
+      );
       if (!mounted) return;
-      await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => ConversationDetailPage(
-          conversation: conversation, service: messaging,
-          currentUserId: currentUserId, picker: DeviceProgressPhotoPicker(),
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConversationDetailPage(
+            conversation: conversation,
+            service: messaging,
+            currentUserId: currentUserId,
+            picker: DeviceProgressPhotoPicker(),
+          ),
         ),
-      ));
+      );
     } on ApiException catch (error) {
       if (mounted) setState(() => _chatError = error.message);
     } catch (_) {
-      if (mounted) setState(() => _chatError = 'Không mở được cuộc trò chuyện.');
+      if (mounted) {
+        setState(() => _chatError = 'Không mở được cuộc trò chuyện.');
+      }
     } finally {
       if (mounted) setState(() => _openingChat = false);
     }
@@ -114,6 +128,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
   @override
   Widget build(BuildContext context) {
     final coach = _coach;
+    final hasApi = context.read<ApiClient?>() != null;
     return Scaffold(
       appBar: AppBar(title: const Text('Chi tiết Coach')),
       body: coach == null && _loadError == null
@@ -154,12 +169,28 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                   OutlinedButton.icon(
                     onPressed: _openingChat ? null : _openChat,
                     icon: const Icon(Icons.chat_bubble_outline),
-                    label: Text(_openingChat ? 'Đang mở…' : 'Nhắn tin với Coach'),
+                    label: Text(
+                      _openingChat ? 'Đang mở…' : 'Nhắn tin với Coach',
+                    ),
                   ),
                   if (_chatError != null)
-                    Text(_chatError!, style: TextStyle(
-                      color: Theme.of(context).colorScheme.error)),
-                  if (_sent)
+                    Text(
+                      _chatError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  if (hasApi)
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CoachOffersPage(coachId: widget.coachId),
+                        ),
+                      ),
+                      child: const Text('Xem gói Coach'),
+                    )
+                  else if (_sent)
                     const Text('Yêu cầu đã được gửi.')
                   else if (coach.availableSlots > 0) ...[
                     const SizedBox(height: 16),

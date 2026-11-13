@@ -197,6 +197,60 @@ export function createTrainingRouter({ database, jwtSecret }) {
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được giáo trình'); }
   });
 
+  router.put('/coach/members/:memberId/training-plans/current', async (request, response) => {
+    if (request.authUser.role !== 'COACH') return fail(response, 403, 'FORBIDDEN', 'Chỉ Coach được lưu giáo trình');
+    const memberId = request.params.memberId;
+    const parsed = planSchema.safeParse(request.body);
+    if (!uuid.safeParse(memberId).success || !parsed.success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Giáo trình không hợp lệ');
+    }
+    const client = await database.connect().catch(() => null);
+    if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [memberId]);
+      const coachId = request.authUser.id;
+      const relationship = await activeRelationship(client, coachId, memberId, true);
+      if (!relationship) {
+        await client.query('ROLLBACK');
+        return fail(response, 403, 'RELATIONSHIP_REQUIRED', 'Quan hệ Coach–Member không hoạt động');
+      }
+      const { title, goal, startDate, endDate, days } = parsed.data;
+      const { rows: [current] } = await client.query(
+        `SELECT id FROM training_plans WHERE relationship_id = $1 AND status = 'ACTIVE' FOR UPDATE`,
+        [relationship.id],
+      );
+      const id = current?.id ?? randomUUID();
+      if (current) {
+        await client.query(
+          'UPDATE training_plans SET title = $2, goal = $3, start_date = $4, end_date = $5 WHERE id = $1',
+          [id, title, goal ?? null, startDate ?? null, endDate ?? null],
+        );
+      } else {
+        await client.query(
+          `UPDATE training_plans SET status = 'ARCHIVED', archived_at = now()
+           WHERE member_id = $1 AND status = 'ACTIVE'`, [memberId],
+        );
+        await client.query(
+          `INSERT INTO training_plans (id, relationship_id, member_id, coach_id, title,
+             goal, start_date, end_date, version, status, published_at)
+           SELECT $1, $2, $3, $4, $5, $6, $7, $8, COALESCE(max(version), 0) + 1, 'ACTIVE', now()
+           FROM training_plans WHERE member_id = $3`,
+          [id, relationship.id, memberId, coachId, title, goal ?? null, startDate ?? null, endDate ?? null],
+        );
+      }
+      await replaceDays(client, id, days);
+      const plan = await loadPlan(client, id);
+      await client.query('COMMIT');
+      return response.json({ data: plan });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      return error.message === 'INVALID_EXERCISE' || error.code === '23505'
+        ? fail(response, 422, 'VALIDATION_ERROR', 'Ngày tập hoặc bài tập không hợp lệ')
+        : fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không lưu được giáo trình');
+    } finally { client.release(); }
+  });
+
   router.post('/coach/members/:memberId/training-plans', async (request, response) => {
     if (request.authUser.role !== 'COACH') return fail(response, 403, 'FORBIDDEN', 'Chỉ Coach được tạo');
     if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');

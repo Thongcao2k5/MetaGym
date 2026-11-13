@@ -20,6 +20,15 @@ class CoachTrainingApi implements CoachTrainingService {
 
   final ApiClient client;
 
+  Future<TrainingPlan> saveCurrent(
+    String memberId,
+    Map<String, Object?> payload,
+  ) async => (await client.put(
+    '/coach/members/${Uri.encodeComponent(memberId)}/training-plans/current',
+    body: payload,
+    decode: TrainingPlan.fromJson,
+  )).data;
+
   @override
   Future<List<CoachMemberSummary>> getMembers() =>
       CoachMembersApi(client).getMembers();
