@@ -303,13 +303,6 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Thông báo Coach',
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
-            ),
-          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Đóng'),
@@ -345,6 +338,13 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
       appBar: AppBar(
         title: const Text('Lịch Coach'),
         actions: [
+          IconButton(
+            tooltip: 'Thông báo Coach',
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
+            ),
+          ),
           IconButton(
             tooltip: 'Tải lại',
             onPressed: _busy ? null : () => _run(_reload),
@@ -416,12 +416,20 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(_slotLabel(booking['startsAt'] as String)),
-              subtitle: Text(switch (booking['status']) {
-                'BOOKED' => 'Đã đặt',
-                'COMPLETED' => 'Đã hoàn thành',
-                _ =>
-                  'Đã hủy${booking['chargedAt'] != null ? ' · Đã trừ lượt' : ''}',
-              }),
+              subtitle: Text(
+                [
+                  if (booking[_isCoach ? 'memberName' : 'coachName']
+                      case final String name)
+                    name,
+                  switch (booking['status']) {
+                    'BOOKED' => 'Đã đặt',
+                    'COMPLETED' => 'Đã hoàn thành',
+                    _ =>
+                      'Đã hủy${booking['chargedAt'] != null ? ' · Đã trừ lượt' : ''}',
+                  },
+                  if (booking['reason'] case final String reason) reason,
+                ].join(' · '),
+              ),
             ),
             if (booking['status'] == 'BOOKED')
               Wrap(

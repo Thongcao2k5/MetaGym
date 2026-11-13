@@ -17,6 +17,7 @@ function view(row) {
     id: row.id, entitlementId: row.entitlement_id, memberId: row.member_id,
     coachId: row.coach_id, startsAt: row.starts_at, endsAt: row.ends_at,
     status: row.status, chargedAt: row.charged_at, reason: row.reason,
+    memberName: row.member_name, coachName: row.coach_name,
   };
 }
 
@@ -180,8 +181,10 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
     if (!['MEMBER', 'COACH'].includes(request.authUser.role)) return error(response, 403, 'FORBIDDEN', 'Không có quyền xem lịch Coach');
     return transact(database, response, async (client) => {
       const { rows } = await client.query(
-        `SELECT * FROM coach_bookings WHERE member_id = $1 OR coach_id = $1
-         ORDER BY starts_at DESC LIMIT 100`, [request.authUser.id],
+        `SELECT b.*, m.full_name AS member_name, c.full_name AS coach_name
+         FROM coach_bookings b JOIN users m ON m.id = b.member_id JOIN users c ON c.id = b.coach_id
+         WHERE b.member_id = $1 OR b.coach_id = $1 ORDER BY b.starts_at DESC LIMIT 100`,
+        [request.authUser.id],
       );
       return { data: rows.map(view) };
     });
