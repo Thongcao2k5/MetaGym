@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 38 THEN
-    RAISE EXCEPTION 'Expected 38 public tables, found %', table_count;
+  IF table_count <> 39 THEN
+    RAISE EXCEPTION 'Expected 39 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -29,7 +29,7 @@ DECLARE
     'conversation_participants', 'messages', 'call_logs', 'ai_conversations',
     'ai_messages', 'admin_audit_logs', 'auth_login_rate_limits',
     'auth_password_reset_rate_limits', 'member_journal_entries',
-    'member_journal_photos', 'coach_package_plans'
+    'member_journal_photos', 'coach_package_plans', 'coach_weekly_slots'
   ];
   missing_tables text[];
 BEGIN
@@ -56,7 +56,8 @@ DECLARE
     'fk_participant_read_cursor',
     'fk_ai_reply_conversation', 'uq_member_journal_day',
     'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner',
-    'ck_direct_conversation_pair', 'ck_coach_package_fixed_terms'
+    'ck_direct_conversation_pair', 'ck_coach_package_fixed_terms',
+    'ex_coach_weekly_slot_overlap'
   ];
   missing_constraints text[];
 BEGIN
