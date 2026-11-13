@@ -908,3 +908,7 @@ Demo seed là lệnh riêng, chỉ chạy khi được chỉ định trong môi 
 3. Một quan hệ mới sau khi chuyển Coach tạo một conversation mới; lịch sử Coach cũ giữ nguyên và chỉ đọc.
 4. Ảnh riêng tư nằm ở dịch vụ lưu trữ tệp và được truy cập bằng URL ký có thời hạn.
 5. Chưa lưu refresh token vì kiến trúc xác thực MVP hiện dùng access token JWT; nếu bổ sung refresh token sẽ cần thêm bảng phiên đăng nhập.
+
+# Bổ sung 13/11/2026 — QR điểm danh tại quầy
+
+Migration `0020_gym_checkins.up.sql` thêm `gym_checkin_code` (một mã UUID tĩnh cho một phòng gym, Admin có thể đổi) và `gym_visits` (mỗi lần quét thành công là một dòng gồm Member, ngày theo `Asia/Ho_Chi_Minh`, thời điểm máy chủ và snapshot tên/địa chỉ gym). Không có unique constraint theo `(member_id, visit_day)` vì Member được vào nhiều lần trong ngày. Lịch tháng đếm ngày khác nhau; lịch sử giữ mọi lượt quét. Bảng này độc lập với nhật ký riêng tư và buổi Coach.

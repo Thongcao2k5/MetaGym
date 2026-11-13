@@ -41,6 +41,7 @@ dependencies:
   fl_chart: ^1.2.0
   intl: ^0.20.3
   image_picker: ^1.2.4
+  mobile_scanner: 7.5.0
 
 dev_dependencies:
   flutter_test:

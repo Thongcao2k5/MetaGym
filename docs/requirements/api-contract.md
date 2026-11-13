@@ -299,6 +299,17 @@ Coach chỉ đọc hướng dẫn dinh dưỡng và buổi tập thuộc quan h�
 
 ## 7. Progress Tracking
 
+### Lịch sử đến gym bằng QR (quyết định 13/11/2026)
+
+| Method | Endpoint | Quyền | Mục đích |
+| --- | --- | --- | --- |
+| `GET` | `/admin/gym-checkin-code` | Admin | Lấy nội dung mã QR tĩnh để in |
+| `POST` | `/admin/gym-checkin-code/rotate` | Admin | Đổi mã; bản in cũ hết hiệu lực |
+| `GET` | `/gym-visits/me?month=YYYY-MM` | Member | Lượt vào và số ngày đến gym trong tháng |
+| `POST` | `/gym-visits/check-in` | Member có gói Gym hiệu lực | Quét mã `{ "code": "metagym://gym-checkin/<uuid>" }` |
+
+Member được quét nhiều lần trong ngày. `visitedDays` đếm ngày khác nhau, `entryCount` đếm lượt quét; `eligibleDays` là số ngày có gói Gym hiệu lực từ đầu tháng đến hôm nay. Lượt quét chỉ ghi thời điểm máy chủ theo `Asia/Ho_Chi_Minh`, không lấy thời gian do điện thoại gửi.
+
 | Method | Endpoint | Quyền | Mục đích |
 | --- | --- | --- | --- |
 | `GET` | `/progress/me/summary` | Member | Số liệu tiến độ gần nhất |

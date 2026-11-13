@@ -33,6 +33,7 @@ Chạy các file `*.up.sql` theo thứ tự:
 17. `0017_coach_expiry_reminders.up.sql`
 18. `0018_daily_training_meals.up.sql`
 19. `0019_backfill_member_journal.up.sql`
+20. `0020_gym_checkins.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 

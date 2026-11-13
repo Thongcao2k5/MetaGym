@@ -23,7 +23,14 @@ Luồng nghiệp vụ trọng tâm của MVP:
 - Nhiều phòng gym hoặc nhiều chi nhánh.
 - Lớp học nhóm và đăng ký lớp.
 - Thanh toán thật, hoàn tiền và xuất hóa đơn.
-- Điểm danh bằng QR, khuôn mặt hoặc vân tay.
+- Điểm danh bằng khuôn mặt hoặc vân tay. Điểm danh QR tĩnh tại quầy được bổ sung theo quyết định mới ngày 13/11/2026.
+
+### Quyết định mới — lịch sử đến gym bằng QR
+
+- Admin in mã QR cố định của một phòng gym tại quầy; có thể đổi mã và in lại khi cần. Member có gói Gym còn hiệu lực quét bằng ứng dụng để ghi nhận thời điểm đến.
+- Một Member được vào và quét nhiều lần trong cùng một ngày. Lịch tháng tính **số ngày khác nhau** đã đến, còn danh sách giữ **từng lượt quét và giờ** theo múi giờ Việt Nam.
+- Điểm danh là dữ liệu vận hành, độc lập với Nhật ký tập luyện riêng tư và buổi hẹn Coach. Không tự tạo nhật ký, không trừ lượt Coach.
+- Mã QR tĩnh có thể bị chụp hoặc chia sẻ; tính năng này ghi nhận lượt quét, chưa chứng minh vị trí vật lý của người quét.
 - Mạng xã hội, bảng tin và kết bạn.
 - Đồng bộ đồng hồ thông minh hoặc ứng dụng sức khỏe.
 - Hệ thống dinh dưỡng tự động chuyên sâu.
