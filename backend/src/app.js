@@ -16,6 +16,7 @@ import { createPaymentsRouter } from './routes/payments.routes.js';
 import { createCoachingRouter } from './routes/coaching.routes.js';
 import { createCatalogRouter } from './routes/catalog.routes.js';
 import { createTrainingRouter } from './routes/training.routes.js';
+import { retireLegacyWrites } from './routes/legacy-v1.routes.js';
 import { createStructuredNutritionRouter } from './routes/structured-nutrition.routes.js';
 import { createSessionsRouter } from './routes/sessions.routes.js';
 import { createMessagingRouter } from './routes/messaging.routes.js';
@@ -72,6 +73,7 @@ export function createApp({
   imageStorage,
   corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS,
   nodeEnv = process.env.NODE_ENV,
+  enableLegacyWrites = false,
 }) {
   validateJwtSecret(jwtSecret);
   const corsOrigin = allowedCorsOrigins(corsAllowedOrigins, nodeEnv);
@@ -88,6 +90,7 @@ export function createApp({
     '/api/v1/auth',
     createAuthRouter({ database, jwtSecret, loginRateLimiter }),
   );
+  if (!enableLegacyWrites) app.use('/api/v1', retireLegacyWrites());
   app.use('/api/v1/health', createHealthRouter({ database }));
   app.use('/api/v1', createPasswordResetsRouter({ database, sendPasswordResetCode }));
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));

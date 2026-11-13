@@ -115,6 +115,10 @@ void main() {
     expect(find.text('Tin nhắn'), findsWidgets);
     expect(find.text('Hồ sơ'), findsOneWidget);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsNothing);
+    expect(find.text('Gói tập & Coach'), findsNothing);
+    expect(find.text('Chưa có gói tập · Chạm để khám phá gói'), findsOneWidget);
+    expect(find.byKey(const Key('member-today-plan-card')), findsNothing);
+    expect(find.text('Tiến độ'), findsNothing);
 
     // Quick access Coach opens CoachSelectionPage
     await tester.tap(find.text('Coach'));
@@ -272,8 +276,8 @@ void main() {
 
     expect(service.loginCalls, 1);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
-    expect(find.text('Yêu cầu chọn Coach'), findsOneWidget);
-    await tester.tap(find.text('Yêu cầu chọn Coach'));
+    expect(find.text('Yêu cầu chọn Coach'), findsNothing);
+    GoRouter.of(tester.element(find.byType(CoachHomePage))).push<void>('/coach/features/requests');
     await tester.pumpAndSettle();
     expect(find.byType(CoachRequestsPage), findsOneWidget);
     expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
@@ -307,7 +311,10 @@ void main() {
     GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
-    await tester.tap(find.text('Kiểm thử các luồng Coach'));
+    final workbenchButton = find.widgetWithText(OutlinedButton, 'Kiểm thử các luồng Coach');
+    await tester.ensureVisible(workbenchButton);
+    await tester.pumpAndSettle();
+    await tester.tap(workbenchButton);
     await tester.pumpAndSettle();
     expect(find.text('Kiểm thử luồng Coach'), findsOneWidget);
     await tester.pageBack();

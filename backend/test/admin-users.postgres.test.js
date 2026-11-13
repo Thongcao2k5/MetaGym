@@ -43,7 +43,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
     let secondCoachId;
     let planId;
     let paymentId;
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     try {
       await database.query(
         `INSERT INTO users (id, email, password_hash, role, full_name)

@@ -13,30 +13,44 @@ abstract final class MetaGymTheme {
     'sans-serif',
   ];
 
-  // Brand & Accent Tokens (DESIGN.md §2.1 & §2.4)
-  static const Color brandOrange = Color(0xFFFF5A36);
+  // Mandatory Semantic Design Tokens (Dark Performance UI with Controlled Glass)
+  static const Color scaffoldBackground = Color(0xFF0F1115);
+  static const Color cardSurface = Color(0xFF181B22);
+  static const Color elevatedSurface = Color(0xFF1F242D);
+  static const Color cardBorder = Color(0xFF262A34);
+  static const Color primary = Color(0xFFFF5E36);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color success = Color(0xFF2ECC71);
+  static const Color warning = Color(0xFFF39C12);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF8E95A5);
+  static const Color coachAvatarBackground = Color(0xFFF5B041);
+  static const Color coachAvatarForeground = Color(0xFF181B22);
+
+  // Brand & Accent Tokens (DESIGN.md §2.1 & §2.4 aligned with Semantic Tokens)
+  static const Color brandOrange = primary;
   static const Color brandOrangeHover = Color(0xFFE84729);
   static const Color brandOrangePressed = Color(0xFFCF3A1E);
-  static const Color onBrandOrange = Color(0xFF090B0E);
+  static const Color onBrandOrange = onPrimary;
   static const Color reflectionBlue = Color(0xFFA9C7E8);
-  static const Color progressGreen = Color(0xFF23C997);
-  static const Color warningAmber = Color(0xFFF2A93B);
+  static const Color progressGreen = success;
+  static const Color warningAmber = warning;
   static const Color dangerCoral = Color(0xFFF15B64);
   static const Color infoSteelBlue = Color(0xFF70AEE8);
   static const Color focusBlue = Color(0xFF8DBCF0);
 
   // Dark Mode — Performance Obsidian Surfaces (DESIGN.md §2.3 & §3)
-  static const Color darkCanvas = Color(0xFF080A0D);
-  static const Color darkCanvasElevated = Color(0xFF0E1217);
-  static const Color darkSurface = Color(0xFF11161C);
-  static const Color darkSurfaceMid = Color(0xFF151B22);
-  static const Color darkSurfaceRaised = Color(0xFF181F27);
-  static const Color darkSurfaceInteractive = Color(0xFF1F2833);
+  static const Color darkCanvas = scaffoldBackground;
+  static const Color darkCanvasElevated = Color(0xFF14171E);
+  static const Color darkSurface = cardSurface;
+  static const Color darkSurfaceMid = Color(0xFF1A1E26);
+  static const Color darkSurfaceRaised = elevatedSurface;
+  static const Color darkSurfaceInteractive = Color(0xFF232934);
 
   // Dark Mode — Text Hierarchy (DESIGN.md §2.3)
-  static const Color darkTextPrimary = Color(0xFFF7F9FC);
-  static const Color darkTextSecondary = Color(0xFFB8C2D0);
-  static const Color darkTextTertiary = Color(0xFF818C9C);
+  static const Color darkTextPrimary = textPrimary;
+  static const Color darkTextSecondary = textSecondary;
+  static const Color darkTextTertiary = Color(0xFF6B7280);
 
   // Dark Mode — Borders & Dividers (DESIGN.md §2.3 & §5.3)
   /// Card border at ~10% opacity (within 8–12% rule).
@@ -54,9 +68,12 @@ abstract final class MetaGymTheme {
 
   /// Level 2 Performance Glass (DESIGN.md §3.2 & Step 3/4).
   /// `rgba(18, 23, 30, 0.72)` with `14–16px` blur and `rgba(212, 228, 255, 0.18)` border.
-  /// Use ONLY for Quick-action dock and Bottom navigation on Member Home.
-  static const Color performanceGlass = Color(0xB812171E); // rgba(18, 23, 30, 0.72)
-  static const Color performanceGlassBorder = Color(0x2ED4E4FF); // rgba(212, 228, 255, 0.18)
+  static const Color performanceGlass = Color(
+    0xB812171E,
+  ); // rgba(18, 23, 30, 0.72)
+  static const Color performanceGlassBorder = Color(
+    0x2ED4E4FF,
+  ); // rgba(212, 228, 255, 0.18)
   static const Color performanceGlassTopHighlight = Color(0x38E6F1FF);
   static const double performanceGlassBlur = 14;
   static const double bottomNavGlassBlur = 16;
@@ -105,7 +122,7 @@ abstract final class MetaGymTheme {
     final isDark = brightness == Brightness.dark;
     final surface = isDark ? darkSurface : _lightSurface;
     final onSurface = isDark ? darkTextPrimary : _lightText;
-    final outline = isDark ? darkBorderStrong : const Color(0xFFCBD4DF);
+    final outline = isDark ? cardBorder : const Color(0xFFCBD4DF);
 
     final colorScheme =
         ColorScheme.fromSeed(

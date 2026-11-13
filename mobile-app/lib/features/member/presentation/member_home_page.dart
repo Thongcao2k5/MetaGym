@@ -22,28 +22,31 @@ class _MemberHomePageState extends State<MemberHomePage> {
   @override
   Widget build(BuildContext context) {
     final currentUserId = context.watch<SessionController>().user?.id ?? '';
+    final bottomPadding = MetaGymBottomNav.contentBottomPadding(context);
 
     // 5 tabs in exact order: Trang chủ · Tập luyện · AI · Tin nhắn · Hồ sơ
     final pages = [
       MemberDashboardView(
         onNavigateTab: (index) => setState(() => _index = index),
-        bottomPadding: MetaGymBottomNav.contentBottomPadding(context),
+        bottomPadding: bottomPadding,
       ),
-      const MemberTrainingPage(),
-      const AiConversationsPage(),
-      ConversationsPage(currentUserId: currentUserId),
-      const ProfilePage(),
+      MemberTrainingPage(bottomPadding: bottomPadding),
+      AiConversationsPage(bottomPadding: bottomPadding),
+      ConversationsPage(
+        currentUserId: currentUserId,
+        bottomPadding: bottomPadding,
+      ),
+      ProfilePage(bottomPadding: bottomPadding),
     ];
 
     return RepaintBoundary(
       child: Scaffold(
-        extendBody: _index == 0,
-        backgroundColor: _index == 0
-            ? MetaGymTheme.darkCanvas
-            : Theme.of(context).scaffoldBackgroundColor,
+        extendBody: true,
+        backgroundColor: MetaGymTheme.darkCanvas,
         body: IndexedStack(index: _index, children: pages),
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,
+          warmGlass: true,
           onTap: (value) => setState(() => _index = value),
         ),
       ),

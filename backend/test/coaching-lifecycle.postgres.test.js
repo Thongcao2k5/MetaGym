@@ -30,7 +30,7 @@ async function call(base, path, bearer, method = 'GET', body) {
 test('Coach requests enforce ownership, membership, capacity and lifecycle under concurrency',
   { skip: !databaseUrl }, async () => {
     const database = new pg.Pool({ connectionString: databaseUrl });
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     const server = app.listen(0);
     const base = `http://127.0.0.1:${server.address().port}`;
     const adminId = randomUUID();

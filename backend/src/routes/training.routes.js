@@ -18,11 +18,20 @@ const exercise = z.strictObject({
   notes: z.string().trim().max(2000).nullable().optional(),
 }).refine((value) => value.reps || value.durationSeconds,
   'Cần số lần lặp hoặc thời lượng');
+const plannedMeal = z.strictObject({
+  displayOrder: z.number().int().min(1).max(32767),
+  mealType: z.enum(['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK', 'OTHER']),
+  scheduledTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
+  title: z.string().trim().min(1).max(120),
+  notes: z.string().trim().max(2000).nullable().optional(),
+});
 const day = z.strictObject({
   dayNumber: z.number().int().min(1).max(32767),
+  scheduledDate: date.nullable().optional(),
   title: z.string().trim().min(1).max(120),
   notes: z.string().trim().max(2000).nullable().optional(),
   exercises: z.array(exercise).max(50),
+  meals: z.array(plannedMeal).max(12).optional(),
 });
 const planFields = {
   title, goal: z.string().trim().max(5000).nullable().optional(),
@@ -60,7 +69,9 @@ async function loadPlan(database, id) {
   const found = await database.query('SELECT * FROM training_plans WHERE id = $1', [id]);
   if (!found.rows.length) return null;
   const rows = await database.query(
-    `SELECT d.id AS day_id, d.day_number, d.title AS day_title, d.notes AS day_notes,
+    `SELECT d.id AS day_id, d.day_number,
+            to_char(d.scheduled_date, 'YYYY-MM-DD') AS scheduled_date,
+            d.title AS day_title, d.notes AS day_notes,
             e.id AS item_id, e.exercise_id, e.exercise_name_snapshot,
             e.instructions_snapshot, e.safety_notes_snapshot, e.display_order,
             e.sets, e.reps, e.duration_seconds, e.rest_seconds,
@@ -73,7 +84,8 @@ async function loadPlan(database, id) {
     let current = days.at(-1);
     if (current?.id !== row.day_id) {
       current = { id: row.day_id, dayNumber: row.day_number,
-        title: row.day_title, notes: row.day_notes, exercises: [] };
+        scheduledDate: row.scheduled_date, title: row.day_title,
+        notes: row.day_notes, exercises: [], meals: [] };
       days.push(current);
     }
     if (row.item_id) current.exercises.push({
@@ -84,6 +96,21 @@ async function loadPlan(database, id) {
       displayOrder: row.display_order, sets: row.sets, reps: row.reps,
       durationSeconds: row.duration_seconds, restSeconds: row.rest_seconds,
       weightGuidance: row.weight_guidance, notes: row.item_notes,
+    });
+  }
+  if (days.length) {
+    const meals = await database.query(
+      `SELECT id, plan_day_id, display_order, meal_type,
+              to_char(scheduled_time, 'HH24:MI') AS scheduled_time,
+              title, notes FROM training_plan_day_meals
+       WHERE plan_day_id = ANY($1::uuid[])
+       ORDER BY plan_day_id, display_order`,
+      [days.map((item) => item.id)],
+    );
+    const byDay = new Map(days.map((item) => [item.id, item]));
+    for (const row of meals.rows) byDay.get(row.plan_day_id)?.meals.push({
+      id: row.id, displayOrder: row.display_order, mealType: row.meal_type,
+      scheduledTime: row.scheduled_time, title: row.title, notes: row.notes,
     });
   }
   return planView(found.rows[0], days);
@@ -100,6 +127,10 @@ async function activeRelationship(client, coachId, memberId, lock = false) {
 
 async function replaceDays(client, planId, days) {
   await client.query(
+    `DELETE FROM training_plan_day_meals WHERE plan_day_id IN
+     (SELECT id FROM training_plan_days WHERE plan_id = $1)`, [planId],
+  );
+  await client.query(
     `DELETE FROM training_plan_exercises WHERE plan_day_id IN
      (SELECT id FROM training_plan_days WHERE plan_id = $1)`, [planId],
   );
@@ -107,9 +138,11 @@ async function replaceDays(client, planId, days) {
   for (const item of days) {
     const dayId = randomUUID();
     await client.query(
-      `INSERT INTO training_plan_days (id, plan_id, day_number, title, notes)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [dayId, planId, item.dayNumber, item.title, item.notes ?? null],
+      `INSERT INTO training_plan_days
+       (id, plan_id, day_number, scheduled_date, title, notes)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [dayId, planId, item.dayNumber, item.scheduledDate ?? null,
+        item.title, item.notes ?? null],
     );
     for (const detail of item.exercises) {
       const catalog = await client.query(
@@ -128,6 +161,15 @@ async function replaceDays(client, planId, days) {
           detail.displayOrder, detail.sets ?? null, detail.reps ?? null,
           detail.durationSeconds ?? null, detail.restSeconds ?? null,
           detail.weightGuidance ?? null, detail.notes ?? null],
+      );
+    }
+    for (const meal of item.meals ?? []) {
+      await client.query(
+        `INSERT INTO training_plan_day_meals
+         (id, plan_day_id, display_order, meal_type, scheduled_time, title, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [randomUUID(), dayId, meal.displayOrder, meal.mealType,
+          meal.scheduledTime ?? null, meal.title, meal.notes ?? null],
       );
     }
   }

@@ -13,6 +13,12 @@ class MemberJournalApi implements MemberJournalService {
   const MemberJournalApi(this.client);
   final ApiClient client;
 
+  Future<int> getCount() async {
+    final result = await client.get('/journal',
+      queryParameters: {'page': 1, 'pageSize': 1}, decode: (value) => value);
+    return result.pagination?['totalItems'] as int? ?? 0;
+  }
+
   @override
   Future<List<JournalEntry>> getPage(int page) async =>
       (await client.get<List<JournalEntry>>(

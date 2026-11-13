@@ -39,7 +39,7 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
     const returnRelationshipId = randomUUID();
     const conversationId = randomUUID();
     const exerciseId = randomUUID();
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     const aiApp = createApp({ database, jwtSecret: secret,
       aiResponder: async ({ content }) => ({
         content: `Test reply: ${content}`, provider: 'TEST', modelName: 'mock',
@@ -126,8 +126,11 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       assert.equal((await call(app, `/ai-conversations/${aiId}`, member, 'DELETE')).status, 200);
       assert.equal((await call(app, `/ai-conversations/${aiId}`, member)).status, 404);
       const body = { title: 'Strength basics', goal: 'Improve strength', days: [
-        { dayNumber: 1, title: 'Monday', exercises: [
+        { dayNumber: 1, scheduledDate: '2026-11-16', title: 'Monday', exercises: [
           { exerciseId, displayOrder: 1, sets: 3, reps: '10' },
+        ], meals: [
+          { displayOrder: 1, mealType: 'LUNCH', scheduledTime: '12:00',
+            title: 'Chicken and rice', notes: 'Add vegetables' },
         ] },
       ] };
       assert.equal((await call(app, `/coach/members/${memberId}/training-plans`, member,
@@ -140,6 +143,8 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       const planId = result.body.data.id;
       assert.equal(result.body.data.status, 'DRAFT');
       assert.equal(result.body.data.days[0].exercises[0].exerciseName, 'Squat');
+      assert.equal(result.body.data.days[0].scheduledDate, '2026-11-16');
+      assert.equal(result.body.data.days[0].meals[0].title, 'Chicken and rice');
       result = await call(app, `/coach/training-plans/${planId}`, coach,
         'PATCH', { goal: 'Build consistency' });
       assert.equal(result.status, 200);
@@ -153,6 +158,8 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       assert.equal(result.body.data.status, 'ACTIVE');
       assert.equal((await call(app, `/training-plans/${planId}`, member)).status, 200);
       assert.equal((await call(app, '/training-plans/me/active', member)).body.data.id, planId);
+      assert.equal((await call(app, '/training-plans/me/active', member))
+        .body.data.days[0].meals[0].scheduledTime, '12:00');
       assert.equal((await call(app, `/coach/training-plans/${planId}`, coach,
         'PATCH', body)).status, 409);
       await database.query("UPDATE exercises SET name = 'Renamed Squat' WHERE id = $1", [exerciseId]);
@@ -401,6 +408,11 @@ test('PostgreSQL training plans stay private until published and preserve snapsh
       await database.query('DELETE FROM training_sessions WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM nutrition_guides WHERE member_id = $1', [memberId]);
       await database.query(
+        `DELETE FROM training_plan_day_meals WHERE plan_day_id IN
+         (SELECT id FROM training_plan_days WHERE plan_id IN
+          (SELECT id FROM training_plans WHERE member_id = $1))`, [memberId],
+      );
+      await database.query(
         `DELETE FROM training_plan_exercises WHERE plan_day_id IN
          (SELECT id FROM training_plan_days WHERE plan_id IN
           (SELECT id FROM training_plans WHERE member_id = $1))`, [memberId],
@@ -426,7 +438,7 @@ test('editing a draft waits for relationship termination and rejects the former 
     const coachId = randomUUID();
     const relationshipId = randomUUID();
     const planId = randomUUID();
-    const app = createApp({ database, jwtSecret: secret });
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true });
     let locked;
     let pendingPatch;
     try {

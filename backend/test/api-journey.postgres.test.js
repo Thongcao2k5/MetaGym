@@ -41,7 +41,7 @@ test('PostgreSQL API journey from registration through coaching and termination'
   { skip: !databaseUrl }, async () => {
     const database = new pg.Pool({ connectionString: databaseUrl });
     const storageDir = await mkdtemp(path.join(tmpdir(), 'metagym-journey-'));
-    const app = createApp({ database, jwtSecret: secret,
+    const app = createApp({ database, jwtSecret: secret, enableLegacyWrites: true,
       imageStorage: createLocalImageStorage(storageDir) });
     const server = app.listen(0);
     const base = `http://127.0.0.1:${server.address().port}`;
@@ -242,6 +242,11 @@ test('PostgreSQL API journey from registration through coaching and termination'
         await database.query('DELETE FROM nutrition_guides WHERE member_id = $1',
           [memberId]);
         await database.query(
+        `DELETE FROM training_plan_day_meals WHERE plan_day_id IN
+         (SELECT id FROM training_plan_days WHERE plan_id IN
+          (SELECT id FROM training_plans WHERE member_id = $1))`, [memberId],
+      );
+      await database.query(
           `DELETE FROM training_plan_exercises WHERE plan_day_id IN
            (SELECT id FROM training_plan_days WHERE plan_id IN
             (SELECT id FROM training_plans WHERE member_id = $1))`, [memberId],

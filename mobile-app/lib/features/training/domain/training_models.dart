@@ -53,8 +53,10 @@ class TrainingDay {
   const TrainingDay({
     required this.dayNumber,
     required this.title,
+    this.scheduledDate,
     this.notes,
     this.exercises = const [],
+    this.meals = const [],
   });
 
   factory TrainingDay.fromJson(Object? value) {
@@ -62,17 +64,58 @@ class TrainingDay {
     return TrainingDay(
       dayNumber: json['dayNumber'] as int,
       title: json['title'] as String,
+      scheduledDate: json['scheduledDate'] as String?,
       notes: json['notes'] as String?,
       exercises: (json['exercises'] as List? ?? const [])
           .map(TrainingExercise.fromJson)
+          .toList(),
+      meals: (json['meals'] as List? ?? const [])
+          .map(PlannedMeal.fromJson)
           .toList(),
     );
   }
 
   final int dayNumber;
   final String title;
+  final String? scheduledDate;
   final String? notes;
   final List<TrainingExercise> exercises;
+  final List<PlannedMeal> meals;
+}
+
+class PlannedMeal {
+  const PlannedMeal({
+    required this.displayOrder,
+    required this.mealType,
+    required this.title,
+    this.scheduledTime,
+    this.notes,
+  });
+
+  factory PlannedMeal.fromJson(Object? value) {
+    final json = Map<String, dynamic>.from(value as Map);
+    return PlannedMeal(
+      displayOrder: json['displayOrder'] as int,
+      mealType: json['mealType'] as String,
+      title: json['title'] as String,
+      scheduledTime: json['scheduledTime'] as String?,
+      notes: json['notes'] as String?,
+    );
+  }
+
+  final int displayOrder;
+  final String mealType;
+  final String title;
+  final String? scheduledTime;
+  final String? notes;
+
+  String get typeLabel => switch (mealType) {
+    'BREAKFAST' => 'Bữa sáng',
+    'LUNCH' => 'Bữa trưa',
+    'DINNER' => 'Bữa tối',
+    'SNACK' => 'Bữa phụ',
+    _ => 'Bữa ăn',
+  };
 }
 
 class TrainingPlan {

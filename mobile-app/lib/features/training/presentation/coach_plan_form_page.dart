@@ -89,6 +89,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     if (_days.isEmpty) return 'Cần ít nhất một ngày tập.';
     if (_catalog.isEmpty) return 'Chưa có bài tập để chọn.';
     for (final day in _days) {
+      if (day.scheduledDate == null) return 'Vui lòng chọn ngày trong lịch.';
       if (day.title.text.trim().isEmpty) return 'Vui lòng nhập tên ngày tập.';
       if (day.exercises.isEmpty) return 'Mỗi ngày cần ít nhất một bài tập.';
       for (final exercise in day.exercises) {
@@ -110,8 +111,38 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
           return 'Số hiệp phải là số dương.';
         }
       }
+      if (day.meals.isEmpty) return 'Mỗi ngày cần ít nhất một bữa ăn.';
+      for (final meal in day.meals) {
+        if (meal.title.text.trim().isEmpty) return 'Vui lòng nhập tên bữa ăn.';
+        final time = meal.time.text.trim();
+        if (time.isNotEmpty &&
+            !RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(time)) {
+          return 'Giờ ăn phải có dạng HH:mm.';
+        }
+      }
+    }
+    final dates = _days.map((day) => _formatDate(day.scheduledDate!)).toSet();
+    if (dates.length != _days.length) {
+      return 'Mỗi ngày phải có ngày lịch riêng.';
     }
     return null;
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  Future<void> _selectDayDate(int dayIndex) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _days[dayIndex].scheduledDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && mounted) {
+      setState(() => _days[dayIndex].scheduledDate = picked);
+    }
   }
 
   Map<String, Object?> _payload() => {
@@ -121,6 +152,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       for (var dayIndex = 0; dayIndex < _days.length; dayIndex++)
         {
           'dayNumber': dayIndex + 1,
+          'scheduledDate': _formatDate(_days[dayIndex].scheduledDate!),
           'title': _days[dayIndex].title.text.trim(),
           'notes': _days[dayIndex].notes.text.trim().isEmpty
               ? null
@@ -152,6 +184,26 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                 'weightGuidance':
                     _days[dayIndex].exercises[exerciseIndex].weightGuidance,
                 'notes': _days[dayIndex].exercises[exerciseIndex].notes,
+              },
+          ],
+          'meals': [
+            for (
+              var mealIndex = 0;
+              mealIndex < _days[dayIndex].meals.length;
+              mealIndex++
+            )
+              {
+                'displayOrder': mealIndex + 1,
+                'mealType': _days[dayIndex].meals[mealIndex].mealType,
+                'scheduledTime':
+                    _days[dayIndex].meals[mealIndex].time.text.trim().isEmpty
+                    ? null
+                    : _days[dayIndex].meals[mealIndex].time.text.trim(),
+                'title': _days[dayIndex].meals[mealIndex].title.text.trim(),
+                'notes':
+                    _days[dayIndex].meals[mealIndex].notes.text.trim().isEmpty
+                    ? null
+                    : _days[dayIndex].meals[mealIndex].notes.text.trim(),
               },
           ],
         },
@@ -203,6 +255,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
         for (var dayIndex = 0; dayIndex < _days.length; dayIndex++)
           TrainingDay(
             dayNumber: dayIndex + 1,
+            scheduledDate: _formatDate(_days[dayIndex].scheduledDate!),
             title: _days[dayIndex].title.text.trim(),
             notes: _days[dayIndex].notes.text.trim(),
             exercises: [
@@ -231,6 +284,23 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                     _days[dayIndex].exercises[exerciseIndex].duration.text
                         .trim(),
                   ),
+                ),
+            ],
+            meals: [
+              for (
+                var mealIndex = 0;
+                mealIndex < _days[dayIndex].meals.length;
+                mealIndex++
+              )
+                PlannedMeal(
+                  displayOrder: mealIndex + 1,
+                  mealType: _days[dayIndex].meals[mealIndex].mealType,
+                  scheduledTime:
+                      _days[dayIndex].meals[mealIndex].time.text.trim().isEmpty
+                      ? null
+                      : _days[dayIndex].meals[mealIndex].time.text.trim(),
+                  title: _days[dayIndex].meals[mealIndex].title.text.trim(),
+                  notes: _days[dayIndex].meals[mealIndex].notes.text.trim(),
                 ),
             ],
           ),
@@ -289,6 +359,16 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                   'Ngày ${dayIndex + 1}',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+                OutlinedButton.icon(
+                  key: Key('day-date-$dayIndex'),
+                  onPressed: _busy ? null : () => _selectDayDate(dayIndex),
+                  icon: const Icon(Icons.event_outlined),
+                  label: Text(
+                    _days[dayIndex].scheduledDate == null
+                        ? 'Chọn ngày theo lịch'
+                        : 'Ngày ${_days[dayIndex].scheduledDate!.day.toString().padLeft(2, '0')}/${_days[dayIndex].scheduledDate!.month.toString().padLeft(2, '0')}/${_days[dayIndex].scheduledDate!.year}',
+                  ),
+                ),
                 TextField(
                   key: Key('day-title-$dayIndex'),
                   controller: _days[dayIndex].title,
@@ -316,6 +396,26 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                         }),
                   icon: const Icon(Icons.add),
                   label: const Text('Thêm bài tập'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Lịch ăn trong ngày',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                for (
+                  var mealIndex = 0;
+                  mealIndex < _days[dayIndex].meals.length;
+                  mealIndex++
+                )
+                  _mealFields(dayIndex, mealIndex),
+                TextButton.icon(
+                  onPressed: _busy || _days[dayIndex].meals.length >= 12
+                      ? null
+                      : () => setState(
+                          () => _days[dayIndex].meals.add(_MealDraft()),
+                        ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Thêm bữa ăn'),
                 ),
               ],
               TextButton.icon(
@@ -378,22 +478,92 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       ],
     );
   }
+
+  Widget _mealFields(int dayIndex, int mealIndex) {
+    final draft = _days[dayIndex].meals[mealIndex];
+    return Card(
+      key: Key('day-meal-$dayIndex-$mealIndex'),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text('Bữa ăn ${mealIndex + 1}')),
+                IconButton(
+                  tooltip: 'Xóa bữa ăn',
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() {
+                          _days[dayIndex].meals.removeAt(mealIndex).dispose();
+                        }),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+            DropdownButtonFormField<String>(
+              initialValue: draft.mealType,
+              decoration: const InputDecoration(labelText: 'Loại bữa'),
+              items: const [
+                DropdownMenuItem(value: 'BREAKFAST', child: Text('Bữa sáng')),
+                DropdownMenuItem(value: 'LUNCH', child: Text('Bữa trưa')),
+                DropdownMenuItem(value: 'DINNER', child: Text('Bữa tối')),
+                DropdownMenuItem(value: 'SNACK', child: Text('Bữa phụ')),
+                DropdownMenuItem(value: 'OTHER', child: Text('Khác')),
+              ],
+              onChanged: _busy
+                  ? null
+                  : (value) =>
+                        setState(() => draft.mealType = value ?? 'OTHER'),
+            ),
+            TextField(
+              controller: draft.time,
+              keyboardType: TextInputType.datetime,
+              decoration: const InputDecoration(
+                labelText: 'Giờ ăn (HH:mm, tùy chọn)',
+              ),
+            ),
+            TextField(
+              controller: draft.title,
+              maxLength: 120,
+              decoration: const InputDecoration(labelText: 'Món ăn / thực đơn'),
+            ),
+            TextField(
+              controller: draft.notes,
+              maxLength: 2000,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Hướng dẫn ăn uống'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _DayDraft {
   _DayDraft()
     : title = TextEditingController(),
       notes = TextEditingController(),
-      exercises = [_ExerciseDraft()];
+      exercises = [_ExerciseDraft()],
+      meals = [_MealDraft()];
 
   _DayDraft.fromPlan(TrainingDay day)
     : title = TextEditingController(text: day.title),
       notes = TextEditingController(text: day.notes),
-      exercises = day.exercises.map(_ExerciseDraft.fromPlan).toList();
+      scheduledDate = day.scheduledDate == null
+          ? null
+          : DateTime.tryParse(day.scheduledDate!),
+      exercises = day.exercises.map(_ExerciseDraft.fromPlan).toList(),
+      meals = day.meals.map(_MealDraft.fromPlan).toList();
 
+  DateTime? scheduledDate;
   final TextEditingController title;
   final TextEditingController notes;
   final List<_ExerciseDraft> exercises;
+  final List<_MealDraft> meals;
 
   void dispose() {
     title.dispose();
@@ -401,6 +571,33 @@ class _DayDraft {
     for (final exercise in exercises) {
       exercise.dispose();
     }
+    for (final meal in meals) {
+      meal.dispose();
+    }
+  }
+}
+
+class _MealDraft {
+  _MealDraft()
+    : title = TextEditingController(),
+      time = TextEditingController(),
+      notes = TextEditingController();
+
+  _MealDraft.fromPlan(PlannedMeal meal)
+    : mealType = meal.mealType,
+      title = TextEditingController(text: meal.title),
+      time = TextEditingController(text: meal.scheduledTime),
+      notes = TextEditingController(text: meal.notes);
+
+  String mealType = 'BREAKFAST';
+  final TextEditingController title;
+  final TextEditingController time;
+  final TextEditingController notes;
+
+  void dispose() {
+    title.dispose();
+    time.dispose();
+    notes.dispose();
   }
 }
 

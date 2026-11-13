@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import pg from 'pg';
 
 import { createApp } from '../src/app.js';
@@ -20,6 +21,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
     const members = [first, second, outsider, ...existing];
     const planId = randomUUID();
     const endpoint = '/coach-payment-holds';
+    const tokens = new Map();
     async function call(member, path, method = 'GET', body, key) {
       const role = member === coach ? 'COACH' : member === admin ? 'ADMIN' : 'MEMBER';
       const bearer = jwt.sign({ role, sessionVersion: 0 }, secret, {
@@ -28,7 +30,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       });
       const response = await fetch(`http://127.0.0.1:${server.address().port}/api/v1${path}`, {
         method,
-        headers: { authorization: `Bearer ${bearer}`,
+        headers: { authorization: `Bearer ${tokens.get(member) ?? bearer}`,
           ...(key && { 'idempotency-key': key }),
           ...(body && { 'content-type': 'application/json' }) },
         body: body && JSON.stringify(body),
@@ -36,12 +38,21 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       return { status: response.status, body: await response.json() };
     }
     try {
+      const password = 'MobileFixture!928';
+      const hash = await bcrypt.hash(password, 10);
       for (const [id, role] of [[admin, 'ADMIN'], [coach, 'COACH'],
         ...members.map((member) => [member, 'MEMBER'])]) {
         await database.query(
           `INSERT INTO users (id, email, password_hash, role, full_name)
-           VALUES ($1, $2, 'hash', $3, 'Hold test')`, [id, `${id}@example.com`, role],
+           VALUES ($1, $2, $4, $3, 'Hold test')`, [id, `${id}@example.com`, role, hash],
         );
+      }
+      for (const account of [admin, coach, first, second]) {
+        const login = await call(account, '/auth/sessions', 'POST', {
+          email: `${account}@example.com`, password,
+        });
+        assert.equal(login.status, 200, JSON.stringify(login.body));
+        tokens.set(account, login.body.data.accessToken);
       }
       await database.query('INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 20)', [coach]);
       await database.query(
@@ -75,6 +86,8 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         );
       }
       const offer = { coachId: coach, planCode: 'BASIC' };
+      assert.equal((await call(first, '/coach-requests', 'POST', { coachId: coach })).status, 410);
+      assert.equal((await call(first, '/meal-logs', 'POST', { mealName: 'Cũ' })).status, 410);
       assert.equal((await call(outsider, endpoint, 'POST', offer, randomUUID())).body.error.code,
         'MEMBERSHIP_REQUIRED');
       assert.equal((await call(first, endpoint, 'POST', offer, randomUUID())).body.error.code,
@@ -160,9 +173,11 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         entitlementId: settled[0].entitlementId, startsAt,
       })).body.error.code, 'SLOT_UNAVAILABLE');
       assert.equal((await call(coach, blocks, 'PUT', { startsAt, blocked: false })).status, 200);
-      const booked = await call(winner, bookingPath, 'POST', {
+      const bookingAttempts = await Promise.all([1, 2].map(() => call(winner, bookingPath, 'POST', {
         entitlementId: settled[0].entitlementId, startsAt: slot.starts_at.toISOString(),
-      });
+      })));
+      assert.deepEqual(bookingAttempts.map((entry) => entry.status).sort(), [201, 409]);
+      const booked = bookingAttempts.find((entry) => entry.status === 201);
       assert.equal(booked.status, 201, JSON.stringify(booked.body));
       const inbox = await call(coach, '/coach-notifications');
       const bookingNotice = inbox.body.data.find((row) => row.subjectId === booked.body.data.id);
@@ -175,7 +190,14 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       });
       assert.equal(duplicate.status, 409);
       assert.equal((await call(loser, bookingPath)).body.data.length, 0);
-      const cancelled = await call(winner, `${bookingPath}/${booked.body.data.id}`, 'PATCH',
+      const alternatives = await call(winner,
+        `${bookingPath}/available-slots?entitlementId=${settled[0].entitlementId}&date=${localDate}&bookingId=${booked.body.data.id}`);
+      assert.equal(alternatives.body.data.length, 3);
+      const moved = await call(winner, `${bookingPath}/${booked.body.data.id}`, 'PATCH', {
+        action: 'RESCHEDULE', startsAt: alternatives.body.data[0].startsAt,
+      });
+      assert.equal(moved.status, 200, JSON.stringify(moved.body));
+      const cancelled = await call(winner, `${bookingPath}/${moved.body.data.id}`, 'PATCH',
         { action: 'CANCEL' });
       assert.equal(cancelled.body.data.status, 'CANCELLED');
       assert.equal(cancelled.body.data.chargedAt, null);

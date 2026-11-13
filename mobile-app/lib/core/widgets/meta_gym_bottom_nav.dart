@@ -17,6 +17,7 @@ class MetaGymBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.useSolidFallback = false,
+    this.warmGlass = false,
   }) : assert(currentIndex >= 0 && currentIndex < 5);
 
   final int currentIndex;
@@ -24,6 +25,7 @@ class MetaGymBottomNav extends StatelessWidget {
 
   /// Optional solid surface fallback for low-power / frame-drop environments.
   final bool useSolidFallback;
+  final bool warmGlass;
 
   static const double _barHeight = 68.0;
   static const double _aiProtrusion = 14.0;
@@ -53,20 +55,26 @@ class MetaGymBottomNav extends StatelessWidget {
     final enableBlur =
         useGlassSurface && !MetaGymTheme.isFlutterTestEnvironment;
 
+    const capsuleRadius = BorderRadius.all(Radius.circular(34.0));
+
     final pillDecoration = BoxDecoration(
-      color: useGlassSurface
-          ? MetaGymTheme.performanceGlass
-          : MetaGymTheme.darkSurface,
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+      color: warmGlass
+          ? (useGlassSurface
+                ? const Color(0xBF302923)
+                : const Color(0xFF292420))
+          : (useGlassSurface
+                ? const Color(0xDE181B22)
+                : MetaGymTheme.darkSurface),
+      borderRadius: capsuleRadius,
       border: Border.all(
-        color: MetaGymTheme.performanceGlassBorder,
+        color: warmGlass ? const Color(0xA3A79D92) : MetaGymTheme.cardBorder,
         width: 1.0,
       ),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x47000000), // rgba(0, 0, 0, 0.28)
-          blurRadius: 36,
-          offset: Offset(0, -12),
+          color: Color(0x33000000), // rgba(0, 0, 0, 0.20)
+          blurRadius: 24,
+          offset: Offset(0, -4),
         ),
       ],
     );
@@ -77,15 +85,17 @@ class MetaGymBottomNav extends StatelessWidget {
       child: Stack(
         children: [
           // Cool specular top-edge highlight (DESIGN.md §3.2)
-          const Positioned(
+          Positioned(
             top: 0,
-            left: 24,
-            right: 24,
+            left: 28,
+            right: 28,
             child: IgnorePointer(
               child: SizedBox(
                 height: 1,
                 child: ColoredBox(
-                  color: MetaGymTheme.performanceGlassTopHighlight,
+                  color: warmGlass
+                      ? const Color(0x70FFF5E9)
+                      : const Color(0x33FFFFFF),
                 ),
               ),
             ),
@@ -181,11 +191,9 @@ class MetaGymBottomNav extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
-              // Clipped Level 2 Backdrop Blur container
+              // Clipped Level 2 Backdrop Blur container (rounded-full capsule)
               ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  MetaGymTheme.radiusGlassDock,
-                ),
+                borderRadius: capsuleRadius,
                 child: enableBlur
                     ? BackdropFilter(
                         filter: ImageFilter.blur(
@@ -203,6 +211,7 @@ class MetaGymBottomNav extends StatelessWidget {
                 child: _AiCenterButton(
                   label: 'AI',
                   selected: currentIndex == 2,
+                  warmGlass: warmGlass,
                   duration: duration,
                   onTap: () => onTap(2),
                 ),
@@ -289,12 +298,14 @@ class _AiCenterButton extends StatelessWidget {
   const _AiCenterButton({
     required this.label,
     required this.selected,
+    required this.warmGlass,
     required this.duration,
     required this.onTap,
   });
 
   final String label;
   final bool selected;
+  final bool warmGlass;
   final Duration duration;
   final VoidCallback onTap;
 
@@ -322,32 +333,39 @@ class _AiCenterButton extends StatelessWidget {
                   height: 52.0,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFF7E58), Color(0xFFFF4820)],
-                    ),
+                    color: selected || warmGlass
+                        ? MetaGymTheme.brandOrange
+                        : MetaGymTheme.darkSurfaceRaised,
                     border: Border.all(
-                      color: selected
-                          ? MetaGymTheme.darkTextPrimary
-                          : const Color(0x40FFFFFF),
-                      width: selected ? 2.0 : 1.2,
+                      color: selected || warmGlass
+                          ? MetaGymTheme.brandOrange
+                          : MetaGymTheme.cardBorder,
+                      width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.50 : 0.30,
+                          alpha: selected ? 0.35 : (warmGlass ? 0.22 : 0.05),
                         ),
-                        blurRadius: selected ? 16.0 : 10.0,
-                        spreadRadius: selected ? 1.0 : 0.0,
-                        offset: const Offset(0, 4),
+                        blurRadius: selected ? 20.0 : 14.0,
+                        spreadRadius: selected ? 2.0 : 0.5,
+                        offset: const Offset(0, 3),
+                      ),
+                      BoxShadow(
+                        color: MetaGymTheme.brandOrange.withValues(
+                          alpha: selected ? 0.15 : 0.0,
+                        ),
+                        blurRadius: selected ? 32.0 : 24.0,
+                        spreadRadius: selected ? 4.0 : 1.0,
                       ),
                     ],
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Icons.auto_awesome_rounded,
-                      color: Colors.white,
+                      color: selected || warmGlass
+                          ? Colors.white
+                          : MetaGymTheme.brandOrange,
                       size: 24.0,
                     ),
                   ),
@@ -361,9 +379,9 @@ class _AiCenterButton extends StatelessWidget {
                   fontFamily: MetaGymTheme.fontFamily,
                   color: selected
                       ? MetaGymTheme.brandOrange
-                      : MetaGymTheme.darkTextPrimary,
+                      : MetaGymTheme.darkTextSecondary,
                   fontSize: 11.0,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   letterSpacing: 0.2,
                   height: 1.15,
                 ),
