@@ -37,6 +37,37 @@ void main() {
     expect(service.lastUpdate, isNot(contains('biography')));
   });
 
+  test('patchProfile filters and sends full member profile fields', () async {
+    final service = _FakeProfileService(member);
+    final controller = ProfileController(service, await _session(member));
+
+    await controller.patchProfile({
+      'fullName': '  Minh Quân  ',
+      'dateOfBirth': '1999-08-15',
+      'gender': 'MALE',
+      'heightCm': 175.0,
+      'experienceLevel': 'INTERMEDIATE',
+      'activityLevel': 'HIGH',
+      'healthNotes': 'Ổn định',
+      'injuryNotes': 'Không',
+      'dietaryPreferences': 'Giàu đạm',
+      'biography': 'Không được phép gửi cho Member',
+      'email': 'khongduocgui@test.com',
+    });
+
+    expect(service.lastUpdate, {
+      'fullName': 'Minh Quân',
+      'dateOfBirth': '1999-08-15',
+      'gender': 'MALE',
+      'heightCm': 175.0,
+      'experienceLevel': 'INTERMEDIATE',
+      'activityLevel': 'HIGH',
+      'healthNotes': 'Ổn định',
+      'injuryNotes': 'Không',
+      'dietaryPreferences': 'Giàu đạm',
+    });
+  });
+
   testWidgets('opening a profile does not notify its provider during build', (
     tester,
   ) async {
