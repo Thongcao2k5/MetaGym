@@ -74,6 +74,7 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
       const size = normalized.length;
       const id = randomUUID();
       const key = randomUUID();
+      let objectStored = false;
       try {
         await database.query(
           `INSERT INTO media_assets
@@ -84,6 +85,7 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
           [id, request.authUser.id, purpose, key, fileName],
         );
         await imageStorage.put(key, normalized, mimeType);
+        objectStored = true;
         await database.query(
           `UPDATE media_assets SET status = 'READY', mime_type = $1,
            size_bytes = $2, width = $3, height = $4, ready_at = now()
@@ -95,6 +97,9 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
           width: image.width, height: image.height,
         } });
       } catch {
+        if (objectStored && typeof imageStorage.remove === 'function') {
+          await imageStorage.remove(key).catch(() => {});
+        }
         await database.query(
           `UPDATE media_assets SET status = 'FAILED', failed_at = now(),
            failure_reason = 'Storage operation failed' WHERE id = $1

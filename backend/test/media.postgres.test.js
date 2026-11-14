@@ -36,6 +36,22 @@ test('PostgreSQL media API validates images and issues short-lived owner URLs',
     const failingStorage = createApp({ database, jwtSecret: secret,
       imageStorage: { put: async () => { throw new Error('Storage unavailable'); },
         get: storage.get } });
+    const removedKeys = [];
+    const metadataFailureDatabase = {
+      query: async (...args) => {
+        if (String(args[0]).includes("UPDATE media_assets SET status = 'READY'")) {
+          throw new Error('Metadata update unavailable');
+        }
+        return database.query(...args);
+      },
+    };
+    const cleanupStorage = {
+      put: async () => {},
+      get: async () => Buffer.from('image'),
+      remove: async (key) => { removedKeys.push(key); },
+    };
+    const metadataFailure = createApp({ database: metadataFailureDatabase,
+      jwtSecret: secret, imageStorage: cleanupStorage });
     const bytes = await sharp({ create: { width: 2, height: 2,
       channels: 3, background: '#00ff00' } }).png().toBuffer();
     try {
@@ -54,10 +70,13 @@ test('PostgreSQL media API validates images and issues short-lived owner URLs',
       const server = app.listen(0);
       const missingServer = noStorage.listen(0);
       const failingServer = failingStorage.listen(0);
+      const metadataFailureServer = metadataFailure.listen(0);
       try {
         const base = `http://127.0.0.1:${server.address().port}`;
         const missingBase = `http://127.0.0.1:${missingServer.address().port}`;
         const failingBase = `http://127.0.0.1:${failingServer.address().port}`;
+        const metadataFailureBase =
+          `http://127.0.0.1:${metadataFailureServer.address().port}`;
         const headers = { authorization: `Bearer ${token(memberId)}`,
           'content-type': 'image/png', 'x-image-purpose': 'PROGRESS_PHOTO' };
         let result = await fetch(`${missingBase}/api/v1/media/images`, {
@@ -100,6 +119,11 @@ test('PostgreSQL media API validates images and issues short-lived owner URLs',
           `SELECT count(*)::int AS count FROM media_assets
            WHERE owner_id = $1 AND status = 'FAILED'`, [memberId]))
           .rows[0].count, 1);
+        result = await fetch(`${metadataFailureBase}/api/v1/media/images`, {
+          method: 'POST', headers, body: bytes,
+        });
+        assert.equal(result.status, 502);
+        assert.equal(removedKeys.length, 1);
         const otherAccess = await fetch(`${base}/api/v1/media/images/${image.id}/access-url`, {
           headers: { authorization: `Bearer ${token(otherId)}` },
         });
@@ -140,6 +164,7 @@ test('PostgreSQL media API validates images and issues short-lived owner URLs',
         await new Promise((resolve) => server.close(resolve));
         await new Promise((resolve) => missingServer.close(resolve));
         await new Promise((resolve) => failingServer.close(resolve));
+        await new Promise((resolve) => metadataFailureServer.close(resolve));
       }
     } finally {
       await database.query('DELETE FROM media_assets WHERE owner_id = $1', [memberId]);

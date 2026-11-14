@@ -71,6 +71,30 @@ test('Supabase image storage converts provider failures to storage errors', asyn
   );
 });
 
+test('Supabase image storage removes an object when cleanup is requested', async () => {
+  const removed = [];
+  const storage = createSupabaseImageStorage({
+    url: 'https://project.supabase.co',
+    secretKey: 'sb_secret_test',
+    bucket: 'meta-gym-media',
+    createClient: () => ({
+      storage: {
+        from: () => ({
+          remove: async (keys) => {
+            removed.push(...keys);
+            return { error: null };
+          },
+        }),
+      },
+    }),
+  });
+  const key = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+  await storage.remove(key);
+
+  assert.deepEqual(removed, [key]);
+});
+
 test('image storage configuration prefers complete Supabase settings', () => {
   const selected = createImageStorageFromEnv({
     SUPABASE_URL: 'https://project.supabase.co',

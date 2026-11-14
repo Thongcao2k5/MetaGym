@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const keyPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -17,5 +17,6 @@ export function createLocalImageStorage(directory) {
       await writeFile(location(key), bytes, { flag: 'wx', mode: 0o600 });
     },
     async get(key) { return readFile(location(key)); },
+    async remove(key) { await unlink(location(key)); },
   };
 }

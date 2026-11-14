@@ -40,5 +40,10 @@ export function createSupabaseImageStorage({
       }
       return Buffer.from(await data.arrayBuffer());
     },
+    async remove(key) {
+      validateKey(key);
+      const { error } = await objects.remove([key]);
+      if (error) throw new Error('Supabase Storage cleanup failed', { cause: error });
+    },
   };
 }
