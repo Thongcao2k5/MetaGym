@@ -8,12 +8,11 @@ import {
   createCallTokenProviderFromEnv,
   createPasswordResetSenderFromEnv,
 } from './config/providers.js';
-import { createLocalImageStorage } from './storage/local-image-storage.js';
+import { createImageStorageFromEnv } from './storage/image-storage.js';
 
 const port = Number(process.env.PORT ?? 3000);
 const database = createDatabasePool();
-const imageStorage = process.env.MEDIA_STORAGE_DIR
-  ? createLocalImageStorage(process.env.MEDIA_STORAGE_DIR) : undefined;
+const imageStorage = createImageStorageFromEnv(process.env);
 const app = createApp({
   database,
   imageStorage,

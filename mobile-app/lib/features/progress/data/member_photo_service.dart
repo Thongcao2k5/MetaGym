@@ -57,6 +57,9 @@ class DeviceProgressPhotoPicker implements ProgressPhotoPicker {
   Future<SelectedProgressImage?> pick() async {
     final file = await _picker.pickImage(
       source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
       requestFullMetadata: false,
     );
     if (file == null) return null;
