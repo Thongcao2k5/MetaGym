@@ -138,6 +138,23 @@ class ApiClient {
     );
   }
 
+  Future<List<int>?> getBytes(String path) async {
+    try {
+      final token = await _accessTokenProvider?.call();
+      final headers = <String, dynamic>{};
+      if (token != null && token.isNotEmpty) {
+        headers['authorization'] = 'Bearer $token';
+      }
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes, headers: headers),
+      );
+      return response.data;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<ApiResult<T>> _request<T>(
     String method,
     String path, {

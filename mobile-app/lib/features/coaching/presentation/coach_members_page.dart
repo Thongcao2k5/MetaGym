@@ -59,9 +59,9 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => CoachMemberDetailPage(
-                memberId: member.memberId,
-                service: _service!,
-              ),
+          memberId: member.memberId,
+          service: _service!,
+        ),
       ),
     );
     if (mounted) await _load();
@@ -69,9 +69,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Hội viên của tôi'),
-    ),
+    appBar: AppBar(title: const Text('Hội viên của tôi')),
     body: _loading && _members.isEmpty && _requests.isEmpty
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(

@@ -19,7 +19,8 @@ class Conversation {
 
   String get messageKey => relationshipId ?? id;
 
-  bool get canSend => const {'NONE', 'ACTIVE', 'PAUSED', 'ENDED'}.contains(status);
+  bool get canSend =>
+      const {'NONE', 'ACTIVE', 'PAUSED', 'ENDED'}.contains(status);
 
   factory Conversation.fromJson(dynamic value) {
     final json = Map<String, dynamic>.from(value as Map);

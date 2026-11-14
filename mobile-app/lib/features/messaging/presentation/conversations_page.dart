@@ -711,8 +711,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                       Text(
                         widget.conversation.canSend
                             ? (widget.conversation.status == 'ENDED'
-                                ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
-                                : 'Có thể nhắn tin.')
+                                  ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
+                                  : 'Có thể nhắn tin.')
                             : 'Không thể gửi tin nhắn.',
                         style: const TextStyle(
                           color: MetaGymTheme.darkTextSecondary,

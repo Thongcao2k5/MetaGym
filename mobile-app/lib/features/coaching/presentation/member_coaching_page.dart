@@ -133,11 +133,18 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
       appBar: AppBar(
         actions: [
           if (_current != null && context.read<ApiClient?>() != null)
-            IconButton(tooltip: 'Xem gói Coach', icon: const Icon(Icons.receipt_long_outlined),
+            IconButton(
+              tooltip: 'Xem gói Coach',
+              icon: const Icon(Icons.receipt_long_outlined),
               onPressed: () {
                 final coachId = _current!.coachId;
-                Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => CoachOffersPage(coachId: coachId)));
-              }),
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => CoachOffersPage(coachId: coachId),
+                  ),
+                );
+              },
+            ),
         ],
         title: const Text(
           'Coach của tôi',

@@ -1,3 +1,4 @@
+import 'dart:typed_data' show Uint8List;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -419,6 +420,15 @@ class _FakeProfileService implements ProfileService {
 
   @override
   Future<AuthUser> updateProfile(Map<String, Object?> fields) async => user;
+
+  @override
+  Future<AuthUser> uploadAvatar(Uint8List bytes) async => user;
+
+  @override
+  Future<AuthUser> deleteAvatar() async => user;
+
+  @override
+  Future<Uint8List?> fetchAvatarBytes(String avatarUrl) async => null;
 
   @override
   Future<bool> verifyPasswordReset({

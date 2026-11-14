@@ -190,7 +190,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       try {
         sessions = await sessionsService.getMine();
         if (sessionsService is MemberSessionsApi) {
-          final bookings = await CoachV2Api(sessionsService.client).list('/coach-bookings');
+          final bookings = await CoachV2Api(sessionsService.client)
+              .list('/coach-bookings');
           sessions = [
             ...sessions,
             for (final booking in bookings)
@@ -199,7 +200,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 title: 'Buổi tập với Coach',
                 scheduledStartAt: booking['startsAt'] as String,
                 scheduledEndAt: booking['endsAt'] as String,
-                status: booking['status'] == 'BOOKED' ? 'SCHEDULED' : booking['status'] as String,
+                status: booking['status'] == 'BOOKED'
+                    ? 'SCHEDULED'
+                    : booking['status'] as String,
               ),
           ];
         }
@@ -1043,8 +1046,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       );
     }
     final upcomingSessions = _sessions
-        .where((session) => session.status == 'SCHEDULED' &&
-          DateTime.parse(session.scheduledStartAt).isAfter(DateTime.now()))
+        .where(
+          (session) =>
+              session.status == 'SCHEDULED' &&
+              DateTime.parse(session.scheduledStartAt).isAfter(DateTime.now()),
+        )
         .length;
     final coachSessionLabel = widget.previewMode
         ? '6 buổi'
@@ -1887,7 +1893,12 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 child: Column(
                   children: [
                     for (final destination in memberDestinations.where(
-                      (item) => !const {'UI15', 'UI17', 'UI18', 'UI19'}.contains(item.task),
+                      (item) => !const {
+                        'UI15',
+                        'UI17',
+                        'UI18',
+                        'UI19',
+                      }.contains(item.task),
                     ))
                       ListTile(
                         title: Text(
