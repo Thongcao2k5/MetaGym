@@ -449,6 +449,44 @@ void main() {
       expect(find.text('Tin riêng của member-2'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'tapping image message opens fullscreen zoom viewer and closes cleanly',
+    (tester) async {
+      final service = _Fixture(active: true, imageHistory: true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConversationsPage(
+            service: service,
+            currentUserId: 'member-1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Coach coach-1'));
+      await tester.pumpAndSettle();
+
+      final tapFinder = find.byKey(const Key('chat-image-tap-media-1'));
+      expect(tapFinder, findsOneWidget);
+
+      await tester.tap(tapFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      expect(
+        find.text('Chụm 2 ngón hoặc chạm đúp để phóng to'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('fullscreen-image-close-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(InteractiveViewer), findsNothing);
+    },
+  );
 }
 
 class _ImageFixture implements ProgressPhotoPicker {

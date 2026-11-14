@@ -2916,8 +2916,15 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(18),
     );
 
+    final isImageMessage =
+        message.messageType == 'IMAGE' &&
+        message.mediaId != null &&
+        widget.service != null;
+
     final bubbleBody = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: isImageMessage
+          ? const EdgeInsets.all(6)
+          : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: isMe ? MetaGymTheme.brandOrange : const Color(0xCC2B2622),
         borderRadius: bubbleRadius,
@@ -2930,15 +2937,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          if (message.messageType == 'IMAGE' &&
-              message.mediaId != null &&
-              widget.service != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: ChatMessageImage(
-                service: widget.service!,
-                mediaId: message.mediaId!,
-              ),
+          if (isImageMessage)
+            ChatMessageImage(
+              service: widget.service!,
+              mediaId: message.mediaId!,
             )
           else
             Text(
@@ -2950,28 +2952,33 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               ),
             ),
           const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                message.sentAt,
-                style: TextStyle(
-                  color: isMe
-                      ? Colors.white.withValues(alpha: 0.78)
-                      : MetaGymTheme.darkTextTertiary,
-                  fontSize: 10,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+          Padding(
+            padding: isImageMessage
+                ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+                : EdgeInsets.zero,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  message.sentAt,
+                  style: TextStyle(
+                    color: isMe
+                        ? Colors.white.withValues(alpha: 0.78)
+                        : MetaGymTheme.darkTextTertiary,
+                    fontSize: 10,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-              ),
-              if (isMe) ...[
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.done_all_rounded,
-                  size: 13,
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.done_all_rounded,
+                    size: 13,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
