@@ -145,7 +145,10 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
           ),
       ],
     ),
-    floatingActionButton: widget.coachBooking != null || _loading || !_members.any((m) => m.status == 'ACTIVE')
+    floatingActionButton:
+        widget.coachBooking != null ||
+            _loading ||
+            !_members.any((m) => m.status == 'ACTIVE')
         ? null
         : FloatingActionButton.extended(
             onPressed: () => _edit(),
@@ -180,11 +183,14 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                             subtitle: Text(
                               '${_memberName(session.memberId)} · ${formatSessionLocalTime(session.scheduledStartAt)} · ${session.statusLabel}',
                             ),
-                            onTap: widget.coachBooking == null && session.status == 'SCHEDULED'
+                            onTap:
+                                widget.coachBooking == null &&
+                                    session.status == 'SCHEDULED'
                                 ? () => _edit(session)
                                 : null,
                           ),
-                          if (widget.coachBooking == null && session.status == 'SCHEDULED')
+                          if (widget.coachBooking == null &&
+                              session.status == 'SCHEDULED')
                             Wrap(
                               spacing: 4,
                               children: [

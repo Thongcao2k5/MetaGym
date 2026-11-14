@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show Uint8List;
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
@@ -20,6 +21,34 @@ class ProfileApi implements ProfileService {
         body: fields,
         decode: AuthUser.fromJson,
       )).data;
+
+  @override
+  Future<AuthUser> uploadAvatar(Uint8List bytes) async =>
+      (await _client.post<AuthUser>(
+        '/users/me/avatar',
+        body: bytes,
+        headers: {'content-type': 'image/jpeg'},
+        decode: AuthUser.fromJson,
+      )).data;
+
+  @override
+  Future<AuthUser> deleteAvatar() async => (await _client.delete<AuthUser>(
+    '/users/me/avatar',
+    decode: AuthUser.fromJson,
+  )).data;
+
+  @override
+  Future<Uint8List?> fetchAvatarBytes(String avatarUrl) async {
+    try {
+      final bytes = await _client.getBytes(avatarUrl);
+      if (bytes != null && bytes.isNotEmpty) {
+        return Uint8List.fromList(bytes);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<bool> changePassword({

@@ -1,3 +1,5 @@
+import 'dart:typed_data' show Uint8List;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
@@ -66,6 +68,24 @@ void main() {
       'injuryNotes': 'Không',
       'dietaryPreferences': 'Giàu đạm',
     });
+  });
+
+  test('uploadAvatar updates the user in the session with avatarUrl', () async {
+    final session = await _session(member);
+    const updatedUser = AuthUser(
+      id: 'member-1',
+      email: 'member@metagym.test',
+      fullName: 'Member Demo',
+      role: UserRole.member,
+      status: 'ACTIVE',
+      avatarUrl: '/api/v1/users/member-1/avatar',
+    );
+    final service = _FakeProfileService(updatedUser);
+    final controller = ProfileController(service, session);
+
+    final ok = await controller.uploadAvatar(Uint8List.fromList([1, 2, 3]));
+    expect(ok, isTrue);
+    expect(session.user?.avatarUrl, '/api/v1/users/member-1/avatar');
   });
 
   testWidgets('opening a profile does not notify its provider during build', (
@@ -149,6 +169,15 @@ class _FakeProfileService implements ProfileService {
 
   @override
   Future<AuthUser> getProfile() async => user;
+
+  @override
+  Future<AuthUser> uploadAvatar(Uint8List bytes) async => user;
+
+  @override
+  Future<AuthUser> deleteAvatar() async => user;
+
+  @override
+  Future<Uint8List?> fetchAvatarBytes(String avatarUrl) async => null;
 
   @override
   Future<String> requestPasswordReset(String email) async => 'request-1';

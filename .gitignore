@@ -19,9 +19,13 @@
 .vscode/
 .DS_Store
 Thumbs.db
+devtools_options.yaml
+windows/
 
 # Local database test runtime
 .tmp/
+.media-storage/
+**/.media-storage/
 
 # Generated code-analysis cache
 graphify-out/

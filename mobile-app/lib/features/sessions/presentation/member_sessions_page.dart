@@ -57,8 +57,13 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
     appBar: AppBar(
       actions: [
         if (widget.coachBooking != null)
-          IconButton(tooltip: 'Lịch Coach', icon: const Icon(Icons.event_available_outlined),
-            onPressed: () => Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => widget.coachBooking!))),
+          IconButton(
+            tooltip: 'Lịch Coach',
+            icon: const Icon(Icons.event_available_outlined),
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => widget.coachBooking!),
+            ),
+          ),
       ],
       title: const Text(
         'Lịch buổi tập',

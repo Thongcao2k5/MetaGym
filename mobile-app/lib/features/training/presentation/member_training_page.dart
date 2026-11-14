@@ -125,28 +125,57 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                 ),
                 children: [
                   InkWell(
-                    onTap: () => Navigator.of(context).push<void>(MaterialPageRoute(
-                      builder: (_) => const GymVisitsPage())),
-                    borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                    onTap: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute(builder: (_) => const GymVisitsPage()),
+                    ),
+                    borderRadius: BorderRadius.circular(
+                      MetaGymTheme.radiusCard,
+                    ),
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 20),
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: MetaGymTheme.cardSurface,
+                      decoration: BoxDecoration(
+                        color: MetaGymTheme.cardSurface,
                         border: Border.all(color: MetaGymTheme.cardBorder),
-                        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard)),
-                      child: const Row(children: [
-                        Icon(Icons.qr_code_scanner, color: MetaGymTheme.primary),
-                        SizedBox(width: 12),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Lịch sử đến gym', style: TextStyle(
-                              color: MetaGymTheme.textPrimary, fontWeight: FontWeight.w600)),
-                            SizedBox(height: 3),
-                            Text('Xem ngày đã đến và quét QR tại quầy', style: TextStyle(
-                              color: MetaGymTheme.textSecondary, fontSize: 12)),
-                          ])),
-                        Icon(Icons.chevron_right, color: MetaGymTheme.textSecondary),
-                      ]),
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusCard,
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.qr_code_scanner,
+                            color: MetaGymTheme.primary,
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Lịch sử đến gym',
+                                  style: TextStyle(
+                                    color: MetaGymTheme.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Xem ngày đã đến và quét QR tại quầy',
+                                  style: TextStyle(
+                                    color: MetaGymTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: MetaGymTheme.textSecondary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   if (_error != null) ...[

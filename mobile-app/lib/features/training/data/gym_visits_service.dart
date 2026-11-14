@@ -1,8 +1,12 @@
 import 'package:meta_gym_app/core/network/api_client.dart';
 
 class GymVisit {
-  const GymVisit({required this.day, required this.checkedInAt,
-    required this.gymName, required this.gymAddress});
+  const GymVisit({
+    required this.day,
+    required this.checkedInAt,
+    required this.gymName,
+    required this.gymAddress,
+  });
   final DateTime day;
   final DateTime checkedInAt;
   final String gymName;
@@ -20,8 +24,12 @@ class GymVisit {
 }
 
 class GymVisitMonth {
-  const GymVisitMonth({required this.visits, required this.visitedDays,
-    required this.eligibleDays, required this.entryCount});
+  const GymVisitMonth({
+    required this.visits,
+    required this.visitedDays,
+    required this.eligibleDays,
+    required this.entryCount,
+  });
   final List<GymVisit> visits;
   final int visitedDays;
   final int eligibleDays;
@@ -43,11 +51,17 @@ class GymVisitsApi {
   final ApiClient client;
 
   Future<GymVisitMonth> getMonth(DateTime month) async =>
-      (await client.get<GymVisitMonth>('/gym-visits/me',
-        queryParameters: {'month': '${month.year}-${month.month.toString().padLeft(2, '0')}'},
-        decode: GymVisitMonth.fromJson)).data;
+      (await client.get<GymVisitMonth>(
+        '/gym-visits/me',
+        queryParameters: {
+          'month': '${month.year}-${month.month.toString().padLeft(2, '0')}',
+        },
+        decode: GymVisitMonth.fromJson,
+      )).data;
 
-  Future<GymVisit> checkIn(String code) async =>
-      (await client.post<GymVisit>('/gym-visits/check-in',
-        body: {'code': code}, decode: GymVisit.fromJson)).data;
+  Future<GymVisit> checkIn(String code) async => (await client.post<GymVisit>(
+    '/gym-visits/check-in',
+    body: {'code': code},
+    decode: GymVisit.fromJson,
+  )).data;
 }

@@ -37,6 +37,20 @@ class ProfileController extends ChangeNotifier {
     _session.updateUser(await _service.getProfile());
   });
 
+  Future<bool> uploadAvatar(Uint8List bytes) => _run(() async {
+    final updated = await _service.uploadAvatar(bytes);
+    _session.updateUser(updated);
+  });
+
+  Future<bool> deleteAvatar() => _run(() async {
+    final updated = await _service.deleteAvatar();
+    _session.updateUser(updated);
+  });
+
+  Future<Uint8List?> fetchAvatarBytes(String avatarUrl) async {
+    return _service.fetchAvatarBytes(avatarUrl);
+  }
+
   Future<bool> updateProfile({
     required String fullName,
     String? phone,

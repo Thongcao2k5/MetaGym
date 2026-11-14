@@ -95,7 +95,7 @@ export function createApp({
   app.use('/api/v1/health', createHealthRouter({ database }));
   app.use('/api/v1', createPasswordResetsRouter({ database, sendPasswordResetCode }));
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
-  app.use('/api/v1/users', createUsersRouter({ database, jwtSecret }));
+  app.use('/api/v1/users', createUsersRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
