@@ -214,11 +214,18 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
+    expect(find.text('Tin mới nhất'), findsOneWidget);
     await tester.tap(find.text('Coach Lê Nam'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Tin mới nhất'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ConversationDetailPage),
+        matching: find.text('Tin mới nhất'),
+      ),
+      findsOneWidget,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Tin mới nhất'), findsOneWidget);
   });
@@ -416,18 +423,17 @@ void main() {
       await tester.tap(find.text('Coach Tài Khoản 1'));
       await tester.pumpAndSettle();
       expect(find.text('Tin riêng của member-1'), findsOneWidget);
-      await tester.pageBack();
-      await tester.pumpAndSettle();
 
-      // Hold member-1's next conversation refresh in flight, then switch to member-2
+      // Hold member-1's conversation reload on pageBack in flight, then switch to member-2
       service.holdMember1Refresh = true;
-      final state = tester.state(find.byType(ConversationsPage));
-      (state as dynamic).widget;
-      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
+      await tester.pageBack();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
+      service.activeAccount = 'member-2';
       userIdNotifier.value = 'member-2';
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Complete stale member-1 response AFTER member-2 is active
       service.completeStaleMember1Refresh();
@@ -757,9 +763,8 @@ class _AccountSwitchFixture extends _Fixture {
 
   @override
   Future<List<Conversation>> getConversations(int page) async {
-    if (holdMember1Refresh) {
+    if (holdMember1Refresh && activeAccount == 'member-1') {
       holdMember1Refresh = false;
-      activeAccount = 'member-2';
       return _staleMember1Completer.future;
     }
     if (activeAccount == 'member-2') {
