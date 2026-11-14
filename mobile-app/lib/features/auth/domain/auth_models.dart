@@ -19,6 +19,7 @@ class AuthUser {
     required this.role,
     required this.status,
     this.phone,
+    this.avatarUrl,
     this.profile = const {},
   });
 
@@ -31,6 +32,7 @@ class AuthUser {
       role: UserRole.fromApi(json['role']),
       status: json['status'] as String,
       phone: json['phone'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
       profile: json['profile'] is Map
           ? Map<String, dynamic>.from(json['profile'] as Map)
           : const {},
@@ -43,6 +45,7 @@ class AuthUser {
   final UserRole role;
   final String status;
   final String? phone;
+  final String? avatarUrl;
   final Map<String, dynamic> profile;
 }
 

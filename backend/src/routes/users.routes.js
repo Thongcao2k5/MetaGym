@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { Router } from 'express';
+import { Router, raw } from 'express';
 import jwt from 'jsonwebtoken';
+import sharp from 'sharp';
 import { z } from 'zod';
 
 import { reconcileMembershipLifecycles } from '../services/membership-lifecycle.js';
@@ -76,6 +78,7 @@ function toPublicUser(row) {
   const result = {
     id: row.id, email: row.email, fullName: row.full_name,
     phone: row.phone, role: row.role, status: row.status,
+    avatarUrl: row.avatar_media_id ? `/api/v1/users/${row.id}/avatar` : null,
   };
   if (row.role === 'MEMBER' || row.role === 'COACH') {
     result.profile = {};
@@ -89,6 +92,7 @@ function toPublicUser(row) {
 async function loadUser(database, id) {
   const result = await database.query(
     `SELECT u.id, u.email::text, u.full_name, u.phone, u.role, u.status,
+            u.avatar_media_id,
             u.session_version, m.date_of_birth::text, m.gender, m.height_cm::float8,
             m.fitness_goal, m.experience_level, m.activity_level,
             m.health_notes, m.injury_notes, m.dietary_preferences,
@@ -137,9 +141,110 @@ export function createAuthentication({ database, jwtSecret }) {
   };
 }
 
-export function createUsersRouter({ database, jwtSecret }) {
+export function createUsersRouter({ database, jwtSecret, imageStorage }) {
   const router = Router();
+
+  router.get('/:id/avatar', async (request, response) => {
+    const { id } = request.params;
+    if (!z.uuid().safeParse(id).success) {
+      return error(response, 404, 'NOT_FOUND', 'Người dùng không tồn tại');
+    }
+    try {
+      const userRes = await database.query(
+        `SELECT u.avatar_media_id, m.storage_key, m.mime_type
+         FROM users u
+         LEFT JOIN media_assets m ON m.id = u.avatar_media_id AND m.status = 'READY'
+         WHERE u.id = $1`,
+        [id],
+      );
+      if (!userRes.rows.length || !userRes.rows[0].avatar_media_id || !userRes.rows[0].storage_key) {
+        return error(response, 404, 'NOT_FOUND', 'Người dùng chưa có ảnh đại diện');
+      }
+      if (!imageStorage || typeof imageStorage.get !== 'function') {
+        return error(response, 503, 'SERVICE_UNAVAILABLE', 'Lưu ảnh chưa được cấu hình');
+      }
+      const bytes = await imageStorage.get(userRes.rows[0].storage_key);
+      if (!Buffer.isBuffer(bytes)) {
+        return error(response, 404, 'NOT_FOUND', 'Không tìm thấy tệp ảnh');
+      }
+      response.set('Cache-Control', 'public, max-age=86400');
+      response.type(userRes.rows[0].mime_type || 'image/jpeg');
+      return response.send(bytes);
+    } catch {
+      return error(response, 500, 'INTERNAL_SERVER_ERROR', 'Không thể tải ảnh đại diện');
+    }
+  });
+
   router.use(createAuthentication({ database, jwtSecret }));
+
+  router.post('/me/avatar',
+    raw({ type: ['image/png', 'image/jpeg', 'application/octet-stream'], limit: 5 * 1024 * 1024 }),
+    async (request, response) => {
+      if (!imageStorage || typeof imageStorage.put !== 'function') {
+        return error(response, 503, 'SERVICE_UNAVAILABLE', 'Lưu ảnh chưa được cấu hình');
+      }
+      const bytes = request.body;
+      if (!Buffer.isBuffer(bytes) || bytes.length === 0 || bytes.length > 5 * 1024 * 1024) {
+        return error(response, 422, 'VALIDATION_ERROR', 'Ảnh đại diện không hợp lệ');
+      }
+      let normalized;
+      let mimeType = 'image/jpeg';
+      try {
+        const source = sharp(bytes, { limitInputPixels: 20000000 });
+        const metadata = await source.metadata();
+        const format = metadata.format === 'png' ? 'png' : 'jpeg';
+        mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+        const output = await source
+          .rotate()
+          .resize(800, 800, { fit: 'cover', withoutEnlargement: true })
+          .toFormat(format, { quality: 85 })
+          .toBuffer({ resolveWithObject: true });
+        normalized = output.data;
+      } catch {
+        return error(response, 422, 'VALIDATION_ERROR', 'Định dạng ảnh không được hỗ trợ');
+      }
+
+      const client = await database.connect().catch(() => null);
+      if (!client) return error(response, 500, 'INTERNAL_SERVER_ERROR', 'Lỗi kết nối cơ sở dữ liệu');
+      const mediaId = randomUUID();
+      const storageKey = randomUUID();
+      try {
+        await client.query('BEGIN');
+        await imageStorage.put(storageKey, normalized, mimeType);
+        await client.query(
+          `INSERT INTO media_assets
+           (id, owner_id, purpose, access_scope, storage_key, original_name, mime_type, size_bytes, status, ready_at)
+           VALUES ($1, $2, 'AVATAR', 'PUBLIC', $3, 'avatar.jpg', $4, $5, 'READY', now())`,
+          [mediaId, request.authUser.id, storageKey, mimeType, normalized.length],
+        );
+        await client.query(
+          `UPDATE users SET avatar_media_id = $1, updated_at = now() WHERE id = $2`,
+          [mediaId, request.authUser.id],
+        );
+        const user = await loadUser(client, request.authUser.id);
+        await client.query('COMMIT');
+        return response.json({ data: toPublicUser(user) });
+      } catch {
+        await client.query('ROLLBACK').catch(() => {});
+        return error(response, 500, 'INTERNAL_SERVER_ERROR', 'Không thể lưu ảnh đại diện');
+      } finally {
+        client.release();
+      }
+    },
+  );
+
+  router.delete('/me/avatar', async (request, response) => {
+    try {
+      await database.query(
+        `UPDATE users SET avatar_media_id = NULL, updated_at = now() WHERE id = $1`,
+        [request.authUser.id],
+      );
+      const user = await loadUser(database, request.authUser.id);
+      return response.json({ data: toPublicUser(user) });
+    } catch {
+      return error(response, 500, 'INTERNAL_SERVER_ERROR', 'Không thể xóa ảnh đại diện');
+    }
+  });
 
   router.get('/me', (request, response) => response.json({ data: toPublicUser(request.authUser) }));
 

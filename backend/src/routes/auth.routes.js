@@ -169,8 +169,8 @@ export function createAuthRouter({ database, jwtSecret, loginRateLimiter }) {
 
         const sessionDatabase = limit.database ?? database;
         const result = await sessionDatabase.query(
-        `SELECT id, email::text, password_hash, role, full_name, status,
-                session_version
+        `SELECT id, email::text, password_hash, role, full_name, phone, status,
+                avatar_media_id, session_version
          FROM users
          WHERE email = $1
          LIMIT 1`,
@@ -252,6 +252,8 @@ export function createAuthRouter({ database, jwtSecret, loginRateLimiter }) {
             id: user.id,
             role: user.role,
             status: user.status,
+            ...(user.phone ? { phone: user.phone } : {}),
+            ...(user.avatar_media_id ? { avatarUrl: `/api/v1/users/${user.id}/avatar` } : {}),
           },
         },
         });

@@ -52,7 +52,8 @@ class Conversation {
 
   String get messageKey => relationshipId ?? id;
 
-  bool get canSend => const {'NONE', 'ACTIVE', 'PAUSED', 'ENDED'}.contains(status);
+  bool get canSend =>
+      const {'NONE', 'ACTIVE', 'PAUSED', 'ENDED'}.contains(status);
 
   String get lastMessagePreview {
     if (lastMessageType == 'IMAGE') return 'Ảnh';

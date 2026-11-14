@@ -76,8 +76,6 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
     }
   }
 
-
-
   @override
   void initState() {
     super.initState();
@@ -380,12 +378,21 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        OutlinedButton(onPressed: _openingChat ? null : _openChat, child: const Text('Nhắn tin với Coach')),
+                        OutlinedButton(
+                          onPressed: _openingChat ? null : _openChat,
+                          child: const Text('Nhắn tin với Coach'),
+                        ),
                         if (_chatError != null) Text(_chatError!),
                         if (context.read<ApiClient?>() != null)
-                          FilledButton(onPressed: () => Navigator.of(context).push<void>(MaterialPageRoute(
-                            builder: (_) => CoachOffersPage(coachId: widget.coachId),
-                          )), child: const Text('Xem gói Coach'))
+                          FilledButton(
+                            onPressed: () => Navigator.of(context).push<void>(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    CoachOffersPage(coachId: widget.coachId),
+                              ),
+                            ),
+                            child: const Text('Xem gói Coach'),
+                          )
                         else if (_sent)
                           MetaGymGlassCard(
                             padding: const EdgeInsets.all(16),

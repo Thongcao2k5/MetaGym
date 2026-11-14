@@ -42,12 +42,14 @@ class MessagingApi implements MessagingService {
   final ApiClient client;
 
   @override
-  Future<Conversation> startConversation({String? coachId, String? memberId}) async =>
-      (await client.post<Conversation>(
-        '/conversations',
-        body: coachId == null ? {'memberId': memberId} : {'coachId': coachId},
-        decode: Conversation.fromJson,
-      )).data;
+  Future<Conversation> startConversation({
+    String? coachId,
+    String? memberId,
+  }) async => (await client.post<Conversation>(
+    '/conversations',
+    body: coachId == null ? {'memberId': memberId} : {'coachId': coachId},
+    decode: Conversation.fromJson,
+  )).data;
 
   @override
   Future<List<Conversation>> getConversations(int page) async =>

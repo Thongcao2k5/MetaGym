@@ -14,8 +14,11 @@ class MemberJournalApi implements MemberJournalService {
   final ApiClient client;
 
   Future<int> getCount() async {
-    final result = await client.get('/journal',
-      queryParameters: {'page': 1, 'pageSize': 1}, decode: (value) => value);
+    final result = await client.get(
+      '/journal',
+      queryParameters: {'page': 1, 'pageSize': 1},
+      decode: (value) => value,
+    );
     return result.pagination?['totalItems'] as int? ?? 0;
   }
 
@@ -31,21 +34,24 @@ class MemberJournalApi implements MemberJournalService {
   Future<List<JournalChartPoint>> getChart() async =>
       (await client.get<List<JournalChartPoint>>(
         '/journal/charts',
-        decode: (value) => (value as List)
-            .map(JournalChartPoint.fromJson).toList(),
+        decode: (value) =>
+            (value as List).map(JournalChartPoint.fromJson).toList(),
       )).data;
 
   @override
   Future<JournalEntry> create(Map<String, Object?> payload) async =>
       (await client.post<JournalEntry>(
-        '/journal', body: payload, decode: JournalEntry.fromJson,
+        '/journal',
+        body: payload,
+        decode: JournalEntry.fromJson,
       )).data;
 
   @override
   Future<JournalEntry> update(String id, Map<String, Object?> payload) async =>
       (await client.patch<JournalEntry>(
         '/journal/${Uri.encodeComponent(id)}',
-        body: payload, decode: JournalEntry.fromJson,
+        body: payload,
+        decode: JournalEntry.fromJson,
       )).data;
 
   @override

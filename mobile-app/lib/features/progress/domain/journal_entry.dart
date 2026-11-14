@@ -38,9 +38,11 @@ class JournalEntry {
     final json = Map<String, dynamic>.from(value as Map);
     double? number(String key) {
       final value = json[key];
-      return value is num ? value.toDouble()
+      return value is num
+          ? value.toDouble()
           : double.tryParse(value?.toString() ?? '');
     }
+
     return JournalEntry(
       id: json['id'] as String,
       journalDate: json['journalDate'] as String,
@@ -49,7 +51,8 @@ class JournalEntry {
       waistCm: number('waistCm'),
       hipsCm: number('hipsCm'),
       achievements: (json['achievements'] as List)
-          .map(JournalAchievement.fromJson).toList(),
+          .map(JournalAchievement.fromJson)
+          .toList(),
       photoMediaIds: (json['photoMediaIds'] as List).cast<String>(),
     );
   }
@@ -72,9 +75,11 @@ class JournalChartPoint {
     final json = Map<String, dynamic>.from(value as Map);
     double? number(String key) {
       final value = json[key];
-      return value is num ? value.toDouble()
+      return value is num
+          ? value.toDouble()
           : double.tryParse(value?.toString() ?? '');
     }
+
     return JournalChartPoint(
       journalDate: json['journalDate'] as String,
       chestCm: number('chestCm'),
