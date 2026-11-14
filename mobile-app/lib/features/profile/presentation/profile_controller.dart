@@ -13,6 +13,26 @@ class ProfileController extends ChangeNotifier {
   bool isBusy = false;
   String? errorMessage;
 
+  static const Set<String> _commonAllowedKeys = {'fullName', 'phone'};
+  static const Set<String> _memberAllowedKeys = {
+    'dateOfBirth',
+    'gender',
+    'heightCm',
+    'fitnessGoal',
+    'experienceLevel',
+    'activityLevel',
+    'healthNotes',
+    'injuryNotes',
+    'dietaryPreferences',
+  };
+  static const Set<String> _coachAllowedKeys = {
+    'biography',
+    'specialties',
+    'qualifications',
+    'experienceYears',
+    'availabilityNote',
+  };
+
   Future<bool> load() => _run(() async {
     _session.updateUser(await _service.getProfile());
   });
@@ -22,17 +42,78 @@ class ProfileController extends ChangeNotifier {
     String? phone,
     String? fitnessGoal,
     String? biography,
+    String? dateOfBirth,
+    String? gender,
+    double? heightCm,
+    String? experienceLevel,
+    String? activityLevel,
+    String? healthNotes,
+    String? injuryNotes,
+    String? dietaryPreferences,
+    List<String>? specialties,
+    String? qualifications,
+    int? experienceYears,
+    String? availabilityNote,
   }) => _run(() async {
     final user = _session.user;
     if (user == null) throw StateError('Cần đăng nhập.');
     final fields = <String, Object?>{
       'fullName': fullName.trim(),
       'phone': _nullableText(phone),
-      if (user.role == UserRole.member)
+      if (user.role == UserRole.member) ...{
         'fitnessGoal': _nullableText(fitnessGoal),
-      if (user.role == UserRole.coach) 'biography': _nullableText(biography),
+        if (dateOfBirth != null) 'dateOfBirth': _nullableText(dateOfBirth),
+        if (gender != null) 'gender': _nullableText(gender),
+        'heightCm': ?heightCm,
+        if (experienceLevel != null)
+          'experienceLevel': _nullableText(experienceLevel),
+        if (activityLevel != null)
+          'activityLevel': _nullableText(activityLevel),
+        if (healthNotes != null) 'healthNotes': _nullableText(healthNotes),
+        if (injuryNotes != null) 'injuryNotes': _nullableText(injuryNotes),
+        if (dietaryPreferences != null)
+          'dietaryPreferences': _nullableText(dietaryPreferences),
+      },
+      if (user.role == UserRole.coach) ...{
+        'biography': _nullableText(biography),
+        if (specialties != null)
+          'specialties': specialties
+              .map((item) => item.trim())
+              .where((item) => item.isNotEmpty)
+              .toList(),
+        if (qualifications != null)
+          'qualifications': _nullableText(qualifications),
+        'experienceYears': ?experienceYears,
+        if (availabilityNote != null)
+          'availabilityNote': _nullableText(availabilityNote),
+      },
     };
     _session.updateUser(await _service.updateProfile(fields));
+  });
+
+  /// Cập nhật từng nhóm trường theo đúng schema `PATCH /users/me` của từng vai trò.
+  Future<bool> patchProfile(Map<String, Object?> rawFields) => _run(() async {
+    final user = _session.user;
+    if (user == null) throw StateError('Cần đăng nhập.');
+    final allowed = <String>{
+      ..._commonAllowedKeys,
+      if (user.role == UserRole.member) ..._memberAllowedKeys,
+      if (user.role == UserRole.coach) ..._coachAllowedKeys,
+    };
+    final filtered = <String, Object?>{};
+    for (final entry in rawFields.entries) {
+      if (!allowed.contains(entry.key)) continue;
+      final value = entry.value;
+      if (value is String) {
+        filtered[entry.key] = entry.key == 'fullName'
+            ? value.trim()
+            : _nullableText(value);
+      } else {
+        filtered[entry.key] = value;
+      }
+    }
+    if (filtered.isEmpty) return;
+    _session.updateUser(await _service.updateProfile(filtered));
   });
 
   Future<bool> changePassword({
