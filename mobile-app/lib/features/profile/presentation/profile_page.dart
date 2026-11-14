@@ -55,6 +55,13 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Uint8List> _allowedPhotoBytes = const [];
   _PhotoAccessMode _photoAccessMode = _PhotoAccessMode.unset;
 
+  // Trạng thái Quyền riêng tư & Cài đặt ứng dụng
+  bool _shareJournalWithCoach = true;
+  bool _shareMeasurementsWithCoach = true;
+  String _unitSystem = 'cm / kg';
+  bool _workoutReminderEnabled = true;
+  String _reminderTime = '18:00';
+
   // Trạng thái đồng bộ với `/users/me`
   String _fullName = '';
   String _email = '';
@@ -528,12 +535,31 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // Thẻ Hero Hồ sơ đồng bộ _buildMembershipGlassCard trên Trang chủ
                   _buildHeroProfileCard(),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
-                  // 4 mục danh mục gọn gàng (như hình mẫu)
-                  _buildProfileMenuCard(),
-                  const SizedBox(height: 12),
+                  // 1. HỒ SƠ CÁ NHÂN (3 thẻ)
+                  _buildSectionHeader('Hồ sơ cá nhân'),
+                  _buildPersonalInfoMenuCard(),
+                  const SizedBox(height: 10),
+                  _buildTrainingProfileMenuCard(),
+                  const SizedBox(height: 10),
+                  _buildHealthMenuCard(),
+                  const SizedBox(height: 18),
+
+                  // 2. HOẠT ĐỘNG & DỊCH VỤ (5 thẻ với Member / 3 thẻ với Coach)
+                  _buildSectionHeader('Hoạt động & Dịch vụ'),
+                  ..._buildActivityServiceCards(),
+                  const SizedBox(height: 18),
+
+                  // 3. TÀI KHOẢN & TIỆN ÍCH (4 thẻ)
+                  _buildSectionHeader('Tài khoản & Tiện ích'),
                   _buildSecurityMenuCard(),
+                  const SizedBox(height: 10),
+                  _buildPrivacyMenuCard(),
+                  const SizedBox(height: 10),
+                  _buildAppSettingsMenuCard(),
+                  const SizedBox(height: 10),
+                  _buildSupportInfoMenuCard(),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -1202,53 +1228,57 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ===========================================================================
-  // 4. THẺ DANH MỤC HỒ SƠ (4 MỤC GỌN GÀNG THEO HÌNH MẪU WAYS STATION)
+  // 4. THẺ DANH MỤC HỒ SƠ (4 THẺ ĐỘC LẬP TÁCH BIỆT THEO PHONG CÁCH GLASS)
   // ===========================================================================
-  Widget _buildProfileMenuCard() {
+  Widget _buildPersonalInfoMenuCard() {
     return _DashboardGlassCard(
-      child: Column(
-        children: [
-          _ProfileMenuTile(
-            icon: Icons.person_outline_rounded,
-            title: 'Thông tin cá nhân',
-            subtitle:
-                '$_fullName · ${_phone.isNotEmpty ? _phone : "Chưa cập nhật SĐT"}',
-            onTap: _openPersonalInfoPage,
-          ),
-          _rowDivider(),
-          _ProfileMenuTile(
-            icon: _role == UserRole.coach
-                ? Icons.badge_outlined
-                : Icons.fitness_center_rounded,
-            title: _role == UserRole.coach
-                ? 'Hồ sơ chuyên môn Huấn luyện viên'
-                : 'Thể trạng & Mục tiêu tập luyện',
-            subtitle: _role == UserRole.coach
-                ? '$_experienceYears năm kinh nghiệm · ${_specialties.length} chuyên môn'
-                : '${_heightCm.round()} cm · $_fitnessGoal',
-            onTap: _role == UserRole.coach
-                ? _openCoachProfilePage
-                : _openTrainingProfilePage,
-          ),
-          _rowDivider(),
-          _ProfileMenuTile(
-            icon: _role == UserRole.coach
-                ? Icons.schedule_rounded
-                : Icons.favorite_border_rounded,
-            title: _role == UserRole.coach
-                ? 'Khung giờ & Chuyên môn'
-                : 'Sức khỏe & Chấn thương',
-            subtitle: _role == UserRole.coach
-                ? _availabilityNote
-                : (_healthNotes.isNotEmpty
-                      ? _healthNotes
-                      : 'Chưa có ghi chú sức khỏe & chấn thương'),
-            badge: _role == UserRole.coach ? null : 'Chỉ bạn & Coach',
-            onTap: _role == UserRole.coach
-                ? _openCoachProfilePage
-                : _openHealthNutritionPage,
-          ),
-        ],
+      child: _ProfileMenuTile(
+        icon: Icons.person_outline_rounded,
+        title: 'Thông tin cá nhân',
+        subtitle:
+            '$_fullName · ${_phone.isNotEmpty ? _phone : "Chưa cập nhật SĐT"}',
+        onTap: _openPersonalInfoPage,
+      ),
+    );
+  }
+
+  Widget _buildTrainingProfileMenuCard() {
+    return _DashboardGlassCard(
+      child: _ProfileMenuTile(
+        icon: _role == UserRole.coach
+            ? Icons.badge_outlined
+            : Icons.fitness_center_rounded,
+        title: _role == UserRole.coach
+            ? 'Hồ sơ chuyên môn Huấn luyện viên'
+            : 'Thể trạng & Mục tiêu tập luyện',
+        subtitle: _role == UserRole.coach
+            ? '$_experienceYears năm kinh nghiệm · ${_specialties.length} chuyên môn'
+            : '${_heightCm.round()} cm · $_fitnessGoal',
+        onTap: _role == UserRole.coach
+            ? _openCoachProfilePage
+            : _openTrainingProfilePage,
+      ),
+    );
+  }
+
+  Widget _buildHealthMenuCard() {
+    return _DashboardGlassCard(
+      child: _ProfileMenuTile(
+        icon: _role == UserRole.coach
+            ? Icons.schedule_rounded
+            : Icons.favorite_border_rounded,
+        title: _role == UserRole.coach
+            ? 'Khung giờ & Chuyên môn'
+            : 'Sức khỏe & Chấn thương',
+        subtitle: _role == UserRole.coach
+            ? _availabilityNote
+            : (_healthNotes.isNotEmpty
+                  ? _healthNotes
+                  : 'Chưa có ghi chú sức khỏe & chấn thương'),
+        badge: _role == UserRole.coach ? null : 'Chỉ bạn & Coach',
+        onTap: _role == UserRole.coach
+            ? _openCoachProfilePage
+            : _openHealthNutritionPage,
       ),
     );
   }
@@ -1260,6 +1290,211 @@ class _ProfilePageState extends State<ProfilePage> {
         title: 'Bảo mật & Tài khoản',
         subtitle: 'Đổi mật khẩu & Quản lý phiên đăng nhập',
         onTap: _openSecurityAccountPage,
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Color(0xFFA09892),
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildActivityServiceCards() {
+    if (_role == UserRole.coach) {
+      return [
+        _DashboardGlassCard(
+          child: _ProfileMenuTile(
+            icon: Icons.groups_outlined,
+            title: 'Hội viên đang phụ trách',
+            subtitle: 'Danh sách học viên & tiến độ tập luyện',
+            onTap: () => _navigateOrPushWidget(route: '/coach/features/members'),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _DashboardGlassCard(
+          child: _ProfileMenuTile(
+            icon: Icons.calendar_month_rounded,
+            title: 'Lịch dạy & Giáo trình',
+            subtitle: 'Quản lý ca dạy 90 phút & bài tập học viên',
+            onTap: () => _navigateOrPushWidget(route: '/coach/features/sessions'),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _DashboardGlassCard(
+          child: _ProfileMenuTile(
+            icon: Icons.notifications_none_rounded,
+            title: 'Thông báo',
+            subtitle: 'Yêu cầu ghép Coach & thông báo hệ thống',
+            onTap: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => const CoachNotificationsPage(),
+                ),
+              );
+            },
+          ),
+        ),
+      ];
+    }
+
+    return [
+      _DashboardGlassCard(
+        child: _ProfileMenuTile(
+          icon: Icons.card_membership_rounded,
+          title: 'Gói tập & Thanh toán',
+          subtitle: 'Quản lý gói hội viên, gia hạn & lịch sử giao dịch',
+          onTap: () => _navigateOrPushWidget(route: '/member/features/membership'),
+        ),
+      ),
+      const SizedBox(height: 10),
+      _DashboardGlassCard(
+        child: _ProfileMenuTile(
+          icon: Icons.qr_code_scanner_rounded,
+          title: 'Điểm danh QR & Lịch sử check-in',
+          subtitle: 'Quét mã QR vào phòng tập & theo dõi ngày tập',
+          onTap: () {
+            Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => const GymVisitsPage()),
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 10),
+      _DashboardGlassCard(
+        child: _ProfileMenuTile(
+          icon: Icons.menu_book_rounded,
+          title: 'Nhật ký tập luyện & Số đo',
+          subtitle: 'Ghi buổi tập, ảnh tiến độ & biểu đồ 3 vòng',
+          onTap: () => _navigateOrPushWidget(
+            route: '/member/features/workouts',
+            fallbackPage: const MemberJournalPage(),
+          ),
+        ),
+      ),
+      const SizedBox(height: 10),
+      _DashboardGlassCard(
+        child: _ProfileMenuTile(
+          icon: Icons.calendar_month_rounded,
+          title: 'Huấn luyện viên & Lịch hẹn',
+          subtitle: 'Xem Coach đồng hành & đặt lịch tập 1-1',
+          onTap: () => _navigateOrPushWidget(route: '/member/features/sessions'),
+        ),
+      ),
+      const SizedBox(height: 10),
+      _DashboardGlassCard(
+        child: _ProfileMenuTile(
+          icon: Icons.notifications_none_rounded,
+          title: 'Thông báo',
+          subtitle: 'Tin tức phòng tập, nhắc lịch & phản hồi từ Coach',
+          onTap: () {
+            Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) => const CoachNotificationsPage(),
+              ),
+            );
+          },
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildPrivacyMenuCard() {
+    return _DashboardGlassCard(
+      child: _ProfileMenuTile(
+        icon: Icons.lock_person_outlined,
+        title: 'Quyền riêng tư & Chia sẻ dữ liệu',
+        subtitle: 'Ảnh: ${_photoAccessModeLabel(_photoAccessMode)}',
+        onTap: _openPrivacySettingsPage,
+      ),
+    );
+  }
+
+  Widget _buildAppSettingsMenuCard() {
+    return _DashboardGlassCard(
+      child: _ProfileMenuTile(
+        icon: Icons.tune_rounded,
+        title: 'Cài đặt ứng dụng',
+        subtitle:
+            'Đơn vị $_unitSystem · ${_workoutReminderEnabled ? "Nhắc tập $_reminderTime" : "Tắt nhắc tập"}',
+        onTap: _openAppSettingsPage,
+      ),
+    );
+  }
+
+  Widget _buildSupportInfoMenuCard() {
+    return _DashboardGlassCard(
+      child: _ProfileMenuTile(
+        icon: Icons.support_agent_rounded,
+        title: 'Thông tin phòng tập & Hỗ trợ',
+        subtitle: 'Meta Gym · 05:30 – 22:00 hằng ngày · v1.0.0',
+        onTap: _openSupportInfoPage,
+      ),
+    );
+  }
+
+  Future<void> _openPrivacySettingsPage() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => _PrivacySettingsDetailPage(
+          accessMode: _photoAccessMode,
+          shareJournalWithCoach: _shareJournalWithCoach,
+          shareMeasurementsWithCoach: _shareMeasurementsWithCoach,
+          onSave: (newMode, shareJournal, shareMeasurements) async {
+            if (!MetaGymTheme.isFlutterTestEnvironment) {
+              try {
+                await _secureStorage.write(
+                  key: _permissionStorageKey,
+                  value: newMode.name,
+                );
+              } catch (_) {}
+            }
+            if (!mounted) return;
+            setState(() {
+              _photoAccessMode = newMode;
+              _shareJournalWithCoach = shareJournal;
+              _shareMeasurementsWithCoach = shareMeasurements;
+            });
+            _showToast('Đã cập nhật cài đặt quyền riêng tư');
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openAppSettingsPage() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => _AppSettingsDetailPage(
+          unitSystem: _unitSystem,
+          workoutReminderEnabled: _workoutReminderEnabled,
+          reminderTime: _reminderTime,
+          onSave: (unit, reminderEnabled, time) {
+            setState(() {
+              _unitSystem = unit;
+              _workoutReminderEnabled = reminderEnabled;
+              _reminderTime = time;
+            });
+            _showToast('Đã lưu cài đặt ứng dụng');
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSupportInfoPage() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => _SupportInfoDetailPage(onShowToast: _showToast),
       ),
     );
   }
@@ -1409,16 +1644,6 @@ class _ProfilePageState extends State<ProfilePage> {
           },
         ),
       ),
-    );
-  }
-
-  Widget _rowDivider() {
-    return const Divider(
-      height: 1,
-      thickness: 0.7,
-      indent: 58,
-      endIndent: 14,
-      color: Color(0x389A8C81),
     );
   }
 
@@ -3346,6 +3571,509 @@ class _CoachProfileDetailPageState extends State<_CoachProfileDetailPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PrivacySettingsDetailPage extends StatefulWidget {
+  const _PrivacySettingsDetailPage({
+    required this.accessMode,
+    required this.shareJournalWithCoach,
+    required this.shareMeasurementsWithCoach,
+    required this.onSave,
+  });
+
+  final _PhotoAccessMode accessMode;
+  final bool shareJournalWithCoach;
+  final bool shareMeasurementsWithCoach;
+  final Future<void> Function(
+    _PhotoAccessMode mode,
+    bool shareJournal,
+    bool shareMeasurements,
+  )
+  onSave;
+
+  @override
+  State<_PrivacySettingsDetailPage> createState() =>
+      _PrivacySettingsDetailPageState();
+}
+
+class _PrivacySettingsDetailPageState
+    extends State<_PrivacySettingsDetailPage> {
+  late _PhotoAccessMode _mode = widget.accessMode;
+  late bool _shareJournal = widget.shareJournalWithCoach;
+  late bool _shareMeasurements = widget.shareMeasurementsWithCoach;
+  bool _saving = false;
+
+  Future<void> _handleSave() async {
+    setState(() => _saving = true);
+    await widget.onSave(_mode, _shareJournal, _shareMeasurements);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SubPageScaffold(
+      eyebrow: 'Bảo vệ dữ liệu',
+      title: 'Quyền riêng tư & Chia sẻ',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DashboardGlassCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Chia sẻ tiến độ với Huấn luyện viên',
+                    style: TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    activeTrackColor: MetaGymTheme.brandOrange,
+                    title: const Text(
+                      'Nhật ký tập luyện hằng ngày',
+                      style: TextStyle(color: Color(0xFFF7F9FC), fontSize: 13.5),
+                    ),
+                    subtitle: const Text(
+                      'Cho phép Coach xem lịch sử bài tập & cảm nhận buổi tập',
+                      style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 12),
+                    ),
+                    value: _shareJournal,
+                    onChanged: (v) => setState(() => _shareJournal = v),
+                  ),
+                  const Divider(color: Color(0x389A8C81), height: 16),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    activeTrackColor: MetaGymTheme.brandOrange,
+                    title: const Text(
+                      'Số đo 3 vòng & Cân nặng',
+                      style: TextStyle(color: Color(0xFFF7F9FC), fontSize: 13.5),
+                    ),
+                    subtitle: const Text(
+                      'Đồng bộ số đo cơ thể để Coach điều chỉnh giáo trình',
+                      style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 12),
+                    ),
+                    value: _shareMeasurements,
+                    onChanged: (v) => setState(() => _shareMeasurements = v),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _DashboardGlassCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Quyền truy cập thư viện ảnh',
+                    style: TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final option in _PhotoAccessMode.values)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => setState(() => _mode = option),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 4,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _mode == option
+                                  ? Icons.radio_button_checked_rounded
+                                  : Icons.radio_button_off_rounded,
+                              size: 20,
+                              color: _mode == option
+                                  ? MetaGymTheme.brandOrange
+                                  : const Color(0xFFB7B2AF),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _ProfilePageState._photoAccessModeLabel(option),
+                                style: const TextStyle(
+                                  color: Color(0xFFF7F9FC),
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomBar: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.brandOrange,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          onPressed: _saving ? null : _handleSave,
+          child: Text(
+            _saving ? 'Đang lưu...' : 'Lưu cài đặt quyền riêng tư',
+            style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppSettingsDetailPage extends StatefulWidget {
+  const _AppSettingsDetailPage({
+    required this.unitSystem,
+    required this.workoutReminderEnabled,
+    required this.reminderTime,
+    required this.onSave,
+  });
+
+  final String unitSystem;
+  final bool workoutReminderEnabled;
+  final String reminderTime;
+  final void Function(String unit, bool reminderEnabled, String time) onSave;
+
+  @override
+  State<_AppSettingsDetailPage> createState() => _AppSettingsDetailPageState();
+}
+
+class _AppSettingsDetailPageState extends State<_AppSettingsDetailPage> {
+  late String _unit = widget.unitSystem;
+  late bool _reminderEnabled = widget.workoutReminderEnabled;
+  late String _time = widget.reminderTime;
+
+  static const _timeOptions = ['06:30', '17:30', '18:00', '19:30'];
+
+  @override
+  Widget build(BuildContext context) {
+    return _SubPageScaffold(
+      eyebrow: 'Tùy chỉnh trải nghiệm',
+      title: 'Cài đặt ứng dụng',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DashboardGlassCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hệ đơn vị đo lường',
+                    style: TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      for (final unit in const ['cm / kg', 'inch / lbs']) ...[
+                        Expanded(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => setState(() => _unit = unit),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _unit == unit
+                                    ? MetaGymTheme.brandOrange.withValues(
+                                        alpha: 0.2,
+                                      )
+                                    : const Color(0x66211E1C),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _unit == unit
+                                      ? MetaGymTheme.brandOrange
+                                      : const Color(0x55A79D92),
+                                ),
+                              ),
+                              child: Text(
+                                unit,
+                                style: TextStyle(
+                                  color: _unit == unit
+                                      ? MetaGymTheme.brandOrange
+                                      : const Color(0xFFF7F9FC),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (unit == 'cm / kg') const SizedBox(width: 10),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _DashboardGlassCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    activeTrackColor: MetaGymTheme.brandOrange,
+                    title: const Text(
+                      'Nhắc lịch tập hằng ngày',
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Gửi thông báo nhắc chuẩn bị trước giờ tập',
+                      style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 12),
+                    ),
+                    value: _reminderEnabled,
+                    onChanged: (v) => setState(() => _reminderEnabled = v),
+                  ),
+                  if (_reminderEnabled) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Khung giờ nhắc',
+                      style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final t in _timeOptions)
+                          ChoiceChip(
+                            label: Text(t),
+                            selected: _time == t,
+                            selectedColor: MetaGymTheme.brandOrange.withValues(
+                              alpha: 0.25,
+                            ),
+                            backgroundColor: const Color(0x66211E1C),
+                            labelStyle: TextStyle(
+                              color: _time == t
+                                  ? MetaGymTheme.brandOrange
+                                  : const Color(0xFFF7F9FC),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            side: BorderSide(
+                              color: _time == t
+                                  ? MetaGymTheme.brandOrange
+                                  : const Color(0x55A79D92),
+                            ),
+                            onSelected: (_) => setState(() => _time = t),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomBar: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.brandOrange,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          onPressed: () {
+            widget.onSave(_unit, _reminderEnabled, _time);
+            Navigator.of(context).pop();
+          },
+          child: const Text(
+            'Lưu cài đặt',
+            style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportInfoDetailPage extends StatelessWidget {
+  const _SupportInfoDetailPage({required this.onShowToast});
+
+  final void Function(String message) onShowToast;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SubPageScaffold(
+      eyebrow: 'Meta Gym Center',
+      title: 'Thông tin phòng tập & Hỗ trợ',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DashboardGlassCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Thông tin cơ sở chính',
+                    style: TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  _InfoKeyValueRow(
+                    label: 'Giờ mở cửa',
+                    value: '05:30 – 22:00 (Thứ 2 – CN)',
+                  ),
+                  SizedBox(height: 8),
+                  _InfoKeyValueRow(
+                    label: 'Hotline hỗ trợ',
+                    value: '1900 6868',
+                  ),
+                  SizedBox(height: 8),
+                  _InfoKeyValueRow(
+                    label: 'Email CSKH',
+                    value: 'support@metagym.vn',
+                  ),
+                  SizedBox(height: 8),
+                  _InfoKeyValueRow(
+                    label: 'Địa chỉ',
+                    value: 'Tầng 3, Meta Complex, Q.1, TP.HCM',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _DashboardGlassCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Nội quy & Thông tin ứng dụng',
+                    style: TextStyle(
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    '• Mang giày tập chuyên dụng và khăn cá nhân khi vào khu vực máy.\n'
+                    '• Quét mã QR tại quầy lễ tân trước mỗi buổi tập để tích lũy lịch sử.\n'
+                    '• Đặt tạ về đúng giá sau khi hoàn thành bài tập.',
+                    style: TextStyle(
+                      color: Color(0xFFB7B2AF),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const _InfoKeyValueRow(
+                    label: 'Phiên bản ứng dụng',
+                    value: 'Meta Gym v1.0.0',
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: MetaGymTheme.brandOrange,
+                        side: const BorderSide(color: MetaGymTheme.brandOrange),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        onShowToast(
+                          'Đã gửi yêu cầu hỗ trợ tới bộ phận CSKH Meta Gym',
+                        );
+                      },
+                      icon: const Icon(Icons.headset_mic_outlined, size: 18),
+                      label: const Text(
+                        'Liên hệ bộ phận hỗ trợ',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoKeyValueRow extends StatelessWidget {
+  const _InfoKeyValueRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFFB7B2AF), fontSize: 13),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Color(0xFFF7F9FC),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
