@@ -71,6 +71,7 @@ export function createApp({
   sendPasswordResetCode,
   aiResponder,
   callTokenProvider,
+  liveKit,
   imageStorage,
   corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS,
   nodeEnv = process.env.NODE_ENV,
@@ -112,7 +113,7 @@ export function createApp({
   app.use('/api/v1', createGymVisitsRouter({ database, jwtSecret }));
   app.use('/api/v1', createDashboardRouter({ database, jwtSecret }));
   app.use('/api/v1', createAiConversationsRouter({ database, jwtSecret, aiResponder }));
-  app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider }));
+  app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit }));
   app.use('/api/v1', createPaymentsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachingRouter({ database, jwtSecret }));
 

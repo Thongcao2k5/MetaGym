@@ -35,6 +35,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
       ConversationsPage(
         currentUserId: currentUserId,
         bottomPadding: bottomPadding,
+        isActive: _index == 3,
       ),
       ProfilePage(bottomPadding: bottomPadding),
     ];

@@ -30,6 +30,26 @@ F:\flutter\bin\flutter.bat run --release `
 
 Có thể truyền `API_BASE_URL` để ghi đè URL ở môi trường local hoặc emulator.
 
+### Thử cuộc gọi qua Internet
+
+Cả hai thiết bị dùng cùng URL HTTPS của backend MetaGym trong `API_BASE_URL`.
+URL này cần kết thúc bằng `/api/v1`. Backend xử lý đăng nhập, lời mời gọi và
+cấp token phòng. Sau khi nhận token, ứng dụng kết nối trực tiếp với LiveKit
+Cloud để truyền âm thanh và video.
+
+Để thử khi máy tính phát triển đã tắt, chạy Node.js và PostgreSQL trên hosting.
+Với một dịch vụ Node.js như Render, đặt thư mục gốc là `backend`, lệnh build
+là `npm ci`, lệnh chạy là `npm start`, và đường dẫn health check là
+`/api/v1/health`. Cấu hình `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`,
+`CORS_ALLOWED_ORIGINS` và ba biến `LIVEKIT_*` trong môi trường của dịch vụ.
+Khởi tạo schema trên PostgreSQL của hosting theo hướng dẫn trong
+`database/README.md`. Tạo hai tài khoản dành riêng cho thử nghiệm và thiết lập
+quan hệ Member–Coach đang hoạt động.
+
+Mở `<URL backend>/api/v1/health` từ điện thoại qua Wi-Fi hoặc dữ liệu di động.
+Khi API và PostgreSQL báo `AVAILABLE`, build app với lệnh production ở trên.
+Mở app trên cả hai máy để thử cuộc gọi đến.
+
 API client chuẩn hóa response `{data, pagination?}` và chuyển lỗi mạng, xác
 thực, phân quyền, validation hoặc lỗi máy chủ thành `ApiException`. Log mạng
 chỉ chứa phương thức, trạng thái và loại lỗi; không ghi header hoặc body.

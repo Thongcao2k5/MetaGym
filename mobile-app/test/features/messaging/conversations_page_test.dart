@@ -93,7 +93,7 @@ void main() {
     await tester.dragUntilVisible(
       find.text('Tải tin cũ'),
       find.byType(ListView).last,
-      const Offset(0, -250),
+      const Offset(0, 250),
     );
     await tester.tap(find.text('Tải tin cũ'));
     await tester.pumpAndSettle();
@@ -188,6 +188,261 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.imageUrlLoads, 2);
   });
+
+  testWidgets('keeps newly sent message after exiting and reopening thread', (
+    tester,
+  ) async {
+    final service = _Fixture(
+      active: true,
+      coachName: 'Coach Lê Nam',
+      memberName: 'Hội viên Minh',
+      persistSentMessages: true,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ConversationsPage(service: service, currentUserId: 'member-1'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Coach Lê Nam'), findsOneWidget);
+    await tester.tap(find.text('Coach Lê Nam'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Tin mới nhất');
+    await tester.tap(find.text('Gửi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tin mới nhất'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Coach Lê Nam'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Tin mới nhất'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Tin mới nhất'), findsOneWidget);
+  });
+
+  test('formats conversation preview and local timestamps accurately', () {
+    final nowLocal = DateTime(2026, 11, 14, 16, 30);
+    final todayUtc = DateTime(2026, 11, 14, 9, 5).toUtc().toIso8601String();
+    final yesterdayUtc =
+        DateTime(2026, 11, 13, 21, 15).toUtc().toIso8601String();
+    final olderUtc = DateTime(2026, 10, 5, 8, 0).toUtc().toIso8601String();
+
+    expect(formatConversationTimestamp(todayUtc, now: nowLocal), '09:05');
+    expect(formatConversationTimestamp(yesterdayUtc, now: nowLocal), 'Hôm qua');
+    expect(formatConversationTimestamp(olderUtc, now: nowLocal), '05/10');
+
+    final imageConv = Conversation.fromJson({
+      'id': 'c-img',
+      'relationshipId': 'r-img',
+      'memberId': 'm-1',
+      'coachId': 'c-1',
+      'status': 'ACTIVE',
+      'unreadCount': 1,
+      'lastMessageAt': todayUtc,
+      'lastMessageType': 'IMAGE',
+      'lastMessageContent': null,
+    });
+    final emptyConv = Conversation.fromJson({
+      'id': 'c-empty',
+      'relationshipId': 'r-empty',
+      'memberId': 'm-1',
+      'coachId': 'c-2',
+      'status': 'ACTIVE',
+      'unreadCount': 0,
+      'lastMessageAt': null,
+    });
+    expect(imageConv.lastMessagePreview, 'Ảnh');
+    expect(emptyConv.lastMessagePreview, 'Chưa có tin nhắn');
+  });
+
+  testWidgets(
+    'sorts conversations by newest message and renders previews &unread counts',
+    (tester) async {
+      final now = DateTime.now();
+      final todayIso = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        8,
+        15,
+      ).toUtc().toIso8601String();
+      final yesterday = now.subtract(const Duration(days: 1));
+      final yesterdayIso = DateTime(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+        14,
+        0,
+      ).toUtc().toIso8601String();
+
+      final service = _MultiConversationFixture([
+        Conversation(
+          id: 'conv-empty',
+          relationshipId: 'rel-empty',
+          memberId: 'member-1',
+          coachId: 'coach-3',
+          coachName: 'Coach Chưa Nhắn',
+          status: 'ACTIVE',
+          unreadCount: 0,
+        ),
+        Conversation(
+          id: 'conv-older',
+          relationshipId: 'rel-older',
+          memberId: 'member-1',
+          coachId: 'coach-2',
+          coachName: 'Coach Hôm Qua',
+          status: 'ACTIVE',
+          unreadCount: 0,
+          lastMessageAt: yesterdayIso,
+          lastMessageType: 'IMAGE',
+        ),
+        Conversation(
+          id: 'conv-newest',
+          relationshipId: 'rel-newest',
+          memberId: 'member-1',
+          coachId: 'coach-1',
+          coachName: 'Coach Mới Nhất',
+          status: 'ACTIVE',
+          unreadCount: 3,
+          lastMessageAt: todayIso,
+          lastMessageType: 'TEXT',
+          lastMessageContent: 'Lịch tập chiều nay nhé',
+        ),
+      ]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConversationsPage(service: service, currentUserId: 'member-1'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lịch tập chiều nay nhé'), findsOneWidget);
+      expect(find.text('Ảnh'), findsOneWidget);
+      expect(find.text('Chưa có tin nhắn'), findsOneWidget);
+      expect(find.text('08:15'), findsOneWidget);
+      expect(find.text('Hôm qua'), findsOneWidget);
+      expect(find.text('3 tin chưa đọc'), findsOneWidget);
+
+      final newestTop = tester.getTopLeft(find.text('Coach Mới Nhất')).dy;
+      final olderTop = tester.getTopLeft(find.text('Coach Hôm Qua')).dy;
+      final emptyTop = tester.getTopLeft(find.text('Coach Chưa Nhắn')).dy;
+      expect(newestTop, lessThan(olderTop));
+      expect(olderTop, lessThan(emptyTop));
+    },
+  );
+
+  testWidgets(
+    'merges incoming message while loading history without duplicates or scroll jump, and retries failed markRead',
+    (tester) async {
+      final service = _ConcurrentHistoryFixture();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConversationsPage(service: service, currentUserId: 'member-1'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Coach coach-1'));
+      await tester.pumpAndSettle();
+
+      // First markRead attempt failed; _lastReadId must remain unset so next sync retries.
+      expect(service.markReadAttempts, 1);
+      expect(service.readMessageIds, isEmpty);
+
+      final listFinder = find.byType(ListView).last;
+      await tester.dragUntilVisible(
+        find.text('Tải tin cũ'),
+        listFinder,
+        const Offset(0, 250),
+      );
+      await tester.pumpAndSettle();
+      final scrollable = tester.state<ScrollableState>(
+        find.descendant(of: listFinder, matching: find.byType(Scrollable)),
+      );
+      final offsetBeforeLoadMore = scrollable.position.pixels;
+      expect(offsetBeforeLoadMore, greaterThan(0));
+
+      // Start loading page 2 (held open by completer)
+      await tester.tap(find.text('Tải tin cũ'));
+      await tester.pump();
+      expect(find.text('Đang tải…'), findsOneWidget);
+
+      // While page 2 is in flight, polling fires and brings a brand new message + duplicate Tin 0
+      service.includeNewIncomingOnPage1 = true;
+      await tester.pump(const Duration(seconds: 11));
+      await tester.pump();
+
+      // Now complete page 2 (which also contains duplicate boundary message-19 + older message)
+      service.completePage2();
+      await tester.pumpAndSettle();
+
+      // Scroll offset did not jump back to 0 when older history loaded
+      expect(scrollable.position.pixels, closeTo(offsetBeforeLoadMore, 1.0));
+      expect(find.text('Tin cũ hơn'), findsOneWidget);
+
+      // Mark read retried and succeeded with the new incoming message ID
+      expect(service.markReadAttempts, greaterThanOrEqualTo(2));
+      expect(service.readMessageIds, contains('message-new'));
+
+      // Scroll back to bottom (offset 0) to verify newest message is at index 0 without duplicates
+      scrollable.position.jumpTo(0);
+      await tester.pumpAndSettle();
+      expect(find.text('Tin mới vừa đến'), findsOneWidget);
+      expect(find.text('Tin 0'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'clears cached data and ignores stale responses when switching accounts on same device',
+    (tester) async {
+      final service = _AccountSwitchFixture();
+      final userIdNotifier = ValueNotifier<String>('member-1');
+
+      await tester.pumpWidget(
+        ValueListenableBuilder<String>(
+          valueListenable: userIdNotifier,
+          builder: (_, userId, _) => MaterialApp(
+            home: ConversationsPage(service: service, currentUserId: userId),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Coach Tài Khoản 1'), findsOneWidget);
+
+      // Open member-1 conversation so its messages are cached
+      await tester.tap(find.text('Coach Tài Khoản 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tin riêng của member-1'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      // Hold member-1's next conversation refresh in flight, then switch to member-2
+      service.holdMember1Refresh = true;
+      final state = tester.state(find.byType(ConversationsPage));
+      (state as dynamic).widget;
+      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
+      await tester.pump();
+
+      userIdNotifier.value = 'member-2';
+      await tester.pumpAndSettle();
+
+      // Complete stale member-1 response AFTER member-2 is active
+      service.completeStaleMember1Refresh();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Coach Tài Khoản 1'), findsNothing);
+      expect(find.text('Coach Tài Khoản 2'), findsOneWidget);
+
+      // Open member-2 thread (even with same relationshipId) and verify member-1 cache was cleared
+      await tester.tap(find.text('Coach Tài Khoản 2'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tin riêng của member-1'), findsNothing);
+      expect(find.text('Tin riêng của member-2'), findsOneWidget);
+    },
+  );
 }
 
 class _ImageFixture implements ProgressPhotoPicker {
@@ -208,6 +463,9 @@ class _Fixture implements MessagingService {
     this.failSendOnce = false,
     this.imageHistory = false,
     this.failImageUrlOnce = false,
+    this.coachName,
+    this.memberName,
+    this.persistSentMessages = false,
   });
   final bool failFirst;
   final bool empty;
@@ -216,11 +474,15 @@ class _Fixture implements MessagingService {
   final bool failSendOnce;
   final bool imageHistory;
   final bool failImageUrlOnce;
+  final String? coachName;
+  final String? memberName;
+  final bool persistSentMessages;
   int loads = 0;
   int sendCalls = 0;
   final messagePages = <int>[];
   final readMessageIds = <String>[];
   final sentIds = <String>[];
+  final persistedMessages = <ChatMessage>[];
   int uploadCalls = 0;
   int imageSends = 0;
   int imageUrlLoads = 0;
@@ -278,7 +540,9 @@ class _Fixture implements MessagingService {
     String clientMessageId,
   ) {
     expect(relationshipId, 'relationship-1');
-    expect(content, 'Xin chào Coach');
+    if (!persistSentMessages) {
+      expect(content, 'Xin chào Coach');
+    }
     expect(
       clientMessageId,
       matches(
@@ -289,6 +553,17 @@ class _Fixture implements MessagingService {
     );
     sendCalls++;
     sentIds.add(clientMessageId);
+    if (persistSentMessages) {
+      final msg = ChatMessage(
+        id: 'sent-$sendCalls',
+        senderId: 'member-1',
+        messageType: 'TEXT',
+        content: content,
+        sentAt: '2026-10-23T08:05:00Z',
+      );
+      persistedMessages.insert(0, msg);
+      return Future.value(msg);
+    }
     if (failSendOnce) {
       if (sendCalls == 1) throw StateError('offline');
       return Future.value(
@@ -348,8 +623,9 @@ class _Fixture implements MessagingService {
         ),
       ];
     }
-    return const [
-      ChatMessage(
+    return [
+      ...persistedMessages,
+      const ChatMessage(
         id: 'message-1',
         senderId: 'coach-1',
         messageType: 'TEXT',
@@ -370,8 +646,172 @@ class _Fixture implements MessagingService {
         relationshipId: 'relationship-1',
         memberId: 'member-1',
         coachId: 'coach-1',
+        memberName: memberName,
+        coachName: coachName,
         status: active ? 'ACTIVE' : 'ENDED',
         unreadCount: 2,
+      ),
+    ];
+  }
+}
+
+class _MultiConversationFixture extends _Fixture {
+  _MultiConversationFixture(this.conversations);
+  final List<Conversation> conversations;
+
+  @override
+  Future<List<Conversation>> getConversations(int page) async => conversations;
+}
+
+class _ConcurrentHistoryFixture extends _Fixture {
+  _ConcurrentHistoryFixture() : super(active: true, fullFirstPage: true);
+
+  final _page2Completer = Completer<List<ChatMessage>>();
+  bool includeNewIncomingOnPage1 = false;
+  int markReadAttempts = 0;
+
+  void completePage2() {
+    if (!_page2Completer.isCompleted) {
+      _page2Completer.complete(const [
+        ChatMessage(
+          id: 'message-19',
+          senderId: 'coach-1',
+          messageType: 'TEXT',
+          content: 'Tin 19',
+          sentAt: '2026-10-23T08:00:00Z',
+        ),
+        ChatMessage(
+          id: 'old-1',
+          senderId: 'coach-1',
+          messageType: 'TEXT',
+          content: 'Tin cũ hơn',
+          sentAt: '2026-10-22T08:00:00Z',
+        ),
+      ]);
+    }
+  }
+
+  @override
+  Future<void> markRead(String relationshipId, String messageId) async {
+    markReadAttempts++;
+    if (markReadAttempts == 1) {
+      throw StateError('temporary network failure');
+    }
+    readMessageIds.add(messageId);
+  }
+
+  @override
+  Future<List<ChatMessage>> getMessages(String relationshipId, int page) async {
+    messagePages.add(page);
+    if (page == 2) {
+      return _page2Completer.future;
+    }
+    final base = List.generate(
+      20,
+      (index) => ChatMessage(
+        id: 'message-$index',
+        senderId: 'coach-1',
+        messageType: 'TEXT',
+        content: 'Tin $index',
+        sentAt: '2026-10-23T08:00:00Z',
+      ),
+    );
+    if (includeNewIncomingOnPage1) {
+      return [
+        const ChatMessage(
+          id: 'message-new',
+          senderId: 'coach-1',
+          messageType: 'TEXT',
+          content: 'Tin mới vừa đến',
+          sentAt: '2026-10-23T08:10:00Z',
+        ),
+        ...base.take(19),
+      ];
+    }
+    return base;
+  }
+}
+
+class _AccountSwitchFixture extends _Fixture {
+  bool holdMember1Refresh = false;
+  String activeAccount = 'member-1';
+  final _staleMember1Completer = Completer<List<Conversation>>();
+
+  void completeStaleMember1Refresh() {
+    if (!_staleMember1Completer.isCompleted) {
+      _staleMember1Completer.complete(const [
+        Conversation(
+          id: 'conv-m1',
+          relationshipId: 'shared-rel',
+          memberId: 'member-1',
+          coachId: 'coach-1',
+          coachName: 'Coach Tài Khoản 1',
+          status: 'ACTIVE',
+          unreadCount: 1,
+          lastMessageContent: 'Tin riêng của member-1',
+          lastMessageType: 'TEXT',
+        ),
+      ]);
+    }
+  }
+
+  @override
+  Future<List<Conversation>> getConversations(int page) async {
+    if (holdMember1Refresh) {
+      holdMember1Refresh = false;
+      activeAccount = 'member-2';
+      return _staleMember1Completer.future;
+    }
+    if (activeAccount == 'member-2') {
+      return const [
+        Conversation(
+          id: 'conv-m2',
+          relationshipId: 'shared-rel',
+          memberId: 'member-2',
+          coachId: 'coach-2',
+          coachName: 'Coach Tài Khoản 2',
+          status: 'ACTIVE',
+          unreadCount: 0,
+          lastMessageContent: 'Tin riêng của member-2',
+          lastMessageType: 'TEXT',
+        ),
+      ];
+    }
+    return const [
+      Conversation(
+        id: 'conv-m1',
+        relationshipId: 'shared-rel',
+        memberId: 'member-1',
+        coachId: 'coach-1',
+        coachName: 'Coach Tài Khoản 1',
+        status: 'ACTIVE',
+        unreadCount: 1,
+        lastMessageContent: 'Tin riêng của member-1',
+        lastMessageType: 'TEXT',
+      ),
+    ];
+  }
+
+  @override
+  Future<List<ChatMessage>> getMessages(String relationshipId, int page) async {
+    if (activeAccount == 'member-2') {
+      return const [
+        ChatMessage(
+          id: 'msg-m2',
+          senderId: 'coach-2',
+          messageType: 'TEXT',
+          content: 'Tin riêng của member-2',
+          sentAt: '2026-10-23T09:00:00Z',
+        ),
+      ];
+    }
+    return const [
+      ChatMessage(
+        id: 'msg-m1',
+        senderId: 'coach-1',
+        messageType: 'TEXT',
+        content: 'Tin riêng của member-1',
+        sentAt: '2026-10-23T08:00:00Z',
       ),
     ];
   }

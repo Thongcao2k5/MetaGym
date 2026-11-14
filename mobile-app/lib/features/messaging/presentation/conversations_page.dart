@@ -6,6 +6,8 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/calls/data/calls_service.dart';
+import 'package:meta_gym_app/features/calls/presentation/live_call_page.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
@@ -217,12 +219,92 @@ class _MockThread {
   final List<ChatMessage> messages;
 }
 
+class _ConversationThreadCacheEntry {
+  const _ConversationThreadCacheEntry({
+    required this.messages,
+    required this.hasMore,
+    this.lastReadId,
+  });
+
+  final List<ChatMessage> messages;
+  final bool hasMore;
+  final String? lastReadId;
+}
+
+class _MessagingSessionCache {
+  static const int _maxConversationsPerAccount = 24;
+  static const int _maxMessagesPerConversation = 100;
+
+  static String? _activeAccountId;
+  static final Map<String, Map<String, _ConversationThreadCacheEntry>>
+  _threadsByAccount = {};
+
+  static String _accountBucketKey(String userId, MessagingService service) =>
+      '$userId:${identityHashCode(service)}';
+
+  static void ensureAccount(String userId) {
+    final normalized = userId.trim();
+    if (normalized.isEmpty) {
+      clearAll();
+      return;
+    }
+    if (_activeAccountId != null && _activeAccountId != normalized) {
+      clearAll();
+    }
+    _activeAccountId = normalized;
+  }
+
+  static void clearAll() {
+    _activeAccountId = null;
+    _threadsByAccount.clear();
+  }
+
+  static _ConversationThreadCacheEntry? readThread(
+    String userId,
+    MessagingService? service,
+    String conversationKey,
+  ) {
+    if (service == null || userId.trim().isEmpty) return null;
+    ensureAccount(userId);
+    final bucket = _threadsByAccount[_accountBucketKey(userId.trim(), service)];
+    return bucket?[conversationKey];
+  }
+
+  static void writeThread(
+    String userId,
+    MessagingService? service,
+    String conversationKey, {
+    required List<ChatMessage> messages,
+    bool? hasMore,
+    String? lastReadId,
+  }) {
+    if (service == null || userId.trim().isEmpty) return;
+    final cleanUser = userId.trim();
+    ensureAccount(cleanUser);
+    final bucketKey = _accountBucketKey(cleanUser, service);
+    final bucket = _threadsByAccount.putIfAbsent(bucketKey, () => {});
+    final previous = bucket.remove(conversationKey);
+    final bounded = messages.length > _maxMessagesPerConversation
+        ? messages.sublist(0, _maxMessagesPerConversation)
+        : messages;
+    bucket[conversationKey] = _ConversationThreadCacheEntry(
+      messages: List<ChatMessage>.unmodifiable(bounded),
+      hasMore: hasMore ?? previous?.hasMore ?? false,
+      lastReadId: lastReadId ?? previous?.lastReadId,
+    );
+    while (bucket.length > _maxConversationsPerAccount) {
+      bucket.remove(bucket.keys.first);
+    }
+  }
+}
+
 class ConversationsPage extends StatefulWidget {
   const ConversationsPage({
     this.service,
     required this.currentUserId,
     this.picker,
     this.bottomPadding,
+    this.isActive = true,
     super.key,
   });
 
@@ -230,6 +312,9 @@ class ConversationsPage extends StatefulWidget {
   final String currentUserId;
   final ProgressPhotoPicker? picker;
   final double? bottomPadding;
+  final bool isActive;
+
+  static void clearSessionCache() => _MessagingSessionCache.clearAll();
 
   @override
   State<ConversationsPage> createState() => _ConversationsPageState();
@@ -237,12 +322,16 @@ class ConversationsPage extends StatefulWidget {
 
 class _ConversationsPageState extends State<ConversationsPage> {
   MessagingService? _service;
+  SessionController? _sessionController;
   List<Conversation> _items = const [];
   bool _loading = true;
+  bool _refreshing = false;
   bool _loadingMore = false;
   String? _error;
   int _page = 1;
   bool _hasMore = false;
+  int _sessionEpoch = 0;
+  String _activeUserId = '';
 
   _MessageFilter _filter = _MessageFilter.all;
   bool _showSearch = false;
@@ -251,14 +340,25 @@ class _ConversationsPageState extends State<ConversationsPage> {
   bool _usingMockShowcase = false;
   late List<_MockThread> _mockThreads;
 
+  String get _effectiveUserId {
+    final sessionUser = _sessionController?.user?.id;
+    if (sessionUser != null && sessionUser.isNotEmpty) return sessionUser;
+    return widget.currentUserId;
+  }
+
   @override
   void initState() {
     super.initState();
+    _activeUserId = widget.currentUserId;
+    if (_activeUserId.isNotEmpty) {
+      _MessagingSessionCache.ensureAccount(_activeUserId);
+    }
     _mockThreads = _createInitialMockThreads();
   }
 
   @override
   void dispose() {
+    _sessionController?.removeListener(_handleSessionChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -383,100 +483,241 @@ class _ConversationsPageState extends State<ConversationsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_service != null) return;
-    if (widget.service != null) {
-      _service = widget.service;
-    } else {
-      try {
-        _service = context.read<MessagingService>();
-      } catch (_) {
-        _service = null;
-      }
+    SessionController? session;
+    try {
+      session = context.read<SessionController?>();
+    } catch (_) {}
+    if (!identical(_sessionController, session)) {
+      _sessionController?.removeListener(_handleSessionChanged);
+      _sessionController = session;
+      _sessionController?.addListener(_handleSessionChanged);
     }
+    final nextService = widget.service ?? context.read<MessagingService?>();
+    final initialBind = _service == null;
+    if (!identical(_service, nextService)) {
+      _service = nextService;
+      _sessionEpoch++;
+    }
+    final currentUser = _effectiveUserId;
+    if (currentUser != _activeUserId) {
+      _resetForUserChange(currentUser);
+      return;
+    }
+    if (initialBind && widget.isActive) _scheduleLoad();
+  }
+
+  @override
+  void didUpdateWidget(covariant ConversationsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.service != null && !identical(widget.service, _service)) {
+      _service = widget.service;
+      _sessionEpoch++;
+    }
+    final nextUser = _effectiveUserId;
+    if (nextUser != _activeUserId ||
+        widget.currentUserId != oldWidget.currentUserId) {
+      _resetForUserChange(nextUser);
+      return;
+    }
+    if (widget.isActive && !oldWidget.isActive) _scheduleLoad();
+  }
+
+  void _handleSessionChanged() {
+    if (!mounted) return;
+    final session = _sessionController;
+    if (session == null) return;
+    if (session.status == SessionStatus.unauthenticated ||
+        session.user == null) {
+      _sessionEpoch++;
+      _activeUserId = '';
+      _MessagingSessionCache.clearAll();
+      setState(() {
+        _items = const [];
+        _page = 1;
+        _hasMore = false;
+        _error = null;
+        _loading = false;
+        _refreshing = false;
+        _loadingMore = false;
+      });
+      return;
+    }
+    final nextUser = session.user!.id;
+    if (nextUser != _activeUserId) {
+      _resetForUserChange(nextUser);
+    }
+  }
+
+  void _resetForUserChange(String nextUser) {
+    _sessionEpoch++;
+    _activeUserId = nextUser;
+    _MessagingSessionCache.clearAll();
+    if (nextUser.isNotEmpty) {
+      _MessagingSessionCache.ensureAccount(nextUser);
+    }
+    setState(() {
+      _items = const [];
+      _page = 1;
+      _hasMore = false;
+      _error = null;
+      _loading = true;
+      _refreshing = false;
+      _loadingMore = false;
+    });
+    if (widget.isActive && nextUser.isNotEmpty) {
+      _scheduleLoad();
+    }
+  }
+
+  bool _isActiveSession(int epoch, String userId) {
+    if (!mounted) return false;
+    if (epoch != _sessionEpoch || userId != _effectiveUserId) return false;
+    final session = _sessionController;
+    if (session != null) {
+      if (session.status == SessionStatus.unauthenticated) return false;
+      if (session.user != null && session.user!.id != userId) return false;
+    }
+    return true;
+  }
+
+  Conversation _enrichFromCache(Conversation item, String userId) {
+    final service = _service;
+    if (service == null) return item;
+    final cached = _MessagingSessionCache.readThread(
+      userId,
+      service,
+      item.messageKey,
+    );
+    if (cached == null || cached.messages.isEmpty) return item;
+    final newest = cached.messages.first;
+    final itemTime = DateTime.tryParse(item.lastMessageAt ?? '');
+    final cachedTime = DateTime.tryParse(newest.sentAt);
+    final useCachedPreview =
+        (item.lastMessageType == null &&
+            (item.lastMessageContent == null ||
+                item.lastMessageContent!.trim().isEmpty)) ||
+        (cachedTime != null && (itemTime == null || cachedTime.isAfter(itemTime)));
+    if (!useCachedPreview) return item;
+    return item.copyWith(
+      lastMessageAt: newest.sentAt,
+      lastMessageType: newest.messageType,
+      lastMessageContent: newest.content,
+      lastMessageSenderId: newest.senderId,
+    );
+  }
+
+  List<Conversation> _sortAndDedupeConversations(
+    List<Conversation> items,
+    String userId,
+  ) {
+    final byId = <String, Conversation>{};
+    final orderIndex = <String, int>{};
+    for (var i = 0; i < items.length; i++) {
+      final enriched = _enrichFromCache(items[i], userId);
+      orderIndex.putIfAbsent(enriched.id, () => i);
+      byId[enriched.id] = enriched;
+    }
+    final unique = byId.values.toList();
+    unique.sort((a, b) {
+      final aTime = DateTime.tryParse(a.lastMessageAt ?? '');
+      final bTime = DateTime.tryParse(b.lastMessageAt ?? '');
+      if (aTime != null && bTime != null) {
+        final cmp = bTime.compareTo(aTime);
+        if (cmp != 0) return cmp;
+      } else if (aTime != null) {
+        return -1;
+      } else if (bTime != null) {
+        return 1;
+      }
+      return orderIndex[a.id]!.compareTo(orderIndex[b.id]!);
+    });
+    return unique;
+  }
+
+  void _scheduleLoad() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _load();
+      if (mounted && widget.isActive) _load();
     });
   }
 
-  bool get _canFallbackToMock =>
-      widget.service == null && !MetaGymTheme.isFlutterTestEnvironment;
-
   Future<void> _load() async {
-    if (_service == null) {
+    if (_refreshing || _loadingMore) return;
+    final service = _service;
+    if (service == null) {
       if (mounted) {
         setState(() {
           _loading = false;
-          _usingMockShowcase = _canFallbackToMock;
+          _usingMockShowcase = !MetaGymTheme.isFlutterTestEnvironment;
         });
       }
       return;
     }
 
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = _effectiveUserId;
+    if (requestUserId.isNotEmpty) {
+      _MessagingSessionCache.ensureAccount(requestUserId);
+    }
+
+    _refreshing = true;
+    final showInitialLoader = _items.isEmpty;
     setState(() {
-      _loading = true;
+      if (showInitialLoader) _loading = true;
       _error = null;
+      _usingMockShowcase = false;
     });
     try {
-      final items = await _service!.getConversations(1);
-      if (mounted) {
-        final useMock = items.isEmpty && _canFallbackToMock;
-        setState(() {
-          _items = items;
-          _page = 1;
-          _hasMore = items.length == 20;
-          _usingMockShowcase = useMock;
-        });
-      }
+      final items = await service.getConversations(1);
+      if (!_isActiveSession(requestEpoch, requestUserId)) return;
+      setState(() {
+        _items = _sortAndDedupeConversations(items, requestUserId);
+        _page = 1;
+        _hasMore = items.length == 20;
+      });
     } on ApiException catch (error) {
-      if (mounted) {
-        if (_canFallbackToMock) {
-          setState(() {
-            _error = null;
-            _usingMockShowcase = true;
-          });
-        } else {
-          setState(() => _error = error.message);
-        }
-      }
+      if (!_isActiveSession(requestEpoch, requestUserId)) return;
+      setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) {
-        if (_canFallbackToMock) {
-          setState(() {
-            _error = null;
-            _usingMockShowcase = true;
-          });
-        } else {
-          setState(() => _error = 'Không tải được cuộc trò chuyện.');
-        }
-      }
+      if (!_isActiveSession(requestEpoch, requestUserId)) return;
+      setState(() => _error = 'Không tải được cuộc trò chuyện.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (_isActiveSession(requestEpoch, requestUserId)) {
+        _refreshing = false;
+        setState(() => _loading = false);
+      }
     }
   }
 
   Future<void> _loadMore() async {
-    if (_service == null) return;
+    if (_service == null || _loading || _loadingMore) return;
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = _effectiveUserId;
+    final targetPage = _page + 1;
     setState(() {
       _loadingMore = true;
       _error = null;
     });
     try {
-      final items = await _service!.getConversations(_page + 1);
-      if (mounted) {
-        setState(() {
-          _items = [..._items, ...items];
-          _page++;
-          _hasMore = items.length == 20;
-        });
-      }
+      final items = await _service!.getConversations(targetPage);
+      if (!_isActiveSession(requestEpoch, requestUserId)) return;
+      setState(() {
+        _items = _sortAndDedupeConversations(
+          [..._items, ...items],
+          requestUserId,
+        );
+        _page = targetPage;
+        _hasMore = items.length == 20;
+      });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!_isActiveSession(requestEpoch, requestUserId)) return;
+      setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'Không tải thêm được cuộc trò chuyện.');
-      }
+      if (!_isActiveSession(requestEpoch, requestUserId)) return;
+      setState(() => _error = 'Không tải thêm được cuộc trò chuyện.');
     } finally {
-      if (mounted) setState(() => _loadingMore = false);
+      if (_isActiveSession(requestEpoch, requestUserId)) {
+        setState(() => _loadingMore = false);
+      }
     }
   }
 
@@ -527,7 +768,13 @@ class _ConversationsPageState extends State<ConversationsPage> {
 
   List<Conversation> get _filteredRealItems {
     final query = _searchQuery.trim().toLowerCase();
+    final userId = _effectiveUserId;
     return _items.where((item) {
+      if (_filter == _MessageFilter.coach &&
+          item.memberId != userId &&
+          item.coachId != userId) {
+        return false;
+      }
       if (_filter == _MessageFilter.unread && item.unreadCount == 0) {
         return false;
       }
@@ -535,10 +782,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
         return false;
       }
       if (query.isNotEmpty) {
-        final label = item.memberId == widget.currentUserId
-            ? 'Coach ${item.coachId}'
-            : 'Hội viên ${item.memberId}';
-        if (!label.toLowerCase().contains(query)) return false;
+        final label = item.displayNameFor(userId).toLowerCase();
+        final preview = item.lastMessagePreview.toLowerCase();
+        if (!label.contains(query) && !preview.contains(query)) return false;
       }
       return true;
     }).toList();
@@ -584,17 +830,22 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Future<void> _openRealConversation(Conversation item) async {
+    final userId = _effectiveUserId;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ConversationDetailPage(
           conversation: item,
           service: _service,
-          currentUserId: widget.currentUserId,
+          currentUserId: userId,
           picker: widget.picker ?? DeviceProgressPhotoPicker(),
         ),
       ),
     );
-    if (mounted) _load();
+    if (!mounted || userId != _effectiveUserId) return;
+    setState(() {
+      _items = _sortAndDedupeConversations(_items, userId);
+    });
+    await _load();
   }
 
   @override
@@ -669,8 +920,14 @@ class _ConversationsPageState extends State<ConversationsPage> {
                           'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
                     )
                   else ...[
-                    for (final item in _filteredRealItems)
-                      _buildRealConversationCard(item),
+                    if (_filteredRealItems.isEmpty)
+                      _buildEmptyCard(
+                        title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                        subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
+                      )
+                    else
+                      for (final item in _filteredRealItems)
+                        _buildRealConversationCard(item),
                     if (_hasMore)
                       Center(
                         child: TextButton(
@@ -1267,6 +1524,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildRealConversationCard(Conversation item) {
+    final userId = _effectiveUserId;
+    final timeLabel = item.formatLastMessageTime();
     return _buildLiquidGlassCard(
       borderRadius: BorderRadius.circular(14),
       margin: const EdgeInsets.only(bottom: 7),
@@ -1290,7 +1549,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 ),
                 child: Center(
                   child: Icon(
-                    item.memberId == widget.currentUserId
+                    item.memberId == userId
                         ? Icons.sports_gymnastics_rounded
                         : Icons.person_rounded,
                     color: MetaGymTheme.reflectionBlue,
@@ -1304,9 +1563,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.memberId == widget.currentUserId
-                          ? 'Coach ${item.coachId}'
-                          : 'Hội viên ${item.memberId}',
+                      item.displayNameFor(userId),
                       style: const TextStyle(
                         color: MetaGymTheme.darkTextPrimary,
                         fontSize: 13.5,
@@ -1331,12 +1588,15 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
-                            item.canSend
-                                ? 'Có thể nhắn tin'
-                                : 'Quan hệ đã kết thúc · chỉ đọc',
-                            style: const TextStyle(
-                              color: MetaGymTheme.darkTextSecondary,
+                            item.lastMessagePreview,
+                            style: TextStyle(
+                              color: item.unreadCount > 0
+                                  ? const Color(0xFFD5DEE8)
+                                  : MetaGymTheme.darkTextSecondary,
                               fontSize: 11.5,
+                              fontWeight: item.unreadCount > 0
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1348,38 +1608,58 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              if (item.unreadCount > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MetaGymTheme.brandOrange,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x4DFF5A36),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (timeLabel.isNotEmpty)
+                    Text(
+                      timeLabel,
+                      style: TextStyle(
+                        color: item.unreadCount > 0
+                            ? MetaGymTheme.brandOrange
+                            : const Color(0xFF8E9AA8),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    '${item.unreadCount} tin chưa đọc',
-                    style: const TextStyle(
-                      color: MetaGymTheme.onBrandOrange,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
                     ),
-                  ),
-                )
-              else
-                const Icon(
-                  Icons.chevron_right,
-                  color: MetaGymTheme.darkTextTertiary,
-                  size: 20,
-                ),
+                  if (timeLabel.isNotEmpty && item.unreadCount > 0)
+                    const SizedBox(height: 4),
+                  if (item.unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MetaGymTheme.brandOrange,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x4DFF5A36),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '${item.unreadCount} tin chưa đọc',
+                        style: const TextStyle(
+                          color: MetaGymTheme.onBrandOrange,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  else if (timeLabel.isEmpty)
+                    const Icon(
+                      Icons.chevron_right,
+                      color: MetaGymTheme.darkTextTertiary,
+                      size: 20,
+                    ),
+                ],
+              ),
             ],
           ),
         ),
@@ -1417,7 +1697,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
             ),
             const SizedBox(height: 8),
             TextButton.icon(
-              onPressed: _items.isEmpty ? _load : _loadMore,
+              onPressed: _load,
               icon: const Icon(
                 Icons.replay_rounded,
                 size: 16,
@@ -1522,6 +1802,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   bool _loadingMore = false;
   bool _sending = false;
   bool _imageSending = false;
+  bool _creatingCall = false;
   String? _error;
   String? _sendError;
   String? _draftMessageId;
@@ -1531,6 +1812,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   String? _pendingMediaId;
   String? _pendingImageMessageId;
   String? _lastReadId;
+  String? _markingReadId;
+  SessionController? _sessionController;
+  int _sessionEpoch = 0;
   Timer? _pollTimer;
   bool _polling = false;
   int _page = 1;
@@ -1545,8 +1829,153 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     'Cảm ơn Coach!',
   ];
 
+  void _storeCache(
+    List<ChatMessage> messages, {
+    bool? hasMore,
+    String? lastReadId,
+  }) {
+    _MessagingSessionCache.writeThread(
+      widget.currentUserId,
+      widget.service,
+      widget.conversation.messageKey,
+      messages: messages,
+      hasMore: hasMore,
+      lastReadId: lastReadId ?? _lastReadId,
+    );
+  }
+
+  List<ChatMessage> _mergeMessages({
+    List<ChatMessage> newer = const [],
+    List<ChatMessage> current = const [],
+    List<ChatMessage> older = const [],
+  }) {
+    final combined = <ChatMessage>[...newer, ...current, ...older];
+    final byId = <String, ChatMessage>{};
+    final orderIndex = <String, int>{};
+    for (var i = 0; i < combined.length; i++) {
+      final item = combined[i];
+      orderIndex.putIfAbsent(item.id, () => i);
+      byId.putIfAbsent(item.id, () => item);
+    }
+    final unique = byId.values.toList();
+    unique.sort((a, b) {
+      final aTime = DateTime.tryParse(a.sentAt);
+      final bTime = DateTime.tryParse(b.sentAt);
+      if (aTime != null && bTime != null) {
+        final cmp = bTime.compareTo(aTime);
+        if (cmp != 0) return cmp;
+      }
+      return orderIndex[a.id]!.compareTo(orderIndex[b.id]!);
+    });
+    return unique;
+  }
+
+  bool _isActiveRequest(int epoch, String userId, String messageKey) {
+    if (!mounted) return false;
+    if (epoch != _sessionEpoch ||
+        userId != widget.currentUserId ||
+        messageKey != widget.conversation.messageKey) {
+      return false;
+    }
+    final session = _sessionController;
+    if (session != null) {
+      if (session.status == SessionStatus.unauthenticated) return false;
+      if (session.user != null && session.user!.id != userId) return false;
+    }
+    return true;
+  }
+
+  void _handleSessionChanged() {
+    if (!mounted) return;
+    final session = _sessionController;
+    if (session == null) return;
+    if (session.status == SessionStatus.unauthenticated ||
+        session.user == null ||
+        session.user!.id != widget.currentUserId) {
+      _sessionEpoch++;
+      _pollTimer?.cancel();
+      _MessagingSessionCache.clearAll();
+      setState(() {
+        _messages = const [];
+        _loading = false;
+        _loadingMore = false;
+        _sending = false;
+        _imageSending = false;
+        _polling = false;
+        _error = null;
+        _sendError = null;
+        _imageError = null;
+        _draftMessageId = null;
+        _draftContent = null;
+        _pendingImage = null;
+        _pendingMediaId = null;
+        _pendingImageMessageId = null;
+        _lastReadId = null;
+        _markingReadId = null;
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SessionController? session;
+    try {
+      session = context.read<SessionController?>();
+    } catch (_) {}
+    if (!identical(_sessionController, session)) {
+      _sessionController?.removeListener(_handleSessionChanged);
+      _sessionController = session;
+      _sessionController?.addListener(_handleSessionChanged);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ConversationDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentUserId != widget.currentUserId ||
+        oldWidget.conversation.messageKey != widget.conversation.messageKey ||
+        !identical(oldWidget.service, widget.service)) {
+      _sessionEpoch++;
+      if (oldWidget.currentUserId != widget.currentUserId) {
+        _MessagingSessionCache.clearAll();
+      }
+      final cached = _MessagingSessionCache.readThread(
+        widget.currentUserId,
+        widget.service,
+        widget.conversation.messageKey,
+      );
+      setState(() {
+        _messages = cached != null
+            ? List<ChatMessage>.from(cached.messages)
+            : const [];
+        _hasMore = cached?.hasMore ?? false;
+        _lastReadId = cached?.lastReadId;
+        _markingReadId = null;
+        _loading = cached == null;
+        _loadingMore = false;
+        _sending = false;
+        _imageSending = false;
+        _polling = false;
+        _page = 1;
+        _error = null;
+        _sendError = null;
+        _imageError = null;
+        _draftMessageId = null;
+        _draftContent = null;
+        _pendingImage = null;
+        _pendingMediaId = null;
+        _pendingImageMessageId = null;
+      });
+      if (!_isMockMode) {
+        _load();
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _sessionController?.removeListener(_handleSessionChanged);
     _pollTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
@@ -1557,9 +1986,20 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   void initState() {
     super.initState();
     if (_isMockMode) {
-      _messages = List<ChatMessage>.from(widget.initialMockMessages!);
+      _messages = widget.initialMockMessages!.reversed.toList();
       _loading = false;
     } else {
+      final cached = _MessagingSessionCache.readThread(
+        widget.currentUserId,
+        widget.service,
+        widget.conversation.messageKey,
+      );
+      if (cached != null) {
+        _messages = List<ChatMessage>.from(cached.messages);
+        _hasMore = cached.hasMore;
+        _lastReadId = cached.lastReadId;
+        _loading = false;
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _load();
       });
@@ -1574,93 +2014,138 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       if (mounted) setState(() => _loading = false);
       return;
     }
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
+    final showLoader = _messages.isEmpty;
     setState(() {
-      _loading = true;
+      if (showLoader) _loading = true;
       _error = null;
     });
     try {
       final messages = await widget.service!.getMessages(
-        widget.conversation.messageKey,
+        requestKey,
         1,
       );
-      if (mounted) {
-        setState(() {
-          _messages = messages;
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      final hasMore = messages.length == 20;
+      final merged = _mergeMessages(newer: messages, current: _messages);
+      setState(() {
+        _messages = merged;
+        if (_page <= 1) {
           _page = 1;
-          _hasMore = messages.length == 20;
-        });
-        await _markLatestReceived(messages);
-      }
+          _hasMore = hasMore;
+        }
+        _loading = false;
+      });
+      _storeCache(merged, hasMore: _hasMore);
+      unawaited(_markLatestReceived(merged).catchError((_) {}));
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      if (_messages.isEmpty) {
+        setState(() => _error = error.message);
+      }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải được tin nhắn.');
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      if (_messages.isEmpty) {
+        setState(() => _error = 'Không tải được tin nhắn.');
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (_isActiveRequest(requestEpoch, requestUserId, requestKey) &&
+          _loading) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   Future<void> _refreshLatest() async {
     if (_polling || _loading || widget.service == null) return;
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
     _polling = true;
     try {
       final latest = await widget.service!.getMessages(
-        widget.conversation.messageKey,
+        requestKey,
         1,
       );
-      if (!mounted) return;
-      final existingById = {for (final item in _messages) item.id: item};
-      for (final item in latest) {
-        existingById[item.id] = item;
-      }
-      final merged = existingById.values.toList();
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      final merged = _mergeMessages(newer: latest, current: _messages);
       setState(() => _messages = merged);
-      await _markLatestReceived(latest);
+      _storeCache(merged);
+      unawaited(_markLatestReceived(merged).catchError((_) {}));
     } catch (_) {
       // Keep the visible message list intact when background refresh fails.
     } finally {
-      _polling = false;
+      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
+        _polling = false;
+      }
     }
   }
 
   Future<void> _loadMore() async {
-    if (widget.service == null) return;
+    if (_loadingMore || !_hasMore || widget.service == null) return;
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
+    final targetPage = _page + 1;
     setState(() {
       _loadingMore = true;
       _error = null;
     });
     try {
       final messages = await widget.service!.getMessages(
-        widget.conversation.messageKey,
-        _page + 1,
+        requestKey,
+        targetPage,
       );
-      if (mounted) {
-        setState(() {
-          _messages = [..._messages, ...messages];
-          _page++;
-          _hasMore = messages.length == 20;
-        });
-      }
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      final merged = _mergeMessages(current: _messages, older: messages);
+      setState(() {
+        _messages = merged;
+        _page = targetPage;
+        _hasMore = messages.length == 20;
+      });
+      _storeCache(merged, hasMore: _hasMore);
+      unawaited(_markLatestReceived(merged).catchError((_) {}));
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải thêm được tin nhắn.');
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      setState(() => _error = 'Không tải thêm được tin nhắn.');
     } finally {
-      if (mounted) setState(() => _loadingMore = false);
+      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
+        setState(() => _loadingMore = false);
+      }
     }
   }
 
   Future<void> _markLatestReceived(List<ChatMessage> messages) async {
-    if (widget.service == null) return;
-    for (final message in messages) {
-      if (message.senderId != widget.currentUserId &&
-          message.id != _lastReadId) {
-        _lastReadId = message.id;
-        await widget.service!.markRead(
-          widget.conversation.messageKey,
-          message.id,
-        );
-        return;
+    final service = widget.service;
+    if (service == null) return;
+    final latest = messages
+        .where((message) => message.senderId != widget.currentUserId)
+        .firstOrNull;
+    if (latest == null ||
+        latest.id == _lastReadId ||
+        latest.id == _markingReadId) {
+      return;
+    }
+
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
+    _markingReadId = latest.id;
+    try {
+      await service.markRead(requestKey, latest.id);
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      _lastReadId = latest.id;
+      _storeCache(_messages, lastReadId: latest.id);
+    } catch (_) {
+      // Leave _lastReadId unchanged so the next sync retries markRead.
+    } finally {
+      if (_markingReadId == latest.id) {
+        _markingReadId = null;
       }
     }
   }
@@ -1685,50 +2170,61 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     );
     _textController.clear();
     setState(() {
-      _messages = [..._messages, msg];
+      _messages = [msg, ..._messages];
     });
     widget.onMockMessageAdded?.call(msg);
   }
 
   Future<void> _send([String? overrideText]) async {
     if (_sending) return;
-    final text = (overrideText ?? _textController.text).trim();
+    final candidate = overrideText ?? _textController.text;
+    final text = candidate.trim().isNotEmpty
+        ? candidate.trim()
+        : (_draftContent ?? '').trim();
     if (text.isEmpty) return;
 
-    if (_isMockMode || widget.service == null) {
+    if (_isMockMode) {
       _sendMockMessage(text);
       return;
     }
+    final service = widget.service;
+    if (service == null) return;
 
-    if (_draftContent != text) {
+    if (_draftContent != text || _draftMessageId == null) {
       _draftContent = text;
       _draftMessageId = newClientMessageId();
     }
     final clientMessageId = _draftMessageId!;
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
     setState(() {
       _sending = true;
       _sendError = null;
     });
     try {
-      final created = await widget.service!.sendText(
-        widget.conversation.messageKey,
+      final created = await service.sendText(
+        requestKey,
         text,
         clientMessageId,
       );
-      if (mounted) {
-        _textController.clear();
-        _draftMessageId = null;
-        _draftContent = null;
-        setState(() {
-          _messages = [..._messages, created];
-        });
-      }
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      _textController.clear();
+      _draftMessageId = null;
+      _draftContent = null;
+      setState(() {
+        _saveMessage(created);
+      });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _sendError = error.message);
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      setState(() => _sendError = error.message);
     } catch (_) {
-      if (mounted) setState(() => _sendError = 'Không gửi được tin nhắn.');
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      setState(() => _sendError = 'Không gửi được tin nhắn.');
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
+        setState(() => _sending = false);
+      }
     }
   }
 
@@ -1743,8 +2239,14 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       return;
     }
     if (_imageSending) return;
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
     final image = await widget.picker.pick();
-    if (image == null || !mounted) return;
+    if (image == null ||
+        !_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
+      return;
+    }
     setState(() {
       _pendingImage = image;
       _pendingMediaId = null;
@@ -1757,6 +2259,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   Future<void> _sendImage() async {
     final image = _pendingImage;
     if (image == null || _imageSending || widget.service == null) return;
+    final requestEpoch = _sessionEpoch;
+    final requestUserId = widget.currentUserId;
+    final requestKey = widget.conversation.messageKey;
+    final clientMessageId = _pendingImageMessageId ??= newClientMessageId();
     setState(() {
       _imageSending = true;
       _imageError = null;
@@ -1764,43 +2270,97 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     try {
       final mediaId =
           _pendingMediaId ?? await widget.service!.uploadImage(image);
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
       _pendingMediaId = mediaId;
       final created = await widget.service!.sendImage(
-        widget.conversation.messageKey,
+        requestKey,
         mediaId,
-        _pendingImageMessageId!,
+        clientMessageId,
       );
-      if (mounted) {
-        _pendingImage = null;
-        _pendingMediaId = null;
-        _pendingImageMessageId = null;
-        setState(() => _messages = [..._messages, created]);
-      }
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      _pendingImage = null;
+      _pendingMediaId = null;
+      _pendingImageMessageId = null;
+      setState(() => _saveMessage(created));
     } on ApiException catch (error) {
-      if (mounted) setState(() => _imageError = error.message);
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      setState(() => _imageError = error.message);
     } catch (_) {
-      if (mounted) setState(() => _imageError = 'Không gửi được hình ảnh.');
+      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
+      setState(() => _imageError = 'Không gửi được hình ảnh.');
     } finally {
-      if (mounted) setState(() => _imageSending = false);
+      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
+        setState(() => _imageSending = false);
+      }
     }
   }
 
-  void _showFeaturePreviewNotice(String label) {
+  void _saveMessage(ChatMessage message) {
+    final updated = _mergeMessages(newer: [message], current: _messages);
+    _messages = updated;
+    _storeCache(updated);
+    if (_scrollController.hasClients && _scrollController.offset > 0) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _showCallNotice(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label sẽ khả dụng khi nối dịch vụ cuộc gọi.'),
+        content: Text(message),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
+  Future<void> _startCall(String callType) async {
+    if (_creatingCall) return;
+    final service = context.read<CallsService?>();
+    if (_isMockMode || service is! CallsApi) {
+      _showCallNotice('Dịch vụ cuộc gọi chưa khả dụng.');
+      return;
+    }
+    final conversation = widget.conversation;
+    final relationshipId = conversation.relationshipId;
+    if (relationshipId == null || conversation.status != 'ACTIVE') {
+      _showCallNotice('Chỉ có thể gọi khi quan hệ huấn luyện đang hoạt động.');
+      return;
+    }
+
+    final navigator = Navigator.of(context, rootNavigator: true);
+    if (LiveCallPage.isOpen(navigator)) return;
+    _creatingCall = true;
+    try {
+      final call = await service.createLiveCall(relationshipId, callType);
+      if (!mounted) return;
+      final peerName =
+          widget.mockTitle ?? conversation.displayNameFor(widget.currentUserId);
+      await LiveCallPage.show(
+        navigator,
+        api: service,
+        call: call,
+        currentUserId: widget.currentUserId,
+        peerName: peerName,
+      );
+    } on ApiException catch (error) {
+      if (mounted) _showCallNotice(error.message);
+    } catch (_) {
+      if (mounted) _showCallNotice('Không tạo được cuộc gọi.');
+    } finally {
+      _creatingCall = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = widget.mockTitle ??
-        (widget.conversation.memberId == widget.currentUserId
-            ? 'Coach ${widget.conversation.coachId}'
-            : 'Hội viên ${widget.conversation.memberId}');
-    final initials = widget.mockInitials ?? 'LN';
+        widget.conversation.displayNameFor(widget.currentUserId);
+    final initials = widget.mockInitials ??
+        widget.conversation.initialsFor(widget.currentUserId);
 
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
@@ -1813,59 +2373,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               Expanded(
                 child: ListView(
                   controller: _scrollController,
+                  reverse: true,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   children: [
-                    _buildLiquidGlassCard(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: widget.conversation.canSend
-                                        ? MetaGymTheme.progressGreen
-                                        : MetaGymTheme.darkTextTertiary,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    widget.mockContextTitle ??
-                                        'Trò chuyện riêng tư',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.darkTextPrimary,
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.conversation.canSend
-                                  ? (_isMockMode
-                                        ? 'Kết nối trực tiếp với huấn luyện viên'
-                                        : (widget.conversation.status == 'ENDED'
-                                              ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
-                                              : 'Có thể nhắn tin.'))
-                                  : 'Không thể gửi tin nhắn.',
-                              style: const TextStyle(
-                                color: MetaGymTheme.darkTextSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     if (_loading)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 32),
@@ -1923,6 +2433,27 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                           ),
                         )
                       else ...[
+                        for (final message in _messages)
+                          KeyedSubtree(
+                            key: ValueKey('chat-msg-${message.id}'),
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: _buildChatMessageBubble(message),
+                            ),
+                          ),
+                        if (_hasMore)
+                          Center(
+                            child: TextButton(
+                              onPressed: _loadingMore ? null : _loadMore,
+                              child: Text(
+                                _loadingMore ? 'Đang tải…' : 'Tải tin cũ',
+                                style: const TextStyle(
+                                  color: MetaGymTheme.brandOrange,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
                         Center(
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -1948,25 +2479,59 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                             ),
                           ),
                         ),
-                        for (final message in _messages) ...[
-                          _buildChatMessageBubble(message),
-                          const SizedBox(height: 10),
-                        ],
                       ],
                     ],
-                    if (_hasMore)
-                      Center(
-                        child: TextButton(
-                          onPressed: _loadingMore ? null : _loadMore,
-                          child: Text(
-                            _loadingMore ? 'Đang tải…' : 'Tải tin cũ',
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
-                              fontWeight: FontWeight.w600,
+                    _buildLiquidGlassCard(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: widget.conversation.canSend
+                                        ? MetaGymTheme.progressGreen
+                                        : MetaGymTheme.darkTextTertiary,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    widget.mockContextTitle ??
+                                        'Trò chuyện riêng tư',
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.darkTextPrimary,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.conversation.canSend
+                                  ? (_isMockMode
+                                        ? 'Kết nối trực tiếp với huấn luyện viên'
+                                        : (widget.conversation.status == 'ENDED'
+                                              ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
+                                              : 'Có thể nhắn tin.'))
+                                  : 'Không thể gửi tin nhắn.',
+                              style: const TextStyle(
+                                color: MetaGymTheme.darkTextSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -2074,13 +2639,13 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               _CircleGlassIconButton(
                 icon: Icons.call_outlined,
                 tooltip: 'Gọi thoại',
-                onTap: () => _showFeaturePreviewNotice('Gọi thoại'),
+                onTap: () => _startCall('VOICE'),
               ),
               const SizedBox(width: 4),
               _CircleGlassIconButton(
                 icon: Icons.videocam_outlined,
                 tooltip: 'Gọi video',
-                onTap: () => _showFeaturePreviewNotice('Gọi video'),
+                onTap: () => _startCall('VIDEO'),
               ),
             ],
           ),
@@ -2297,7 +2862,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               decoration: const InputDecoration(
                 hintText: 'Nhắn tin cho Coach...',
                 hintStyle: TextStyle(color: Color(0xFF8E9AA8), fontSize: 13.5),
+                filled: false,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 counterText: '',
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(
