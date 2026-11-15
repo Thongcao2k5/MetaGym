@@ -1350,28 +1350,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return [
       _DashboardGlassCard(
         child: _ProfileMenuTile(
-          icon: Icons.card_membership_rounded,
-          title: 'Gói tập & Thanh toán',
-          subtitle: 'Quản lý gói hội viên, gia hạn & lịch sử giao dịch',
-          onTap: () => _navigateOrPushWidget(route: '/member/features/membership'),
-        ),
-      ),
-      const SizedBox(height: 10),
-      _DashboardGlassCard(
-        child: _ProfileMenuTile(
-          icon: Icons.qr_code_scanner_rounded,
-          title: 'Điểm danh QR & Lịch sử check-in',
-          subtitle: 'Quét mã QR vào phòng tập & theo dõi ngày tập',
-          onTap: () {
-            Navigator.of(context).push<void>(
-              MaterialPageRoute(builder: (_) => const GymVisitsPage()),
-            );
-          },
-        ),
-      ),
-      const SizedBox(height: 10),
-      _DashboardGlassCard(
-        child: _ProfileMenuTile(
           icon: Icons.menu_book_rounded,
           title: 'Nhật ký tập luyện & Số đo',
           subtitle: 'Ghi buổi tập, ảnh tiến độ & biểu đồ 3 vòng',
