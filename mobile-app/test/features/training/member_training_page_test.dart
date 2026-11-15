@@ -19,7 +19,14 @@ void main() {
       expect(find.text('Toàn thân'), findsOneWidget);
       expect(find.text('Squat'), findsOneWidget);
       expect(find.text('3 hiệp · 12 lần'), findsOneWidget);
+      expect(find.text('Đang áp dụng'), findsNothing);
+      await tester.tap(find.text('Sức bền cơ bản'));
+      await tester.pumpAndSettle();
       expect(find.text('Đang áp dụng'), findsOneWidget);
+      expect(find.text('1 ngày tập'), findsOneWidget);
+      await tester.tap(find.text('Sức bền cơ bản'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đang áp dụng'), findsNothing);
       expect(find.text('Dinh dưỡng'), findsOneWidget);
       expect(find.textContaining('Phiên bản'), findsNothing);
       expect(find.text('Lịch sử đến gym'), findsNothing);

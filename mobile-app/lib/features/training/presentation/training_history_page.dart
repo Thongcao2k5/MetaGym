@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/training/data/gym_visits_service.dart';
 import 'package:provider/provider.dart';
 
@@ -69,212 +70,312 @@ class _TrainingHistoryPageState extends State<TrainingHistoryPage> {
 
     return Scaffold(
       backgroundColor: MetaGymTheme.scaffoldBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Lịch sử tập luyện'),
-        backgroundColor: MetaGymTheme.scaffoldBackground,
-        foregroundColor: MetaGymTheme.textPrimary,
-      ),
-      body: RefreshIndicator(
-        color: MetaGymTheme.primary,
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            _HistorySurface(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Lịch đến gym',
-                          style: TextStyle(
-                            color: MetaGymTheme.textPrimary,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => _moveMonth(-1),
-                        tooltip: 'Tháng trước',
-                        icon: const Icon(
-                          Icons.chevron_left_rounded,
-                          color: MetaGymTheme.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        DateFormat('MM/yyyy').format(_month),
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: canGoForward ? () => _moveMonth(1) : null,
-                        tooltip: 'Tháng sau',
-                        icon: const Icon(Icons.chevron_right_rounded),
-                        color: MetaGymTheme.textPrimary,
-                        disabledColor: MetaGymTheme.textSecondary,
-                      ),
-                    ],
-                  ),
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: MetaGymTheme.primary,
-                        ),
-                      ),
-                    )
-                  else if (_error != null)
-                    TextButton.icon(
-                      onPressed: _load,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: Text('$_error Thử lại'),
-                    )
-                  else if (data != null) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _HistoryStat(
-                            label: 'Đã đến gym',
-                            value: data.visitedDays,
-                            color: MetaGymTheme.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _HistoryStat(
-                            label: 'Ngày chưa đến',
-                            value: (data.eligibleDays - data.visitedDays).clamp(
-                              0,
-                              31,
-                            ),
-                            color: MetaGymTheme.textPrimary,
-                          ),
-                        ),
-                      ],
+        automaticallyImplyLeading: false,
+        leadingWidth: 72,
+        leading: Navigator.of(context).canPop()
+            ? Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: MetaGymCircleIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      tooltip: 'Quay lại',
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                    const SizedBox(height: 18),
-                    _HistoryCalendar(month: _month, visits: data.visits),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Ngày chưa đến chỉ tính khi gói tập có hiệu lực.',
-                      style: TextStyle(
-                        color: MetaGymTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Các lần đến gym',
-              style: TextStyle(
-                color: MetaGymTheme.textPrimary,
-                fontSize: 19,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (data != null && !_loading && _error == null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '${data.entryCount} lượt trong tháng · Một ngày có thể vào nhiều lần',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
-                    fontSize: 12,
                   ),
                 ),
+              )
+            : null,
+        title: const Text(
+          'Lịch sử tập luyện',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+        titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
+        backgroundColor: Colors.transparent,
+        foregroundColor: MetaGymTheme.textPrimary,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          RefreshIndicator(
+            color: MetaGymTheme.primary,
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
               ),
-            const SizedBox(height: 12),
-            if (!_loading && _error == null && data != null)
-              if (data.visits.isEmpty)
-                const _HistorySurface(
-                  child: Text(
-                    'Chưa có lượt đến gym trong tháng này.',
-                    style: TextStyle(color: MetaGymTheme.textSecondary),
-                  ),
-                )
-              else
-                ...data.visits.map(
-                  (visit) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _HistorySurface(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HistorySurface(
+                  dense: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
                           const Icon(
-                            Icons.place_outlined,
+                            Icons.calendar_month_outlined,
                             color: MetaGymTheme.primary,
+                            size: 20,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  DateFormat('dd/MM/yyyy').format(visit.day),
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textPrimary,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${DateFormat('HH:mm').format(visit.checkedInAt.toLocal())} · ${visit.gymName}',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textPrimary,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  visit.gymAddress,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textSecondary,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Lịch đến gym',
+                              style: TextStyle(
+                                color: MetaGymTheme.textPrimary,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                          ),
+                          IconButton(
+                            onPressed: () => _moveMonth(-1),
+                            tooltip: 'Tháng trước',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.chevron_left_rounded,
+                              color: MetaGymTheme.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('MM/yyyy').format(_month),
+                            style: const TextStyle(
+                              color: MetaGymTheme.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: canGoForward
+                                ? () => _moveMonth(1)
+                                : null,
+                            tooltip: 'Tháng sau',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.chevron_right_rounded),
+                            color: MetaGymTheme.textPrimary,
+                            disabledColor: MetaGymTheme.textSecondary,
                           ),
                         ],
                       ),
-                    ),
+                      if (_loading)
+                        const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: MetaGymTheme.primary,
+                            ),
+                          ),
+                        )
+                      else if (_error != null)
+                        TextButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text('$_error Thử lại'),
+                        )
+                      else if (data != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xD423211F),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _HistoryStat(
+                                  label: 'Đã đến gym',
+                                  value: data.visitedDays,
+                                  color: MetaGymTheme.primary,
+                                ),
+                              ),
+                              Container(
+                                width: 1,
+                                height: 46,
+                                color: const Color(0x667E7064),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: _HistoryStat(
+                                  label: 'Ngày chưa đến',
+                                  value: (data.eligibleDays - data.visitedDays)
+                                      .clamp(0, 31),
+                                  color: MetaGymTheme.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _HistoryCalendar(month: _month, visits: data.visits),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Ngày chưa đến chỉ tính khi gói tập còn hiệu lực.',
+                          style: TextStyle(
+                            color: MetaGymTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-          ],
-        ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Các lần đến gym',
+                        style: TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (data != null && !_loading && _error == null)
+                      Text(
+                        '${data.entryCount} lượt · ${data.visitedDays} ngày',
+                        style: const TextStyle(
+                          color: MetaGymTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (!_loading && _error == null && data != null)
+                  if (data.visits.isEmpty)
+                    const _HistorySurface(
+                      child: Text(
+                        'Chưa có lượt đến gym trong tháng này.',
+                        style: TextStyle(color: MetaGymTheme.textSecondary),
+                      ),
+                    )
+                  else
+                    ...data.visits.map(
+                      (visit) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _HistorySurface(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: MetaGymTheme.primary.withValues(
+                                    alpha: 0.14,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.place_outlined,
+                                  size: 20,
+                                  color: MetaGymTheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            DateFormat('dd/MM/yyyy')
+                                                .format(visit.day),
+                                            style: const TextStyle(
+                                              color: MetaGymTheme.textPrimary,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          DateFormat(
+                                            'HH:mm',
+                                          ).format(visit.checkedInAt.toLocal()),
+                                          style: const TextStyle(
+                                            color: Color(0xFFF5C5A3),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      visit.gymName,
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    Text(
+                                      visit.gymAddress,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFFB8B0A8),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _HistorySurface extends StatelessWidget {
-  const _HistorySurface({required this.child});
+  const _HistorySurface({
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.dense = false,
+  });
 
   final Widget child;
+  final EdgeInsetsGeometry padding;
+  final bool dense;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: MetaGymTheme.cardSurface,
-      border: Border.all(color: MetaGymTheme.cardBorder),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: child,
+  Widget build(BuildContext context) => MetaGymGlassCard(
+    padding: dense ? EdgeInsets.zero : padding,
+    child: dense
+        ? ColoredBox(
+            color: const Color(0xA0211E1C),
+            child: Padding(padding: padding, child: child),
+          )
+        : child,
   );
 }
 
@@ -290,34 +391,23 @@ class _HistoryStat extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: MetaGymTheme.elevatedSurface,
-      border: Border.all(color: MetaGymTheme.cardBorder),
-      borderRadius: BorderRadius.circular(14),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: MetaGymTheme.textSecondary,
-            fontSize: 12,
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(color: MetaGymTheme.textSecondary, fontSize: 12),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        '$value',
+        style: TextStyle(
+          color: color,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
         ),
-        const SizedBox(height: 6),
-        Text(
-          '$value',
-          style: TextStyle(
-            color: color,
-            fontSize: 25,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 
@@ -354,15 +444,15 @@ class _HistoryCalendar extends StatelessWidget {
               )
               .toList(),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         ...List.generate(((leading + days) / 7).ceil(), (week) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 5),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: List.generate(7, (weekday) {
                 final day = week * 7 + weekday - leading + 1;
                 if (day < 1 || day > days) {
-                  return const Expanded(child: SizedBox(height: 44));
+                  return const Expanded(child: SizedBox(height: 38));
                 }
                 final hasVisit = visited.contains(day);
                 final future = currentMonth && day > now.day;
@@ -371,18 +461,18 @@ class _HistoryCalendar extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: Container(
-                      height: 44,
+                      height: 38,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: hasVisit
                             ? MetaGymTheme.primary
                             : future
-                            ? MetaGymTheme.darkCanvasElevated
-                            : MetaGymTheme.elevatedSurface,
+                            ? const Color(0xA01F1D1B)
+                            : const Color(0xDA292522),
                         border: Border.all(
                           color: today
-                              ? MetaGymTheme.reflectionBlue
-                              : MetaGymTheme.cardBorder,
+                              ? const Color(0xFFE0B99A)
+                              : const Color(0x677D7065),
                         ),
                         borderRadius: BorderRadius.circular(9),
                       ),
