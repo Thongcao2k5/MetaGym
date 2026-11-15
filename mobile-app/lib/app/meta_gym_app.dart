@@ -21,6 +21,7 @@ import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
+import 'package:meta_gym_app/features/calls/presentation/incoming_call_listener.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
@@ -132,6 +133,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CallsService _callsService;
   late final AiService _aiService;
   late final GoRouter _router;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -202,7 +204,10 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _messagingService = widget.messagingService ?? MessagingApi(_apiClient);
     _callsService = widget.callsService ?? CallsApi(_apiClient);
     _aiService = widget.aiService ?? AiApi(_apiClient);
-    _router = createAppRouter(sessionController: _sessionController);
+    _router = createAppRouter(
+      sessionController: _sessionController,
+      navigatorKey: _navigatorKey,
+    );
     _sessionController.restore();
   }
 
@@ -269,6 +274,18 @@ class _MetaGymAppState extends State<MetaGymApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         routerConfig: _router,
+        builder: (context, child) {
+          final api = _callsService;
+          if (child == null || api is! CallsApi) {
+            return child ?? const SizedBox.shrink();
+          }
+          return IncomingCallListener(
+            navigatorKey: _navigatorKey,
+            session: _sessionController,
+            api: api,
+            child: child,
+          );
+        },
       ),
     );
   }

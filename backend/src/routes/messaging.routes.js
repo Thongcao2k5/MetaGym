@@ -64,7 +64,7 @@ export function createMessagingRouter({ database, jwtSecret }) {
     try {
       await client.query('BEGIN');
       const target = await client.query(
-        `SELECT 1 FROM users WHERE id = $1 AND role = $2 AND status = 'ACTIVE'`,
+        `SELECT full_name FROM users WHERE id = $1 AND role = $2 AND status = 'ACTIVE'`,
         [member ? coachId : memberId, member ? 'COACH' : 'MEMBER'],
       );
       if (!target.rows.length) {
@@ -77,19 +77,45 @@ export function createMessagingRouter({ database, jwtSecret }) {
         `SELECT c.id, c.relationship_id, COALESCE(r.status, 'NONE') AS status,
                 COALESCE(c.member_id, r.member_id) AS member_id,
                 COALESCE(c.coach_id, r.coach_id) AS coach_id,
-                c.last_message_at
+                m.full_name AS member_name,
+                ch.full_name AS coach_name,
+                COALESCE(c.last_message_at, last_msg.sent_at) AS last_message_at,
+                last_msg.message_type AS last_message_type,
+                last_msg.content AS last_message_content,
+                last_msg.sender_id AS last_message_sender_id,
+                (SELECT count(*)::int FROM messages msg
+                 LEFT JOIN conversation_participants cp
+                   ON cp.conversation_id = c.id AND cp.user_id = $3
+                 LEFT JOIN messages last_read ON last_read.id = cp.last_read_message_id
+                 WHERE msg.conversation_id = c.id AND msg.sender_id <> $3
+                 AND (last_read.id IS NULL OR
+                      (msg.sent_at, msg.id) > (last_read.sent_at, last_read.id))) AS unread_count
          FROM conversations c LEFT JOIN coach_relationships r ON r.id = c.relationship_id
+         LEFT JOIN users m ON m.id = COALESCE(c.member_id, r.member_id)
+         LEFT JOIN users ch ON ch.id = COALESCE(c.coach_id, r.coach_id)
+         LEFT JOIN LATERAL (
+           SELECT lm.message_type, lm.content, lm.sender_id, lm.sent_at
+           FROM messages lm
+           WHERE lm.conversation_id = c.id
+           ORDER BY lm.sent_at DESC, lm.id DESC
+           LIMIT 1
+         ) last_msg ON true
          WHERE COALESCE(c.member_id, r.member_id) = $1
            AND COALESCE(c.coach_id, r.coach_id) = $2
-         ORDER BY c.last_message_at DESC NULLS LAST, c.created_at DESC LIMIT 1`,
-        [memberId, coachId],
+         ORDER BY COALESCE(c.last_message_at, last_msg.sent_at) DESC NULLS LAST, c.created_at DESC LIMIT 1`,
+        [memberId, coachId, request.authUser.id],
       );
       if (existing.rows.length) {
         await client.query('COMMIT');
         const row = existing.rows[0];
         return response.json({ data: { id: row.id, relationshipId: row.relationship_id,
           status: row.status, memberId: row.member_id, coachId: row.coach_id,
-          lastMessageAt: row.last_message_at, unreadCount: 0 } });
+          memberName: row.member_name ?? null, coachName: row.coach_name ?? null,
+          lastMessageAt: row.last_message_at ?? null,
+          lastMessageType: row.last_message_type ?? null,
+          lastMessageContent: row.last_message_content ?? null,
+          lastMessageSenderId: row.last_message_sender_id ?? null,
+          unreadCount: row.unread_count ?? 0 } });
       }
       const id = randomUUID();
       await client.query(
@@ -100,9 +126,21 @@ export function createMessagingRouter({ database, jwtSecret }) {
         `INSERT INTO conversation_participants (conversation_id, user_id)
          VALUES ($1, $2), ($1, $3)`, [id, memberId, coachId],
       );
+      const participants = await client.query(
+        `SELECT id, full_name FROM users WHERE id IN ($1, $2)`,
+        [memberId, coachId],
+      );
       await client.query('COMMIT');
+      const names = new Map(participants.rows.map((u) => [u.id, u.full_name]));
       return response.status(201).json({ data: { id, relationshipId: null, status: 'NONE',
-        memberId, coachId, lastMessageAt: null, unreadCount: 0 } });
+        memberId, coachId,
+        memberName: names.get(memberId) ?? null,
+        coachName: names.get(coachId) ?? null,
+        lastMessageAt: null,
+        lastMessageType: null,
+        lastMessageContent: null,
+        lastMessageSenderId: null,
+        unreadCount: 0 } });
     } catch {
       await client.query('ROLLBACK').catch(() => {});
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không mở được cuộc trò chuyện');
@@ -114,31 +152,53 @@ export function createMessagingRouter({ database, jwtSecret }) {
     if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Phân trang không hợp lệ');
     const { page, pageSize } = parsed.data;
     try {
-      const total = await database.query(
-        `SELECT count(*)::int AS count FROM conversation_participants WHERE user_id = $1`,
-        [request.authUser.id],
-      );
-      const result = await database.query(
-        `SELECT c.id, c.relationship_id, c.last_message_at,
-                COALESCE(r.status, 'NONE') AS status,
-                COALESCE(c.member_id, r.member_id) AS member_id,
-                COALESCE(c.coach_id, r.coach_id) AS coach_id,
-                (SELECT count(*)::int FROM messages m
-                 LEFT JOIN messages last_read ON last_read.id = p.last_read_message_id
-                 WHERE m.conversation_id = c.id AND m.sender_id <> $1
-                 AND (last_read.id IS NULL OR
-                      (m.sent_at, m.id) > (last_read.sent_at, last_read.id))) AS unread_count
-         FROM conversation_participants p JOIN conversations c ON c.id = p.conversation_id
-         LEFT JOIN coach_relationships r ON r.id = c.relationship_id
-         WHERE p.user_id = $1
-         ORDER BY c.last_message_at DESC NULLS LAST, c.id DESC
-         LIMIT $2 OFFSET $3`, [request.authUser.id, pageSize, (page - 1) * pageSize],
-      );
+      const [total, result] = await Promise.all([
+        database.query(
+          `SELECT count(*)::int AS count FROM conversation_participants WHERE user_id = $1`,
+          [request.authUser.id],
+        ),
+        database.query(
+          `SELECT c.id, c.relationship_id,
+                  COALESCE(c.last_message_at, last_msg.sent_at) AS last_message_at,
+                  COALESCE(r.status, 'NONE') AS status,
+                  COALESCE(c.member_id, r.member_id) AS member_id,
+                  COALESCE(c.coach_id, r.coach_id) AS coach_id,
+                  m.full_name AS member_name,
+                  ch.full_name AS coach_name,
+                  last_msg.message_type AS last_message_type,
+                  last_msg.content AS last_message_content,
+                  last_msg.sender_id AS last_message_sender_id,
+                  (SELECT count(*)::int FROM messages msg
+                   LEFT JOIN messages last_read ON last_read.id = p.last_read_message_id
+                   WHERE msg.conversation_id = c.id AND msg.sender_id <> $1
+                   AND (last_read.id IS NULL OR
+                        (msg.sent_at, msg.id) > (last_read.sent_at, last_read.id))) AS unread_count
+           FROM conversation_participants p JOIN conversations c ON c.id = p.conversation_id
+           LEFT JOIN coach_relationships r ON r.id = c.relationship_id
+           LEFT JOIN users m ON m.id = COALESCE(c.member_id, r.member_id)
+           LEFT JOIN users ch ON ch.id = COALESCE(c.coach_id, r.coach_id)
+           LEFT JOIN LATERAL (
+             SELECT lm.message_type, lm.content, lm.sender_id, lm.sent_at
+             FROM messages lm
+             WHERE lm.conversation_id = c.id
+             ORDER BY lm.sent_at DESC, lm.id DESC
+             LIMIT 1
+           ) last_msg ON true
+           WHERE p.user_id = $1
+           ORDER BY COALESCE(c.last_message_at, last_msg.sent_at) DESC NULLS LAST, c.id DESC
+           LIMIT $2 OFFSET $3`, [request.authUser.id, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
       const totalItems = total.rows[0].count;
       return response.json({ data: result.rows.map((row) => ({
         id: row.id, relationshipId: row.relationship_id, status: row.status,
         memberId: row.member_id, coachId: row.coach_id,
-        lastMessageAt: row.last_message_at, unreadCount: row.unread_count,
+        memberName: row.member_name ?? null, coachName: row.coach_name ?? null,
+        lastMessageAt: row.last_message_at ?? null,
+        lastMessageType: row.last_message_type ?? null,
+        lastMessageContent: row.last_message_content ?? null,
+        lastMessageSenderId: row.last_message_sender_id ?? null,
+        unreadCount: row.unread_count,
       })), pagination: { page, pageSize, totalItems,
         totalPages: Math.ceil(totalItems / pageSize) } });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được cuộc trò chuyện'); }
@@ -152,13 +212,15 @@ export function createMessagingRouter({ database, jwtSecret }) {
       const found = await conversation(database, request.params.relationshipId, request.authUser.id);
       if (!found) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy cuộc trò chuyện');
       const { page, pageSize } = parsed.data;
-      const total = await database.query('SELECT count(*)::int AS count FROM messages WHERE conversation_id = $1', [found.id]);
-      const result = await database.query(
-        `SELECT m.*, $2::uuid AS relationship_id FROM messages m
-         WHERE m.conversation_id = $1 ORDER BY m.sent_at DESC, m.id DESC
-         LIMIT $3 OFFSET $4`,
-        [found.id, found.relationship_id, pageSize, (page - 1) * pageSize],
-      );
+      const [total, result] = await Promise.all([
+        database.query('SELECT count(*)::int AS count FROM messages WHERE conversation_id = $1', [found.id]),
+        database.query(
+          `SELECT m.*, $2::uuid AS relationship_id FROM messages m
+           WHERE m.conversation_id = $1 ORDER BY m.sent_at DESC, m.id DESC
+           LIMIT $3 OFFSET $4`,
+          [found.id, found.relationship_id, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
       const totalItems = total.rows[0].count;
       return response.json({ data: result.rows.map(view), pagination: {
         page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize),

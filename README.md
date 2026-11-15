@@ -30,7 +30,13 @@ Các tích hợp bên ngoài chỉ được bật khi cấu hình đủ biến m
 - Email đặt lại mật khẩu: `PASSWORD_RESET_DELIVERY_URL`; có thể thêm
   `PASSWORD_RESET_DELIVERY_TOKEN`. Dịch vụ nhận `POST` JSON gồm `email`, `code`
   và `requestId` rồi chịu trách nhiệm gửi email.
-- Token gọi thoại/video: `CALL_TOKEN_SERVICE_URL`; có thể thêm
+- Gọi thoại/video từ Tin nhắn: thêm `LIVEKIT_URL` (`wss://...`),
+  `LIVEKIT_API_KEY` và `LIVEKIT_API_SECRET` vào `backend/.env` rồi khởi động lại backend.
+  Lấy các giá trị từ project trong [LiveKit Cloud](https://cloud.livekit.io/).
+  Flutter Android dùng `lib/main.dart`. Đăng nhập Member và Coach có quan hệ
+  đang hoạt động trên hai thiết bị, mở cả hai ứng dụng rồi bấm nút gọi trong Tin nhắn.
+  Hai thiết bị phải truy cập được cùng backend. Bản này báo cuộc gọi đến khi app đang mở.
+- Provider token RTC ngoài (tùy chọn): `CALL_TOKEN_SERVICE_URL`; có thể thêm
   `CALL_TOKEN_SERVICE_TOKEN`. Dịch vụ RTC nhận thông tin cuộc gọi và trả về
   `accessToken`, `providerCallId`, `channelId`, `expiresAt`.
 

@@ -55,9 +55,11 @@ abstract final class AppRoutes {
 
 GoRouter createAppRouter({
   required SessionController sessionController,
+  GlobalKey<NavigatorState>? navigatorKey,
   String initialLocation = AppRoutes.welcome,
 }) {
   return GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: initialLocation,
     refreshListenable: sessionController,
     redirect: (context, state) {

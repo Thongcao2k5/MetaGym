@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import { createApp } from './app.js';
 import { createDatabasePool } from './config/database.js';
+import { createLiveKitFromEnv } from './config/livekit.js';
 import {
   createAiResponderFromEnv,
   createCallTokenProviderFromEnv,
@@ -18,6 +19,7 @@ const app = createApp({
   sendPasswordResetCode: createPasswordResetSenderFromEnv(),
   aiResponder: createAiResponderFromEnv(),
   callTokenProvider: createCallTokenProviderFromEnv(),
+  liveKit: createLiveKitFromEnv(),
 });
 
 const server = app.listen(port, () => {
