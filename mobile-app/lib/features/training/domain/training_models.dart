@@ -124,6 +124,8 @@ class TrainingPlan {
     required this.title,
     required this.status,
     required this.version,
+    this.relationshipId,
+    this.coachId,
     this.goal,
     this.startDate,
     this.endDate,
@@ -138,6 +140,8 @@ class TrainingPlan {
       title: json['title'] as String,
       status: json['status'] as String,
       version: json['version'] as int,
+      relationshipId: json['relationshipId'] as String?,
+      coachId: json['coachId'] as String?,
       goal: json['goal'] as String?,
       startDate: json['startDate'] as String?,
       endDate: json['endDate'] as String?,
@@ -152,6 +156,8 @@ class TrainingPlan {
   final String title;
   final String status;
   final int version;
+  final String? relationshipId;
+  final String? coachId;
   final String? goal;
   final String? startDate;
   final String? endDate;

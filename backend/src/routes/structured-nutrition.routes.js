@@ -88,7 +88,8 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
   router.get('/meal-plans/me', async (request, response) => {
     if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'Chỉ Member được xem thực đơn của mình');
     const { rows } = await database.query(
-      `SELECT id, title, content, status, meal_items FROM nutrition_guides WHERE member_id = $1
+      `SELECT id, relationship_id AS "relationshipId", title, content, status, meal_items
+       FROM nutrition_guides WHERE member_id = $1
        AND status IN ('ACTIVE', 'ARCHIVED') ORDER BY (status = 'ACTIVE') DESC, version DESC LIMIT 100`,
       [request.authUser.id],
     );

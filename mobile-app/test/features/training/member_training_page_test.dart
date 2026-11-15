@@ -18,10 +18,12 @@ void main() {
       expect(find.text('Giáo trình cũ'), findsOneWidget);
       await tester.tap(find.text('Sức bền cơ bản'));
       await tester.pumpAndSettle();
-      expect(find.text('Ngày 1: Toàn thân'), findsOneWidget);
+      expect(find.text('Toàn thân'), findsOneWidget);
       expect(find.text('Squat'), findsOneWidget);
       expect(find.text('3 hiệp · 12 lần'), findsOneWidget);
-      expect(find.text('Đã công bố · Phiên bản 2'), findsOneWidget);
+      expect(find.text('Đang áp dụng'), findsOneWidget);
+      expect(find.text('Dinh dưỡng'), findsOneWidget);
+      expect(find.textContaining('Phiên bản'), findsNothing);
     },
   );
 

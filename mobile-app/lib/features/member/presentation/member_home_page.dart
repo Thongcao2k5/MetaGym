@@ -6,7 +6,7 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/member/presentation/member_dashboard_view.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
-import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_training_hub_page.dart';
 import 'package:provider/provider.dart';
 
 class MemberHomePage extends StatefulWidget {
@@ -30,7 +30,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
         onNavigateTab: (index) => setState(() => _index = index),
         bottomPadding: bottomPadding,
       ),
-      MemberTrainingPage(bottomPadding: bottomPadding),
+      MemberTrainingHubPage(bottomPadding: bottomPadding),
       AiConversationsPage(bottomPadding: bottomPadding),
       ConversationsPage(
         currentUserId: currentUserId,
