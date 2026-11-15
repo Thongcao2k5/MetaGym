@@ -4,7 +4,7 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
-import 'package:meta_gym_app/features/training/presentation/training_plan_content.dart';
+import 'package:meta_gym_app/features/training/presentation/member_curriculum_detail_page.dart';
 import 'package:meta_gym_app/features/training/presentation/gym_visits_page.dart';
 import 'package:provider/provider.dart';
 
@@ -64,7 +64,7 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
   Future<void> _openPlan(String id) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => _MemberTrainingDetailPage(id: id, service: _service!),
+        builder: (_) => MemberCurriculumDetailPage(id: id, service: _service!),
       ),
     );
     if (mounted) await _load();
@@ -625,156 +625,6 @@ class _MemberTrainingPageState extends State<MemberTrainingPage> {
                         ),
                   ],
                   SizedBox(height: effectiveBottomPadding),
-                ],
-              ),
-            ),
-    );
-  }
-}
-
-class _MemberTrainingDetailPage extends StatefulWidget {
-  const _MemberTrainingDetailPage({required this.id, required this.service});
-
-  final String id;
-  final MemberTrainingService service;
-
-  @override
-  State<_MemberTrainingDetailPage> createState() =>
-      _MemberTrainingDetailPageState();
-}
-
-class _MemberTrainingDetailPageState extends State<_MemberTrainingDetailPage> {
-  TrainingPlan? _plan;
-  String? _error;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _plan = null;
-      _error = null;
-    });
-    try {
-      final plan = await widget.service.getPlan(widget.id);
-      if (!mounted) return;
-      setState(() {
-        if (plan.status == 'ACTIVE' || plan.status == 'ARCHIVED') {
-          _plan = plan;
-        } else {
-          _error = 'Không tìm thấy giáo trình đã công bố.';
-        }
-      });
-    } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'Không tải được chi tiết giáo trình.');
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
-      appBar: AppBar(
-        title: const Text(
-          'Chi tiết giáo trình',
-          style: TextStyle(
-            color: MetaGymTheme.darkTextPrimary,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            fontFamily: MetaGymTheme.fontFamily,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: MetaGymTheme.darkTextPrimary,
-            size: 18,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: MetaGymTheme.primary,
-                strokeWidth: 2.5,
-              ),
-            )
-          : RefreshIndicator(
-              color: MetaGymTheme.brandOrange,
-              backgroundColor: MetaGymTheme.darkSurfaceRaised,
-              onRefresh: _load,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(MetaGymTheme.pageGutter),
-                children: [
-                  if (_error != null) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0x1FF15B64),
-                        borderRadius: BorderRadius.circular(
-                          MetaGymTheme.radiusCard,
-                        ),
-                        border: Border.all(color: const Color(0x4DF15B64)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline_rounded,
-                                color: MetaGymTheme.dangerCoral,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _error!,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: MetaGymTheme.fontFamily,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _load,
-                            child: const Text(
-                              'Thử lại',
-                              style: TextStyle(
-                                color: MetaGymTheme.brandOrange,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: MetaGymTheme.fontFamily,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (_plan != null) TrainingPlanContent(plan: _plan!),
-                  const SizedBox(height: 32),
                 ],
               ),
             ),
