@@ -22,6 +22,7 @@ import { createSessionsRouter } from './routes/sessions.routes.js';
 import { createMessagingRouter } from './routes/messaging.routes.js';
 import { createProgressRouter } from './routes/progress.routes.js';
 import { createJournalRouter } from './routes/journal.routes.js';
+import { createMemberSelfTrainingRouter } from './routes/member-self-training.routes.js';
 import { createGymVisitsRouter } from './routes/gym-visits.routes.js';
 import { createDashboardRouter } from './routes/dashboard.routes.js';
 import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
@@ -109,6 +110,7 @@ export function createApp({
   app.use('/api/v1', createMessagingRouter({ database, jwtSecret }));
   app.use('/api/v1', createProgressRouter({ database, jwtSecret }));
   app.use('/api/v1', createJournalRouter({ database, jwtSecret }));
+  app.use('/api/v1', createMemberSelfTrainingRouter({ database, jwtSecret }));
   app.use('/api/v1', createGymVisitsRouter({ database, jwtSecret }));
   app.use('/api/v1', createDashboardRouter({ database, jwtSecret }));
   app.use('/api/v1', createAiConversationsRouter({ database, jwtSecret, aiResponder }));

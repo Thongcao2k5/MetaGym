@@ -1,6 +1,6 @@
 # Meta Gym Database
 
-PostgreSQL schema cho MVP Meta Gym gồm 46 bảng nghiệp vụ và 2 bảng vận hành
+PostgreSQL schema cho MVP Meta Gym gồm 47 bảng nghiệp vụ và 2 bảng vận hành
 cho giới hạn đăng nhập/khôi phục mật khẩu. Migration được chia theo thứ tự phụ
 thuộc và có file rollback tương ứng.
 
@@ -34,6 +34,7 @@ Chạy các file `*.up.sql` theo thứ tự:
 18. `0018_daily_training_meals.up.sql`
 19. `0019_backfill_member_journal.up.sql`
 20. `0020_gym_checkins.up.sql`
+21. `0021_member_self_training_days.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 
@@ -50,8 +51,9 @@ Rollback chạy các file `*.down.sql` theo thứ tự ngược lại.
 
 Git chỉ đồng bộ mã nguồn và migration, không chuyển dữ liệu PostgreSQL hay ảnh đã tải lên. Trước khi nâng cấp một database đang dùng, sao lưu bằng `pg_dump --format=custom`; giữ `DATABASE_URL` trong cấu hình riêng của từng máy.
 
-- **Đã chạy V2 đến `0019`:** chỉ chạy `0020_gym_checkins.up.sql`, rồi chạy `database/tests/schema_assertions.sql`.
-- **Database từ `main` cũ (đến `0008_daily_training_meals`):** chạy các file `0008_member_journal.up.sql` đến `0020_gym_checkins.up.sql` theo tên tăng dần. `0018_daily_training_meals` tương thích với bảng ngày tập và bữa ăn của bản cũ. Sau đó chạy schema assertions.
+- **Đã chạy đến `0020`:** chỉ chạy `0021_member_self_training_days.up.sql`, rồi chạy `database/tests/schema_assertions.sql`.
+- **Đã chạy V2 đến `0019`:** chạy `0020_gym_checkins.up.sql` rồi `0021_member_self_training_days.up.sql`, sau đó chạy schema assertions.
+- **Database từ `main` cũ (đến `0008_daily_training_meals`):** chạy các file `0008_member_journal.up.sql` đến `0021_member_self_training_days.up.sql` theo tên tăng dần. `0018_daily_training_meals` tương thích với bảng ngày tập và bữa ăn của bản cũ. Sau đó chạy schema assertions.
 - **Database mới hoàn toàn:** chạy toàn bộ migration `*.up.sql` theo thứ tự, rồi baseline seed và schema assertions.
 
 Ví dụ khi database đã ở V2 đến `0019`:
@@ -59,6 +61,7 @@ Ví dụ khi database đã ở V2 đến `0019`:
 ```powershell
 pg_dump --dbname=$env:DATABASE_URL --format=custom --file=meta_gym_before_0020.dump
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/migrations/0020_gym_checkins.up.sql
+psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/migrations/0021_member_self_training_days.up.sql
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 ```
 
@@ -123,7 +126,7 @@ Sau migration, chạy:
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 ```
 
-Kiểm tra xác nhận đủ 46 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
+Kiểm tra xác nhận đủ 47 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
 nhập/khôi phục mật khẩu, các FK sở hữu quan trọng, constraint chỉ cho phép tối
 đa một Admin và constraint chống chồng ngày membership. Sự tồn tại của Admin
 và `gym_profile` được kiểm tra khi chạy baseline seed.

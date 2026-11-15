@@ -1,4 +1,5 @@
 import 'dart:typed_data' show Uint8List;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,7 @@ import 'package:meta_gym_app/features/messaging/presentation/conversations_page.
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
-import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_training_hub_page.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
@@ -131,7 +132,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
-    // Tapping bottom nav tab 1: Tập luyện -> MemberTrainingPage
+    // Tapping bottom nav tab 1 opens the training hub.
     await tester.tap(
       find.descendant(
         of: find.byType(MetaGymBottomNav),
@@ -139,8 +140,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(MemberTrainingPage), findsOneWidget);
-    expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
+    expect(find.byType(MemberTrainingHubPage), findsOneWidget);
+    expect(find.text('Lịch tập của tôi'), findsOneWidget);
 
     // Tapping bottom nav tab 2: AI -> AiConversationsPage
     await tester.tap(find.byIcon(Icons.auto_awesome_rounded));
@@ -189,7 +190,7 @@ void main() {
         .go('/member/features/workouts');
     await tester.pumpAndSettle();
     expect(find.byType(MemberJournalPage), findsOneWidget);
-    expect(find.text('Chưa có nhật ký tập.'), findsOneWidget);
+    expect(find.text('Nhật ký tập luyện'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(MemberJournalPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
@@ -278,7 +279,8 @@ void main() {
     expect(service.loginCalls, 1);
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
     expect(find.text('Yêu cầu chọn Coach'), findsNothing);
-    GoRouter.of(tester.element(find.byType(CoachHomePage))).push<void>('/coach/features/requests');
+    GoRouter.of(tester.element(find.byType(CoachHomePage)))
+        .push<void>('/coach/features/requests');
     await tester.pumpAndSettle();
     expect(find.byType(CoachRequestsPage), findsOneWidget);
     expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
@@ -312,7 +314,10 @@ void main() {
     GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
-    final workbenchButton = find.widgetWithText(OutlinedButton, 'Kiểm thử các luồng Coach');
+    final workbenchButton = find.widgetWithText(
+      OutlinedButton,
+      'Kiểm thử các luồng Coach',
+    );
     await tester.ensureVisible(workbenchButton);
     await tester.pumpAndSettle();
     await tester.tap(workbenchButton);
@@ -646,8 +651,10 @@ class _EmptyMembershipService implements MembershipService {
   @override
   Future<List<Membership>> getMembershipHistory() async => const [];
   @override
-  Future<Payment> createPayment({required String planId,
-      required String idempotencyKey}) => throw UnimplementedError();
+  Future<Payment> createPayment({
+    required String planId,
+    required String idempotencyKey,
+  }) => throw UnimplementedError();
   @override
   Future<PurchaseResult> confirmMockPayment(String paymentId) =>
       throw UnimplementedError();
