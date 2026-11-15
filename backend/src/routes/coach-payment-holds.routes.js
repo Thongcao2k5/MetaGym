@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from './users.routes.js';
+import { settleCoachHold } from '../services/coach-entitlements.js';
 
 const uuid = z.uuid();
 const holdSchema = z.strictObject({
@@ -195,6 +196,52 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
       return response.json({ data: view(hold) });
     } catch {
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không hủy được suất Coach');
+    }
+  });
+
+  router.post('/coach-payment-holds/:id/mock-confirmations', async (request, response) => {
+    const id = uuid.safeParse(request.params.id);
+    if (!id.success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã giữ suất không hợp lệ');
+    try {
+      const { rows: [hold] } = await database.query(
+        'SELECT * FROM coach_payment_holds WHERE id = $1 AND member_id = $2',
+        [id.data, request.authUser.id],
+      );
+      if (!hold) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy suất đang giữ');
+      if (hold.status === 'CONSUMED') {
+        const { rows: [entitlement] } = await database.query(
+          'SELECT * FROM coach_entitlements WHERE hold_id = $1', [hold.id],
+        );
+        return response.json({ data: { hold: view(hold), entitlement } });
+      }
+      if (hold.status !== 'HELD') {
+        return fail(response, 409, 'HOLD_NOT_HELD', 'Suất giữ đã kết thúc hoặc hết hạn');
+      }
+      const result = await settleCoachHold(database, hold.id, {
+        paid: true,
+        amount: Number(hold.amount),
+      });
+      if (result.status === 'CONSUMED') {
+        const { rows: [entitlement] } = await database.query(
+          'SELECT * FROM coach_entitlements WHERE id = $1', [result.entitlementId],
+        );
+        const { rows: [updatedHold] } = await database.query(
+          'SELECT * FROM coach_payment_holds WHERE id = $1', [hold.id],
+        );
+        return response.json({ data: { hold: view(updatedHold), entitlement } });
+      }
+      const errorMap = {
+        HOLD_EXPIRED: 'Suất giữ 15 phút đã hết hạn',
+        AMOUNT_MISMATCH: 'Số tiền thanh toán không khớp',
+        PARTICIPANT_INELIGIBLE: 'Cần có gói Gym đang hoạt động',
+        RELATIONSHIP_EXISTS: 'Bạn đã có Coach cá nhân',
+        QUEUED_UNAVAILABLE: 'Không thể mua thêm gói chờ',
+        COACH_FULL: 'Coach đã đủ 8 học viên',
+        CAPACITY_UNAVAILABLE: 'Coach không đủ công suất dạy trong thời gian này',
+      };
+      return fail(response, 409, result.reason || 'PAYMENT_FAILED', errorMap[result.reason] || 'Xác nhận thanh toán giữ suất thất bại');
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không xác nhận được thanh toán');
     }
   });
 

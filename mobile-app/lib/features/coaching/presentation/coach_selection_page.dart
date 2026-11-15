@@ -136,79 +136,82 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                         for (final coach in _coaches)
                           MetaGymGlassCard(
                             margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              leading: CircleAvatar(
-                                radius: 22,
-                                backgroundColor: MetaGymTheme.brandOrange
-                                    .withValues(alpha: 0.2),
-                                child: Text(
-                                  coach.fullName.isNotEmpty
-                                      ? coach.fullName[0].toUpperCase()
-                                      : 'C',
+                            child: Material(
+                              color: Colors.transparent,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+                                leading: CircleAvatar(
+                                  radius: 22,
+                                  backgroundColor: MetaGymTheme.brandOrange
+                                      .withValues(alpha: 0.2),
+                                  child: Text(
+                                    coach.fullName.isNotEmpty
+                                        ? coach.fullName[0].toUpperCase()
+                                        : 'C',
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.brandOrange,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  coach.fullName,
                                   style: const TextStyle(
-                                    color: MetaGymTheme.brandOrange,
+                                    color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18,
+                                    fontSize: 16,
                                   ),
                                 ),
-                              ),
-                              title: Text(
-                                coach.fullName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  coach.specialties.join(', '),
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    coach.specialties.join(', '),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: coach.availableSlots > 0
-                                          ? const Color(0x3334C759)
-                                          : const Color(0x33FF453A),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      coach.availableSlots > 0
-                                          ? 'Còn ${coach.availableSlots} suất'
-                                          : 'Đã hết suất',
-                                      style: TextStyle(
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
                                         color: coach.availableSlots > 0
-                                            ? const Color(0xFF34C759)
-                                            : const Color(0xFFFF6961),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
+                                            ? const Color(0x3334C759)
+                                            : const Color(0x33FF453A),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        coach.availableSlots > 0
+                                            ? 'Còn ${coach.availableSlots} suất'
+                                            : 'Đã hết suất',
+                                        style: TextStyle(
+                                          color: coach.availableSlots > 0
+                                              ? const Color(0xFF34C759)
+                                              : const Color(0xFFFF6961),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => CoachDetailPage(
-                                    coachId: coach.id,
-                                    service: _service!,
+                                  ],
+                                ),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => CoachDetailPage(
+                                      coachId: coach.id,
+                                      service: _service!,
+                                    ),
                                   ),
                                 ),
                               ),

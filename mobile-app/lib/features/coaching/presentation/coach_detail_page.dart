@@ -1,16 +1,16 @@
 import 'package:meta_gym_app/core/network/api_client.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
-import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
-import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
-import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
-import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
+import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
+import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:provider/provider.dart';
 
 class CoachDetailPage extends StatefulWidget {
   const CoachDetailPage({
@@ -385,6 +385,16 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                         if (_chatError != null) Text(_chatError!),
                         if (context.read<ApiClient?>() != null)
                           FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: coach.availableSlots > 0
+                                  ? MetaGymTheme.brandOrange
+                                  : Colors.grey.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
                             onPressed: () => Navigator.of(context).push<void>(
                               MaterialPageRoute(
                                 builder: (_) =>

@@ -279,12 +279,17 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                       const _SectionTitle('Dịch vụ của bạn'),
                       const SizedBox(height: 10),
                       if (_loading)
-                        const SizedBox(
+                        SizedBox(
                           height: 170,
                           child: Center(
-                            child: CircularProgressIndicator(
-                              color: MetaGymTheme.primary,
-                            ),
+                            child: MetaGymTheme.isFlutterTestEnvironment
+                                ? const CircularProgressIndicator(
+                                    value: 0.5,
+                                    color: MetaGymTheme.primary,
+                                  )
+                                : const CircularProgressIndicator(
+                                    color: MetaGymTheme.primary,
+                                  ),
                           ),
                         )
                       else if (_error != null)

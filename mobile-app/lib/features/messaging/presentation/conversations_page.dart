@@ -2003,9 +2003,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _load();
       });
-      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-        if (mounted) _refreshLatest();
-      });
+      if (!MetaGymTheme.isFlutterTestEnvironment) {
+        _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+          if (mounted) _refreshLatest();
+        });
+      }
     }
   }
 
@@ -2607,6 +2609,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     ),
                     const SizedBox(height: 1),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 6,
@@ -2619,16 +2622,20 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                           ),
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          widget.conversation.canSend
-                              ? 'Đang hoạt động'
-                              : 'Chỉ đọc',
-                          style: TextStyle(
-                            color: widget.conversation.canSend
-                                ? MetaGymTheme.progressGreen
-                                : const Color(0xFF8E9AA8),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            widget.conversation.canSend
+                                ? 'Đang hoạt động'
+                                : 'Chỉ đọc',
+                            style: TextStyle(
+                              color: widget.conversation.canSend
+                                  ? MetaGymTheme.progressGreen
+                                  : const Color(0xFF8E9AA8),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
