@@ -15,13 +15,9 @@ import 'package:provider/provider.dart';
 
 /// Read-only Member view of the Coach's training and seven-day meal plan.
 class MemberCurriculumDetailPage extends StatefulWidget {
-  const MemberCurriculumDetailPage({
-    required this.id,
-    required this.service,
-    super.key,
-  });
+  const MemberCurriculumDetailPage({this.id, required this.service, super.key});
 
-  final String id;
+  final String? id;
   final MemberTrainingService service;
 
   @override
@@ -32,6 +28,7 @@ class MemberCurriculumDetailPage extends StatefulWidget {
 class _MemberCurriculumDetailPageState
     extends State<MemberCurriculumDetailPage> {
   TrainingPlan? _plan;
+  List<TrainingPlan> _history = const [];
   CoachRecord? _mealPlan;
   String? _coachName;
   String? _error;
@@ -54,10 +51,29 @@ class _MemberCurriculumDetailPageState
       _loading = true;
       _error = null;
       _mealError = null;
+      _mealPlan = null;
+      _coachName = null;
+      _paused = false;
+      if (widget.id == null) _history = const [];
     });
     try {
-      final plan = await widget.service.getPlan(widget.id);
+      final plan = widget.id == null
+          ? await widget.service.getActive()
+          : await widget.service.getPlan(widget.id!);
       if (!mounted) return;
+      if (widget.id == null) {
+        final history = await widget.service.getHistory();
+        if (!mounted) return;
+        setState(
+          () => _history = history
+              .where((item) => item.status == 'ARCHIVED' && item.id != plan?.id)
+              .toList(),
+        );
+      }
+      if (plan == null) {
+        setState(() => _plan = null);
+        return;
+      }
       if (plan.status != 'ACTIVE' && plan.status != 'ARCHIVED') {
         setState(() => _error = 'Không tìm thấy giáo trình của bạn.');
         return;
@@ -158,11 +174,24 @@ class _MemberCurriculumDetailPageState
                     child: const Text('Thử lại'),
                   ),
                 )
-              else if (plan != null) ...[
+              else if (plan == null) ...[
+                _tabSelector(null),
+                _message(
+                  icon: _tab == 0
+                      ? Icons.fitness_center_outlined
+                      : Icons.restaurant_menu_outlined,
+                  title: _tab == 0
+                      ? 'Chưa có kế hoạch tập luyện'
+                      : 'Chưa có kế hoạch dinh dưỡng',
+                  body: 'Coach chưa gửi giáo trình cho bạn. Khi Coach công bố, nội dung sẽ xuất hiện tại đây.',
+                ),
+              ] else ...[
                 _tabSelector(plan),
                 if (_paused) _pausedNotice(),
                 if (_tab == 0) _training(plan) else _nutrition(),
               ],
+              if (!_loading && _error == null && _history.isNotEmpty)
+                _archivedPlans(),
               SizedBox(height: MediaQuery.paddingOf(context).bottom + 32),
             ],
           ),
@@ -226,13 +255,17 @@ class _MemberCurriculumDetailPageState
                     ),
                     _headerButton(
                       icon: Icons.chat_bubble_outline_rounded,
-                      label: 'Tin nhắn',
+                      label: 'Nhắn Coach',
                       onPressed: () =>
                           context.push('/member/features/messages'),
                     ),
                   ],
                 ),
                 if (plan != null) ...[const SizedBox(height: 8), _hero(plan)],
+                if (plan == null && !_loading && _error == null) ...[
+                  const SizedBox(height: 8),
+                  _emptyHero(),
+                ],
               ],
             ),
           ),
@@ -380,7 +413,81 @@ class _MemberCurriculumDetailPageState
     );
   }
 
-  Widget _tabSelector(TrainingPlan plan) {
+  Widget _emptyHero() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xE3443025), Color(0xF024201F)],
+      ),
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: const Color(0xB8C89463)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _status('Chờ Coach', MetaGymTheme.warning),
+        const SizedBox(height: 12),
+        const Text(
+          'Chưa có giáo trình',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
+            fontFamily: MetaGymTheme.fontFamily,
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Coach sẽ gửi kế hoạch tập luyện và dinh dưỡng phù hợp cho bạn.',
+          style: TextStyle(color: Color(0xFFE4DAD1), fontSize: 13, height: 1.4),
+        ),
+      ],
+    ),
+  );
+
+  Widget _archivedPlans() => _surface(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Giáo trình đã lưu trữ',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        for (final old in _history)
+          Material(
+            color: Colors.transparent,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                old.title,
+                style: const TextStyle(color: Colors.white),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: MetaGymTheme.textSecondary,
+              ),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => MemberCurriculumDetailPage(
+                    id: old.id,
+                    service: widget.service,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+
+  Widget _tabSelector(TrainingPlan? plan) {
     final count = _mealPlan == null ? 'Chưa có' : 'T2–CN';
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -389,7 +496,11 @@ class _MemberCurriculumDetailPageState
       child: Row(
         children: [
           for (final (index, label, badge) in [
-            (0, 'Tập luyện', '${plan.days.length} ngày'),
+            (
+              0,
+              'Tập luyện',
+              plan == null ? 'Chưa có' : '${plan.days.length} ngày',
+            ),
             (1, 'Dinh dưỡng', count),
           ])
             Expanded(
