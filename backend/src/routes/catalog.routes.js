@@ -85,25 +85,36 @@ export function createCatalogRouter({ database, jwtSecret }) {
       }
       const { page, pageSize, search, category } = parsed.data;
       const args = [];
-      let where = "status = 'ACTIVE'";
-      if (search) { args.push(`%${search}%`); where += ` AND name ILIKE $${args.length}`; }
+      const isExercise = table === 'exercises';
+      const source = isExercise ? 'exercises x LEFT JOIN equipment e ON e.id = x.equipment_id' : table;
+      const prefix = isExercise ? 'x.' : '';
+      let where = `${prefix}status = 'ACTIVE'`;
+      if (search) { args.push(`%${search}%`); where += ` AND ${prefix}name ILIKE $${args.length}`; }
       if (category) { args.push(category); where += ` AND category = $${args.length}`; }
       try {
-        const total = await database.query(`SELECT count(*)::int AS count FROM ${table} WHERE ${where}`, args);
+        const total = await database.query(`SELECT count(*)::int AS count FROM ${source} WHERE ${where}`, args);
         const result = await database.query(
-          `SELECT * FROM ${table} WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT $${args.length + 1} OFFSET $${args.length + 2}`,
+          `SELECT ${isExercise ? 'x.*, e.video_url AS equipment_video_url' : '*'} FROM ${source} WHERE ${where} ORDER BY ${prefix}created_at DESC, ${prefix}id DESC LIMIT $${args.length + 1} OFFSET $${args.length + 2}`,
           [...args, pageSize, (page - 1) * pageSize],
         );
         const totalItems = total.rows[0].count;
-        return response.json({ data: result.rows.map((row) => publicRow(row, mapping)),
+        return response.json({ data: result.rows.map((row) => publicRow(
+          isExercise ? { ...row, video_url: row.video_url || row.equipment_video_url } : row, mapping)),
           pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) } });
       } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được danh mục'); }
     });
     router.get(`/${basePath}/:itemId`, async (request, response) => {
       if (!idSchema.safeParse(request.params.itemId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã không hợp lệ');
       try {
-        const result = await database.query(`SELECT * FROM ${table} WHERE id = $1 AND status = 'ACTIVE'`, [request.params.itemId]);
-        return result.rows.length ? response.json({ data: publicRow(result.rows[0], mapping) })
+        const isExercise = table === 'exercises';
+        const result = await database.query(isExercise
+          ? `SELECT x.*, e.video_url AS equipment_video_url FROM exercises x
+             LEFT JOIN equipment e ON e.id = x.equipment_id
+             WHERE x.id = $1 AND x.status = 'ACTIVE'`
+          : `SELECT * FROM ${table} WHERE id = $1 AND status = 'ACTIVE'`, [request.params.itemId]);
+        const row = result.rows[0];
+        return row ? response.json({ data: publicRow(
+          isExercise ? { ...row, video_url: row.video_url || row.equipment_video_url } : row, mapping) })
           : fail(response, 404, 'NOT_FOUND', 'Không tìm thấy mục');
       } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được mục'); }
     });
