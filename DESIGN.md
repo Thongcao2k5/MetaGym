@@ -3,31 +3,34 @@ version: beta
 name: Meta Gym
 description: Futuristic Performance Glass design system for the Flutter Member and Coach app and the Bootstrap Admin application.
 colors:
-  primary: "#FF5A36"
-  on-primary: "#090B0E"
-  primary-hover: "#E84729"
-  on-primary-hover: "#090B0E"
+  primary: "#FF5E36"
+  on-primary: "#FFFFFF"
+  primary-hover: "#E84E27"
+  on-primary-hover: "#FFFFFF"
   reflection: "#A9C7E8"
-  background-dark: "#080A0D"
-  surface-dark: "#11161C"
-  surface-raised-dark: "#181F27"
-  glass-dark: "rgba(18, 23, 30, 0.78)"
-  glass-strong-dark: "rgba(14, 18, 24, 0.90)"
+  background-dark: "#0F1115"
+  surface-dark: "#181B22"
+  surface-raised-dark: "#1F232C"
+  glass-dark: "rgba(24, 27, 34, 0.78)"
+  glass-strong-dark: "rgba(15, 17, 21, 0.90)"
   glass-border-dark: "rgba(212, 228, 255, 0.18)"
   glass-highlight-dark: "rgba(235, 246, 255, 0.32)"
   text-primary-dark: "#F7F9FC"
-  text-secondary-dark: "#B8C2D0"
-  text-tertiary-dark: "#818C9C"
+  text-secondary-dark: "#8E95A5"
+  text-tertiary-dark: "#8E95A5"
   background-light: "#F5F7FA"
   surface-light: "#FFFFFF"
   surface-raised-light: "#EDF1F5"
   text-primary-light: "#11151A"
   text-secondary-light: "#4D5968"
   border-light: "#CBD4DF"
-  success: "#23C997"
+  border-dark: "#262A34"
+  success: "#2ECC71"
   on-success: "#06261D"
-  warning: "#F2A93B"
+  warning: "#F39C12"
   on-warning: "#2A1900"
+  coach-avatar: "#F5B041"
+  on-coach-avatar: "#181B22"
   error: "#F15B64"
   on-error: "#2C080B"
   info: "#70AEE8"
@@ -228,28 +231,28 @@ At least **80% of the visible interface uses stable, dark surfaces**. No more th
 
 ### Level 0 — Canvas
 
-- Obsidian background `#080A0D`.
+- Deep Graphite scaffold `#0F1115`.
 - Background photography is optional and must be dimmed with a 72–84% dark scrim.
 - Photography never runs behind dense text without a solid or strong-glass layer.
 
 ### Level 1 — Solid performance surface
 
 - Default for workout cards, nutrition content, forms, tables, and long text.
-- Use `#11161C` or `#181F27`; no backdrop blur.
-- Separation comes from tonal contrast and a subtle one-pixel border, not a heavy shadow.
+- Use Card Surface `#181B22` with a subtle 1px border `#262A34`; no backdrop blur.
+- Separation comes from tonal contrast and a clean one-pixel border, not a heavy shadow.
 - This level should represent most of the screen.
 
 ### Level 2 — Performance glass
 
 - Reserved for quick-action docks, compact summaries, floating filters, and bottom navigation.
-- Target fill: `rgba(18, 23, 30, 0.78)` with **12px blur**.
+- Target fill: `rgba(24, 27, 34, 0.78)` with **12px blur**.
 - Use a cool one-pixel border at 18% opacity and one restrained top-edge highlight.
 - Maximum: one dominant glass group per viewport region. Do not nest another blurred glass object inside it.
 
 ### Level 3 — Overlay glass
 
 - Reserved for dialogs, bottom sheets, AI Coach panels, and high-priority floating controls.
-- Target fill: `rgba(14, 18, 24, 0.90)` with **18px blur**.
+- Target fill: `rgba(15, 17, 21, 0.90)` with **18px blur**.
 - Always pair with the scrim token and verify text contrast over the real background.
 - Never use as a standard content card.
 
@@ -266,17 +269,19 @@ At least **80% of the visible interface uses stable, dark surfaces**. No more th
 
 ### Brand colors
 
-- **Energy Orange `#FF5A36`:** primary action, active navigation, selected workout state, and key progress.
+- **Primary Accent (Coral Orange) `#FF5E36`:** primary CTA, active navigation, selected workout state, and key progress. Chữ và Icon trên nền nút Primary bắt buộc dùng màu trắng `#FFFFFF`.
 - **Cool Reflection `#A9C7E8`:** glass edges, focus support, and restrained technological highlights.
-- **Obsidian `#080A0D`:** primary mobile canvas.
-- **Graphite `#11161C`:** default content surface.
+- **Deep Graphite `#0F1115`:** primary mobile scaffold / background.
+- **Card Surface `#181B22`:** default content card surface, bordered with 1px `#262A34`.
 
 Orange is not ambient decoration. In a typical viewport, it should occupy roughly **5–10%** of pixels. Use orange glow only around a selected or primary control; never around every card.
 
 ### Semantic colors
 
-- Success `#23C997`
-- Warning `#F2A93B`
+- **Success / Active / Nutrition `#2ECC71`:** hoàn thành, đang hiệu lực, tiến độ dinh dưỡng.
+- **Warning / Secondary Avatar `#F39C12`:** cảnh báo, trạng thái chờ, avatar phụ.
+- **Subtext / Future State `#8E95A5`:** chữ phụ, trạng thái tương lai chưa diễn ra.
+- **Coach Avatar "LN" (Lê Hoàng Nam):** nền `#F5B041`, chữ `#181B22` đậm xuyên suốt toàn bộ các thẻ.
 - Error `#F15B64`
 - Information `#70AEE8`
 
