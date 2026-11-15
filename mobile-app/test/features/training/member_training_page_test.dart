@@ -16,12 +16,13 @@ void main() {
       expect(find.text('Sức bền cơ bản'), findsOneWidget);
       expect(find.text('Bản nháp bí mật'), findsNothing);
       expect(find.text('Giáo trình cũ'), findsOneWidget);
-      await tester.tap(find.text('Sức bền cơ bản'));
-      await tester.pumpAndSettle();
-      expect(find.text('Ngày 1: Toàn thân'), findsOneWidget);
+      expect(find.text('Toàn thân'), findsOneWidget);
       expect(find.text('Squat'), findsOneWidget);
       expect(find.text('3 hiệp · 12 lần'), findsOneWidget);
-      expect(find.text('Đã công bố · Phiên bản 2'), findsOneWidget);
+      expect(find.text('Đang áp dụng'), findsOneWidget);
+      expect(find.text('Dinh dưỡng'), findsOneWidget);
+      expect(find.textContaining('Phiên bản'), findsNothing);
+      expect(find.text('Lịch sử đến gym'), findsNothing);
     },
   );
 
@@ -36,7 +37,9 @@ void main() {
     expect(find.text('Không tải được giáo trình.'), findsOneWidget);
     await tester.tap(find.text('Thử lại'));
     await tester.pumpAndSettle();
-    expect(find.text('Bạn chưa được giao giáo trình.'), findsOneWidget);
+    expect(find.text('Chưa có giáo trình'), findsOneWidget);
+    expect(find.text('Chưa có kế hoạch tập luyện'), findsOneWidget);
+    expect(find.text('Lịch sử đến gym'), findsNothing);
   });
 }
 
