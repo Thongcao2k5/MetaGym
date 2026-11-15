@@ -45,7 +45,7 @@ async function conversation(database, relationshipId, userId, lock = false) {
   return found.rows[0];
 }
 
-export function createMessagingRouter({ database, jwtSecret }) {
+export function createMessagingRouter({ database, jwtSecret, realtime }) {
   const router = Router();
   router.use(createAuthentication({ database, jwtSecret }));
   router.use('/conversations', (request, response, next) =>
@@ -279,6 +279,8 @@ export function createMessagingRouter({ database, jwtSecret }) {
       await client.query('UPDATE conversations SET last_message_at = $1 WHERE id = $2',
         [result.rows[0].sent_at, found.id]);
       await client.query('COMMIT');
+      const recipient = found.member_id === request.authUser.id ? found.coach_id : found.member_id;
+      void realtime?.publish(recipient, 'message', { conversationId: found.id });
       return response.status(201).json({ data: view(result.rows[0]) });
     } catch {
       await client.query('ROLLBACK').catch(() => {});

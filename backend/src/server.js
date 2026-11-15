@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import { createApp } from './app.js';
 import { createDatabasePool } from './config/database.js';
+import { createRealtimeFromEnv } from './config/realtime.js';
 import { createLiveKitFromEnv } from './config/livekit.js';
 import {
   createAiResponderFromEnv,
@@ -15,6 +16,7 @@ const database = createDatabasePool();
 const imageStorage = createImageStorageFromEnv(process.env);
 const app = createApp({
   database,
+  realtime: createRealtimeFromEnv(),
   imageStorage,
   sendPasswordResetCode: createPasswordResetSenderFromEnv(),
   aiResponder: createAiResponderFromEnv(),

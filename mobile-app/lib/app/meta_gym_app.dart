@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
@@ -133,6 +134,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CallsService _callsService;
   late final AiService _aiService;
   late final GoRouter _router;
+  MetaGymRealtime? _realtime;
   final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -204,6 +206,9 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _messagingService = widget.messagingService ?? MessagingApi(_apiClient);
     _callsService = widget.callsService ?? CallsApi(_apiClient);
     _aiService = widget.aiService ?? AiApi(_apiClient);
+    if (widget.sessionController == null) {
+      _realtime = MetaGymRealtime(_apiClient, _sessionController);
+    }
     _router = createAppRouter(
       sessionController: _sessionController,
       navigatorKey: _navigatorKey,
@@ -213,6 +218,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
 
   @override
   void dispose() {
+    _realtime?.dispose();
     _router.dispose();
     _authController.dispose();
     _profileController.dispose();
@@ -227,6 +233,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     return MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: _apiClient),
+        Provider<MetaGymRealtime?>.value(value: _realtime),
         Provider<AuthService>.value(value: _authService),
         ChangeNotifierProvider<AuthController>.value(value: _authController),
         Provider<ProfileService>.value(value: _profileService),
@@ -283,6 +290,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
             navigatorKey: _navigatorKey,
             session: _sessionController,
             api: api,
+            realtime: _realtime,
             child: child,
           );
         },
