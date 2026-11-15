@@ -21,6 +21,7 @@ import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart
 import 'package:meta_gym_app/features/profile/presentation/change_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
+import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
@@ -108,20 +109,31 @@ GoRouter createAppRouter({
     routes: [
       GoRoute(
         path: AppRoutes.loading,
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const AppLoadingPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.welcome,
-        builder: (context, state) => const WelcomePage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const WelcomePage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginPage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const LoginPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (context, state) => const RegisterPage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const RegisterPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
@@ -233,3 +245,31 @@ String _homeForRole(UserRole role) => switch (role) {
   UserRole.coach => AppRoutes.coachHome,
   UserRole.admin => AppRoutes.adminHome,
 };
+
+CustomTransitionPage<void> _smoothAuthTransitionPage({
+  required LocalKey key,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: key,
+    transitionDuration: const Duration(milliseconds: 380),
+    reverseTransitionDuration: const Duration(milliseconds: 280),
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.03),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}

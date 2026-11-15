@@ -18,8 +18,21 @@ class AuthController extends ChangeNotifier {
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
   Map<String, String> get fieldErrors => _fieldErrors;
+  bool get defaultRememberMe => _sessionController.rememberMe;
+  String? get rememberedEmail => _sessionController.rememberedEmail;
 
-  Future<bool> login({required String email, required String password}) async {
+  void clearErrors() {
+    if (_errorMessage == null && _fieldErrors.isEmpty) return;
+    _errorMessage = null;
+    _fieldErrors = const {};
+    notifyListeners();
+  }
+
+  Future<bool> login({
+    required String email,
+    required String password,
+    bool rememberMe = true,
+  }) async {
     if (_isSubmitting) return false;
     final errors = <String, String>{};
     if (!_isValidEmail(email)) errors['email'] = 'Email không hợp lệ.';
@@ -31,7 +44,7 @@ class AuthController extends ChangeNotifier {
         email: email,
         password: password,
       );
-      await _sessionController.authenticate(session);
+      await _sessionController.authenticate(session, rememberMe: rememberMe);
       return true;
     } on ApiException catch (error) {
       _applyApiError(error);

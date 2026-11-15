@@ -110,9 +110,13 @@ abstract final class MetaGymTheme {
   /// Detects `flutter_test` binding so `RenderRepaintBoundary.toImage()` in
   /// fake-async widget tests does not deadlock on `BackdropFilter` layers.
   static bool get isFlutterTestEnvironment {
-    final bindingName = WidgetsBinding.instance.runtimeType.toString();
-    return bindingName.contains('TestWidgetsFlutterBinding') ||
-        bindingName.contains('AutomatedTestWidgetsFlutterBinding');
+    try {
+      final bindingName = WidgetsBinding.instance.runtimeType.toString();
+      return bindingName.contains('TestWidgetsFlutterBinding') ||
+          bindingName.contains('AutomatedTestWidgetsFlutterBinding');
+    } catch (_) {
+      return true;
+    }
   }
 
   static ThemeData get light => _build(Brightness.light);
