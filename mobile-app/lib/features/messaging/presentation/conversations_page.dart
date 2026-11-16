@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -321,6 +322,7 @@ class ConversationsPage extends StatefulWidget {
 }
 
 class _ConversationsPageState extends State<ConversationsPage> {
+  StreamSubscription<String>? _realtimeMessages;
   MessagingService? _service;
   SessionController? _sessionController;
   List<Conversation> _items = const [];
@@ -354,10 +356,14 @@ class _ConversationsPageState extends State<ConversationsPage> {
       _MessagingSessionCache.ensureAccount(_activeUserId);
     }
     _mockThreads = _createInitialMockThreads();
+    _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((_) {
+      if (mounted && widget.isActive) unawaited(_load());
+    });
   }
 
   @override
   void dispose() {
+    unawaited(_realtimeMessages?.cancel());
     _sessionController?.removeListener(_handleSessionChanged);
     _searchController.dispose();
     super.dispose();
@@ -1795,6 +1801,7 @@ class ConversationDetailPage extends StatefulWidget {
 }
 
 class _ConversationDetailPageState extends State<ConversationDetailPage> {
+  StreamSubscription<String>? _realtimeMessages;
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   List<ChatMessage> _messages = const [];
@@ -1977,6 +1984,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   void dispose() {
     _sessionController?.removeListener(_handleSessionChanged);
     _pollTimer?.cancel();
+    unawaited(_realtimeMessages?.cancel());
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -1989,6 +1997,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       _messages = widget.initialMockMessages!.reversed.toList();
       _loading = false;
     } else {
+      _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((id) {
+        if (mounted && id == widget.conversation.id) unawaited(_refreshLatest());
+      });
       final cached = _MessagingSessionCache.readThread(
         widget.currentUserId,
         widget.service,

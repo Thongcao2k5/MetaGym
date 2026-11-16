@@ -32,7 +32,7 @@ const callUserJoins = `LEFT JOIN users caller ON caller.id = c.caller_id
 
 const ringWindow = "interval '45 seconds'";
 
-export function createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit }) {
+export function createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime }) {
   const router = Router();
   const issueToken = liveKit?.issueToken ?? callTokenProvider;
   router.use('/calls', createAuthentication({ database, jwtSecret }));
@@ -150,6 +150,7 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider, live
           receiverId, parsed.data.callType, parsed.data.live ? 'RINGING' : 'CREATED'],
       );
       await client.query('COMMIT');
+      if (parsed.data.live) void realtime?.publish(receiverId, 'incoming_call', {});
       return response.status(201).json({ data: view(result.rows[0]) });
     } catch {
       await client.query('ROLLBACK').catch(() => {});

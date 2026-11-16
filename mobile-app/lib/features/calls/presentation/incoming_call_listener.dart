@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -12,6 +13,7 @@ class IncomingCallListener extends StatefulWidget {
     required this.navigatorKey,
     required this.session,
     required this.api,
+    this.realtime,
     required this.child,
     super.key,
   });
@@ -19,6 +21,7 @@ class IncomingCallListener extends StatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey;
   final SessionController session;
   final CallsApi api;
+  final MetaGymRealtime? realtime;
   final Widget child;
 
   @override
@@ -28,6 +31,8 @@ class IncomingCallListener extends StatefulWidget {
 class _IncomingCallListenerState extends State<IncomingCallListener> {
   late final AppLifecycleListener _lifecycle;
   Timer? _timer;
+  StreamSubscription<void>? _realtimeSubscription;
+  StreamSubscription<String>? _messageSubscription;
   bool _checking = false;
   bool _foreground = true;
 
@@ -43,6 +48,18 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
       },
     );
     widget.session.addListener(_syncTimer);
+    _realtimeSubscription = widget.realtime?.calls.listen((_) => _check());
+    _messageSubscription = widget.realtime?.messages.listen((_) {
+      final navigator = widget.navigatorKey.currentState;
+      if (!mounted ||
+          !_canListen ||
+          navigator == null ||
+          LiveCallPage.isOpen(navigator)) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(const SnackBar(content: Text('Bạn có tin nhắn mới.')));
+    });
     _syncTimer();
   }
 
@@ -101,6 +118,8 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
   void dispose() {
     widget.session.removeListener(_syncTimer);
     _timer?.cancel();
+    unawaited(_realtimeSubscription?.cancel());
+    unawaited(_messageSubscription?.cancel());
     _lifecycle.dispose();
     super.dispose();
   }
