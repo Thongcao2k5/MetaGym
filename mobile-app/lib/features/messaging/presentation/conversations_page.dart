@@ -2619,6 +2619,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     ),
                     const SizedBox(height: 1),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 6,

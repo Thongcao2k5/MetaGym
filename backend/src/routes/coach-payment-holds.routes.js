@@ -237,10 +237,15 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
         [id.data, request.authUser.id],
       )).rows[0];
       if (settlement.status === 'CONSUMED') {
+        const entitlement = (await database.query(
+          'SELECT * FROM coach_entitlements WHERE id = $1',
+          [settlement.entitlementId],
+        )).rows[0];
         return response.json({
           data: {
             hold: view(updated ?? existing),
             entitlementId: settlement.entitlementId,
+            entitlement,
           },
         });
       }

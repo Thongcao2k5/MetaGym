@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
@@ -63,6 +64,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
   }
 
   bool get _canListen {
+    if (MetaGymTheme.isFlutterTestEnvironment) return false;
     final role = widget.session.user?.role;
     return _foreground &&
         widget.session.status == SessionStatus.authenticated &&
