@@ -104,8 +104,13 @@ test('PostgreSQL messaging enforces participants, retries, media and relationshi
       assert.equal((await call(base, messagesPath, member, 'POST',
         { ...firstPayload, content: 'Changed' })).body.error.code,
       'MESSAGE_ID_CONFLICT');
-      assert.equal((await call(base, '/conversations', coach)).body.data[0]
-        .unreadCount, 1);
+      const coachConversations = (await call(base, '/conversations', coach)).body.data;
+      assert.equal(coachConversations[0].unreadCount, 1);
+      assert.equal(coachConversations[0].lastMessageType, 'TEXT');
+      assert.equal(coachConversations[0].lastMessageContent, 'Hello Coach');
+      assert.equal(coachConversations[0].lastMessageSenderId, memberId);
+      assert.equal(coachConversations[0].memberName, 'MEMBER');
+      assert.equal(coachConversations[0].coachName, 'COACH');
 
       const reply = await call(base, messagesPath, coach, 'POST', {
         messageType: 'TEXT', clientMessageId: randomUUID(), content: 'Hi Member',
@@ -121,8 +126,11 @@ test('PostgreSQL messaging enforces participants, retries, media and relationshi
       });
       assert.equal(image.status, 201);
       assert.equal(image.body.data.mediaId, imageId);
-      assert.equal((await call(base, '/conversations', member)).body.data[0]
-        .unreadCount, 1);
+      const memberConversations = (await call(base, '/conversations', member)).body.data;
+      assert.equal(memberConversations[0].unreadCount, 1);
+      assert.equal(memberConversations[0].lastMessageType, 'IMAGE');
+      assert.equal(memberConversations[0].lastMessageContent, null);
+      assert.equal(memberConversations[0].lastMessageSenderId, memberId);
       assert.equal((await call(base, readPath, member, 'PATCH',
         { messageId: image.body.data.id })).status, 422);
       assert.equal((await call(base, '/conversations', member)).body.data[0]

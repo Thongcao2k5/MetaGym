@@ -17,6 +17,42 @@ class CallsApi implements CallsService {
   const CallsApi(this.client);
   final ApiClient client;
 
+  Future<CallLog> createLiveCall(
+    String relationshipId,
+    String callType,
+  ) async => (await client.post<CallLog>(
+    '/calls',
+    body: {
+      'relationshipId': relationshipId,
+      'callType': callType,
+      'live': true,
+    },
+    decode: CallLog.fromJson,
+  )).data;
+
+  Future<CallLog?> getIncoming() async => (await client.get<List<CallLog>>(
+    '/calls/incoming',
+    decode: (value) => (value as List).map(CallLog.fromJson).toList(),
+  )).data.firstOrNull;
+
+  Future<CallLog> getCall(String callId) async => (await client.get<CallLog>(
+    '/calls/${Uri.encodeComponent(callId)}',
+    decode: CallLog.fromJson,
+  )).data;
+
+  Future<({String url, String token})> getRoomAccess(String callId) async =>
+      (await client.post<({String url, String token})>(
+        '/calls/${Uri.encodeComponent(callId)}/access-tokens',
+        body: const <String, dynamic>{},
+        decode: (value) {
+          final data = value as Map;
+          return (
+            url: data['serverUrl'] as String,
+            token: data['accessToken'] as String,
+          );
+        },
+      )).data;
+
   @override
   Future<List<CallLog>> getCalls(int page) async =>
       (await client.get<List<CallLog>>(

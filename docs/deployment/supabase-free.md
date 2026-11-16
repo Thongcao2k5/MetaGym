@@ -1,5 +1,20 @@
 # Triển khai Meta Gym bằng Supabase Free
 
+## Realtime cho tin nhắn và cuộc gọi đến
+
+Chạy `supabase-realtime.sql` tại SQL Editor của project Supabase. Bật Realtime
+cho project. Đặt thêm `SUPABASE_PUBLISHABLE_KEY` và
+`SUPABASE_REALTIME_JWT_SECRET` trong môi trường backend. Biến thứ hai là
+**Legacy JWT secret** đang được project Supabase chấp nhận để ký token Realtime
+HS256. Nó khác với `JWT_SECRET` của MetaGym và `SUPABASE_SECRET_KEY`.
+Giữ khóa ký JWT và secret key ở backend.
+
+Khởi động lại API và build lại Flutter. Đăng nhập Member và Coach trên hai máy,
+giữ app đang mở. Gửi tin hoặc gọi để kiểm tra nhận sự kiện trên máy còn lại.
+App vẫn lấy dữ liệu qua API MetaGym và nhận cuộc gọi qua màn hình LiveKit hiện có.
+Realtime cần kết nối WebSocket còn hoạt động. Android có thể ngắt kết nối khi
+app chạy nền hoặc đã đóng.
+
 Việc chuyển đổi được thực hiện từng bước để bản local luôn sử dụng được. Không
 đưa khóa bí mật hoặc mật khẩu database vào Git, Flutter hay Admin Web.
 

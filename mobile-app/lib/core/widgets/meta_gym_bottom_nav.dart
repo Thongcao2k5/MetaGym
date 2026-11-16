@@ -18,6 +18,8 @@ class MetaGymBottomNav extends StatelessWidget {
     required this.onTap,
     this.useSolidFallback = false,
     this.warmGlass = false,
+    this.secondTabLabel = 'Tập luyện',
+    this.secondTabIcon = Icons.fitness_center_outlined,
   }) : assert(currentIndex >= 0 && currentIndex < 5);
 
   final int currentIndex;
@@ -26,6 +28,8 @@ class MetaGymBottomNav extends StatelessWidget {
   /// Optional solid surface fallback for low-power / frame-drop environments.
   final bool useSolidFallback;
   final bool warmGlass;
+  final String secondTabLabel;
+  final IconData secondTabIcon;
 
   static const double _barHeight = 68.0;
   static const double _aiProtrusion = 14.0;
@@ -145,8 +149,8 @@ class MetaGymBottomNav extends StatelessWidget {
               ),
               Expanded(
                 child: _NavTabItem(
-                  label: 'Tập luyện',
-                  icon: Icons.fitness_center_outlined,
+                  label: secondTabLabel,
+                  icon: secondTabIcon,
                   selected: currentIndex == 1,
                   duration: duration,
                   onTap: () => onTap(1),
