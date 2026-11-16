@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
@@ -132,8 +134,20 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: MetaGymTheme.darkCanvas,
     appBar: AppBar(
-      title: const Text('Quản lý buổi tập'),
+      title: const Text(
+        'Quản lý buổi tập',
+        style: TextStyle(
+          color: Color(0xFFF6F3F0),
+          fontWeight: FontWeight.w700,
+          fontSize: 20,
+          letterSpacing: -0.3,
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      iconTheme: const IconThemeData(color: Color(0xFFF6F3F0)),
       actions: [
         if (widget.coachBooking != null)
           IconButton(
@@ -151,72 +165,242 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
             !_members.any((m) => m.status == 'ACTIVE')
         ? null
         : FloatingActionButton.extended(
+            backgroundColor: MetaGymTheme.brandOrange,
+            foregroundColor: Colors.white,
             onPressed: () => _edit(),
             icon: const Icon(Icons.add),
             label: const Text('Tạo buổi tập'),
           ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              children: [
-                if (_error != null) ...[
-                  Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  TextButton(onPressed: _load, child: const Text('Thử lại')),
-                ] else if (_sessions.isEmpty)
-                  const ListTile(title: Text('Chưa có buổi tập nào.')),
-                if (_error == null)
-                  for (final session in _sessions)
-                    Card(
-                      child: Column(
-                        children: [
-                          ListTile(
-                            title: Text(session.title),
-                            subtitle: Text(
-                              '${_memberName(session.memberId)} · ${formatSessionLocalTime(session.scheduledStartAt)} · ${session.statusLabel}',
-                            ),
-                            onTap:
-                                widget.coachBooking == null &&
-                                    session.status == 'SCHEDULED'
-                                ? () => _edit(session)
-                                : null,
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        const MetaGymBackground(),
+        SafeArea(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: MetaGymTheme.brandOrange))
+              : RefreshIndicator(
+                  color: MetaGymTheme.brandOrange,
+                  backgroundColor: const Color(0xFF2B2622),
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    children: [
+                      if (widget.coachBooking != null) ...[
+                        MetaGymGlassCard(
+                          featured: true,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.calendar_month_rounded,
+                                      color: MetaGymTheme.brandOrange,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Lịch làm việc & Buổi hẹn',
+                                          style: TextStyle(
+                                            color: Color(0xFFF6F3F0),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        SizedBox(height: 2),
+                                        Text(
+                                          'Cấu hình lịch làm việc tuần, khóa giờ & duyệt hẹn',
+                                          style: TextStyle(
+                                            color: Color(0xFFBCB5AE),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: MetaGymTheme.brandOrange,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: () => Navigator.of(context).push<void>(
+                                  MaterialPageRoute(builder: (_) => widget.coachBooking!),
+                                ),
+                                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                                label: const Text(
+                                  'Quản lý lịch làm việc Coach',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                ),
+                              ),
+                            ],
                           ),
-                          if (widget.coachBooking == null &&
-                              session.status == 'SCHEDULED')
-                            Wrap(
-                              spacing: 4,
-                              children: [
-                                TextButton(
-                                  onPressed: () =>
-                                      _changeStatus(session, 'COMPLETED'),
-                                  child: const Text('Hoàn thành'),
+                        ),
+                      ],
+                      if (_error != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0x33FF453A),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0x66FF453A)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: Color(0xFFFF6961),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: const TextStyle(
+                                    color: Color(0xFFFF857D),
+                                    fontSize: 13,
+                                  ),
                                 ),
-                                TextButton(
-                                  onPressed: () =>
-                                      _changeStatus(session, 'MEMBER_ABSENT'),
-                                  child: const Text('Vắng mặt'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _load,
+                          style: TextButton.styleFrom(
+                            foregroundColor: MetaGymTheme.brandOrange,
+                          ),
+                          child: const Text('Thử lại'),
+                        ),
+                      ] else if (_sessions.isEmpty)
+                        const MetaGymGlassCard(
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.event_busy_rounded, color: Color(0xFF8C7B6C), size: 36),
+                              SizedBox(height: 12),
+                              Text(
+                                'Chưa có buổi tập nào.',
+                                style: TextStyle(
+                                  color: Color(0xFFF6F3F0),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
                                 ),
-                                TextButton(
-                                  onPressed: () =>
-                                      _changeStatus(session, 'CANCELLED'),
-                                  child: const Text('Hủy buổi'),
-                                ),
-                              ],
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_error == null)
+                        for (final session in _sessions)
+                          MetaGymGlassCard(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(4),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Column(
+                                children: [
+                                  ListTile(
+                                    textColor: const Color(0xFFF6F3F0),
+                                    title: Text(
+                                      session.title,
+                                      style: const TextStyle(
+                                        color: Color(0xFFF6F3F0),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      '${_memberName(session.memberId)} · ${formatSessionLocalTime(session.scheduledStartAt)} · ${session.statusLabel}',
+                                      style: const TextStyle(
+                                        color: Color(0xFFBCB5AE),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    onTap:
+                                        widget.coachBooking == null &&
+                                            session.status == 'SCHEDULED'
+                                        ? () => _edit(session)
+                                        : null,
+                                  ),
+                                  if (widget.coachBooking == null &&
+                                      session.status == 'SCHEDULED')
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                      child: Wrap(
+                                        spacing: 8,
+                                        children: [
+                                          FilledButton.tonal(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: const Color(0x332ECC71),
+                                              foregroundColor: const Color(0xFF52D68A),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            onPressed: () =>
+                                                _changeStatus(session, 'COMPLETED'),
+                                            child: const Text('Hoàn thành'),
+                                          ),
+                                          FilledButton.tonal(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: const Color(0x33FFB300),
+                                              foregroundColor: const Color(0xFFFFD54F),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            onPressed: () =>
+                                                _changeStatus(session, 'MEMBER_ABSENT'),
+                                            child: const Text('Vắng mặt'),
+                                          ),
+                                          OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: const Color(0xFFFF6961),
+                                              side: const BorderSide(color: Color(0x66FF453A)),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            onPressed: () =>
+                                                _changeStatus(session, 'CANCELLED'),
+                                            child: const Text('Hủy buổi'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
-                        ],
-                      ),
-                    ),
-              ],
-            ),
-          ),
+                          ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    ),
   );
 
   String _memberName(String? id) {

@@ -7,6 +7,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/termination_reason_dialog.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:provider/provider.dart';
 
 class MemberCoachingPage extends StatefulWidget {
@@ -414,6 +415,29 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                     child: const Text('Kết thúc quan hệ'),
                                   ),
                                 ],
+                              ),
+                            ),
+                          if (_current != null)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: MetaGymTheme.primary,
+                                  foregroundColor: MetaGymTheme.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: () => Navigator.of(context).push<void>(
+                                  MaterialPageRoute(builder: (_) => const CoachBookingPage()),
+                                ),
+                                icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                                label: const Text(
+                                  'Đặt & Quản lý lịch tập với Coach',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
                               ),
                             ),
                           const SizedBox(height: 8),
