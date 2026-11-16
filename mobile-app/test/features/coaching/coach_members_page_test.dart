@@ -18,7 +18,7 @@ void main() {
     await tester.tap(find.text('Nguyễn An'));
     await tester.pumpAndSettle();
     expect(find.text('Mục tiêu: Tăng sức bền'), findsOneWidget);
-    expect(find.text('Ghi chú sức khỏe: Hen nhẹ'), findsOneWidget);
+    expect(find.text('Bệnh nền: Hen nhẹ'), findsOneWidget);
     await tester.tap(find.text('Xin ngừng phụ trách'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gửi yêu cầu'));
@@ -49,14 +49,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nguyễn An'));
     await tester.pumpAndSettle();
-    expect(find.text('Ghi chú sức khỏe: Hen nhẹ'), findsOneWidget);
+    expect(find.text('Bệnh nền: Hen nhẹ'), findsOneWidget);
     service.revoked = true;
-    await tester.drag(
-      find.text('Ghi chú sức khỏe: Hen nhẹ'),
-      const Offset(0, 350),
-    );
+    await tester.drag(find.text('Bệnh nền: Hen nhẹ'), const Offset(0, 350));
     await tester.pumpAndSettle();
-    expect(find.text('Ghi chú sức khỏe: Hen nhẹ'), findsNothing);
+    expect(find.text('Bệnh nền: Hen nhẹ'), findsNothing);
     expect(find.text('Không tìm thấy Member đang phụ trách'), findsOneWidget);
   });
 
@@ -78,7 +75,7 @@ void main() {
       );
       await tester.tap(find.text('Gửi yêu cầu'));
       await tester.pumpAndSettle();
-      expect(find.text('Ghi chú sức khỏe: Hen nhẹ'), findsNothing);
+      expect(find.text('Bệnh nền: Hen nhẹ'), findsNothing);
       expect(find.text('Không tìm thấy quan hệ hiện tại'), findsOneWidget);
     },
   );

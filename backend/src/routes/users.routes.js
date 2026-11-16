@@ -23,12 +23,31 @@ const memberSchema = z.strictObject({
   dateOfBirth: z.iso.date().nullable().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).nullable().optional(),
   heightCm: z.number().positive().max(300).nullable().optional(),
+  weightKg: z.number().positive().max(999.99).nullable().optional(),
+  bodyFatPercent: z.number().positive().max(100).nullable().optional(),
   fitnessGoal: z.string().nullable().optional(),
   experienceLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).nullable().optional(),
   activityLevel: z.enum(['LOW', 'MODERATE', 'HIGH']).nullable().optional(),
   healthNotes: z.string().nullable().optional(),
   injuryNotes: z.string().nullable().optional(),
   dietaryPreferences: z.string().nullable().optional(),
+});
+const healthDeclarationSchema = z.strictObject({
+  heightCm: z.number().positive().max(300),
+  weightKg: z.number().positive().max(999.99),
+  bodyFatPercent: z.number().positive().max(100).nullable().optional(),
+  hasCondition: z.boolean(),
+  conditionDetails: z.string().trim().max(1000).optional(),
+  hasInjury: z.boolean(),
+  injuryDetails: z.string().trim().max(1000).optional(),
+  fitnessGoal: z.string().trim().max(500).nullable().optional(),
+}).superRefine((value, context) => {
+  if (value.hasCondition && !value.conditionDetails) context.addIssue({
+    code: 'custom', path: ['conditionDetails'], message: 'Cần mô tả bệnh nền',
+  });
+  if (value.hasInjury && !value.injuryDetails) context.addIssue({
+    code: 'custom', path: ['injuryDetails'], message: 'Cần mô tả chấn thương',
+  });
 });
 const coachSchema = z.strictObject({
   ...commonSchema,
@@ -46,6 +65,8 @@ const changePasswordSchema = z.strictObject({
 const profileColumns = {
   MEMBER: {
     dateOfBirth: 'date_of_birth', gender: 'gender', heightCm: 'height_cm',
+    weightKg: 'weight_kg', bodyFatPercent: 'body_fat_percent',
+    healthDeclarationCompletedAt: 'health_declaration_completed_at',
     fitnessGoal: 'fitness_goal', experienceLevel: 'experience_level',
     activityLevel: 'activity_level', healthNotes: 'health_notes',
     injuryNotes: 'injury_notes', dietaryPreferences: 'dietary_preferences',
@@ -94,6 +115,8 @@ async function loadUser(database, id) {
     `SELECT u.id, u.email::text, u.full_name, u.phone, u.role, u.status,
             u.avatar_media_id,
             u.session_version, m.date_of_birth::text, m.gender, m.height_cm::float8,
+            m.weight_kg::float8, m.body_fat_percent::float8,
+            m.health_declaration_completed_at,
             m.fitness_goal, m.experience_level, m.activity_level,
             m.health_notes, m.injury_notes, m.dietary_preferences,
             c.biography, c.specialties, c.qualifications,
@@ -248,6 +271,35 @@ export function createUsersRouter({ database, jwtSecret, imageStorage }) {
 
   router.get('/me', (request, response) => response.json({ data: toPublicUser(request.authUser) }));
 
+  router.patch('/me/health-declaration', async (request, response) => {
+    if (request.authUser.role !== 'MEMBER') {
+      return error(response, 403, 'FORBIDDEN', 'Chỉ Member được khai báo thể trạng');
+    }
+    const parsed = healthDeclarationSchema.safeParse(request.body);
+    if (!parsed.success) return validationError(response, parsed.error);
+    const data = parsed.data;
+    try {
+      const updated = await database.query(
+        `UPDATE member_profiles SET height_cm = $1, weight_kg = $2,
+           body_fat_percent = $3, health_notes = $4, injury_notes = $5,
+           fitness_goal = COALESCE($6, fitness_goal),
+           health_declaration_completed_at = now(), updated_at = now()
+         WHERE user_id = $7 RETURNING user_id`,
+        [data.heightCm, data.weightKg, data.bodyFatPercent ?? null,
+          data.hasCondition ? data.conditionDetails : null,
+          data.hasInjury ? data.injuryDetails : null,
+          data.fitnessGoal ?? null, request.authUser.id],
+      );
+      if (updated.rows.length !== 1) {
+        return error(response, 404, 'NOT_FOUND', 'Không tìm thấy hồ sơ Member');
+      }
+      const user = await loadUser(database, request.authUser.id);
+      return response.json({ data: toPublicUser(user) });
+    } catch {
+      return error(response, 500, 'INTERNAL_SERVER_ERROR', 'Không lưu được khai báo thể trạng');
+    }
+  });
+
   router.patch('/me', async (request, response) => {
     const role = request.authUser.role;
     const schema = role === 'MEMBER' ? memberSchema : role === 'COACH' ? coachSchema : adminSchema;
@@ -281,6 +333,21 @@ export function createUsersRouter({ database, jwtSecret, imageStorage }) {
       const table = role === 'MEMBER' ? 'member_profiles' : 'coach_profiles';
       const profileFields = Object.entries(profileColumns[role] ?? {})
         .filter(([key]) => key in fields);
+      if (role === 'MEMBER' && (fields.heightCm === null || fields.weightKg === null)) {
+        const declared = await client.query(
+          'SELECT health_declaration_completed_at FROM member_profiles WHERE user_id = $1',
+          [request.authUser.id],
+        );
+        if (declared.rows[0]?.health_declaration_completed_at) {
+          await client.query('ROLLBACK');
+          return error(
+            response,
+            422,
+            'VALIDATION_ERROR',
+            'Chiều cao và cân nặng là bắt buộc sau khi đã khai báo thể trạng',
+          );
+        }
+      }
       if (profileFields.length) {
         const updated = await client.query(
           `UPDATE ${table} SET ${profileFields.map(([, column], index) => `${column} = $${index + 1}`).join(', ')} WHERE user_id = $${profileFields.length + 1} RETURNING user_id`,

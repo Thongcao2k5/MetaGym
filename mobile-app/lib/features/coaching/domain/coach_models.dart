@@ -10,6 +10,7 @@ class CoachProfile {
     this.qualifications,
     this.experienceYears,
     this.availabilityNote,
+    this.avatarUrl,
   });
 
   factory CoachProfile.fromJson(Object? value) {
@@ -27,6 +28,7 @@ class CoachProfile {
       qualifications: json['qualifications'] as String?,
       experienceYears: json['experienceYears'] as int?,
       availabilityNote: json['availabilityNote'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
     );
   }
 
@@ -37,6 +39,7 @@ class CoachProfile {
   final String? qualifications;
   final int? experienceYears;
   final String? availabilityNote;
+  final String? avatarUrl;
   final int memberLimit;
   final int usedSlots;
   final int availableSlots;

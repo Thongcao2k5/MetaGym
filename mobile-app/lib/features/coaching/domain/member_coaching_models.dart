@@ -41,6 +41,9 @@ class MemberCoachRelationship {
     required this.id,
     required this.coachId,
     required this.status,
+    this.coachName,
+    this.coachAvatarUrl,
+    this.pauseReason,
     this.startedAt,
     this.endedAt,
   });
@@ -51,6 +54,9 @@ class MemberCoachRelationship {
       id: json['id'] as String,
       coachId: json['coachId'] as String,
       status: json['status'] as String,
+      coachName: json['coachName'] as String?,
+      coachAvatarUrl: json['coachAvatarUrl'] as String?,
+      pauseReason: json['pauseReason'] as String?,
       startedAt: json['startedAt'] as String?,
       endedAt: json['endedAt'] as String?,
     );
@@ -59,12 +65,18 @@ class MemberCoachRelationship {
   final String id;
   final String coachId;
   final String status;
+  final String? coachName;
+  final String? coachAvatarUrl;
+  final String? pauseReason;
   final String? startedAt;
   final String? endedAt;
 
   String get statusLabel => switch (status) {
     'ACTIVE' => 'Đang hoạt động',
-    'PAUSED' => 'Tạm dừng',
+    'PAUSED' =>
+      pauseReason == 'COACH_LOCKED'
+          ? 'Coach đang tạm khóa'
+          : 'Tạm ngưng do Gym hết hạn',
     'ENDED' => 'Đã kết thúc',
     _ => status,
   };

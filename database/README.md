@@ -35,6 +35,8 @@ Chạy các file `*.up.sql` theo thứ tự:
 19. `0019_backfill_member_journal.up.sql`
 20. `0020_gym_checkins.up.sql`
 21. `0021_member_self_training_days.up.sql`
+22. `0022_member_health_declaration.up.sql`
+23. `0023_coach_outcomes.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 
@@ -51,7 +53,8 @@ Rollback chạy các file `*.down.sql` theo thứ tự ngược lại.
 
 Git chỉ đồng bộ mã nguồn và migration, không chuyển dữ liệu PostgreSQL hay ảnh đã tải lên. Trước khi nâng cấp một database đang dùng, sao lưu bằng `pg_dump --format=custom`; giữ `DATABASE_URL` trong cấu hình riêng của từng máy.
 
-- **Đã chạy đến `0020`:** chỉ chạy `0021_member_self_training_days.up.sql`, rồi chạy `database/tests/schema_assertions.sql`.
+- **Đã chạy đến `0021`:** sao lưu database, rồi chạy `0022_member_health_declaration.up.sql` và `database/tests/schema_assertions.sql`.
+- **Đã chạy đến `0020`:** chạy `0021_member_self_training_days.up.sql`, sau đó `0022_member_health_declaration.up.sql` và schema assertions.
 - **Đã chạy V2 đến `0019`:** chạy `0020_gym_checkins.up.sql` rồi `0021_member_self_training_days.up.sql`, sau đó chạy schema assertions.
 - **Database từ `main` cũ (đến `0008_daily_training_meals`):** chạy các file `0008_member_journal.up.sql` đến `0021_member_self_training_days.up.sql` theo tên tăng dần. `0018_daily_training_meals` tương thích với bảng ngày tập và bữa ăn của bản cũ. Sau đó chạy schema assertions.
 - **Database mới hoàn toàn:** chạy toàn bộ migration `*.up.sql` theo thứ tự, rồi baseline seed và schema assertions.

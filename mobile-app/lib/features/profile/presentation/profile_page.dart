@@ -11,6 +11,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/member_health_declaration_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/training/presentation/gym_visits_page.dart';
@@ -72,12 +73,12 @@ class _ProfilePageState extends State<ProfilePage> {
   // Trường dành cho Hội viên (`member_profiles`)
   String _dateOfBirth = '1999-08-15';
   String _gender = 'MALE';
-  double _heightCm = 174;
-  String _fitnessGoal = 'Tăng cơ giảm mỡ · Duy trì 4 buổi/tuần';
+  double _heightCm = 0;
+  String _fitnessGoal = '';
   String _experienceLevel = 'INTERMEDIATE';
   String _activityLevel = 'MODERATE';
-  String _healthNotes = 'Huyết áp ổn định, không bệnh nền';
-  String _injuryNotes = 'Lưu ý nhẹ khớp vai phải khi đẩy nặng';
+  String _healthNotes = '';
+  String _injuryNotes = '';
   String _dietaryPreferences = 'Ưu tiên đạm cao (~150g/ngày), hạn chế đường';
 
   // Trường dành cho Huấn luyện viên (`coach_profiles`)
@@ -276,10 +277,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (gender != null && gender.trim().isNotEmpty) _gender = gender.trim();
 
       final height = p['heightCm'];
-      if (height is num && height > 0) _heightCm = height.toDouble();
+      _heightCm = height is num && height > 0 ? height.toDouble() : 0;
 
       final goal = p['fitnessGoal'] as String?;
-      if (goal != null && goal.trim().isNotEmpty) _fitnessGoal = goal.trim();
+      _fitnessGoal = goal?.trim() ?? '';
 
       final exp = p['experienceLevel'] as String?;
       if (exp != null && exp.trim().isNotEmpty) _experienceLevel = exp.trim();
@@ -288,14 +289,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (act != null && act.trim().isNotEmpty) _activityLevel = act.trim();
 
       final health = p['healthNotes'] as String?;
-      if (health != null && health.trim().isNotEmpty) {
-        _healthNotes = health.trim();
-      }
+      _healthNotes = health?.trim() ?? '';
 
       final injury = p['injuryNotes'] as String?;
-      if (injury != null && injury.trim().isNotEmpty) {
-        _injuryNotes = injury.trim();
-      }
+      _injuryNotes = injury?.trim() ?? '';
 
       final diet = p['dietaryPreferences'] as String?;
       if (diet != null && diet.trim().isNotEmpty) {
@@ -544,6 +541,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildTrainingProfileMenuCard(),
                   const SizedBox(height: 10),
                   _buildHealthMenuCard(),
+                  if (_role == UserRole.member) ...[
+                    const SizedBox(height: 10),
+                    _buildCoachDeclarationMenuCard(),
+                  ],
                   const SizedBox(height: 18),
 
                   // 2. HOẠT ĐỘNG & DỊCH VỤ (5 thẻ với Member / 3 thẻ với Coach)
@@ -1253,7 +1254,9 @@ class _ProfilePageState extends State<ProfilePage> {
             : 'Thể trạng & Mục tiêu tập luyện',
         subtitle: _role == UserRole.coach
             ? '$_experienceYears năm kinh nghiệm · ${_specialties.length} chuyên môn'
-            : '${_heightCm.round()} cm · $_fitnessGoal',
+            : _heightCm > 0
+                ? '${_heightCm.round()} cm · ${_fitnessGoal.isEmpty ? 'Chưa có mục tiêu' : _fitnessGoal}'
+                : 'Chưa khai báo thể trạng',
         onTap: _role == UserRole.coach
             ? _openCoachProfilePage
             : _openTrainingProfilePage,
@@ -1282,6 +1285,21 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  Widget _buildCoachDeclarationMenuCard() => _DashboardGlassCard(
+    child: _ProfileMenuTile(
+      icon: Icons.monitor_heart_outlined,
+      title: 'Khai báo thể trạng cho Coach',
+      subtitle: 'Chiều cao, cân nặng, bệnh nền và chấn thương',
+      badge: 'Riêng tư',
+      onTap: () async {
+        final saved = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(builder: (_) => const MemberHealthDeclarationPage()),
+        );
+        if (saved == true && mounted) await _reloadProfile();
+      },
+    ),
+  );
 
   Widget _buildSecurityMenuCard() {
     return _DashboardGlassCard(

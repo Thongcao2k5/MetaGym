@@ -125,7 +125,7 @@ void main() {
     // Quick access Coach opens CoachSelectionPage
     await tester.tap(find.text('Coach'));
     await tester.pumpAndSettle();
-    expect(find.text('Chọn Coach', findRichText: true), findsWidgets);
+    expect(find.text('Khám phá Coach', findRichText: true), findsWidgets);
     expect(find.byType(CoachSelectionPage), findsOneWidget);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
     await tester.pageBack();

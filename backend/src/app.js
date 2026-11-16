@@ -14,6 +14,7 @@ import { createCoachPaymentHoldsRouter } from './routes/coach-payment-holds.rout
 import { createCoachBookingsRouter } from './routes/coach-bookings.routes.js';
 import { createPaymentsRouter } from './routes/payments.routes.js';
 import { createCoachingRouter } from './routes/coaching.routes.js';
+import { createCoachOutcomesRouter } from './routes/coach-outcomes.routes.js';
 import { createCatalogRouter } from './routes/catalog.routes.js';
 import { createTrainingRouter } from './routes/training.routes.js';
 import { retireLegacyWrites } from './routes/legacy-v1.routes.js';
@@ -117,6 +118,7 @@ export function createApp({
   app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider }));
   app.use('/api/v1', createPaymentsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachingRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachOutcomesRouter({ database, jwtSecret, imageStorage }));
 
   return app;
 }
