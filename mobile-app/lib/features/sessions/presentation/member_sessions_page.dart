@@ -56,17 +56,16 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
 
   void _openCoachBooking() {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => widget.coachBooking ?? const CoachBookingPage()),
+      MaterialPageRoute(
+        builder: (_) => widget.coachBooking ?? const CoachBookingPage(),
+      ),
     );
   }
 
   void _openDetail(TrainingSession session) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => _SessionDetailPage(
-          service: _service!,
-          id: session.id,
-        ),
+        builder: (_) => _SessionDetailPage(service: _service!, id: session.id),
       ),
     );
   }
@@ -103,10 +102,7 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                 SizedBox(height: 2),
                 Text(
                   'Lịch tự tập & buổi tập với Coach',
-                  style: TextStyle(
-                    color: Color(0xFFBCB5AE),
-                    fontSize: 11.5,
-                  ),
+                  style: TextStyle(color: Color(0xFFBCB5AE), fontSize: 11.5),
                 ),
               ],
             ),
@@ -176,21 +172,22 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
         children: [
           Icon(icon, size: 16, color: MetaGymTheme.brandOrange),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFFC6BBB3),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFFC6BBB3),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Color(0xFF8C7B6C),
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Color(0xFF8C7B6C), fontSize: 12),
           ),
         ],
       ),
@@ -203,7 +200,9 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
     final filteredSessions = _sessions.where((session) {
       if (_currentTab == _SessionsTab.all) return true;
       final start = DateTime.tryParse(session.scheduledStartAt)?.toLocal();
-      final isUpcoming = session.status == 'SCHEDULED' && (start == null || start.isAfter(now));
+      final isUpcoming =
+          session.status == 'SCHEDULED' &&
+          (start == null || start.isAfter(now));
       if (_currentTab == _SessionsTab.upcoming) return isUpcoming;
       return !isUpcoming;
     }).toList();
@@ -226,7 +225,9 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                 Expanded(
                   child: _loading
                       ? const Center(
-                          child: CircularProgressIndicator(color: MetaGymTheme.brandOrange),
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.brandOrange,
+                          ),
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
@@ -242,15 +243,19 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                 padding: const EdgeInsets.all(16),
                                 margin: const EdgeInsets.only(bottom: 16),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     Row(
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(10),
                                           decoration: BoxDecoration(
-                                            color: MetaGymTheme.brandOrange.withValues(alpha: 0.18),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: MetaGymTheme.brandOrange
+                                                .withValues(alpha: 0.18),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: const Icon(
                                             Icons.calendar_month_rounded,
@@ -261,7 +266,8 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                         const SizedBox(width: 12),
                                         const Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Lịch tập với Coach',
@@ -287,18 +293,29 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                     const SizedBox(height: 14),
                                     FilledButton.icon(
                                       style: FilledButton.styleFrom(
-                                        backgroundColor: MetaGymTheme.brandOrange,
+                                        backgroundColor:
+                                            MetaGymTheme.brandOrange,
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                       onPressed: _openCoachBooking,
-                                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                                      icon: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 18,
+                                      ),
                                       label: const Text(
                                         'Đặt lịch tập với Coach',
-                                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -320,7 +337,9 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                   decoration: BoxDecoration(
                                     color: const Color(0x33FF453A),
                                     borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: const Color(0x66FF453A)),
+                                    border: Border.all(
+                                      color: const Color(0x66FF453A),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
@@ -351,11 +370,18 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                 ),
                               ] else if (_sessions.isEmpty)
                                 const MetaGymGlassCard(
-                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 32,
+                                  ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.event_busy_rounded, color: Color(0xFF8C7B6C), size: 36),
+                                      Icon(
+                                        Icons.event_busy_rounded,
+                                        color: Color(0xFF8C7B6C),
+                                        size: 36,
+                                      ),
                                       SizedBox(height: 12),
                                       Text(
                                         'Bạn chưa có buổi tập nào.',
@@ -384,7 +410,10 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                   child: Center(
                                     child: Text(
                                       'Không có buổi tập nào trong mục này.',
-                                      style: TextStyle(color: Color(0xFFBCB5AE), fontSize: 13),
+                                      style: TextStyle(
+                                        color: Color(0xFFBCB5AE),
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -401,8 +430,10 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                           Container(
                                             padding: const EdgeInsets.all(10),
                                             decoration: BoxDecoration(
-                                              color: MetaGymTheme.brandOrange.withValues(alpha: 0.18),
-                                              borderRadius: BorderRadius.circular(12),
+                                              color: MetaGymTheme.brandOrange
+                                                  .withValues(alpha: 0.18),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                             child: const Icon(
                                               Icons.fitness_center_rounded,
@@ -413,7 +444,8 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                           const SizedBox(width: 14),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   session.title,
@@ -555,7 +587,9 @@ class _SessionDetailPageState extends State<_SessionDetailPage> {
         SafeArea(
           child: _loading
               ? const Center(
-                  child: CircularProgressIndicator(color: MetaGymTheme.brandOrange),
+                  child: CircularProgressIndicator(
+                    color: MetaGymTheme.brandOrange,
+                  ),
                 )
               : RefreshIndicator(
                   color: MetaGymTheme.brandOrange,
@@ -613,7 +647,8 @@ class _SessionDetailPageState extends State<_SessionDetailPage> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.2),
+                                      color: MetaGymTheme.brandOrange
+                                          .withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: const Icon(
@@ -648,7 +683,9 @@ class _SessionDetailPageState extends State<_SessionDetailPage> {
                                 icon: Icons.schedule_rounded,
                                 iconColor: MetaGymTheme.reflectionBlue,
                                 label: 'Bắt đầu · Giờ địa phương',
-                                value: formatSessionLocalTime(session.scheduledStartAt),
+                                value: formatSessionLocalTime(
+                                  session.scheduledStartAt,
+                                ),
                               ),
                               if (session.scheduledEndAt case final end?)
                                 _detailRow(
@@ -664,7 +701,8 @@ class _SessionDetailPageState extends State<_SessionDetailPage> {
                                   label: 'Ghi chú',
                                   value: session.notes!,
                                 ),
-                              if (session.cancellationReason?.isNotEmpty ?? false)
+                              if (session.cancellationReason?.isNotEmpty ??
+                                  false)
                                 _detailRow(
                                   icon: Icons.cancel_outlined,
                                   iconColor: const Color(0xFFFF6961),
@@ -704,7 +742,10 @@ class _SessionDetailPageState extends State<_SessionDetailPage> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: Color(0xFFBCB5AE), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFFBCB5AE),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(

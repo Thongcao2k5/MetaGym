@@ -1,0 +1,401 @@
+import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_muscle_anatomy_tile.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
+
+DateTime _gymTime(DateTime time) => time.toUtc().add(const Duration(hours: 7));
+
+String _hhmm(DateTime time) => time.toIso8601String().substring(11, 16);
+
+String _ddmmyyyy(DateTime time) =>
+    '${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}/${time.year}';
+
+String formatMemberBookingWindow(
+  String startsAtStr, {
+  String? endsAtStr,
+  required DateTime now,
+}) {
+  final start = _gymTime(DateTime.parse(startsAtStr));
+  final end = endsAtStr != null
+      ? _gymTime(DateTime.parse(endsAtStr))
+      : start.add(const Duration(minutes: 90));
+  final today = _gymTime(now);
+  final startDay = DateTime(start.year, start.month, start.day);
+  final todayDay = DateTime(today.year, today.month, today.day);
+  final diffDays = startDay.difference(todayDay).inDays;
+  final prefix = switch (diffDays) {
+    0 => 'Hôm nay',
+    1 => 'Ngày mai',
+    _ => _ddmmyyyy(start),
+  };
+  return '$prefix · ${_hhmm(start)} – ${_hhmm(end)}';
+}
+
+/// Member booking card displaying curriculum muscle focus, time range, and actions.
+class CoachMemberBookingCard extends StatelessWidget {
+  const CoachMemberBookingCard({
+    required this.booking,
+    required this.isUpcoming,
+    required this.now,
+    required this.primaryTitle,
+    this.matchedDay,
+    this.canReschedule = false,
+    this.busy = false,
+    this.onOpenCurriculum,
+    this.onCancel,
+    this.onReschedule,
+    super.key,
+  });
+
+  final CoachRecord booking;
+  final bool isUpcoming;
+  final DateTime now;
+  final String primaryTitle;
+  final TrainingDay? matchedDay;
+  final bool canReschedule;
+  final bool busy;
+  final VoidCallback? onOpenCurriculum;
+  final VoidCallback? onCancel;
+  final VoidCallback? onReschedule;
+
+  bool get _isToday {
+    if (!isUpcoming) return false;
+    final start = _gymTime(DateTime.parse(booking['startsAt'] as String));
+    final today = _gymTime(now);
+    return start.year == today.year &&
+        start.month == today.month &&
+        start.day == today.day;
+  }
+
+  Widget _buildStatusChip(String status, Object? chargedAt) {
+    return switch (status) {
+      'BOOKED' => const CoachingPill(
+        label: 'Đã đặt',
+        tone: CoachingPillTone.coral,
+      ),
+      'COMPLETED' => const CoachingPill(
+        label: 'Đã hoàn thành',
+        tone: CoachingPillTone.green,
+      ),
+      'CANCELLED' when chargedAt != null => const CoachingPill(
+        label: 'Đã hủy · Đã trừ lượt',
+        tone: CoachingPillTone.amber,
+      ),
+      _ => const CoachingPill(label: 'Đã hủy', tone: CoachingPillTone.neutral),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final startsAtStr = booking['startsAt'] as String;
+    final endsAtStr = booking['endsAt'] as String?;
+    final startsAt = DateTime.tryParse(startsAtStr);
+    final status = booking['status'] as String;
+    final reason = booking['reason'] as String?;
+    final chargedAt = booking['chargedAt'];
+    final hasCurriculum = matchedDay != null;
+    final focuses = hasCurriculum
+        ? resolveCoachMuscleFocusSet(
+            matchedDay!.title,
+            exerciseNames: matchedDay!.exercises
+                .map((exercise) => exercise.exerciseName)
+                .toList(),
+          )
+        : const <CoachMuscleFocus>{};
+    final timeLabel = formatMemberBookingWindow(
+      startsAtStr,
+      endsAtStr: endsAtStr,
+      now: now,
+    );
+    final showActions =
+        status == 'BOOKED' &&
+        isUpcoming &&
+        startsAt != null &&
+        startsAt.isAfter(now);
+
+    final mainRow = hasCurriculum
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CoachMuscleAnatomyTile(focuses: focuses, isUpcoming: isUpcoming),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            timeLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _isToday
+                                  ? const Color(0xFFFF9B82)
+                                  : const Color(0xFFC9D0DB),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusChip(status, chargedAt),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      primaryTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.menu_book_rounded,
+                            size: 13,
+                            color: MetaGymTheme.brandOrange,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'Giáo án · ${matchedDay!.exercises.length} bài tập',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFFC9D0DB),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 14,
+                            color: MetaGymTheme.textSecondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )
+        : Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isUpcoming
+                      ? MetaGymTheme.brandOrange.withValues(alpha: 0.16)
+                      : MetaGymTheme.elevatedSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.fitness_center_rounded,
+                  color: isUpcoming
+                      ? MetaGymTheme.brandOrange
+                      : MetaGymTheme.textSecondary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      timeLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _isToday
+                            ? const Color(0xFFFF9B82)
+                            : MetaGymTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      primaryTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildStatusChip(status, chargedAt),
+            ],
+          );
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: MetaGymTheme.cardSurface,
+        gradient: _isToday
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  MetaGymTheme.brandOrange.withValues(alpha: 0.11),
+                  MetaGymTheme.cardSurface,
+                ],
+                stops: const [0, 0.56],
+              )
+            : null,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _isToday
+              ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+              : MetaGymTheme.cardBorder,
+        ),
+      ),
+      child: Stack(
+        children: [
+          if (_isToday)
+            Positioned(
+              left: 0,
+              top: 14,
+              bottom: 14,
+              child: Container(
+                width: 3,
+                decoration: const BoxDecoration(
+                  color: MetaGymTheme.brandOrange,
+                  borderRadius: BorderRadius.horizontal(
+                    right: Radius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (onOpenCurriculum != null)
+                  InkWell(
+                    onTap: onOpenCurriculum,
+                    borderRadius: BorderRadius.circular(12),
+                    child: mainRow,
+                  )
+                else
+                  mainRow,
+                if (reason != null && reason.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do: $reason',
+                    style: const TextStyle(
+                      color: Color(0xFFC4C8CE),
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                if (showActions) ...[
+                  const SizedBox(height: 12),
+                  const Divider(color: Color(0x14FFFFFF), height: 1),
+                  const SizedBox(height: 11),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 44),
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.14),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                          onPressed: busy ? null : onCancel,
+                          child: const Text(
+                            'Hủy buổi',
+                            style: TextStyle(
+                              color: Color(0xFFE08C87),
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (canReschedule) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 44),
+                              backgroundColor: MetaGymTheme.elevatedSurface,
+                              foregroundColor: MetaGymTheme.textPrimary,
+                              side: BorderSide(
+                                color: MetaGymTheme.brandOrange.withValues(
+                                  alpha: 0.45,
+                                ),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                            ),
+                            onPressed: busy ? null : onReschedule,
+                            icon: const Icon(
+                              Icons.schedule_rounded,
+                              size: 15,
+                              color: MetaGymTheme.brandOrange,
+                            ),
+                            label: const Text(
+                              'Đổi giờ',
+                              style: TextStyle(
+                                color: MetaGymTheme.textPrimary,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

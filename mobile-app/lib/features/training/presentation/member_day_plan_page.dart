@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
@@ -78,6 +79,10 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
       'CANCELLED' || 'MEMBER_ABSENT' => MetaGymTheme.warningAmber,
       _ => MetaGymTheme.progressGreen,
     };
+    final focuses = resolveMuscleFocusSet(
+      widget.day.title,
+      exerciseNames: widget.day.exercises.map((e) => e.exerciseName).toList(),
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Kế hoạch trong ngày')),
       body: Stack(
@@ -96,37 +101,58 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (widget.planTitle?.isNotEmpty == true) ...[
-                      Text(
-                        'GIÁO TRÌNH · ${widget.planTitle}',
-                        style: const TextStyle(
-                          color: MetaGymTheme.darkTextSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        MuscleAnatomyTile(
+                          focuses: focuses,
+                          width: 56,
+                          height: 66,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Text(
-                      dateLabel,
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.day.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      status,
-                      style: TextStyle(color: statusColor, fontSize: 13),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.planTitle?.isNotEmpty == true) ...[
+                                Text(
+                                  'GIÁO TRÌNH · ${widget.planTitle}',
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.darkTextSecondary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                              ],
+                              Text(
+                                dateLabel,
+                                style: const TextStyle(
+                                  color: MetaGymTheme.brandOrange,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.day.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                status,
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     if (widget.day.notes?.isNotEmpty == true) ...[
                       const SizedBox(height: 10),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
@@ -641,6 +642,10 @@ class _MemberCurriculumDetailPageState
       );
     }
     final day = days[_day];
+    final dayFocuses = resolveMuscleFocusSet(
+      day.title,
+      exerciseNames: day.exercises.map((e) => e.exerciseName).toList(),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -667,33 +672,51 @@ class _MemberCurriculumDetailPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Ngày ${day.dayNumber} trong giáo án',
-                  style: const TextStyle(
-                    color: MetaGymTheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  day.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (day.scheduledDate != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Lịch: ${_date(day.scheduledDate!)}',
-                    style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
-                      fontSize: 12,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    MuscleAnatomyTile(
+                      focuses: dayFocuses,
+                      width: 52,
+                      height: 62,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ngày ${day.dayNumber} trong giáo án',
+                            style: const TextStyle(
+                              color: MetaGymTheme.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            day.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (day.scheduledDate != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Lịch: ${_date(day.scheduledDate!)}',
+                              style: const TextStyle(
+                                color: MetaGymTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 if (day.notes?.trim().isNotEmpty == true) ...[
                   const SizedBox(height: 12),
                   _note(day.notes!),

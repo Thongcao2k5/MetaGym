@@ -3,8 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
@@ -15,6 +17,9 @@ import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
+import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
+import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
+import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_self_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/training_history_page.dart';
@@ -42,6 +47,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   MembershipController? _membership;
   MemberCoachingService? _coaching;
   MemberCoachRelationship? _relationship;
+  MemberSelfTrainingDay? _todaySelfPlan;
+  String? _todaySelfIconKey;
   String? _coachName;
   String? _error;
   bool _loading = true;
@@ -59,6 +66,12 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   Future<void> _load() async {
+    ApiClient? apiClient;
+    try {
+      apiClient = context.read<ApiClient>();
+    } catch (_) {
+      apiClient = null;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -77,9 +90,33 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
           // The relationship is still useful if the public Coach list is offline.
         }
       }
+      MemberSelfTrainingDay? todaySelfPlan;
+      String? todaySelfIconKey;
+      if (apiClient != null) {
+        try {
+          final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
+          final todayStr =
+              '${vnNow.year.toString().padLeft(4, '0')}-${vnNow.month.toString().padLeft(2, '0')}-${vnNow.day.toString().padLeft(2, '0')}';
+          final results = await Future.wait([
+            MemberSelfTrainingApi(apiClient).getRange(todayStr, todayStr),
+            SelfTrainingIconStore().loadAll(),
+          ]);
+          final plans = results[0] as List<MemberSelfTrainingDay>;
+          final icons = results[1] as Map<String, String>;
+          todaySelfPlan = plans.firstOrNull;
+          if (todaySelfPlan != null) {
+            todaySelfIconKey =
+                icons[todaySelfPlan.planDate] ?? todaySelfPlan.iconKey;
+          }
+        } catch (_) {
+          // Optional summary enhancement; hub remains usable without self-plan API.
+        }
+      }
       if (!mounted) return;
       setState(() {
         _relationship = relationship;
+        _todaySelfPlan = todaySelfPlan;
+        _todaySelfIconKey = todaySelfIconKey;
         _coachName = coachName;
       });
     } catch (_) {
@@ -387,7 +424,27 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                         iconColor: const Color(0xFF5CBEFF),
                         locked: false,
                         title: 'Lịch tập của tôi',
-                        detail: 'Tự lên lịch theo tuần hoặc tháng',
+                        leadingTile: _todaySelfPlan == null
+                            ? null
+                            : MuscleAnatomyTile(
+                                focuses: resolveMuscleFocusSet(
+                                  _todaySelfPlan!.title,
+                                  exerciseNames: _todaySelfPlan!.exercises
+                                      .map((e) => e.name)
+                                      .toList(),
+                                  explicitKey: _todaySelfIconKey,
+                                ),
+                                width: 42,
+                                height: 48,
+                              ),
+                        detail: _todaySelfPlan == null
+                            ? 'Tự lên lịch theo tuần hoặc tháng'
+                            : [
+                                'Hôm nay',
+                                if (_todaySelfPlan!.startTime != null)
+                                  _todaySelfPlan!.startTime!,
+                                _todaySelfPlan!.title,
+                              ].join(' · '),
                         actionLabel: 'Mở',
                         onTap: () => _open(const MemberSelfTrainingPage()),
                       ),
@@ -738,12 +795,14 @@ class _FeatureRow extends StatelessWidget {
     required this.detail,
     required this.actionLabel,
     required this.onTap,
+    this.leadingTile,
   });
   final IconData icon;
   final Color iconColor;
   final bool locked;
   final String title, detail, actionLabel;
   final VoidCallback onTap;
+  final Widget? leadingTile;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -798,75 +857,76 @@ class _FeatureRow extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color.lerp(
-                                iconColor,
-                                const Color(0xFF181411),
-                                locked ? 0.68 : 0.62,
-                              )!,
-                              Color.lerp(
-                                iconColor,
-                                const Color(0xFF181411),
-                                locked ? 0.83 : 0.78,
-                              )!,
-                            ],
-                          ),
-                          border: Border.all(
-                            color: iconColor.withValues(
-                              alpha: locked ? 0.65 : 0.9,
-                            ),
-                          ),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: Alignment.center,
-                              child: Padding(
-                                padding: EdgeInsets.only(
-                                  right: locked ? 5 : 0,
-                                  bottom: locked ? 4 : 0,
-                                ),
-                                child: Icon(
-                                  icon,
-                                  size: 22,
-                                  color: iconColor.withValues(
-                                    alpha: locked ? 0.8 : 1,
-                                  ),
+                      leadingTile ??
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color.lerp(
+                                    iconColor,
+                                    const Color(0xFF181411),
+                                    locked ? 0.68 : 0.62,
+                                  )!,
+                                  Color.lerp(
+                                    iconColor,
+                                    const Color(0xFF181411),
+                                    locked ? 0.83 : 0.78,
+                                  )!,
+                                ],
+                              ),
+                              border: Border.all(
+                                color: iconColor.withValues(
+                                  alpha: locked ? 0.65 : 0.9,
                                 ),
                               ),
+                              borderRadius: BorderRadius.circular(11),
                             ),
-                            if (locked)
-                              Positioned(
-                                right: 1,
-                                bottom: 1,
-                                child: Container(
-                                  width: 18,
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF322B29),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFE5C1AE),
+                            child: Stack(
+                              children: [
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: locked ? 5 : 0,
+                                      bottom: locked ? 4 : 0,
+                                    ),
+                                    child: Icon(
+                                      icon,
+                                      size: 22,
+                                      color: iconColor.withValues(
+                                        alpha: locked ? 0.8 : 1,
+                                      ),
                                     ),
                                   ),
-                                  child: const Icon(
-                                    Icons.lock_rounded,
-                                    size: 11,
-                                    color: Color(0xFFFFE7DA),
-                                  ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
+                                if (locked)
+                                  Positioned(
+                                    right: 1,
+                                    bottom: 1,
+                                    child: Container(
+                                      width: 18,
+                                      height: 18,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF322B29),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(0xFFE5C1AE),
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.lock_rounded,
+                                        size: 11,
+                                        color: Color(0xFFFFE7DA),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                       const SizedBox(width: 9),
                       Expanded(
                         child: Column(

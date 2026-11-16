@@ -1,0 +1,160 @@
+import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_card.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
+
+/// Dedicated history view for Member's completed and cancelled Coach sessions.
+class CoachBookingHistoryPage extends StatelessWidget {
+  const CoachBookingHistoryPage({
+    required this.bookings,
+    required this.matchPlanDay,
+    required this.onOpenPlanDay,
+    super.key,
+  });
+
+  final List<CoachRecord> bookings;
+  final TrainingDay? Function(String startsAt) matchPlanDay;
+  final void Function(TrainingDay? day) onOpenPlanDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    return Scaffold(
+      backgroundColor: MetaGymTheme.darkCanvas,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                  child: Row(
+                    children: [
+                      MetaGymCircleIconButton(
+                        icon: Icons.arrow_back_rounded,
+                        tooltip: 'Quay lại',
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Lịch sử buổi tập',
+                              style: TextStyle(
+                                color: Color(0xFFF6F3F0),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Các buổi đã tập & đã hủy với Coach',
+                              style: TextStyle(
+                                color: Color(0xFFBCB5AE),
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.history_rounded,
+                              color: MetaGymTheme.brandOrange,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Các buổi đã tập & đã hủy',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${bookings.length} buổi',
+                              style: const TextStyle(
+                                color: MetaGymTheme.textSecondary,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (bookings.isEmpty)
+                        const CoachingGraphiteCard(
+                          padding: EdgeInsets.all(20),
+                          child: Center(
+                            child: Text(
+                              'Chưa có lịch sử buổi tập với Coach.',
+                              style: TextStyle(
+                                color: MetaGymTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        for (final booking in bookings) ...[
+                          Builder(
+                            builder: (context) {
+                              final matchedDay = matchPlanDay(
+                                booking['startsAt'] as String,
+                              );
+                              final coachName = booking['coachName'] as String?;
+                              return CoachMemberBookingCard(
+                                booking: booking,
+                                isUpcoming: false,
+                                now: now,
+                                primaryTitle:
+                                    matchedDay?.title ??
+                                    (coachName != null &&
+                                            coachName.trim().isNotEmpty
+                                        ? coachName.trim()
+                                        : 'Huấn luyện viên'),
+                                matchedDay: matchedDay,
+                                onOpenCurriculum: matchedDay != null
+                                    ? () => onOpenPlanDay(matchedDay)
+                                    : null,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

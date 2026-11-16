@@ -23,7 +23,6 @@ import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
-import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
@@ -174,7 +173,7 @@ GoRouter createAppRouter({
               : destination.path == '/member/features/nutrition'
               ? const MemberNutritionPage(structured: true)
               : destination.path == '/member/features/sessions'
-              ? const MemberSessionsPage(coachBooking: CoachBookingPage())
+              ? const CoachBookingPage()
               : destination.path == '/member/features/progress'
               ? const MemberProgressPage()
               : destination.path == '/member/features/workouts'

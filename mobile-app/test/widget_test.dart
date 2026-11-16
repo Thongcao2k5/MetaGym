@@ -38,7 +38,7 @@ import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart
 import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
-import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
@@ -175,9 +175,9 @@ void main() {
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/sessions');
     await tester.pumpAndSettle();
-    expect(find.byType(MemberSessionsPage), findsOneWidget);
-    expect(find.text('Bạn chưa có buổi tập nào.'), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(MemberSessionsPage))).go('/member');
+    expect(find.byType(CoachBookingPage), findsOneWidget);
+    expect(find.text('Lịch Coach'), findsOneWidget);
+    GoRouter.of(tester.element(find.byType(CoachBookingPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/progress');

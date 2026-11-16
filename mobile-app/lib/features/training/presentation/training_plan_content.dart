@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 
 class TrainingPlanContent extends StatelessWidget {
@@ -161,171 +162,187 @@ class TrainingPlanContent extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Day by Day details
-        for (final day in plan.days) ...[
-          Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: MetaGymTheme.darkSurface,
-              borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-              border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Day header
-                Row(
+        for (final day in plan.days)
+          Builder(
+            builder: (context) {
+              final dayFocuses = resolveMuscleFocusSet(
+                day.title,
+                exerciseNames: day.exercises
+                    .map((exercise) => exercise.exerciseName)
+                    .toList(),
+              );
+              return Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: MetaGymTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                  border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0x1FA9C7E8),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0x3DA9C7E8)),
-                      ),
-                      child: Text(
-                        'Buổi ${day.dayNumber}',
-                        style: const TextStyle(
-                          color: MetaGymTheme.reflectionBlue,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: MetaGymTheme.fontFamily,
+                    // Day header
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        MuscleAnatomyTile(
+                          focuses: dayFocuses,
+                          width: 34,
+                          height: 40,
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Ngày ${day.dayNumber}: ${day.title}',
-                        style: const TextStyle(
-                          color: MetaGymTheme.darkTextPrimary,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: MetaGymTheme.fontFamily,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (day.scheduledDate != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Lịch ngày ${day.scheduledDate!.substring(8, 10)}/${day.scheduledDate!.substring(5, 7)}/${day.scheduledDate!.substring(0, 4)}',
-                    style: const TextStyle(
-                      color: MetaGymTheme.darkTextSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-                if (day.notes?.isNotEmpty == true) ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      day.notes!,
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextTertiary,
-                        fontSize: 13,
-                        fontFamily: MetaGymTheme.fontFamily,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 14),
-
-                if (day.exercises.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.darkSurfaceMid,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Chưa có bài tập.',
-                        style: TextStyle(
-                          color: MetaGymTheme.darkTextTertiary,
-                          fontSize: 14,
-                          fontFamily: MetaGymTheme.fontFamily,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  for (var i = 0; i < day.exercises.length; i++)
-                    _ExerciseCard(exercise: day.exercises[i], index: i + 1),
-                const SizedBox(height: 10),
-                const Text(
-                  'Lịch ăn',
-                  style: TextStyle(
-                    color: MetaGymTheme.darkTextPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (day.meals.isEmpty)
-                  const Text(
-                    'Coach chưa xếp lịch ăn cho ngày này.',
-                    style: TextStyle(
-                      color: MetaGymTheme.darkTextTertiary,
-                      fontSize: 13,
-                    ),
-                  )
-                else
-                  for (final meal in day.meals)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.restaurant_outlined,
-                            size: 18,
-                            color: MetaGymTheme.progressGreen,
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.darkTextSecondary,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                Text(
-                                  meal.title,
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.darkTextPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                if (meal.notes?.isNotEmpty == true)
-                                  Text(
-                                    meal.notes!,
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.darkTextTertiary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                              ],
+                          decoration: BoxDecoration(
+                            color: const Color(0x1FA9C7E8),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0x3DA9C7E8)),
+                          ),
+                          child: Text(
+                            'Buổi ${day.dayNumber}',
+                            style: const TextStyle(
+                              color: MetaGymTheme.reflectionBlue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: MetaGymTheme.fontFamily,
                             ),
                           ),
-                        ],
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Ngày ${day.dayNumber}: ${day.title}',
+                            style: const TextStyle(
+                              color: MetaGymTheme.darkTextPrimary,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: MetaGymTheme.fontFamily,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (day.scheduledDate != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Lịch ngày ${day.scheduledDate!.substring(8, 10)}/${day.scheduledDate!.substring(5, 7)}/${day.scheduledDate!.substring(0, 4)}',
+                        style: const TextStyle(
+                          color: MetaGymTheme.darkTextSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                    if (day.notes?.isNotEmpty == true) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          day.notes!,
+                          style: const TextStyle(
+                            color: MetaGymTheme.darkTextTertiary,
+                            fontSize: 13,
+                            fontFamily: MetaGymTheme.fontFamily,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+
+                    if (day.exercises.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: MetaGymTheme.darkSurfaceMid,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Chưa có bài tập.',
+                            style: TextStyle(
+                              color: MetaGymTheme.darkTextTertiary,
+                              fontSize: 14,
+                              fontFamily: MetaGymTheme.fontFamily,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      for (var i = 0; i < day.exercises.length; i++)
+                        _ExerciseCard(exercise: day.exercises[i], index: i + 1),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Lịch ăn',
+                      style: TextStyle(
+                        color: MetaGymTheme.darkTextPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-              ],
-            ),
+                    const SizedBox(height: 8),
+                    if (day.meals.isEmpty)
+                      const Text(
+                        'Coach chưa xếp lịch ăn cho ngày này.',
+                        style: TextStyle(
+                          color: MetaGymTheme.darkTextTertiary,
+                          fontSize: 13,
+                        ),
+                      )
+                    else
+                      for (final meal in day.meals)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.restaurant_outlined,
+                                size: 18,
+                                color: MetaGymTheme.progressGreen,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.darkTextSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      meal.title,
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.darkTextPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (meal.notes?.isNotEmpty == true)
+                                      Text(
+                                        meal.notes!,
+                                        style: const TextStyle(
+                                          color: MetaGymTheme.darkTextTertiary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                  ],
+                ),
+              );
+            },
           ),
-        ],
       ],
     );
   }

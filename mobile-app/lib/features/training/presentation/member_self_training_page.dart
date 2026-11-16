@@ -3,20 +3,29 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
+import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
 import 'package:provider/provider.dart';
 
 enum _CalendarMode { week, month }
 
 class MemberSelfTrainingPage extends StatefulWidget {
-  const MemberSelfTrainingPage({this.api, this.catalog, super.key});
+  const MemberSelfTrainingPage({
+    this.api,
+    this.catalog,
+    this.iconStore,
+    super.key,
+  });
 
   final MemberSelfTrainingApi? api;
   final CatalogService? catalog;
+  final SelfTrainingIconStore? iconStore;
 
   @override
   State<MemberSelfTrainingPage> createState() => _MemberSelfTrainingPageState();
@@ -26,16 +35,20 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   static const _weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
   late final MemberSelfTrainingApi _api;
   late final CatalogService _catalog;
+  late final SelfTrainingIconStore _iconStore;
   late DateTime _selected = _today;
   final _title = TextEditingController();
   final _notes = TextEditingController();
   final Map<String, MemberSelfTrainingDay> _plans = {};
+  final Map<String, String> _iconKeys = {};
   List<CatalogItem> _exercises = [];
   String? _time;
+  String? _selectedIconKey;
   String? _error;
   bool _loading = true;
   bool _saving = false;
   bool _editing = false;
+  bool _expandedDetails = false;
   bool _ready = false;
   _CalendarMode _mode = _CalendarMode.week;
 
@@ -55,13 +68,22 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     _ready = true;
     _api = widget.api ?? MemberSelfTrainingApi(context.read<ApiClient>());
     _catalog = widget.catalog ?? context.read<CatalogService>();
+    _iconStore = widget.iconStore ?? SelfTrainingIconStore();
+    _title.addListener(_onDraftTitleChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
     });
   }
 
+  void _onDraftTitleChanged() {
+    if (_editing && _selectedIconKey == null && mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    _title.removeListener(_onDraftTitleChanged);
     _title.dispose();
     _notes.dispose();
     super.dispose();
@@ -93,12 +115,20 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     });
     final days = _visibleDays;
     try {
-      final plans = await _api.getRange(_key(days.first), _key(days.last));
+      final results = await Future.wait([
+        _api.getRange(_key(days.first), _key(days.last)),
+        _iconStore.loadAll(),
+      ]);
+      final plans = results[0] as List<MemberSelfTrainingDay>;
+      final storedIcons = results[1] as Map<String, String>;
       if (!mounted) return;
       setState(() {
         _plans
           ..clear()
           ..addEntries(plans.map((plan) => MapEntry(plan.planDate, plan)));
+        _iconKeys
+          ..clear()
+          ..addAll(storedIcons);
       });
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -115,6 +145,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ? _selected.add(Duration(days: 7 * delta))
           : DateTime(_selected.year, _selected.month + delta);
       _editing = false;
+      _expandedDetails = false;
     });
     _load();
   }
@@ -124,6 +155,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     setState(() {
       _mode = mode;
       _editing = false;
+      _expandedDetails = false;
     });
     _load();
   }
@@ -133,6 +165,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     _title.text = plan?.title ?? '';
     _notes.text = plan?.notes ?? '';
     _time = plan?.startTime;
+    _selectedIconKey = _iconKeys[_selectedKey] ?? plan?.iconKey;
     _exercises =
         plan?.exercises
             .map(
@@ -140,7 +173,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             )
             .toList() ??
         [];
-    setState(() => _editing = true);
+    setState(() {
+      _editing = true;
+      _expandedDetails = false;
+    });
   }
 
   Future<void> _chooseTime() async {
@@ -268,10 +304,25 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         notes: _notes.text.trim(),
         exerciseIds: _exercises.map((item) => item.id).toList(),
       );
+      await _iconStore.setIcon(_selectedKey, _selectedIconKey);
       if (!mounted) return;
       setState(() {
-        _plans[_selectedKey] = saved;
+        _plans[_selectedKey] = MemberSelfTrainingDay(
+          id: saved.id,
+          planDate: saved.planDate,
+          title: saved.title,
+          startTime: saved.startTime,
+          notes: saved.notes,
+          iconKey: _selectedIconKey ?? saved.iconKey,
+          exercises: saved.exercises,
+        );
+        if (_selectedIconKey == null || _selectedIconKey!.isEmpty) {
+          _iconKeys.remove(_selectedKey);
+        } else {
+          _iconKeys[_selectedKey] = _selectedIconKey!;
+        }
         _editing = false;
+        _expandedDetails = false;
       });
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Đã lưu lịch tập.')));
@@ -295,10 +346,13 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     setState(() => _saving = true);
     try {
       await _api.delete(_selectedKey);
+      await _iconStore.removeIcon(_selectedKey);
       if (!mounted) return;
       setState(() {
         _plans.remove(_selectedKey);
+        _iconKeys.remove(_selectedKey);
         _editing = false;
+        _expandedDetails = false;
       });
     } catch (_) {
       if (mounted) {
@@ -523,6 +577,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         setState(() {
           _selected = day;
           _editing = false;
+          _expandedDetails = false;
         });
         if (_mode == _CalendarMode.month && monthChanged) _load();
       },
@@ -595,59 +650,183 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         ),
       );
     }
-    return _panel(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+
+    final focuses = resolveMuscleFocusSet(
+      plan.title,
+      exerciseNames: plan.exercises.map((e) => e.name).toList(),
+      explicitKey: _iconKeys[plan.planDate] ?? plan.iconKey,
+    );
+    final metaParts = [
+      if (plan.startTime != null) 'Bắt đầu ${plan.startTime}',
+      '${plan.exercises.length} bài tập',
+    ];
+
+    return CoachingGraphiteCard(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            plan.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
+          InkWell(
+            onTap: () => setState(() => _expandedDetails = !_expandedDetails),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                MuscleAnatomyTile(focuses: focuses, width: 58, height: 68),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        metaParts.join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: MetaGymTheme.brandOrange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        plan.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          if (focuses.isNotEmpty)
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                  ),
+                                ),
+                                child: Text(
+                                  summarizeMuscleFocuses(focuses),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFFC9D0DB),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const Spacer(),
+                          Icon(
+                            _expandedDetails
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            color: MetaGymTheme.textSecondary,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          if (plan.startTime != null) ...[
-            const SizedBox(height: 5),
-            Text(
-              'Bắt đầu ${plan.startTime}',
-              style: const TextStyle(color: Color(0xFFB8B0A8)),
-            ),
-          ],
-          if (plan.exercises.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            for (final exercise in plan.exercises)
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: Text(exercise.name),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _openExercise(exercise),
+          if (_expandedDetails) ...[
+            if (plan.exercises.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Divider(color: Color(0x14FFFFFF), height: 1),
+              const SizedBox(height: 6),
+              for (final exercise in plan.exercises)
+                Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(
+                      exercise.name,
+                      style: const TextStyle(
+                        color: MetaGymTheme.textPrimary,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: MetaGymTheme.textSecondary,
+                    ),
+                    onTap: () => _openExercise(exercise),
+                  ),
+                ),
+            ],
+            if (plan.notes.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                plan.notes,
+                style: const TextStyle(
+                  color: Color(0xFFE4DAD1),
+                  fontSize: 13,
+                  height: 1.5,
                 ),
               ),
-          ],
-          if (plan.notes.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              plan.notes,
-              style: const TextStyle(color: Color(0xFFE4DAD1), height: 1.5),
-            ),
+            ],
           ],
           if (_canEdit) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+            const Divider(color: Color(0x14FFFFFF), height: 1),
+            const SizedBox(height: 10),
             Row(
               children: [
-                OutlinedButton.icon(
-                  onPressed: _startEditing,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Sửa lịch'),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      foregroundColor: MetaGymTheme.textPrimary,
+                      side: BorderSide(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                    ),
+                    onPressed: _startEditing,
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: MetaGymTheme.brandOrange,
+                    ),
+                    label: const Text('Sửa lịch'),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: _saving ? null : _delete,
-                  child: const Text('Xóa lịch'),
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      foregroundColor: const Color(0xFFE08C87),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.14),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                    ),
+                    onPressed: _saving ? null : _delete,
+                    child: const Text('Xóa lịch'),
+                  ),
                 ),
               ],
             ),
@@ -656,6 +835,12 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       ),
     );
   }
+
+  Set<MuscleFocus> get _draftInferredFocuses => resolveMuscleFocusSet(
+    _title.text,
+    exerciseNames: _exercises.map((item) => item.name).toList(),
+    targetMuscles: _exercises.expand((item) => item.targetMuscles).toList(),
+  );
 
   Widget _editPanel() => _panel(
     Column(
@@ -667,6 +852,15 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           decoration: const InputDecoration(labelText: 'Tên buổi tập'),
         ),
         const SizedBox(height: 10),
+        CoachingGraphiteCard(
+          padding: const EdgeInsets.all(12),
+          child: MuscleFocusPicker(
+            selectedKey: _selectedIconKey,
+            inferredTargets: _draftInferredFocuses,
+            onSelected: (value) => setState(() => _selectedIconKey = value),
+          ),
+        ),
+        const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _chooseTime,
           icon: const Icon(Icons.schedule_rounded),

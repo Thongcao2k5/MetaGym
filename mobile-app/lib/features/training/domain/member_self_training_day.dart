@@ -21,6 +21,7 @@ class MemberSelfTrainingDay {
     required this.exercises,
     this.startTime,
     this.notes = '',
+    this.iconKey,
   });
 
   factory MemberSelfTrainingDay.fromJson(Object? value) {
@@ -31,6 +32,7 @@ class MemberSelfTrainingDay {
       title: json['title'] as String,
       startTime: json['startTime'] as String?,
       notes: json['notes'] as String? ?? '',
+      iconKey: json['iconKey'] as String?,
       exercises: (json['exercises'] as List? ?? const [])
           .map(SelfTrainingExercise.fromJson)
           .toList(),
@@ -42,5 +44,6 @@ class MemberSelfTrainingDay {
   final String title;
   final String? startTime;
   final String notes;
+  final String? iconKey;
   final List<SelfTrainingExercise> exercises;
 }

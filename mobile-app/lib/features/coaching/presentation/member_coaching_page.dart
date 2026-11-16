@@ -18,7 +18,6 @@ import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
-import 'package:meta_gym_app/features/sessions/presentation/member_sessions_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:provider/provider.dart';
 
@@ -224,9 +223,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                 } else {
                                   Navigator.of(context).push<void>(
                                     MaterialPageRoute(
-                                      builder: (_) => const MemberSessionsPage(
-                                        coachBooking: CoachBookingPage(),
-                                      ),
+                                      builder: (_) => const CoachBookingPage(),
                                     ),
                                   );
                                 }
