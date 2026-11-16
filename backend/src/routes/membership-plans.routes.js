@@ -163,15 +163,6 @@ export function createMembershipPlansRouter({ database, jwtSecret }) {
         await client.query('ROLLBACK');
         return error(response, 404, 'NOT_FOUND', 'Không tìm thấy gói tập');
       }
-      if ('price' in parsed.data || 'durationDays' in parsed.data) {
-        const used = await client.query(
-          'SELECT 1 FROM payments WHERE plan_id = $1 LIMIT 1', [before.id],
-        );
-        if (used.rows.length) {
-          await client.query('ROLLBACK');
-          return error(response, 409, 'PLAN_ALREADY_PURCHASED', 'Không thể đổi giá hoặc thời hạn của gói đã mua');
-        }
-      }
       const fields = Object.entries({
         name: 'name', description: 'description', price: 'price',
         durationDays: 'duration_days', status: 'status',

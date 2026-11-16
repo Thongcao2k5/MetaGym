@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
@@ -56,13 +57,33 @@ void main() {
     expect(service.idempotencyKeys, hasLength(2));
     expect(service.idempotencyKeys.toSet(), hasLength(2));
     expect(controller.history, hasLength(2));
+    expect(controller.memberships, hasLength(2));
   });
+
+  test(
+    'reuses the payment key when retrying after a network failure',
+    () async {
+      final service = _FakeMembershipService(failFirstPurchase: true);
+      final controller = MembershipController(service);
+      await controller.load();
+
+      expect(await controller.buy(controller.plans.first), isFalse);
+      expect(await controller.buy(controller.plans.first), isTrue);
+      expect(service.idempotencyKeys, hasLength(2));
+      expect(service.idempotencyKeys.toSet(), hasLength(1));
+    },
+  );
 }
 
 class _FakeMembershipService implements MembershipService {
-  _FakeMembershipService({this.confirmFuture});
+  @override
+  Future<MembershipQuote> getQuote(String planId) async =>
+      throw UnimplementedError();
+
+  _FakeMembershipService({this.confirmFuture, this.failFirstPurchase = false});
 
   final Future<PurchaseResult>? confirmFuture;
+  final bool failFirstPurchase;
   int confirmCalls = 0;
   int createCalls = 0;
   final List<String> idempotencyKeys = [];
@@ -91,6 +112,12 @@ class _FakeMembershipService implements MembershipService {
   }) async {
     createCalls += 1;
     idempotencyKeys.add(idempotencyKey);
+    if (failFirstPurchase && createCalls == 1) {
+      throw const ApiException(
+        kind: ApiExceptionKind.network,
+        message: 'Mất kết nối',
+      );
+    }
     return Payment(
       id: 'payment-$createCalls',
       status: 'PENDING',
