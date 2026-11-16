@@ -34,6 +34,14 @@ abstract class AdminService {
     required String planId,
     required String status,
   });
+
+  Future<void> updatePlan({
+    required String planId,
+    required String name,
+    required String description,
+    required int price,
+    required int durationDays,
+  });
 }
 
 class AdminApi implements AdminService {
@@ -146,6 +154,26 @@ class AdminApi implements AdminService {
     await _client.patch<void>(
       '/api/v1/admin/membership-plans/$planId',
       body: {'status': status},
+      decode: (_) {},
+    );
+  }
+
+  @override
+  Future<void> updatePlan({
+    required String planId,
+    required String name,
+    required String description,
+    required int price,
+    required int durationDays,
+  }) async {
+    await _client.patch<void>(
+      '/api/v1/admin/membership-plans/$planId',
+      body: {
+        'name': name.trim(),
+        'description': description.trim().isEmpty ? null : description.trim(),
+        'price': price,
+        'durationDays': durationDays,
+      },
       decode: (_) {},
     );
   }

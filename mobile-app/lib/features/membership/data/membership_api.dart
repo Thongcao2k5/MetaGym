@@ -2,7 +2,7 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 
-class MembershipApi implements MembershipService {
+class MembershipApi implements MembershipService, MembershipCheckoutService {
   const MembershipApi(this._client);
 
   final ApiClient _client;
@@ -10,6 +10,13 @@ class MembershipApi implements MembershipService {
   @override
   Future<List<MembershipPlan>> getPlans() =>
       _list('/membership-plans', MembershipPlan.fromJson);
+
+  @override
+  Future<MembershipQuote> getQuote(String planId) async =>
+      (await _client.get<MembershipQuote>(
+        '/membership-plans/$planId/quote',
+        decode: MembershipQuote.fromJson,
+      )).data;
 
   @override
   Future<Payment> createPayment({
@@ -27,6 +34,25 @@ class MembershipApi implements MembershipService {
       (await _client.post<PurchaseResult>(
         '/payments/$paymentId/mock-confirmations',
         decode: PurchaseResult.fromJson,
+      )).data;
+
+  @override
+  Future<Payment?> getPendingPayment() async {
+    final payments = await _list('/payments/me', Payment.fromJson);
+    return payments.where((payment) => payment.status == 'PENDING').firstOrNull;
+  }
+
+  @override
+  Future<Payment> getPayment(String id) async => (await _client.get<Payment>(
+    '/payments/${Uri.encodeComponent(id)}',
+    decode: Payment.fromJson,
+  )).data;
+
+  @override
+  Future<Payment> cancelPayment(String id) async =>
+      (await _client.post<Payment>(
+        '/payments/${Uri.encodeComponent(id)}/cancellations',
+        decode: Payment.fromJson,
       )).data;
 
   @override

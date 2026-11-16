@@ -171,7 +171,10 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _catalogService = widget.catalogService ?? CatalogApi(_apiClient);
     _catalogController = CatalogController(_catalogService);
     _membershipService = widget.membershipService ?? MembershipApi(_apiClient);
-    _membershipController = MembershipController(_membershipService);
+    _membershipController = MembershipController(
+      _membershipService,
+      session: _sessionController,
+    );
     _coachSelectionService =
         widget.coachSelectionService ?? CoachSelectionApi(_apiClient);
     _coachRequestsService =
