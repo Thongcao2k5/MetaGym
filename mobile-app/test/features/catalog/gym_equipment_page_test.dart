@@ -35,10 +35,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Tạ đơn'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Tạ đơn'), findsOneWidget);
-    await tester.tap(find.byType(DropdownButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cardio').last);
+    final cardio = find.widgetWithText(ChoiceChip, 'Cardio');
+    await tester.ensureVisible(cardio);
+    await tester.tap(cardio);
     await tester.pumpAndSettle();
     expect(find.text('Tạ đơn'), findsNothing);
 
@@ -49,7 +54,7 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
     expect(service.search, 'không có');
-    expect(find.text('Không có thiết bị phù hợp.'), findsOneWidget);
+    expect(find.text('Không có máy phù hợp.'), findsOneWidget);
   });
 
   testWidgets('shows load error and retries', (tester) async {

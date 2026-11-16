@@ -14,8 +14,9 @@ import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_workout_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_self_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/training_history_page.dart';
 import 'package:provider/provider.dart';
 
@@ -195,7 +196,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     } else if (destination == false && isExpired) {
       _open(
         feature == 'nhật ký tập luyện'
-            ? const MemberWorkoutPage()
+            ? const MemberJournalPage()
             : const MemberTrainingPage(),
       );
     }
@@ -223,7 +224,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     if (_currentGym == null) {
       _requirePackage(coach: false, feature: 'nhật ký tập luyện');
     } else {
-      _open(const MemberWorkoutPage());
+      _open(const MemberJournalPage());
     }
   }
 
@@ -374,6 +375,16 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                             ? 'Mở'
                             : 'Đăng ký',
                         onTap: _openPlan,
+                      ),
+                      const SizedBox(height: 10),
+                      _FeatureRow(
+                        icon: Icons.event_note_rounded,
+                        iconColor: const Color(0xFF5CBEFF),
+                        locked: false,
+                        title: 'Lịch tập của tôi',
+                        detail: 'Tự lên lịch theo tuần hoặc tháng',
+                        actionLabel: 'Mở',
+                        onTap: () => _open(const MemberSelfTrainingPage()),
                       ),
                       const SizedBox(height: 10),
                       _FeatureRow(

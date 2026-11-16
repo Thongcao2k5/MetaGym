@@ -45,6 +45,8 @@ dependencies:
   livekit_client: ^2.13.2
   connectivity_plus: ^7.3.2
   supabase: ^2.16.5
+  video_player: 2.14.1
+  youtube_player_iframe: 6.0.2
 
 dev_dependencies:
   flutter_test:

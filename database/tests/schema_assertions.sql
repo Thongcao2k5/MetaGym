@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 48 THEN
-    RAISE EXCEPTION 'Expected 48 public tables, found %', table_count;
+  IF table_count <> 50 THEN
+    RAISE EXCEPTION 'Expected 50 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -32,7 +32,8 @@ DECLARE
     'member_journal_photos', 'coach_package_plans', 'coach_weekly_slots',
     'coach_payment_holds', 'coach_entitlements', 'coach_bookings', 'coach_slot_blocks',
     'coach_notifications', 'nutrition_foods', 'training_plan_day_meals',
-    'gym_checkin_code', 'gym_visits'
+    'gym_checkin_code', 'gym_visits', 'member_self_training_days',
+    'coach_outcome_cases'
   ];
   missing_tables text[];
 BEGIN
@@ -61,7 +62,8 @@ DECLARE
     'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner',
     'ck_direct_conversation_pair', 'ck_coach_package_fixed_terms',
     'ex_coach_weekly_slot_overlap', 'uq_coach_hold_request',
-    'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap'
+    'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap',
+    'uq_member_self_training_day', 'ck_coach_outcome_different_pair'
   ];
   missing_constraints text[];
 BEGIN

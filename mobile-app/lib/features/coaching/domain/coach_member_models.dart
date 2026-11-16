@@ -38,6 +38,10 @@ class CoachMemberDetail extends CoachMemberSummary {
     this.fitnessGoal,
     this.healthNotes,
     this.injuryNotes,
+    this.heightCm,
+    this.weightKg,
+    this.bodyFatPercent,
+    this.healthDeclarationCompletedAt,
   });
 
   factory CoachMemberDetail.fromJson(Object? value) {
@@ -52,6 +56,11 @@ class CoachMemberDetail extends CoachMemberSummary {
       fitnessGoal: member['fitnessGoal'] as String?,
       healthNotes: member['healthNotes'] as String?,
       injuryNotes: member['injuryNotes'] as String?,
+      heightCm: (member['heightCm'] as num?)?.toDouble(),
+      weightKg: (member['weightKg'] as num?)?.toDouble(),
+      bodyFatPercent: (member['bodyFatPercent'] as num?)?.toDouble(),
+      healthDeclarationCompletedAt:
+          member['healthDeclarationCompletedAt'] as String?,
     );
   }
 
@@ -59,6 +68,10 @@ class CoachMemberDetail extends CoachMemberSummary {
   final String? fitnessGoal;
   final String? healthNotes;
   final String? injuryNotes;
+  final double? heightCm;
+  final double? weightKg;
+  final double? bodyFatPercent;
+  final String? healthDeclarationCompletedAt;
 }
 
 class CoachTerminationRequest {

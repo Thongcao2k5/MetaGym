@@ -1,19 +1,18 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_detail_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
-import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
+import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 
 void main() {
-  testWidgets('Member can open a direct chat even when Coach has no slot',
-      (tester) async {
+  testWidgets('Member can open a direct chat even when Coach has no slot', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -21,13 +20,19 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     final messaging = _DirectChatFixture();
-    await tester.pumpWidget(MaterialApp(home: CoachDetailPage(
-      coachId: 'coach-2', service: _CoachFixture(),
-      messagingService: messaging, currentUserId: 'member-1',
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CoachDetailPage(
+          coachId: 'coach-2',
+          service: _CoachFixture(),
+          messagingService: messaging,
+          currentUserId: 'member-1',
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Đã hết suất'), findsOneWidget);
-    await tester.tap(find.text('Nhắn tin với Coach'));
+    await tester.tap(find.byTooltip('Nhắn Coach'));
     await tester.pumpAndSettle();
     expect(messaging.coachId, 'coach-2');
     expect(messaging.messageKey, 'direct-chat-1');
@@ -35,7 +40,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('lists coaches, opens detail and sends a trimmed message', (
+  testWidgets('lists, searches, filters coaches and opens detail proof', (
     tester,
   ) async {
     final service = _CoachFixture();
@@ -44,26 +49,28 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Coach Linh'), findsOneWidget);
+    expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+    expect(find.text('Coach Minh'), findsOneWidget);
     expect(find.text('Còn 2 suất'), findsOneWidget);
-    await tester.tap(find.text('Coach Linh'));
-    await tester.pumpAndSettle();
-    expect(find.text('Chuyên môn: Yoga'), findsOneWidget);
-    expect(service.loadedId, 'coach-1');
 
-    await tester.enterText(
-      find.byKey(const Key('coach-message')),
-      '  Tôi muốn tập yoga  ',
-    );
-    await tester.tap(find.text('Gửi yêu cầu'));
+    await tester.tap(find.text('Còn suất'));
     await tester.pumpAndSettle();
-    expect(service.sentMessage, 'Tôi muốn tập yoga');
-    expect(find.text('Yêu cầu đã được gửi.'), findsOneWidget);
+    expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+    expect(find.text('Coach Minh'), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('coach-search-input')), 'Nam');
+    await tester.pumpAndSettle();
+    expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+
+    await tester.tap(find.text('Lê Hoàng Nam'));
+    await tester.pumpAndSettle();
+    expect(service.loadedId, 'coach-1');
+    expect(find.text('5 năm'), findsOneWidget);
+    expect(find.text('Chứng chỉ PT'), findsOneWidget);
+    expect(find.text('Xem lịch làm việc'), findsOneWidget);
   });
 
-  testWidgets('disables request when no slot and shows list retry', (
-    tester,
-  ) async {
+  testWidgets('retries list error and opens full coach detail', (tester) async {
     final service = _CoachFixture(failFirstList: true);
     await tester.pumpWidget(
       MaterialApp(home: CoachSelectionPage(service: service)),
@@ -75,28 +82,7 @@ void main() {
     await tester.tap(find.text('Coach Minh'));
     await tester.pumpAndSettle();
     expect(find.text('Đã hết suất'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Gửi yêu cầu'), findsNothing);
-  });
-
-  testWidgets('locks submit while pending and displays membership error', (
-    tester,
-  ) async {
-    final service = _CoachFixture(pendingSubmit: true);
-    await tester.pumpWidget(
-      MaterialApp(home: CoachSelectionPage(service: service)),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Coach Linh'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Gửi yêu cầu'));
-    await tester.pump();
-    expect(find.widgetWithText(FilledButton, 'Gửi yêu cầu'), findsNothing);
-    service.completeSubmitError(
-      'MEMBERSHIP_REQUIRED',
-      'Cần gói tập đang hoạt động',
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Cần gói tập đang hoạt động'), findsOneWidget);
+    expect(find.text('4 năm'), findsNothing);
   });
 
   testWidgets('shows empty list', (tester) async {
@@ -107,19 +93,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
   });
-
-  testWidgets('shows existing-request conflict', (tester) async {
-    final conflictService = _CoachFixture(requestError: true);
-    await tester.pumpWidget(
-      MaterialApp(home: CoachSelectionPage(service: conflictService)),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Coach Linh'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Gửi yêu cầu'));
-    await tester.pumpAndSettle();
-    expect(find.text('Đã có Coach hoặc yêu cầu đang chờ'), findsOneWidget);
-  });
 }
 
 class _DirectChatFixture implements MessagingService {
@@ -127,10 +100,19 @@ class _DirectChatFixture implements MessagingService {
   String? messageKey;
 
   @override
-  Future<Conversation> startConversation({String? coachId, String? memberId}) async {
+  Future<Conversation> startConversation({
+    String? coachId,
+    String? memberId,
+  }) async {
     this.coachId = coachId;
-    return const Conversation(id: 'direct-chat-1', relationshipId: null,
-      memberId: 'member-1', coachId: 'coach-2', status: 'NONE', unreadCount: 0);
+    return const Conversation(
+      id: 'direct-chat-1',
+      relationshipId: null,
+      memberId: 'member-1',
+      coachId: 'coach-2',
+      status: 'NONE',
+      unreadCount: 0,
+    );
   }
 
   @override
@@ -144,29 +126,22 @@ class _DirectChatFixture implements MessagingService {
 }
 
 class _CoachFixture implements CoachSelectionService {
-  _CoachFixture({
-    this.failFirstList = false,
-    this.pendingSubmit = false,
-    this.emptyList = false,
-    this.requestError = false,
-  });
+  _CoachFixture({this.failFirstList = false, this.emptyList = false});
 
   final bool failFirstList;
-  final bool pendingSubmit;
   final bool emptyList;
-  final bool requestError;
   int listLoads = 0;
   String? loadedId;
-  String? sentMessage;
-  final submitCompleter = Completer<CoachRequest>();
 
   static const coaches = [
     CoachProfile(
       id: 'coach-1',
-      fullName: 'Coach Linh',
-      specialties: ['Yoga'],
-      memberLimit: 5,
-      usedSlots: 3,
+      fullName: 'Lê Hoàng Nam',
+      specialties: ['Tăng cơ', 'Sức mạnh'],
+      qualifications: 'Chứng chỉ PT',
+      experienceYears: 5,
+      memberLimit: 8,
+      usedSlots: 6,
       availableSlots: 2,
     ),
     CoachProfile(
@@ -198,26 +173,6 @@ class _CoachFixture implements CoachSelectionService {
   }
 
   @override
-  Future<CoachRequest> sendRequest(String coachId, String? message) {
-    sentMessage = message;
-    if (pendingSubmit) return submitCompleter.future;
-    if (requestError) {
-      throw const ApiException(
-        kind: ApiExceptionKind.request,
-        code: 'COACH_REQUEST_CONFLICT',
-        message: 'Đã có Coach hoặc yêu cầu đang chờ',
-      );
-    }
-    return Future.value(const CoachRequest(id: 'request-1', status: 'PENDING'));
-  }
-
-  void completeSubmitError(String code, String message) {
-    submitCompleter.completeError(
-      ApiException(
-        kind: ApiExceptionKind.forbidden,
-        code: code,
-        message: message,
-      ),
-    );
-  }
+  Future<CoachRequest> sendRequest(String coachId, String? message) async =>
+      const CoachRequest(id: 'request-1', status: 'PENDING');
 }

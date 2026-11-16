@@ -6,57 +6,43 @@ import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dar
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 
 void main() {
-  testWidgets('shows pending request and refreshes after cancellation', (
+  testWidgets(
+    'shows current Coach hero and action rows without legacy requests',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final service = _MemberCoachingFixture();
+      await tester.pumpWidget(
+        MaterialApp(home: MemberCoachingPage(service: service)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Coach Linh'), findsOneWidget);
+      expect(find.text('Đang hoạt động'), findsOneWidget);
+      expect(find.text('Xem lịch với Coach'), findsOneWidget);
+      expect(find.text('Giáo trình'), findsOneWidget);
+      expect(find.text('Nhắn Coach'), findsOneWidget);
+      expect(find.text('Yêu cầu đang chờ'), findsNothing);
+      expect(find.text('Kết thúc quan hệ'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('auto-end replaces manual termination and keeps chat on paused', (
     tester,
   ) async {
-    final service = _MemberCoachingFixture();
+    final service = _MemberCoachingFixture(paused: true);
     await tester.pumpWidget(
       MaterialApp(home: MemberCoachingPage(service: service)),
     );
     await tester.pumpAndSettle();
-
-    expect(find.text('Yêu cầu đang chờ'), findsOneWidget);
-    expect(find.text('Coach hiện tại'), findsOneWidget);
-    expect(find.text('Coach Linh'), findsWidgets);
-    await tester.tap(find.text('Hủy yêu cầu'));
-    await tester.pumpAndSettle();
-    expect(service.cancelledId, 'request-1');
-    expect(find.text('Không có yêu cầu đang chờ.'), findsOneWidget);
-    expect(find.text('Đã hủy'), findsOneWidget);
-  });
-
-  testWidgets('requires reason and confirmation before ending relationship', (
-    tester,
-  ) async {
-    final service = _MemberCoachingFixture();
-    await tester.pumpWidget(
-      MaterialApp(home: MemberCoachingPage(service: service)),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Kết thúc quan hệ'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Quay lại'));
-    await tester.pumpAndSettle();
-    expect(service.endedId, isNull);
-
-    await tester.tap(find.text('Kết thúc quan hệ'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Xác nhận kết thúc'));
-    await tester.pumpAndSettle();
-    expect(service.endedId, isNull);
-    expect(find.text('Vui lòng nhập lý do.'), findsOneWidget);
-
-    await tester.enterText(
-      find.byKey(const Key('termination-reason')),
-      '  Đổi lịch tập  ',
-    );
-    await tester.tap(find.text('Xác nhận kết thúc'));
-    await tester.pumpAndSettle();
-    expect(service.endedId, 'relationship-1');
-    expect(service.endReason, 'Đổi lịch tập');
-    expect(find.text('Chưa có Coach hiện tại.'), findsOneWidget);
-    expect(find.text('Đã kết thúc'), findsOneWidget);
+    expect(find.text('Tạm ngưng do Gym hết hạn'), findsOneWidget);
+    expect(find.text('Gia hạn gói Gym'), findsOneWidget);
+    expect(find.text('Đang tạm khóa'), findsOneWidget);
+    expect(find.text('Nhắn Coach'), findsOneWidget);
+    expect(find.text('Kết thúc quan hệ'), findsNothing);
   });
 
   testWidgets('shows empty state and retries an API error', (tester) async {
@@ -68,22 +54,25 @@ void main() {
     expect(find.text('Không tải được quan hệ.'), findsOneWidget);
     await tester.tap(find.text('Thử lại'));
     await tester.pumpAndSettle();
-    expect(find.text('Không có yêu cầu đang chờ.'), findsOneWidget);
-    expect(find.text('Chưa có Coach hiện tại.'), findsOneWidget);
+    expect(find.text('Chưa có Coach'), findsOneWidget);
+    expect(find.text('Khám phá Coach'), findsOneWidget);
     expect(service.loads, 2);
   });
 }
 
 class _MemberCoachingFixture implements MemberCoachingService {
-  _MemberCoachingFixture({this.empty = false, this.failFirst = false});
+  _MemberCoachingFixture({
+    this.empty = false,
+    this.failFirst = false,
+    this.paused = false,
+  });
 
   final bool empty;
   final bool failFirst;
+  final bool paused;
   int loads = 0;
-  String? cancelledId;
   String? endedId;
   String? endReason;
-  bool cancelled = false;
   bool ended = false;
 
   @override
@@ -92,7 +81,10 @@ class _MemberCoachingFixture implements MemberCoachingService {
   };
 
   @override
-  Future<List<MemberCoachRequest>> getRequests() async {
+  Future<List<MemberCoachRequest>> getRequests() async => const [];
+
+  @override
+  Future<MemberCoachRelationship?> getCurrentRelationship() async {
     loads++;
     if (failFirst && loads == 1) {
       throw const ApiException(
@@ -100,26 +92,15 @@ class _MemberCoachingFixture implements MemberCoachingService {
         message: 'Không tải được quan hệ.',
       );
     }
-    if (empty) return const [];
-    return [
-      MemberCoachRequest(
-        id: 'request-1',
-        coachId: 'coach-1',
-        status: cancelled ? 'CANCELLED' : 'PENDING',
-        message: 'Tôi muốn tập Yoga',
-      ),
-    ];
+    if (empty || ended) return null;
+    return MemberCoachRelationship(
+      id: 'relationship-1',
+      coachId: 'coach-1',
+      coachName: 'Coach Linh',
+      status: paused ? 'PAUSED' : 'ACTIVE',
+      pauseReason: paused ? 'MEMBERSHIP_EXPIRED' : null,
+    );
   }
-
-  @override
-  Future<MemberCoachRelationship?> getCurrentRelationship() async =>
-      empty || ended
-      ? null
-      : const MemberCoachRelationship(
-          id: 'relationship-1',
-          coachId: 'coach-1',
-          status: 'ACTIVE',
-        );
 
   @override
   Future<List<MemberCoachRelationship>> getRelationshipHistory() async => empty
@@ -128,15 +109,13 @@ class _MemberCoachingFixture implements MemberCoachingService {
           MemberCoachRelationship(
             id: 'relationship-1',
             coachId: 'coach-1',
-            status: ended ? 'ENDED' : 'ACTIVE',
+            coachName: 'Coach Linh',
+            status: ended ? 'ENDED' : (paused ? 'PAUSED' : 'ACTIVE'),
           ),
         ];
 
   @override
-  Future<void> cancelRequest(String id) async {
-    cancelledId = id;
-    cancelled = true;
-  }
+  Future<void> cancelRequest(String id) async {}
 
   @override
   Future<void> terminateRelationship(String id, String reason) async {

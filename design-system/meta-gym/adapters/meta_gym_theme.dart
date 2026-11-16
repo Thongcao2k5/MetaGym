@@ -5,27 +5,31 @@ import 'package:flutter/material.dart';
 /// Bundle Be Vietnam Pro locally before using this theme in production.
 /// See the adapter README for the expected family name.
 abstract final class MetaGymTheme {
-  static const Color brandOrange = Color(0xFFFF5A36);
-  static const Color brandOrangeHover = Color(0xFFE84729);
+  static const Color brandOrange = Color(0xFFFF5E36);
+  static const Color brandOrangeHover = Color(0xFFE84E27);
   static const Color reflectionBlue = Color(0xFFA9C7E8);
-  static const Color progressGreen = Color(0xFF23C997);
+  static const Color progressGreen = Color(0xFF2ECC71);
+  static const Color warningAmber = Color(0xFFF39C12);
+  static const Color textGray = Color(0xFF8E95A5);
   static const Color focusBlue = Color(0xFF8DBCF0);
+  static const Color coachAvatarBg = Color(0xFFF5B041);
+  static const Color coachAvatarText = Color(0xFF181B22);
 
   static const Color _lightBackground = Color(0xFFF5F7FA);
   static const Color _lightSurface = Color(0xFFFFFFFF);
   static const Color _lightText = Color(0xFF11151A);
-  static const Color _darkBackground = Color(0xFF080A0D);
-  static const Color _darkSurface = Color(0xFF11161C);
+  static const Color _darkBackground = Color(0xFF0F1115);
+  static const Color _darkSurface = Color(0xFF181B22);
   static const Color _darkText = Color(0xFFF7F9FC);
   static const Color _error = Color(0xFFF15B64);
 
   /// Level 2 glass. Use only for compact docks, navigation, and floating tools.
-  static const Color performanceGlass = Color(0xC712171E);
+  static const Color performanceGlass = Color(0xC7181B22);
   static const Color performanceGlassBorder = Color(0x2ED4E4FF);
   static const double performanceGlassBlur = 12;
 
   /// Level 3 glass. Use only for sheets, dialogs, and the AI Coach overlay.
-  static const Color overlayGlass = Color(0xE60E1218);
+  static const Color overlayGlass = Color(0xE60F1115);
   static const Color overlayGlassBorder = Color(0x52EBF6FF);
   static const double overlayGlassBlur = 18;
 
@@ -36,14 +40,14 @@ abstract final class MetaGymTheme {
     final isDark = brightness == Brightness.dark;
     final surface = isDark ? _darkSurface : _lightSurface;
     final onSurface = isDark ? _darkText : _lightText;
-    final outline = isDark ? const Color(0xFF3A4654) : const Color(0xFFCBD4DF);
+    final outline = isDark ? const Color(0xFF262A34) : const Color(0xFFCBD4DF);
 
     final colorScheme =
         ColorScheme.fromSeed(
           seedColor: brandOrange,
           brightness: brightness,
           primary: brandOrange,
-          onPrimary: const Color(0xFF090B0E),
+          onPrimary: const Color(0xFFFFFFFF),
           secondary: reflectionBlue,
           onSecondary: const Color(0xFF071A2C),
           surface: surface,
@@ -55,13 +59,13 @@ abstract final class MetaGymTheme {
           tertiary: progressGreen,
           onTertiary: const Color(0xFF06261D),
           surfaceContainerLow: isDark
-              ? const Color(0xFF11161C)
+              ? const Color(0xFF181B22)
               : const Color(0xFFFFFFFF),
           surfaceContainer: isDark
-              ? const Color(0xFF151B22)
+              ? const Color(0xFF1D212A)
               : const Color(0xFFF5F7FA),
           surfaceContainerHigh: isDark
-              ? const Color(0xFF181F27)
+              ? const Color(0xFF222731)
               : const Color(0xFFEDF1F5),
         );
 

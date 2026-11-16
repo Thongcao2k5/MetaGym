@@ -59,6 +59,7 @@ test('PostgreSQL catalog API filters hidden items and protects admin mutations',
       result = await call(app, '/admin/equipment', 'POST', admin, {
         name: 'Treadmill', category: 'Cardio', targetMuscles: ['Legs'],
         usageSteps: ['Warm up', 'Walk'], status: 'ACTIVE',
+        videoUrl: 'https://example.com/treadmill.mp4',
       });
       assert.equal(result.status, 201);
       const equipmentId = result.body.data.id;
@@ -74,7 +75,12 @@ test('PostgreSQL catalog API filters hidden items and protects admin mutations',
       assert.equal(result.status, 201);
       const exerciseId = result.body.data.id;
       assert.equal((await call(app, '/exercises')).status, 401);
-      assert.equal((await call(app, '/exercises', 'GET', member)).body.data.length, 1);
+      const memberExercises = await call(app, '/exercises', 'GET', member);
+      assert.equal(memberExercises.body.data.length, 1);
+      assert.equal(memberExercises.body.data[0].videoUrl,
+        'https://example.com/treadmill.mp4');
+      assert.equal((await call(app, `/exercises/${exerciseId}`, 'GET', member))
+        .body.data.videoUrl, 'https://example.com/treadmill.mp4');
       assert.equal((await call(app, `/admin/exercises/${exerciseId}`, 'PATCH', member,
         { status: 'HIDDEN' })).status, 403);
       assert.equal((await call(app, `/admin/exercises/${exerciseId}`, 'PATCH', admin,

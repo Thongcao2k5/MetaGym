@@ -47,6 +47,11 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
            VALUES ($1, $2, $4, $3, 'Hold test')`, [id, `${id}@example.com`, role, hash],
         );
       }
+      for (const member of members) {
+        await database.query(
+          'INSERT INTO member_profiles (user_id) VALUES ($1)', [member],
+        );
+      }
       for (const account of [admin, coach, first, second]) {
         const login = await call(account, '/auth/sessions', 'POST', {
           email: `${account}@example.com`, password,
@@ -97,6 +102,17 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
          SELECT gen_random_uuid(), $1, day, minute
          FROM generate_series(1, 6) day CROSS JOIN generate_series(360, 630, 90) minute`, [coach],
       );
+      assert.equal((await call(first, endpoint, 'POST', offer, randomUUID())).body.error.code,
+        'HEALTH_DECLARATION_REQUIRED');
+      for (const member of [first, second]) {
+        const declaration = await call(member, '/users/me/health-declaration', 'PATCH', {
+          heightCm: 172, weightKg: 70, bodyFatPercent: null,
+          hasCondition: false, hasInjury: false,
+        });
+        assert.equal(declaration.status, 200, JSON.stringify(declaration.body));
+        assert.ok(declaration.body.data.profile.healthDeclarationCompletedAt);
+      }
+      assert.equal((await call(first, '/users/me', 'PATCH', { weightKg: null })).status, 422);
       await database.query("UPDATE coach_package_plans SET status = 'ACTIVE', price = 123000 WHERE code = 'BASIC'");
       const keys = [randomUUID(), randomUUID()];
       const contenders = [first, second];
@@ -231,8 +247,17 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       }
       assert.equal(renewal.status, 201);
       assert.equal((await call(loser, `/coaches/${coach}`)).body.data.usedSlots, 8);
-      const queued = await settleCoachHold(database, renewal.body.data.id, { paid: true, amount: 456000 });
-      assert.equal(queued.status, 'CONSUMED', JSON.stringify(queued));
+      assert.ok('avatarUrl' in (await call(loser, `/coaches/${coach}`)).body.data);
+      assert.equal((await call(loser, `${endpoint}/${renewal.body.data.id}/mock-confirmations`, 'POST')).status, 404);
+      const mockConfirmations = await Promise.all([1, 2].map(() =>
+        call(winner, `${endpoint}/${renewal.body.data.id}/mock-confirmations`, 'POST')));
+      assert.deepEqual(mockConfirmations.map((entry) => entry.status), [200, 200]);
+      assert.equal(mockConfirmations[0].body.data.hold.status, 'CONSUMED');
+      assert.equal(mockConfirmations[0].body.data.entitlementId, mockConfirmations[1].body.data.entitlementId);
+      const queued = mockConfirmations[0].body.data;
+      const myRel = await call(winner, '/relationships/me');
+      assert.equal(myRel.status, 200);
+      assert.equal(myRel.body.data.coachName, 'Hold test');
       assert.equal((await call(winner, endpoint, 'POST', offer, randomUUID())).body.error.code, 'QUEUED_EXISTS');
       await database.query(
         `UPDATE coach_entitlements SET starts_on = CURRENT_DATE - 38,
@@ -268,6 +293,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       await database.query('DELETE FROM payments WHERE plan_id = $1', [planId]);
       await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
       await database.query('DELETE FROM coach_profiles WHERE user_id = $1', [coach]);
+      await database.query('DELETE FROM member_profiles WHERE user_id = ANY($1::uuid[])', [members]);
       await database.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[admin, coach, ...members]]);
       await new Promise((resolve) => server.close(resolve));
       await database.end();

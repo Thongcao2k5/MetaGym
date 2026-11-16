@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { settleCoachHold } from '../services/coach-entitlements.js';
 import { createAuthentication } from './users.routes.js';
 
 const uuid = z.uuid();
@@ -114,6 +115,14 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
       if (workdays < 6) {
         return fail(response, 409, 'SCHEDULE_REQUIRED', 'Coach chưa cấu hình đủ lịch làm việc');
       }
+      const declaration = (await client.query(
+        `SELECT health_declaration_completed_at FROM member_profiles
+         WHERE user_id = $1`, [memberId],
+      )).rows[0];
+      if (!declaration?.health_declaration_completed_at) {
+        return fail(response, 409, 'HEALTH_DECLARATION_REQUIRED',
+          'Cần khai báo thể trạng trước khi thanh toán gói Coach');
+      }
       const plan = (await client.query(
         "SELECT * FROM coach_package_plans WHERE code = $1 AND status = 'ACTIVE'",
         [planCode],
@@ -198,5 +207,73 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
     }
   });
 
+  router.post('/coach-payment-holds/:id/mock-confirmations', async (request, response) => {
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_MOCK_PAYMENTS !== 'true') {
+      return fail(
+        response,
+        403,
+        'MOCK_PAYMENT_DISABLED',
+        'Thanh toán mô phỏng không khả dụng trên môi trường production',
+      );
+    }
+    const id = uuid.safeParse(request.params.id);
+    if (!id.success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã giữ suất không hợp lệ');
+    try {
+      const existing = (await database.query(
+        `SELECT *, CASE WHEN status = 'HELD' AND expires_at <= statement_timestamp()
+                        THEN 'EXPIRED' ELSE status END AS effective_status
+         FROM coach_payment_holds WHERE id = $1 AND member_id = $2`,
+        [id.data, request.authUser.id],
+      )).rows[0];
+      if (!existing) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy suất đang giữ');
+      const settlement = await settleCoachHold(database, existing.id, {
+        paid: true,
+        amount: Number(existing.amount),
+      });
+      const updated = (await database.query(
+        `SELECT *, CASE WHEN status = 'HELD' AND expires_at <= statement_timestamp()
+                        THEN 'EXPIRED' ELSE status END AS effective_status
+         FROM coach_payment_holds WHERE id = $1 AND member_id = $2`,
+        [id.data, request.authUser.id],
+      )).rows[0];
+      if (settlement.status === 'CONSUMED') {
+        return response.json({
+          data: {
+            hold: view(updated ?? existing),
+            entitlementId: settlement.entitlementId,
+          },
+        });
+      }
+      const code = settlement.reason ?? settlement.status;
+      const message = switchHoldSettlementMessage(code);
+      return fail(response, 409, code, message);
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không xác nhận được thanh toán gói Coach');
+    }
+  });
+
   return router;
+}
+
+function switchHoldSettlementMessage(code) {
+  switch (code) {
+    case 'EXPIRED':
+    case 'HOLD_EXPIRED':
+      return 'Suất giữ đã hết hạn. Hãy chọn gói để giữ suất lại.';
+    case 'CANCELLED':
+      return 'Suất giữ đã được hủy trước đó.';
+    case 'COACH_FULL':
+      return 'Coach vừa đủ 8 Member. Hãy chọn Coach khác.';
+    case 'CAPACITY_UNAVAILABLE':
+      return 'Lịch Coach không còn đủ khung giờ trống cho gói này.';
+    case 'MEMBERSHIP_REQUIRED':
+    case 'PARTICIPANT_INELIGIBLE':
+      return 'Cần có gói Gym đang hoạt động và tài khoản hợp lệ.';
+    case 'QUEUED_UNAVAILABLE':
+      return 'Bạn đã có gói Coach chờ kích hoạt.';
+    case 'RELATIONSHIP_EXISTS':
+      return 'Bạn đang có quan hệ với Coach khác.';
+    default:
+      return 'Không thể hoàn tất thanh toán cho suất giữ này.';
+  }
 }

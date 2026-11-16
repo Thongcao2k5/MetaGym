@@ -35,6 +35,7 @@ class _MemberCurriculumDetailPageState
   String? _mealError;
   bool _loading = true;
   bool _paused = false;
+  bool _heroExpanded = false;
   int _tab = 0;
   int _day = 0;
   int _weekday = 1;
@@ -320,86 +321,116 @@ class _MemberCurriculumDetailPageState
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xB8C89463)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _status(status, statusColor),
-              const Spacer(),
-              if (plan.publishedAt != null)
-                Text(
-                  _date(plan.publishedAt!),
-                  style: const TextStyle(
-                    color: Color(0xFFD6C5B8),
-                    fontSize: 11,
-                    fontFamily: MetaGymTheme.fontFamily,
+      child: Material(
+        color: Colors.transparent,
+        child: Semantics(
+          button: true,
+          expanded: _heroExpanded,
+          label:
+              '${_heroExpanded ? 'Thu gọn' : 'Mở rộng'} thông tin giáo trình',
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => setState(() => _heroExpanded = !_heroExpanded),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          plan.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            height: 1.3,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: MetaGymTheme.fontFamily,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _heroExpanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            plan.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 19,
-              height: 1.25,
-              fontWeight: FontWeight.w700,
-              fontFamily: MetaGymTheme.fontFamily,
+                if (_heroExpanded) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _status(status, statusColor),
+                      const Spacer(),
+                      if (plan.publishedAt != null)
+                        Text(
+                          _date(plan.publishedAt!),
+                          style: const TextStyle(
+                            color: Color(0xFFD6C5B8),
+                            fontSize: 11,
+                            fontFamily: MetaGymTheme.fontFamily,
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (plan.goal?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      plan.goal!,
+                      style: const TextStyle(
+                        color: Color(0xFFE4DAD1),
+                        fontSize: 13,
+                        height: 1.4,
+                        fontFamily: MetaGymTheme.fontFamily,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0x40FFE0C2), height: 1),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (coach != null) ...[
+                        CircleAvatar(
+                          radius: 17,
+                          backgroundColor: MetaGymTheme.coachAvatarBackground,
+                          child: Text(
+                            _initials(coach),
+                            style: const TextStyle(
+                              color: MetaGymTheme.coachAvatarForeground,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            coach,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: MetaGymTheme.fontFamily,
+                            ),
+                          ),
+                        ),
+                      ] else
+                        const Spacer(),
+                      _smallChip('${plan.days.length} ngày tập'),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
-          if (plan.goal?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 5),
-            Text(
-              plan.goal!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFFE4DAD1),
-                fontSize: 13,
-                height: 1.4,
-                fontFamily: MetaGymTheme.fontFamily,
-              ),
-            ),
-          ],
-          const SizedBox(height: 8),
-          const Divider(color: Color(0x40FFE0C2), height: 1),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (coach != null) ...[
-                CircleAvatar(
-                  radius: 17,
-                  backgroundColor: MetaGymTheme.coachAvatarBackground,
-                  child: Text(
-                    _initials(coach),
-                    style: const TextStyle(
-                      color: MetaGymTheme.coachAvatarForeground,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    coach,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: MetaGymTheme.fontFamily,
-                    ),
-                  ),
-                ),
-              ] else
-                const Spacer(),
-              _smallChip('${plan.days.length} ngày tập'),
-            ],
-          ),
-        ],
+        ),
       ),
     );
     return ClipRRect(

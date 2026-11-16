@@ -168,19 +168,22 @@ class MetaGymGlassCard extends StatelessWidget {
         borderRadius: radius,
         border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
       ),
-      child: Stack(
-        children: [
-          const Positioned(
-            top: 0,
-            left: 18,
-            right: 18,
-            child: SizedBox(
-              height: 1,
-              child: ColoredBox(color: Color(0x70FFF6EA)),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Stack(
+          children: [
+            const Positioned(
+              top: 0,
+              left: 18,
+              right: 18,
+              child: SizedBox(
+                height: 1,
+                child: ColoredBox(color: Color(0x70FFF6EA)),
+              ),
             ),
-          ),
-          innerContent,
-        ],
+            innerContent,
+          ],
+        ),
       ),
     );
 

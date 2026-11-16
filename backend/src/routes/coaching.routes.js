@@ -16,6 +16,7 @@ function coachView(row) {
     id: row.id, fullName: row.full_name, biography: row.biography,
     specialties: row.specialties, qualifications: row.qualifications,
     experienceYears: row.experience_years, availabilityNote: row.availability_note,
+    avatarUrl: row.avatar_media_id ? `/api/v1/users/${row.id}/avatar` : null,
     memberLimit: row.member_limit, usedSlots: Number(row.used_slots),
     availableSlots: Math.max(0, row.member_limit - Number(row.used_slots)),
   };
@@ -33,7 +34,10 @@ function requestView(row) {
 function relationshipView(row) {
   return {
     id: row.id, memberId: row.member_id, coachId: row.coach_id,
-    status: row.status, startedAt: row.started_at,
+    status: row.status, pauseReason: row.pause_reason ?? null,
+    coachName: row.coach_name ?? null,
+    coachAvatarUrl: row.coach_avatar_media_id ? `/api/v1/users/${row.coach_id}/avatar` : null,
+    startedAt: row.started_at,
     pausedAt: row.paused_at, endedAt: row.ended_at,
   };
 }
@@ -79,7 +83,7 @@ export function createCoachingRouter({ database, jwtSecret }) {
   router.get('/coaches', async (_request, response) => {
     try {
       const result = await database.query(
-        `SELECT u.id, u.full_name, c.biography, c.specialties,
+        `SELECT u.id, u.full_name, u.avatar_media_id, c.biography, c.specialties,
                 c.qualifications, c.experience_years, c.availability_note,
                 LEAST(c.member_limit, 8) AS member_limit,
                 coach_occupied_seats(u.id) AS used_slots
@@ -95,7 +99,7 @@ export function createCoachingRouter({ database, jwtSecret }) {
     if (!uuid.safeParse(request.params.coachId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Coach không hợp lệ');
     try {
       const result = await database.query(
-        `SELECT u.id, u.full_name, c.biography, c.specialties,
+        `SELECT u.id, u.full_name, u.avatar_media_id, c.biography, c.specialties,
                 c.qualifications, c.experience_years, c.availability_note,
                 LEAST(c.member_limit, 8) AS member_limit,
                 coach_occupied_seats(u.id) AS used_slots
@@ -316,8 +320,11 @@ export function createCoachingRouter({ database, jwtSecret }) {
     if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được xem Coach');
     try {
       const result = await database.query(
-        `SELECT * FROM coach_relationships WHERE member_id = $1
-         AND status IN ('ACTIVE', 'PAUSED') LIMIT 1`, [request.authUser.id],
+        `SELECT r.*, u.full_name AS coach_name, u.avatar_media_id AS coach_avatar_media_id
+         FROM coach_relationships r
+         JOIN users u ON u.id = r.coach_id
+         WHERE r.member_id = $1
+         AND r.status IN ('ACTIVE', 'PAUSED') LIMIT 1`, [request.authUser.id],
       );
       return response.json({ data: result.rows.length ? relationshipView(result.rows[0]) : null });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được quan hệ'); }
@@ -327,8 +334,11 @@ export function createCoachingRouter({ database, jwtSecret }) {
     if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được xem Coach');
     try {
       const result = await database.query(
-        `SELECT * FROM coach_relationships WHERE member_id = $1
-         ORDER BY started_at DESC, id DESC`, [request.authUser.id],
+        `SELECT r.*, u.full_name AS coach_name, u.avatar_media_id AS coach_avatar_media_id
+         FROM coach_relationships r
+         JOIN users u ON u.id = r.coach_id
+         WHERE r.member_id = $1
+         ORDER BY r.started_at DESC, r.id DESC`, [request.authUser.id],
       );
       return response.json({ data: result.rows.map(relationshipView) });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được quan hệ'); }
@@ -354,8 +364,14 @@ export function createCoachingRouter({ database, jwtSecret }) {
     if (!uuid.safeParse(request.params.memberId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã Member không hợp lệ');
     try {
       const result = await database.query(
-        `SELECT r.*, u.full_name, u.email::text, m.fitness_goal,
-                m.health_notes, m.injury_notes
+        `SELECT r.*, u.full_name, u.email::text,
+                CASE WHEN r.status = 'ACTIVE' THEN m.fitness_goal END AS fitness_goal,
+                CASE WHEN r.status = 'ACTIVE' THEN m.height_cm::float8 END AS height_cm,
+                CASE WHEN r.status = 'ACTIVE' THEN m.weight_kg::float8 END AS weight_kg,
+                CASE WHEN r.status = 'ACTIVE' THEN m.body_fat_percent::float8 END AS body_fat_percent,
+                CASE WHEN r.status = 'ACTIVE' THEN m.health_notes END AS health_notes,
+                CASE WHEN r.status = 'ACTIVE' THEN m.injury_notes END AS injury_notes,
+                CASE WHEN r.status = 'ACTIVE' THEN m.health_declaration_completed_at END AS health_declaration_completed_at
          FROM coach_relationships r JOIN users u ON u.id = r.member_id
          JOIN member_profiles m ON m.user_id = r.member_id
          WHERE r.coach_id = $1 AND r.member_id = $2
@@ -368,7 +384,9 @@ export function createCoachingRouter({ database, jwtSecret }) {
         ...relationshipView(row), member: {
           id: row.member_id, fullName: row.full_name, email: row.email,
           fitnessGoal: row.fitness_goal, healthNotes: row.health_notes,
-          injuryNotes: row.injury_notes,
+          injuryNotes: row.injury_notes, heightCm: row.height_cm,
+          weightKg: row.weight_kg, bodyFatPercent: row.body_fat_percent,
+          healthDeclarationCompletedAt: row.health_declaration_completed_at,
         },
       } });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được Member'); }

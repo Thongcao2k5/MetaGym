@@ -4,56 +4,31 @@ This page inherits `../MASTER.md`. These rules resolve the home-screen compositi
 
 ## Visual hierarchy
 
-1. Greeting and current member identity.
-2. Quick-action dock: Lịch tập, Giáo trình, Dinh dưỡng, Coach.
-3. Today's workout as the primary content card.
-4. Membership/Coach summary.
-5. Nutrition guidance and weekly progress.
-6. Bottom navigation with AI as the single elevated action.
+1. Greeting (`META GYM` / `Chào, <Tên>`) and circular glass search action.
+2. Quick-action dock: 4 equal squircle tiles (`Lịch tập`, `Giáo trình`, `Dinh dưỡng`, `Coach`).
+3. Membership & Coach summary (`Gói tập & Coach` Warm Glass card, or `Gói tập của bạn` when the member has no active Coach).
+4. Today's workout (`Hôm nay` featured Liquid Glass card, or `Tự tập hôm nay` self-workout card when the member has no Coach).
+5. 2-column balanced Bento pair (`Dinh dưỡng` and `Tiến độ tập luyện` / `Tiến độ tuần`, equal height `128px`).
+6. `Khám phá Meta Gym`, collapsible full feature workbench directory, and 5-item bottom navigation with AI as the single elevated action.
 
-On days with an upcoming workout, move **Hôm nay** above membership status so the next action appears without scrolling.
+## Material allocation & Warm Glass + Bento Layout
 
-## Material allocation
-
-### Global Baseline (80/20 Rule)
-- Canvas: obsidian plus one dimmed, static gym image.
-- Quick-action dock: Level 2 performance glass.
-- Bottom navigation: Level 2 performance glass.
-- Workout, membership, nutrition, and progress: Level 1 solid surfaces.
-- AI detail panel or modal: Level 3 overlay glass.
-- Do not blur individual cards in the scrolling list.
-
-### Page Override: Showcase Mode (Graduation / Thesis Presentation)
-To achieve a "Premium Smoked Optical Glass" aesthetic without compromising data-heavy screens or Admin portals, Member Home introduces an isolated **Showcase Mode**:
-- **Material Ratio**: **60% Solid / 40% Optical Glass**.
-- **Visual Effect Dial**: **7/10** (Optical glass with multi-layered specular edge reflection, top/left bevel highlights, 20–22px blur, and dual ambient lighting).
-- **Motion Dial**: **4/10** (Strictly static lights and blur; only opacity and translation transitions).
-- **Three Optical Glass Regions (Level C)**:
-  1. *Quick-action dock (“Optical Launcher”)*:
-     - Radius 26px, 18px blur, top-edge highlight (`rgba(255,255,255,0.18)`), border `rgba(212,228,255,0.18)`.
-     - Overall height: **112–118px** (actual 116px).
-     - 0 dividers between actions.
-     - Min touch target: **64×64px** per action (actual 72.25×64px).
-     - Selected tile: `rgba(255,90,54,0.12)`, border `rgba(255,90,54,0.32)`, radius 18px, inner top highlight 10%.
-     - Unselected items: transparent, no container, reflection-blue `#B9D0E8` icons (24px, 1.85px stroke), label 11.5px (weight 600).
-     - Indicator: active 20×5px orange capsule + inactive 5×5px gray dot.
-     - "Xem tất cả" replaced by a 40×40px reflection-blue glass grid button (`aria-label="Xem tất cả tiện ích"`).
-     - Zero blur animation; carousel uses pure 200ms transform easing.
-  2. *Card “Hôm nay” (Featured Glass Hero)*: Radius 26px, 20px blur, background translucency calibrated 12% clearer (`rgba(255,255,255,0.09)` to `0.03`), text contrast maintained > 4.5:1 (actual white title 14.2:1).
-  3. *Bottom navigation*: Radius 28px, 22px blur, top-edge highlight, AI focal glow reduced by 50% (`0 0 10px rgba(255,90,54,0.20), 0 4px 14px rgba(0,0,0,0.30)`) ensuring shadow is softer than primary hero CTA.
-- **Scroll Content Clearance**:
-  - `#scroll` content padding-bottom calibrated to **116px** (70px navigation height + 24px safe area + 16px buffer + headroom) to guarantee the last Explore card has a clearance gap > 16px (actual 91px gap) and is never obscured.
+- **Canvas & Ambient Depth**: Deep Graphite canvas (`#0F1115`) over the single dimmed static gym background image with subtle vertical obsidian scrim (`0x9E0F1115` → `0x900F1115` → `0xAA0F1115`), cool top-right ambient tint (`rgba(169, 199, 232, 0.16)`), and warm bottom-left ambient glow (`rgba(255, 94, 54, 0.10)`).
+- **Quick-action Dock**: 4 symmetric Warm Glass squircle tiles (`radius: 18px`, warm smoked gradient `0xC637302A` → `0xBB2C2621`, border `0xB7ADA396`), zero dividers between actions, `>= 48dp` touch targets.
+- **Membership & Coach Card (`Gói tập & Coach`)**: Warm Glass card (`radius: 24px`, `BackdropFilter` blur `sigma: 10`, warm smoked gradient `0xCD342D28` → `0xC829241F`, border `0xB7B3A99D`, top specular highlight `0x75FFF5E9`), inner metric panels (`radius: 17px`, min-height `82px`, translucent `#80211E1C` fill with `#9A8C8176` border), Coach avatar monogram, and Vietnamese status pill (`"Hiệu lực"`).
+- **Featured Card (`Hôm nay`) & Bento Cards (`Dinh dưỡng` + `Tiến độ`)**: Liquid Glass surfaces (`sigma: 12` when featured, subtle top specular highlight `0x70FFF6EA`). The 2-column Bento row splits `Dinh dưỡng` (left) and weekly workout progress (right) equally in a `128px`-tall row.
+- **Bottom Navigation & Scroll Clearance**: Floating navigation with 5 destinations and elevated AI center button; scrollable list includes `bottomPadding + 32` clearance so the bottom Explore/workbench items are never obscured.
 - **Terminology & Typography Refinement**:
-  - Replace all English status chips with Vietnamese: **"Hiệu lực"** (replaces "Active").
-  - Zero text-shadow, zero RGB subpixel fringe, hardware-accurate crisp font rendering (`-webkit-font-smoothing: antialiased`, `text-rendering: optimizeLegibility`).
-- **Solid Performance Surfaces (Level B - 60%)**:
-  - Gói tập & Coach, Dinh dưỡng, Tiến độ tuần, Khám phá Meta Gym use deep tonal solid graphite (`linear-gradient(145deg, rgba(24,31,39,0.97), rgba(15,20,26,0.97))`, border `rgba(212,228,255,0.10)`).
-- **Ambient Lighting**: Two static, large, soft radial gradients behind the canvas:
-  - Cool blue ambient light at top-right: `rgba(169, 199, 232, 0.16)`
-  - Warm orange ambient light at bottom-left: `rgba(255, 90, 54, 0.10)`
-  - Scrim calibration: **72% – 78%** to allow optical transmission through glass while keeping foreground text perfectly readable.
-- **Performance Mode Fallback**:
-  - If a low-end device drops frames, provide a toggle to fall back to the 80/20 baseline: Hero Card "Hôm nay" reverts to solid `#11161C` without backdrop blur, and blur on the dock/nav simplifies to flat `rgba(18,23,30,0.92)`.
+  - Replace English status chips with Vietnamese (`"Hiệu lực"` instead of `"Active"`).
+  - Crisp font rendering (`Be Vietnam Pro`), zero text-shadow blur or RGB subpixel fringe, `tabularFigures` for remaining days and workout metrics.
+- **Color Palette Standards**:
+  - Scaffold / Canvas: `#0F1115` (Deep Graphite).
+  - Card Surface (solid fallback & non-blurred containers): `#181B22` with 1px border `#262A34`.
+  - Primary Accent: `#FF5E36` (Coral Orange) for primary CTA, active navigation, active tiles, and key progress; with strictly white `#FFFFFF` text and icons on primary buttons.
+  - Semantic Colors: Green `#2ECC71` (Hoàn thành / Đang hiệu lực / Dinh dưỡng), Yellow `#F39C12` (Cảnh báo / Avatar phụ), Gray `#8E95A5` (Chữ phụ / Trạng thái tương lai chưa diễn ra).
+  - Coach Avatar `"LN"` (Lê Hoàng Nam): background `#F5B041`, text `#181B22` bold, synchronized across cards.
+- **Performance Mode Fallback (`useSolidGlassFallback` / Reduced Motion / Tests)**:
+  - Disable `BackdropFilter` blur and fall back to solid graphite/warm-dark surfaces (`#181B22` / `#302923` dock tiles, `rgba(24,27,34,0.92)` chrome) while maintaining borders and contrast.
 
 
 ## Simplification rules
@@ -75,9 +50,8 @@ Do not apply a strong glow to all four simultaneously. The strongest glow belong
 
 ## Performance target for demo
 
-- Two blurred regions visible at once: quick-action dock and bottom navigation.
-- All scrolling cards remain non-blurred.
-- Precache the single background image.
+- Keep Warm/Liquid Glass `BackdropFilter` (`sigma: 10–12`) bounded with `RepaintBoundary` on hero/summary cards and navigation, with solid fallback (`useSolidGlassFallback` / reduced motion) for low-end devices.
+- Precache the single background image (`assets/images/gym_banner.png`).
 - Avoid parallax and continuously animated glow.
 - Use opacity/transform only for card entrance and state changes.
 

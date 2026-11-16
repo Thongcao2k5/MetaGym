@@ -14,20 +14,22 @@
 ## Non-negotiable formula
 
 - 80% stable dark surfaces; no more than 20% true backdrop glass.
-- Canvas: `#080A0D`.
-- Solid card: `#11161C` or `#181F27`, no blur.
-- Performance glass: `rgba(18, 23, 30, 0.78)`, 12px blur, 24px radius.
-- Overlay glass: `rgba(14, 18, 24, 0.90)`, 18px blur, only dialogs/sheets/AI overlay.
+- Canvas (Scaffold): `#0F1115` (Deep Graphite).
+- Solid card: `#181B22` with 1px border `#262A34`, no blur.
+- Performance glass: `rgba(24, 27, 34, 0.78)`, 12px blur, 24px radius.
+- Overlay glass: `rgba(15, 17, 21, 0.90)`, 18px blur, only dialogs/sheets/AI overlay.
 - Never nest blurred glass.
 - Never animate blur. Animate opacity and transform.
 
 ## Identity tokens
 
-- Action orange: `#FF5A36`.
+- Primary accent (Coral Orange): `#FF5E36` (CTA chính, active, progress chính, điểm nhấn; chữ/icon trên nút bắt buộc `#FFFFFF`).
 - Cool reflection: `#A9C7E8`.
 - Primary text: `#F7F9FC`.
-- Secondary text: `#B8C2D0`.
-- Success: `#23C997`.
+- Secondary/Subtext: `#8E95A5` (chữ phụ / trạng thái tương lai chưa diễn ra).
+- Semantic green: `#2ECC71` (hoàn thành / đang hiệu lực / dinh dưỡng).
+- Semantic yellow: `#F39C12` (cảnh báo / avatar phụ).
+- Coach Avatar "LN": nền `#F5B041`, chữ `#181B22` đậm xuyên suốt toàn bộ các thẻ.
 - Font: **Be Vietnam Pro**, locally bundled.
 - Orange occupies roughly 5–10% of a typical viewport and is reserved for action, selection, and key progress.
 

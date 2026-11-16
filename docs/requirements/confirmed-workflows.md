@@ -1,5 +1,7 @@
 # Meta Gym — Đặc tả và kế hoạch MVP
 
+> Quyết định mới 15/11/2026: Điểm danh bằng nhận diện khuôn mặt thay thế luồng quét QR. Sau khi thanh toán gói Gym thành công, hội viên đăng ký khuôn mặt trong ứng dụng. Khi đến phòng gym, camera tại quầy nhận diện để ghi lượt đến. **Chỉ triển khai tính năng này sau khi hoàn tất giao diện ứng dụng**; giai đoạn hiện tại chỉ thiết kế trang Lịch sử tập luyện để xem ngày và các lượt đã ghi nhận, không thêm thao tác điểm danh. Các đoạn mô tả QR bên dưới và API QR hiện có phản ánh bản triển khai cũ, không còn là mục tiêu thiết kế. Hợp đồng API và cách lưu/xác minh dữ liệu khuôn mặt sẽ được thiết kế ở giai đoạn triển khai tính năng.
+
 > Cập nhật: 20/10/2026  
 > Trạng thái: Bản chốt nghiệp vụ và kỹ thuật để người dùng thực hiện lượt review cuối trước khi lập trình.
 

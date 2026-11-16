@@ -49,7 +49,10 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
       const mimeType = request.get('content-type')?.split(';')[0]?.toLowerCase();
       const fileName = request.get('x-file-name') ?? 'image';
       const bytes = request.body;
-      if (!['MESSAGE', 'PROGRESS_PHOTO', 'MEAL_PHOTO'].includes(purpose) ||
+      const validPurpose =
+        ['MESSAGE', 'PROGRESS_PHOTO', 'MEAL_PHOTO'].includes(purpose) ||
+        (purpose === 'COACH_OUTCOME' && request.authUser.role === 'COACH');
+      if (!validPurpose ||
         !['image/png', 'image/jpeg'].includes(mimeType) ||
         !Buffer.isBuffer(bytes) || !bytes.length || bytes.length > MAX_BYTES ||
         fileName.length > 255) {
