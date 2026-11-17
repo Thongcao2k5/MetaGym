@@ -95,6 +95,33 @@ void main() {
     expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
     expect(service.loads, 2);
   });
+
+  testWidgets(
+    'renders CoachRequestsPage and CoachRequestDetailPage without overflow at 375x812',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final service = _CoachRequestsFixture();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CoachRequestsPage(coachId: 'coach-1', service: service),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hạn mức học viên'), findsOneWidget);
+      expect(find.text('Còn 1 suất'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('Hội viên member-1'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Phản hồi yêu cầu'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _CoachRequestsFixture implements CoachRequestsService {
