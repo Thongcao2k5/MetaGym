@@ -77,6 +77,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Quan hệ Coach–Member không hoạt động'), findsOneWidget);
   });
+
+  testWidgets('renders Coach nutrition flow without overflow at 375x812', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final service = _CoachNutritionFixture();
+    await tester.pumpWidget(
+      MaterialApp(home: CoachNutritionPage(service: service)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Nguyễn An'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tạo hướng dẫn'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('guide-title')),
+      'Thực đơn tuần đầu',
+    );
+    await tester.enterText(
+      find.byKey(const Key('guide-content')),
+      'Ăn đủ đạm và rau xanh.',
+    );
+    await tester.tap(find.text('Lưu bản nháp'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bản nháp · Phiên bản 1'), findsOneWidget);
+    expect(find.text('Lưu bản nháp'), findsOneWidget);
+    expect(find.text('Công bố'), findsOneWidget);
+  });
 }
 
 class _CoachNutritionFixture
