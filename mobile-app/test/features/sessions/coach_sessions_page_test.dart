@@ -118,6 +118,47 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'renders Graphite tabs and coachBooking hero without overflow at 375x812',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final sessions = _SessionsFixture(seed: true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CoachSessionsPage(
+            service: sessions,
+            membersService: _MembersFixture(),
+            coachBooking: const Scaffold(body: Center(child: Text('Booking'))),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quản lý buổi tập'), findsOneWidget);
+      expect(find.text('Quản lý lịch làm việc Coach'), findsOneWidget);
+      expect(find.text('Buổi cũ'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('Lịch sử'));
+      await tester.pumpAndSettle();
+      expect(find.text('Không có buổi tập ở mục này.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('Tất cả'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quản lý lịch làm việc Coach'));
+      await tester.pumpAndSettle();
+      expect(find.text('Booking'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _MembersFixture implements CoachMembersService {
