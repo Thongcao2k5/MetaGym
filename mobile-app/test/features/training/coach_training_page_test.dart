@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
@@ -186,6 +187,46 @@ void main() {
     expect(find.text('Bài tập không còn trong danh mục.'), findsOneWidget);
     expect(service.updated, false);
   });
+
+  testWidgets(
+    'renders muscle preview & status pills without overflow at 375x812',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final service = _MultiStatusTrainingFixture();
+      await tester.pumpWidget(
+        MaterialApp(home: CoachTrainingPage(service: service)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Nguyễn An'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MuscleAnatomyTile), findsNWidgets(3));
+      expect(find.text('Bản nháp · Phiên bản 3'), findsOneWidget);
+      expect(find.text('Đã công bố · Phiên bản 2'), findsOneWidget);
+      expect(find.text('Đã lưu trữ · Phiên bản 1'), findsOneWidget);
+
+      await tester.tap(find.text('Giáo trình nháp'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sửa bản nháp'), findsOneWidget);
+      expect(find.text('Công bố'), findsOneWidget);
+
+      await tester.tap(find.text('Sửa bản nháp'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MuscleAnatomyTile), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('day-title-0')),
+        'Ngực · Vai',
+      );
+      await tester.pump();
+      expect(find.textContaining('Ngực · Vai'), findsWidgets);
+    },
+  );
 }
 
 class _CoachTrainingFixture implements CoachTrainingService {
@@ -271,4 +312,59 @@ class _CoachTrainingFixture implements CoachTrainingService {
       ],
     );
   }
+}
+
+class _MultiStatusTrainingFixture extends _CoachTrainingFixture {
+  static const List<TrainingPlan> _plans = [
+    TrainingPlan(
+      id: 'draft-1',
+      title: 'Giáo trình nháp',
+      goal: 'Tăng sức mạnh toàn thân',
+      status: 'DRAFT',
+      version: 3,
+      days: [
+        TrainingDay(
+          dayNumber: 1,
+          scheduledDate: '2026-11-18',
+          title: 'Chân · Mông',
+          exercises: [
+            TrainingExercise(
+              exerciseId: 'exercise-1',
+              exerciseName: 'Squat',
+              displayOrder: 1,
+              sets: 4,
+              reps: '10',
+            ),
+          ],
+        ),
+      ],
+    ),
+    TrainingPlan(
+      id: 'active-1',
+      title: 'Giáo trình hiện hành',
+      goal: 'Ổn định kỹ thuật cơ bản',
+      status: 'ACTIVE',
+      version: 2,
+      days: [
+        TrainingDay(
+          dayNumber: 1,
+          scheduledDate: '2026-11-15',
+          title: 'Lưng · Xô',
+        ),
+      ],
+    ),
+    TrainingPlan(
+      id: 'archived-1',
+      title: 'Giáo trình lưu trữ',
+      status: 'ARCHIVED',
+      version: 1,
+    ),
+  ];
+
+  @override
+  Future<List<TrainingPlan>> getPlans(String memberId) async => _plans;
+
+  @override
+  Future<TrainingPlan> getPlan(String id) async =>
+      _plans.firstWhere((item) => item.id == id);
 }

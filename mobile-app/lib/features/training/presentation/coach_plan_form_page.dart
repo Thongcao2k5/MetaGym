@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/training_plan_content.dart';
@@ -133,12 +138,18 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       '${date.month.toString().padLeft(2, '0')}-'
       '${date.day.toString().padLeft(2, '0')}';
 
+  String _displayDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
+
   Future<void> _selectDayDate(int dayIndex) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _days[dayIndex].scheduledDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: (context, child) =>
+          Theme(data: MetaGymTheme.dark, child: child!),
     );
     if (picked != null && mounted) {
       setState(() => _days[dayIndex].scheduledDate = picked);
@@ -308,15 +319,38 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     );
     await showDialog<void>(
       context: context,
+      barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Xem trước giáo trình'),
+        backgroundColor: MetaGymTheme.cardSurface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+          side: const BorderSide(color: MetaGymTheme.cardBorder),
+        ),
+        title: const Text(
+          'Xem trước giáo trình',
+          style: TextStyle(
+            color: MetaGymTheme.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: SizedBox(
           width: 400,
           child: SingleChildScrollView(child: TrainingPlanContent(plan: plan)),
         ),
         actions: [
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.elevatedSurface,
+              foregroundColor: MetaGymTheme.textPrimary,
+              minimumSize: const Size(48, 44),
+              side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              ),
+            ),
             child: const Text('Đóng'),
           ),
         ],
@@ -324,221 +358,637 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     );
   }
 
+  Set<MuscleFocus> _resolveDayFocuses(_DayDraft day) {
+    final selected = day.exercises
+        .map(
+          (draft) =>
+              _catalog.where((item) => item.id == draft.exerciseId).firstOrNull,
+        )
+        .whereType<CatalogItem>()
+        .toList();
+    return resolveMuscleFocusSet(
+      day.title.text,
+      exerciseNames: selected.map((item) => item.name).toList(),
+      targetMuscles: selected.expand((item) => item.targetMuscles).toList(),
+    );
+  }
+
+  InputDecoration _darkInputDecoration({
+    required String labelText,
+    String? hintText,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.darkBorderStrong),
+    );
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      filled: true,
+      fillColor: MetaGymTheme.elevatedSurface,
+      labelStyle: const TextStyle(
+        color: MetaGymTheme.textSecondary,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+      floatingLabelStyle: const TextStyle(
+        color: MetaGymTheme.reflectionBlue,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: TextStyle(
+        color: MetaGymTheme.textSecondary.withValues(alpha: 0.65),
+        fontSize: 13.5,
+      ),
+      counterStyle: const TextStyle(
+        color: MetaGymTheme.textSecondary,
+        fontSize: 11,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+        borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 1.8),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+        borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+      ),
+    );
+  }
+
+  static const TextStyle _fieldTextStyle = TextStyle(
+    color: MetaGymTheme.textPrimary,
+    fontSize: 14.5,
+    fontWeight: FontWeight.w500,
+  );
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(widget.plan == null ? 'Tạo giáo trình' : 'Sửa bản nháp'),
-    ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            key: const Key('coach-plan-form-list'),
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (_error != null)
-                Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              TextField(
-                key: const Key('plan-title'),
-                controller: _title,
-                maxLength: 150,
-                decoration: const InputDecoration(labelText: 'Tiêu đề'),
-              ),
-              TextField(
-                key: const Key('plan-goal'),
-                controller: _goal,
-                maxLength: 5000,
-                maxLines: 2,
-                decoration: const InputDecoration(labelText: 'Mục tiêu'),
-              ),
-              for (var dayIndex = 0; dayIndex < _days.length; dayIndex++) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'Ngày ${dayIndex + 1}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                OutlinedButton.icon(
-                  key: Key('day-date-$dayIndex'),
-                  onPressed: _busy ? null : () => _selectDayDate(dayIndex),
-                  icon: const Icon(Icons.event_outlined),
-                  label: Text(
-                    _days[dayIndex].scheduledDate == null
-                        ? 'Chọn ngày theo lịch'
-                        : 'Ngày ${_days[dayIndex].scheduledDate!.day.toString().padLeft(2, '0')}/${_days[dayIndex].scheduledDate!.month.toString().padLeft(2, '0')}/${_days[dayIndex].scheduledDate!.year}',
+  Widget build(BuildContext context) {
+    final media = MediaQuery.paddingOf(context);
+    final canPop = Navigator.of(context).canPop();
+    final pageTitle = widget.plan == null
+        ? 'Tạo giáo trình'
+        : (widget.service is CoachTrainingApi
+              ? 'Sửa giáo trình'
+              : 'Sửa bản nháp');
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: MetaGymTheme.scaffoldBackground,
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leadingWidth: 72,
+          leading: canPop
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: MetaGymCircleIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      tooltip: 'Back',
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
                   ),
-                ),
-                TextField(
-                  key: Key('day-title-$dayIndex'),
-                  controller: _days[dayIndex].title,
-                  maxLength: 120,
-                  decoration: const InputDecoration(labelText: 'Tên ngày tập'),
-                ),
-                TextField(
-                  controller: _days[dayIndex].notes,
-                  maxLength: 2000,
-                  decoration: const InputDecoration(
-                    labelText: 'Ghi chú ngày tập',
-                  ),
-                ),
-                for (
-                  var exerciseIndex = 0;
-                  exerciseIndex < _days[dayIndex].exercises.length;
-                  exerciseIndex++
                 )
-                  _exerciseFields(dayIndex, exerciseIndex),
-                TextButton.icon(
+              : null,
+          titleSpacing: canPop ? 8 : 16,
+          title: Text(
+            pageTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          foregroundColor: MetaGymTheme.textPrimary,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const MetaGymBackground(),
+            _loading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: MetaGymTheme.primary,
+                    ),
+                  )
+                : ListView(
+                    key: const Key('coach-plan-form-list'),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      media.top + kToolbarHeight + 12,
+                      16,
+                      media.bottom + 32,
+                    ),
+                    children: [
+                      if (_error != null) CoachingErrorBanner(message: _error!),
+                      CoachingGraphiteCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _FormSectionHeader(
+                              icon: Icons.description_outlined,
+                              title: 'Thông tin giáo trình',
+                            ),
+                            const SizedBox(height: 14),
+                            TextField(
+                              key: const Key('plan-title'),
+                              controller: _title,
+                              maxLength: 150,
+                              style: _fieldTextStyle,
+                              decoration: _darkInputDecoration(
+                                labelText: 'Tiêu đề',
+                                hintText: 'VD: Sức mạnh cơ bản 4 buổi/tuần',
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              key: const Key('plan-goal'),
+                              controller: _goal,
+                              maxLength: 5000,
+                              maxLines: 2,
+                              style: _fieldTextStyle,
+                              decoration: _darkInputDecoration(
+                                labelText: 'Mục tiêu',
+                                hintText: 'VD: Tăng cơ và ổn định kỹ thuật',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      for (
+                        var dayIndex = 0;
+                        dayIndex < _days.length;
+                        dayIndex++
+                      )
+                        _buildDayCard(dayIndex),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _busy
+                              ? null
+                              : () => setState(() => _days.add(_DayDraft())),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: MetaGymTheme.textPrimary,
+                            backgroundColor: MetaGymTheme.cardSurface,
+                            minimumSize: const Size(double.infinity, 48),
+                            side: const BorderSide(
+                              color: MetaGymTheme.darkBorderStrong,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                MetaGymTheme.radiusInput,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Thêm ngày tập'),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CoachingSecondaryButton(
+                              label: 'Xem trước',
+                              onPressed: _busy ? null : _preview,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: CoachingPrimaryButton(
+                              label: widget.service is CoachTrainingApi
+                                  ? 'Lưu giáo trình'
+                                  : 'Lưu bản nháp',
+                              loading: _busy,
+                              onPressed: _busy ? null : _save,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDayCard(int dayIndex) {
+    final day = _days[dayIndex];
+    final dayFocuses = _resolveDayFocuses(day);
+    final focusSummary = dayFocuses.isEmpty
+        ? 'Nhóm cơ tự động theo tên & bài tập'
+        : '${summarizeMuscleFocuses(dayFocuses)} · ${isPosteriorMuscleView(dayFocuses) ? 'Mặt sau' : 'Mặt trước'}';
+
+    return CoachingGraphiteCard(
+      margin: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              MuscleAnatomyTile(
+                focuses: dayFocuses,
+                width: 48,
+                height: 58,
+                selected: dayFocuses.isNotEmpty,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CoachingPill(
+                      label: 'Ngày ${dayIndex + 1}',
+                      tone: CoachingPillTone.coral,
+                      icon: Icons.fitness_center_rounded,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      focusSummary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: dayFocuses.isNotEmpty
+                            ? MetaGymTheme.reflectionBlue
+                            : MetaGymTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_days.length > 1)
+                IconButton(
+                  tooltip: 'Xóa ngày tập',
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
+                  onPressed: _busy
+                      ? null
+                      : () =>
+                            setState(() => _days.removeAt(dayIndex).dispose()),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: MetaGymTheme.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: Key('day-date-$dayIndex'),
+              onPressed: _busy ? null : () => _selectDayDate(dayIndex),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: MetaGymTheme.textPrimary,
+                backgroundColor: MetaGymTheme.elevatedSurface,
+                minimumSize: const Size(double.infinity, 48),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              icon: const Icon(
+                Icons.event_outlined,
+                color: MetaGymTheme.brandOrange,
+                size: 20,
+              ),
+              label: Text(
+                day.scheduledDate == null
+                    ? 'Chọn ngày theo lịch'
+                    : 'Ngày ${_displayDate(day.scheduledDate!)}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: Key('day-title-$dayIndex'),
+            controller: day.title,
+            maxLength: 120,
+            style: _fieldTextStyle,
+            onChanged: (_) => setState(() {}),
+            decoration: _darkInputDecoration(
+              labelText: 'Tên ngày tập',
+              hintText: 'VD: Thân trên · Ngực & Vai',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: day.notes,
+            maxLength: 2000,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(labelText: 'Ghi chú ngày tập'),
+          ),
+          const SizedBox(height: 14),
+          _FormSectionHeader(
+            icon: Icons.sports_gymnastics_rounded,
+            title: 'Bài tập (${day.exercises.length})',
+          ),
+          const SizedBox(height: 10),
+          for (
+            var exerciseIndex = 0;
+            exerciseIndex < day.exercises.length;
+            exerciseIndex++
+          )
+            _exerciseFields(dayIndex, exerciseIndex),
+          OutlinedButton.icon(
+            onPressed: _busy
+                ? null
+                : () => setState(() => day.exercises.add(_ExerciseDraft())),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: MetaGymTheme.reflectionBlue,
+              backgroundColor: MetaGymTheme.elevatedSurface,
+              minimumSize: const Size(double.infinity, 44),
+              side: const BorderSide(color: MetaGymTheme.cardBorder),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              ),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Thêm bài tập'),
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: MetaGymTheme.cardBorder, height: 1),
+          const SizedBox(height: 14),
+          const _FormSectionHeader(
+            icon: Icons.restaurant_menu_rounded,
+            iconColor: MetaGymTheme.success,
+            title: 'Lịch ăn trong ngày',
+          ),
+          const SizedBox(height: 10),
+          for (var mealIndex = 0; mealIndex < day.meals.length; mealIndex++)
+            _mealFields(dayIndex, mealIndex),
+          OutlinedButton.icon(
+            onPressed: _busy || day.meals.length >= 12
+                ? null
+                : () => setState(() => day.meals.add(_MealDraft())),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: MetaGymTheme.success,
+              backgroundColor: MetaGymTheme.elevatedSurface,
+              minimumSize: const Size(double.infinity, 44),
+              side: const BorderSide(color: MetaGymTheme.cardBorder),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              ),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Thêm bữa ăn'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _exerciseFields(int dayIndex, int exerciseIndex) {
+    final day = _days[dayIndex];
+    final draft = day.exercises[exerciseIndex];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: MetaGymTheme.elevatedSurface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: MetaGymTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Bài tập ${exerciseIndex + 1}',
+                  style: const TextStyle(
+                    color: MetaGymTheme.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (day.exercises.length > 1)
+                IconButton(
+                  tooltip: 'Xóa bài tập',
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                   onPressed: _busy
                       ? null
                       : () => setState(() {
-                          _days[dayIndex].exercises.add(_ExerciseDraft());
+                          day.exercises.removeAt(exerciseIndex).dispose();
                         }),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Thêm bài tập'),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: MetaGymTheme.textSecondary,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Lịch ăn trong ngày',
-                  style: Theme.of(context).textTheme.titleSmall,
+            ],
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            key: Key('exercise-choice-$dayIndex-$exerciseIndex'),
+            initialValue: draft.exerciseId,
+            isExpanded: true,
+            dropdownColor: MetaGymTheme.elevatedSurface,
+            iconEnabledColor: MetaGymTheme.textSecondary,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(labelText: 'Bài tập'),
+            items: [
+              for (final item in _catalog)
+                DropdownMenuItem(
+                  value: item.id,
+                  child: Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                for (
-                  var mealIndex = 0;
-                  mealIndex < _days[dayIndex].meals.length;
-                  mealIndex++
-                )
-                  _mealFields(dayIndex, mealIndex),
-                TextButton.icon(
-                  onPressed: _busy || _days[dayIndex].meals.length >= 12
-                      ? null
-                      : () => setState(
-                          () => _days[dayIndex].meals.add(_MealDraft()),
-                        ),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Thêm bữa ăn'),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) => setState(() => draft.exerciseId = value),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: draft.sets,
+                  keyboardType: TextInputType.number,
+                  style: _fieldTextStyle,
+                  decoration: _darkInputDecoration(labelText: 'Số hiệp'),
                 ),
-              ],
-              TextButton.icon(
-                onPressed: _busy
-                    ? null
-                    : () => setState(() => _days.add(_DayDraft())),
-                icon: const Icon(Icons.add),
-                label: const Text('Thêm ngày tập'),
               ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: _busy ? null : _preview,
-                child: const Text('Xem trước'),
-              ),
-              FilledButton(
-                onPressed: _busy ? null : _save,
-                child: Text(
-                  widget.service is CoachTrainingApi
-                      ? 'Lưu giáo trình'
-                      : 'Lưu bản nháp',
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  key: Key('exercise-reps-$dayIndex-$exerciseIndex'),
+                  controller: draft.reps,
+                  style: _fieldTextStyle,
+                  decoration: _darkInputDecoration(labelText: 'Số lần lặp'),
                 ),
               ),
             ],
           ),
-  );
-
-  Widget _exerciseFields(int dayIndex, int exerciseIndex) {
-    final draft = _days[dayIndex].exercises[exerciseIndex];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Bài tập ${exerciseIndex + 1}'),
-        DropdownButtonFormField<String>(
-          key: Key('exercise-choice-$dayIndex-$exerciseIndex'),
-          initialValue: draft.exerciseId,
-          decoration: const InputDecoration(labelText: 'Bài tập'),
-          items: [
-            for (final item in _catalog)
-              DropdownMenuItem(value: item.id, child: Text(item.name)),
-          ],
-          onChanged: _busy
-              ? null
-              : (value) => setState(() => draft.exerciseId = value),
-        ),
-        TextField(
-          controller: draft.sets,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Số hiệp'),
-        ),
-        TextField(
-          key: Key('exercise-reps-$dayIndex-$exerciseIndex'),
-          controller: draft.reps,
-          decoration: const InputDecoration(labelText: 'Số lần lặp'),
-        ),
-        TextField(
-          controller: draft.duration,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Thời lượng (giây)'),
-        ),
-      ],
+          const SizedBox(height: 10),
+          TextField(
+            controller: draft.duration,
+            keyboardType: TextInputType.number,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(labelText: 'Thời lượng (giây)'),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _mealFields(int dayIndex, int mealIndex) {
     final draft = _days[dayIndex].meals[mealIndex];
-    return Card(
+    return Container(
       key: Key('day-meal-$dayIndex-$mealIndex'),
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text('Bữa ăn ${mealIndex + 1}')),
-                IconButton(
-                  tooltip: 'Xóa bữa ăn',
-                  onPressed: _busy
-                      ? null
-                      : () => setState(() {
-                          _days[dayIndex].meals.removeAt(mealIndex).dispose();
-                        }),
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-            DropdownButtonFormField<String>(
-              initialValue: draft.mealType,
-              decoration: const InputDecoration(labelText: 'Loại bữa'),
-              items: const [
-                DropdownMenuItem(value: 'BREAKFAST', child: Text('Bữa sáng')),
-                DropdownMenuItem(value: 'LUNCH', child: Text('Bữa trưa')),
-                DropdownMenuItem(value: 'DINNER', child: Text('Bữa tối')),
-                DropdownMenuItem(value: 'SNACK', child: Text('Bữa phụ')),
-                DropdownMenuItem(value: 'OTHER', child: Text('Khác')),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (value) =>
-                        setState(() => draft.mealType = value ?? 'OTHER'),
-            ),
-            TextField(
-              controller: draft.time,
-              keyboardType: TextInputType.datetime,
-              decoration: const InputDecoration(
-                labelText: 'Giờ ăn (HH:mm, tùy chọn)',
-              ),
-            ),
-            TextField(
-              controller: draft.title,
-              maxLength: 120,
-              decoration: const InputDecoration(labelText: 'Món ăn / thực đơn'),
-            ),
-            TextField(
-              controller: draft.notes,
-              maxLength: 2000,
-              maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Hướng dẫn ăn uống'),
-            ),
-          ],
-        ),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: MetaGymTheme.elevatedSurface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: MetaGymTheme.cardBorder),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Bữa ăn ${mealIndex + 1}',
+                  style: const TextStyle(
+                    color: MetaGymTheme.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Xóa bữa ăn',
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                onPressed: _busy
+                    ? null
+                    : () => setState(() {
+                        _days[dayIndex].meals.removeAt(mealIndex).dispose();
+                      }),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: MetaGymTheme.textSecondary,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: draft.mealType,
+            isExpanded: true,
+            dropdownColor: MetaGymTheme.elevatedSurface,
+            iconEnabledColor: MetaGymTheme.textSecondary,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(labelText: 'Loại bữa'),
+            items: const [
+              DropdownMenuItem(value: 'BREAKFAST', child: Text('Bữa sáng')),
+              DropdownMenuItem(value: 'LUNCH', child: Text('Bữa trưa')),
+              DropdownMenuItem(value: 'DINNER', child: Text('Bữa tối')),
+              DropdownMenuItem(value: 'SNACK', child: Text('Bữa phụ')),
+              DropdownMenuItem(value: 'OTHER', child: Text('Khác')),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) => setState(() => draft.mealType = value ?? 'OTHER'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: draft.time,
+            keyboardType: TextInputType.datetime,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(
+              labelText: 'Giờ ăn (HH:mm, tùy chọn)',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: draft.title,
+            maxLength: 120,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(labelText: 'Món ăn / thực đơn'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: draft.notes,
+            maxLength: 2000,
+            maxLines: 2,
+            style: _fieldTextStyle,
+            decoration: _darkInputDecoration(labelText: 'Hướng dẫn ăn uống'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormSectionHeader extends StatelessWidget {
+  const _FormSectionHeader({
+    required this.icon,
+    required this.title,
+    this.iconColor = MetaGymTheme.brandOrange,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: iconColor, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
