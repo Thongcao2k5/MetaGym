@@ -449,7 +449,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                     alignment: Alignment.centerLeft,
                     child: MetaGymCircleIconButton(
                       icon: Icons.arrow_back_ios_new_rounded,
-                      tooltip: 'Quay lại',
+                      tooltip: 'Back',
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                   ),
