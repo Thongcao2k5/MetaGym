@@ -342,6 +342,10 @@ class _FakeMembershipService implements MembershipService {
   }
 
   @override
+  Future<MembershipQuote> getQuote(String planId) async =>
+      throw UnimplementedError();
+
+  @override
   Future<List<Membership>> getCurrentMemberships() async => memberships;
 
   @override
