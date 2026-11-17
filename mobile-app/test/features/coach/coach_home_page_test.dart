@@ -124,6 +124,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Lịch dạy & Học viên'), findsOneWidget);
+      expect(find.text('Lịch dạy (90p)'), findsOneWidget);
+      expect(find.text('Nhắn tin'), findsOneWidget);
+      expect(find.text('Hủy ca'), findsOneWidget);
+      expect(find.text('Hoàn tất'), findsOneWidget);
+      // Ensure the 3 booking action labels stay on a single line at 375x812
+      expect(tester.getSize(find.text('Nhắn tin')).height, lessThan(26));
+      expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
+      expect(tester.getSize(find.text('Hoàn tất')).height, lessThan(26));
       expect(find.text('Học viên & Yêu cầu (1)'), findsOneWidget);
 
       await tester.tap(find.text('Học viên & Yêu cầu (1)'));

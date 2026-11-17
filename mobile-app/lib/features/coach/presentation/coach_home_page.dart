@@ -1563,36 +1563,39 @@ class _CoachDashboardView extends StatelessWidget {
         InkWell(
           onTap: () => onOpenWorkHub(0),
           borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.workspace_premium_rounded,
-                  color: MetaGymTheme.brandOrange,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Tổng quan công việc',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFFF7F9FC),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: MetaGymTheme.brandOrange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Tổng quan công việc',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                CoachingPill(label: statusLabel, tone: statusTone),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: MetaGymTheme.darkTextSecondary,
-                  size: 20,
-                ),
-              ],
+                  CoachingPill(label: statusLabel, tone: statusTone),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: MetaGymTheme.darkTextSecondary,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -2978,13 +2981,18 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       foregroundColor: MetaGymTheme.darkTextPrimary,
                       side: const BorderSide(
                         color: MetaGymTheme.darkBorderStrong,
                       ),
                     ),
                     onPressed: widget.onOpenMessages,
-                    child: const Text('Nhắn tin'),
+                    child: const Text(
+                      'Nhắn tin',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -2992,6 +3000,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       foregroundColor: MetaGymTheme.dangerCoral,
                       side: BorderSide(
                         color: MetaGymTheme.dangerCoral.withValues(alpha: 0.45),
@@ -3000,7 +3009,11 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                     onPressed: widget.isMutating
                         ? null
                         : () => widget.onCancelBooking(booking),
-                    child: const Text('Hủy ca'),
+                    child: const Text(
+                      'Hủy ca',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -3008,13 +3021,18 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                   child: FilledButton(
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(48, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       backgroundColor: MetaGymTheme.brandOrange,
                       foregroundColor: MetaGymTheme.onPrimary,
                     ),
                     onPressed: widget.isMutating
                         ? null
                         : () => widget.onCompleteBooking(booking),
-                    child: const Text('Hoàn tất'),
+                    child: const Text(
+                      'Hoàn tất',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
