@@ -885,10 +885,24 @@ class _CoachSnapshot {
   );
 
   factory _CoachSnapshot.preview() {
-    final now = _toGymLocal(DateTime.now());
-    final todayMorning = DateTime(now.year, now.month, now.day, 9, 0);
-    final todayAfternoon = DateTime(now.year, now.month, now.day, 14, 0);
-    final todayEvening = DateTime(now.year, now.month, now.day, 17, 30);
+    final nowUtc = DateTime.now().toUtc();
+    final gymNow = _toGymLocal(nowUtc);
+    final gymTodayMax = DateTime.utc(
+      gymNow.year,
+      gymNow.month,
+      gymNow.day,
+      23,
+      0,
+    );
+    final firstGymCandidate = gymNow.add(const Duration(minutes: 20));
+    final firstGymStart = firstGymCandidate.isAfter(gymTodayMax)
+        ? gymTodayMax
+        : firstGymCandidate;
+    final firstStartUtc = firstGymStart.subtract(const Duration(hours: 7));
+    final secondStartUtc = firstStartUtc.add(const Duration(hours: 2));
+    final secondGymStart = firstGymStart.add(const Duration(hours: 2));
+    final thirdStartUtc = nowUtc.subtract(const Duration(hours: 2));
+    final thirdGymStart = gymNow.subtract(const Duration(hours: 2));
     return _CoachSnapshot(
       profile: const CoachProfile(
         id: 'preview-coach',
@@ -933,9 +947,9 @@ class _CoachSnapshot {
           id: 'bk-1',
           memberId: 'm-1',
           memberName: 'Nguyễn Minh Tuấn',
-          startsAt: todayMorning,
-          gymStart: todayMorning,
-          gymEnd: todayMorning.add(const Duration(minutes: 90)),
+          startsAt: firstStartUtc,
+          gymStart: firstGymStart,
+          gymEnd: firstGymStart.add(const Duration(minutes: 90)),
           focusTitle: 'Upper Body · Sức mạnh',
           status: 'BOOKED',
           isV2Booking: true,
@@ -944,9 +958,9 @@ class _CoachSnapshot {
           id: 'bk-2',
           memberId: 'm-2',
           memberName: 'Trần Thảo Vy',
-          startsAt: todayAfternoon,
-          gymStart: todayAfternoon,
-          gymEnd: todayAfternoon.add(const Duration(minutes: 90)),
+          startsAt: secondStartUtc,
+          gymStart: secondGymStart,
+          gymEnd: secondGymStart.add(const Duration(minutes: 90)),
           focusTitle: 'Glutes & Core · Giảm mỡ',
           status: 'BOOKED',
           isV2Booking: true,
@@ -955,9 +969,9 @@ class _CoachSnapshot {
           id: 'bk-3',
           memberId: 'm-3',
           memberName: 'Phạm Quốc Bảo',
-          startsAt: todayEvening,
-          gymStart: todayEvening,
-          gymEnd: todayEvening.add(const Duration(minutes: 90)),
+          startsAt: thirdStartUtc,
+          gymStart: thirdGymStart,
+          gymEnd: thirdGymStart.add(const Duration(minutes: 90)),
           focusTitle: 'Pull & Mobility',
           status: 'COMPLETED',
           isV2Booking: true,

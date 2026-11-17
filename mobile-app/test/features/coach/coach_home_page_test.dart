@@ -159,6 +159,8 @@ void main() {
 
       expect(find.text('Xin chào, Lê Hoàng Nam'), findsOneWidget);
       expect(find.text('8/12'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.text('Nguyễn Minh Tuấn').first, 200);
       expect(find.text('Nguyễn Minh Tuấn'), findsWidgets);
 
       final avatarFinder = find.ancestor(
@@ -204,14 +206,20 @@ class _CoachHomeAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    final nowLocal = DateTime.now().toUtc().add(const Duration(hours: 7));
-    final startUtc = DateTime.utc(
-      nowLocal.year,
-      nowLocal.month,
-      nowLocal.day,
-      2,
+    final nowUtc = DateTime.now().toUtc();
+    final gymNow = nowUtc.add(const Duration(hours: 7));
+    final gymTodayMax = DateTime.utc(
+      gymNow.year,
+      gymNow.month,
+      gymNow.day,
+      23,
       0,
-    ).add(const Duration(hours: 2));
+    );
+    final gymCandidate = gymNow.add(const Duration(minutes: 20));
+    final gymStart = gymCandidate.isAfter(gymTodayMax)
+        ? gymTodayMax
+        : gymCandidate;
+    final startUtc = gymStart.subtract(const Duration(hours: 7));
     final endUtc = startUtc.add(const Duration(minutes: 90));
 
     final Object? data = switch (options.path) {
