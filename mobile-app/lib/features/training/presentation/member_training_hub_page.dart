@@ -20,24 +20,26 @@ import 'package:meta_gym_app/features/progress/presentation/member_journal_page.
 import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
-import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_self_training_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/training_history_page.dart';
 import 'package:provider/provider.dart';
 
-/// Overview of the Member training area. The detailed Coach plan keeps its own
-/// page; this screen only routes to features available to the current Member.
+/// Overview of the Member training area. Synchronized with Member Home's
+/// Futuristic Performance Glass palette and 80/20 material hierarchy.
 class MemberTrainingHubPage extends StatefulWidget {
   const MemberTrainingHubPage({
     this.bottomPadding,
     this.membershipController,
     this.coachingService,
+    this.selfTrainingApi,
     super.key,
   });
 
   final double? bottomPadding;
   final MembershipController? membershipController;
   final MemberCoachingService? coachingService;
+  final MemberSelfTrainingApi? selfTrainingApi;
 
   @override
   State<MemberTrainingHubPage> createState() => _MemberTrainingHubPageState();
@@ -66,11 +68,13 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   Future<void> _load() async {
-    ApiClient? apiClient;
-    try {
-      apiClient = context.read<ApiClient>();
-    } catch (_) {
-      apiClient = null;
+    MemberSelfTrainingApi? selfApi = widget.selfTrainingApi;
+    if (selfApi == null) {
+      try {
+        selfApi = MemberSelfTrainingApi(context.read<ApiClient>());
+      } catch (_) {
+        selfApi = null;
+      }
     }
     setState(() {
       _loading = true;
@@ -92,13 +96,13 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       }
       MemberSelfTrainingDay? todaySelfPlan;
       String? todaySelfIconKey;
-      if (apiClient != null) {
+      if (selfApi != null) {
         try {
           final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
           final todayStr =
               '${vnNow.year.toString().padLeft(4, '0')}-${vnNow.month.toString().padLeft(2, '0')}-${vnNow.day.toString().padLeft(2, '0')}';
           final results = await Future.wait([
-            MemberSelfTrainingApi(apiClient).getRange(todayStr, todayStr),
+            selfApi.getRange(todayStr, todayStr),
             SelfTrainingIconStore().loadAll(),
           ]);
           final plans = results[0] as List<MemberSelfTrainingDay>;
@@ -203,9 +207,12 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: MetaGymTheme.primary,
                   foregroundColor: MetaGymTheme.onPrimary,
-                  minimumSize: const Size.fromHeight(52),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   textStyle: const TextStyle(
-                    fontSize: 19,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -269,6 +276,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   Widget build(BuildContext context) {
     final bottom =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
+    final useSolidFallback = _useSolidFallback(context);
     final gym = _membership == null ? null : _currentGym;
     final relationship = _relationship;
     final hasGym = gym != null;
@@ -286,6 +294,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                   )
                   .inDays +
               1;
+    final coachInitials = _extractInitials(_coachName);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -295,213 +304,168 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
           fit: StackFit.expand,
           children: [
             const _TrainingBackground(),
-            BackdropGroup(
-              child: SafeArea(
-                bottom: false,
-                child: RefreshIndicator(
-                  color: MetaGymTheme.primary,
-                  onRefresh: _load,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 20, 16, bottom + 20),
-                    children: [
-                      const Text(
-                        'Tập luyện',
-                        style: TextStyle(
-                          color: MetaGymTheme.textPrimary,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const _SectionTitle('Dịch vụ của bạn'),
-                      const SizedBox(height: 10),
-                      if (_loading)
-                        SizedBox(
-                          height: 170,
-                          child: Center(
-                            child: MetaGymTheme.isFlutterTestEnvironment
-                                ? const CircularProgressIndicator(
-                                    value: 0.5,
-                                    color: MetaGymTheme.primary,
-                                  )
-                                : const CircularProgressIndicator(
-                                    color: MetaGymTheme.primary,
-                                  ),
-                          ),
-                        )
-                      else if (_error != null)
-                        _ErrorCard(message: _error!, onRetry: _load)
-                      else
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child: _PackageTile(
-                                  title: 'Gói tập',
-                                  icon: Icons.card_membership_outlined,
-                                  headline: hasGym
-                                      ? '$daysLeft ngày'
-                                      : _hadGym
-                                      ? 'Đã hết hạn'
-                                      : 'Chưa có gói',
-                                  detail: hasGym
-                                      ? 'Còn lại · Hết hạn ${DateFormat('dd/MM/yyyy').format(end!)}'
-                                      : _hadGym
-                                      ? 'Gia hạn để tiếp tục tập luyện.'
-                                      : 'Chọn gói phù hợp để bắt đầu.',
-                                  action: hasGym
-                                      ? 'Xem gói tập'
-                                      : _hadGym
-                                      ? 'Gia hạn gói tập'
-                                      : 'Xem các gói tập',
-                                  onTap: () => _open(const MembershipPage()),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _PackageTile(
-                                  title: 'Gói Coach',
-                                  icon: Icons.person_outline_rounded,
-                                  coachInitials:
-                                      relationship != null && _coachName != null
-                                      ? _coachName!
-                                            .trim()
-                                            .split(RegExp(r'\s+'))
-                                            .map((word) => word[0])
-                                            .take(2)
-                                            .join()
-                                      : null,
-                                  headline: relationship == null
-                                      ? 'Khám phá Coach'
-                                      : _coachName ?? 'Coach của bạn',
-                                  detail: relationship == null
-                                      ? hasGym
-                                            ? 'Xem Coach và gói phù hợp.'
-                                            : 'Xem hồ sơ trước khi mua gói tập.'
-                                      : relationship.status == 'PAUSED'
-                                      ? 'Tạm ngưng · Gia hạn gói tập để tiếp tục.'
-                                      : 'Coach cá nhân · ${relationship.statusLabel}',
-                                  action: relationship == null
-                                      ? 'Xem danh sách'
-                                      : 'Xem gói Coach',
-                                  onTap: () => _open(
-                                    relationship == null
-                                        ? const CoachSelectionPage()
-                                        : const MemberCoachingPage(),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 20),
-                      const _SectionTitle('Công cụ tập luyện', accent: true),
-                      const SizedBox(height: 10),
-                      _FeatureRow(
-                        icon: Icons.menu_book_outlined,
-                        iconColor: const Color(0xFFFF8A32),
-                        locked: !hasGym || !hasCoach,
-                        title: 'Giáo trình của Coach',
-                        detail: _loading || _error != null
-                            ? 'Kế hoạch tập luyện và ăn uống từ Coach'
-                            : !hasGym
-                            ? 'Cần gói tập và gói Coach'
-                            : !hasCoach
-                            ? 'Cần gói Coach'
-                            : 'Kế hoạch tập luyện và ăn uống từ Coach',
-                        actionLabel: _error != null
-                            ? 'Thử lại'
-                            : hasGym && hasCoach
-                            ? 'Mở'
-                            : 'Đăng ký',
-                        onTap: _openPlan,
-                      ),
-                      const SizedBox(height: 10),
-                      _FeatureRow(
-                        icon: Icons.event_note_rounded,
-                        iconColor: const Color(0xFF5CBEFF),
-                        locked: false,
-                        title: 'Lịch tập của tôi',
-                        leadingTile: _todaySelfPlan == null
-                            ? null
-                            : MuscleAnatomyTile(
-                                focuses: resolveMuscleFocusSet(
-                                  _todaySelfPlan!.title,
-                                  exerciseNames: _todaySelfPlan!.exercises
-                                      .map((e) => e.name)
-                                      .toList(),
-                                  explicitKey: _todaySelfIconKey,
-                                ),
-                                width: 42,
-                                height: 48,
-                              ),
-                        detail: _todaySelfPlan == null
-                            ? 'Tự lên lịch theo tuần hoặc tháng'
-                            : [
-                                'Hôm nay',
-                                if (_todaySelfPlan!.startTime != null)
-                                  _todaySelfPlan!.startTime!,
-                                _todaySelfPlan!.title,
-                              ].join(' · '),
-                        actionLabel: 'Mở',
-                        onTap: () => _open(const MemberSelfTrainingPage()),
-                      ),
-                      const SizedBox(height: 10),
-                      _FeatureRow(
-                        icon: Icons.calendar_month_outlined,
-                        iconColor: const Color(0xFF25DE76),
-                        locked: !hasGym,
-                        title: 'Nhật ký tập luyện',
-                        detail: _loading || _error != null
-                            ? 'Ghi thành tích, ảnh và số đo theo ngày'
-                            : !hasGym
-                            ? _hadGym
-                                  ? 'Chỉ xem · Gia hạn gói tập để ghi thêm'
-                                  : 'Cần gói tập để ghi nhật ký'
-                            : 'Ghi thành tích, ảnh và số đo theo ngày',
-                        actionLabel: _error != null
-                            ? 'Thử lại'
-                            : hasGym
-                            ? 'Mở'
-                            : _hadGym
-                            ? 'Gia hạn'
-                            : 'Đăng ký',
-                        onTap: _openJournal,
-                      ),
-                      const SizedBox(height: 10),
-                      _FeatureRow(
-                        icon: Icons.history_rounded,
-                        iconColor: const Color(0xFF28AFFF),
-                        locked: false,
-                        title: 'Lịch sử tập luyện',
-                        detail: 'Xem các ngày và lượt đến phòng gym',
-                        actionLabel: 'Xem',
-                        onTap: () => _open(const TrainingHistoryPage()),
-                      ),
-                      const SizedBox(height: 10),
-                      _FeatureRow(
-                        icon: Icons.sports_gymnastics_outlined,
-                        iconColor: const Color(0xFFFFB923),
-                        locked: false,
-                        title: 'Thư viện bài tập',
-                        detail: 'Tìm bài theo nhóm cơ và xem cách thực hiện',
-                        actionLabel: 'Xem',
-                        onTap: () => _open(const ExerciseLibraryPage()),
-                      ),
-                      const SizedBox(height: 10),
-                      _FeatureRow(
-                        icon: Icons.fitness_center_outlined,
-                        iconColor: const Color(0xFFB45CFF),
-                        locked: false,
-                        title: 'Phòng gym & thiết bị',
-                        detail: 'Nội quy và hướng dẫn dùng máy',
-                        actionLabel: 'Xem',
-                        onTap: () => _open(const GymEquipmentPage()),
-                      ),
-                    ],
+            SafeArea(
+              bottom: false,
+              child: RefreshIndicator(
+                color: MetaGymTheme.primary,
+                backgroundColor: MetaGymTheme.cardSurface,
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    MetaGymTheme.pageGutter,
+                    10,
+                    MetaGymTheme.pageGutter,
+                    bottom + 24,
                   ),
+                  children: [
+                    _TrainingHeader(
+                      useSolidFallback: useSolidFallback,
+                      onOpenLibrary: () => _open(const ExerciseLibraryPage()),
+                      onOpenHistory: () => _open(const TrainingHistoryPage()),
+                    ),
+                    const SizedBox(height: 18),
+                    const _SectionTitle('Dịch vụ của bạn'),
+                    const SizedBox(height: 10),
+                    _ServiceHeroGlassCard(
+                      useSolidFallback: useSolidFallback,
+                      child: _buildServiceContent(
+                        useSolidFallback: useSolidFallback,
+                        hasGym: hasGym,
+                        daysLeft: daysLeft,
+                        endDate: end,
+                        relationship: relationship,
+                        coachInitials: coachInitials,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const _SectionTitle('Kế hoạch tập luyện', accent: true),
+                    const SizedBox(height: 10),
+                    _FeaturedPlanCard(
+                      useSolidFallback: useSolidFallback,
+                      icon: Icons.menu_book_outlined,
+                      iconColor: MetaGymTheme.primary,
+                      locked: !hasGym || !hasCoach,
+                      showActionPill:
+                          !_loading && _error == null && (!hasGym || !hasCoach),
+                      actionPillLabel: 'Đăng ký',
+                      title: 'Giáo trình của Coach',
+                      detail: _loading || _error != null
+                          ? 'Kế hoạch tập luyện và ăn uống từ Coach'
+                          : !hasGym
+                          ? 'Cần gói tập và gói Coach'
+                          : !hasCoach
+                          ? 'Cần gói Coach'
+                          : 'Kế hoạch tập luyện và ăn uống từ Coach',
+                      onTap: _openPlan,
+                    ),
+                    const SizedBox(height: 10),
+                    _FeaturedPlanCard(
+                      useSolidFallback: useSolidFallback,
+                      icon: Icons.event_note_rounded,
+                      iconColor: MetaGymTheme.reflectionBlue,
+                      locked: false,
+                      title: 'Lịch tập của tôi',
+                      leadingTile: _todaySelfPlan == null
+                          ? null
+                          : MuscleAnatomyTile(
+                              focuses: resolveMuscleFocusSet(
+                                _todaySelfPlan!.title,
+                                exerciseNames: _todaySelfPlan!.exercises
+                                    .map((e) => e.name)
+                                    .toList(),
+                                explicitKey: _todaySelfIconKey,
+                              ),
+                              width: 44,
+                              height: 50,
+                            ),
+                      statusBadge: _todaySelfPlan == null ? null : 'Hôm nay',
+                      detail: _todaySelfPlan == null
+                          ? 'Tự lên lịch theo tuần hoặc tháng'
+                          : [
+                              'Hôm nay',
+                              if (_todaySelfPlan!.startTime != null)
+                                _todaySelfPlan!.startTime!,
+                              _todaySelfPlan!.title,
+                            ].join(' · '),
+                      onTap: () => _open(const MemberSelfTrainingPage()),
+                    ),
+                    const SizedBox(height: 20),
+                    const _SectionTitle('Công cụ & Khám phá'),
+                    const SizedBox(height: 10),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _BentoToolCard(
+                              useSolidFallback: useSolidFallback,
+                              icon: Icons.calendar_month_outlined,
+                              iconColor: MetaGymTheme.success,
+                              locked: !hasGym,
+                              title: 'Nhật ký tập luyện',
+                              detail: _loading || _error != null
+                                  ? 'Ghi thành tích, ảnh và số đo theo ngày'
+                                  : !hasGym
+                                  ? _hadGym
+                                        ? 'Chỉ xem · Gia hạn gói tập để ghi thêm'
+                                        : 'Cần gói tập để ghi nhật ký'
+                                  : 'Ghi thành tích, ảnh và số đo theo ngày',
+                              ctaPillLabel:
+                                  !_loading && _error == null && !hasGym
+                                  ? (_hadGym ? 'Gia hạn' : 'Đăng ký')
+                                  : null,
+                              onTap: _openJournal,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _BentoToolCard(
+                              useSolidFallback: useSolidFallback,
+                              icon: Icons.history_rounded,
+                              iconColor: MetaGymTheme.reflectionBlue,
+                              locked: false,
+                              title: 'Lịch sử tập luyện',
+                              detail: 'Xem các ngày và lượt đến phòng gym',
+                              onTap: () => _open(const TrainingHistoryPage()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _BentoToolCard(
+                              useSolidFallback: useSolidFallback,
+                              icon: Icons.sports_gymnastics_outlined,
+                              iconColor: MetaGymTheme.primary,
+                              locked: false,
+                              title: 'Thư viện bài tập',
+                              detail:
+                                  'Tìm bài theo nhóm cơ và xem cách thực hiện',
+                              onTap: () => _open(const ExerciseLibraryPage()),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _BentoToolCard(
+                              useSolidFallback: useSolidFallback,
+                              icon: Icons.fitness_center_outlined,
+                              iconColor: MetaGymTheme.warning,
+                              locked: false,
+                              title: 'Phòng gym & thiết bị',
+                              detail: 'Nội quy và hướng dẫn dùng máy',
+                              onTap: () => _open(const GymEquipmentPage()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -510,6 +474,172 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       ),
     );
   }
+
+  Widget _buildServiceContent({
+    required bool useSolidFallback,
+    required bool hasGym,
+    required int? daysLeft,
+    required DateTime? endDate,
+    required MemberCoachRelationship? relationship,
+    required String? coachInitials,
+  }) {
+    if (_loading) {
+      return SizedBox(
+        height: 148,
+        child: Center(
+          child: MetaGymTheme.isFlutterTestEnvironment
+              ? const CircularProgressIndicator(
+                  value: 0.5,
+                  color: MetaGymTheme.primary,
+                  strokeWidth: 2.2,
+                )
+              : const CircularProgressIndicator(
+                  color: MetaGymTheme.primary,
+                  strokeWidth: 2.2,
+                ),
+        ),
+      );
+    }
+    if (_error != null) {
+      return _ServiceErrorPanel(message: _error!, onRetry: _load);
+    }
+
+    final gymStatus = hasGym
+        ? 'Hiệu lực'
+        : _hadGym
+        ? 'Hết hạn'
+        : 'Chưa có';
+    final gymStatusColor = hasGym
+        ? MetaGymTheme.success
+        : _hadGym
+        ? MetaGymTheme.warning
+        : MetaGymTheme.textSecondary;
+
+    final coachStatus = relationship == null
+        ? 'Khám phá'
+        : relationship.status == 'ACTIVE'
+        ? 'Hiệu lực'
+        : relationship.status == 'PAUSED'
+        ? 'Tạm ngưng'
+        : relationship.statusLabel;
+    final coachStatusColor = relationship == null
+        ? MetaGymTheme.reflectionBlue
+        : relationship.status == 'ACTIVE'
+        ? MetaGymTheme.success
+        : relationship.status == 'PAUSED'
+        ? MetaGymTheme.warning
+        : MetaGymTheme.textSecondary;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _ServiceMetricPanel(
+              useSolidFallback: useSolidFallback,
+              onTap: () => _open(const MembershipPage()),
+              leading: Icon(
+                Icons.card_membership_outlined,
+                color: MetaGymTheme.primary,
+                size: 16,
+              ),
+              title: 'Gói tập',
+              statusText: gymStatus,
+              statusColor: gymStatusColor,
+              headline: hasGym
+                  ? '$daysLeft ngày'
+                  : _hadGym
+                  ? 'Đã hết hạn'
+                  : 'Chưa có gói',
+              isNumericHeadline: hasGym,
+              detail: hasGym
+                  ? 'Còn lại · Hết hạn ${DateFormat('dd/MM/yyyy').format(endDate!)}'
+                  : _hadGym
+                  ? 'Gia hạn để tiếp tục tập luyện.'
+                  : 'Chọn gói phù hợp để bắt đầu.',
+              action: hasGym
+                  ? 'Xem gói tập'
+                  : _hadGym
+                  ? 'Gia hạn gói tập'
+                  : 'Xem các gói tập',
+              actionColor: hasGym
+                  ? MetaGymTheme.reflectionBlue
+                  : MetaGymTheme.primary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _ServiceMetricPanel(
+              useSolidFallback: useSolidFallback,
+              onTap: () => _open(
+                relationship == null
+                    ? const CoachSelectionPage()
+                    : const MemberCoachingPage(),
+              ),
+              leading: coachInitials != null && relationship != null
+                  ? Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: MetaGymTheme.coachAvatarBackground,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        coachInitials,
+                        style: const TextStyle(
+                          color: MetaGymTheme.coachAvatarForeground,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person_outline_rounded,
+                      color: MetaGymTheme.reflectionBlue,
+                      size: 16,
+                    ),
+              title: 'Gói Coach',
+              statusText: coachStatus,
+              statusColor: coachStatusColor,
+              headline: relationship == null
+                  ? 'Khám phá Coach'
+                  : _coachName ?? 'Coach của bạn',
+              isNumericHeadline: false,
+              detail: relationship == null
+                  ? hasGym
+                        ? 'Xem Coach và gói phù hợp.'
+                        : 'Xem hồ sơ trước khi mua gói tập.'
+                  : relationship.status == 'PAUSED'
+                  ? 'Tạm ngưng · Gia hạn gói tập để tiếp tục.'
+                  : 'Coach cá nhân · ${relationship.statusLabel}',
+              action: relationship == null ? 'Xem danh sách' : 'Xem gói Coach',
+              actionColor: MetaGymTheme.reflectionBlue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+bool _useSolidFallback(BuildContext context) =>
+    MediaQuery.disableAnimationsOf(context) ||
+    MetaGymTheme.isFlutterTestEnvironment;
+
+String? _extractInitials(String? name) {
+  if (name == null) return null;
+  final parts = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
+  if (parts.isEmpty) return null;
+  if (parts.length >= 2) {
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+  final word = parts.first;
+  return word.substring(0, word.length >= 2 ? 2 : 1).toUpperCase();
 }
 
 /// Same photo, ambient lights and dark scrim as the approved Member Home.
@@ -566,8 +696,129 @@ class _TrainingBackground extends StatelessWidget {
   ) => const ColoredBox(color: MetaGymTheme.darkCanvas);
 }
 
+class _TrainingHeader extends StatelessWidget {
+  const _TrainingHeader({
+    required this.useSolidFallback,
+    required this.onOpenLibrary,
+    required this.onOpenHistory,
+  });
+
+  final bool useSolidFallback;
+  final VoidCallback onOpenLibrary;
+  final VoidCallback onOpenHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'META GYM · TẬP LUYỆN',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: MetaGymTheme.primary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  height: 1.2,
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                'Tập luyện',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Color(0xFFF7F9FC),
+                  fontSize: 25,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        _CircleHeaderActionButton(
+          useSolidFallback: useSolidFallback,
+          icon: Icons.sports_gymnastics_outlined,
+          semanticLabel: 'Mở thư viện bài tập',
+          onTap: onOpenLibrary,
+        ),
+        const SizedBox(width: 4),
+        _CircleHeaderActionButton(
+          useSolidFallback: useSolidFallback,
+          icon: Icons.history_rounded,
+          semanticLabel: 'Mở lịch sử tập luyện',
+          onTap: onOpenHistory,
+        ),
+      ],
+    );
+  }
+}
+
+class _CircleHeaderActionButton extends StatelessWidget {
+  const _CircleHeaderActionButton({
+    required this.useSolidFallback,
+    required this.icon,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  final bool useSolidFallback;
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Tooltip(
+        message: semanticLabel,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: Center(
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: useSolidFallback
+                        ? const Color(0xFF282320)
+                        : const Color(0x9E2F2924),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0x95ADA295),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(icon, color: const Color(0xFFF7F9FC), size: 20),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.label, {this.accent = false});
+
   final String label;
   final bool accent;
 
@@ -577,450 +828,649 @@ class _SectionTitle extends StatelessWidget {
       if (accent) ...[
         Container(
           width: 3,
-          height: 18,
+          height: 17,
           decoration: BoxDecoration(
             color: MetaGymTheme.primary,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(width: 9),
+        const SizedBox(width: 8),
       ],
-      Text(
-        label,
-        style: const TextStyle(
-          color: MetaGymTheme.textPrimary,
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
+      Flexible(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     ],
   );
 }
 
-class _TrainingGlassBlur extends StatelessWidget {
-  const _TrainingGlassBlur({required this.radius, required this.child});
+/// Level 2 Hero Smoked Glass card synchronized 1:1 with Member Home's
+/// `_buildMembershipGlassCard`. Uses `BackdropFilter` only on this hero card.
+class _ServiceHeroGlassCard extends StatelessWidget {
+  const _ServiceHeroGlassCard({
+    required this.useSolidFallback,
+    required this.child,
+  });
 
-  final double radius;
+  final bool useSolidFallback;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    if (MediaQuery.disableAnimationsOf(context) ||
-        MetaGymTheme.isFlutterTestEnvironment) {
-      return child;
+    final radius = BorderRadius.circular(24);
+    final surface = Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: useSolidFallback ? const Color(0xFF282320) : null,
+        gradient: useSolidFallback
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xCD342D28), Color(0xC829241F)],
+              ),
+        borderRadius: radius,
+        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            left: 20,
+            right: 20,
+            top: 0,
+            child: SizedBox(
+              height: 1,
+              child: ColoredBox(color: Color(0x75FFF5E9)),
+            ),
+          ),
+          Padding(padding: const EdgeInsets.all(12), child: child),
+        ],
+      ),
+    );
+    if (useSolidFallback) {
+      return surface;
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter.grouped(
-        filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-        child: child,
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: surface,
+        ),
       ),
     );
   }
 }
 
-class _PackageTile extends StatelessWidget {
-  const _PackageTile({
+class _ServiceMetricPanel extends StatelessWidget {
+  const _ServiceMetricPanel({
+    required this.useSolidFallback,
+    required this.onTap,
+    required this.leading,
     required this.title,
-    required this.icon,
+    required this.statusText,
+    required this.statusColor,
     required this.headline,
+    required this.isNumericHeadline,
     required this.detail,
     required this.action,
-    required this.onTap,
-    this.coachInitials,
+    required this.actionColor,
   });
-  final String title, headline, detail, action;
-  final IconData icon;
+
+  final bool useSolidFallback;
   final VoidCallback onTap;
-  final String? coachInitials;
+  final Widget leading;
+  final String title;
+  final String statusText;
+  final Color statusColor;
+  final String headline;
+  final bool isNumericHeadline;
+  final String detail;
+  final String action;
+  final Color actionColor;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(22),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x35FF842F),
-          blurRadius: 16,
-          offset: Offset(0, 5),
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(17);
+    return Material(
+      color: useSolidFallback
+          ? MetaGymTheme.cardSurface
+          : const Color(0x80211E1C),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(
+          color: useSolidFallback
+              ? MetaGymTheme.cardBorder
+              : const Color(0x9A8C8176),
+          width: 1,
         ),
-      ],
-    ),
-    child: _TrainingGlassBlur(
-      radius: 22,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(22),
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xD6493122), Color(0xE02A221E)],
-              ),
-              border: Border.all(color: const Color(0xC2C89463), width: 1.1),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Stack(
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 136),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(11, 11, 10, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Positioned(
-                  left: 20,
-                  right: 20,
-                  top: 0,
-                  child: SizedBox(
-                    height: 1,
-                    child: ColoredBox(color: Color(0xAFFFCA8D)),
+                Row(
+                  children: [
+                    leading,
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFF7F9FC),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _StatusBadge(label: statusText, color: statusColor),
+                const SizedBox(height: 8),
+                Text(
+                  headline,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: const Color(0xFFF7F9FC),
+                    fontSize: isNumericHeadline ? 20 : 15,
+                    height: 1.2,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: isNumericHeadline
+                        ? MetaGymTheme.tabularFigures
+                        : null,
                   ),
                 ),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 132),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 11, 11, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF4A332A),
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: coachInitials == null
-                                  ? Icon(
-                                      icon,
-                                      color: const Color(0xFFFFAE98),
-                                      size: 18,
-                                    )
-                                  : Container(
-                                      alignment: Alignment.center,
-                                      decoration: const BoxDecoration(
-                                        color:
-                                            MetaGymTheme.coachAvatarBackground,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Text(
-                                        coachInitials!,
-                                        style: const TextStyle(
-                                          color: MetaGymTheme
-                                              .coachAvatarForeground,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                            const SizedBox(width: 7),
-                            Flexible(
-                              child: Text(
-                                title,
-                                style: const TextStyle(
-                                  color: MetaGymTheme.textPrimary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          headline,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textPrimary,
-                            fontSize: 15,
-                            height: 1.25,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          detail,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFE2D8CE),
-                            fontSize: 11,
-                            height: 1.35,
-                          ),
-                        ),
-                        const Spacer(),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                action,
-                                maxLines: 2,
-                                style: const TextStyle(
-                                  color: Color(0xFFFFAE98),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 3),
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              color: Color(0xFFFFAE98),
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                const SizedBox(height: 4),
+                Text(
+                  detail,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFB7B2AF),
+                    fontSize: 11,
+                    height: 1.35,
                   ),
+                ),
+                const Spacer(),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        action,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: actionColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: actionColor,
+                      size: 16,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.42), width: 0.8),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          height: 1.15,
+        ),
+      ),
+    );
+  }
+}
+
+class _ServiceErrorPanel extends StatelessWidget {
+  const _ServiceErrorPanel({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: MetaGymTheme.warning,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Color(0xFFEAE6E2),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: onRetry,
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.primary,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(120, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text(
+              'Thử lại',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Level 1 stable content card synchronized with Member Home's
+/// `_buildLiquidGlassCard` surface (zero backdrop blur, zero orange glow).
+class _TrainingContentCard extends StatelessWidget {
+  const _TrainingContentCard({
+    required this.useSolidFallback,
+    required this.onTap,
+    required this.child,
+    this.featured = false,
+  });
+
+  final bool useSolidFallback;
+  final VoidCallback onTap;
+  final Widget child;
+  final bool featured;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
+    final fillColor = useSolidFallback
+        ? MetaGymTheme.cardSurface
+        : (featured ? const Color(0xB82D2824) : const Color(0xC42B2622));
+    final borderColor = useSolidFallback
+        ? MetaGymTheme.cardBorder
+        : const Color(0xA3A79D92);
+
+    return Material(
+      color: fillColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: borderColor, width: 1.1),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Stack(
+          children: [
+            if (!useSolidFallback)
+              const Positioned(
+                top: 0,
+                left: 18,
+                right: 18,
+                child: SizedBox(
+                  height: 1,
+                  child: ColoredBox(color: Color(0x70FFF6EA)),
+                ),
+              ),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeaturedPlanCard extends StatelessWidget {
+  const _FeaturedPlanCard({
+    required this.useSolidFallback,
     required this.icon,
     required this.iconColor,
     required this.locked,
     required this.title,
     required this.detail,
-    required this.actionLabel,
     required this.onTap,
     this.leadingTile,
+    this.statusBadge,
+    this.showActionPill = false,
+    this.actionPillLabel,
   });
+
+  final bool useSolidFallback;
   final IconData icon;
   final Color iconColor;
   final bool locked;
-  final String title, detail, actionLabel;
+  final String title;
+  final String detail;
   final VoidCallback onTap;
   final Widget? leadingTile;
+  final String? statusBadge;
+  final bool showActionPill;
+  final String? actionPillLabel;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(18),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x24F18639),
-          blurRadius: 13,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: _TrainingGlassBlur(
-      radius: 18,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xDA39312C),
-                  Color(0xD52A2522),
-                  Color(0xD93B2E27),
-                ],
+  Widget build(BuildContext context) {
+    return _TrainingContentCard(
+      useSolidFallback: useSolidFallback,
+      featured: true,
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 74),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              leadingTile ??
+                  _IconBadge(
+                    icon: icon,
+                    iconColor: iconColor,
+                    locked: locked,
+                    size: 46,
+                    iconSize: 22,
+                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFF7F9FC),
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (statusBadge != null) ...[
+                          const SizedBox(width: 8),
+                          _StatusBadge(
+                            label: statusBadge!,
+                            color: MetaGymTheme.success,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      detail,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFB7B2AF),
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              border: Border.all(color: const Color(0xB6B9A18E), width: 1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Stack(
-              children: [
-                const Positioned(
-                  left: 18,
-                  right: 18,
-                  top: 0,
-                  child: SizedBox(
-                    height: 1,
-                    child: ColoredBox(color: Color(0x93FFE9D3)),
-                  ),
-                ),
+              const SizedBox(width: 10),
+              if (showActionPill && actionPillLabel != null)
                 Container(
-                  constraints: const BoxConstraints(minHeight: 76),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 8,
+                    horizontal: 12,
+                    vertical: 7,
                   ),
-                  child: Row(
-                    children: [
-                      leadingTile ??
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color.lerp(
-                                    iconColor,
-                                    const Color(0xFF181411),
-                                    locked ? 0.68 : 0.62,
-                                  )!,
-                                  Color.lerp(
-                                    iconColor,
-                                    const Color(0xFF181411),
-                                    locked ? 0.83 : 0.78,
-                                  )!,
-                                ],
-                              ),
-                              border: Border.all(
-                                color: iconColor.withValues(
-                                  alpha: locked ? 0.65 : 0.9,
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: locked ? 5 : 0,
-                                      bottom: locked ? 4 : 0,
-                                    ),
-                                    child: Icon(
-                                      icon,
-                                      size: 22,
-                                      color: iconColor.withValues(
-                                        alpha: locked ? 0.8 : 1,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                if (locked)
-                                  Positioned(
-                                    right: 1,
-                                    bottom: 1,
-                                    child: Container(
-                                      width: 18,
-                                      height: 18,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF322B29),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: const Color(0xFFE5C1AE),
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.lock_rounded,
-                                        size: 11,
-                                        color: Color(0xFFFFE7DA),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              detail,
-                              style: const TextStyle(
-                                color: Color(0xFFBDB8B4),
-                                fontSize: 10.5,
-                                height: 1.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 7),
-                      OutlinedButton(
-                        onPressed: onTap,
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(60, 38),
-                          tapTargetSize: MaterialTapTargetSize.padded,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          backgroundColor: locked
-                              ? MetaGymTheme.primary
-                              : const Color(0xA13C2C24),
-                          foregroundColor: locked
-                              ? MetaGymTheme.onPrimary
-                              : MetaGymTheme.textPrimary,
-                          side: BorderSide(
-                            color: locked
-                                ? MetaGymTheme.primary
-                                : const Color(0xC0C9895C),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        child: Text(actionLabel),
-                      ),
-                    ],
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.primary,
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Text(
+                    actionPillLabel!,
+                    style: const TextStyle(
+                      color: MetaGymTheme.onPrimary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF9EAAB8),
+                  size: 22,
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-class _ErrorCard extends StatelessWidget {
-  const _ErrorCard({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
+class _BentoToolCard extends StatelessWidget {
+  const _BentoToolCard({
+    required this.useSolidFallback,
+    required this.icon,
+    required this.iconColor,
+    required this.locked,
+    required this.title,
+    required this.detail,
+    required this.onTap,
+    this.ctaPillLabel,
+  });
+
+  final bool useSolidFallback;
+  final IconData icon;
+  final Color iconColor;
+  final bool locked;
+  final String title;
+  final String detail;
+  final VoidCallback onTap;
+  final String? ctaPillLabel;
 
   @override
-  Widget build(BuildContext context) => Container(
-    height: 168,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: MetaGymTheme.cardSurface,
-      border: Border.all(color: MetaGymTheme.cardBorder),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          message,
-          style: const TextStyle(color: MetaGymTheme.textSecondary),
+  Widget build(BuildContext context) {
+    return _TrainingContentCard(
+      useSolidFallback: useSolidFallback,
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 122),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _IconBadge(
+                    icon: icon,
+                    iconColor: iconColor,
+                    locked: locked,
+                    size: 36,
+                    iconSize: 19,
+                  ),
+                  const Spacer(),
+                  if (ctaPillLabel != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MetaGymTheme.primary,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        ctaPillLabel!,
+                        style: const TextStyle(
+                          color: MetaGymTheme.onPrimary,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF9EAAB8),
+                      size: 19,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 11),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFF7F9FC),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                detail,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFB7B2AF),
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
         ),
-        const Spacer(),
-        TextButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Thử lại'),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
+}
+
+class _IconBadge extends StatelessWidget {
+  const _IconBadge({
+    required this.icon,
+    required this.iconColor,
+    required this.locked,
+    required this.size,
+    required this.iconSize,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final bool locked;
+  final double size;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = locked ? MetaGymTheme.textSecondary : iconColor;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: effectiveColor.withValues(alpha: locked ? 0.12 : 0.16),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: effectiveColor.withValues(alpha: locked ? 0.28 : 0.42),
+                width: 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: iconSize, color: effectiveColor),
+          ),
+          if (locked)
+            Positioned(
+              right: -3,
+              bottom: -3,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: MetaGymTheme.cardSurface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: MetaGymTheme.primary, width: 1),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.lock_rounded,
+                  size: 10,
+                  color: MetaGymTheme.primary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
