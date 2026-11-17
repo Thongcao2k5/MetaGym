@@ -168,7 +168,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     final isExpired = !coach && _hadGym;
     final destination = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: MetaGymTheme.cardSurface,
+      backgroundColor: const Color(0xFF24201D),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -276,7 +276,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   Widget build(BuildContext context) {
     final bottom =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
-    final useSolidFallback = _useSolidFallback(context);
+    final disableBlur = _disableBackdropBlur(context);
     final gym = _membership == null ? null : _currentGym;
     final relationship = _relationship;
     final hasGym = gym != null;
@@ -308,7 +308,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
               bottom: false,
               child: RefreshIndicator(
                 color: MetaGymTheme.primary,
-                backgroundColor: MetaGymTheme.cardSurface,
+                backgroundColor: const Color(0xFF282320),
                 onRefresh: _load,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -320,7 +320,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                   ),
                   children: [
                     _TrainingHeader(
-                      useSolidFallback: useSolidFallback,
+                      disableBlur: disableBlur,
                       onOpenLibrary: () => _open(const ExerciseLibraryPage()),
                       onOpenHistory: () => _open(const TrainingHistoryPage()),
                     ),
@@ -328,9 +328,9 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                     const _SectionTitle('Dịch vụ của bạn'),
                     const SizedBox(height: 10),
                     _ServiceHeroGlassCard(
-                      useSolidFallback: useSolidFallback,
+                      disableBlur: disableBlur,
                       child: _buildServiceContent(
-                        useSolidFallback: useSolidFallback,
+                        disableBlur: disableBlur,
                         hasGym: hasGym,
                         daysLeft: daysLeft,
                         endDate: end,
@@ -342,7 +342,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                     const _SectionTitle('Kế hoạch tập luyện', accent: true),
                     const SizedBox(height: 10),
                     _FeaturedPlanCard(
-                      useSolidFallback: useSolidFallback,
+                      disableBlur: disableBlur,
                       icon: Icons.menu_book_outlined,
                       iconColor: MetaGymTheme.primary,
                       locked: !hasGym || !hasCoach,
@@ -361,7 +361,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                     ),
                     const SizedBox(height: 10),
                     _FeaturedPlanCard(
-                      useSolidFallback: useSolidFallback,
+                      disableBlur: disableBlur,
                       icon: Icons.event_note_rounded,
                       iconColor: MetaGymTheme.reflectionBlue,
                       locked: false,
@@ -399,7 +399,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                         children: [
                           Expanded(
                             child: _BentoToolCard(
-                              useSolidFallback: useSolidFallback,
+                              disableBlur: disableBlur,
                               icon: Icons.calendar_month_outlined,
                               iconColor: MetaGymTheme.success,
                               locked: !hasGym,
@@ -421,7 +421,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: _BentoToolCard(
-                              useSolidFallback: useSolidFallback,
+                              disableBlur: disableBlur,
                               icon: Icons.history_rounded,
                               iconColor: MetaGymTheme.reflectionBlue,
                               locked: false,
@@ -440,7 +440,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                         children: [
                           Expanded(
                             child: _BentoToolCard(
-                              useSolidFallback: useSolidFallback,
+                              disableBlur: disableBlur,
                               icon: Icons.sports_gymnastics_outlined,
                               iconColor: MetaGymTheme.primary,
                               locked: false,
@@ -453,7 +453,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: _BentoToolCard(
-                              useSolidFallback: useSolidFallback,
+                              disableBlur: disableBlur,
                               icon: Icons.fitness_center_outlined,
                               iconColor: MetaGymTheme.warning,
                               locked: false,
@@ -476,7 +476,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   Widget _buildServiceContent({
-    required bool useSolidFallback,
+    required bool disableBlur,
     required bool hasGym,
     required int? daysLeft,
     required DateTime? endDate,
@@ -536,7 +536,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
         children: [
           Expanded(
             child: _ServiceMetricPanel(
-              useSolidFallback: useSolidFallback,
+              disableBlur: disableBlur,
               onTap: () => _open(const MembershipPage()),
               leading: Icon(
                 Icons.card_membership_outlined,
@@ -570,7 +570,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
           const SizedBox(width: 8),
           Expanded(
             child: _ServiceMetricPanel(
-              useSolidFallback: useSolidFallback,
+              disableBlur: disableBlur,
               onTap: () => _open(
                 relationship == null
                     ? const CoachSelectionPage()
@@ -623,7 +623,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 }
 
-bool _useSolidFallback(BuildContext context) =>
+bool _disableBackdropBlur(BuildContext context) =>
     MediaQuery.disableAnimationsOf(context) ||
     MetaGymTheme.isFlutterTestEnvironment;
 
@@ -698,12 +698,12 @@ class _TrainingBackground extends StatelessWidget {
 
 class _TrainingHeader extends StatelessWidget {
   const _TrainingHeader({
-    required this.useSolidFallback,
+    required this.disableBlur,
     required this.onOpenLibrary,
     required this.onOpenHistory,
   });
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final VoidCallback onOpenLibrary;
   final VoidCallback onOpenHistory;
 
@@ -747,14 +747,14 @@ class _TrainingHeader extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _CircleHeaderActionButton(
-          useSolidFallback: useSolidFallback,
+          disableBlur: disableBlur,
           icon: Icons.sports_gymnastics_outlined,
           semanticLabel: 'Mở thư viện bài tập',
           onTap: onOpenLibrary,
         ),
         const SizedBox(width: 4),
         _CircleHeaderActionButton(
-          useSolidFallback: useSolidFallback,
+          disableBlur: disableBlur,
           icon: Icons.history_rounded,
           semanticLabel: 'Mở lịch sử tập luyện',
           onTap: onOpenHistory,
@@ -766,13 +766,13 @@ class _TrainingHeader extends StatelessWidget {
 
 class _CircleHeaderActionButton extends StatelessWidget {
   const _CircleHeaderActionButton({
-    required this.useSolidFallback,
+    required this.disableBlur,
     required this.icon,
     required this.semanticLabel,
     required this.onTap,
   });
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final IconData icon;
   final String semanticLabel;
   final VoidCallback onTap;
@@ -796,7 +796,7 @@ class _CircleHeaderActionButton extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: useSolidFallback
+                    color: disableBlur
                         ? const Color(0xFF282320)
                         : const Color(0x9E2F2924),
                     shape: BoxShape.circle,
@@ -855,12 +855,9 @@ class _SectionTitle extends StatelessWidget {
 /// Level 2 Hero Smoked Glass card synchronized 1:1 with Member Home's
 /// `_buildMembershipGlassCard`. Uses `BackdropFilter` only on this hero card.
 class _ServiceHeroGlassCard extends StatelessWidget {
-  const _ServiceHeroGlassCard({
-    required this.useSolidFallback,
-    required this.child,
-  });
+  const _ServiceHeroGlassCard({required this.disableBlur, required this.child});
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final Widget child;
 
   @override
@@ -869,8 +866,8 @@ class _ServiceHeroGlassCard extends StatelessWidget {
     final surface = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: useSolidFallback ? const Color(0xFF282320) : null,
-        gradient: useSolidFallback
+        color: disableBlur ? const Color(0xFF282320) : null,
+        gradient: disableBlur
             ? null
             : const LinearGradient(
                 begin: Alignment.topLeft,
@@ -895,7 +892,7 @@ class _ServiceHeroGlassCard extends StatelessWidget {
         ],
       ),
     );
-    if (useSolidFallback) {
+    if (disableBlur) {
       return surface;
     }
     return RepaintBoundary(
@@ -912,7 +909,7 @@ class _ServiceHeroGlassCard extends StatelessWidget {
 
 class _ServiceMetricPanel extends StatelessWidget {
   const _ServiceMetricPanel({
-    required this.useSolidFallback,
+    required this.disableBlur,
     required this.onTap,
     required this.leading,
     required this.title,
@@ -925,7 +922,7 @@ class _ServiceMetricPanel extends StatelessWidget {
     required this.actionColor,
   });
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final VoidCallback onTap;
   final Widget leading;
   final String title;
@@ -941,13 +938,11 @@ class _ServiceMetricPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(17);
     return Material(
-      color: useSolidFallback
-          ? MetaGymTheme.cardSurface
-          : const Color(0x80211E1C),
+      color: disableBlur ? MetaGymTheme.cardSurface : const Color(0x80211E1C),
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(
-          color: useSolidFallback
+          color: disableBlur
               ? MetaGymTheme.cardBorder
               : const Color(0x9A8C8176),
           width: 1,
@@ -1135,13 +1130,13 @@ class _ServiceErrorPanel extends StatelessWidget {
 /// `_buildLiquidGlassCard` surface (zero backdrop blur, zero orange glow).
 class _TrainingContentCard extends StatelessWidget {
   const _TrainingContentCard({
-    required this.useSolidFallback,
+    required this.disableBlur,
     required this.onTap,
     required this.child,
     this.featured = false,
   });
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final VoidCallback onTap;
   final Widget child;
   final bool featured;
@@ -1149,14 +1144,14 @@ class _TrainingContentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
-    final fillColor = useSolidFallback
+    final fillColor = disableBlur
         ? MetaGymTheme.cardSurface
         : (featured ? const Color(0xB82D2824) : const Color(0xC42B2622));
-    final borderColor = useSolidFallback
+    final borderColor = disableBlur
         ? MetaGymTheme.cardBorder
         : const Color(0xA3A79D92);
 
-    return Material(
+    final surface = Material(
       color: fillColor,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
@@ -1168,7 +1163,7 @@ class _TrainingContentCard extends StatelessWidget {
         borderRadius: radius,
         child: Stack(
           children: [
-            if (!useSolidFallback)
+            if (featured && !disableBlur)
               const Positioned(
                 top: 0,
                 left: 18,
@@ -1183,12 +1178,22 @@ class _TrainingContentCard extends StatelessWidget {
         ),
       ),
     );
+    if (!featured || disableBlur) return surface;
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: surface,
+        ),
+      ),
+    );
   }
 }
 
 class _FeaturedPlanCard extends StatelessWidget {
   const _FeaturedPlanCard({
-    required this.useSolidFallback,
+    required this.disableBlur,
     required this.icon,
     required this.iconColor,
     required this.locked,
@@ -1201,7 +1206,7 @@ class _FeaturedPlanCard extends StatelessWidget {
     this.actionPillLabel,
   });
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final IconData icon;
   final Color iconColor;
   final bool locked;
@@ -1216,7 +1221,7 @@ class _FeaturedPlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _TrainingContentCard(
-      useSolidFallback: useSolidFallback,
+      disableBlur: disableBlur,
       featured: true,
       onTap: onTap,
       child: ConstrainedBox(
@@ -1312,7 +1317,7 @@ class _FeaturedPlanCard extends StatelessWidget {
 
 class _BentoToolCard extends StatelessWidget {
   const _BentoToolCard({
-    required this.useSolidFallback,
+    required this.disableBlur,
     required this.icon,
     required this.iconColor,
     required this.locked,
@@ -1322,7 +1327,7 @@ class _BentoToolCard extends StatelessWidget {
     this.ctaPillLabel,
   });
 
-  final bool useSolidFallback;
+  final bool disableBlur;
   final IconData icon;
   final Color iconColor;
   final bool locked;
@@ -1334,7 +1339,7 @@ class _BentoToolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _TrainingContentCard(
-      useSolidFallback: useSolidFallback,
+      disableBlur: disableBlur,
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 122),
