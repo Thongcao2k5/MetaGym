@@ -28,6 +28,30 @@ class MembershipPlan {
   final String? description;
 }
 
+class MembershipQuote {
+  const MembershipQuote({
+    required this.price,
+    required this.durationDays,
+    required this.startDate,
+    required this.endDate,
+  });
+
+  factory MembershipQuote.fromJson(Object? value) {
+    final json = Map<String, dynamic>.from(value as Map);
+    return MembershipQuote(
+      price: json['price'] as num,
+      durationDays: json['durationDays'] as int,
+      startDate: json['startDate'] as String,
+      endDate: json['endDate'] as String,
+    );
+  }
+
+  final num price;
+  final int durationDays;
+  final String startDate;
+  final String endDate;
+}
+
 class Payment {
   const Payment({
     required this.id,
@@ -82,6 +106,7 @@ class Membership {
     required this.endDate,
     required this.status,
     this.sourcePaymentId,
+    this.planName,
   });
 
   factory Membership.fromJson(Object? value) {
@@ -92,6 +117,7 @@ class Membership {
       endDate: json['endDate'] as String,
       status: json['status'] as String,
       sourcePaymentId: json['sourcePaymentId'] as String?,
+      planName: json['planName'] as String?,
     );
   }
 
@@ -100,6 +126,28 @@ class Membership {
   final String endDate;
   final String status;
   final String? sourcePaymentId;
+  final String? planName;
+
+  String get label => switch (status) {
+    'ACTIVE' => 'Đang hiệu lực',
+    'SCHEDULED' => 'Chờ hiệu lực',
+    'EXPIRED' => 'Hết hạn',
+    'CANCELLED' => 'Đã hủy',
+    _ => status,
+  };
+
+  int? remainingDays(DateTime now) {
+    if (status != 'ACTIVE') return null;
+    final end = DateTime.tryParse('${endDate}T00:00:00Z');
+    if (end == null) return null;
+    final vietnamTime = now.toUtc().add(const Duration(hours: 7));
+    final today = DateTime.utc(
+      vietnamTime.year,
+      vietnamTime.month,
+      vietnamTime.day,
+    );
+    return (end.difference(today).inDays + 1).clamp(0, 3650);
+  }
 }
 
 class PurchaseResult {

@@ -274,16 +274,20 @@ class _AdminHomePageState extends State<AdminHomePage>
     );
   }
 
-  Future<void> _showCreatePlanDialog() async {
-    final nameCtrl = TextEditingController();
-    final priceCtrl = TextEditingController();
-    final daysCtrl = TextEditingController(text: '30');
-    final descCtrl = TextEditingController();
+  Future<void> _showPlanDialog([AdminPlanItem? plan]) async {
+    final nameCtrl = TextEditingController(text: plan?.name);
+    final priceCtrl = TextEditingController(
+      text: plan?.price.toInt().toString(),
+    );
+    final daysCtrl = TextEditingController(
+      text: (plan?.durationDays ?? 30).toString(),
+    );
+    final descCtrl = TextEditingController(text: plan?.description);
     final formKey = GlobalKey<FormState>();
     bool busy = false;
     String? dialogError;
 
-    await showDialog<void>(
+    final route = DialogRoute<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
@@ -292,13 +296,16 @@ class _AdminHomePageState extends State<AdminHomePage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.card_membership, color: MetaGymTheme.brandOrange),
-              SizedBox(width: 10),
+              const Icon(
+                Icons.card_membership,
+                color: MetaGymTheme.brandOrange,
+              ),
+              const SizedBox(width: 10),
               Text(
-                'Thêm Gói tập mới',
-                style: TextStyle(
+                plan == null ? 'Thêm gói tập mới' : 'Sửa gói tập',
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -395,31 +402,45 @@ class _AdminHomePageState extends State<AdminHomePage>
                         dialogError = null;
                       });
                       try {
-                        await _service!.createPlan(
-                          name: nameCtrl.text,
-                          price: int.parse(priceCtrl.text),
-                          durationDays: int.parse(daysCtrl.text),
-                          description: descCtrl.text,
-                        );
+                        final price = int.parse(priceCtrl.text);
+                        final durationDays = int.parse(daysCtrl.text);
+                        if (plan == null) {
+                          await _service!.createPlan(
+                            name: nameCtrl.text,
+                            price: price,
+                            durationDays: durationDays,
+                            description: descCtrl.text,
+                          );
+                        } else {
+                          await _service!.updatePlan(
+                            planId: plan.id,
+                            name: nameCtrl.text,
+                            price: price,
+                            durationDays: durationDays,
+                            description: descCtrl.text,
+                          );
+                        }
                         if (ctx.mounted) Navigator.pop(ctx);
                         await _loadAll();
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Đã tạo gói tập mới thành công!'),
+                              content: Text('Đã lưu gói tập.'),
                               backgroundColor: Color(0xFF34C759),
                             ),
                           );
                         }
                       } on ApiException catch (e) {
+                        if (!ctx.mounted) return;
                         setDialogState(() {
                           busy = false;
                           dialogError = e.message;
                         });
                       } catch (_) {
+                        if (!ctx.mounted) return;
                         setDialogState(() {
                           busy = false;
-                          dialogError = 'Tạo gói tập thất bại.';
+                          dialogError = 'Không lưu được gói tập.';
                         });
                       }
                     },
@@ -429,6 +450,12 @@ class _AdminHomePageState extends State<AdminHomePage>
         ),
       ),
     );
+    await Navigator.of(context, rootNavigator: true).push(route);
+    await route.completed;
+    nameCtrl.dispose();
+    priceCtrl.dispose();
+    daysCtrl.dispose();
+    descCtrl.dispose();
   }
 
   Future<void> _toggleUserStatus(AdminUserItem user) async {
@@ -976,7 +1003,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: _showCreatePlanDialog,
+                              onPressed: () => _showPlanDialog(),
                               icon: const Icon(Icons.add_card_rounded),
                               label: const Text(
                                 'Thêm Gói tập mới',
@@ -1065,6 +1092,11 @@ class _AdminHomePageState extends State<AdminHomePage>
                                               ),
                                           ],
                                         ),
+                                      ),
+                                      IconButton(
+                                        tooltip: 'Sửa gói tập',
+                                        onPressed: () => _showPlanDialog(plan),
+                                        icon: const Icon(Icons.edit_outlined),
                                       ),
                                       Switch(
                                         value: plan.isActive,

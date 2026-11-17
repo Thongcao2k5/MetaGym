@@ -645,6 +645,10 @@ class _EmptyMemberJournalService implements MemberJournalService {
 
 class _EmptyMembershipService implements MembershipService {
   @override
+  Future<MembershipQuote> getQuote(String planId) async =>
+      throw UnimplementedError();
+
+  @override
   Future<List<MembershipPlan>> getPlans() async => const [];
   @override
   Future<List<Membership>> getCurrentMemberships() async => const [];

@@ -31,6 +31,7 @@ function publicMembership(row) {
     sourcePaymentId: row.source_payment_id,
     startDate: row.start_date, endDate: row.end_date,
     status: row.status,
+    planName: row.plan_name_snapshot ?? null,
   };
 }
 
@@ -50,16 +51,24 @@ async function paymentById(client, id, lock = false) {
   return result.rows[0];
 }
 
-async function createMembership(client, payment) {
+async function membershipDates(client, memberId, durationDays) {
   const dates = await client.query(
-    `SELECT (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS today,
-            GREATEST((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,
-              COALESCE((SELECT max(end_date) + 1 FROM member_memberships
-                WHERE member_id = $1 AND status <> 'CANCELLED'),
-                (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date))::text AS start_date`,
-    [payment.member_id],
+    `WITH period AS (
+       SELECT (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS today,
+              GREATEST((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date,
+                (SELECT max(end_date) + 1 FROM member_memberships
+                 WHERE member_id = $1 AND status <> 'CANCELLED')) AS start_date
+     )
+     SELECT today::text, start_date::text,
+            (start_date + $2::int - 1)::text AS end_date FROM period`,
+    [memberId, durationDays],
   );
-  const { today, start_date: startDate } = dates.rows[0];
+  const { today, start_date: startDate, end_date: endDate } = dates.rows[0];
+  return { today, startDate, endDate };
+}
+
+async function createMembership(client, payment) {
+  const { today, startDate } = await membershipDates(client, payment.member_id, payment.duration_days_snapshot);
   const status = startDate === today ? 'ACTIVE' : 'SCHEDULED';
   const id = randomUUID();
   const created = await client.query(
@@ -81,12 +90,29 @@ async function createMembership(client, payment) {
        AND pause_reason = 'MEMBERSHIP_EXPIRED'`, [payment.member_id],
     );
   }
-  return publicMembership(created.rows[0]);
+  return publicMembership({ ...created.rows[0], plan_name_snapshot: payment.plan_name_snapshot });
 }
 
 export function createPaymentsRouter({ database, jwtSecret }) {
   const router = Router();
   router.use(createAuthentication({ database, jwtSecret }));
+
+  router.get('/membership-plans/:planId/quote', async (request, response) => {
+    if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được xem dự kiến mua gói');
+    const parsed = uuid.safeParse(request.params.planId);
+    if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã gói không hợp lệ');
+    try {
+      const { rows: [plan] } = await database.query(
+        "SELECT price, duration_days FROM membership_plans WHERE id = $1 AND status = 'ACTIVE'",
+        [parsed.data],
+      );
+      if (!plan) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy gói tập đang bán');
+      const { startDate, endDate } = await membershipDates(database, request.authUser.id, plan.duration_days);
+      return response.json({ data: { price: Number(plan.price), durationDays: plan.duration_days, startDate, endDate } });
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được thông tin mua gói');
+    }
+  });
 
   router.post('/payments', async (request, response) => {
     if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được tạo thanh toán');
@@ -165,9 +191,11 @@ export function createPaymentsRouter({ database, jwtSecret }) {
                   start_date::text, end_date::text, status
            FROM member_memberships WHERE source_payment_id = $1`, [payment.id],
         );
+        if (!existing.rows[0]) throw new Error('Confirmed payment has no membership');
         await client.query('COMMIT');
         return response.json({ data: {
-          payment: publicPayment(payment), membership: publicMembership(existing.rows[0]),
+          payment: publicPayment(payment),
+          membership: publicMembership({ ...existing.rows[0], plan_name_snapshot: payment.plan_name_snapshot }),
         } });
       }
       if (payment.status !== 'PENDING') {
@@ -202,6 +230,31 @@ export function createPaymentsRouter({ database, jwtSecret }) {
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được giao dịch'); }
   });
 
+  router.post('/payments/:paymentId/cancellations', async (request, response) => {
+    if (request.authUser.role !== 'MEMBER') return fail(response, 403, 'FORBIDDEN', 'Chỉ Member được hủy giao dịch');
+    const { paymentId } = request.params;
+    if (!uuid.safeParse(paymentId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã giao dịch không hợp lệ');
+    try {
+      const { rows: [payment] } = await database.query(
+        `UPDATE payments SET status = 'CANCELLED', decided_at = now(),
+           failure_reason = 'Member hủy thanh toán mô phỏng'
+         WHERE id = $1 AND member_id = $2 AND method = 'MOCK_QR'
+           AND status = 'PENDING'
+         RETURNING *`,
+        [paymentId, request.authUser.id],
+      );
+      if (payment) return response.json({ data: publicPayment(payment) });
+      const existing = await paymentById(database, paymentId);
+      if (existing?.member_id !== request.authUser.id || existing.method !== 'MOCK_QR') {
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giao dịch');
+      }
+      if (existing.status === 'CANCELLED') return response.json({ data: publicPayment(existing) });
+      return fail(response, 409, 'PAYMENT_NOT_PENDING', 'Giao dịch đã kết thúc. Hãy kiểm tra lại trạng thái.');
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không hủy được giao dịch');
+    }
+  });
+
   router.get('/payments/:paymentId', async (request, response) => {
     if (!uuid.safeParse(request.params.paymentId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã giao dịch không hợp lệ');
     try {
@@ -218,7 +271,8 @@ export function createPaymentsRouter({ database, jwtSecret }) {
     try {
       const result = await database.query(
         `SELECT id, member_id, plan_id, source_payment_id,
-                start_date::text, end_date::text, status
+                start_date::text, end_date::text, status,
+                (SELECT plan_name_snapshot FROM payments WHERE id = source_payment_id)
          FROM member_memberships WHERE member_id = $1
          AND status IN ('ACTIVE', 'SCHEDULED') ORDER BY start_date`,
         [request.authUser.id],
@@ -232,7 +286,8 @@ export function createPaymentsRouter({ database, jwtSecret }) {
     try {
       const result = await database.query(
         `SELECT id, member_id, plan_id, source_payment_id,
-                start_date::text, end_date::text, status
+                start_date::text, end_date::text, status,
+                (SELECT plan_name_snapshot FROM payments WHERE id = source_payment_id)
          FROM member_memberships WHERE member_id = $1
          ORDER BY start_date DESC, id DESC`, [request.authUser.id],
       );

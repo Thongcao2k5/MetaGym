@@ -87,10 +87,7 @@ void main() {
 
       // Enter result for Đẩy ngực (index 0) and notes (last field)
       await tester.enterText(find.byType(TextFormField).at(0), '60 kg');
-      await tester.enterText(
-        find.byType(TextFormField).last,
-        'Tập thân trên',
-      );
+      await tester.enterText(find.byType(TextFormField).last, 'Tập thân trên');
       tester.testTextInput.hide();
       await tester.pumpAndSettle();
 
@@ -217,6 +214,10 @@ class _JournalFixture implements MemberJournalService {
 }
 
 class _MembershipFixture implements MembershipService {
+  @override
+  Future<MembershipQuote> getQuote(String planId) async =>
+      throw UnimplementedError();
+
   const _MembershipFixture(this.active);
   final bool active;
   @override
