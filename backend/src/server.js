@@ -48,8 +48,8 @@ const app = createApp({
   liveKit: createLiveKitFromEnv(),
 });
 
-const server = app.listen(port, () => {
-  console.log(`Meta Gym API is running at http://localhost:${port}`);
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`Meta Gym API is running at http://0.0.0.0:${port}`);
 });
 
 async function shutdown() {
