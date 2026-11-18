@@ -96,12 +96,6 @@ const memberDestinations = <FeatureDestination>[
 
 const coachDestinations = <FeatureDestination>[
   FeatureDestination(
-    'Yêu cầu chọn Coach',
-    '/coach/features/requests',
-    'UI06',
-    'Hội viên',
-  ),
-  FeatureDestination(
     'Hội viên của tôi',
     '/coach/features/members',
     'UI07',

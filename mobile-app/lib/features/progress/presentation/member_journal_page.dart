@@ -926,7 +926,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   date.month != _selectedDate.month;
               final hasEntry = _hasRecordOnDate(date);
               final label = _calendarMode == _CalendarMode.week
-                  ? '${_weekdayShort[index]}\n${date.day}'
+                  ? _weekdayShort[index]
                   : '${date.day}';
 
               return InkWell(
@@ -952,9 +952,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                               : outsideMonth
                               ? const Color(0xFF8D827B)
                               : const Color(0xFFDED7D1),
-                          fontSize: _calendarMode == _CalendarMode.week
-                              ? 10.5
-                              : 12,
+                          fontSize: 12,
                           height: 1.15,
                           fontWeight: selected ||
                                   _calendarMode == _CalendarMode.week

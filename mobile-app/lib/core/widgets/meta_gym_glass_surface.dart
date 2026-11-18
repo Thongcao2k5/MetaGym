@@ -18,7 +18,12 @@ class MetaGymBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const Image(image: bannerAsset, fit: BoxFit.cover),
+          Image(
+            image: bannerAsset,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) =>
+                const ColoredBox(color: MetaGymTheme.darkCanvas),
+          ),
           // Ambient glow: Cool blue ở góc trên bên phải
           Container(
             decoration: const BoxDecoration(

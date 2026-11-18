@@ -107,6 +107,60 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('member@metagym.test'), findsOneWidget);
+    expect(find.text('Thông tin cá nhân'), findsNothing);
+    await tester.tap(find.text('Cá nhân & thể trạng'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thông tin cá nhân'), findsOneWidget);
+    expect(find.text('Khai báo thể trạng cho Coach'), findsOneWidget);
+    expect(find.text('Sức khỏe & chấn thương'), findsNothing);
+    await tester.tap(find.text('Cá nhân & thể trạng'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thông tin cá nhân'), findsNothing);
+    expect(find.byTooltip('Đăng xuất'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Đăng xuất'), 300);
+    await tester.tap(find.text('Đăng xuất'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Hủy'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Coach sees the same compact groups with Coach destinations', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    const coach = AuthUser(
+      id: 'coach-1',
+      email: 'coach@metagym.test',
+      fullName: 'Lê Hoàng Nam',
+      role: UserRole.coach,
+      status: 'ACTIVE',
+    );
+    final session = await _session(coach);
+    final controller = ProfileController(_FakeProfileService(coach), session);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SessionController>.value(value: session),
+          ChangeNotifierProvider<ProfileController>.value(value: controller),
+        ],
+        child: const MaterialApp(home: ProfilePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cá nhân & thể trạng'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hồ sơ chuyên môn'), findsOneWidget);
+    expect(find.text('Khai báo thể trạng cho Coach'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   test('changing password clears the invalidated session', () async {

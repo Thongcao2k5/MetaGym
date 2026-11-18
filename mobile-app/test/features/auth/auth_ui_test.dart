@@ -1,12 +1,19 @@
+import 'dart:typed_data' show Uint8List;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/login_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/profile/data/profile_service.dart';
+import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
+import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart';
 import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:provider/provider.dart';
@@ -18,10 +25,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: AppLoadingPage()));
     expect(find.text('META GYM'), findsOneWidget);
     expect(find.text('PERSONAL PERFORMANCE'), findsOneWidget);
-    expect(
-      find.text('Đang khởi động không gian tập luyện...'),
-      findsOneWidget,
-    );
+    expect(find.text('Đang khởi động không gian tập luyện...'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
   });
 
@@ -105,10 +109,7 @@ void main() {
       ),
     );
 
-    expect(
-      find.byKey(const Key('register-password-strength')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('register-password-strength')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('register-password')),
       'StrongPass9',
@@ -157,6 +158,129 @@ void main() {
       expect(find.byKey(const Key('register-submit')), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'AuthModeSegmentSwitch navigates between LoginPage and RegisterPage via GoRouter',
+    (tester) async {
+      final session = SessionController(
+        _MemoryTokenStorage(),
+        (_) async => throw UnimplementedError(),
+        preferenceStorage: _MemoryPrefStorage(),
+      );
+      await session.restore();
+      final authController = AuthController(_FakeAuthService(), session);
+      final router = createAppRouter(
+        sessionController: session,
+        initialLocation: AppRoutes.login,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: authController,
+          child: MaterialApp.router(theme: AppTheme.dark, routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(RegisterPage), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const Key('auth-mode-register')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RegisterPage), findsOneWidget);
+      expect(find.byType(LoginPage), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const Key('auth-mode-login')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(RegisterPage), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final viewport in const <Size>[Size(375, 812), Size(360, 640)]) {
+    testWidgets(
+      '${viewport.width.toInt()}x${viewport.height.toInt()} viewport renders Splash, Welcome, Login, Register, and ForgotPassword cleanly',
+      (tester) async {
+        tester.view.physicalSize = viewport;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(theme: AppTheme.dark, home: const AppLoadingPage()),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('META GYM'), findsOneWidget);
+        expect(find.text('MG'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.pumpWidget(
+          MaterialApp(theme: AppTheme.dark, home: const WelcomePage()),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('welcome-login-button')), findsOneWidget);
+        expect(
+          find.byKey(const Key('welcome-register-button')),
+          findsOneWidget,
+        );
+        expect(find.text('MG'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        final session = SessionController(
+          _MemoryTokenStorage(),
+          (_) async => throw UnimplementedError(),
+          preferenceStorage: _MemoryPrefStorage(),
+        );
+        final authController = AuthController(_FakeAuthService(), session);
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider.value(
+            value: authController,
+            child: MaterialApp(theme: AppTheme.dark, home: const LoginPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('auth-mode-login')), findsOneWidget);
+        expect(find.byKey(const Key('login-submit')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider.value(
+            value: authController,
+            child: MaterialApp(
+              theme: AppTheme.dark,
+              home: const RegisterPage(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('auth-mode-register')), findsOneWidget);
+        expect(find.byKey(const Key('register-submit')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        final resetController = PasswordResetController(_FakeProfileService());
+        await tester.pumpWidget(
+          ChangeNotifierProvider.value(
+            value: resetController,
+            child: MaterialApp(
+              theme: AppTheme.dark,
+              home: const ForgotPasswordPage(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('forgot-password-input')), findsOneWidget);
+        expect(find.text('Quên mật khẩu'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }
 
 class _MemoryTokenStorage implements TokenStorage {
@@ -223,3 +347,50 @@ class _FakeAuthService implements AuthService {
   }
 }
 
+class _FakeProfileService implements ProfileService {
+  static const _demoUser = AuthUser(
+    id: 'u-1',
+    email: 'member@metagym.local',
+    fullName: 'Member Demo',
+    role: UserRole.member,
+    status: 'ACTIVE',
+  );
+
+  @override
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async => true;
+
+  @override
+  Future<AuthUser> deleteAvatar() async => _demoUser;
+
+  @override
+  Future<Uint8List?> fetchAvatarBytes(String avatarUrl) async => null;
+
+  @override
+  Future<AuthUser> getProfile() async => _demoUser;
+
+  @override
+  Future<String> requestPasswordReset(String email) async => 'req-1';
+
+  @override
+  Future<bool> resetPassword({
+    required String requestId,
+    required String code,
+    required String newPassword,
+  }) async => true;
+
+  @override
+  Future<AuthUser> updateProfile(Map<String, Object?> fields) async =>
+      _demoUser;
+
+  @override
+  Future<AuthUser> uploadAvatar(Uint8List bytes) async => _demoUser;
+
+  @override
+  Future<bool> verifyPasswordReset({
+    required String requestId,
+    required String code,
+  }) async => true;
+}

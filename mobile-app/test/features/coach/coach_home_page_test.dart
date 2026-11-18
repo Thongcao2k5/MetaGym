@@ -60,16 +60,16 @@ void main() {
       expect(find.text('Tổng quan công việc'), findsOneWidget);
       expect(find.text('8/12'), findsOneWidget);
       expect(find.text('Còn 4 suất'), findsOneWidget);
-      expect(find.text('1 yêu cầu chờ duyệt'), findsOneWidget);
+      expect(find.text('Thông báo Coach'), findsWidgets);
+      expect(find.text('1 thông báo chưa đọc'), findsWidgets);
 
-      // Quick actions present
-      expect(find.text('Yêu cầu'), findsOneWidget);
+      // Quick actions present (no Coach request approval flow)
+      expect(find.text('Học viên'), findsOneWidget);
       expect(find.text('Giáo trình'), findsOneWidget);
       expect(find.text('Dinh dưỡng'), findsOneWidget);
       expect(find.text('Lịch tập'), findsOneWidget);
-
-      // Full feature directory is initially collapsed
       expect(find.text('Yêu cầu chọn Coach'), findsNothing);
+      expect(find.textContaining('yêu cầu chờ duyệt'), findsNothing);
 
       // Scroll to Next session + Bento cards
       await tester.scrollUntilVisible(find.text('Ca dạy tiếp theo'), 200);
@@ -132,12 +132,13 @@ void main() {
       expect(tester.getSize(find.text('Nhắn tin')).height, lessThan(26));
       expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
       expect(tester.getSize(find.text('Hoàn tất')).height, lessThan(26));
-      expect(find.text('Học viên & Yêu cầu (1)'), findsOneWidget);
+      expect(find.text('Học viên (1)'), findsOneWidget);
 
-      await tester.tap(find.text('Học viên & Yêu cầu (1)'));
+      await tester.tap(find.text('Học viên (1)'));
       await tester.pumpAndSettle();
-      expect(find.text('Hội viên member-9'), findsOneWidget);
       expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
+      expect(find.text('Chấp nhận'), findsNothing);
+      expect(find.text('Từ chối'), findsNothing);
 
       expect(tester.takeException(), isNull);
     },

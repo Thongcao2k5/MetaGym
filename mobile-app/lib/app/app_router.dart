@@ -9,7 +9,6 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
@@ -56,7 +55,7 @@ abstract final class AppRoutes {
 GoRouter createAppRouter({
   required SessionController sessionController,
   GlobalKey<NavigatorState>? navigatorKey,
-  String initialLocation = AppRoutes.welcome,
+  String initialLocation = AppRoutes.login,
 }) {
   return GoRouter(
     navigatorKey: navigatorKey,
@@ -70,14 +69,13 @@ GoRouter createAppRouter({
       }
       if (sessionController.status == SessionStatus.unauthenticated) {
         const publicRoutes = {
-          AppRoutes.welcome,
           AppRoutes.login,
           AppRoutes.register,
           AppRoutes.forgotPassword,
         };
         return publicRoutes.contains(state.matchedLocation)
             ? null
-            : AppRoutes.welcome;
+            : AppRoutes.login;
       }
 
       final home = _homeForRole(sessionController.user!.role);
@@ -136,7 +134,10 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
-        builder: (context, state) => const ForgotPasswordPage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const ForgotPasswordPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.profile,
@@ -148,11 +149,17 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.memberHome,
-        builder: (context, state) => const MemberHomePage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const MemberHomePage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.coachHome,
-        builder: (context, state) => const CoachHomePage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const CoachHomePage(),
+        ),
       ),
       for (final destination in memberDestinations)
         GoRoute(
@@ -197,8 +204,6 @@ GoRouter createAppRouter({
           path: destination.path,
           builder: (context, state) => destination.path == '/coach/features/gym'
               ? const GymEquipmentPage()
-              : destination.path == '/coach/features/requests'
-              ? CoachRequestsPage(coachId: sessionController.user!.id)
               : destination.path == '/coach/features/members'
               ? const CoachMembersPage()
               : destination.path == '/coach/features/training'
@@ -231,7 +236,10 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.adminHome,
-        builder: (context, state) => const AdminHomePage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const AdminHomePage(),
+        ),
       ),
     ],
     errorBuilder: (context, state) =>
@@ -251,22 +259,38 @@ CustomTransitionPage<void> _smoothAuthTransitionPage({
 }) {
   return CustomTransitionPage<void>(
     key: key,
-    transitionDuration: const Duration(milliseconds: 380),
-    reverseTransitionDuration: const Duration(milliseconds: 280),
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 240),
     child: child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
+      if (MediaQuery.disableAnimationsOf(context)) {
+        return child;
+      }
+      final incoming = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,
       );
+      final outgoing = CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeInCubic,
+      );
       return FadeTransition(
-        opacity: curved,
+        opacity: incoming,
         child: SlideTransition(
           position: Tween<Offset>(
             begin: const Offset(0, 0.03),
             end: Offset.zero,
-          ).animate(curved),
-          child: child,
+          ).animate(incoming),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.985, end: 1.0).animate(incoming),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 1.0, end: 0.0).animate(outgoing),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 1.0, end: 0.97).animate(outgoing),
+                child: child,
+              ),
+            ),
+          ),
         ),
       );
     },

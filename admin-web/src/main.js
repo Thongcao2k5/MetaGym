@@ -86,7 +86,6 @@ async function dashboard() {
   const cards = [ ['Member hoạt động', data.members.active, 'members'],
     ['Coach hoạt động', data.coaches.active, 'coaches'],
     ['Gói đang hoạt động', data.activeMemberships, 'payments'],
-    ['Yêu cầu chọn Coach', data.pendingCoachRequests, 'relationships'],
     ['Yêu cầu kết thúc', data.pendingTerminationRequests, 'terminations'],
     ['Doanh thu', currency(data.revenue.amount), 'payments'] ];
   layout('dashboard', `<p class="text-secondary">${esc(data.from)} – ${esc(data.to)}</p><div class="row g-3 mb-4">${cards.map(([label, value, routeName]) =>
@@ -102,8 +101,8 @@ async function accounts(role, page = 1) {
   const section = role === 'COACH' ? 'coaches' : 'members';
   const result = await api(`/admin/users?role=${role}&page=${page}&pageSize=20`);
   layout(section, `${role === 'COACH' ? '<button id="create" class="btn btn-success mb-3">Tạo Coach</button>' : ''}
-    ${table(['Tên', 'Email', 'Trạng thái', 'Giới hạn', 'Thao tác'], result.data.map((row) => `<tr><td>${esc(row.fullName)}</td><td>${esc(row.email)}</td>
-    <td>${esc(row.status)}</td><td>${row.memberLimit ?? '—'}</td><td><button class="btn btn-outline-primary btn-sm edit" data-id="${row.id}">Sửa</button>
+    ${table(['Tên', 'Email', 'Trạng thái', 'Thao tác'], result.data.map((row) => `<tr><td>${esc(row.fullName)}</td><td>${esc(row.email)}</td>
+    <td>${esc(row.status)}</td><td><button class="btn btn-outline-primary btn-sm edit" data-id="${row.id}">Sửa</button>
     <button class="btn btn-outline-${row.status === 'ACTIVE' ? 'danger' : 'success'} btn-sm toggle" data-id="${row.id}" data-status="${row.status}">${row.status === 'ACTIVE' ? 'Khóa' : 'Mở'}</button>
     ${role === 'COACH' ? `<button class="btn btn-outline-secondary btn-sm reset" data-id="${row.id}">Mật khẩu tạm</button>` : ''}</td></tr>`))}
     <div class="d-flex justify-content-between align-items-center"><span>${result.pagination.totalItems} kết quả · trang ${page}</span>
@@ -115,13 +114,11 @@ async function accounts(role, page = 1) {
     document.querySelector('#editor').innerHTML = `<form id="account-form" class="card card-body mt-3"><h2 class="h5">${row ? 'Sửa tài khoản' : 'Tạo Coach'}</h2>
       <input class="form-control mb-2" name="fullName" placeholder="Họ tên" value="${esc(row?.fullName)}" required minlength="2">
       ${row ? `<input class="form-control mb-2" name="phone" placeholder="Điện thoại" value="${esc(row.phone)}">` : `<input class="form-control mb-2" name="email" type="email" placeholder="Email" required><input class="form-control mb-2" name="password" type="password" placeholder="Mật khẩu (hoa, thường, số)" required minlength="8">`}
-      ${role === 'COACH' ? `<input class="form-control mb-2" name="memberLimit" type="number" min="1" value="${row?.memberLimit ?? ''}" placeholder="Giới hạn Member" required>` : ''}
       <button class="btn btn-success align-self-start">Lưu</button></form>`;
     document.querySelector('#account-form').onsubmit = async (event) => {
       event.preventDefault(); const form = new FormData(event.currentTarget);
       const body = { fullName: form.get('fullName'), ...(row ? { phone: form.get('phone') || null } :
-        { email: form.get('email'), password: form.get('password') }),
-      ...(role === 'COACH' ? { memberLimit: Number(form.get('memberLimit')) } : {}) };
+        { email: form.get('email'), password: form.get('password'), ...(role === 'COACH' ? { memberLimit: 8 } : {}) }) };
       try { await api(row ? `/admin/users/${row.id}` : '/admin/coaches', row ? 'PATCH' : 'POST', body);
         await accounts(role, page); notice('Đã lưu tài khoản.'); }
       catch (error) { notice(error.message, 'danger'); }

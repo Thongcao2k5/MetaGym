@@ -163,6 +163,34 @@ void main() {
 
     expect(find.text('Ngày này chưa có nhật ký và đã khóa.'), findsOneWidget);
   });
+
+  testWidgets('week mode shows only T2..CN labels without combining date numbers', (
+    tester,
+  ) async {
+    final journal = _JournalFixture();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MemberJournalPage(
+          service: journal,
+          membershipService: const _MembershipFixture(true),
+          photoService: _PhotoFixture(),
+          picker: _PickerFixture(),
+          todayOverride: fixedToday,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final weekday in const ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']) {
+      expect(find.text(weekday), findsOneWidget);
+    }
+    expect(find.textContaining('T2\n'), findsNothing);
+    expect(find.text('13'), findsNothing);
+
+    await tester.tap(find.text('T3'));
+    await tester.pumpAndSettle();
+    expect(find.text('10 tháng 11, 2026'), findsOneWidget);
+  });
 }
 
 class _JournalFixture implements MemberJournalService {

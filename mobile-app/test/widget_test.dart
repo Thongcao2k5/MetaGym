@@ -14,7 +14,6 @@ import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
@@ -74,7 +73,7 @@ void main() {
     await tester.pumpWidget(MetaGymApp(sessionController: controller));
     await tester.pumpAndSettle();
 
-    expect(find.text('Meta Gym'), findsOneWidget);
+    expect(find.text('Chào mừng trở lại'), findsOneWidget);
     expect(find.text('Không gian dành cho hội viên'), findsNothing);
   });
 
@@ -257,8 +256,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Đăng nhập'));
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pump();
@@ -280,12 +277,9 @@ void main() {
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
     expect(find.text('Yêu cầu chọn Coach'), findsNothing);
     GoRouter.of(tester.element(find.byType(CoachHomePage)))
-        .push<void>('/coach/features/requests');
+        .go('/coach/features/requests');
     await tester.pumpAndSettle();
-    expect(find.byType(CoachRequestsPage), findsOneWidget);
-    expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
+    expect(find.byType(CoachHomePage), findsOneWidget);
     await tester.tap(find.text('Hội viên của tôi'));
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
@@ -350,8 +344,6 @@ void main() {
         profileService: _FakeProfileService(member),
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Đăng nhập'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Quên mật khẩu?'));
     await tester.pumpAndSettle();

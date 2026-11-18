@@ -14,134 +14,192 @@ class WelcomePage extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Logo & tên thương hiệu căn giữa hoàn toàn
           AuthStaggeredEntrance(
             delayMs: 0,
             child: Column(
               children: [
                 Container(
-                  width: 68,
-                  height: 68,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFF7A4D), MetaGymTheme.brandOrange],
+                    color: const Color(0x992D2824),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0x88A79D92),
+                      width: 1,
                     ),
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.40),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 6,
+                        height: 6,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: MetaGymTheme.brandOrange,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'META GYM · STUDIO OS',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Color(0xFFEAE3DA),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.6,
+                            height: 1.1,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.fitness_center_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
+                const MetaGymBrandBadge(
+                  size: 70,
+                  borderRadius: 22,
+                  fontSize: 23,
+                ),
+                const SizedBox(height: 14),
                 const Text(
                   'Meta Gym',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 34,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 32,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
+                    letterSpacing: -0.3,
+                    height: 1.15,
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'COACHING & TRAINING STUDIO',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: MetaGymTheme.brandOrange,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          // Vạch nhấn nhỏ cân giữa
-          AuthStaggeredEntrance(
-            delayMs: 50,
-            child: Center(
-              child: Container(
-                width: 44,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          // 2. Câu khẩu hiệu & mô tả ngắn căn giữa đều chữ
-          const AuthStaggeredEntrance(
-            delayMs: 90,
-            child: Column(
-              children: [
-                Text(
-                  'Đồng hành cùng\nhành trình luyện tập của bạn',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    height: 1.32,
-                  ),
-                ),
-                SizedBox(height: 10),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
+                const SizedBox(height: 8),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
-                    'Theo dõi lịch tập, chỉ số cơ thể và kết nối 1:1 cùng Huấn luyện viên cá nhân.',
+                    'Không gian luyện tập & Huấn luyện cá nhân thế hệ mới',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFD5CCBF),
-                      fontSize: 14,
-                      height: 1.5,
+                      color: Color(0xFFC8C2BC),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                      height: 1.45,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // 3. Hai nút Đăng nhập & Đăng ký nằm ngay phía dưới chữ ở giữa màn hình
+          const SizedBox(height: 22),
           AuthStaggeredEntrance(
-            delayMs: 140,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+            delayMs: 90,
+            child: WarmSmokeGlass(
+              padding: const EdgeInsets.all(20),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0x80211E1C),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0x9A8C8176),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _WelcomeHighlightRow(
+                          icon: Icons.calendar_month_rounded,
+                          label: 'Đặt lịch PT 1:1 linh hoạt theo ca',
+                        ),
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0x2EA79D92),
+                        ),
+                        _WelcomeHighlightRow(
+                          icon: Icons.bolt_rounded,
+                          label: 'Giáo trình & dinh dưỡng cá nhân hóa',
+                        ),
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0x2EA79D92),
+                        ),
+                        _WelcomeHighlightRow(
+                          icon: Icons.auto_awesome_rounded,
+                          label: 'Theo dõi chỉ số & Trợ lý AI 24/7',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
                   AuthPrimaryButton(
                     buttonKey: const Key('welcome-login-button'),
                     label: 'Đăng nhập',
+                    trailingIcon: Icons.arrow_forward_rounded,
                     onPressed: () => context.go(AppRoutes.login),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   AuthSecondaryGlassButton(
                     buttonKey: const Key('welcome-register-button'),
                     label: 'Đăng ký Member',
                     onPressed: () => context.go(AppRoutes.register),
                   ),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WelcomeHighlightRow extends StatelessWidget {
+  const _WelcomeHighlightRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0x24FF5E36),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0x4DFF5E36), width: 1),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 16, color: MetaGymTheme.brandOrange),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFFF7F9FC),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
               ),
             ),
           ),

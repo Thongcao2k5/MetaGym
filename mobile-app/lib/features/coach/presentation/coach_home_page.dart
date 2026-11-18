@@ -16,11 +16,9 @@ import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart'
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
-import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_request_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
@@ -150,7 +148,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
       membersService,
     );
 
-    List<CoachIncomingRequest> requests = const [];
     CoachProfile? profile;
     List<CoachMemberSummary> members = const [];
     List<TrainingSession> trainingSessions = const [];
@@ -161,18 +158,11 @@ class _CoachHomePageState extends State<CoachHomePage> {
     List<CoachRecord> blocks = const [];
     Object? firstError;
 
-    if (requestsService != null) {
+    if (requestsService != null && coachId.isNotEmpty) {
       try {
-        requests = await requestsService.getRequests();
-      } catch (error) {
-        firstError ??= error;
-      }
-      if (coachId.isNotEmpty) {
-        try {
-          profile = await requestsService.getCoach(coachId);
-        } catch (_) {
-          // Fixtures without getCoach support should degrade silently.
-        }
+        profile = await requestsService.getCoach(coachId);
+      } catch (_) {
+        // Fixtures without getCoach support should degrade silently.
       }
     }
 
@@ -244,7 +234,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
     setState(() {
       _snapshot = _CoachSnapshot(
         profile: profile,
-        requests: requests,
         members: members,
         bookings: mergedBookings,
         notifications: notifications,
@@ -462,61 +451,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
       if (mounted) showCoachingSnackBar(context, error.message);
     } catch (_) {
       if (mounted) showCoachingSnackBar(context, 'Không thể hủy buổi dạy.');
-    } finally {
-      if (mounted) setState(() => _isMutating = false);
-    }
-  }
-
-  Future<void> _decideRequest(
-    CoachIncomingRequest request,
-    String decision,
-  ) async {
-    if (_isMutating) return;
-    String? reason;
-    if (decision == 'REJECTED') {
-      reason = await _askReasonDialog(
-        title: 'Từ chối yêu cầu',
-        label: 'Lý do từ chối',
-      );
-      if (reason == null || !mounted) return;
-    }
-
-    if (widget.previewMode) {
-      setState(() {
-        _snapshot = _snapshot.withoutRequest(request.id);
-      });
-      showCoachingSnackBar(
-        context,
-        decision == 'ACCEPTED'
-            ? 'Đã chấp nhận học viên.'
-            : 'Đã từ chối yêu cầu.',
-      );
-      return;
-    }
-
-    final requestsService = _tryReadProvider<CoachRequestsService>(context);
-    if (requestsService == null) return;
-
-    setState(() => _isMutating = true);
-    try {
-      await requestsService.decide(request.id, decision, reason: reason);
-      if (mounted) {
-        await _loadCoachData();
-        if (mounted) {
-          showCoachingSnackBar(
-            context,
-            decision == 'ACCEPTED'
-                ? 'Đã chấp nhận yêu cầu chọn Coach.'
-                : 'Đã từ chối yêu cầu.',
-          );
-        }
-      }
-    } on ApiException catch (error) {
-      if (mounted) showCoachingSnackBar(context, error.message);
-    } catch (_) {
-      if (mounted) {
-        showCoachingSnackBar(context, 'Không xử lý được yêu cầu.');
-      }
     } finally {
       if (mounted) setState(() => _isMutating = false);
     }
@@ -763,7 +697,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
           onOpenOffers: _openOffersPage,
           onCompleteBooking: _completeBooking,
           onCancelBooking: _cancelBooking,
-          onDecideRequest: _decideRequest,
         )
       else
         const SizedBox.shrink(),
@@ -858,7 +791,6 @@ class _CoachBookingEntry {
 class _CoachSnapshot {
   const _CoachSnapshot({
     required this.profile,
-    required this.requests,
     required this.members,
     required this.bookings,
     required this.notifications,
@@ -872,7 +804,6 @@ class _CoachSnapshot {
 
   factory _CoachSnapshot.empty() => const _CoachSnapshot(
     profile: null,
-    requests: [],
     members: [],
     bookings: [],
     notifications: [],
@@ -912,22 +843,6 @@ class _CoachSnapshot {
         availableSlots: 4,
         specialties: ['Hypertrophy', 'Giảm mỡ'],
       ),
-      requests: const [
-        CoachIncomingRequest(
-          id: 'req-1',
-          memberId: 'member-1',
-          coachId: 'preview-coach',
-          status: 'PENDING',
-          message: 'Mình muốn tập khung 18h các ngày 2-4-6.',
-        ),
-        CoachIncomingRequest(
-          id: 'req-2',
-          memberId: 'member-2',
-          coachId: 'preview-coach',
-          status: 'PENDING',
-          message: 'Người mới bắt đầu, cần hướng dẫn kỹ thuật cơ bản.',
-        ),
-      ],
       members: const [
         CoachMemberSummary(
           relationshipId: 'rel-1',
@@ -1033,7 +948,6 @@ class _CoachSnapshot {
   }
 
   final CoachProfile? profile;
-  final List<CoachIncomingRequest> requests;
   final List<CoachMemberSummary> members;
   final List<_CoachBookingEntry> bookings;
   final List<CoachRecord> notifications;
@@ -1043,9 +957,6 @@ class _CoachSnapshot {
   final List<CoachRecord> blocks;
   final Set<String> blockedSlotKeys;
   final bool hasLiveApi;
-
-  int get pendingRequestsCount =>
-      requests.where((item) => item.status == 'PENDING').length;
 
   int get activeMembersCount =>
       members.where((item) => item.status == 'ACTIVE').length;
@@ -1083,7 +994,6 @@ class _CoachSnapshot {
   }) {
     return _CoachSnapshot(
       profile: profile,
-      requests: requests,
       members: members,
       bookings: bookings,
       notifications: notifications,
@@ -1099,7 +1009,6 @@ class _CoachSnapshot {
   _CoachSnapshot withBookingStatus(String bookingId, String newStatus) {
     return _CoachSnapshot(
       profile: profile,
-      requests: requests,
       members: members,
       bookings: [
         for (final entry in bookings)
@@ -1108,22 +1017,6 @@ class _CoachSnapshot {
           else
             entry,
       ],
-      notifications: notifications,
-      offers: offers,
-      workDays: workDays,
-      activeWorkWeekdays: activeWorkWeekdays,
-      blocks: blocks,
-      blockedSlotKeys: blockedSlotKeys,
-      hasLiveApi: hasLiveApi,
-    );
-  }
-
-  _CoachSnapshot withoutRequest(String requestId) {
-    return _CoachSnapshot(
-      profile: profile,
-      requests: requests.where((item) => item.id != requestId).toList(),
-      members: members,
-      bookings: bookings,
       notifications: notifications,
       offers: offers,
       workDays: workDays,
@@ -1448,16 +1341,14 @@ class _CoachDashboardView extends StatelessWidget {
   }
 
   Widget _buildQuickActionDock() {
-    final pending = snapshot.pendingRequestsCount;
     return Row(
       children: [
         Expanded(
           child: _CoachQuickActionTile(
-            icon: Icons.pending_actions_rounded,
-            label: 'Yêu cầu',
-            badgeCount: pending,
+            icon: Icons.groups_outlined,
+            label: 'Học viên',
             useSolidFallback: useSolidGlassFallback,
-            onTap: () => onPushRoute('/coach/features/requests'),
+            onTap: () => onPushRoute('/coach/features/members'),
           ),
         ),
         const SizedBox(width: 8),
@@ -1557,7 +1448,7 @@ class _CoachDashboardView extends StatelessWidget {
 
     final profile = snapshot.profile;
     final activeMembers = snapshot.activeMembersCount;
-    final pendingRequests = snapshot.pendingRequestsCount;
+    final unreadNotifications = snapshot.unreadNotificationsCount;
     final upcomingCount = snapshot.bookings
         .where((b) => b.isUpcomingOrActive)
         .length;
@@ -1686,7 +1577,7 @@ class _CoachDashboardView extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: MetaGymMetricPanel(
-                  onTap: () => onPushRoute('/coach/features/requests'),
+                  onTap: onOpenNotifications,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 10,
@@ -1731,7 +1622,7 @@ class _CoachDashboardView extends StatelessWidget {
                                   ),
                                 ),
                                 const Text(
-                                  'Yêu cầu & Thông báo',
+                                  'Thông báo Coach',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1746,13 +1637,13 @@ class _CoachDashboardView extends StatelessWidget {
                       ),
                       const SizedBox(height: 9),
                       Text(
-                        pendingRequests > 0
-                            ? '$pendingRequests yêu cầu chờ duyệt'
-                            : 'Không có yêu cầu chờ',
+                        unreadNotifications > 0
+                            ? '$unreadNotifications thông báo chưa đọc'
+                            : 'Chưa có thông báo mới',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: pendingRequests > 0
+                          color: unreadNotifications > 0
                               ? MetaGymTheme.warningAmber
                               : const Color(0xFFEAE6E2),
                           fontSize: 11,
@@ -2650,7 +2541,6 @@ class _CoachWorkHubView extends StatefulWidget {
     required this.onOpenOffers,
     required this.onCompleteBooking,
     required this.onCancelBooking,
-    required this.onDecideRequest,
   });
 
   final double bottomPadding;
@@ -2665,8 +2555,6 @@ class _CoachWorkHubView extends StatefulWidget {
   final Future<void> Function() onOpenOffers;
   final Future<void> Function(_CoachBookingEntry entry) onCompleteBooking;
   final Future<void> Function(_CoachBookingEntry entry) onCancelBooking;
-  final Future<void> Function(CoachIncomingRequest request, String decision)
-  onDecideRequest;
 
   @override
   State<_CoachWorkHubView> createState() => _CoachWorkHubViewState();
@@ -2697,11 +2585,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
     final dayBookings = widget.snapshot.bookings
         .where((entry) => entry.gymStart.weekday == selectedWeekday)
         .toList();
-    final pendingRequests = widget.snapshot.requests
-        .where((item) => item.status == 'PENDING')
-        .toList();
     final members = widget.snapshot.members;
-    final requestsService = _tryReadProvider<CoachRequestsService>(context);
     final membersService = _tryReadProvider<CoachMembersService>(context);
 
     return Material(
@@ -2779,8 +2663,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _SegmentPill(
-                          label:
-                              'Học viên & Yêu cầu (${pendingRequests.length})',
+                          label: 'Học viên (${members.length})',
                           selected: _segment == 1,
                           onTap: () => setState(() => _segment = 1),
                         ),
@@ -2848,16 +2731,6 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                       for (final booking in dayBookings)
                         _buildWorkHubBookingCard(booking),
                   ] else ...[
-                    if (pendingRequests.isNotEmpty) ...[
-                      const _CoachSectionHeader(
-                        title: 'Yêu cầu chờ duyệt',
-                        icon: Icons.pending_actions_rounded,
-                      ),
-                      const SizedBox(height: 8),
-                      for (final req in pendingRequests)
-                        _buildRequestCard(req, requestsService),
-                      const SizedBox(height: 12),
-                    ],
                     Row(
                       children: [
                         const Expanded(
@@ -3057,116 +2930,6 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
     );
   }
 
-  Widget _buildRequestCard(
-    CoachIncomingRequest req,
-    CoachRequestsService? service,
-  ) {
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      onTap: service == null
-          ? null
-          : () async {
-              final changed = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => CoachRequestDetailPage(
-                    requestId: req.id,
-                    service: service,
-                  ),
-                ),
-              );
-              if (changed == true && mounted) {
-                await widget.onRefresh();
-              }
-            },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CoachingAvatar(fullName: req.memberId, size: 38, round: true),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hội viên ${req.memberId}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextPrimary,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      req.statusLabel,
-                      style: const TextStyle(
-                        color: MetaGymTheme.warningAmber,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const CoachingPill(
-                label: 'Chờ duyệt',
-                tone: CoachingPillTone.amber,
-              ),
-            ],
-          ),
-          if (req.message != null && req.message!.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              '"${req.message!.trim()}"',
-              style: const TextStyle(
-                color: MetaGymTheme.darkTextSecondary,
-                fontSize: 12.5,
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(48, 44),
-                    foregroundColor: MetaGymTheme.dangerCoral,
-                    side: BorderSide(
-                      color: MetaGymTheme.dangerCoral.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  onPressed: widget.isMutating
-                      ? null
-                      : () => widget.onDecideRequest(req, 'REJECTED'),
-                  child: const Text('Từ chối'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(48, 44),
-                    backgroundColor: MetaGymTheme.brandOrange,
-                    foregroundColor: MetaGymTheme.onPrimary,
-                  ),
-                  onPressed: widget.isMutating
-                      ? null
-                      : () => widget.onDecideRequest(req, 'ACCEPTED'),
-                  child: const Text('Chấp nhận'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMemberCard(
     CoachMemberSummary member,
     CoachMembersService? service,
@@ -3245,14 +3008,12 @@ class _CoachQuickActionTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     required this.useSolidFallback,
-    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool useSolidFallback;
-  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -3288,36 +3049,7 @@ class _CoachQuickActionTile extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
-                        if (badgeCount > 0)
-                          Positioned(
-                            right: -8,
-                            top: -5,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: MetaGymTheme.brandOrange,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                badgeCount > 9 ? '9+' : '$badgeCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  fontFeatures: MetaGymTheme.tabularFigures,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
                     const SizedBox(height: 6),
                     Text(
                       label,

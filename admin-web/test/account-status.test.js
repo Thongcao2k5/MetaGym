@@ -109,3 +109,123 @@ test('Admin mở tài khoản không bị hỏi hoặc gửi lý do khóa', asyn
   assert.equal(page.getPromptCalls(), 0);
   assert.equal(page.getStatus(), 'ACTIVE');
 });
+
+test('Admin dashboard không hiển thị thẻ Yêu cầu chọn Coach', async () => {
+  const nodes = {
+    '#app': { innerHTML: '' },
+    '#logout': {},
+    '#notice': { innerHTML: '' },
+    '#revenue-chart': {},
+  };
+  const context = {
+    document: {
+      querySelector: (selector) => nodes[selector] ?? null,
+      querySelectorAll: () => [],
+    },
+    window: { addEventListener() {} },
+    location: { hash: '#/admin/dashboard' },
+    sessionStorage: { getItem: () => 'test-admin-token', removeItem() {} },
+    fetch: async (url) => {
+      const path = new URL(url, 'http://localhost').pathname;
+      if (path === '/api/v1/users/me') {
+        return { ok: true, json: async () => ({ data: { role: 'ADMIN', fullName: 'Admin' } }) };
+      }
+      if (path === '/api/v1/admin/dashboard') {
+        return {
+          ok: true,
+          json: async () => ({
+            data: {
+              from: '2026-11-01',
+              to: '2026-11-17',
+              members: { active: 10 },
+              coaches: { active: 3 },
+              activeMemberships: 8,
+              pendingCoachRequests: 4,
+              pendingTerminationRequests: 1,
+              revenue: { amount: '5000000', byDay: [] },
+            },
+          }),
+        };
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    },
+    Chart: class {},
+    console,
+  };
+  vm.runInNewContext(source, context, { filename: 'admin-web/src/main.js' });
+  for (let attempt = 0; attempt < 20 && !nodes['#app'].innerHTML.includes('Doanh thu'); attempt += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  assert.equal(nodes['#app'].innerHTML.includes('Yêu cầu chọn Coach'), false);
+  assert.equal(nodes['#app'].innerHTML.includes('Yêu cầu kết thúc'), true);
+});
+
+test('Admin danh sách Coach không hiển thị cột Giới hạn và không cho sửa memberLimit', async () => {
+  const editBtn = { dataset: { id: 'coach-1' }, onclick: null };
+  const editorNode = { innerHTML: '' };
+  const accountForm = { onsubmit: null };
+  const nodes = {
+    '#app': { innerHTML: '' },
+    '#logout': {},
+    '#prev': {},
+    '#next': {},
+    '#notice': { innerHTML: '' },
+    '#editor': editorNode,
+    '#account-form': accountForm,
+  };
+  const requests = [];
+  const context = {
+    FormData: class {
+      get(key) {
+        return { fullName: 'Coach Mới', phone: '0901234567' }[key] ?? null;
+      }
+    },
+    document: {
+      querySelector: (selector) => nodes[selector] ?? null,
+      querySelectorAll: (selector) => selector === '.edit' ? [editBtn] : [],
+    },
+    window: { addEventListener() {} },
+    location: { hash: '#/admin/coaches' },
+    sessionStorage: { getItem: () => 'test-admin-token', removeItem() {} },
+    fetch: async (url, options = {}) => {
+      const path = new URL(url, 'http://localhost').pathname;
+      const body = options.body && JSON.parse(options.body);
+      requests.push({ path, method: options.method ?? 'GET', body });
+      if (path === '/api/v1/users/me') {
+        return { ok: true, json: async () => ({ data: { role: 'ADMIN', fullName: 'Admin' } }) };
+      }
+      if (path === '/api/v1/admin/users' && (!options.method || options.method === 'GET')) {
+        return {
+          ok: true,
+          json: async () => ({
+            data: [{
+              id: 'coach-1',
+              fullName: 'Coach Một',
+              email: 'coach@test.local',
+              phone: '0900000000',
+              status: 'ACTIVE',
+              memberLimit: 8,
+            }],
+            pagination: { totalItems: 1, totalPages: 1 },
+          }),
+        };
+      }
+      if (path === '/api/v1/admin/users/coach-1' && options.method === 'PATCH') {
+        return { ok: true, json: async () => ({ data: { id: 'coach-1' } }) };
+      }
+      throw new Error(`Unexpected request: ${options.method} ${path}`);
+    },
+    Chart: class {},
+    console,
+  };
+  vm.runInNewContext(source, context, { filename: 'admin-web/src/main.js' });
+  for (let attempt = 0; attempt < 20 && !editBtn.onclick; attempt += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  assert.equal(nodes['#app'].innerHTML.includes('<th>Giới hạn</th>'), false);
+  editBtn.onclick();
+  assert.equal(editorNode.innerHTML.includes('name="memberLimit"'), false);
+  await accountForm.onsubmit({ preventDefault() {}, currentTarget: {} });
+  const patch = requests.find((r) => r.method === 'PATCH');
+  assert.deepEqual(patch.body, { fullName: 'Coach Mới', phone: '0901234567' });
+});
