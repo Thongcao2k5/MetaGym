@@ -22,6 +22,11 @@ class CoachBookingHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final completedCount = bookings
+        .where((b) => b['status'] == 'COMPLETED')
+        .length;
+    final cancelledCount = bookings.length - completedCount;
+
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
       body: Stack(
@@ -49,7 +54,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                             Text(
                               'Lịch sử buổi tập',
                               style: TextStyle(
-                                color: Color(0xFFF6F3F0),
+                                color: Color(0xFFF7F9FC),
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.3,
@@ -59,7 +64,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                             Text(
                               'Các buổi đã tập & đã hủy với Coach',
                               style: TextStyle(
-                                color: Color(0xFFBCB5AE),
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 11.5,
                               ),
                             ),
@@ -73,6 +78,69 @@ class CoachBookingHistoryPage extends StatelessWidget {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
                     children: [
+                      MetaGymHeroGlassCard(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: MetaGymMetricPanel(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Đã hoàn thành',
+                                      style: TextStyle(
+                                        color: Color(0xFFB8B0A8),
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '$completedCount buổi',
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.progressGreen,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: MetaGymMetricPanel(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Đã hủy / Khác',
+                                      style: TextStyle(
+                                        color: Color(0xFFB8B0A8),
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '$cancelledCount buổi',
+                                      style: const TextStyle(
+                                        color: Color(0xFFF7F9FC),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
@@ -101,6 +169,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                                 color: MetaGymTheme.textSecondary,
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w500,
+                                fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                             ),
                           ],

@@ -15,7 +15,6 @@ import 'package:meta_gym_app/features/profile/data/profile_service.dart';
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart';
-import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -23,19 +22,8 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: AppLoadingPage()));
-    expect(find.text('META GYM'), findsOneWidget);
-    expect(find.text('PERSONAL PERFORMANCE'), findsOneWidget);
     expect(find.text('Đang khởi động không gian tập luyện...'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
-  });
-
-  testWidgets('WelcomePage renders primary and secondary actions', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const MaterialApp(home: WelcomePage()));
-    expect(find.text('Meta Gym'), findsOneWidget);
-    expect(find.byKey(const Key('welcome-login-button')), findsOneWidget);
-    expect(find.byKey(const Key('welcome-register-button')), findsOneWidget);
   });
 
   testWidgets(
@@ -119,16 +107,12 @@ void main() {
   });
 
   testWidgets(
-    'compact phone viewport renders Welcome, Login and Register cleanly without overflow',
+    'compact phone viewport renders Login and Register cleanly without overflow',
     (tester) async {
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(const MaterialApp(home: WelcomePage()));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('welcome-login-button')), findsOneWidget);
 
       final session = SessionController(
         _MemoryTokenStorage(),
@@ -205,7 +189,7 @@ void main() {
 
   for (final viewport in const <Size>[Size(375, 812), Size(360, 640)]) {
     testWidgets(
-      '${viewport.width.toInt()}x${viewport.height.toInt()} viewport renders Splash, Welcome, Login, Register, and ForgotPassword cleanly',
+      '${viewport.width.toInt()}x${viewport.height.toInt()} viewport renders Splash, Login, Register, and ForgotPassword cleanly',
       (tester) async {
         tester.view.physicalSize = viewport;
         tester.view.devicePixelRatio = 1.0;
@@ -217,18 +201,6 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(find.text('META GYM'), findsOneWidget);
-        expect(find.text('MG'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-
-        await tester.pumpWidget(
-          MaterialApp(theme: AppTheme.dark, home: const WelcomePage()),
-        );
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('welcome-login-button')), findsOneWidget);
-        expect(
-          find.byKey(const Key('welcome-register-button')),
-          findsOneWidget,
-        );
         expect(find.text('MG'), findsOneWidget);
         expect(tester.takeException(), isNull);
 

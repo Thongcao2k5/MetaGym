@@ -180,8 +180,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         IconButton(
                                           visualDensity: VisualDensity.compact,
                                           constraints: const BoxConstraints(
-                                            minWidth: 32,
-                                            minHeight: 32,
+                                            minWidth: 44,
+                                            minHeight: 44,
                                           ),
                                           padding: EdgeInsets.zero,
                                           onPressed: () => _moveMonth(-1),
@@ -203,14 +203,16 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                               color: Color(0xFFF7F9FC),
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
+                                              fontFeatures:
+                                                  MetaGymTheme.tabularFigures,
                                             ),
                                           ),
                                         ),
                                         IconButton(
                                           visualDensity: VisualDensity.compact,
                                           constraints: const BoxConstraints(
-                                            minWidth: 32,
-                                            minHeight: 32,
+                                            minWidth: 44,
+                                            minHeight: 44,
                                           ),
                                           padding: EdgeInsets.zero,
                                           onPressed: canGoForward
@@ -610,6 +612,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
                 height: 1.05,
+                fontFeatures: MetaGymTheme.tabularFigures,
               ),
             ),
           ],

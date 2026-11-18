@@ -20,9 +20,9 @@ import 'package:meta_gym_app/features/progress/presentation/member_journal_page.
 import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
+import 'package:meta_gym_app/features/training/presentation/gym_visits_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_self_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
-import 'package:meta_gym_app/features/training/presentation/training_history_page.dart';
 import 'package:provider/provider.dart';
 
 /// Overview of the Member training area. Synchronized with Member Home's
@@ -322,7 +322,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                     _TrainingHeader(
                       disableBlur: disableBlur,
                       onOpenLibrary: () => _open(const ExerciseLibraryPage()),
-                      onOpenHistory: () => _open(const TrainingHistoryPage()),
+                      onOpenHistory: () => _open(const GymVisitsPage()),
                     ),
                     const SizedBox(height: 18),
                     const _SectionTitle('Dịch vụ của bạn'),
@@ -427,7 +427,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                               locked: false,
                               title: 'Lịch sử tập luyện',
                               detail: 'Xem các ngày và lượt đến phòng gym',
-                              onTap: () => _open(const TrainingHistoryPage()),
+                              onTap: () => _open(const GymVisitsPage()),
                             ),
                           ),
                         ],

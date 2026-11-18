@@ -1,5 +1,3 @@
-import 'meal_plans_page.dart';
-
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -7,6 +5,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:provider/provider.dart';
+
+import 'meal_plans_page.dart';
 
 class MemberNutritionPage extends StatefulWidget {
   const MemberNutritionPage({this.service, this.structured = false, super.key});
@@ -65,27 +65,50 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      widget.structured && _service is MemberNutritionApi
-      ? const MealPlansPage()
-      : Scaffold(
-          backgroundColor: MetaGymTheme.scaffoldBackground,
-          extendBodyBehindAppBar: false,
-          appBar: AppBar(
-            title: const Text(
-              'Dinh dưỡng',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            iconTheme: const IconThemeData(color: Colors.white),
+  Widget build(BuildContext context) {
+    if (widget.structured && _service is MemberNutritionApi) {
+      return const MealPlansPage();
+    }
+    final canPop = Navigator.of(context).canPop();
+    return Scaffold(
+      backgroundColor: MetaGymTheme.darkCanvas,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leadingWidth: canPop ? 72 : null,
+        leading: canPop
+            ? Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+              )
+            : null,
+        titleSpacing: canPop ? 8 : 16,
+        title: const Text(
+          'Dinh dưỡng',
+          style: TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
           ),
-          body: SafeArea(
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: const Color(0xFFF7F9FC),
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          SafeArea(
             child: _loading
                 ? const Center(
                     child: CircularProgressIndicator(
@@ -94,70 +117,80 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                       children: [
                         if (_error != null) ...[
                           Container(
                             margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0x33FF453A),
-                              borderRadius: BorderRadius.circular(12),
+                              color: const Color(0xFF24161A),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0x66FF453A),
+                                color: const Color(0xFF642B32),
                               ),
                             ),
                             child: Row(
                               children: [
                                 const Icon(
-                                  Icons.error_outline,
-                                  color: Color(0xFFFF6961),
+                                  Icons.error_outline_rounded,
+                                  color: MetaGymTheme.dangerCoral,
                                   size: 20,
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     _error!,
                                     style: const TextStyle(
-                                      color: Color(0xFFFF857D),
-                                      fontSize: 13,
+                                      color: Color(0xFFFFB2B6),
+                                      fontSize: 13.5,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          TextButton(
-                            onPressed: _load,
-                            style: TextButton.styleFrom(
-                              foregroundColor: MetaGymTheme.brandOrange,
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: _load,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: MetaGymTheme.primary,
+                                foregroundColor: MetaGymTheme.onPrimary,
+                                minimumSize: const Size(120, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text(
+                                'Thử lại',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ),
-                            child: const Text('Thử lại'),
                           ),
                         ] else ...[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12, top: 4),
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 12, top: 4),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.restaurant_menu,
+                                Icon(
+                                  Icons.restaurant_menu_rounded,
                                   color: MetaGymTheme.brandOrange,
                                   size: 20,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   'Hiện hành',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: TextStyle(
+                                    color: Color(0xFFF7F9FC),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
                             ),
@@ -166,18 +199,22 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                             const MetaGymGlassCard(
                               padding: EdgeInsets.all(16),
                               child: ListTile(
+                                contentPadding: EdgeInsets.zero,
                                 leading: Icon(
-                                  Icons.no_meals,
-                                  color: Colors.white38,
+                                  Icons.no_meals_outlined,
+                                  color: Color(0xFFC8C2BC),
                                 ),
                                 title: Text(
                                   'Bạn chưa có hướng dẫn dinh dưỡng.',
-                                  style: TextStyle(color: Colors.white70),
+                                  style: TextStyle(
+                                    color: Color(0xFFE4DAD1),
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
                             )
                           else
-                            MetaGymGlassCard(
+                            MetaGymHeroGlassCard(
                               padding: const EdgeInsets.all(20),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,14 +224,19 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                       Container(
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          color: const Color(0x3334C759),
+                                          color: MetaGymTheme.success
+                                              .withValues(alpha: 0.18),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
+                                          border: Border.all(
+                                            color: MetaGymTheme.success
+                                                .withValues(alpha: 0.42),
+                                          ),
                                         ),
                                         child: const Icon(
-                                          Icons.eco,
-                                          color: Color(0xFF34C759),
+                                          Icons.eco_outlined,
+                                          color: MetaGymTheme.success,
                                           size: 24,
                                         ),
                                       ),
@@ -206,21 +248,21 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                           children: [
                                             Text(
                                               _active!.title,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge
-                                                  ?.copyWith(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                              style: const TextStyle(
+                                                color: Color(0xFFF7F9FC),
+                                                fontSize: 19,
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
                                               '${_active!.statusLabel} · Phiên bản ${_active!.version}',
                                               style: const TextStyle(
-                                                color: Color(0xFF34C759),
-                                                fontWeight: FontWeight.w600,
+                                                color: MetaGymTheme.success,
+                                                fontWeight: FontWeight.w700,
                                                 fontSize: 12,
+                                                fontFeatures: MetaGymTheme
+                                                    .tabularFigures,
                                               ),
                                             ),
                                           ],
@@ -232,17 +274,18 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                   Text(
                                     _active!.publicationLabel,
                                     style: const TextStyle(
-                                      color: Colors.white60,
+                                      color: Color(0xFFC8C2BC),
                                       fontSize: 12,
+                                      fontFeatures: MetaGymTheme.tabularFigures,
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  const Divider(color: Color(0x26FFFFFF)),
+                                  const Divider(color: Color(0x40A79D92)),
                                   const SizedBox(height: 10),
                                   Text(
                                     _active!.content,
                                     style: const TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFFF7F9FC),
                                       fontSize: 15,
                                       height: 1.5,
                                     ),
@@ -251,23 +294,23 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                               ),
                             ),
                           const SizedBox(height: 24),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.history,
-                                  color: Colors.white70,
+                                Icon(
+                                  Icons.history_rounded,
+                                  color: MetaGymTheme.reflectionBlue,
                                   size: 20,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   'Lịch sử',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: TextStyle(
+                                    color: Color(0xFFF7F9FC),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
                             ),
@@ -276,13 +319,17 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                             const MetaGymGlassCard(
                               padding: EdgeInsets.all(16),
                               child: ListTile(
+                                contentPadding: EdgeInsets.zero,
                                 leading: Icon(
-                                  Icons.history_toggle_off,
-                                  color: Colors.white38,
+                                  Icons.history_toggle_off_rounded,
+                                  color: Color(0xFFC8C2BC),
                                 ),
                                 title: Text(
                                   'Chưa có hướng dẫn cũ.',
-                                  style: TextStyle(color: Colors.white70),
+                                  style: TextStyle(
+                                    color: Color(0xFFE4DAD1),
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
                             )
@@ -296,20 +343,22 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                   ).copyWith(dividerColor: Colors.transparent),
                                   child: ExpansionTile(
                                     iconColor: MetaGymTheme.brandOrange,
-                                    collapsedIconColor: Colors.white54,
+                                    collapsedIconColor: const Color(0xFFC8C2BC),
                                     title: Text(
                                       guide.title,
                                       style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFF7F9FC),
+                                        fontWeight: FontWeight.w700,
                                         fontSize: 15,
                                       ),
                                     ),
                                     subtitle: Text(
                                       '${guide.statusLabel} · ${guide.publicationLabel}',
                                       style: const TextStyle(
-                                        color: Colors.white60,
-                                        fontSize: 13,
+                                        color: Color(0xFFC8C2BC),
+                                        fontSize: 12.5,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
                                       ),
                                     ),
                                     children: [
@@ -325,9 +374,9 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                           child: Text(
                                             guide.content,
                                             style: const TextStyle(
-                                              color: Colors.white70,
+                                              color: Color(0xFFE4DAD1),
                                               fontSize: 14,
-                                              height: 1.4,
+                                              height: 1.45,
                                             ),
                                           ),
                                         ),
@@ -341,5 +390,8 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                     ),
                   ),
           ),
-        );
+        ],
+      ),
+    );
+  }
 }

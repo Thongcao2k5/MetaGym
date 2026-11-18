@@ -404,7 +404,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
         ? 7
         : ((((monthStart.weekday - 1) + daysInMonth) / 7).ceil() * 7);
 
-    return CoachingGraphiteCard(
+    return MetaGymHeroGlassCard(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       child: Column(
         children: [
@@ -769,6 +769,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                                 : MetaGymTheme.textSecondary,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
+                            fontFeatures: MetaGymTheme.tabularFigures,
                           ),
                         ),
                         const SizedBox(height: 2),

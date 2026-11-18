@@ -1746,6 +1746,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   // 6. THẺ "KHÁM PHÁ META GYM"
   // ===========================================================================
   Widget _buildExploreSection(BuildContext context) {
+    final featuredArticle = kMemberExploreArticles.first;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1824,45 +1825,51 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       errorBuilder: (_, _, _) => Container(
                         width: 82,
                         height: 58,
-                        color: const Color(0xFF1E2633),
+                        color: const Color(0xFF282320),
                         alignment: Alignment.center,
                         child: const Icon(
                           Icons.fitness_center_rounded,
-                          color: MetaGymTheme.reflectionBlue,
+                          color: MetaGymTheme.brandOrange,
                           size: 24,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Khu máy Hack Squat & Hip Thrust',
-                          style: TextStyle(
+                          featuredArticle.title,
+                          style: const TextStyle(
                             color: Color(0xFFF7F9FC),
-                            fontSize: 12.5,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                             height: 1.2,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'Chuẩn form tránh chấn thương, tối ưu kích hoạt cơ mông đùi.',
-                          style: TextStyle(
-                            color: Color(0xFF9EAAB8),
-                            fontSize: 11,
-                            height: 1.25,
+                          featuredArticle.shortDescription,
+                          style: const TextStyle(
+                            color: Color(0xFFC8C2BC),
+                            fontSize: 11.5,
+                            height: 1.3,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFFC8C2BC),
+                    size: 20,
                   ),
                 ],
               ),

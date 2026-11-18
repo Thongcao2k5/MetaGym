@@ -138,6 +138,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                                   : const Color(0xFFC9D0DB),
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
+                              fontFeatures: MetaGymTheme.tabularFigures,
                             ),
                           ),
                         ),
@@ -238,6 +239,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                             : MetaGymTheme.textPrimary,
                         fontWeight: FontWeight.w700,
                         fontSize: 14.5,
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -274,7 +276,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                 stops: const [0, 0.56],
               )
             : null,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
         border: Border.all(
           color: _isToday
               ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)

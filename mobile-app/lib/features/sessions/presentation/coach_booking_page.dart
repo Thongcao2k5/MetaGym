@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_card.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_history_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_schedule_picker_page.dart';
@@ -853,9 +856,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                 // Member: Gói Coach
                                 if (showPackages) ...[
                                   if (_loaded && _packages.isEmpty)
-                                    _buildEmptyStateCard(
-                                      'Bạn chưa có gói Coach.',
-                                    ),
+                                    _buildEmptyPackageHeroCard(context),
                                   for (final pack in _packages) ...[
                                     _buildPackageCard(pack, gymNow, now),
                                     const SizedBox(height: 12),
@@ -957,6 +958,97 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _pushOrFallback(
+    BuildContext context, {
+    required String route,
+    required Widget fallbackPage,
+  }) {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.push(route);
+      return;
+    }
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => fallbackPage),
+    );
+  }
+
+  Widget _buildEmptyPackageHeroCard(BuildContext context) {
+    return MetaGymHeroGlassCard(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0x26FF5E36),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: const Color(0x52FF5E36)),
+                ),
+                child: const Icon(
+                  Icons.groups_outlined,
+                  color: MetaGymTheme.brandOrange,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bạn chưa có gói Coach.',
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Khám phá hồ sơ chuyên môn, lịch làm việc và chọn gói PT 1:1 phù hợp để bắt đầu đặt lịch tập.',
+                      style: TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 12.5,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          CoachingPrimaryButton(
+            label: 'Khám phá Coach',
+            icon: Icons.arrow_forward_rounded,
+            onPressed: () => _pushOrFallback(
+              context,
+              route: '/member/features/coaching',
+              fallbackPage: const CoachSelectionPage(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          CoachingSecondaryButton(
+            label: 'Coach của tôi',
+            expand: true,
+            onPressed: () => _pushOrFallback(
+              context,
+              route: '/member/features/my-coach',
+              fallbackPage: const MemberCoachingPage(),
             ),
           ),
         ],
@@ -1227,6 +1319,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 color: valueColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
+                fontFeatures: MetaGymTheme.tabularFigures,
               ),
               children: [
                 if (suffix != null)
@@ -1236,6 +1329,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       color: MetaGymTheme.textSecondary,
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
+                      fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                   ),
               ],
@@ -1319,13 +1413,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         ),
         if (isActivePack) ...[
           const SizedBox(height: 12),
-          Container(
+          MetaGymMetricPanel(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0x9E0F1115),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x1AD4E4FF)),
-            ),
             child: Row(
               children: [
                 _buildStatCell(

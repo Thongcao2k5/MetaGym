@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -30,12 +31,12 @@ Future<void> waitForFirstRasterizedFrame() async {
   await Future<void>.delayed(const Duration(milliseconds: 450));
 }
 
-/// Màn hình chờ khởi động Meta Gym với 5 phân cảnh mượt mà:
-/// 1. Giọt nước cam mềm mại nảy nhẹ từ dưới lên tâm (Liquid Droplet)
-/// 2. Giọt nước bung mượt thành hình người gồng cơ V-Taper (Bodybuilder Silhouette)
-/// 3. Hình người thu gọn mượt mà trở lại thành giọt nước cam (Back to Liquid Droplet)
-/// 4. Giọt nước lướt sang trái tạo thành thanh dọc màu cam rồi vẽ chữ "M"
-/// 5. Lần lượt hiện các chữ cái sắc nét, hiện đại tạo thành "MetaGym" (M và G viết hoa màu cam)
+/// Màn hình chờ khởi động Meta Gym với 5 phân cảnh mượt mà chuẩn theo video mẫu:
+/// 1. Giọt nước sáng rơi từ đỉnh xuống chạm sàn, nén dẹt rồi nảy lên thành giọt nước ngược cam vàng
+/// 2. Từ hai bên hông mọc cánh tay vươn rộng rồi gập lên tư thế gồng cơ V-Taper + đầu tròn tách lên
+/// 3. Đầu và hai tay thu gọn mượt vào thân V-Taper rồi tụ xuống mũi nhọn dưới đáy
+/// 4. Hóa thành giọt nước sao chổi cam vàng lượn vòng tròn 360° theo chiều kim đồng hồ rồi đáp vào nét chữ M
+/// 5. Đầu giọt nước cam dẫn nét vẽ chữ "M" và hiện trọn vẹn logo "MetaGym" (M, G màu cam)
 class AppLoadingPage extends StatefulWidget {
   const AppLoadingPage({super.key, this.debugProgressOverride});
 
@@ -57,7 +58,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     super.initState();
     _morphController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 4200),
+      duration: const Duration(milliseconds: 4800),
     );
     _pulseController = AnimationController(
       vsync: this,
@@ -200,8 +201,12 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     final breath = animatePulse
         ? 0.5 - 0.5 * math.cos(pulse * 2 * math.pi)
         : 0.5;
-    final badgeFade = _interval(morphProgress, 0.68, 0.92, Curves.easeOutCubic);
-    final titleFade = _interval(morphProgress, 0.74, 0.96, Curves.easeOutCubic);
+    final subtitleFade = _interval(
+      morphProgress,
+      0.74,
+      0.96,
+      Curves.easeOutCubic,
+    );
     final barFade = _interval(morphProgress, 0.80, 1.0, Curves.easeOutCubic);
 
     return Column(
@@ -220,89 +225,22 @@ class _AppLoadingPageState extends State<AppLoadingPage>
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _StaggeredSlideFade(
-          progress: badgeFade,
-          offsetY: 14,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(7, 5, 14, 5),
-              decoration: BoxDecoration(
-                color: const Color(0x992D2824),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: const Color(0x66FF5E36)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Text(
-                      'MG',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'PERSONAL PERFORMANCE',
-                    style: TextStyle(
-                      color: MetaGymTheme.brandOrange,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.8,
-                    ),
-                  ),
-                ],
-              ),
+          progress: subtitleFade,
+          offsetY: 12,
+          child: const Text(
+            'Đang khởi động không gian tập luyện...',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFFC8C2BC),
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
             ),
           ),
         ),
-        const SizedBox(height: 14),
-        _StaggeredSlideFade(
-          progress: titleFade,
-          offsetY: 14,
-          child: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'META GYM',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3.6,
-                  height: 1.15,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Đang khởi động không gian tập luyện...',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFC8C2BC),
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w500,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         _StaggeredSlideFade(
           progress: barFade,
           offsetY: 10,
@@ -457,101 +395,65 @@ class _MetaGymMorphPainter extends CustomPainter {
     const stemW = 7.4;
 
     // -------------------------------------------------------------------------
-    // STEP 1 (0.00 -> 0.14): Giọt nước mềm mại (Liquid Droplet) nảy từ dưới lên tâm
-    // STEP 2 (0.13 -> 0.34): Giọt nước hóa mượt thành người gồng cơ V-Taper
-    // STEP 3 (0.33 -> 0.46): Người thu gọn mượt mà trở lại thành giọt nước cam
+    // STEP 1 (0.00 -> 0.16): Giọt nước sáng rơi từ đỉnh xuống chạm sàn, nén dẹt
+    //                        rồi nảy lên tâm thành giọt nước ngược (0.2s -> 0.92s)
     // -------------------------------------------------------------------------
-    if (progress < 0.47) {
-      final riseT = _segment(progress, 0.0, 0.13, Curves.easeOutBack);
-      final toAthlete = _segment(progress, 0.13, 0.27, Curves.easeOutBack);
-      final backToDroplet = _segment(
-        progress,
-        0.33,
-        0.45,
-        Curves.easeInOutCubic,
-      );
-      final athleteMorph = _clamp(toAthlete * (1.0 - backToDroplet), 0.0, 1.12);
-
-      // Liquid squash & stretch during initial rise and collapse
-      final riseY = (1.0 - riseT) * 28.0;
-      final squash = progress < 0.13
-          ? math.sin(_clamp(progress / 0.13) * math.pi) * 0.18
-          : 0.0;
-      final scaleX = (0.45 + 0.55 * _clamp(riseT, 0.0, 1.12)) * (1.0 - squash * 0.6);
-      final scaleY = (0.45 + 0.55 * _clamp(riseT, 0.0, 1.12)) * (1.0 + squash);
-
-      _paintSmoothDropletAndAthlete(
+    if (progress < 0.16) {
+      _paintFallingAndReboundingDroplet(
         canvas: canvas,
-        center: Offset(center.dx, center.dy + riseY),
-        scaleX: scaleX,
-        scaleY: scaleY,
-        athleteMorph: athleteMorph,
-        alpha: 1.0,
+        center: center,
+        progress: progress,
       );
     }
 
     // -------------------------------------------------------------------------
-    // STEP 4A (0.45 -> 0.56): Giọt nước lướt mượt sang trái & hóa thành THANH DỌC MÀU CAM
+    // STEP 2 (0.16 -> 0.37): Giọt nước ngược mọc 2 tay từ hông vươn lên gồng cơ
+    //                        V-Taper + đầu tròn tách lên (1.04s -> 2.12s)
+    // STEP 3 (0.37 -> 0.45): Đầu và tay gập thu gọn về giọt nước ngược (2.24s -> 2.48s)
     // -------------------------------------------------------------------------
-    if (progress >= 0.45 && progress < 0.58) {
-      final moveT = _segment(progress, 0.45, 0.55, Curves.easeInOutCubic);
-      final barMorph = _segment(progress, 0.48, 0.56, Curves.easeOutCubic);
+    if (progress >= 0.16 && progress < 0.45) {
+      final sproutT = _segment(progress, 0.16, 0.26, Curves.easeOutBack);
+      final collapseT = _segment(progress, 0.37, 0.45, Curves.easeInOutCubic);
+      final athleteMorph = _clamp(sproutT * (1.0 - collapseT), 0.0, 1.08);
+      final flexWave = (progress >= 0.26 && progress < 0.37)
+          ? math.sin(_segment(progress, 0.26, 0.37) * math.pi)
+          : 0.0;
 
-      final currentX = ui.lerpDouble(center.dx, mLeftStemX, moveT)!;
-      final currentY = center.dy;
-
-      // Smoothly morph from liquid droplet to rounded vertical orange bar
-      if (barMorph < 0.45) {
-        final dropScale = 1.0 - barMorph * 0.35;
-        _paintSmoothDropletAndAthlete(
-          canvas: canvas,
-          center: Offset(currentX, currentY),
-          scaleX: dropScale,
-          scaleY: 1.0 + barMorph * 0.25,
-          athleteMorph: 0.0,
-          alpha: 1.0,
-        );
-      } else {
-        final tBar = (barMorph - 0.45) / 0.55;
-        final w = ui.lerpDouble(18.0, stemW, tBar)!;
-        final h = ui.lerpDouble(28.0, mBotY - mTopY, tBar)!;
-        final r = ui.lerpDouble(9.0, stemW / 2, tBar)!;
-
-        canvas.drawCircle(
-          Offset(currentX, currentY),
-          22.0,
-          Paint()
-            ..shader = ui.Gradient.radial(
-              Offset(currentX, currentY),
-              22.0,
-              const [Color(0x70FF5E36), Colors.transparent],
-            ),
-        );
-
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromCenter(
-              center: Offset(currentX, currentY),
-              width: w,
-              height: h,
-            ),
-            Radius.circular(r),
-          ),
-          Paint()..color = MetaGymTheme.brandOrange,
-        );
-      }
+      _paintInvertedDropletAndAthlete(
+        canvas: canvas,
+        center: Offset(center.dx, center.dy + 2.0 - flexWave * 2.5),
+        athleteMorph: athleteMorph,
+        flexWave: flexWave,
+        collapsePhase: collapseT,
+      );
     }
 
     // -------------------------------------------------------------------------
-    // STEP 4B (0.55 -> 0.70): Từ thanh dọc màu cam vẽ mượt ra chữ "M"
-    // STEP 5  (0.66 -> 0.95): Lần lượt hiện các chữ cái "e", "t", "a", "G", "y", "m"
+    // STEP 4A (0.45 -> 0.63): Thu nhỏ xuống mũi nhọn dưới đáy rồi hóa thành
+    //                         giọt nước sao chổi lượn vòng 360° theo chiều kim
+    //                         đồng hồ quanh khung hình và đáp vào nét chữ M (2.6s -> 3.8s)
     // -------------------------------------------------------------------------
-    if (progress >= 0.55) {
-      final mDrawProg = _segment(progress, 0.55, 0.70, Curves.easeInOutCubic);
+    if (progress >= 0.45 && progress < 0.635) {
+      _paintCometDiveAndOrbit(
+        canvas: canvas,
+        center: center,
+        targetStem: Offset(mLeftStemX, center.dy),
+        stemWidth: stemW,
+        stemHeight: mBotY - mTopY,
+        progress: progress,
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // STEP 4B (0.62 -> 0.74): Từ thanh dọc màu cam vẽ mượt ra chữ "M" bằng đầu giọt nước
+    // STEP 5  (0.70 -> 0.96): Lần lượt hiện các chữ cái "e", "t", "a", "G", "y", "m"
+    // -------------------------------------------------------------------------
+    if (progress >= 0.62) {
+      final mDrawProg = _segment(progress, 0.62, 0.74, Curves.easeInOutCubic);
       final mFontCrossfade = _segment(
         progress,
-        0.65,
-        0.74,
+        0.70,
+        0.78,
         Curves.easeOutCubic,
       );
 
@@ -572,7 +474,7 @@ class _MetaGymMorphPainter extends CustomPainter {
             ..color = MetaGymTheme.brandOrange.withValues(alpha: strokeAlpha),
         );
 
-        // Smooth stroke drawing of the rest of 'M'
+        // Smooth stroke drawing of the rest of 'M' led by a directional droplet tip
         final mStrokePath = Path()
           ..moveTo(mLeftStemX, mTopY + 1.5)
           ..lineTo(mMidX, mBotY - 3.0)
@@ -613,12 +515,12 @@ class _MetaGymMorphPainter extends CustomPainter {
 
       // Lần lượt hiện các chữ cái: e -> t -> a -> G (Cam) -> y -> m
       const timings = <(double, double)>[
-        (0.66, 0.75), // e
-        (0.70, 0.79), // t
-        (0.74, 0.83), // a
-        (0.78, 0.88), // G (viết hoa màu cam)
-        (0.83, 0.92), // y
-        (0.87, 0.96), // m
+        (0.70, 0.78), // e
+        (0.73, 0.81), // t
+        (0.76, 0.84), // a
+        (0.80, 0.89), // G (viết hoa màu cam)
+        (0.84, 0.92), // y
+        (0.88, 0.96), // m
       ];
 
       for (var i = 1; i < _wordChars.length; i++) {
@@ -634,32 +536,14 @@ class _MetaGymMorphPainter extends CustomPainter {
 
         final tp = charPainters[i];
         final baseOffset = charOffsets[i];
-        final slideX = (1.0 - t) * -10.0;
-        final slideY = (1.0 - t) * 6.0;
+        final slideX = (1.0 - t) * -8.0;
+        final slideY = (1.0 - t) * 8.0;
         final scale = 0.86 + 0.14 * Curves.easeOutBack.transform(t);
 
         final charCenter = Offset(
           baseOffset.dx + tp.width / 2 + slideX,
           baseOffset.dy + tp.height / 2 + slideY,
         );
-
-        if (isOrangeCap && t < 0.95) {
-          canvas.drawCircle(
-            charCenter,
-            24.0 * math.sin(t * math.pi),
-            Paint()
-              ..shader = ui.Gradient.radial(
-                charCenter,
-                24.0,
-                [
-                  MetaGymTheme.brandOrange.withValues(
-                    alpha: 0.42 * math.sin(t * math.pi),
-                  ),
-                  Colors.transparent,
-                ],
-              ),
-          );
-        }
 
         canvas.save();
         canvas.translate(charCenter.dx, charCenter.dy);
@@ -679,10 +563,26 @@ class _MetaGymMorphPainter extends CustomPainter {
         tp.layout();
         tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
         canvas.restore();
+
+        // Đầu giọt nước cam dẫn nét trên đỉnh chữ khi chữ đang vẽ lên (giống 4.0s -> 5.4s trong video)
+        if (t > 0.04 && t < 0.92) {
+          final tipArcAngle = -math.pi * 0.75 + t * math.pi * 1.35;
+          final tipOffset = Offset(
+            charCenter.dx + math.cos(tipArcAngle) * (tp.width * 0.36),
+            charCenter.dy + math.sin(tipArcAngle) * (tp.height * 0.28),
+          );
+          _paintDirectionalCometDroplet(
+            canvas: canvas,
+            position: tipOffset,
+            angle: tipArcAngle + math.pi * 0.5,
+            length: 11.0 * math.sin(t * math.pi),
+            radius: 4.2 * math.sin(t * math.pi),
+          );
+        }
       }
 
       // Smooth glowing underline sweep beneath MetaGym
-      final underlineProg = _segment(progress, 0.84, 0.98, Curves.easeOutCubic);
+      final underlineProg = _segment(progress, 0.86, 0.98, Curves.easeOutCubic);
       if (underlineProg > 0.01) {
         final lineStart = wordStartX;
         final lineEnd = wordStartX + totalWordWidth * underlineProg;
@@ -708,99 +608,493 @@ class _MetaGymMorphPainter extends CustomPainter {
     }
   }
 
-  /// Vẽ giọt nước mềm mại bằng đường cong Bézier (cubicTo) và biến hình mượt mà
-  /// thành người gồng cơ V-Taper giống video mẫu, rồi thu ngược lại thành giọt nước.
-  void _paintSmoothDropletAndAthlete({
+  /// STEP 1 (0.00 -> 0.16):
+  /// - 0.00 -> 0.09: Giọt nước sáng ấm rơi từ trên đỉnh xuống sàn (đuôi nhọn ở trên, bầu tròn ở dưới)
+  /// - 0.09 -> 0.12: Chạm sàn ở phía dưới tâm và nén dẹt thành viên tròn (0.80s trong video)
+  /// - 0.12 -> 0.16: Nảy vọt lên tâm và xoay thành giọt nước ngược màu vàng cam (0.92s trong video)
+  void _paintFallingAndReboundingDroplet({
     required Canvas canvas,
     required Offset center,
-    required double scaleX,
-    required double scaleY,
-    required double athleteMorph,
-    required double alpha,
+    required double progress,
   }) {
-    if (alpha <= 0.01 || scaleX <= 0.01 || scaleY <= 0.01) return;
+    final topY = center.dy - 78.0;
+    final floorY = center.dy + 34.0;
+    final restY = center.dy + 2.0;
 
+    late final double currentY;
+    late final double scaleX;
+    late final double scaleY;
+    late final double invertMorph; // 0 = upright falling drop, 0.5 = round ball, 1 = inverted shield drop
+    late final double warmColorMix; // 0 = luminous warm cream, 1 = golden orange
+
+    if (progress < 0.09) {
+      final fallT = _segment(progress, 0.0, 0.09, Curves.easeInQuad);
+      currentY = ui.lerpDouble(topY, floorY, fallT)!;
+      scaleX = ui.lerpDouble(0.42, 0.54, fallT)!;
+      scaleY = ui.lerpDouble(0.55, 1.02, fallT)!;
+      invertMorph = 0.0;
+      warmColorMix = fallT * 0.25;
+    } else if (progress < 0.12) {
+      final squashT = _segment(progress, 0.09, 0.12, Curves.easeOutCubic);
+      final squashPulse = math.sin(squashT * math.pi);
+      currentY = floorY + squashPulse * 3.0;
+      scaleX = ui.lerpDouble(0.54, 0.84, squashPulse)!;
+      scaleY = ui.lerpDouble(1.02, 0.54, squashPulse)!;
+      invertMorph = squashT * 0.5;
+      warmColorMix = 0.25 + squashT * 0.30;
+    } else {
+      final reboundT = _segment(progress, 0.12, 0.16, Curves.easeOutCubic);
+      currentY = ui.lerpDouble(floorY, restY, reboundT)!;
+      scaleX = ui.lerpDouble(0.68, 1.0, reboundT)!;
+      scaleY = ui.lerpDouble(0.68, 1.0, reboundT)!;
+      invertMorph = 0.5 + reboundT * 0.5;
+      warmColorMix = 0.55 + reboundT * 0.45;
+    }
+
+    final dropCenter = Offset(center.dx, currentY);
     canvas.save();
-    canvas.translate(center.dx, center.dy);
+    canvas.translate(dropCenter.dx, dropCenter.dy);
     canvas.scale(scaleX, scaleY);
 
-    final m = _clamp(athleteMorph, 0.0, 1.0);
+    // Quầng sáng ấm quanh giọt nước
+    canvas.drawCircle(
+      Offset.zero,
+      26.0,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          Offset.zero,
+          26.0,
+          [
+            Color.lerp(
+              const Color(0x66FFF6E0),
+              const Color(0x66FF8C3B),
+              warmColorMix,
+            )!,
+            Colors.transparent,
+          ],
+        ),
+    );
+
+    final topColor = Color.lerp(
+      const Color(0xFFFFFDF7),
+      const Color(0xFFFFC44D),
+      warmColorMix,
+    )!;
+    final botColor = Color.lerp(
+      const Color(0xFFFFE5B4),
+      MetaGymTheme.brandOrange,
+      warmColorMix,
+    )!;
+
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
       ..shader = ui.Gradient.linear(
-        const Offset(0, -54),
-        const Offset(0, 42),
-        [
-          const Color(0xFFFFB84D).withValues(alpha: alpha),
-          const Color(0xFFF59E0B).withValues(alpha: alpha),
-          MetaGymTheme.brandOrange.withValues(alpha: alpha),
-        ],
-        const [0.0, 0.52, 1.0],
+        const Offset(0, -24),
+        const Offset(0, 24),
+        [topColor, botColor],
       );
 
-    // 1. Khi m = 0: Giọt nước mềm mại (cubic Bézier teardrop: đỉnh nhọn mượt ở trên, bầu tròn ở dưới)
-    // 2. Khi m = 1: Thân khiên V-Taper mềm mại (vai rộng ở trên, eo thon vát xuống dưới)
-    final dropletPath = Path()
-      ..moveTo(0, -24)
-      ..cubicTo(6, -14, 17, -2, 17, 9)
-      ..cubicTo(17, 19, 9.5, 25, 0, 25)
-      ..cubicTo(-9.5, 25, -17, 19, -17, 9)
-      ..cubicTo(-17, -2, -6, -14, 0, -24)
-      ..close();
+    // Nội suy mượt từ:
+    // - Giọt nước rơi xuôi (đỉnh nhọn ở trên y=-24, bụng bầu ở dưới y=+20)
+    // - Qua viên tròn nén ở đáy (invertMorph = 0.5)
+    // - Sang giọt nước ngược ở tâm (đỉnh bầu rộng ở trên y=-18, đáy nhọn bầu ở dưới y=+22)
+    final double topShoulderX;
+    final double botBellyX;
+    final double topApexY;
+    final double botApexY;
 
-    if (m <= 0.02) {
-      canvas.drawPath(dropletPath, fillPaint);
+    if (invertMorph <= 0.5) {
+      final t = invertMorph / 0.5;
+      topShoulderX = ui.lerpDouble(2.5, 14.0, t)!;
+      botBellyX = ui.lerpDouble(15.0, 14.0, t)!;
+      topApexY = ui.lerpDouble(-25.0, -14.0, t)!;
+      botApexY = ui.lerpDouble(18.0, 14.0, t)!;
     } else {
-      // Smoothly cross-morph droplet into sculpted V-Taper torso shield
-      final torsoScale = 0.72 + 0.28 * m;
-      canvas.save();
-      canvas.scale(torsoScale, torsoScale);
-      final topW = ui.lerpDouble(6.0, 26.0, m)!;
-      final midW = ui.lerpDouble(17.0, 22.0, m)!;
-      final botY = ui.lerpDouble(25.0, 38.0, m)!;
-
-      final morphTorso = Path()
-        ..moveTo(0, -22)
-        ..cubicTo(topW * 0.65, -22, topW, -19, topW * 0.96, -9)
-        ..cubicTo(midW, 9, 10, 27, 0, botY)
-        ..cubicTo(-10, 27, -midW, 9, -topW * 0.96, -9)
-        ..cubicTo(-topW, -19, -topW * 0.65, -22, 0, -22)
-        ..close();
-      canvas.drawPath(morphTorso, fillPaint);
-      canvas.restore();
+      final t = (invertMorph - 0.5) / 0.5;
+      topShoulderX = ui.lerpDouble(14.0, 16.5, t)!;
+      botBellyX = ui.lerpDouble(14.0, 5.5, t)!;
+      topApexY = ui.lerpDouble(-14.0, -18.0, t)!;
+      botApexY = ui.lerpDouble(14.0, 22.0, t)!;
     }
 
-    // Đầu tròn + 2 cánh tay gồng cơ mềm mại (giống hệt silhouette trong video mẫu)
-    if (athleteMorph > 0.03) {
-      final armScale = athleteMorph;
-      canvas.save();
-      canvas.translate(0, -24.0 - 15.0 * armScale);
-      canvas.scale(armScale, armScale);
-      canvas.drawCircle(Offset.zero, 12.2, fillPaint);
-      canvas.restore();
+    final path = Path()
+      ..moveTo(0, topApexY)
+      ..cubicTo(
+        topShoulderX * 0.85,
+        topApexY,
+        topShoulderX,
+        topApexY * 0.35,
+        (topShoulderX + botBellyX) * 0.5,
+        0,
+      )
+      ..cubicTo(
+        botBellyX,
+        botApexY * 0.45,
+        botBellyX * 0.75,
+        botApexY,
+        0,
+        botApexY,
+      )
+      ..cubicTo(
+        -botBellyX * 0.75,
+        botApexY,
+        -botBellyX,
+        botApexY * 0.45,
+        -(topShoulderX + botBellyX) * 0.5,
+        0,
+      )
+      ..cubicTo(
+        -topShoulderX,
+        topApexY * 0.35,
+        -topShoulderX * 0.85,
+        topApexY,
+        0,
+        topApexY,
+      )
+      ..close();
+
+    canvas.drawPath(path, fillPaint);
+    canvas.restore();
+  }
+
+  /// STEP 2 & 3 (0.16 -> 0.45):
+  /// Biến hình từ giọt nước ngược (0.92s) -> mọc 2 chồi tay ở hông (1.04s) ->
+  /// vươn rộng cánh tay (1.16s) -> gập cẳng tay lên tư thế Double Front Biceps +
+  /// đầu tròn tách lên trên cổ (1.28s -> 2.12s) -> thu gọn về giọt nước ngược (2.24s -> 2.48s).
+  void _paintInvertedDropletAndAthlete({
+    required Canvas canvas,
+    required Offset center,
+    required double athleteMorph,
+    required double flexWave,
+    required double collapsePhase,
+  }) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+
+    final m = _clamp(athleteMorph, 0.0, 1.0);
+    final overshoot = (athleteMorph - 1.0).clamp(0.0, 0.12);
+
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = ui.Gradient.linear(
+        const Offset(0, -56),
+        const Offset(0, 44),
+        const [
+          Color(0xFFFFC145),
+          Color(0xFFF59E0B),
+          MetaGymTheme.brandOrange,
+        ],
+        const [0.0, 0.55, 1.0],
+      );
+
+    // 1. Thân V-Taper (Inverted Teardrop Shield):
+    // Khi m = 0: Giọt nước ngược bầu ở trên (topW = 16.5), thon ở dưới (botY = 22)
+    // Khi m = 1: Thân V-Taper vai rộng (topW = 28), đáy vát tròn uy lực (botY = 39)
+    final topY = ui.lerpDouble(-18.0, -21.0, m)!;
+    final botY = ui.lerpDouble(22.0, 39.0, m)!;
+    final topW = ui.lerpDouble(16.5, 28.0 + flexWave * 1.2, m)!;
+    final midW = ui.lerpDouble(13.5, 22.5 + flexWave * 0.8, m)!;
+
+    final torsoPath = Path()
+      ..moveTo(0, topY)
+      ..cubicTo(
+        topW * 0.55,
+        topY,
+        topW,
+        topY + 2.5,
+        topW * 0.96,
+        topY + 13.0,
+      )
+      ..cubicTo(
+        midW,
+        10.0,
+        8.5,
+        botY - 6.0,
+        0,
+        botY,
+      )
+      ..cubicTo(
+        -8.5,
+        botY - 6.0,
+        -midW,
+        10.0,
+        -topW * 0.96,
+        topY + 13.0,
+      )
+      ..cubicTo(
+        -topW,
+        topY + 2.5,
+        -topW * 0.55,
+        topY,
+        0,
+        topY,
+      )
+      ..close();
+
+    canvas.drawPath(torsoPath, fillPaint);
+
+    // 2. Đầu tròn tách từ đỉnh thân lên trên cổ (có khoảng hở rõ ràng như frame 1.28s -> 2.12s)
+    if (m > 0.05) {
+      final headT = _segment(m, 0.05, 0.88, Curves.easeOutCubic);
+      final headY = ui.lerpDouble(-10.0, -37.5 - overshoot * 14.0, headT)!;
+      final headRadius = ui.lerpDouble(8.0, 12.2, headT)!;
+      canvas.drawCircle(Offset(0, headY), headRadius, fillPaint);
+    }
+
+    // 3. Hai cánh tay mọc từ hông (1.04s), vươn ngang (1.16s) rồi gập lên gồng cơ (1.28s -> 2.12s)
+    // Khi thu gọn (collapsePhase > 0): Cẳng tay gập xuống vai trước (2.36s) rồi rút gọn vào thân (2.48s)
+    if (m > 0.04) {
+      final spreadT = _segment(m, 0.04, 0.55, Curves.easeOutCubic);
+      final curlT = _segment(m, 0.36, 1.0, Curves.easeOutBack);
 
       for (final dir in const [-1.0, 1.0]) {
         canvas.save();
-        canvas.translate(dir * 21.0, -15.0);
-        canvas.scale(dir * armScale, armScale);
+        canvas.scale(dir, 1.0);
 
-        final arm = Path()
-          ..moveTo(0, -5)
-          ..cubicTo(10, -14, 24, -13, 33, -4)
-          ..cubicTo(31, -18, 25, -31, 21, -39)
+        // Điểm gốc nối liền vào vai/thân trên
+        final shoulderTopY = ui.lerpDouble(0.0, -19.5, spreadT)!;
+        final shoulderBotY = ui.lerpDouble(12.0, -3.5, spreadT)!;
+        final shoulderX = ui.lerpDouble(11.0, 21.0, spreadT)!;
+
+        // Khuỷu tay (elbow): lúc mới nhú (1.04s) chúc xuống (+11), sau đó nâng ngang vai (-8..-14)
+        final elbowX = ui.lerpDouble(15.0, 49.0 + flexWave * 1.5, spreadT)!;
+        final elbowY = ui.lerpDouble(
+          12.0,
+          ui.lerpDouble(5.0, -10.0 - flexWave * 1.2, curlT)!,
+          spreadT,
+        )!;
+
+        // Cổ tay & nắm đấm (fist):
+        // - Khi curlT = 0 (1.04s - 1.16s): vươn ra ngoài/dưới
+        // - Khi curlT = 1 (1.28s - 2.12s): cuộn cao lên (-39) và hướng nhẹ vào đầu (x = 41)
+        final fistX = ui.lerpDouble(
+          ui.lerpDouble(17.0, 52.0, spreadT)!,
+          41.5 - flexWave * 1.2,
+          _clamp(curlT, 0.0, 1.15),
+        )!;
+        final fistY = ui.lerpDouble(
+          ui.lerpDouble(14.0, 2.0, spreadT)!,
+          -39.0 - overshoot * 18.0 - flexWave * 1.8,
+          _clamp(curlT, 0.0, 1.15),
+        )!;
+
+        // Đỉnh cơ chuột (bicep peak) phồng lên khi gập tay
+        final bicepPeakX = ui.lerpDouble(18.0, 33.5, spreadT)!;
+        final bicepPeakY = ui.lerpDouble(
+          4.0,
+          -22.5 - flexWave * 2.0,
+          _clamp(curlT, 0.0, 1.1),
+        )!;
+
+        final fistRadius = ui.lerpDouble(3.5, 6.8, _clamp(spreadT))!;
+
+        final armPath = Path()
+          ..moveTo(shoulderX, shoulderTopY)
+          // Đường cong trên của vai + đỉnh cơ Bicep chạy tới mặt trong cổ tay
+          ..cubicTo(
+            bicepPeakX - 5.0,
+            bicepPeakY,
+            bicepPeakX + 3.0,
+            bicepPeakY + 1.5,
+            elbowX - 11.5,
+            elbowY - 8.5,
+          )
+          // Mặt trong cẳng tay vươn lên nắm đấm cuộn vào trong
+          ..cubicTo(
+            elbowX - 11.0,
+            ui.lerpDouble(elbowY - 4.0, fistY + 12.0, _clamp(curlT))!,
+            fistX - fistRadius * 1.1,
+            fistY + 4.0,
+            fistX - fistRadius * 0.7,
+            fistY,
+          )
+          // Vòm tròn nắm đấm (fist)
           ..arcToPoint(
-            const Offset(32, -41),
-            radius: const Radius.circular(7.5),
+            Offset(fistX + fistRadius * 0.9, fistY + 2.0),
+            radius: Radius.circular(fistRadius),
             clockwise: true,
           )
-          ..cubicTo(39, -28, 46, -10, 41, 3)
-          ..cubicTo(35, 13, 16, 12, 1, 7)
+          // Mặt ngoài cẳng tay chạy xuống khuỷu tay ngoài
+          ..cubicTo(
+            elbowX + 4.5,
+            ui.lerpDouble(elbowY, fistY + 16.0, _clamp(curlT))!,
+            elbowX + 4.0,
+            elbowY - 4.0,
+            elbowX,
+            elbowY + 3.5,
+          )
+          // Mặt dưới bắp tay (tricep) nối mượt về nách/thân V-Taper
+          ..cubicTo(
+            elbowX - 6.0,
+            elbowY + 9.0,
+            shoulderX + 10.0,
+            shoulderBotY + 2.0,
+            shoulderX - 2.0,
+            shoulderBotY,
+          )
           ..close();
-        canvas.drawPath(arm, fillPaint);
+
+        canvas.drawPath(armPath, fillPaint);
         canvas.restore();
       }
     }
 
+    canvas.restore();
+  }
+
+  /// STEP 4A (0.45 -> 0.635):
+  /// - 0.45 -> 0.485: Giọt nước ngược thu nhỏ xuống mũi nhọn dưới đáy (2.60s trong video)
+  /// - 0.485 -> 0.615: Hóa thành giọt nước sao chổi cam-vàng lượn 1 vòng 360° theo chiều
+  ///                   kim đồng hồ quanh tâm (2.60s -> 3.68s trong video)
+  /// - 0.605 -> 0.635: Đáp mượt vào vị trí thanh dọc chữ M bên trái
+  void _paintCometDiveAndOrbit({
+    required Canvas canvas,
+    required Offset center,
+    required Offset targetStem,
+    required double stemWidth,
+    required double stemHeight,
+    required double progress,
+  }) {
+    if (progress < 0.485) {
+      // Thu nhỏ từ giọt nước ngược ở tâm xuống mũi nhọn dưới đáy (2.48s -> 2.60s)
+      final diveT = _segment(progress, 0.45, 0.485, Curves.easeInCubic);
+      final y = ui.lerpDouble(center.dy + 2.0, center.dy + 34.0, diveT)!;
+      final scale = ui.lerpDouble(1.0, 0.28, diveT)!;
+      canvas.save();
+      canvas.translate(center.dx, y);
+      canvas.scale(scale, scale);
+      _paintInvertedDropletAndAthlete(
+        canvas: canvas,
+        center: Offset.zero,
+        athleteMorph: 0.0,
+        flexWave: 0.0,
+        collapsePhase: 1.0,
+      );
+      canvas.restore();
+      return;
+    }
+
+    // Quỹ đạo lượn vòng 360° theo chiều kim đồng hồ (2.60s -> 3.68s):
+    // Bắt đầu từ đáy dưới (angle = pi/2), vòng sang trái (pi), lên đỉnh (3*pi/2),
+    // vòng sang phải (2*pi), xuống đáy và đáp mượt vào thanh dọc chữ M.
+    final orbitT = _segment(progress, 0.485, 0.615, Curves.easeInOutSine);
+    Offset orbitPos(double t) {
+      // Góc quay theo chiều kim đồng hồ trong hệ tọa độ màn hình (y hướng xuống):
+      // pi/2 (đáy) -> pi (trái) -> 1.5*pi (đỉnh) -> 2*pi (phải) -> 2.5*pi (đáy)
+      final theta = math.pi * 0.5 + t * math.pi * 2.05;
+      final rx = ui.lerpDouble(96.0, 108.0, math.sin(t * math.pi))!;
+      final ry = ui.lerpDouble(54.0, 68.0, math.sin(t * math.pi))!;
+      final rawOrbit = Offset(
+        center.dx + rx * math.cos(theta),
+        center.dy + ry * math.sin(theta),
+      );
+      // Pha cuối (t > 0.78) bẻ lái mượt từ đáy vòng tròn vào đúng tâm thanh dọc chữ M
+      final landBlend = _segment(t, 0.78, 1.0, Curves.easeInOutCubic);
+      return Offset.lerp(rawOrbit, targetStem, landBlend)!;
+    }
+
+    if (progress < 0.615) {
+      final pos = orbitPos(orbitT);
+      final dt = 0.015;
+      final pPrev = orbitPos((orbitT - dt).clamp(0.0, 1.0));
+      final pNext = orbitPos((orbitT + dt).clamp(0.0, 1.0));
+      final vel = pNext - pPrev;
+      final angle = vel.distance > 0.001
+          ? math.atan2(vel.dy, vel.dx)
+          : -math.pi / 2;
+
+      final speedStretch = 1.0 + 0.35 * math.sin(orbitT * math.pi);
+      _paintDirectionalCometDroplet(
+        canvas: canvas,
+        position: pos,
+        angle: angle,
+        length: 22.0 * speedStretch,
+        radius: 5.6,
+      );
+    }
+
+    // Khi vừa đáp tới vị trí chữ M (0.60 -> 0.635), dựng thành thanh dọc màu cam
+    if (progress >= 0.60) {
+      final barT = _segment(progress, 0.60, 0.63, Curves.easeOutCubic);
+      final h = ui.lerpDouble(14.0, stemHeight, barT)!;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: targetStem, width: stemWidth, height: h),
+          Radius.circular(stemWidth / 2),
+        ),
+        Paint()..color = MetaGymTheme.brandOrange,
+      );
+    }
+  }
+
+  /// Vẽ giọt nước sao chổi định hướng (đầu tròn hướng theo vector chuyển động [angle],
+  /// đuôi nhọn kéo dài phía sau giống hệt frame 2.60s -> 3.68s trong video).
+  void _paintDirectionalCometDroplet({
+    required Canvas canvas,
+    required Offset position,
+    required double angle,
+    required double length,
+    required double radius,
+  }) {
+    if (length <= 0.5 || radius <= 0.3) return;
+
+    canvas.save();
+    canvas.translate(position.dx, position.dy);
+    canvas.rotate(angle);
+
+    // Quầng sáng ấm quanh đầu giọt nước sao chổi
+    canvas.drawCircle(
+      Offset(radius * 0.4, 0),
+      radius * 2.8,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          Offset(radius * 0.4, 0),
+          radius * 2.8,
+          const [Color(0x66FFB84D), Color(0x28FF5E36), Colors.transparent],
+          const [0.0, 0.55, 1.0],
+        ),
+    );
+
+    // Hình giọt nước sao chổi: Đầu tròn ở phía trước (+x), đuôi vuốt nhọn về phía sau (-length)
+    final cometPath = Path()
+      ..moveTo(-length, 0)
+      ..cubicTo(
+        -length * 0.45,
+        -radius * 0.38,
+        -radius * 0.2,
+        -radius,
+        radius * 0.35,
+        -radius,
+      )
+      ..arcToPoint(
+        Offset(radius * 0.35, radius),
+        radius: Radius.circular(radius),
+        clockwise: true,
+      )
+      ..cubicTo(
+        -radius * 0.2,
+        radius,
+        -length * 0.45,
+        radius * 0.38,
+        -length,
+        0,
+      )
+      ..close();
+
+    final cometPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = ui.Gradient.linear(
+        Offset(radius * 1.35, 0),
+        Offset(-length, 0),
+        const [
+          Color(0xFFFFF3D1),
+          Color(0xFFFFB84D),
+          MetaGymTheme.brandOrange,
+        ],
+        const [0.0, 0.38, 1.0],
+      );
+
+    canvas.drawPath(cometPath, cometPaint);
     canvas.restore();
   }
 
@@ -824,6 +1118,7 @@ class _MetaGymMorphPainter extends CustomPainter {
     final extracted = Path();
     var accumulated = 0.0;
     Offset? tipPosition;
+    double tipAngle = 0.0;
 
     for (final metric in metrics) {
       final nextAccumulated = accumulated + metric.length;
@@ -834,6 +1129,7 @@ class _MetaGymMorphPainter extends CustomPainter {
           final tangent = metric.getTangentForOffset(localEnd);
           if (tangent != null) {
             tipPosition = tangent.position;
+            tipAngle = math.atan2(tangent.vector.dy, tangent.vector.dx);
           }
         }
       }
@@ -851,21 +1147,12 @@ class _MetaGymMorphPainter extends CustomPainter {
     );
 
     if (drawGlowingTip && tipPosition != null && endFrac > 0.02) {
-      canvas.drawCircle(
-        tipPosition,
-        15.0,
-        Paint()
-          ..shader = ui.Gradient.radial(
-            tipPosition,
-            15.0,
-            const [Color(0xFFFFD26E), Color(0xCCFF5E36), Colors.transparent],
-            const [0.0, 0.45, 1.0],
-          ),
-      );
-      canvas.drawCircle(
-        tipPosition,
-        3.5,
-        Paint()..color = const Color(0xFFFFF7E6),
+      _paintDirectionalCometDroplet(
+        canvas: canvas,
+        position: tipPosition,
+        angle: tipAngle,
+        length: 14.0,
+        radius: 4.4,
       );
     }
   }

@@ -17,11 +17,9 @@ import 'package:meta_gym_app/features/membership/presentation/membership_page.da
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/calls/presentation/calls_page.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
-import 'package:meta_gym_app/features/profile/presentation/change_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart';
-import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
@@ -38,13 +36,11 @@ import 'package:meta_gym_app/features/workbench/flow_workbench_page.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 
 abstract final class AppRoutes {
-  static const welcome = '/';
   static const loading = '/loading';
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
   static const profile = '/profile';
-  static const changePassword = '/profile/change-password';
   static const memberHome = '/member';
   static const coachHome = '/coach';
   static const memberWorkbench = '/member/test-flows';
@@ -81,7 +77,6 @@ GoRouter createAppRouter({
       final home = _homeForRole(sessionController.user!.role);
       const sharedProtectedRoutes = {
         AppRoutes.profile,
-        AppRoutes.changePassword,
       };
       if (state.matchedLocation == home ||
           (home == AppRoutes.memberHome &&
@@ -112,13 +107,6 @@ GoRouter createAppRouter({
         ),
       ),
       GoRoute(
-        path: AppRoutes.welcome,
-        pageBuilder: (context, state) => _smoothAuthTransitionPage(
-          key: state.pageKey,
-          child: const WelcomePage(),
-        ),
-      ),
-      GoRoute(
         path: AppRoutes.login,
         pageBuilder: (context, state) => _smoothAuthTransitionPage(
           key: state.pageKey,
@@ -142,10 +130,6 @@ GoRouter createAppRouter({
       GoRoute(
         path: AppRoutes.profile,
         builder: (context, state) => const ProfilePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.changePassword,
-        builder: (context, state) => const ChangePasswordPage(),
       ),
       GoRoute(
         path: AppRoutes.memberHome,

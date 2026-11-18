@@ -12,7 +12,6 @@ import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
-import 'package:meta_gym_app/features/catalog/presentation/catalog_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
@@ -111,7 +110,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final ProfileController _profileController;
   late final PasswordResetController _passwordResetController;
   late final CatalogService _catalogService;
-  late final CatalogController _catalogController;
   late final MembershipService _membershipService;
   late final MembershipController _membershipController;
   late final CoachSelectionService _coachSelectionService;
@@ -169,7 +167,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileController = ProfileController(_profileService, _sessionController);
     _passwordResetController = PasswordResetController(_profileService);
     _catalogService = widget.catalogService ?? CatalogApi(_apiClient);
-    _catalogController = CatalogController(_catalogService);
     _membershipService = widget.membershipService ?? MembershipApi(_apiClient);
     _membershipController = MembershipController(
       _membershipService,
@@ -226,7 +223,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _authController.dispose();
     _profileController.dispose();
     _passwordResetController.dispose();
-    _catalogController.dispose();
     _membershipController.dispose();
     super.dispose();
   }
@@ -247,9 +243,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
           value: _passwordResetController,
         ),
         Provider<CatalogService>.value(value: _catalogService),
-        ChangeNotifierProvider<CatalogController>.value(
-          value: _catalogController,
-        ),
         Provider<MembershipService>.value(value: _membershipService),
         Provider<CoachSelectionService>.value(value: _coachSelectionService),
         Provider<CoachRequestsService>.value(value: _coachRequestsService),
