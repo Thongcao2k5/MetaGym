@@ -3,6 +3,8 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
@@ -12,9 +14,14 @@ import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:provider/provider.dart';
 
 class CoachOffersPage extends StatefulWidget {
-  const CoachOffersPage({required this.coachId, super.key});
+  const CoachOffersPage({
+    required this.coachId,
+    this.coachView = false,
+    super.key,
+  });
 
   final String coachId;
+  final bool coachView;
 
   @override
   State<CoachOffersPage> createState() => _CoachOffersPageState();
@@ -34,6 +41,12 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
   String? _error;
   bool _busy = false;
   bool _loaded = false;
+
+  bool get _isCoachView {
+    if (widget.coachView) return true;
+    final user = optionalProvider<SessionController>(context)?.user;
+    return user?.role == UserRole.coach && user?.id == widget.coachId;
+  }
 
   @override
   void initState() {
@@ -69,10 +82,24 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
   }
 
   Future<void> _load() => _run(() async {
-    final apiClient = context.read<ApiClient>();
+    final isCoachView = _isCoachView;
     final offersFuture = _api.list('/coach-packages');
-    final holdsFuture = _api.list('/coach-payment-holds');
     final coachFuture = _optional(() => _api.get('/coaches/${widget.coachId}'));
+    if (isCoachView) {
+      final offers = await offersFuture;
+      final coach = await coachFuture;
+      if (!mounted) return;
+      setState(() {
+        _offers = offers;
+        if (_selectedOfferIndex >= offers.length) _selectedOfferIndex = 0;
+        _coach = coach ?? _coach;
+        _loaded = true;
+      });
+      return;
+    }
+
+    final apiClient = context.read<ApiClient>();
+    final holdsFuture = _api.list('/coach-payment-holds');
     final userFuture = _optional(() => _api.get('/users/me'));
     final membershipsFuture = _optional(() => _api.list('/memberships/me'));
     final relationshipFuture = _optional(
@@ -212,10 +239,15 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
+    final isCoachView = _isCoachView;
     final hold = _hold;
     final held = hold?['status'] == 'HELD';
-    final coachName = (_coach?['fullName'] as String?) ?? 'Coach phụ trách';
+    final coachName =
+        (_coach?['fullName'] as String?) ??
+        (isCoachView ? 'Hồ sơ Coach của bạn' : 'Coach phụ trách');
     final coachAvatar = _coach?['avatarUrl'] as String?;
+    final usedSlots = (_coach?['usedSlots'] as num?)?.toInt();
+    final memberLimit = (_coach?['memberLimit'] as num?)?.toInt();
     final availableSlots = (_coach?['availableSlots'] as num?)?.toInt();
     final relCoachId = _relationship?['coachId'] as String?;
     final assignedElsewhere =
@@ -257,11 +289,11 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                 ),
               )
             : null,
-        title: const Text(
-          'Chọn gói Coach',
+        title: Text(
+          isCoachView ? 'Gói PT & Bảng giá' : 'Chọn gói Coach',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
+          style: const TextStyle(
             color: MetaGymTheme.textPrimary,
             fontSize: 19,
             fontWeight: FontWeight.w700,
@@ -324,428 +356,629 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                               const SizedBox(height: 12),
                             ],
                           ],
-                          CoachingGraphiteCard(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(14),
-                            child: Row(
-                              children: [
-                                CoachingAvatar(
-                                  fullName: coachName,
-                                  avatarUrl: coachAvatar,
-                                  size: 44,
-                                  round: true,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        coachName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: MetaGymTheme.textPrimary,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      const Text(
-                                        'Huấn luyện cá nhân · mỗi buổi 90 phút',
-                                        style: TextStyle(
-                                          color: MetaGymTheme.textSecondary,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                          if (isCoachView) ...[
+                            _CoachPackagesHeroCard(
+                              coachName: coachName,
+                              coachAvatar: coachAvatar,
+                              usedSlots: usedSlots,
+                              memberLimit: memberLimit,
+                              availableSlots: availableSlots,
+                              offerCount: _offers.length,
                             ),
-                          ),
-                          if (noGym)
-                            CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              borderColor: const Color(0xFF815423),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Gói Gym chưa hiệu lực',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'Bạn vẫn có thể xem hồ sơ và giá gói Coach. Để mua, hãy có gói Gym còn hiệu lực.',
-                                    style: TextStyle(
-                                      color: Color(0xFFC8CBD2),
-                                      fontSize: 12.5,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  CoachingSecondaryButton(
-                                    label: 'Xem gói Gym',
-                                    onPressed: () => Navigator.of(context)
-                                        .push<void>(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const MembershipPage(),
-                                          ),
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else if (full)
-                            CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              borderColor: const Color(0xFF815423),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Coach đã hết suất',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'Bạn có thể nhắn Coach hoặc quay lại Khám phá để chọn người khác.',
-                                    style: TextStyle(
-                                      color: Color(0xFFC8CBD2),
-                                      fontSize: 12.5,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  CoachingSecondaryButton(
-                                    label: 'Quay lại hồ sơ Coach',
-                                    onPressed: () =>
-                                        Navigator.of(context).maybePop(),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else if (assignedElsewhere)
-                            CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              borderColor: const Color(0xFF815423),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Bạn đã có Coach khác',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'Mỗi hội viên chỉ có một Coach hiện hành. Xem thông tin Coach của bạn trước khi chọn người mới.',
-                                    style: TextStyle(
-                                      color: Color(0xFFC8CBD2),
-                                      fontSize: 12.5,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  CoachingSecondaryButton(
-                                    label: 'Coach của tôi',
-                                    onPressed: () => Navigator.of(context)
-                                        .push<void>(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const MemberCoachingPage(),
-                                          ),
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else if (assignedHere)
-                            CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Gói nối tiếp',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _hasQueuedPackage
-                                        ? 'Bạn đã có một gói Coach đang chờ kích hoạt sau gói hiện tại.'
-                                        : 'Bạn đang tập cùng Coach này. Có thể mua một gói chờ kích hoạt sau gói hiện tại.',
-                                    style: const TextStyle(
-                                      color: Color(0xFFC8CBD2),
-                                      fontSize: 12.5,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ],
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 10, top: 4),
+                              child: Text(
+                                'Bảng giá gói PT đang mở bán',
+                                style: TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          if (_healthDeclared)
-                            CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
+                            if (_loaded && _offers.isEmpty)
+                              const CoachingGraphiteCard(
+                                child: Text(
+                                  'Chưa có gói Coach đang mở bán.',
+                                  style: TextStyle(
+                                    color: MetaGymTheme.textSecondary,
+                                  ),
+                                ),
                               ),
-                              child: Row(
+                            for (final offer in _offers)
+                              _OfferPackageCard(
+                                offer: offer,
+                                selected: false,
+                                enabled: false,
+                                readOnlyMode: true,
+                                onTap: () {},
+                              ),
+                            CoachingGraphiteCard(
+                              margin: const EdgeInsets.only(top: 2, bottom: 12),
+                              padding: const EdgeInsets.all(14),
+                              child: const Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    Icons.check_circle_outline_rounded,
-                                    color: MetaGymTheme.success,
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    color: MetaGymTheme.reflectionBlue,
                                     size: 19,
                                   ),
-                                  const SizedBox(width: 10),
-                                  const Expanded(
+                                  SizedBox(width: 10),
+                                  Expanded(
                                     child: Text(
-                                      'Đã khai báo thể trạng',
+                                      'Bảng giá và quyền lợi gói PT được đồng bộ theo cấu hình của phòng tập. Mỗi buổi huấn luyện có thời lượng 90 phút.',
                                       style: TextStyle(
-                                        color: Color(0xFFD9DDE3),
+                                        color: Color(0xFFD2D5DB),
                                         fontSize: 12.5,
+                                        height: 1.48,
                                       ),
                                     ),
-                                  ),
-                                  TextButton(
-                                    onPressed: _busy
-                                        ? null
-                                        : _editHealthDeclaration,
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: MetaGymTheme.primary,
-                                      minimumSize: const Size(48, 48),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                      ),
-                                    ),
-                                    child: const Text('Xem / sửa'),
                                   ),
                                 ],
                               ),
                             ),
-                          if (hold != null) ...[
-                            MetaGymHeroGlassCard(
-                              margin: const EdgeInsets.only(bottom: 14),
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          ] else ...[
+                            CoachingGraphiteCard(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
                                 children: [
-                                  CoachingPill(
-                                    label: switch (hold['status']) {
-                                      'HELD' =>
-                                        'Đang giữ suất · Chờ thanh toán',
-                                      'CONSUMED' => 'Đã kích hoạt gói hoặc đưa vào hàng chờ',
-                                      'EXPIRED' => 'Đã hết hạn giữ suất',
-                                      'CANCELLED' => 'Đã hủy giữ suất',
-                                      _ => 'Thanh toán không thành công',
-                                    },
-                                    tone: held
-                                        ? CoachingPillTone.amber
-                                        : (hold['status'] == 'CONSUMED'
-                                              ? CoachingPillTone.green
-                                              : CoachingPillTone.neutral),
+                                  CoachingAvatar(
+                                    fullName: coachName,
+                                    avatarUrl: coachAvatar,
+                                    size: 44,
+                                    round: true,
                                   ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    '${hold['planName']} · ${formatVnd((hold['amount'] as num?) ?? 0)}',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      fontFeatures: MetaGymTheme.tabularFigures,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          coachName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: MetaGymTheme.textPrimary,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          'Huấn luyện cá nhân · mỗi buổi 90 phút',
+                                          style: TextStyle(
+                                            color: MetaGymTheme.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  if (held) ...[
-                                    Text(
-                                      'Suất được giữ tối đa 15 phút (hết hạn ${formatVietnamTime(hold['expiresAt'] as String?)})',
-                                      style: const TextStyle(
-                                        color: Color(0xFFE0D9D0),
+                                ],
+                              ),
+                            ),
+                            if (noGym)
+                              CoachingGraphiteCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                borderColor: const Color(0xFF815423),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Gói Gym chưa hiệu lực',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'Bạn vẫn có thể xem hồ sơ và giá gói Coach. Để mua, hãy có gói Gym còn hiệu lực.',
+                                      style: TextStyle(
+                                        color: Color(0xFFC8CBD2),
                                         fontSize: 12.5,
-                                        height: 1.45,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    CoachingSecondaryButton(
+                                      label: 'Xem gói Gym',
+                                      onPressed: () => Navigator.of(context)
+                                          .push<void>(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const MembershipPage(),
+                                            ),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (full)
+                              CoachingGraphiteCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                borderColor: const Color(0xFF815423),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Coach đã hết suất',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'Bạn có thể nhắn Coach hoặc quay lại Khám phá để chọn người khác.',
+                                      style: TextStyle(
+                                        color: Color(0xFFC8CBD2),
+                                        fontSize: 12.5,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    CoachingSecondaryButton(
+                                      label: 'Quay lại hồ sơ Coach',
+                                      onPressed: () =>
+                                          Navigator.of(context).maybePop(),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (assignedElsewhere)
+                              CoachingGraphiteCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                borderColor: const Color(0xFF815423),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Bạn đã có Coach khác',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      'Mỗi hội viên chỉ có một Coach hiện hành. Xem thông tin Coach của bạn trước khi chọn người mới.',
+                                      style: TextStyle(
+                                        color: Color(0xFFC8CBD2),
+                                        fontSize: 12.5,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    CoachingSecondaryButton(
+                                      label: 'Coach của tôi',
+                                      onPressed: () => Navigator.of(context)
+                                          .push<void>(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const MemberCoachingPage(),
+                                            ),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (assignedHere)
+                              CoachingGraphiteCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Gói nối tiếp',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      _hasQueuedPackage
+                                          ? 'Bạn đã có một gói Coach đang chờ kích hoạt sau gói hiện tại.'
+                                          : 'Bạn đang tập cùng Coach này. Có thể mua một gói chờ kích hoạt sau gói hiện tại.',
+                                      style: const TextStyle(
+                                        color: Color(0xFFC8CBD2),
+                                        fontSize: 12.5,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_healthDeclared)
+                              CoachingGraphiteCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle_outline_rounded,
+                                      color: MetaGymTheme.success,
+                                      size: 19,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Expanded(
+                                      child: Text(
+                                        'Đã khai báo thể trạng',
+                                        style: TextStyle(
+                                          color: Color(0xFFD9DDE3),
+                                          fontSize: 12.5,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: _busy
+                                          ? null
+                                          : _editHealthDeclaration,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: MetaGymTheme.primary,
+                                        minimumSize: const Size(48, 48),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                      ),
+                                      child: const Text('Xem / sửa'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (hold != null) ...[
+                              MetaGymHeroGlassCard(
+                                margin: const EdgeInsets.only(bottom: 14),
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CoachingPill(
+                                      label: switch (hold['status']) {
+                                        'HELD' =>
+                                          'Đang giữ suất · Chờ thanh toán',
+                                        'CONSUMED' => 'Đã kích hoạt gói hoặc đưa vào hàng chờ',
+                                        'EXPIRED' => 'Đã hết hạn giữ suất',
+                                        'CANCELLED' => 'Đã hủy giữ suất',
+                                        _ => 'Thanh toán không thành công',
+                                      },
+                                      tone: held
+                                          ? CoachingPillTone.amber
+                                          : (hold['status'] == 'CONSUMED'
+                                                ? CoachingPillTone.green
+                                                : CoachingPillTone.neutral),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      '${hold['planName']} · ${formatVnd((hold['amount'] as num?) ?? 0)}',
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
                                         fontFeatures:
                                             MetaGymTheme.tabularFigures,
                                       ),
                                     ),
-                                    const SizedBox(height: 14),
-                                    CoachingPrimaryButton(
-                                      label: 'Hoàn tất thanh toán',
-                                      onPressed: _busy
-                                          ? null
-                                          : _confirmMockPayment,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    CoachingSecondaryButton(
-                                      label: 'Hủy giữ suất',
-                                      expand: true,
-                                      onPressed: _busy
-                                          ? null
-                                          : () => _readHold(cancel: true),
-                                    ),
-                                  ] else ...[
                                     const SizedBox(height: 6),
-                                    TextButton(
-                                      onPressed: _busy
-                                          ? null
-                                          : () => setState(() {
-                                              _keys.clear();
-                                              _hold = null;
-                                            }),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: MetaGymTheme.primary,
-                                        minimumSize: const Size(48, 48),
+                                    if (held) ...[
+                                      Text(
+                                        'Suất được giữ tối đa 15 phút (hết hạn ${formatVietnamTime(hold['expiresAt'] as String?)})',
+                                        style: const TextStyle(
+                                          color: Color(0xFFE0D9D0),
+                                          fontSize: 12.5,
+                                          height: 1.45,
+                                          fontFeatures:
+                                              MetaGymTheme.tabularFigures,
+                                        ),
                                       ),
-                                      child: const Text('Chọn gói khác'),
-                                    ),
+                                      const SizedBox(height: 14),
+                                      CoachingPrimaryButton(
+                                        label: 'Hoàn tất thanh toán',
+                                        onPressed: _busy
+                                            ? null
+                                            : _confirmMockPayment,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      CoachingSecondaryButton(
+                                        label: 'Hủy giữ suất',
+                                        expand: true,
+                                        onPressed: _busy
+                                            ? null
+                                            : () => _readHold(cancel: true),
+                                      ),
+                                    ] else ...[
+                                      const SizedBox(height: 6),
+                                      TextButton(
+                                        onPressed: _busy
+                                            ? null
+                                            : () => setState(() {
+                                                _keys.clear();
+                                                _hold = null;
+                                              }),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: MetaGymTheme.primary,
+                                          minimumSize: const Size(48, 48),
+                                        ),
+                                        child: const Text('Chọn gói khác'),
+                                      ),
+                                    ],
                                   ],
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 10, top: 4),
-                            child: Text(
-                              'Gói huấn luyện',
-                              style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          if (_loaded && _offers.isEmpty)
-                            const CoachingGraphiteCard(
+                            ],
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 10, top: 4),
                               child: Text(
-                                'Chưa có gói Coach đang mở bán.',
+                                'Gói huấn luyện',
                                 style: TextStyle(
-                                  color: MetaGymTheme.textSecondary,
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
-                          for (var i = 0; i < _offers.length; i++)
-                            _OfferPackageCard(
-                              offer: _offers[i],
-                              selected: i == _selectedOfferIndex,
-                              enabled: !held && !_busy,
-                              onTap: () =>
-                                  setState(() => _selectedOfferIndex = i),
-                            ),
-                          CoachingGraphiteCard(
-                            margin: const EdgeInsets.only(top: 2, bottom: 12),
-                            padding: const EdgeInsets.all(14),
-                            child: const Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.schedule_rounded,
-                                  color: MetaGymTheme.warning,
-                                  size: 19,
-                                ),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Thời hạn bắt đầu khi gói được kích hoạt. Khi gói Gym hết hạn, bạn tạm dừng đặt lịch với Coach. Thời hạn gói Coach vẫn tiếp tục tính.',
-                                    style: TextStyle(
-                                      color: Color(0xFFD2D5DB),
-                                      fontSize: 12.5,
-                                      height: 1.48,
-                                    ),
+                            if (_loaded && _offers.isEmpty)
+                              const CoachingGraphiteCard(
+                                child: Text(
+                                  'Chưa có gói Coach đang mở bán.',
+                                  style: TextStyle(
+                                    color: MetaGymTheme.textSecondary,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          if (selectedOffer != null)
+                              ),
+                            for (var i = 0; i < _offers.length; i++)
+                              _OfferPackageCard(
+                                offer: _offers[i],
+                                selected: i == _selectedOfferIndex,
+                                enabled: !held && !_busy,
+                                onTap: () =>
+                                    setState(() => _selectedOfferIndex = i),
+                              ),
                             CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 14),
-                              child: Column(
+                              margin: const EdgeInsets.only(top: 2, bottom: 12),
+                              padding: const EdgeInsets.all(14),
+                              child: const Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Gói đã chọn',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                  Icon(
+                                    Icons.schedule_rounded,
+                                    color: MetaGymTheme.warning,
+                                    size: 19,
                                   ),
-                                  const SizedBox(height: 10),
-                                  _SummaryLine(
-                                    label: 'Tên gói',
-                                    value: selectedOffer['name'] as String,
-                                  ),
-                                  _SummaryLine(
-                                    label: 'Quyền lợi',
-                                    value:
-                                        '${selectedOffer['durationDays']} ngày · ${selectedOffer['sessionCount']} buổi',
-                                  ),
-                                  _SummaryLine(
-                                    label: 'Giá gói',
-                                    value: formatVnd(
-                                      (selectedOffer['price'] as num?) ?? 0,
-                                    ),
-                                    highlight: true,
-                                  ),
-                                  const Divider(
-                                    color: Color(0x26FFFFFF),
-                                    height: 22,
-                                  ),
-                                  CoachingPrimaryButton(
-                                    label: noGym
-                                        ? 'Cần gói Gym hiệu lực'
-                                        : full
-                                        ? 'Coach đã hết suất'
-                                        : assignedElsewhere
-                                        ? 'Đang có Coach khác'
-                                        : (assignedHere && _hasQueuedPackage)
-                                        ? 'Đã có gói chờ'
-                                        : 'Thanh toán',
-                                    loading: _busy && !held,
-                                    onPressed: canCheckout
-                                        ? () => _reserve(
-                                            selectedOffer['code'] as String,
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    held
-                                        ? 'Bạn đã có một suất đang giữ.'
-                                        : assignedHere
-                                        ? 'Chỉ một gói Coach được chờ nối tiếp tại một thời điểm.'
-                                        : 'Suất được giữ tối đa 15 phút trong quá trình thanh toán.',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.textSecondary,
-                                      fontSize: 11.5,
-                                      height: 1.4,
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Thời hạn bắt đầu khi gói được kích hoạt. Khi gói Gym hết hạn, bạn tạm dừng đặt lịch với Coach. Thời hạn gói Coach vẫn tiếp tục tính.',
+                                      style: TextStyle(
+                                        color: Color(0xFFD2D5DB),
+                                        fontSize: 12.5,
+                                        height: 1.48,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            if (selectedOffer != null)
+                              CoachingGraphiteCard(
+                                margin: const EdgeInsets.only(bottom: 14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Gói đã chọn',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 15.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _SummaryLine(
+                                      label: 'Tên gói',
+                                      value: selectedOffer['name'] as String,
+                                    ),
+                                    _SummaryLine(
+                                      label: 'Quyền lợi',
+                                      value:
+                                          '${selectedOffer['durationDays']} ngày · ${selectedOffer['sessionCount']} buổi',
+                                    ),
+                                    _SummaryLine(
+                                      label: 'Giá gói',
+                                      value: formatVnd(
+                                        (selectedOffer['price'] as num?) ?? 0,
+                                      ),
+                                      highlight: true,
+                                    ),
+                                    const Divider(
+                                      color: Color(0x26FFFFFF),
+                                      height: 22,
+                                    ),
+                                    CoachingPrimaryButton(
+                                      label: noGym
+                                          ? 'Cần gói Gym hiệu lực'
+                                          : full
+                                          ? 'Coach đã hết suất'
+                                          : assignedElsewhere
+                                          ? 'Đang có Coach khác'
+                                          : (assignedHere && _hasQueuedPackage)
+                                          ? 'Đã có gói chờ'
+                                          : 'Thanh toán',
+                                      loading: _busy && !held,
+                                      onPressed: canCheckout
+                                          ? () => _reserve(
+                                              selectedOffer['code'] as String,
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      held
+                                          ? 'Bạn đã có một suất đang giữ.'
+                                          : assignedHere
+                                          ? 'Chỉ một gói Coach được chờ nối tiếp tại một thời điểm.'
+                                          : 'Suất được giữ tối đa 15 phút trong quá trình thanh toán.',
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.textSecondary,
+                                        fontSize: 11.5,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ],
                       ),
                     ),
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoachPackagesHeroCard extends StatelessWidget {
+  const _CoachPackagesHeroCard({
+    required this.coachName,
+    required this.coachAvatar,
+    required this.usedSlots,
+    required this.memberLimit,
+    required this.availableSlots,
+    required this.offerCount,
+  });
+
+  final String coachName;
+  final String? coachAvatar;
+  final int? usedSlots;
+  final int? memberLimit;
+  final int? availableSlots;
+  final int offerCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCapacity = usedSlots != null && memberLimit != null;
+    final hasSlots = availableSlots == null || availableSlots! > 0;
+    return MetaGymHeroGlassCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CoachingAvatar(
+                fullName: coachName,
+                avatarUrl: coachAvatar,
+                size: 46,
+                round: true,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      coachName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Huấn luyện 1:1 · Mỗi buổi 90 phút',
+                      style: TextStyle(color: Color(0xFFD7D2CE), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              CoachingPill(
+                label: availableSlots == null
+                    ? 'Đang mở'
+                    : (hasSlots ? 'Còn $availableSlots suất' : 'Đã đủ suất'),
+                tone: hasSlots
+                    ? CoachingPillTone.green
+                    : CoachingPillTone.amber,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: MetaGymMetricPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Suất học viên',
+                          style: TextStyle(
+                            color: Color(0xFFB7B2AF),
+                            fontSize: 11.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          hasCapacity ? '$usedSlots/$memberLimit' : '--',
+                          style: const TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: MetaGymMetricPanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Gói đang mở bán',
+                          style: TextStyle(
+                            color: Color(0xFFB7B2AF),
+                            fontSize: 11.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$offerCount gói',
+                          style: const TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -759,12 +992,14 @@ class _OfferPackageCard extends StatelessWidget {
     required this.selected,
     required this.enabled,
     required this.onTap,
+    this.readOnlyMode = false,
   });
 
   final CoachRecord offer;
   final bool selected;
   final bool enabled;
   final VoidCallback onTap;
+  final bool readOnlyMode;
 
   @override
   Widget build(BuildContext context) {
@@ -790,10 +1025,14 @@ class _OfferPackageCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               CoachingPill(
-                label: selected ? 'Đã chọn' : 'Chọn gói',
-                tone: selected
-                    ? CoachingPillTone.coral
-                    : CoachingPillTone.neutral,
+                label: readOnlyMode
+                    ? 'Đang mở bán'
+                    : (selected ? 'Đã chọn' : 'Chọn gói'),
+                tone: readOnlyMode
+                    ? CoachingPillTone.green
+                    : (selected
+                          ? CoachingPillTone.coral
+                          : CoachingPillTone.neutral),
               ),
             ],
           ),

@@ -3,12 +3,16 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:provider/provider.dart';
 
 class CoachNotificationsPage extends StatefulWidget {
-  const CoachNotificationsPage({super.key});
+  const CoachNotificationsPage({this.coachRole = false, super.key});
+
+  final bool coachRole;
 
   @override
   State<CoachNotificationsPage> createState() => _CoachNotificationsPageState();
@@ -18,6 +22,11 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   late final _api = CoachV2Api(context.read<ApiClient>());
   late Future<List<CoachRecord>> _items = _api.list('/coach-notifications');
   bool _saving = false;
+
+  bool get _isCoachRole =>
+      widget.coachRole ||
+      optionalProvider<SessionController>(context)?.user?.role ==
+          UserRole.coach;
 
   Future<void> _reload() async {
     final future = _api.list('/coach-notifications');
@@ -46,18 +55,59 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     }
   }
 
-  String _titleForKind(Object? kind) => switch (kind) {
-    'BOOKED' => 'Có lịch tập mới với Coach',
-    'COMPLETED' => 'Coach đã xác nhận buổi tập',
-    'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
-    'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
-    'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
-    'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
-    'PACKAGE_LAST_SESSION' => 'Gói Coach còn 1 buổi',
-    'PACKAGE_ENDED' => 'Gói Coach đã kết thúc',
-    'PACKAGE_EXPIRING' => 'Gói Coach còn tối đa 7 ngày',
-    _ => 'Có cập nhật về Coach',
-  };
+  Future<void> _markAllRead(List<CoachRecord> items) async {
+    final unread = items.where((item) => item['readAt'] == null).toList();
+    if (_saving || unread.isEmpty) return;
+    setState(() => _saving = true);
+    try {
+      for (final item in unread) {
+        await _api.patch('/coach-notifications/${item['id']}/read', {});
+      }
+      if (mounted) {
+        await _reload();
+        if (mounted) {
+          showCoachingSnackBar(context, 'Đã đánh dấu tất cả là đã đọc.');
+        }
+      }
+    } on ApiException catch (error) {
+      if (mounted) showCoachingSnackBar(context, error.message);
+    } catch (_) {
+      if (mounted) {
+        showCoachingSnackBar(context, 'Không cập nhật được trạng thái đã đọc.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _titleForKind(Object? kind) {
+    if (_isCoachRole) {
+      return switch (kind) {
+        'BOOKED' => 'Học viên vừa đặt lịch dạy 90 phút',
+        'COMPLETED' => 'Buổi dạy 90 phút đã hoàn tất',
+        'CANCELLED' => 'Buổi dạy đã hủy hoặc đổi lịch',
+        'PACKAGE_ACTIVE' => 'Gói PT của học viên đã kích hoạt',
+        'PACKAGE_QUEUED' => 'Học viên có gói PT chờ nối tiếp',
+        'PACKAGE_EXTENDED' => 'Gói PT học viên được gia hạn 7 ngày',
+        'PACKAGE_LAST_SESSION' => 'Học viên còn 1 buổi PT cuối',
+        'PACKAGE_ENDED' => 'Gói PT của học viên đã kết thúc',
+        'PACKAGE_EXPIRING' => 'Gói PT học viên còn tối đa 7 ngày',
+        _ => 'Có cập nhật mới từ học viên',
+      };
+    }
+    return switch (kind) {
+      'BOOKED' => 'Có lịch tập mới với Coach',
+      'COMPLETED' => 'Coach đã xác nhận buổi tập',
+      'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
+      'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
+      'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
+      'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
+      'PACKAGE_LAST_SESSION' => 'Gói Coach còn 1 buổi',
+      'PACKAGE_ENDED' => 'Gói Coach đã kết thúc',
+      'PACKAGE_EXPIRING' => 'Gói Coach còn tối đa 7 ngày',
+      _ => 'Có cập nhật về Coach',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -218,29 +268,48 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                         return MetaGymHeroGlassCard(
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(18),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(
-                                child: _NotificationMetric(
-                                  label: 'Chưa đọc',
-                                  value: '$unreadCount',
-                                  accent: unreadCount > 0,
-                                ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _NotificationMetric(
+                                      label: 'Chưa đọc',
+                                      value: '$unreadCount',
+                                      accent: unreadCount > 0,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
+                                    color: const Color(0x26FFFFFF),
+                                  ),
+                                  Expanded(
+                                    child: _NotificationMetric(
+                                      label: 'Tổng thông báo',
+                                      value: '${items.length}',
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 14,
+                              if (unreadCount > 0) ...[
+                                const SizedBox(height: 12),
+                                CoachingCompactAccentButton(
+                                  label: _saving
+                                      ? 'Đang cập nhật…'
+                                      : 'Đánh dấu tất cả đã đọc',
+                                  icon: Icons.done_all_rounded,
+                                  expand: true,
+                                  loading: _saving,
+                                  onPressed: _saving
+                                      ? null
+                                      : () => _markAllRead(items),
                                 ),
-                                color: const Color(0x26FFFFFF),
-                              ),
-                              Expanded(
-                                child: _NotificationMetric(
-                                  label: 'Tổng thông báo',
-                                  value: '${items.length}',
-                                ),
-                              ),
+                              ],
                             ],
                           ),
                         );

@@ -136,17 +136,9 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Đóng'),
             ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: MetaGymTheme.primary,
-                foregroundColor: MetaGymTheme.onPrimary,
-                minimumSize: const Size(96, 44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            CoachingCompactAccentButton(
+              label: 'Xác nhận',
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Xác nhận'),
             ),
           ],
         ),
@@ -892,35 +884,38 @@ class _SessionFormPageState extends State<_SessionFormPage> {
     required String label,
     String? hint,
     IconData? icon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      labelStyle: const TextStyle(color: MetaGymTheme.textSecondary),
-      hintStyle: const TextStyle(color: MetaGymTheme.darkTextTertiary),
-      prefixIcon: icon == null
-          ? null
-          : Icon(icon, size: 19, color: MetaGymTheme.textSecondary),
-      filled: true,
-      fillColor: MetaGymTheme.elevatedSurface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
-      ),
+    Widget? suffixIcon,
+  }) => coachingInputDecoration(
+    label: label,
+    hint: hint,
+    prefixIcon: icon,
+    suffixIcon: suffixIcon,
+  );
+
+  Future<void> _pickDateTime(TextEditingController controller) async {
+    final initial = parseSessionLocalTime(controller.text) ?? DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      builder: (context, child) =>
+          Theme(data: MetaGymTheme.dark, child: child!),
     );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+      builder: (context, child) =>
+          Theme(data: MetaGymTheme.dark, child: child!),
+    );
+    if (time == null || !mounted) return;
+    final d = date.day.toString().padLeft(2, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final y = date.year.toString().padLeft(4, '0');
+    final hh = time.hour.toString().padLeft(2, '0');
+    final mm = time.minute.toString().padLeft(2, '0');
+    setState(() => controller.text = '$d/$m/$y $hh:$mm');
   }
 
   Future<void> _save() async {
@@ -1087,6 +1082,15 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                 label: 'Bắt đầu (dd/MM/yyyy HH:mm)',
                                 hint: '24/10/2026 08:00',
                                 icon: Icons.schedule_rounded,
+                                suffixIcon: IconButton(
+                                  tooltip: 'Chọn ngày giờ bắt đầu',
+                                  onPressed: () => _pickDateTime(_start),
+                                  icon: const Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 18,
+                                    color: MetaGymTheme.brandOrange,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -1102,6 +1106,15 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                 label: 'Kết thúc (tùy chọn)',
                                 hint: '24/10/2026 09:00',
                                 icon: Icons.timer_off_outlined,
+                                suffixIcon: IconButton(
+                                  tooltip: 'Chọn ngày giờ kết thúc',
+                                  onPressed: () => _pickDateTime(_end),
+                                  icon: const Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 18,
+                                    color: MetaGymTheme.textSecondary,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 14),

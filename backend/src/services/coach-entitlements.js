@@ -67,15 +67,17 @@ async function settleLockedHold(client, holdId, paid, amount) {
   )).rows[0];
   if (current && current.coach_id !== hold.coach_id) return release('FAILED', 'RELATIONSHIP_EXISTS');
   let proposalStart = hold.today;
+  let renewal = false;
   if (current) {
     const { rows: [existing] } = await client.query(
-      `SELECT (original_ends_on + 8)::text AS latest_start,
+      `SELECT (SELECT (original_ends_on + 8)::text FROM coach_entitlements
+           WHERE relationship_id = $1 AND status = 'ACTIVE') AS latest_start,
          EXISTS (SELECT 1 FROM coach_entitlements WHERE relationship_id = $1
-           AND status = 'QUEUED') AS queued
-       FROM coach_entitlements WHERE relationship_id = $1 AND status = 'ACTIVE'`, [current.id],
+           AND status = 'QUEUED') AS queued`, [current.id],
     );
-    if (!existing || existing.queued) return release('FAILED', 'QUEUED_UNAVAILABLE');
-    proposalStart = existing.latest_start;
+    if (existing.queued) return release('FAILED', 'QUEUED_UNAVAILABLE');
+    renewal = existing.latest_start !== null;
+    if (renewal) proposalStart = existing.latest_start;
   }
   const seats = (await client.query('SELECT coach_occupied_seats($1) AS count', [hold.coach_id]))
     .rows[0].count;
@@ -102,8 +104,8 @@ async function settleLockedHold(client, holdId, paid, amount) {
        status, total_sessions, remaining_sessions, duration_days, starts_on, original_ends_on, ends_on)
      VALUES ($1, $2, $3, $4, $5, $10, $6, $6, $7, $8, $9, $9)`,
     [entitlementId, holdId, relationshipId, hold.member_id, hold.coach_id, hold.session_count,
-      hold.duration_days, current ? null : hold.today, current ? null : hold.through,
-      current ? 'QUEUED' : 'ACTIVE'],
+      hold.duration_days, renewal ? null : hold.today, renewal ? null : hold.through,
+      renewal ? 'QUEUED' : 'ACTIVE'],
   );
   return { status: 'CONSUMED', entitlementId };
 }

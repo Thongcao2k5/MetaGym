@@ -19,10 +19,13 @@ class CoachRequestsPage extends StatefulWidget {
   State<CoachRequestsPage> createState() => _CoachRequestsPageState();
 }
 
+enum _RequestFilter { all, pending, decided }
+
 class _CoachRequestsPageState extends State<CoachRequestsPage> {
   CoachRequestsService? _service;
   List<CoachIncomingRequest> _requests = const [];
   CoachProfile? _coach;
+  _RequestFilter _filter = _RequestFilter.all;
   String? _error;
   bool _loading = true;
 
@@ -157,43 +160,82 @@ class _CoachRequestsPageState extends State<CoachRequestsPage> {
                               coach: _coach!,
                               pendingCount: pending.length,
                             ),
-                          _SectionHeader(
-                            title: 'Đang chờ xử lý',
-                            count: pending.length,
-                            highlight: pending.isNotEmpty,
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final entry in const [
+                                (_RequestFilter.all, 'Tất cả'),
+                                (_RequestFilter.pending, 'Chờ duyệt'),
+                                (_RequestFilter.decided, 'Đã xử lý'),
+                              ])
+                                ChoiceChip(
+                                  label: Text(entry.$2),
+                                  selected: _filter == entry.$1,
+                                  selectedColor: const Color(0xFF33201B),
+                                  surfaceTintColor: Colors.transparent,
+                                  checkmarkColor: MetaGymTheme.brandOrange,
+                                  backgroundColor: MetaGymTheme.cardSurface,
+                                  side: BorderSide(
+                                    color: _filter == entry.$1
+                                        ? MetaGymTheme.brandOrange
+                                        : MetaGymTheme.cardBorder,
+                                  ),
+                                  labelStyle: TextStyle(
+                                    color: _filter == entry.$1
+                                        ? MetaGymTheme.textPrimary
+                                        : MetaGymTheme.textSecondary,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  onSelected: (_) =>
+                                      setState(() => _filter = entry.$1),
+                                ),
+                            ],
                           ),
-                          if (pending.isEmpty)
-                            const _EmptyStateCard(
-                              icon: Icons.mark_email_read_outlined,
-                              title: 'Chưa có yêu cầu đang chờ.',
-                              subtitle: 'Yêu cầu mới từ học viên sẽ hiển thị ở đây để bạn duyệt.',
+                          const SizedBox(height: 14),
+                          if (_filter != _RequestFilter.decided) ...[
+                            _SectionHeader(
+                              title: 'Đang chờ xử lý',
+                              count: pending.length,
+                              highlight: pending.isNotEmpty,
                             ),
-                          for (final request in pending)
-                            _RequestCard(
-                              request: request,
-                              onTap: () => _openRequest(request),
+                            if (pending.isEmpty)
+                              const _EmptyStateCard(
+                                icon: Icons.mark_email_read_outlined,
+                                title: 'Chưa có yêu cầu đang chờ.',
+                                subtitle: 'Yêu cầu mới từ học viên sẽ hiển thị ở đây để bạn duyệt.',
+                              ),
+                            for (final request in pending)
+                              _RequestCard(
+                                request: request,
+                                onTap: () => _openRequest(request),
+                              ),
+                            if (_filter == _RequestFilter.all)
+                              const SizedBox(height: 12),
+                          ],
+                          if (_filter != _RequestFilter.pending) ...[
+                            _SectionHeader(
+                              title: 'Lịch sử yêu cầu',
+                              count: decided.length,
                             ),
-                          const SizedBox(height: 12),
-                          _SectionHeader(
-                            title: 'Lịch sử yêu cầu',
-                            count: decided.length,
-                          ),
-                          if (decided.isEmpty && pending.isEmpty)
-                            const _EmptyStateCard(
-                              icon: Icons.inbox_outlined,
-                              title: 'Chưa có yêu cầu nào.',
-                              subtitle: 'Kéo xuống để làm mới khi có học viên gửi yêu cầu chọn Coach.',
-                            )
-                          else if (decided.isEmpty)
-                            const _EmptyStateCard(
-                              icon: Icons.history_rounded,
-                              title: 'Chưa có yêu cầu đã xử lý.',
-                            ),
-                          for (final request in decided)
-                            _RequestCard(
-                              request: request,
-                              onTap: () => _openRequest(request),
-                            ),
+                            if (decided.isEmpty && pending.isEmpty)
+                              const _EmptyStateCard(
+                                icon: Icons.inbox_outlined,
+                                title: 'Chưa có yêu cầu nào.',
+                                subtitle: 'Kéo xuống để làm mới khi có học viên gửi yêu cầu chọn Coach.',
+                              )
+                            else if (decided.isEmpty)
+                              const _EmptyStateCard(
+                                icon: Icons.history_rounded,
+                                title: 'Chưa có yêu cầu đã xử lý.',
+                              ),
+                            for (final request in decided)
+                              _RequestCard(
+                                request: request,
+                                onTap: () => _openRequest(request),
+                              ),
+                          ],
                         ],
                       ],
                     ),

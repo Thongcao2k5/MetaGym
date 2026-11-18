@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -334,7 +335,7 @@ class CoachingPrimaryButton extends StatelessWidget {
           textStyle: const TextStyle(
             fontFamily: MetaGymTheme.fontFamily,
             fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-            fontSize: 16,
+            fontSize: 18.5,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -361,10 +362,236 @@ class CoachingPrimaryButton extends StatelessWidget {
                   ),
                   if (icon != null) ...[
                     const SizedBox(width: 8),
-                    Icon(icon, size: 19),
+                    Icon(icon, size: 20),
                   ],
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// Compact accent action button on Graphite surface (`#1F242D` + Coral `#FF5E36`
+/// text/border) so smaller inline buttons satisfy >= 4.5:1 contrast.
+class CoachingCompactAccentButton extends StatelessWidget {
+  const CoachingCompactAccentButton({
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.loading = false,
+    this.expand = false,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final bool loading;
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = OutlinedButton(
+      onPressed: loading ? null : onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: MetaGymTheme.brandOrange,
+        backgroundColor: MetaGymTheme.elevatedSurface,
+        disabledForegroundColor: MetaGymTheme.textSecondary,
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        side: BorderSide(
+          color: onPressed == null || loading
+              ? MetaGymTheme.cardBorder
+              : MetaGymTheme.brandOrange.withValues(alpha: 0.78),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: MetaGymTheme.fontFamily,
+          fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      child: loading
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: MetaGymTheme.brandOrange,
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 17),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+    );
+    return expand ? SizedBox(width: double.infinity, child: button) : button;
+  }
+}
+
+/// Shared Graphite form decoration aligned with `DESIGN.md` & `ui-design-spec.md`.
+InputDecoration coachingInputDecoration({
+  required String label,
+  String? hint,
+  String? errorText,
+  IconData? prefixIcon,
+  Widget? suffixIcon,
+}) {
+  return InputDecoration(
+    labelText: label,
+    hintText: hint,
+    errorText: errorText,
+    labelStyle: const TextStyle(
+      color: MetaGymTheme.textSecondary,
+      fontSize: 13.5,
+    ),
+    floatingLabelStyle: const TextStyle(
+      color: MetaGymTheme.focusBlue,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+    ),
+    hintStyle: const TextStyle(
+      color: MetaGymTheme.darkTextTertiary,
+      fontSize: 13.5,
+    ),
+    counterStyle: const TextStyle(
+      color: MetaGymTheme.textSecondary,
+      fontSize: 11.5,
+    ),
+    errorStyle: const TextStyle(color: MetaGymTheme.dangerCoral, fontSize: 12),
+    prefixIcon: prefixIcon == null
+        ? null
+        : Icon(prefixIcon, size: 19, color: MetaGymTheme.textSecondary),
+    suffixIcon: suffixIcon,
+    filled: true,
+    fillColor: MetaGymTheme.elevatedSurface,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral, width: 2),
+    ),
+  );
+}
+
+/// Level 3 Overlay Glass modal bottom sheet (`rgba(15, 17, 21, 0.90)` + `18px`
+/// clipped blur with solid fallback for reduced motion and widget tests).
+class CoachingOverlaySheet extends StatelessWidget {
+  const CoachingOverlaySheet({
+    required this.title,
+    required this.child,
+    this.subtitle,
+    super.key,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final enableBlur =
+        !media.disableAnimations && !MetaGymTheme.isFlutterTestEnvironment;
+    final bottomInset = media.viewInsets.bottom + media.padding.bottom;
+    const radius = BorderRadius.vertical(
+      top: Radius.circular(MetaGymTheme.radiusGlassDock),
+    );
+
+    final content = Container(
+      decoration: const BoxDecoration(
+        color: MetaGymTheme.overlayGlass,
+        borderRadius: radius,
+        border: Border(
+          top: BorderSide(color: MetaGymTheme.overlayGlassBorder, width: 1),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(18, 12, 18, 20 + bottomInset),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.darkBorderStrong,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: MetaGymTheme.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: const TextStyle(
+                    color: MetaGymTheme.textSecondary,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!enableBlur) return content;
+    return ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: MetaGymTheme.overlayGlassBlur,
+          sigmaY: MetaGymTheme.overlayGlassBlur,
+        ),
+        child: content,
       ),
     );
   }

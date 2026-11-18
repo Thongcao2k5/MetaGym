@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -9,6 +10,7 @@ import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:meta_gym_app/features/training/presentation/meal_plans_page.dart';
 
 class CoachMemberDetailPage extends StatefulWidget {
   const CoachMemberDetailPage({
@@ -253,6 +255,77 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                           _MemberHeroCard(member: member),
                           if (showHealth)
                             _HealthDeclarationCard(member: member),
+                          if (member.status == 'ACTIVE') ...[
+                            CoachingGraphiteCard(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Thao tác nhanh với học viên',
+                                    style: TextStyle(
+                                      color: MetaGymTheme.textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      if (hasApiClient)
+                                        CoachingCompactAccentButton(
+                                          label: 'Thực đơn 7 ngày',
+                                          icon: Icons.restaurant_menu_rounded,
+                                          onPressed: _busy
+                                              ? null
+                                              : () => Navigator.of(context)
+                                                    .push(
+                                                      MaterialPageRoute<void>(
+                                                        builder: (_) =>
+                                                            MealPlansPage(
+                                                              memberId: member
+                                                                  .memberId,
+                                                              editable: true,
+                                                            ),
+                                                      ),
+                                                    ),
+                                        ),
+                                      if (GoRouter.maybeOf(context) !=
+                                          null) ...[
+                                        CoachingSecondaryButton(
+                                          label: 'Giáo trình',
+                                          onPressed: _busy
+                                              ? null
+                                              : () => context.push(
+                                                  '/coach/features/training',
+                                                ),
+                                        ),
+                                        CoachingSecondaryButton(
+                                          label: 'Lịch tập',
+                                          onPressed: _busy
+                                              ? null
+                                              : () => context.push(
+                                                  '/coach/features/sessions',
+                                                ),
+                                        ),
+                                        CoachingSecondaryButton(
+                                          label: 'Nhắn tin',
+                                          onPressed: _busy
+                                              ? null
+                                              : () => context.push(
+                                                  '/coach/features/messages',
+                                                ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           CoachingGraphiteCard(
                             margin: const EdgeInsets.only(bottom: 14),
                             child: Column(
@@ -312,31 +385,10 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  FilledButton.icon(
+                                  CoachingCompactAccentButton(
+                                    label: 'Gửi thành quả',
+                                    icon: Icons.add_rounded,
                                     onPressed: _busy ? null : _submitOutcome,
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: MetaGymTheme.primary,
-                                      foregroundColor: MetaGymTheme.onPrimary,
-                                      minimumSize: const Size(48, 44),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 10,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          MetaGymTheme.radiusInput,
-                                        ),
-                                      ),
-                                      textStyle: const TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    icon: const Icon(
-                                      Icons.add_rounded,
-                                      size: 18,
-                                    ),
-                                    label: const Text('Gửi thành quả'),
                                   ),
                                 ],
                               ),

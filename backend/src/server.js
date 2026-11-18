@@ -37,6 +37,7 @@ try {
 }
 const app = createApp({
   database,
+  enableCoachWorkflows: process.env.ENABLE_COACH_WORKFLOWS === 'true',
   vnpay,
   momo,
   zalopay,

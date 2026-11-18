@@ -168,59 +168,68 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   Future<String?> _reason(String heading) async {
     var reason = '';
+    String? validationError;
     return showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-        ),
-        title: Text(
-          heading,
-          style: const TextStyle(
-            color: MetaGymTheme.textPrimary,
-            fontWeight: FontWeight.w700,
+      barrierColor: const Color(0xB8040609),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: MetaGymTheme.cardSurface,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
           ),
-        ),
-        content: TextFormField(
-          maxLength: 500,
-          autofocus: true,
-          style: const TextStyle(color: MetaGymTheme.textPrimary),
-          onChanged: (value) => reason = value.trim(),
-          decoration: const InputDecoration(
-            labelText: 'Lý do',
-            labelStyle: TextStyle(color: MetaGymTheme.textSecondary),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: MetaGymTheme.darkBorderStrong),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: MetaGymTheme.brandOrange),
+          title: Text(
+            heading,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Quay lại',
-              style: TextStyle(color: MetaGymTheme.textSecondary),
+          content: TextFormField(
+            maxLength: 500,
+            maxLines: 3,
+            autofocus: true,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontSize: 14,
             ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.brandOrange,
-              foregroundColor: MetaGymTheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              if (reason.isNotEmpty) Navigator.pop(ctx, reason);
+            onChanged: (value) {
+              reason = value.trim();
+              if (validationError != null && reason.isNotEmpty) {
+                setDialogState(() => validationError = null);
+              }
             },
-            child: const Text('Xác nhận'),
+            decoration: coachingInputDecoration(
+              label: 'Lý do',
+              errorText: validationError,
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(64, 44),
+                foregroundColor: MetaGymTheme.textSecondary,
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Quay lại'),
+            ),
+            CoachingCompactAccentButton(
+              label: 'Xác nhận',
+              onPressed: () {
+                if (reason.isEmpty) {
+                  setDialogState(
+                    () => validationError = 'Vui lòng nhập lý do.',
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, reason);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

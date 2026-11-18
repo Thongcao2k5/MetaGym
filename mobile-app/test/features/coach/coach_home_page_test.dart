@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
@@ -68,8 +67,10 @@ void main() {
       expect(find.text('Dinh dưỡng'), findsOneWidget);
       expect(find.text('Lịch tập'), findsOneWidget);
 
-      // Full feature directory is initially collapsed
-      expect(find.text('Yêu cầu chọn Coach'), findsNothing);
+      // Removed directory and logout button on Coach home
+      expect(find.text('Danh mục tính năng Coach'), findsNothing);
+      expect(find.text('Đăng xuất'), findsNothing);
+      expect(find.byTooltip('Phòng gym và thiết bị'), findsOneWidget);
 
       // Scroll to Next session + Bento cards
       await tester.scrollUntilVisible(find.text('Ca dạy tiếp theo'), 200);
@@ -81,18 +82,10 @@ void main() {
       expect(find.text('Gói PT Cơ bản'), findsOneWidget);
       expect(find.text('1 gói'), findsOneWidget);
 
-      // Expand directory and verify every coachDestination + Offers + Notifications
-      await tester.scrollUntilVisible(
-        find.text('Danh mục tính năng Coach'),
-        250,
-      );
-      await tester.tap(find.text('Danh mục tính năng Coach'));
-      await tester.pumpAndSettle();
-
-      for (final destination in coachDestinations) {
-        await tester.scrollUntilVisible(find.text(destination.title).last, 150);
-        expect(find.text(destination.title), findsWidgets);
-      }
+      // Verify utilities card provides entry points for calls and gym equipment
+      await tester.scrollUntilVisible(find.text('Khám phá & Liên lạc'), 200);
+      expect(find.text('Cuộc gọi thoại & video'), findsOneWidget);
+      expect(find.text('Phòng gym và thiết bị'), findsOneWidget);
 
       // Scroll back to top and open CoachNotificationsPage from header bell
       await tester.scrollUntilVisible(
@@ -105,17 +98,19 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
 
-      // Open CoachOffersPage from PT package Bento card
+      // Open CoachOffersPage in Coach view from PT package Bento card
       await tester.scrollUntilVisible(find.text('Gói PT Cơ bản'), 200);
       await tester.ensureVisible(find.text('Gói PT Cơ bản'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Gói PT Cơ bản'));
       await tester.pumpAndSettle();
       expect(find.byType(CoachOffersPage), findsOneWidget);
+      expect(find.text('Bảng giá gói PT đang mở bán'), findsOneWidget);
+      expect(find.text('Thanh toán'), findsNothing);
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      // Switch to Lịch dạy tab (WorkHub) and verify schedule + members/requests
+      // Switch to Lịch dạy tab (WorkHub) and verify schedule + week date filtering
       await tester.tap(
         find.descendant(
           of: find.byType(MetaGymBottomNav),
@@ -132,6 +127,15 @@ void main() {
       expect(tester.getSize(find.text('Nhắn tin')).height, lessThan(26));
       expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
       expect(tester.getSize(find.text('Hoàn tất')).height, lessThan(26));
+
+      // Moving to next week should NOT leak this week's booking on the same weekday
+      await tester.tap(find.byTooltip('Tuần sau'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hoàn tất'), findsNothing);
+      await tester.tap(find.text('Về hôm nay'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hoàn tất'), findsOneWidget);
+
       expect(find.text('Học viên & Yêu cầu (1)'), findsOneWidget);
 
       await tester.tap(find.text('Học viên & Yêu cầu (1)'));
