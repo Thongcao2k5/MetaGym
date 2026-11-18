@@ -37,6 +37,10 @@ Chạy các file `*.up.sql` theo thứ tự:
 21. `0021_member_self_training_days.up.sql`
 22. `0022_member_health_declaration.up.sql`
 23. `0023_coach_outcomes.up.sql`
+24. `0024_membership_renewals.up.sql`
+25. `0025_vnpay_sandbox.up.sql`
+26. `0026_momo_sandbox.up.sql`
+27. `0027_zalopay_sandbox.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 

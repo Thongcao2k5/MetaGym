@@ -87,6 +87,7 @@ class ApiClient {
     Object? body,
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
+    Duration? receiveTimeout,
   }) {
     return _request(
       'POST',
@@ -95,6 +96,7 @@ class ApiClient {
       body: body,
       queryParameters: queryParameters,
       headers: headers,
+      receiveTimeout: receiveTimeout,
     );
   }
 
@@ -162,6 +164,7 @@ class ApiClient {
     Object? body,
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
+    Duration? receiveTimeout,
   }) async {
     _logger?.call('API $method started');
     try {
@@ -177,7 +180,11 @@ class ApiClient {
         path,
         data: body,
         queryParameters: queryParameters,
-        options: Options(method: method, headers: requestHeaders),
+        options: Options(
+          method: method,
+          headers: requestHeaders,
+          receiveTimeout: receiveTimeout,
+        ),
       );
       final result = _decodeResult(response.data, decode);
       _logger?.call('API $method completed (${response.statusCode})');

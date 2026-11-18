@@ -47,6 +47,8 @@ dependencies:
   livekit_client: ^2.13.2
   connectivity_plus: ^7.3.2
   supabase: ^2.16.5
+  url_launcher: ^6.3.3
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

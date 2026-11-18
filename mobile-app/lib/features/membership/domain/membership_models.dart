@@ -34,6 +34,7 @@ class MembershipQuote {
     required this.durationDays,
     required this.startDate,
     required this.endDate,
+    this.isRenewal = false,
   });
 
   factory MembershipQuote.fromJson(Object? value) {
@@ -43,6 +44,7 @@ class MembershipQuote {
       durationDays: json['durationDays'] as int,
       startDate: json['startDate'] as String,
       endDate: json['endDate'] as String,
+      isRenewal: json['isRenewal'] as bool? ?? false,
     );
   }
 
@@ -50,6 +52,7 @@ class MembershipQuote {
   final int durationDays;
   final String startDate;
   final String endDate;
+  final bool isRenewal;
 }
 
 class Payment {
@@ -63,6 +66,8 @@ class Payment {
     this.transactionCode,
     this.createdAt,
     this.confirmedAt,
+    this.membershipId,
+    this.paymentUrl,
   });
 
   factory Payment.fromJson(Object? value) {
@@ -77,6 +82,8 @@ class Payment {
       transactionCode: json['transactionCode'] as String?,
       createdAt: json['createdAt'] as String?,
       confirmedAt: json['confirmedAt'] as String?,
+      membershipId: json['membershipId'] as String?,
+      paymentUrl: json['paymentUrl'] as String?,
     );
   }
 
@@ -89,6 +96,8 @@ class Payment {
   final String? transactionCode;
   final String? createdAt;
   final String? confirmedAt;
+  final String? membershipId;
+  final String? paymentUrl;
 
   String get statusLabel => switch (status) {
     'PENDING' => 'Đang chờ',

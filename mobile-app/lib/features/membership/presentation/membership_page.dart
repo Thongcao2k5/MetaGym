@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
@@ -11,7 +13,10 @@ import 'package:provider/provider.dart';
 /// Màn hình Gói tập hội viên đồng bộ bảng màu Warm Smoked Glass
 /// (`DESIGN.md` / `MASTER.md`) cùng Trang chủ Hội viên & Hồ sơ.
 class MembershipPage extends StatefulWidget {
-  const MembershipPage({super.key});
+  const MembershipPage({super.key, this.paymentReturnId, this.paymentReturnMethod});
+
+  final String? paymentReturnId;
+  final String? paymentReturnMethod;
 
   @override
   State<MembershipPage> createState() => _MembershipPageState();
@@ -21,8 +26,17 @@ class _MembershipPageState extends State<MembershipPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<MembershipController>().load();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final controller = context.read<MembershipController>();
+      final paymentId = widget.paymentReturnId;
+      final method = widget.paymentReturnMethod;
+      if (paymentId != null && method != null &&
+          await controller.resumeOnlinePayment(paymentId, method: method)) {
+        if (mounted) await _openCheckout(const MembershipCheckoutPage());
+        return;
+      }
+      if (mounted) await controller.load();
     });
   }
 
@@ -35,8 +49,9 @@ class _MembershipPageState extends State<MembershipPage> {
 
   Future<void> _openCheckout(MembershipCheckoutPage page) async {
     final controller = context.read<MembershipController>();
-    await Navigator.of(context)
-        .push<void>(MaterialPageRoute<void>(builder: (_) => page));
+    await Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute<void>(builder: (_) => page));
     if (mounted && controller.pendingPayment == null) await controller.load();
   }
 
@@ -58,22 +73,9 @@ class _MembershipPageState extends State<MembershipPage> {
           SafeArea(
             child: Column(
               children: [
-                MembershipTopBar(
+                const MembershipTopBar(
                   eyebrow: 'HỘI VIÊN & ƯU ĐÃI',
                   title: 'Gói tập',
-                  actions: [
-                    MetaGymCircleIconButton(
-                      icon: Icons.receipt_long_rounded,
-                      tooltip: 'Lịch sử thanh toán',
-                      onTap: _openHistory,
-                    ),
-                    const SizedBox(width: 8),
-                    MetaGymCircleIconButton(
-                      icon: Icons.refresh_rounded,
-                      tooltip: 'Tải lại',
-                      onTap: controller.isLoading ? null : controller.load,
-                    ),
-                  ],
                 ),
                 Expanded(
                   child: controller.isLoading && controller.plans.isEmpty
@@ -153,17 +155,12 @@ class _MembershipPageState extends State<MembershipPage> {
                                       ),
                                     ),
                                   )
-                                else
-                                  for (final plan in controller.plans)
-                                    _MembershipPlanCard(
-                                      plan: plan,
-                                      tier: _resolvePlanTier(
-                                        plan,
-                                        controller.plans,
-                                      ),
-                                      busy: controller.isLoading,
-                                      onBuy: () => _reviewPurchase(plan),
-                                    ),
+                                else if (controller.plans.isNotEmpty)
+                                  _MembershipPlanCarousel(
+                                    plans: controller.plans,
+                                    busy: controller.isLoading,
+                                    onBuy: _reviewPurchase,
+                                  ),
                               ],
 
                               // 3. LỊCH SỬ GÓI & GIAO DỊCH
@@ -311,11 +308,11 @@ class _PendingCheckoutBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Giao dịch chờ thanh toán',
                       style: TextStyle(
                         color: MetaGymTheme.textPrimary,
@@ -323,10 +320,10 @@ class _PendingCheckoutBanner extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'VNPAY-QR · Giả lập',
-                      style: TextStyle(
+                      '${formatPaymentMethodLabel(payment.method)} · Chờ xác nhận',
+                      style: const TextStyle(
                         color: MetaGymTheme.warningAmber,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -670,6 +667,204 @@ _PlanTierMeta _resolvePlanTier(
   );
 }
 
+class _MembershipPlanCarousel extends StatefulWidget {
+  const _MembershipPlanCarousel({
+    required this.plans,
+    required this.busy,
+    required this.onBuy,
+  });
+
+  final List<MembershipPlan> plans;
+  final bool busy;
+  final ValueChanged<MembershipPlan> onBuy;
+
+  @override
+  State<_MembershipPlanCarousel> createState() =>
+      _MembershipPlanCarouselState();
+}
+
+class _MembershipPlanCarouselState extends State<_MembershipPlanCarousel> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Widget _card(MembershipPlan plan) => _MembershipPlanCard(
+    plan: plan,
+    tier: _resolvePlanTier(plan, widget.plans),
+    busy: widget.busy,
+    onBuy: () => widget.onBuy(plan),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final plans = widget.plans;
+    if (plans.length == 1) return _card(plans.single);
+
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final scrollBehavior = ScrollConfiguration.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        final peek = constraints.maxWidth >= 300 ? 26.0 : 0.0;
+        final cardWidth = constraints.maxWidth - peek;
+        final stride = cardWidth + gap;
+        double position() => _scroll.hasClients ? _scroll.offset / stride : 0;
+        double focusAt(double page, int index) {
+          final distance = (page - index).abs().clamp(0.0, 1.0);
+          return 1 - Curves.easeInOut.transform(distance);
+        }
+
+        return Column(
+          children: [
+            ScrollConfiguration(
+              behavior: scrollBehavior.copyWith(
+                dragDevices: {
+                  ...scrollBehavior.dragDevices,
+                  PointerDeviceKind.mouse,
+                },
+              ),
+              child: SingleChildScrollView(
+                controller: _scroll,
+                scrollDirection: Axis.horizontal,
+                physics: disableAnimations
+                    ? null
+                    : _MembershipPlanSnapPhysics(stride: stride),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (index, plan) in plans.indexed) ...[
+                      if (index > 0) const SizedBox(width: gap),
+                      SizedBox(
+                        width: cardWidth,
+                        child: AnimatedBuilder(
+                          animation: _scroll,
+                          child: _card(plan),
+                          builder: (context, child) {
+                            if (disableAnimations) return child!;
+                            return Transform.scale(
+                              alignment: Alignment.topCenter,
+                              scale: 0.98 + focusAt(position(), index) * 0.02,
+                              child: child,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                    SizedBox(width: peek),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedBuilder(
+              animation: _scroll,
+              builder: (context, _) {
+                final page = position();
+                final selected = page.round().clamp(0, plans.length - 1);
+                return Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (final (index, plan) in plans.indexed)
+                      Semantics(
+                        selected: selected == index,
+                        child: IconButton(
+                          tooltip: plan.name,
+                          onPressed: () {
+                            final offset = (index * stride)
+                                .clamp(0.0, _scroll.position.maxScrollExtent)
+                                .toDouble();
+                            if (disableAnimations) {
+                              _scroll.jumpTo(offset);
+                            } else {
+                              _scroll.animateTo(
+                                offset,
+                                duration: const Duration(milliseconds: 280),
+                                curve: Curves.easeOutCubic,
+                              );
+                            }
+                          },
+                          icon: _PlanPositionDot(
+                            emphasis: disableAnimations
+                                ? (selected == index ? 1 : 0)
+                                : focusAt(page, index),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PlanPositionDot extends StatelessWidget {
+  const _PlanPositionDot({required this.emphasis});
+
+  final double emphasis;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 6 + 12 * emphasis,
+      height: 6,
+      decoration: BoxDecoration(
+        color: Color.lerp(
+          MetaGymTheme.textSecondary,
+          MetaGymTheme.brandOrange,
+          emphasis,
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+  }
+}
+
+class _MembershipPlanSnapPhysics extends ScrollPhysics {
+  const _MembershipPlanSnapPhysics({required this.stride, super.parent});
+
+  final double stride;
+
+  @override
+  _MembershipPlanSnapPhysics applyTo(ScrollPhysics? ancestor) =>
+      _MembershipPlanSnapPhysics(stride: stride, parent: buildParent(ancestor));
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    if (position.outOfRange ||
+        (position.pixels <= position.minScrollExtent && velocity <= 0) ||
+        (position.pixels >= position.maxScrollExtent && velocity >= 0)) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+
+    final page = position.pixels / stride;
+    final momentum = (velocity / 900).clamp(-0.5, 0.5);
+    final target = ((page + momentum).round() * stride).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    final tolerance = toleranceFor(position);
+    if ((target - position.pixels).abs() < tolerance.distance) return null;
+
+    return ScrollSpringSimulation(
+      const SpringDescription(mass: 1, stiffness: 170, damping: 25),
+      position.pixels,
+      target,
+      velocity.clamp(-stride * 4, stride * 4),
+      tolerance: tolerance,
+    );
+  }
+}
+
 class _MembershipPlanCard extends StatelessWidget {
   const _MembershipPlanCard({
     required this.plan,
@@ -785,6 +980,8 @@ class _MembershipPlanCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               description.trim(),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Color(0xFFE0D9CE),
                 fontSize: 13.5,

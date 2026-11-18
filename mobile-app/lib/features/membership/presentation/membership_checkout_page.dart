@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -6,6 +9,8 @@ import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MembershipCheckoutPage extends StatefulWidget {
   const MembershipCheckoutPage({super.key, this.plan, this.quote});
@@ -17,15 +22,114 @@ class MembershipCheckoutPage extends StatefulWidget {
   State<MembershipCheckoutPage> createState() => _MembershipCheckoutPageState();
 }
 
-class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
+class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
+    with WidgetsBindingObserver {
   late bool _reviewing = widget.quote != null;
+  late final Timer _statusPoll;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _statusPoll = Timer.periodic(
+      const Duration(seconds: 4),
+      (timer) => _refreshOnlinePaymentIfPending(
+        allowZalopayQuery: timer.tick % 15 == 0,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _statusPoll.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshOnlinePaymentIfPending(reconcile: true);
+    }
+  }
+
+  void _refreshOnlinePaymentIfPending({
+    bool reconcile = false,
+    bool allowZalopayQuery = false,
+  }) {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+    final controller = context.read<MembershipController>();
+    final method = controller.pendingPayment?.method;
+    if (['ZALOPAY', 'MOMO', 'VNPAY'].contains(method)) {
+      unawaited(
+        controller.refreshPayment(
+          reconcile: reconcile || (allowZalopayQuery && method == 'ZALOPAY'),
+        ),
+      );
+    }
+  }
+
+  Uri? _paymentCheckoutUri(Payment payment) {
+    final url = Uri.tryParse(payment.paymentUrl ?? '');
+    if (url == null ||
+        url.scheme != 'https' ||
+        url.port != 443 ||
+        url.userInfo.isNotEmpty) {
+      return null;
+    }
+    final validCheckout = switch (payment.method) {
+      'ZALOPAY' => [
+        'qcgateway.zalopay.vn',
+        'sbgateway.zalopay.vn',
+      ].contains(url.host),
+      'MOMO' =>
+        url.host == 'test-payment.momo.vn' &&
+            (url.path == '/v2/gateway/pay' ||
+                url.path == '/gateway/pay' ||
+                url.path.startsWith('/gw_payment/')),
+      'VNPAY' =>
+        url.host == 'sandbox.vnpayment.vn' &&
+            url.path == '/paymentv2/vpcpay.html',
+      _ => false,
+    };
+    return validCheckout ? url : null;
+  }
+
+  Future<void> _openOnlinePayment(Payment payment) async {
+    final url = _paymentCheckoutUri(payment);
+    if (url != null) {
+      try {
+        if (await launchUrl(
+          url,
+          mode: kIsWeb
+              ? LaunchMode.platformDefault
+              : LaunchMode.externalApplication,
+          webOnlyWindowName: payment.method == 'ZALOPAY' ? '_blank' : '_self',
+        )) {
+          return;
+        }
+      } catch (_) {
+        // Keep the order recoverable and let the member try opening it again.
+      }
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Chưa mở được ${formatPaymentMethodLabel(payment.method)}. Hãy kiểm tra trạng thái rồi thử lại.',
+        ),
+      ),
+    );
+  }
 
   Future<void> _copyText(String value, String message) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _cancel(MembershipController controller) async {
@@ -80,10 +184,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              color: Color(0xFFB7B2AF),
-              fontSize: 13.5,
-            ),
+            style: const TextStyle(color: Color(0xFFB7B2AF), fontSize: 13.5),
           ),
         ),
         const SizedBox(width: 12),
@@ -123,7 +224,10 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
     final plan = widget.plan;
     final reviewing = _reviewing && quote != null && plan != null;
     final pending = payment?.status == 'PENDING';
+    final succeeded = !reviewing && payment?.status == 'SUCCESS';
     final mock = payment?.method == 'MOCK_QR';
+    final online = ['ZALOPAY', 'MOMO', 'VNPAY'].contains(payment?.method);
+    final checkoutUri = payment == null ? null : _paymentCheckoutUri(payment);
     final title = reviewing
         ? 'Kiểm tra đơn'
         : pending
@@ -163,8 +267,33 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                       if (!reviewing && !pending && payment != null)
                         _CheckoutOutcomeHero(payment: payment),
 
-                      // BƯỚC 2: ĐẶT CỔNG VNPAY-QR & CỤM THAO TÁC CHÍNH LÊN TRÊN ĐỂ THAO TÁC NGAY
                       if (!reviewing && pending) ...[
+                        if (online && payment != null) ...[
+                          if (payment.method == 'ZALOPAY' &&
+                              checkoutUri != null)
+                            _ZalopayQrCard(data: payment.paymentUrl!)
+                          else
+                            MetaGymGlassCard(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                checkoutUri == null
+                                    ? 'Chưa có liên kết thanh toán. Hãy bấm Kiểm tra trạng thái để thử lại.'
+                                    : 'Đang chờ ${formatPaymentMethodLabel(payment.method)} xác nhận. Sau khi thanh toán, quay lại MetaGym để xem kết quả.',
+                                style: const TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                          if (checkoutUri != null) ...[
+                            const SizedBox(height: 10),
+                            MembershipPrimaryButton(
+                              label:
+                                  'Mở lại ${formatPaymentMethodLabel(payment.method)}',
+                              icon: Icons.open_in_new_rounded,
+                              onPressed: () => _openOnlinePayment(payment),
+                            ),
+                          ],
+                        ],
                         if (mock) ...[
                           _VnPaySandboxQrCard(
                             qrSeed:
@@ -173,10 +302,8 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                                 'META-GYM-MOCK',
                             qrPayload: payment?.qrPayload,
                             amount: amount,
-                            onCopy: (text) => _copyText(
-                              text,
-                              'Đã sao chép mã giao dịch.',
-                            ),
+                            onCopy: (text) =>
+                                _copyText(text, 'Đã sao chép mã giao dịch.'),
                           ),
                           const SizedBox(height: 10),
                           MembershipPrimaryButton(
@@ -189,7 +316,8 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                           const SizedBox(height: 8),
                           _RefreshStatusButton(
                             busy: busy,
-                            onPressed: controller.refreshPayment,
+                            onPressed: () =>
+                                controller.refreshPayment(reconcile: online),
                           ),
                           Wrap(
                             alignment: WrapAlignment.center,
@@ -254,13 +382,19 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                               ),
                               const SizedBox(height: 10),
                               _info('Gói tập', plan.name),
-                              _info('Thời hạn', '${quote.durationDays} ngày'),
                               _info(
-                                'Bắt đầu dự kiến',
-                                formatMembershipDate(quote.startDate),
+                                quote.isRenewal ? 'Cộng thêm' : 'Thời hạn',
+                                '${quote.durationDays} ngày',
                               ),
+                              if (!quote.isRenewal)
+                                _info(
+                                  'Bắt đầu dự kiến',
+                                  formatMembershipDate(quote.startDate),
+                                ),
                               _info(
-                                'Hết hạn dự kiến',
+                                quote.isRenewal
+                                    ? 'Hạn mới dự kiến'
+                                    : 'Hết hạn dự kiến',
                                 formatMembershipDate(quote.endDate),
                               ),
                               if (plan.description case final description?
@@ -394,7 +528,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Hệ thống sẽ khởi tạo mã VNPAY-QR giả lập để bạn xác nhận thanh toán.',
+                                  'MetaGym sẽ tạo mã QR để bạn thanh toán thử bằng ví ZaloPay Sandbox.',
                                   style: TextStyle(
                                     color: Color(0xFFD5CCBF),
                                     fontSize: 12.5,
@@ -406,17 +540,24 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                           ),
                         ),
                         MembershipPrimaryButton(
-                          label: busy ? 'Đang tạo giao dịch…' : 'Tạo giao dịch',
-                          icon: busy ? null : Icons.qr_code_2_rounded,
+                          label: busy
+                              ? 'Đang tạo giao dịch…'
+                              : 'Thanh toán bằng ZaloPay',
+                          icon: busy ? null : Icons.open_in_new_rounded,
                           onPressed: busy
                               ? null
                               : () async {
                                   if (await controller.buy(plan) && mounted) {
                                     setState(() => _reviewing = false);
+                                    final order = controller.pendingPayment;
+                                    if (order?.paymentUrl != null &&
+                                        order?.method != 'ZALOPAY') {
+                                      await _openOnlinePayment(order!);
+                                    }
                                   }
                                 },
                         ),
-                      ] else if (!pending) ...[
+                      ] else if (!pending && !succeeded) ...[
                         MembershipPrimaryButton(
                           label: 'Về Gói tập',
                           icon: Icons.check_rounded,
@@ -426,6 +567,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
                     ],
                   ),
                 ),
+                if (succeeded) const _SuccessfulCheckoutReturn(),
               ],
             ),
           ),
@@ -433,6 +575,70 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage> {
       ),
     );
   }
+}
+
+class _SuccessfulCheckoutReturn extends StatefulWidget {
+  const _SuccessfulCheckoutReturn();
+
+  @override
+  State<_SuccessfulCheckoutReturn> createState() =>
+      _SuccessfulCheckoutReturnState();
+}
+
+class _SuccessfulCheckoutReturnState extends State<_SuccessfulCheckoutReturn> {
+  late final Timer _timer;
+  int _secondsLeft = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final remaining = (10 - timer.tick).clamp(0, 10);
+      if (_secondsLeft != remaining) {
+        setState(() => _secondsLeft = remaining);
+      }
+      if (remaining == 0) _returnToMembership();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _returnToMembership() {
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    _timer.cancel();
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _secondsLeft > 0
+              ? 'Tự động về Gói tập sau $_secondsLeft giây'
+              : 'Đang về Gói tập…',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: MetaGymTheme.textSecondary,
+            fontSize: 13,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+        const SizedBox(height: 8),
+        MembershipPrimaryButton(
+          label: 'Về Gói tập',
+          icon: Icons.check_rounded,
+          onPressed: _returnToMembership,
+        ),
+      ],
+    ),
+  );
 }
 
 class _RefreshStatusButton extends StatelessWidget {
@@ -552,6 +758,43 @@ class _CheckoutStepper extends StatelessWidget {
   }
 }
 
+class _ZalopayQrCard extends StatelessWidget {
+  const _ZalopayQrCard({required this.data});
+
+  final String data;
+
+  @override
+  Widget build(BuildContext context) => MetaGymGlassCard(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        const Text(
+          'Mã QR ZaloPay Sandbox',
+          style: TextStyle(
+            color: MetaGymTheme.textPrimary,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 12),
+        QrImageView(
+          data: data,
+          size: 224,
+          padding: const EdgeInsets.all(20),
+          backgroundColor: Colors.white,
+          semanticsLabel: 'Mã QR thanh toán thử nghiệm ZaloPay',
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Mở ví ZaloPay Sandbox trên điện thoại khác và quét mã này.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: MetaGymTheme.textPrimary),
+        ),
+      ],
+    ),
+  );
+}
+
 class _VnPaySandboxQrCard extends StatelessWidget {
   const _VnPaySandboxQrCard({
     required this.qrSeed,
@@ -609,10 +852,7 @@ class _VnPaySandboxQrCard extends StatelessWidget {
           const SizedBox(height: 2),
           const Text(
             'Chế độ thử nghiệm. Không chuyển tiền thật.',
-            style: TextStyle(
-              color: Color(0xFFD5CCBF),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Color(0xFFD5CCBF), fontSize: 12),
           ),
           const SizedBox(height: 12),
           SimulatedVnPayQrBox(payload: qrSeed),

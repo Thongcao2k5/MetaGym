@@ -113,16 +113,15 @@ test('PostgreSQL payment and coaching flow preserves ownership, capacity and his
       const second = await call(base, '/payments', member, 'POST', { planId }, randomUUID());
       assert.equal(second.status, 201);
       assert.equal(second.body.data.amount, 200000);
+      const renewalQuote = await call(base, `/membership-plans/${planId}/quote`, member);
+      assert.equal(renewalQuote.status, 200);
+      assert.equal(renewalQuote.body.data.isRenewal, true);
       const extended = await call(base, `/payments/${second.body.data.id}/mock-confirmations`,
         member, 'POST', {});
       assert.equal(extended.status, 200);
-      assert.equal(extended.body.data.membership.status, 'SCHEDULED');
-      const dates = (await database.query(
-        `SELECT start_date::text, end_date::text FROM member_memberships
-         WHERE member_id = $1 ORDER BY start_date`, [memberId])).rows;
-      const dayAfter = new Date(`${dates[0].end_date}T00:00:00Z`);
-      dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
-      assert.equal(dates[1].start_date, dayAfter.toISOString().slice(0, 10));
+      assert.equal(extended.body.data.membership.status, 'ACTIVE');
+      assert.equal(extended.body.data.membership.id, confirmations[0].body.data.membership.id);
+      assert.equal(extended.body.data.membership.endDate, renewalQuote.body.data.endDate);
       await database.query(
         `INSERT INTO membership_plans (id, name, price, duration_days, status, created_by)
          VALUES ($1, 'Day', 60000, 1, 'ACTIVE', $3), ($2, 'Year', 5000000, 365, 'ACTIVE', $3)`,
@@ -137,17 +136,18 @@ test('PostgreSQL payment and coaching flow preserves ownership, capacity and his
       const renewals = await Promise.all(intents.map(({ body }) =>
         call(base, `/payments/${body.data.id}/mock-confirmations`, member, 'POST', {})));
       assert.deepEqual(renewals.map((renewal) => renewal.status), [200, 200]);
-      const queued = (await call(base, '/memberships/me', member)).body.data;
-      assert.equal(queued.length, 4);
-      for (let i = 1; i < queued.length; i += 1) {
-        const nextDay = new Date(`${queued[i - 1].endDate}T00:00:00Z`);
-        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
-        assert.equal(queued[i].startDate, nextDay.toISOString().slice(0, 10));
-      }
-      for (const [i, duration] of [1, 365].entries()) {
-        const { startDate, endDate } = renewals[i].body.data.membership;
-        assert.equal((Date.parse(endDate) - Date.parse(startDate)) / 86400000 + 1, duration);
-      }
+      const memberships = (await call(base, '/memberships/me', member)).body.data;
+      assert.equal(memberships.length, 1);
+      const [current] = memberships;
+      assert.equal(current.id, extended.body.data.membership.id);
+      assert.equal(current.startDate, quote.body.data.startDate);
+      assert.equal((Date.parse(current.endDate) - Date.parse(current.startDate)) / 86400000 + 1,
+        30 + 30 + 1 + 365);
+      assert.ok(renewals.every(({ body }) => body.data.payment.membershipId === current.id));
+      const replay = await call(base, `/payments/${second.body.data.id}/mock-confirmations`,
+        member, 'POST', {});
+      assert.equal(replay.status, 200);
+      assert.equal(replay.body.data.membership.endDate, current.endDate);
       const requested = await call(base, '/coach-requests', member, 'POST', { coachId });
       assert.equal(requested.status, 201, JSON.stringify(requested.body));
       assert.equal((await call(base, '/coach-requests', member, 'POST',

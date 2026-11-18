@@ -47,6 +47,7 @@ abstract final class AppRoutes {
   static const profile = '/profile';
   static const changePassword = '/profile/change-password';
   static const memberHome = '/member';
+  static const membership = '/member/features/membership';
   static const coachHome = '/coach';
   static const memberWorkbench = '/member/test-flows';
   static const coachWorkbench = '/coach/test-flows';
@@ -58,11 +59,29 @@ GoRouter createAppRouter({
   GlobalKey<NavigatorState>? navigatorKey,
   String initialLocation = AppRoutes.welcome,
 }) {
+  String? pendingPaymentReturn;
+  final paymentIdPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
   return GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: initialLocation,
     refreshListenable: sessionController,
     redirect: (context, state) {
+      final query = state.uri.queryParameters;
+      final key = query.containsKey('momoPaymentId')
+          ? 'momoPaymentId'
+          : 'vnpayPaymentId';
+      final paymentId = query[key];
+      if (sessionController.status != SessionStatus.authenticated &&
+          state.uri.path == AppRoutes.membership &&
+          paymentId != null &&
+          paymentIdPattern.hasMatch(paymentId)) {
+        pendingPaymentReturn = Uri(
+          path: AppRoutes.membership,
+          queryParameters: {key: paymentId},
+        ).toString();
+      }
       if (sessionController.status == SessionStatus.restoring) {
         return state.matchedLocation == AppRoutes.loading
             ? null
@@ -81,6 +100,13 @@ GoRouter createAppRouter({
       }
 
       final home = _homeForRole(sessionController.user!.role);
+      final returnLocation = pendingPaymentReturn;
+      pendingPaymentReturn = null;
+      if (home == AppRoutes.memberHome &&
+          returnLocation != null &&
+          state.uri.toString() != returnLocation) {
+        return returnLocation;
+      }
       const sharedProtectedRoutes = {
         AppRoutes.profile,
         AppRoutes.changePassword,
@@ -157,9 +183,17 @@ GoRouter createAppRouter({
       for (final destination in memberDestinations)
         GoRoute(
           path: destination.path,
-          builder: (context, state) =>
-              destination.path == '/member/features/membership'
-              ? const MembershipPage()
+          builder: (context, state) => destination.path == AppRoutes.membership
+              ? MembershipPage(
+                  key: ValueKey(state.uri.query),
+                  paymentReturnId:
+                      state.uri.queryParameters['momoPaymentId'] ??
+                      state.uri.queryParameters['vnpayPaymentId'],
+                  paymentReturnMethod:
+                      state.uri.queryParameters.containsKey('momoPaymentId')
+                      ? 'MOMO'
+                      : 'VNPAY',
+                )
               : destination.path == '/member/features/payments'
               ? const PaymentHistoryPage()
               : destination.path == '/member/features/gym'
