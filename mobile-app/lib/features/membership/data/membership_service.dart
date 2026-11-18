@@ -17,3 +17,7 @@ abstract interface class MembershipCheckoutService {
   Future<Payment> getPayment(String id);
   Future<Payment> cancelPayment(String id);
 }
+
+abstract interface class MembershipOnlinePaymentService {
+  Future<Payment> reconcileOnlinePayment(String id, {required String method});
+}

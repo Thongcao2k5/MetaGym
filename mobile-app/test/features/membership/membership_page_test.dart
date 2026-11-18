@@ -5,6 +5,7 @@ import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 void main() {
   testWidgets('buy and confirm flow shows the current membership', (
@@ -21,7 +22,7 @@ void main() {
     await tester.tap(find.text('Mua'));
     await tester.pumpAndSettle();
     expect(find.text('Bắt đầu dự kiến'), findsOneWidget);
-    await tester.tap(find.text('Tạo giao dịch'));
+    await tester.tap(find.text('Thanh toán bằng ZaloPay'));
     await tester.pumpAndSettle();
     expect(find.text('META-GYM-MOCK:MG-1'), findsOneWidget);
 
@@ -29,6 +30,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Thanh toán thành công'), findsOneWidget);
     expect(find.text('20/11/2026'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('resumes and cancels a pending checkout from the backend', (
@@ -67,6 +69,39 @@ void main() {
     await tester.tap(find.text('Về Gói tập'));
     await tester.pumpAndSettle();
     expect(find.text('Mua'), findsOneWidget);
+  });
+
+  testWidgets('shows a QR for a pending ZaloPay order', (tester) async {
+    const orderUrl =
+        'https://qcgateway.zalopay.vn/openinapp?order=sandbox-order';
+    final controller = MembershipController(
+      _MembershipFixture(
+        recovered: const Payment(
+          id: 'zalopay-pending',
+          status: 'PENDING',
+          method: 'ZALOPAY',
+          amount: 150000,
+          paymentUrl: orderUrl,
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: controller,
+        child: const MaterialApp(home: MembershipPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tiếp tục thanh toán'));
+    await tester.pumpAndSettle();
+    final qr = find.byType(QrImageView);
+    expect(qr, findsOneWidget);
+    expect(
+      find.descendant(of: qr, matching: find.byType(CustomPaint)),
+      findsWidgets,
+    );
+    expect(find.text('Mã QR ZaloPay Sandbox'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets(

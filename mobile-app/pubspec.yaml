@@ -47,6 +47,8 @@ dependencies:
   supabase: ^2.16.5
   video_player: 2.14.1
   youtube_player_iframe: 6.0.2
+  url_launcher: ^6.3.3
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

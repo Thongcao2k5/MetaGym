@@ -4,6 +4,9 @@ import { createApp } from './app.js';
 import { createDatabasePool } from './config/database.js';
 import { createRealtimeFromEnv } from './config/realtime.js';
 import { createLiveKitFromEnv } from './config/livekit.js';
+import { createVnpayFromEnv } from './config/vnpay.js';
+import { createMomoFromEnv } from './config/momo.js';
+import { createZalopayFromEnv } from './config/zalopay.js';
 import {
   createAiResponderFromEnv,
   createCallTokenProviderFromEnv,
@@ -14,8 +17,29 @@ import { createImageStorageFromEnv } from './storage/image-storage.js';
 const port = Number(process.env.PORT ?? 3000);
 const database = createDatabasePool();
 const imageStorage = createImageStorageFromEnv(process.env);
+let vnpay;
+try {
+  vnpay = createVnpayFromEnv();
+} catch {
+  console.error('Kiểm tra cấu hình merchant và URL HTTPS của VNPay Sandbox.');
+}
+let momo;
+try {
+  momo = createMomoFromEnv();
+} catch {
+  console.error('Kiểm tra cấu hình merchant và URL HTTPS của MoMo Sandbox.');
+}
+let zalopay;
+try {
+  zalopay = createZalopayFromEnv();
+} catch {
+  console.error('Kiểm tra cấu hình merchant của ZaloPay Sandbox.');
+}
 const app = createApp({
   database,
+  vnpay,
+  momo,
+  zalopay,
   realtime: createRealtimeFromEnv(),
   imageStorage,
   sendPasswordResetCode: createPasswordResetSenderFromEnv(),

@@ -128,7 +128,7 @@ class MembershipController extends ChangeNotifier {
         ),
       );
       if (generation != _generation) return false;
-      pendingPayment = payment;
+      pendingPayment = payment.status == 'PENDING' ? payment : null;
       checkoutPayment = payment;
       _purchaseKeys.remove(plan.id);
       return true;
@@ -177,10 +177,35 @@ class MembershipController extends ChangeNotifier {
     }
   }
 
-  Future<void> refreshPayment() async {
-    final service = checkoutService;
-    if (service != null) await _updatePayment(service.getPayment);
+  Future<void> refreshPayment({bool reconcile = false}) async {
+    final service = _onlinePaymentService;
+    final method = pendingPayment?.method;
+    if (reconcile &&
+        service != null &&
+        ['ZALOPAY', 'MOMO', 'VNPAY'].contains(method)) {
+      await _updatePayment(
+        (id) => service.reconcileOnlinePayment(id, method: method!),
+      );
+      return;
+    }
+    final checkout = checkoutService;
+    if (checkout != null) await _updatePayment(checkout.getPayment);
   }
+
+  Future<bool> resumeOnlinePayment(String id, {required String method}) async {
+    final service = _onlinePaymentService;
+    if (service == null) return false;
+    return _updatePayment(
+      (id) => service.reconcileOnlinePayment(id, method: method),
+      paymentId: id,
+    );
+  }
+
+  MembershipOnlinePaymentService? get _onlinePaymentService =>
+      switch (_service) {
+        final MembershipOnlinePaymentService service => service,
+        _ => null,
+      };
 
   Future<void> cancelPayment() async {
     final service = checkoutService;
@@ -189,30 +214,40 @@ class MembershipController extends ChangeNotifier {
     }
   }
 
-  Future<void> _updatePayment(Future<Payment> Function(String) update) async {
-    final payment = pendingPayment;
-    if (payment == null || isLoading || isConfirming) return;
+  Future<bool> _updatePayment(
+    Future<Payment> Function(String) update, {
+    String? paymentId,
+  }) async {
+    final id = paymentId ?? pendingPayment?.id;
+    if (id == null || isLoading || isConfirming) return false;
     final generation = _generation;
     isConfirming = true;
     errorMessage = null;
     notifyListeners();
     try {
-      final latest = await update(payment.id);
-      if (generation != _generation) return;
+      final latest = await update(id);
+      if (generation != _generation) return false;
+      purchaseResult = null;
       if (latest.status == 'SUCCESS') {
         final current = await _service.getCurrentMemberships();
         final all = await _service.getMembershipHistory();
-        if (generation != _generation) return;
+        if (generation != _generation) return false;
         memberships = current;
         history = all;
         purchaseResult = all
-            .where((item) => item.sourcePaymentId == latest.id)
+            .where(
+              (item) =>
+                  item.id == latest.membershipId ||
+                  item.sourcePaymentId == latest.id,
+            )
             .firstOrNull;
       }
       checkoutPayment = latest;
       pendingPayment = latest.status == 'PENDING' ? latest : null;
+      return true;
     } on ApiException catch (error) {
       if (generation == _generation) errorMessage = error.message;
+      return false;
     } finally {
       if (generation == _generation) {
         isConfirming = false;

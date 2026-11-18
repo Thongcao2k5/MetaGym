@@ -2,7 +2,11 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 
-class MembershipApi implements MembershipService, MembershipCheckoutService {
+class MembershipApi
+    implements
+        MembershipService,
+        MembershipCheckoutService,
+        MembershipOnlinePaymentService {
   const MembershipApi(this._client);
 
   final ApiClient _client;
@@ -25,7 +29,8 @@ class MembershipApi implements MembershipService, MembershipCheckoutService {
   }) async => (await _client.post<Payment>(
     '/payments',
     headers: {'idempotency-key': idempotencyKey},
-    body: {'planId': planId},
+    body: {'planId': planId, 'method': 'ZALOPAY'},
+    receiveTimeout: const Duration(seconds: 40),
     decode: Payment.fromJson,
   )).data;
 
@@ -39,12 +44,29 @@ class MembershipApi implements MembershipService, MembershipCheckoutService {
   @override
   Future<Payment?> getPendingPayment() async {
     final payments = await _list('/payments/me', Payment.fromJson);
-    return payments.where((payment) => payment.status == 'PENDING').firstOrNull;
+    return payments
+        .where(
+          (payment) =>
+              payment.method == 'ZALOPAY' && payment.status == 'PENDING',
+        )
+        .firstOrNull;
   }
 
   @override
   Future<Payment> getPayment(String id) async => (await _client.get<Payment>(
     '/payments/${Uri.encodeComponent(id)}',
+    decode: Payment.fromJson,
+  )).data;
+
+  @override
+  Future<Payment> reconcileOnlinePayment(
+    String id, {
+    required String method,
+  }) async => (await _client.post<Payment>(
+    '/payments/${Uri.encodeComponent(id)}/${method.toLowerCase()}-status',
+    receiveTimeout: method == 'MOMO' || method == 'ZALOPAY'
+        ? const Duration(seconds: 70)
+        : null,
     decode: Payment.fromJson,
   )).data;
 

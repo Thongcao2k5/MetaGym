@@ -236,13 +236,14 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
   void _handleDoubleTap() {
     final current = _transformController.value;
     if (!current.isIdentity()) {
-      _transformController.value = Matrix4.identity();
+      _transformController.value = current.clone()..setIdentity();
       return;
     }
     final position = _doubleTapDetails?.localPosition;
     if (position == null) return;
     const scale = 2.2;
-    _transformController.value = Matrix4.identity()
+    _transformController.value = current.clone()
+      ..setIdentity()
       ..translateByDouble(
         -position.dx * (scale - 1),
         -position.dy * (scale - 1),
