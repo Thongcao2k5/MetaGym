@@ -294,7 +294,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: Color(0xFFF7F9FC),
             fontSize: 19,
             fontWeight: FontWeight.w700,
           ),
@@ -370,7 +370,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                               child: Text(
                                 'Bảng giá gói PT đang mở bán',
                                 style: TextStyle(
-                                  color: MetaGymTheme.textPrimary,
+                                  color: Color(0xFFF7F9FC),
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -409,7 +409,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     child: Text(
                                       'Bảng giá và quyền lợi gói PT được đồng bộ theo cấu hình của phòng tập. Mỗi buổi huấn luyện có thời lượng 90 phút.',
                                       style: TextStyle(
-                                        color: Color(0xFFD2D5DB),
+                                        color: Color(0xFFB7B2AF),
                                         fontSize: 12.5,
                                         height: 1.48,
                                       ),
@@ -441,7 +441,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            color: MetaGymTheme.textPrimary,
+                                            color: Color(0xFFF7F9FC),
                                             fontSize: 15,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -450,7 +450,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                         const Text(
                                           'Huấn luyện cá nhân · mỗi buổi 90 phút',
                                           style: TextStyle(
-                                            color: MetaGymTheme.textSecondary,
+                                            color: Color(0xFFB7B2AF),
                                             fontSize: 12,
                                           ),
                                         ),
@@ -470,7 +470,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Gói Gym chưa hiệu lực',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
+                                        color: Color(0xFFF7F9FC),
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -479,7 +479,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Bạn vẫn có thể xem hồ sơ và giá gói Coach. Để mua, hãy có gói Gym còn hiệu lực.',
                                       style: TextStyle(
-                                        color: Color(0xFFC8CBD2),
+                                        color: Color(0xFFB7B2AF),
                                         fontSize: 12.5,
                                         height: 1.5,
                                       ),
@@ -508,7 +508,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Coach đã hết suất',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
+                                        color: Color(0xFFF7F9FC),
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -517,7 +517,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Bạn có thể nhắn Coach hoặc quay lại Khám phá để chọn người khác.',
                                       style: TextStyle(
-                                        color: Color(0xFFC8CBD2),
+                                        color: Color(0xFFB7B2AF),
                                         fontSize: 12.5,
                                         height: 1.5,
                                       ),
@@ -541,7 +541,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Bạn đã có Coach khác',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
+                                        color: Color(0xFFF7F9FC),
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -550,7 +550,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Mỗi hội viên chỉ có một Coach hiện hành. Xem thông tin Coach của bạn trước khi chọn người mới.',
                                       style: TextStyle(
-                                        color: Color(0xFFC8CBD2),
+                                        color: Color(0xFFB7B2AF),
                                         fontSize: 12.5,
                                         height: 1.5,
                                       ),
@@ -578,7 +578,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     const Text(
                                       'Gói nối tiếp',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
+                                        color: Color(0xFFF7F9FC),
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -589,7 +589,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                           ? 'Bạn đã có một gói Coach đang chờ kích hoạt sau gói hiện tại.'
                                           : 'Bạn đang tập cùng Coach này. Có thể mua một gói chờ kích hoạt sau gói hiện tại.',
                                       style: const TextStyle(
-                                        color: Color(0xFFC8CBD2),
+                                        color: Color(0xFFB7B2AF),
                                         fontSize: 12.5,
                                         height: 1.5,
                                       ),
@@ -761,7 +761,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     child: Text(
                                       'Thời hạn bắt đầu khi gói được kích hoạt. Khi gói Gym hết hạn, bạn tạm dừng đặt lịch với Coach. Thời hạn gói Coach vẫn tiếp tục tính.',
                                       style: TextStyle(
-                                        color: Color(0xFFD2D5DB),
+                                        color: Color(0xFFB7B2AF),
                                         fontSize: 12.5,
                                         height: 1.48,
                                       ),
@@ -802,7 +802,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                       highlight: true,
                                     ),
                                     const Divider(
-                                      color: Color(0x26FFFFFF),
+                                      color: Color(0x2EADA295),
                                       height: 22,
                                     ),
                                     CoachingPrimaryButton(
@@ -1005,7 +1005,7 @@ class _OfferPackageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CoachingGraphiteCard(
       margin: const EdgeInsets.only(bottom: 10),
-      borderColor: selected ? MetaGymTheme.primary : MetaGymTheme.cardBorder,
+      borderColor: selected ? MetaGymTheme.primary : const Color(0xA3A79D92),
       onTap: enabled ? onTap : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1017,7 +1017,7 @@ class _OfferPackageCard extends StatelessWidget {
                 child: Text(
                   offer['name'] as String,
                   style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                    color: Color(0xFFF7F9FC),
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1027,7 +1027,7 @@ class _OfferPackageCard extends StatelessWidget {
               CoachingPill(
                 label: readOnlyMode
                     ? 'Đang mở bán'
-                    : (selected ? 'Đã chọn' : 'Chọn gói'),
+                    : (selected ? 'Đang chọn' : 'Chọn gói'),
                 tone: readOnlyMode
                     ? CoachingPillTone.green
                     : (selected
@@ -1040,7 +1040,7 @@ class _OfferPackageCard extends StatelessWidget {
           Text(
             '${offer['sessionCount']} buổi · ${offer['durationDays']} ngày',
             style: const TextStyle(
-              color: Color(0xFFD9DADD),
+              color: Color(0xFFB7B2AF),
               fontSize: 13,
               fontWeight: FontWeight.w600,
               fontFeatures: MetaGymTheme.tabularFigures,
@@ -1049,9 +1049,11 @@ class _OfferPackageCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             formatVnd((offer['price'] as num?) ?? 0),
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
-              fontSize: 16,
+            style: TextStyle(
+              color: selected
+                  ? MetaGymTheme.brandOrange
+                  : const Color(0xFFF7F9FC),
+              fontSize: 16.5,
               fontWeight: FontWeight.w800,
               fontFeatures: MetaGymTheme.tabularFigures,
             ),
@@ -1084,10 +1086,7 @@ class _SummaryLine extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Color(0xFFB7B2AF), fontSize: 13),
             ),
           ),
           const SizedBox(width: 12),
@@ -1096,7 +1095,9 @@ class _SummaryLine extends StatelessWidget {
               value,
               textAlign: TextAlign.end,
               style: TextStyle(
-                color: MetaGymTheme.textPrimary,
+                color: highlight
+                    ? MetaGymTheme.brandOrange
+                    : const Color(0xFFF7F9FC),
                 fontSize: highlight ? 17 : 13.5,
                 fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
                 fontFeatures: MetaGymTheme.tabularFigures,

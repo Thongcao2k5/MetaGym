@@ -404,7 +404,6 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPending = request.status == 'PENDING';
     final tone = switch (request.status) {
       'PENDING' => CoachingPillTone.amber,
       'ACCEPTED' => CoachingPillTone.green,
@@ -412,12 +411,9 @@ class _RequestCard extends StatelessWidget {
       _ => CoachingPillTone.neutral,
     };
 
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      borderColor: isPending
-          ? MetaGymTheme.primary.withValues(alpha: 0.4)
-          : MetaGymTheme.cardBorder,
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       onTap: onTap,
       child: Row(
         children: [
@@ -436,7 +432,7 @@ class _RequestCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: MetaGymTheme.textPrimary,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -452,7 +448,7 @@ class _RequestCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Color(0xFFD2D6DE),
+                      color: Color(0xFFEAE6E2),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -463,7 +459,7 @@ class _RequestCard extends StatelessWidget {
                   Text(
                     'Gửi lúc ${formatVietnamTime(request.requestedAt)}',
                     style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFB7B2AF),
                       fontSize: 12,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
@@ -475,7 +471,7 @@ class _RequestCard extends StatelessWidget {
           const SizedBox(width: 8),
           const Icon(
             Icons.chevron_right_rounded,
-            color: MetaGymTheme.textSecondary,
+            color: Color(0xFFB7B2AF),
             size: 20,
           ),
         ],
@@ -497,8 +493,8 @@ class _EmptyStateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -507,11 +503,11 @@ class _EmptyStateCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: MetaGymTheme.elevatedSurface,
+              color: const Color(0x80211E1C),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: MetaGymTheme.cardBorder),
+              border: Border.all(color: const Color(0x9A8C8176)),
             ),
-            child: Icon(icon, color: MetaGymTheme.textSecondary, size: 20),
+            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -531,7 +527,7 @@ class _EmptyStateCard extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFB7B2AF),
                       fontSize: 12.5,
                       height: 1.45,
                     ),

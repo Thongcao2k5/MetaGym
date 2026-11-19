@@ -173,7 +173,9 @@ class _CoachRequestDetailPageState extends State<CoachRequestDetailPage> {
                               request.decidedAt != null)
                             _RequestNotesCard(request: request),
                           if (request.status == 'PENDING')
-                            CoachingGraphiteCard(
+                            MetaGymGlassCard(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -376,8 +378,9 @@ class _RequestNotesCard extends StatelessWidget {
     final hasMessage = request.message?.isNotEmpty == true;
     final hasRejection = request.rejectionReason?.isNotEmpty == true;
 
-    return CoachingGraphiteCard(
+    return MetaGymGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -385,7 +388,7 @@ class _RequestNotesCard extends StatelessWidget {
             'Thông tin yêu cầu',
             style: TextStyle(
               color: MetaGymTheme.textPrimary,
-              fontSize: 15.5,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -394,7 +397,7 @@ class _RequestNotesCard extends StatelessWidget {
             Text(
               'Lời nhắn: ${request.message}',
               style: const TextStyle(
-                color: Color(0xFFE3E7EE),
+                color: Color(0xFFEAE6E2),
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -402,7 +405,7 @@ class _RequestNotesCard extends StatelessWidget {
           ],
           if (hasRejection) ...[
             if (hasMessage)
-              const Divider(color: Color(0x1FD4E4FF), height: 20)
+              const Divider(color: Color(0x26FFFFFF), height: 20)
             else
               const SizedBox(height: 10),
             Text(
@@ -419,7 +422,7 @@ class _RequestNotesCard extends StatelessWidget {
             Text(
               'Thời gian xử lý: ${formatVietnamTime(request.decidedAt)}',
               style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
+                color: Color(0xFFB7B2AF),
                 fontSize: 12.5,
                 fontFeatures: MetaGymTheme.tabularFigures,
               ),

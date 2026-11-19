@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:provider/provider.dart';
 
@@ -223,9 +224,9 @@ class CoachingPill extends StatelessWidget {
         const Color(0xFFA54E36),
       ),
       CoachingPillTone.neutral => (
-        const Color(0xFFDCE0E7),
-        const Color(0xFF24262C),
-        const Color(0xFF494D58),
+        const Color(0xFFEAE6E2),
+        const Color(0x80211E1C),
+        const Color(0x9A8C8176),
       ),
     };
 
@@ -280,25 +281,13 @@ class CoachingGraphiteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
-    final body = Material(
-      color: MetaGymTheme.cardSurface,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(color: borderColor ?? MetaGymTheme.cardBorder),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: onTap == null
-          ? Padding(padding: padding, child: child)
-          : InkWell(
-              onTap: onTap,
-              borderRadius: radius,
-              child: Padding(padding: padding, child: child),
-            ),
+    return MetaGymGlassCard(
+      margin: margin,
+      padding: padding,
+      borderColor: borderColor,
+      onTap: onTap,
+      child: child,
     );
-
-    if (margin != null) return Padding(padding: margin!, child: body);
-    return body;
   }
 }
 
@@ -614,12 +603,12 @@ class CoachingSecondaryButton extends StatelessWidget {
     final button = OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: MetaGymTheme.textPrimary,
-        backgroundColor: MetaGymTheme.elevatedSurface,
+        foregroundColor: const Color(0xFFF7F9FC),
+        backgroundColor: const Color(0x332B2622),
         disabledForegroundColor: MetaGymTheme.textSecondary,
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
+        side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
         ),

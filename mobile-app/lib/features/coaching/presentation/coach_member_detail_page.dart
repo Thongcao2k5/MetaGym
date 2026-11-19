@@ -256,9 +256,9 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                           if (showHealth)
                             _HealthDeclarationCard(member: member),
                           if (member.status == 'ACTIVE') ...[
-                            CoachingGraphiteCard(
-                              margin: const EdgeInsets.only(bottom: 14),
-                              padding: const EdgeInsets.all(14),
+                            MetaGymGlassCard(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -266,7 +266,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                     'Thao tác nhanh với học viên',
                                     style: TextStyle(
                                       color: MetaGymTheme.textPrimary,
-                                      fontSize: 15,
+                                      fontSize: 15.5,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -326,8 +326,9 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                               ),
                             ),
                           ],
-                          CoachingGraphiteCard(
-                            margin: const EdgeInsets.only(bottom: 14),
+                          MetaGymGlassCard(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -345,8 +346,8 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                   const Text(
                                     'Quản trị viên đang xem xét yêu cầu ngừng phụ trách của bạn.',
                                     style: TextStyle(
-                                      color: MetaGymTheme.textSecondary,
-                                      fontSize: 12.5,
+                                      color: Color(0xFFB7B2AF),
+                                      fontSize: 13,
                                       height: 1.45,
                                     ),
                                   ),
@@ -394,12 +395,14 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                               ),
                             ),
                             if (_outcomes.isEmpty)
-                              const CoachingGraphiteCard(
+                              const MetaGymGlassCard(
+                                margin: EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.all(16),
                                 child: Row(
                                   children: [
                                     Icon(
                                       Icons.emoji_events_outlined,
-                                      color: MetaGymTheme.textSecondary,
+                                      color: Color(0xFFB7B2AF),
                                       size: 20,
                                     ),
                                     SizedBox(width: 10),
@@ -407,7 +410,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                       child: Text(
                                         'Chưa có thành quả nào được gửi cho học viên này.',
                                         style: TextStyle(
-                                          color: MetaGymTheme.textSecondary,
+                                          color: Color(0xFFB7B2AF),
                                           fontSize: 13,
                                           height: 1.45,
                                         ),
@@ -545,8 +548,9 @@ class _HealthDeclarationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CoachingGraphiteCard(
+    return MetaGymGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -563,7 +567,7 @@ class _HealthDeclarationCard extends StatelessWidget {
                   'Khai báo thể trạng',
                   style: TextStyle(
                     color: MetaGymTheme.textPrimary,
-                    fontSize: 15.5,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

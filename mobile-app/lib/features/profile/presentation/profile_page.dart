@@ -152,9 +152,7 @@ class _ProfilePageState extends State<ProfilePage> {
           user?.avatarUrl != null &&
           user!.avatarUrl!.isNotEmpty &&
           controller != null) {
-        final serverBytes = await controller.fetchAvatarBytes(
-          user.avatarUrl!,
-        );
+        final serverBytes = await controller.fetchAvatarBytes(user.avatarUrl!);
         if (serverBytes != null && serverBytes.isNotEmpty) {
           if (file != null) {
             await file.writeAsBytes(serverBytes, flush: true);
@@ -396,38 +394,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _ => code,
   };
 
-  int get _profileCompletionPercent {
-    if (_role == UserRole.member) {
-      final checks = [
-        _fullName.trim().isNotEmpty,
-        _phone.trim().isNotEmpty,
-        _dateOfBirth.trim().isNotEmpty,
-        _gender.trim().isNotEmpty,
-        _heightCm > 0,
-        _fitnessGoal.trim().isNotEmpty,
-        _experienceLevel.trim().isNotEmpty,
-        _activityLevel.trim().isNotEmpty,
-        _healthNotes.trim().isNotEmpty || _injuryNotes.trim().isNotEmpty,
-        _dietaryPreferences.trim().isNotEmpty,
-      ];
-      final done = checks.where((c) => c).length;
-      return ((done / checks.length) * 100).round();
-    }
-    if (_role == UserRole.coach) {
-      final checks = [
-        _fullName.trim().isNotEmpty,
-        _phone.trim().isNotEmpty,
-        _biography.trim().isNotEmpty,
-        _specialties.isNotEmpty,
-        _qualifications.trim().isNotEmpty,
-        _availabilityNote.trim().isNotEmpty,
-      ];
-      final done = checks.where((c) => c).length;
-      return ((done / checks.length) * 100).round();
-    }
-    return _phone.trim().isNotEmpty ? 100 : 80;
-  }
-
   void _refreshBoth() {
     if (mounted) setState(() {});
     _activeSectionRefresh?.call();
@@ -561,6 +527,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildAppSettingsMenuCard(),
                   const SizedBox(height: 10),
                   _buildSupportInfoMenuCard(),
+                  const SizedBox(height: 16),
+                  _buildLogoutButton(),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -660,13 +628,6 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.edit_outlined,
             semanticLabel: 'Chỉnh sửa thông tin cá nhân',
             onTap: _openPersonalInfoPage,
-          ),
-          const SizedBox(width: 4),
-          _CircleHeaderGlassButton(
-            icon: Icons.logout_rounded,
-            iconColor: const Color(0xFFFF6961),
-            semanticLabel: 'Đăng xuất',
-            onTap: _confirmSignOut,
           ),
         ],
       ),
@@ -829,8 +790,6 @@ class _ProfilePageState extends State<ProfilePage> {
   // 3. HERO PROFILE CARD (GỌN GÀNG ĐỒNG BỘ MẪU WAYS STATION, GIỮ PHONG CÁCH KÍNH META GYM)
   // ===========================================================================
   Widget _buildHeroProfileCard() {
-    final completion = _profileCompletionPercent;
-
     return _MembershipGlassCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -991,23 +950,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               fontSize: 11,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            '·',
-                            style: TextStyle(
-                              color: Color(0xFF8C847E),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Hoàn thiện: $completion%',
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ],
                       ),
                     ],
@@ -1123,7 +1065,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 children: [
                                   const Expanded(
                                     child: Text(
-                                      'Hoàn thiện hồ sơ',
+                                      'Mục tiêu cá nhân',
                                       style: TextStyle(
                                         color: Color(0xFFEAE6E2),
                                         fontSize: 10,
@@ -1142,9 +1084,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                       color: const Color(0x242ECC71),
                                       borderRadius: BorderRadius.circular(5),
                                     ),
-                                    child: Text(
-                                      '$completion%',
-                                      style: const TextStyle(
+                                    child: const Text(
+                                      'ĐÃ BẬT',
+                                      style: TextStyle(
                                         color: MetaGymTheme.progressGreen,
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
@@ -1255,8 +1197,8 @@ class _ProfilePageState extends State<ProfilePage> {
         subtitle: _role == UserRole.coach
             ? '$_experienceYears năm kinh nghiệm · ${_specialties.length} chuyên môn'
             : _heightCm > 0
-                ? '${_heightCm.round()} cm · ${_fitnessGoal.isEmpty ? 'Chưa có mục tiêu' : _fitnessGoal}'
-                : 'Chưa khai báo thể trạng',
+            ? '${_heightCm.round()} cm · ${_fitnessGoal.isEmpty ? 'Chưa có mục tiêu' : _fitnessGoal}'
+            : 'Chưa khai báo thể trạng',
         onTap: _role == UserRole.coach
             ? _openCoachProfilePage
             : _openTrainingProfilePage,
@@ -1294,7 +1236,9 @@ class _ProfilePageState extends State<ProfilePage> {
       badge: 'Riêng tư',
       onTap: () async {
         final saved = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(builder: (_) => const MemberHealthDeclarationPage()),
+          MaterialPageRoute(
+            builder: (_) => const MemberHealthDeclarationPage(),
+          ),
         );
         if (saved == true && mounted) await _reloadProfile();
       },
@@ -1335,7 +1279,8 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.groups_outlined,
             title: 'Hội viên đang phụ trách',
             subtitle: 'Danh sách học viên & tiến độ tập luyện',
-            onTap: () => _navigateOrPushWidget(route: '/coach/features/members'),
+            onTap: () =>
+                _navigateOrPushWidget(route: '/coach/features/members'),
           ),
         ),
         const SizedBox(height: 10),
@@ -1344,7 +1289,8 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.calendar_month_rounded,
             title: 'Lịch dạy & Giáo trình',
             subtitle: 'Quản lý ca dạy 90 phút & bài tập học viên',
-            onTap: () => _navigateOrPushWidget(route: '/coach/features/sessions'),
+            onTap: () =>
+                _navigateOrPushWidget(route: '/coach/features/sessions'),
           ),
         ),
         const SizedBox(height: 10),
@@ -1383,7 +1329,8 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.calendar_month_rounded,
           title: 'Huấn luyện viên & Lịch hẹn',
           subtitle: 'Xem Coach đồng hành & đặt lịch tập 1-1',
-          onTap: () => _navigateOrPushWidget(route: '/member/features/sessions'),
+          onTap: () =>
+              _navigateOrPushWidget(route: '/member/features/sessions'),
         ),
       ),
       const SizedBox(height: 10),
@@ -1394,9 +1341,7 @@ class _ProfilePageState extends State<ProfilePage> {
           subtitle: 'Tin tức phòng tập, nhắc lịch & phản hồi từ Coach',
           onTap: () {
             Navigator.of(context).push<void>(
-              MaterialPageRoute(
-                builder: (_) => const CoachNotificationsPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
             );
           },
         ),
@@ -1434,6 +1379,49 @@ class _ProfilePageState extends State<ProfilePage> {
         title: 'Thông tin phòng tập & Hỗ trợ',
         subtitle: 'Meta Gym · 05:30 – 22:00 hằng ngày · v1.0.0',
         onTap: _openSupportInfoPage,
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return _DashboardGlassCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _confirmSignOut,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0x26FF6961),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: Color(0xFFFF6961),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Đăng xuất',
+                  style: TextStyle(
+                    color: Color(0xFFFF6961),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1888,13 +1876,11 @@ class _CircleHeaderGlassButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.onTap,
-    this.iconColor,
   });
 
   final IconData icon;
   final String semanticLabel;
   final VoidCallback onTap;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1924,7 +1910,7 @@ class _CircleHeaderGlassButton extends StatelessWidget {
                   ),
                   child: Icon(
                     icon,
-                    color: iconColor ?? MetaGymTheme.darkTextPrimary,
+                    color: MetaGymTheme.darkTextPrimary,
                     size: 20,
                   ),
                 ),
@@ -3637,7 +3623,10 @@ class _PrivacySettingsDetailPageState
                     activeTrackColor: MetaGymTheme.brandOrange,
                     title: const Text(
                       'Nhật ký tập luyện hằng ngày',
-                      style: TextStyle(color: Color(0xFFF7F9FC), fontSize: 13.5),
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 13.5,
+                      ),
                     ),
                     subtitle: const Text(
                       'Cho phép Coach xem lịch sử bài tập & cảm nhận buổi tập',
@@ -3652,7 +3641,10 @@ class _PrivacySettingsDetailPageState
                     activeTrackColor: MetaGymTheme.brandOrange,
                     title: const Text(
                       'Số đo 3 vòng & Cân nặng',
-                      style: TextStyle(color: Color(0xFFF7F9FC), fontSize: 13.5),
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 13.5,
+                      ),
                     ),
                     subtitle: const Text(
                       'Đồng bộ số đo cơ thể để Coach điều chỉnh giáo trình',
@@ -3863,7 +3855,10 @@ class _AppSettingsDetailPageState extends State<_AppSettingsDetailPage> {
                     const SizedBox(height: 10),
                     const Text(
                       'Khung giờ nhắc',
-                      style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 12.5),
+                      style: TextStyle(
+                        color: Color(0xFFB7B2AF),
+                        fontSize: 12.5,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -3958,10 +3953,7 @@ class _SupportInfoDetailPage extends StatelessWidget {
                     value: '05:30 – 22:00 (Thứ 2 – CN)',
                   ),
                   SizedBox(height: 8),
-                  _InfoKeyValueRow(
-                    label: 'Hotline hỗ trợ',
-                    value: '1900 6868',
-                  ),
+                  _InfoKeyValueRow(label: 'Hotline hỗ trợ', value: '1900 6868'),
                   SizedBox(height: 8),
                   _InfoKeyValueRow(
                     label: 'Email CSKH',

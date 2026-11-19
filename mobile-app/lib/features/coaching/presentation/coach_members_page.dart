@@ -325,15 +325,15 @@ class _MemberRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = member.status == 'ACTIVE';
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       onTap: onTap,
       child: Row(
         children: [
           CoachingAvatar(
             fullName: member.memberFullName,
-            size: 46,
+            size: 44,
             round: true,
           ),
           const SizedBox(width: 12),
@@ -346,8 +346,8 @@ class _MemberRowCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 15,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -364,7 +364,7 @@ class _MemberRowCard extends StatelessWidget {
           const SizedBox(width: 8),
           const Icon(
             Icons.chevron_right_rounded,
-            color: MetaGymTheme.textSecondary,
+            color: Color(0xFFB7B2AF),
             size: 20,
           ),
         ],
@@ -387,9 +387,9 @@ class _TerminationCard extends StatelessWidget {
       _ => CoachingPillTone.neutral,
     };
 
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -398,7 +398,7 @@ class _TerminationCard extends StatelessWidget {
           Text(
             request.reason,
             style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+              color: Color(0xFFF7F9FC),
               fontSize: 14,
               fontWeight: FontWeight.w600,
               height: 1.45,
@@ -409,8 +409,8 @@ class _TerminationCard extends StatelessWidget {
             Text(
               'Ghi chú quản trị: ${request.adminNote}',
               style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
-                fontSize: 12.5,
+                color: Color(0xFFB7B2AF),
+                fontSize: 13,
                 height: 1.4,
               ),
             ),
@@ -434,21 +434,20 @@ class _EmptySectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: MetaGymTheme.elevatedSurface,
+              color: const Color(0x26ADA295),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: MetaGymTheme.cardBorder),
             ),
-            child: Icon(icon, color: MetaGymTheme.textSecondary, size: 20),
+            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -458,8 +457,8 @@ class _EmptySectionCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 14,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -468,8 +467,8 @@ class _EmptySectionCard extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
-                      fontSize: 12.5,
+                      color: Color(0xFFB7B2AF),
+                      fontSize: 13,
                       height: 1.45,
                     ),
                   ),

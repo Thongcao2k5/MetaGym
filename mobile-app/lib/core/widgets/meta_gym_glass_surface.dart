@@ -139,6 +139,8 @@ class MetaGymGlassCard extends StatelessWidget {
     this.borderRadius,
     this.padding,
     this.margin,
+    this.borderColor,
+    this.onTap,
     this.featured = false,
     this.clipBehavior = Clip.antiAlias,
     super.key,
@@ -148,6 +150,8 @@ class MetaGymGlassCard extends StatelessWidget {
   final BorderRadius? borderRadius;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
+  final Color? borderColor;
+  final VoidCallback? onTap;
   final bool featured;
   final Clip clipBehavior;
 
@@ -161,12 +165,19 @@ class MetaGymGlassCard extends StatelessWidget {
         ? Padding(padding: padding!, child: child)
         : child;
 
+    final Widget interactiveContent = onTap != null
+        ? InkWell(onTap: onTap, borderRadius: radius, child: innerContent)
+        : innerContent;
+
     final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
         color: featured ? const Color(0xB82D2824) : const Color(0xC42B2622),
         borderRadius: radius,
-        border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
+        border: Border.all(
+          color: borderColor ?? const Color(0xA3A79D92),
+          width: 1.1,
+        ),
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -181,7 +192,7 @@ class MetaGymGlassCard extends StatelessWidget {
                 child: ColoredBox(color: Color(0x70FFF6EA)),
               ),
             ),
-            innerContent,
+            interactiveContent,
           ],
         ),
       ),
