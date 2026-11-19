@@ -100,7 +100,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     if (!unread) return MetaGymTheme.textSecondary;
     return switch (kind) {
       'COMPLETED' || 'PACKAGE_ACTIVE' => MetaGymTheme.success,
-      'CANCELLED' => MetaGymTheme.danger,
+      'CANCELLED' => MetaGymTheme.dangerCoral,
       'PACKAGE_LAST_SESSION' || 'PACKAGE_EXPIRING' => MetaGymTheme.warning,
       _ => MetaGymTheme.brandOrange,
     };

@@ -266,6 +266,7 @@ class CoachingGraphiteCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin,
+    this.backgroundColor,
     this.borderColor,
     this.onTap,
     super.key,
@@ -274,6 +275,7 @@ class CoachingGraphiteCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
+  final Color? backgroundColor;
   final Color? borderColor;
   final VoidCallback? onTap;
 
@@ -281,7 +283,7 @@ class CoachingGraphiteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
     final body = Material(
-      color: MetaGymTheme.cardSurface,
+      color: backgroundColor ?? MetaGymTheme.cardSurface,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(color: borderColor ?? MetaGymTheme.cardBorder),

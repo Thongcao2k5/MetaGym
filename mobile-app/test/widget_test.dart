@@ -51,9 +51,6 @@ import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
-import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
-import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
@@ -102,7 +99,6 @@ void main() {
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
         memberJournalService: _EmptyMemberJournalService(),
-        memberMealService: _EmptyMemberMealService(),
         memberMeasurementService: _EmptyMemberMeasurementService(),
         memberPhotoService: _EmptyMemberPhotoService(),
       ),
@@ -127,7 +123,7 @@ void main() {
     expect(find.text('Khám phá Coach', findRichText: true), findsWidgets);
     expect(find.byType(CoachSelectionPage), findsOneWidget);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
@@ -191,13 +187,6 @@ void main() {
     expect(find.byType(MemberJournalPage), findsOneWidget);
     expect(find.text('Nhật ký tập luyện'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(MemberJournalPage))).go('/member');
-    await tester.pumpAndSettle();
-    GoRouter.of(tester.element(find.byType(MemberHomePage)))
-        .go('/member/features/meals');
-    await tester.pumpAndSettle();
-    expect(find.byType(MemberMealPage), findsOneWidget);
-    expect(find.text('Bạn chưa có nhật ký ăn.'), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(MemberMealPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/measurements');
@@ -284,7 +273,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
@@ -653,17 +642,6 @@ class _EmptyMembershipService implements MembershipService {
   }) => throw UnimplementedError();
   @override
   Future<PurchaseResult> confirmMockPayment(String paymentId) =>
-      throw UnimplementedError();
-}
-
-class _EmptyMemberMealService implements MemberMealService {
-  @override
-  Future<List<MealLog>> getPage(int page) async => const [];
-  @override
-  Future<MealLog> create(Map<String, Object?> payload) =>
-      throw UnimplementedError();
-  @override
-  Future<MealLog> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError();
 }
 

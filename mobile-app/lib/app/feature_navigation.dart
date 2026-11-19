@@ -63,7 +63,6 @@ const memberDestinations = <FeatureDestination>[
     'UI16',
     'Tiến độ',
   ),
-  FeatureDestination('Nhật ký ăn', '/member/features/meals', 'UI17', 'Tiến độ'),
   FeatureDestination(
     'Số đo cơ thể',
     '/member/features/measurements',

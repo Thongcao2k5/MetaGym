@@ -385,129 +385,136 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                 width: 1.1,
                               ),
                             ),
-                            child: Theme(
-                              data: Theme.of(context)
-                                  .copyWith(dividerColor: Colors.transparent),
-                              child: ExpansionTile(
-                                tilePadding: EdgeInsets.zero,
-                                childrenPadding: const EdgeInsets.only(
-                                  bottom: 12,
-                                ),
-                                iconColor: const Color(0xFFF7F9FC),
-                                collapsedIconColor: const Color(0xFFC8C2BC),
-                                leading: const Icon(
-                                  Icons.calendar_month_outlined,
-                                  color: MetaGymTheme.reflectionBlue,
-                                  size: 20,
-                                ),
-                                title: const Text(
-                                  'Xem lịch làm việc',
-                                  style: TextStyle(
-                                    color: Color(0xFFF7F9FC),
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: Theme(
+                                data: Theme.of(context)
+                                    .copyWith(dividerColor: Colors.transparent),
+                                child: ExpansionTile(
+                                  tilePadding: EdgeInsets.zero,
+                                  childrenPadding: const EdgeInsets.only(
+                                    bottom: 12,
                                   ),
-                                ),
-                                children: [
-                                  if (_workDays.isEmpty &&
-                                      coach.availabilityNote?.isNotEmpty !=
-                                          true)
+                                  iconColor: const Color(0xFFF7F9FC),
+                                  collapsedIconColor: const Color(0xFFC8C2BC),
+                                  leading: const Icon(
+                                    Icons.calendar_month_outlined,
+                                    color: MetaGymTheme.reflectionBlue,
+                                    size: 20,
+                                  ),
+                                  title: const Text(
+                                    'Xem lịch làm việc',
+                                    style: TextStyle(
+                                      color: Color(0xFFF7F9FC),
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  children: [
+                                    if (_workDays.isEmpty &&
+                                        coach.availabilityNote?.isNotEmpty !=
+                                            true)
+                                      const Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Coach chưa cấu hình lịch cố định.',
+                                          style: TextStyle(
+                                            color: Color(0xFFC8C2BC),
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                      ),
+                                    if (_workDays.isNotEmpty)
+                                      SizedBox(
+                                        height: 64,
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _workDays.length,
+                                          separatorBuilder: (_, _) =>
+                                              const SizedBox(width: 8),
+                                          itemBuilder: (_, index) {
+                                            final day = _workDays[index];
+                                            final starts =
+                                                (day['starts'] as List? ??
+                                                        const [])
+                                                    .cast<String>();
+                                            return Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0x80211E1C),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      MetaGymTheme.radiusInput,
+                                                    ),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0x9A8C8176,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    _weekdayName(
+                                                      day['weekday'] as int,
+                                                    ),
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFF7F9FC),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                    starts.take(2).join(' · '),
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFC8C2BC),
+                                                      fontSize: 11,
+                                                      fontFeatures: MetaGymTheme
+                                                          .tabularFigures,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    if (coach.availabilityNote?.isNotEmpty ==
+                                        true) ...[
+                                      const SizedBox(height: 8),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          coach.availabilityNote!,
+                                          style: const TextStyle(
+                                            color: Color(0xFFE4DAD1),
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
                                     const Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        'Coach chưa cấu hình lịch cố định.',
+                                        'Khung giờ để tham khảo; hệ thống kiểm tra suất khi thanh toán.',
                                         style: TextStyle(
                                           color: Color(0xFFC8C2BC),
-                                          fontSize: 12.5,
-                                        ),
-                                      ),
-                                    ),
-                                  if (_workDays.isNotEmpty)
-                                    SizedBox(
-                                      height: 64,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: _workDays.length,
-                                        separatorBuilder: (_, _) =>
-                                            const SizedBox(width: 8),
-                                        itemBuilder: (_, index) {
-                                          final day = _workDays[index];
-                                          final starts =
-                                              (day['starts'] as List? ??
-                                                      const [])
-                                                  .cast<String>();
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0x80211E1C),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                    MetaGymTheme.radiusInput,
-                                                  ),
-                                              border: Border.all(
-                                                color: const Color(0x9A8C8176),
-                                              ),
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  _weekdayName(
-                                                    day['weekday'] as int,
-                                                  ),
-                                                  style: const TextStyle(
-                                                    color: Color(0xFFF7F9FC),
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 3),
-                                                Text(
-                                                  starts.take(2).join(' · '),
-                                                  style: const TextStyle(
-                                                    color: Color(0xFFC8C2BC),
-                                                    fontSize: 11,
-                                                    fontFeatures: MetaGymTheme
-                                                        .tabularFigures,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  if (coach.availabilityNote?.isNotEmpty ==
-                                      true) ...[
-                                    const SizedBox(height: 8),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        coach.availabilityNote!,
-                                        style: const TextStyle(
-                                          color: Color(0xFFE4DAD1),
-                                          fontSize: 12.5,
+                                          fontSize: 11.5,
+                                          height: 1.4,
                                         ),
                                       ),
                                     ),
                                   ],
-                                  const SizedBox(height: 8),
-                                  const Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Khung giờ để tham khảo; hệ thống kiểm tra suất khi thanh toán.',
-                                      style: TextStyle(
-                                        color: Color(0xFFC8C2BC),
-                                        fontSize: 11.5,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),

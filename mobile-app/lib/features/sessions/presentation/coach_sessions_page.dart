@@ -217,7 +217,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
         children: [
           if (Navigator.of(context).canPop()) ...[
             Tooltip(
-              message: 'Back',
+              message: 'Quay lại',
               child: MetaGymCircleIconButton(
                 icon: Icons.arrow_back_rounded,
                 tooltip: 'Quay lại',
@@ -350,7 +350,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Cấu hình lịch làm việc tuần, khóa giờ & duyệt hẹn',
+                      'Cấu hình lịch làm việc tuần, khóa giờ và xem buổi hẹn',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

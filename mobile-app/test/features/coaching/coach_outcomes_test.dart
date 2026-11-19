@@ -65,6 +65,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(adapter.cases.length, 1);
+      expect(tester.takeException(), isNull);
       expect(adapter.cases.first['status'], 'PENDING_MEMBER');
       expect(find.text('Chờ học viên duyệt'), findsOneWidget);
 
@@ -81,16 +82,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Kết thúc quan hệ'), findsNothing);
+      expect(tester.takeException(), isNull);
       await tester.ensureVisible(find.text('Duyệt thành quả học viên'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Duyệt thành quả học viên'));
       await tester.pumpAndSettle();
 
       expect(find.text('Học viên ẩn danh'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await tester.ensureVisible(find.text('Duyệt công khai'));
       await tester.tap(find.text('Duyệt công khai'));
       await tester.pumpAndSettle();
       expect(adapter.cases.first['status'], 'APPROVED');
+      expect(tester.takeException(), isNull);
       expect(adapter.cases.first['allowRealName'], isFalse);
 
       // 3. CoachDetailPage renders approved anonymous case.

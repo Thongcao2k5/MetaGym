@@ -24,7 +24,6 @@ import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.d
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
@@ -75,9 +74,7 @@ GoRouter createAppRouter({
       }
 
       final home = _homeForRole(sessionController.user!.role);
-      const sharedProtectedRoutes = {
-        AppRoutes.profile,
-      };
+      const sharedProtectedRoutes = {AppRoutes.profile};
       if (state.matchedLocation == home ||
           (home == AppRoutes.memberHome &&
               memberDestinations.any(
@@ -169,8 +166,6 @@ GoRouter createAppRouter({
               ? const MemberProgressPage()
               : destination.path == '/member/features/workouts'
               ? const MemberJournalPage()
-              : destination.path == '/member/features/meals'
-              ? const MemberMealPage()
               : destination.path == '/member/features/measurements'
               ? const MemberMeasurementPage()
               : destination.path == '/member/features/photos'

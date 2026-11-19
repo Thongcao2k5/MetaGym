@@ -87,7 +87,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                 padding: const EdgeInsets.only(left: 16),
                 child: Center(
                   child: Tooltip(
-                    message: 'Back',
+                    message: 'Quay lại',
                     child: MetaGymCircleIconButton(
                       icon: Icons.arrow_back_rounded,
                       tooltip: 'Quay lại',
@@ -164,7 +164,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                             const _EmptySectionCard(
                               icon: Icons.people_outline_rounded,
                               title: 'Chưa có hội viên đang phụ trách.',
-                              subtitle: 'Khi bạn chấp nhận yêu cầu hoặc học viên mua gói, hồ sơ sẽ hiển thị tại đây.',
+                              subtitle: 'Khi học viên mua gói Coach, hồ sơ sẽ hiển thị tại đây.',
                             ),
                           for (final member in _members)
                             _MemberRowCard(
