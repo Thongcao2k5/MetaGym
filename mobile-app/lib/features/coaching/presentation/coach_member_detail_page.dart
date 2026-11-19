@@ -237,7 +237,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
+                    backgroundColor: coachingWarmOverlaySurface,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -630,40 +630,7 @@ class _HealthInfoLine extends StatelessWidget {
 InputDecoration _darkInputDecoration({
   required String label,
   String? errorText,
-}) {
-  return InputDecoration(
-    labelText: label,
-    labelStyle: const TextStyle(
-      color: MetaGymTheme.textSecondary,
-      fontSize: 13,
-    ),
-    counterStyle: const TextStyle(
-      color: MetaGymTheme.textSecondary,
-      fontSize: 11.5,
-    ),
-    filled: true,
-    fillColor: MetaGymTheme.elevatedSurface,
-    errorText: errorText,
-    errorStyle: const TextStyle(color: MetaGymTheme.dangerCoral),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 2),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
-    ),
-  );
-}
+}) => coachingInputDecoration(label: label, errorText: errorText);
 
 class _CreateOutcomeDialog extends StatefulWidget {
   const _CreateOutcomeDialog({
@@ -796,17 +763,14 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: MetaGymTheme.cardSurface,
+      backgroundColor: coachingWarmOverlaySurface,
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-        side: const BorderSide(color: MetaGymTheme.cardBorder),
-      ),
+      shape: coachingDialogShape,
       title: const Text(
         'Gửi thành quả học viên',
         style: TextStyle(
-          color: MetaGymTheme.textPrimary,
+          color: coachingWarmTextPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
@@ -912,13 +876,13 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: OutlinedButton(
                     onPressed: _saving ? null : () => _pickPhoto(true),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: MetaGymTheme.textPrimary,
-                      backgroundColor: MetaGymTheme.elevatedSurface,
+                      foregroundColor: coachingWarmTextPrimary,
+                      backgroundColor: coachingWarmInputFill,
                       minimumSize: const Size(48, 46),
                       side: BorderSide(
                         color: _beforePhoto != null
                             ? MetaGymTheme.success
-                            : MetaGymTheme.darkBorderStrong,
+                            : coachingWarmInputBorder,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -938,13 +902,13 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: OutlinedButton(
                     onPressed: _saving ? null : () => _pickPhoto(false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: MetaGymTheme.textPrimary,
-                      backgroundColor: MetaGymTheme.elevatedSurface,
+                      foregroundColor: coachingWarmTextPrimary,
+                      backgroundColor: coachingWarmInputFill,
                       minimumSize: const Size(48, 46),
                       side: BorderSide(
                         color: _afterPhoto != null
                             ? MetaGymTheme.success
-                            : MetaGymTheme.darkBorderStrong,
+                            : coachingWarmInputBorder,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -972,22 +936,14 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            foregroundColor: MetaGymTheme.textSecondary,
+            foregroundColor: coachingWarmTextSecondary,
             minimumSize: const Size(48, 48),
           ),
           child: const Text('Hủy'),
         ),
-        FilledButton(
+        CoachingCompactAccentButton(
+          label: _saving ? 'Đang gửi...' : 'Gửi học viên duyệt',
           onPressed: _saving ? null : _submit,
-          style: FilledButton.styleFrom(
-            backgroundColor: MetaGymTheme.primary,
-            foregroundColor: MetaGymTheme.onPrimary,
-            minimumSize: const Size(48, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-            ),
-          ),
-          child: Text(_saving ? 'Đang gửi...' : 'Gửi học viên duyệt'),
         ),
       ],
     );
@@ -1014,17 +970,14 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    backgroundColor: MetaGymTheme.cardSurface,
+    backgroundColor: coachingWarmOverlaySurface,
     surfaceTintColor: Colors.transparent,
     insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-      side: const BorderSide(color: MetaGymTheme.cardBorder),
-    ),
+    shape: coachingDialogShape,
     title: const Text(
       'Xin ngừng phụ trách?',
       style: TextStyle(
-        color: MetaGymTheme.textPrimary,
+        color: coachingWarmTextPrimary,
         fontSize: 18,
         fontWeight: FontWeight.w700,
       ),
@@ -1034,7 +987,7 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
       controller: _reason,
       maxLength: 1000,
       maxLines: 3,
-      style: const TextStyle(color: MetaGymTheme.textPrimary),
+      style: const TextStyle(color: coachingWarmTextPrimary),
       decoration: _darkInputDecoration(
         label: 'Lý do',
         errorText: _invalid ? 'Vui lòng nhập lý do.' : null,
@@ -1044,12 +997,13 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
       TextButton(
         onPressed: () => Navigator.pop(context),
         style: TextButton.styleFrom(
-          foregroundColor: MetaGymTheme.textSecondary,
+          foregroundColor: coachingWarmTextSecondary,
           minimumSize: const Size(48, 48),
         ),
         child: const Text('Quay lại'),
       ),
-      FilledButton(
+      CoachingCompactAccentButton(
+        label: 'Gửi yêu cầu',
         onPressed: () {
           final reason = _reason.text.trim();
           if (reason.isEmpty) {
@@ -1058,15 +1012,6 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
           }
           Navigator.pop(context, reason);
         },
-        style: FilledButton.styleFrom(
-          backgroundColor: MetaGymTheme.primary,
-          foregroundColor: MetaGymTheme.onPrimary,
-          minimumSize: const Size(48, 48),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          ),
-        ),
-        child: const Text('Gửi yêu cầu'),
       ),
     ],
   );

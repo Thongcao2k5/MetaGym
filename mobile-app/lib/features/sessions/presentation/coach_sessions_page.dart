@@ -104,15 +104,13 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
       final submitted = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          backgroundColor: MetaGymTheme.cardSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-            side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-          ),
+          backgroundColor: coachingWarmOverlaySurface,
+          surfaceTintColor: Colors.transparent,
+          shape: coachingDialogShape,
           title: const Text(
             'Đổi trạng thái',
             style: TextStyle(
-              color: MetaGymTheme.textPrimary,
+              color: coachingWarmTextPrimary,
               fontWeight: FontWeight.w700,
               fontSize: 18,
             ),
@@ -122,7 +120,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                 ? 'Đánh dấu hoàn thành?'
                 : 'Đánh dấu hội viên vắng?',
             style: const TextStyle(
-              color: Color(0xFFD9DDE4),
+              color: coachingWarmTextSecondary,
               fontSize: 14,
               height: 1.45,
             ),
@@ -131,7 +129,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
             TextButton(
               style: TextButton.styleFrom(
                 minimumSize: const Size(64, 44),
-                foregroundColor: MetaGymTheme.textSecondary,
+                foregroundColor: coachingWarmTextSecondary,
               ),
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Đóng'),
@@ -268,9 +266,9 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: MetaGymTheme.cardSurface,
+        color: coachingWarmGlassSurface,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: MetaGymTheme.cardBorder),
+        border: Border.all(color: coachingWarmGlassBorder),
       ),
       child: Row(
         children: [
@@ -562,7 +560,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.primary,
-                          backgroundColor: MetaGymTheme.elevatedSurface,
+                          backgroundColor: coachingWarmOverlaySurface,
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -744,15 +742,13 @@ class _CancellationDialogState extends State<_CancellationDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    backgroundColor: MetaGymTheme.cardSurface,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-      side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-    ),
+    backgroundColor: coachingWarmOverlaySurface,
+    surfaceTintColor: Colors.transparent,
+    shape: coachingDialogShape,
     title: const Text(
       'Hủy buổi tập',
       style: TextStyle(
-        color: MetaGymTheme.textPrimary,
+        color: coachingWarmTextPrimary,
         fontWeight: FontWeight.w700,
         fontSize: 18,
       ),
@@ -762,24 +758,9 @@ class _CancellationDialogState extends State<_CancellationDialog> {
       key: const Key('session-cancellation-reason'),
       maxLength: 2000,
       maxLines: 3,
-      style: const TextStyle(color: MetaGymTheme.textPrimary),
-      decoration: InputDecoration(
-        labelText: 'Lý do hủy',
-        labelStyle: const TextStyle(color: MetaGymTheme.textSecondary),
-        filled: true,
-        fillColor: MetaGymTheme.elevatedSurface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 2),
-        ),
+      style: const TextStyle(color: coachingWarmTextPrimary),
+      decoration: coachingInputDecoration(
+        label: 'Lý do hủy',
         errorText: _invalid ? 'Vui lòng nhập lý do hủy.' : null,
       ),
     ),
@@ -787,20 +768,13 @@ class _CancellationDialogState extends State<_CancellationDialog> {
       TextButton(
         style: TextButton.styleFrom(
           minimumSize: const Size(64, 44),
-          foregroundColor: MetaGymTheme.textSecondary,
+          foregroundColor: coachingWarmTextSecondary,
         ),
         onPressed: () => Navigator.pop(context),
         child: const Text('Đóng'),
       ),
-      FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: MetaGymTheme.primary,
-          foregroundColor: MetaGymTheme.onPrimary,
-          minimumSize: const Size(112, 44),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      CoachingCompactAccentButton(
+        label: 'Xác nhận hủy',
         onPressed: () {
           final reason = _reason.text.trim();
           if (reason.isEmpty) {
@@ -809,7 +783,6 @@ class _CancellationDialogState extends State<_CancellationDialog> {
           }
           Navigator.pop(context, reason);
         },
-        child: const Text('Xác nhận hủy'),
       ),
     ],
   );
@@ -1016,7 +989,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                             if (isCreate) ...[
                               DropdownButtonFormField<String>(
                                 initialValue: _memberId,
-                                dropdownColor: MetaGymTheme.elevatedSurface,
+                                dropdownColor: coachingWarmOverlaySurface,
                                 style: const TextStyle(
                                   color: MetaGymTheme.textPrimary,
                                   fontSize: 14,

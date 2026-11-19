@@ -654,7 +654,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: MetaGymTheme.cardSurface,
+              color: coachingWarmGlassSurface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: MetaGymTheme.brandOrange.withValues(alpha: 0.35),
@@ -715,19 +715,19 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
               final enabled = item.isOpen && !blockedByDay;
 
               final bgColor = picked
-                  ? MetaGymTheme.brandOrange.withValues(alpha: 0.20)
+                  ? coachingWarmSelectedChip
                   : item.isMine
-                  ? MetaGymTheme.brandOrange.withValues(alpha: 0.08)
+                  ? const Color(0x9933201B)
                   : enabled
-                  ? MetaGymTheme.elevatedSurface
-                  : MetaGymTheme.cardSurface.withValues(alpha: 0.72);
+                  ? coachingWarmGlassSurface
+                  : coachingWarmNestedSurface;
               final borderColor = picked
                   ? MetaGymTheme.brandOrange
                   : item.isMine
                   ? MetaGymTheme.brandOrange.withValues(alpha: 0.35)
                   : enabled
-                  ? MetaGymTheme.darkBorderStrong
-                  : MetaGymTheme.cardBorder;
+                  ? coachingWarmGlassBorder
+                  : coachingWarmInputBorder;
               final metaColor = picked
                   ? const Color(0xFFFF987E)
                   : item.isMine
@@ -801,7 +801,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: MetaGymTheme.cardSurface,
+        color: coachingWarmGlassSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: MetaGymTheme.brandOrange.withValues(alpha: 0.35),

@@ -313,14 +313,10 @@ void main() {
     expect(find.text('Chưa có buổi tập nào.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Kiểm thử các luồng Coach'), 300);
-    final workbenchButton = find.widgetWithText(
-      OutlinedButton,
-      'Kiểm thử các luồng Coach',
-    );
-    await tester.ensureVisible(workbenchButton);
-    await tester.pumpAndSettle();
-    await tester.tap(workbenchButton);
+    await tester.scrollUntilVisible(find.text('Khám phá & Liên lạc'), 300);
+    expect(find.text('Kiểm thử các luồng Coach'), findsNothing);
+    GoRouter.of(tester.element(find.byType(CoachHomePage)))
+        .push<void>(AppRoutes.coachWorkbench);
     await tester.pumpAndSettle();
     expect(find.text('Kiểm thử luồng Coach'), findsOneWidget);
     await tester.pageBack();

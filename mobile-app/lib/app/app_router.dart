@@ -246,11 +246,14 @@ GoRouter createAppRouter({
                   ),
                 )
               : destination.path == '/coach/features/messages'
-              ? ConversationsPage(currentUserId: sessionController.user!.id)
+              ? ConversationsPage(
+                  currentUserId: sessionController.user!.id,
+                  coachMode: true,
+                )
               : destination.path == '/coach/features/calls'
               ? CallsPage(currentUserId: sessionController.user!.id)
               : destination.path == '/coach/features/ai'
-              ? const AiConversationsPage()
+              ? const AiConversationsPage(coachMode: true)
               : throw StateError('Thiếu trang Coach: ${destination.path}'),
         ),
       GoRoute(

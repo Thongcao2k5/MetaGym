@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 
 class TrainingPlanContent extends StatelessWidget {
@@ -14,22 +16,8 @@ class TrainingPlanContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Overview Card
-        Container(
-          width: double.infinity,
+        MetaGymHeroGlassCard(
           padding: const EdgeInsets.all(MetaGymTheme.cardPadding),
-          decoration: BoxDecoration(
-            color: MetaGymTheme.darkSurface,
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-            border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                MetaGymTheme.darkSurfaceRaised,
-                MetaGymTheme.darkSurface,
-              ],
-            ),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -131,7 +119,7 @@ class TrainingPlanContent extends StatelessWidget {
                   plan.endDate != null ||
                   plan.publishedAt != null) ...[
                 const SizedBox(height: 14),
-                const Divider(color: MetaGymTheme.darkDividerSubtle, height: 1),
+                const Divider(color: coachingWarmDivider, height: 1),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
@@ -171,14 +159,9 @@ class TrainingPlanContent extends StatelessWidget {
                     .map((exercise) => exercise.exerciseName)
                     .toList(),
               );
-              return Container(
+              return MetaGymGlassCard(
                 margin: const EdgeInsets.only(bottom: 20),
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.darkSurface,
-                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-                  border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -257,14 +240,15 @@ class TrainingPlanContent extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: MetaGymTheme.darkSurfaceMid,
+                          color: coachingWarmNestedSurface,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: coachingWarmInputBorder),
                         ),
                         child: const Center(
                           child: Text(
                             'Chưa có bài tập.',
                             style: TextStyle(
-                              color: MetaGymTheme.darkTextTertiary,
+                              color: coachingWarmTextSecondary,
                               fontSize: 14,
                               fontFamily: MetaGymTheme.fontFamily,
                             ),
@@ -359,12 +343,12 @@ class _MetaInfoPill extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: MetaGymTheme.darkTextTertiary),
+        Icon(icon, size: 14, color: coachingWarmTextSecondary),
         const SizedBox(width: 4),
         Text(
           text,
           style: const TextStyle(
-            color: MetaGymTheme.darkTextTertiary,
+            color: coachingWarmTextSecondary,
             fontSize: 12,
             fontFamily: MetaGymTheme.fontFamily,
           ),
@@ -386,9 +370,9 @@ class _ExerciseCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: MetaGymTheme.darkSurfaceRaised,
+        color: coachingWarmNestedSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
+        border: Border.all(color: const Color(0x52A79D92)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,9 +385,9 @@ class _ExerciseCard extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0x1F222B35),
+                  color: coachingWarmGlassSurface,
                   shape: BoxShape.circle,
-                  border: Border.all(color: MetaGymTheme.darkBorderSubtle),
+                  border: Border.all(color: coachingWarmInputBorder),
                 ),
                 child: Text(
                   '$index',

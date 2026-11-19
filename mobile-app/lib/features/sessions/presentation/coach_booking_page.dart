@@ -174,12 +174,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
       barrierColor: const Color(0xB8040609),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: MetaGymTheme.cardSurface,
+          backgroundColor: coachingWarmOverlaySurface,
           surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-          ),
+          shape: coachingDialogShape,
           title: Text(
             heading,
             style: const TextStyle(
@@ -263,40 +260,31 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     return await showDialog<bool>(
           context: context,
           builder: (dialog) => AlertDialog(
-            backgroundColor: MetaGymTheme.cardSurface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-            ),
+            backgroundColor: coachingWarmOverlaySurface,
+            surfaceTintColor: Colors.transparent,
+            shape: coachingDialogShape,
             title: Text(
               title,
               style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+                color: coachingWarmTextPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
             content: const Text(
               'Còn dưới 12 giờ đến buổi tập. Nếu tiếp tục, gói Coach sẽ bị trừ một lượt.',
-              style: TextStyle(color: Color(0xFFD9DDE4), height: 1.45),
+              style: TextStyle(color: coachingWarmTextSecondary, height: 1.45),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialog, false),
                 child: const Text(
                   'Quay lại',
-                  style: TextStyle(color: MetaGymTheme.textSecondary),
+                  style: TextStyle(color: coachingWarmTextSecondary),
                 ),
               ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: MetaGymTheme.brandOrange,
-                  foregroundColor: MetaGymTheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+              CoachingCompactAccentButton(
+                label: 'Tiếp tục',
                 onPressed: () => Navigator.pop(dialog, true),
-                child: const Text('Tiếp tục'),
               ),
             ],
           ),
@@ -317,11 +305,11 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           colorScheme: const ColorScheme.dark(
             primary: MetaGymTheme.primary,
             onPrimary: MetaGymTheme.onPrimary,
-            surface: MetaGymTheme.cardSurface,
-            onSurface: MetaGymTheme.textPrimary,
+            surface: coachingWarmOverlaySurface,
+            onSurface: coachingWarmTextPrimary,
           ),
           dialogTheme: const DialogThemeData(
-            backgroundColor: MetaGymTheme.cardSurface,
+            backgroundColor: coachingWarmOverlaySurface,
           ),
         ),
         child: child!,
@@ -340,16 +328,15 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
     final time = await showDialog<String>(
       context: context,
+      barrierColor: const Color(0xB8040609),
       builder: (ctx) => SimpleDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-          side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-        ),
+        backgroundColor: coachingWarmOverlaySurface,
+        surfaceTintColor: Colors.transparent,
+        shape: coachingDialogShape,
         title: const Text(
           'Chọn giờ cần khóa',
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: coachingWarmTextPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -360,7 +347,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               child: Text(
                 'Ngày này không có lịch làm việc.',
-                style: TextStyle(color: MetaGymTheme.textSecondary),
+                style: TextStyle(color: coachingWarmTextSecondary),
               ),
             ),
           for (final slot in starts)
@@ -374,9 +361,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.elevatedSurface,
+                  color: coachingWarmNestedSurface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: MetaGymTheme.cardBorder),
+                  border: Border.all(color: coachingWarmInputBorder),
                 ),
                 child: Row(
                   children: [
@@ -671,45 +658,16 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                         Row(
                                           children: [
                                             Expanded(
-                                              child: FilledButton.icon(
-                                                style: FilledButton.styleFrom(
-                                                  backgroundColor:
-                                                      MetaGymTheme.primary,
-                                                  foregroundColor:
-                                                      MetaGymTheme.onPrimary,
-                                                  minimumSize: const Size(
-                                                    0,
-                                                    48,
+                                              child:
+                                                  CoachingCompactAccentButton(
+                                                    label: 'Cấu hình lịch tuần',
+                                                    icon: Icons
+                                                        .edit_calendar_rounded,
+                                                    expand: true,
+                                                    onPressed: _busy
+                                                        ? null
+                                                        : _editSchedule,
                                                   ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                      ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          MetaGymTheme
-                                                              .radiusInput,
-                                                        ),
-                                                  ),
-                                                ),
-                                                onPressed: _busy
-                                                    ? null
-                                                    : _editSchedule,
-                                                icon: const Icon(
-                                                  Icons.edit_calendar_rounded,
-                                                  size: 18,
-                                                ),
-                                                label: const Text(
-                                                  'Cấu hình lịch tuần',
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                              ),
                                             ),
                                             const SizedBox(width: 10),
                                             OutlinedButton.icon(
@@ -2237,14 +2195,14 @@ class _CoachScheduleBuilderDialogState
                             ),
                             icon: const Icon(
                               Icons.more_vert_rounded,
-                              color: MetaGymTheme.textSecondary,
+                              color: coachingWarmTextSecondary,
                               size: 19,
                             ),
-                            color: MetaGymTheme.elevatedSurface,
+                            color: coachingWarmOverlaySurface,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                               side: const BorderSide(
-                                color: MetaGymTheme.darkBorderStrong,
+                                color: coachingWarmGlassBorder,
                               ),
                             ),
                             onSelected: (newSlots) =>
@@ -2256,7 +2214,7 @@ class _CoachScheduleBuilderDialogState
                                   child: Text(
                                     p['label'] as String,
                                     style: const TextStyle(
-                                      color: MetaGymTheme.textPrimary,
+                                      color: coachingWarmTextPrimary,
                                       fontSize: 12.5,
                                     ),
                                   ),
@@ -2278,25 +2236,15 @@ class _CoachScheduleBuilderDialogState
                 TextButton(
                   style: TextButton.styleFrom(
                     minimumSize: const Size(64, 48),
-                    foregroundColor: MetaGymTheme.textSecondary,
+                    foregroundColor: coachingWarmTextSecondary,
                   ),
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Đóng'),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: MetaGymTheme.primary,
-                      foregroundColor: MetaGymTheme.onPrimary,
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          MetaGymTheme.radiusInput,
-                        ),
-                      ),
-                    ),
+                  child: CoachingCompactAccentButton(
+                    label: 'Lưu lịch ($activeCount/6 ngày)',
                     onPressed: isValid
                         ? () {
                             final days = <CoachRecord>[
@@ -2307,12 +2255,6 @@ class _CoachScheduleBuilderDialogState
                             Navigator.pop(context, days);
                           }
                         : null,
-                    child: Text(
-                      'Lưu lịch ($activeCount/6 ngày)',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
                   ),
                 ),
               ],

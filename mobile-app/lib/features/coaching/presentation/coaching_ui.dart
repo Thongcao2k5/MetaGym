@@ -11,6 +11,22 @@ import 'package:provider/provider.dart';
 
 enum CoachingPillTone { green, amber, coral, neutral }
 
+const coachingWarmGlassSurface = Color(0xC42B2622);
+const coachingWarmGlassBorder = Color(0xA3A79D92);
+const coachingWarmDivider = Color(0x2EADA295);
+const coachingWarmOverlaySurface = Color(0xF526211D);
+const coachingWarmInputFill = Color(0xCC221E1B);
+const coachingWarmInputBorder = Color(0x66A79D92);
+const coachingWarmNestedSurface = Color(0x80211E1C);
+const coachingWarmSelectedChip = Color(0xFF33201B);
+const coachingWarmTextPrimary = Color(0xFFF7F9FC);
+const coachingWarmTextSecondary = Color(0xFFB7B2AF);
+
+RoundedRectangleBorder get coachingDialogShape => RoundedRectangleBorder(
+  borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+  side: const BorderSide(color: coachingWarmGlassBorder, width: 1.1),
+);
+
 T? optionalProvider<T>(BuildContext context) {
   try {
     return context.read<T?>();
@@ -360,8 +376,8 @@ class CoachingPrimaryButton extends StatelessWidget {
   }
 }
 
-/// Compact accent action button on Graphite surface (`#1F242D` + Coral `#FF5E36`
-/// text/border) so smaller inline buttons satisfy >= 4.5:1 contrast.
+/// Compact accent action button on Warm Smoked surface so smaller inline
+/// buttons satisfy >= 4.5:1 contrast.
 class CoachingCompactAccentButton extends StatelessWidget {
   const CoachingCompactAccentButton({
     required this.label,
@@ -384,13 +400,13 @@ class CoachingCompactAccentButton extends StatelessWidget {
       onPressed: loading ? null : onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: MetaGymTheme.brandOrange,
-        backgroundColor: MetaGymTheme.elevatedSurface,
-        disabledForegroundColor: MetaGymTheme.textSecondary,
+        backgroundColor: const Color(0xCC2B231E),
+        disabledForegroundColor: coachingWarmTextSecondary,
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         side: BorderSide(
           color: onPressed == null || loading
-              ? MetaGymTheme.cardBorder
+              ? coachingWarmInputBorder
               : MetaGymTheme.brandOrange.withValues(alpha: 0.78),
         ),
         shape: RoundedRectangleBorder(
@@ -435,7 +451,7 @@ class CoachingCompactAccentButton extends StatelessWidget {
   }
 }
 
-/// Shared Graphite form decoration aligned with `DESIGN.md` & `ui-design-spec.md`.
+/// Shared Warm Smoked form decoration aligned with `DESIGN.md` & Member Home.
 InputDecoration coachingInputDecoration({
   required String label,
   String? hint,
@@ -448,7 +464,7 @@ InputDecoration coachingInputDecoration({
     hintText: hint,
     errorText: errorText,
     labelStyle: const TextStyle(
-      color: MetaGymTheme.textSecondary,
+      color: coachingWarmTextSecondary,
       fontSize: 13.5,
     ),
     floatingLabelStyle: const TextStyle(
@@ -456,29 +472,26 @@ InputDecoration coachingInputDecoration({
       fontSize: 13,
       fontWeight: FontWeight.w600,
     ),
-    hintStyle: const TextStyle(
-      color: MetaGymTheme.darkTextTertiary,
-      fontSize: 13.5,
-    ),
+    hintStyle: const TextStyle(color: Color(0x99B7B2AF), fontSize: 13.5),
     counterStyle: const TextStyle(
-      color: MetaGymTheme.textSecondary,
+      color: coachingWarmTextSecondary,
       fontSize: 11.5,
     ),
     errorStyle: const TextStyle(color: MetaGymTheme.dangerCoral, fontSize: 12),
     prefixIcon: prefixIcon == null
         ? null
-        : Icon(prefixIcon, size: 19, color: MetaGymTheme.textSecondary),
+        : Icon(prefixIcon, size: 19, color: coachingWarmTextSecondary),
     suffixIcon: suffixIcon,
     filled: true,
-    fillColor: MetaGymTheme.elevatedSurface,
+    fillColor: coachingWarmInputFill,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+      borderSide: const BorderSide(color: coachingWarmInputBorder),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+      borderSide: const BorderSide(color: coachingWarmInputBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -495,8 +508,8 @@ InputDecoration coachingInputDecoration({
   );
 }
 
-/// Level 3 Overlay Glass modal bottom sheet (`rgba(15, 17, 21, 0.90)` + `18px`
-/// clipped blur with solid fallback for reduced motion and widget tests).
+/// Level 3 Overlay Glass modal bottom sheet in Warm Smoked Glass with solid
+/// fallback for reduced motion and widget tests.
 class CoachingOverlaySheet extends StatelessWidget {
   const CoachingOverlaySheet({
     required this.title,
@@ -521,54 +534,67 @@ class CoachingOverlaySheet extends StatelessWidget {
 
     final content = Container(
       decoration: const BoxDecoration(
-        color: MetaGymTheme.overlayGlass,
+        color: coachingWarmOverlaySurface,
         borderRadius: radius,
         border: Border(
-          top: BorderSide(color: MetaGymTheme.overlayGlassBorder, width: 1),
+          top: BorderSide(color: coachingWarmGlassBorder, width: 1.1),
         ),
       ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(18, 12, 18, 20 + bottomInset),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: MetaGymTheme.darkBorderStrong,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: MetaGymTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (subtitle != null && subtitle!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              child,
-            ],
+      child: Stack(
+        children: [
+          const Positioned(
+            left: 20,
+            right: 20,
+            top: 0,
+            child: SizedBox(
+              height: 1,
+              child: ColoredBox(color: Color(0x70FFF6EA)),
+            ),
           ),
-        ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(18, 12, 18, 20 + bottomInset),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0x75FFF5E9),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: coachingWarmTextPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        color: coachingWarmTextSecondary,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  child,
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
 

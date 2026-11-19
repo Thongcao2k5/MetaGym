@@ -122,7 +122,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                       child: DropdownButtonFormField<int>(
                         initialValue: day,
                         isExpanded: true,
-                        dropdownColor: MetaGymTheme.elevatedSurface,
+                        dropdownColor: coachingWarmOverlaySurface,
                         style: const TextStyle(
                           color: MetaGymTheme.textPrimary,
                           fontSize: 14,
@@ -148,7 +148,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                       child: DropdownButtonFormField<String>(
                         initialValue: meal,
                         isExpanded: true,
-                        dropdownColor: MetaGymTheme.elevatedSurface,
+                        dropdownColor: coachingWarmOverlaySurface,
                         style: const TextStyle(
                           color: MetaGymTheme.textPrimary,
                           fontSize: 14,
@@ -175,7 +175,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                 DropdownButtonFormField<String>(
                   initialValue: food?['id'] as String?,
                   isExpanded: true,
-                  dropdownColor: MetaGymTheme.elevatedSurface,
+                  dropdownColor: coachingWarmOverlaySurface,
                   style: const TextStyle(
                     color: MetaGymTheme.textPrimary,
                     fontSize: 14,
@@ -389,7 +389,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                         Expanded(
                           child: RefreshIndicator(
                             color: MetaGymTheme.brandOrange,
-                            backgroundColor: MetaGymTheme.cardSurface,
+                            backgroundColor: coachingWarmOverlaySurface,
                             onRefresh: () => _run(_load),
                             child: ListView(
                               physics: const AlwaysScrollableScrollPhysics(),
@@ -405,7 +405,8 @@ class _MealPlansPageState extends State<MealPlansPage> {
                                     padding: EdgeInsets.only(bottom: 10),
                                     child: LinearProgressIndicator(
                                       color: MetaGymTheme.brandOrange,
-                                      backgroundColor: MetaGymTheme.cardSurface,
+                                      backgroundColor:
+                                          coachingWarmOverlaySurface,
                                     ),
                                   ),
                                 if (_error != null) ...[
@@ -484,25 +485,24 @@ class _MealPlansPageState extends State<MealPlansPage> {
                                                 ),
                                                 selected:
                                                     i == _selectedPlanIndex,
-                                                selectedColor: const Color(
-                                                  0xFF33201B,
-                                                ),
+                                                selectedColor:
+                                                    coachingWarmSelectedChip,
                                                 surfaceTintColor:
                                                     Colors.transparent,
                                                 checkmarkColor:
                                                     MetaGymTheme.brandOrange,
                                                 backgroundColor:
-                                                    MetaGymTheme.cardSurface,
+                                                    coachingWarmGlassSurface,
                                                 side: BorderSide(
                                                   color: i == _selectedPlanIndex
                                                       ? MetaGymTheme.brandOrange
-                                                      : MetaGymTheme.cardBorder,
+                                                      : coachingWarmGlassBorder,
+                                                  width: 1.1,
                                                 ),
                                                 labelStyle: TextStyle(
                                                   color: i == _selectedPlanIndex
-                                                      ? MetaGymTheme.textPrimary
-                                                      : MetaGymTheme
-                                                            .textSecondary,
+                                                      ? coachingWarmTextPrimary
+                                                      : coachingWarmTextSecondary,
                                                   fontSize: 12.5,
                                                   fontWeight: FontWeight.w600,
                                                 ),
@@ -659,9 +659,9 @@ class _MealPlansPageState extends State<MealPlansPage> {
                           Container(
                             padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                             decoration: const BoxDecoration(
-                              color: MetaGymTheme.scaffoldBackground,
+                              color: coachingWarmOverlaySurface,
                               border: Border(
-                                top: BorderSide(color: MetaGymTheme.cardBorder),
+                                top: BorderSide(color: coachingWarmDivider),
                               ),
                             ),
                             child: CoachingPrimaryButton(
@@ -809,14 +809,12 @@ class _DayChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected
-          ? MetaGymTheme.brandOrange.withValues(alpha: 0.2)
-          : MetaGymTheme.cardSurface,
+      color: selected ? coachingWarmSelectedChip : coachingWarmGlassSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: selected ? MetaGymTheme.brandOrange : MetaGymTheme.cardBorder,
-          width: selected ? 1.5 : 1,
+          color: selected ? MetaGymTheme.brandOrange : coachingWarmGlassBorder,
+          width: selected ? 1.5 : 1.1,
         ),
       ),
       child: InkWell(
@@ -831,8 +829,8 @@ class _DayChip extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: selected
-                      ? MetaGymTheme.textPrimary
-                      : MetaGymTheme.textSecondary,
+                      ? coachingWarmTextPrimary
+                      : coachingWarmTextSecondary,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -929,8 +927,7 @@ class _MealSlotCard extends StatelessWidget {
             )
           else
             for (var i = 0; i < items.length; i++) ...[
-              if (i > 0)
-                const Divider(height: 16, color: MetaGymTheme.cardBorder),
+              if (i > 0) const Divider(height: 16, color: coachingWarmDivider),
               Row(
                 children: [
                   Expanded(

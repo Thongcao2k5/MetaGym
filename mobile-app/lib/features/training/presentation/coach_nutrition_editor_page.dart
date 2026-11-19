@@ -93,16 +93,13 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
+        backgroundColor: coachingWarmOverlaySurface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: MetaGymTheme.cardBorder),
-        ),
+        shape: coachingDialogShape,
         title: const Text(
           'Công bố hướng dẫn?',
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: coachingWarmTextPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -110,7 +107,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
         content: const Text(
           'Member sẽ thấy hướng dẫn này; bản cũ chuyển vào lịch sử.',
           style: TextStyle(
-            color: MetaGymTheme.textSecondary,
+            color: coachingWarmTextSecondary,
             fontSize: 14,
             height: 1.45,
           ),
@@ -119,22 +116,14 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
-              foregroundColor: MetaGymTheme.textSecondary,
+              foregroundColor: coachingWarmTextSecondary,
               minimumSize: const Size(48, 44),
             ),
             child: const Text('Quay lại'),
           ),
-          FilledButton(
+          CoachingCompactAccentButton(
+            label: 'Xác nhận công bố',
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.primary,
-              foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(48, 44),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-              ),
-            ),
-            child: const Text('Xác nhận công bố'),
           ),
         ],
       ),
@@ -168,20 +157,16 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
       borderSide: BorderSide(
-        color: enabled
-            ? MetaGymTheme.darkBorderStrong
-            : MetaGymTheme.cardBorder,
+        color: enabled ? coachingWarmInputBorder : coachingWarmDivider,
       ),
     );
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
       filled: true,
-      fillColor: enabled
-          ? MetaGymTheme.elevatedSurface
-          : MetaGymTheme.cardSurface,
+      fillColor: enabled ? coachingWarmInputFill : coachingWarmNestedSurface,
       labelStyle: const TextStyle(
-        color: MetaGymTheme.textSecondary,
+        color: coachingWarmTextSecondary,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
@@ -190,12 +175,9 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      hintStyle: TextStyle(
-        color: MetaGymTheme.textSecondary.withValues(alpha: 0.65),
-        fontSize: 13.5,
-      ),
+      hintStyle: const TextStyle(color: Color(0x99B7B2AF), fontSize: 13.5),
       counterStyle: const TextStyle(
-        color: MetaGymTheme.textSecondary,
+        color: coachingWarmTextSecondary,
         fontSize: 11,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -203,7 +185,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
       enabledBorder: border,
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+        borderSide: const BorderSide(color: coachingWarmDivider),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),

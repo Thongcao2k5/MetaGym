@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
@@ -28,9 +29,10 @@ enum _PhotoAccessMode { unset, full, selectedOnly, denied }
 /// - Quick Action Tile: gradient `[0xC637302A, 0xBB2C2621]`, border `0xB7ADA396` (1.1px), radius `18`
 /// - Header Circle Button: fill `0x9E2F2924`, border `0x95ADA295` (1.0px)
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({this.bottomPadding, super.key});
+  const ProfilePage({this.bottomPadding, this.coachMode, super.key});
 
   final double? bottomPadding;
+  final bool? coachMode;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -487,8 +489,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 children: [
                   const SizedBox(height: 6),
-                  _buildHeader(isBusy: isBusy),
-                  const SizedBox(height: 14),
+                  (widget.coachMode ?? (_role == UserRole.coach))
+                      ? _buildCoachHeader(isBusy: isBusy)
+                      : _buildHeader(isBusy: isBusy),
+                  SizedBox(
+                    height: (widget.coachMode ?? (_role == UserRole.coach))
+                        ? 12
+                        : 14,
+                  ),
 
                   // 4 nút điều hướng nhanh (ẩn theo yêu cầu, giữ nguyên hàm xử lý)
                   if (_showQuickActionDock && _role != UserRole.admin) ...[
@@ -540,8 +548,32 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ===========================================================================
-  // 1. HEADER BAR (GIỐNG CHÍNH XÁC _buildHeader CỦA TRANG CHỦ)
+  // 1. HEADER BAR (ĐỒNG BỘ THEO MẪU CHUNG CỦA COACH & TRANG CHỦ)
   // ===========================================================================
+  Widget _buildCoachHeader({required bool isBusy}) {
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM · COACH',
+      title: 'Hồ sơ cá nhân',
+      subtitle: 'Tài khoản & thiết lập huấn luyện viên',
+      actions: [
+        if (isBusy)
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: MetaGymTheme.brandOrange,
+            ),
+          ),
+        MetaGymCircleIconButton(
+          icon: Icons.edit_outlined,
+          tooltip: 'Chỉnh sửa thông tin cá nhân',
+          onTap: _openPersonalInfoPage,
+        ),
+      ],
+    );
+  }
+
   Widget _buildHeader({required bool isBusy}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

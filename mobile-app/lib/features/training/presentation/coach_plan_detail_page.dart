@@ -78,16 +78,13 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
+        backgroundColor: coachingWarmOverlaySurface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: MetaGymTheme.cardBorder),
-        ),
+        shape: coachingDialogShape,
         title: const Text(
           'Công bố giáo trình?',
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: coachingWarmTextPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -95,7 +92,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
         content: const Text(
           'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
           style: TextStyle(
-            color: MetaGymTheme.textSecondary,
+            color: coachingWarmTextSecondary,
             fontSize: 14,
             height: 1.45,
           ),
@@ -104,22 +101,14 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
-              foregroundColor: MetaGymTheme.textSecondary,
+              foregroundColor: coachingWarmTextSecondary,
               minimumSize: const Size(48, 44),
             ),
             child: const Text('Quay lại'),
           ),
-          FilledButton(
+          CoachingCompactAccentButton(
+            label: 'Xác nhận công bố',
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.primary,
-              foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(48, 44),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-              ),
-            ),
-            child: const Text('Xác nhận công bố'),
           ),
         ],
       ),
@@ -255,9 +244,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   if (showBottomBar)
                     Container(
                       decoration: const BoxDecoration(
-                        color: MetaGymTheme.cardSurface,
+                        color: coachingWarmOverlaySurface,
                         border: Border(
-                          top: BorderSide(color: MetaGymTheme.cardBorder),
+                          top: BorderSide(color: coachingWarmDivider),
                         ),
                       ),
                       child: SafeArea(
