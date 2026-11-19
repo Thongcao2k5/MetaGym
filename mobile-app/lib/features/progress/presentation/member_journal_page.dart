@@ -164,8 +164,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         final memberships = await _membershipService!.getCurrentMemberships();
         canWrite = memberships.any((item) => item.status == 'ACTIVE');
       } catch (_) {
-        accessError =
-            'Không kiểm tra được gói tập. Nhật ký tạm thời chỉ xem.';
+        accessError = 'Không kiểm tra được gói tập. Nhật ký tạm thời chỉ xem.';
       }
 
       List<BodyMeasurement> measurements = const [];
@@ -358,7 +357,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     if (draft == null || !_canEditSelectedDay || _saving) return;
 
     // Validate custom achievements: both name & result must be present if either is non-empty
-    for (var i = _starterAchievements.length; i < draft.achievements.length; i++) {
+    for (
+      var i = _starterAchievements.length;
+      i < draft.achievements.length;
+      i++
+    ) {
       final row = draft.achievements[i];
       final hasTitle = row.title.trim().isNotEmpty;
       final hasResult = row.result.trim().isNotEmpty;
@@ -405,8 +408,13 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
       // 2. Filter non-empty achievements
       final achievementsPayload = draft.achievements
-          .where((row) => row.title.trim().isNotEmpty && row.result.trim().isNotEmpty)
-          .map((row) => {'title': row.title.trim(), 'result': row.result.trim()})
+          .where(
+            (row) =>
+                row.title.trim().isNotEmpty && row.result.trim().isNotEmpty,
+          )
+          .map(
+            (row) => {'title': row.title.trim(), 'result': row.result.trim()},
+          )
           .toList();
 
       final journalPayload = <String, Object?>{
@@ -456,7 +464,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     } on ApiException catch (error) {
       if (mounted) setState(() => _saveError = error.message);
     } catch (_) {
-      if (mounted) setState(() => _saveError = 'Không lưu được nhật ký hôm nay.');
+      if (mounted)
+        setState(() => _saveError = 'Không lưu được nhật ký hôm nay.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -473,7 +482,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         ),
         title: const Text(
           'Xóa nhật ký?',
-          style: TextStyle(color: Color(0xFFF7F9FC), fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: Text(
           'Nhật ký ngày ${_shortDate(_parseIsoDate(entry.journalDate) ?? _today)} sẽ bị xóa.',
@@ -482,7 +494,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Giữ lại', style: TextStyle(color: Color(0xFFB7B2AF))),
+            child: const Text(
+              'Giữ lại',
+              style: TextStyle(color: Color(0xFFB7B2AF)),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -524,9 +539,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   String _calendarTitleText() {
     if (_calendarMode == _CalendarMode.week) {
-      final offset = _weekMonday(_selectedDate)
-          .difference(_weekMonday(_today))
-          .inDays ~/
+      final offset =
+          _weekMonday(_selectedDate).difference(_weekMonday(_today)).inDays ~/
           7;
       if (offset == 0) return 'Tuần này';
       if (offset == -1) return 'Tuần trước';
@@ -539,7 +553,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   @override
   Widget build(BuildContext context) {
-    final showSaveBar = _tab == _JournalTab.journal &&
+    final showSaveBar =
+        _tab == _JournalTab.journal &&
         _canEditSelectedDay &&
         _isDirty &&
         !_loading;
@@ -716,10 +731,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 SizedBox(height: 2),
                 Text(
                   'Hành trình và kết quả của bạn',
-                  style: TextStyle(
-                    color: Color(0xFFBCB5AE),
-                    fontSize: 11.5,
-                  ),
+                  style: TextStyle(color: Color(0xFFBCB5AE), fontSize: 11.5),
                 ),
               ],
             ),
@@ -823,8 +835,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final gridStart = _calendarMode == _CalendarMode.week
         ? _weekMonday(_selectedDate)
         : _weekMonday(monthStart);
-    final daysInMonth =
-        DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+    final daysInMonth = DateTime(
+      _selectedDate.year,
+      _selectedDate.month + 1,
+      0,
+    ).day;
     final cellCount = _calendarMode == _CalendarMode.week
         ? 7
         : ((((monthStart.weekday - 1) + daysInMonth) / 7).ceil() * 7);
@@ -922,7 +937,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             itemBuilder: (context, index) {
               final date = gridStart.add(Duration(days: index));
               final selected = _isSameDay(date, _selectedDate);
-              final outsideMonth = _calendarMode == _CalendarMode.month &&
+              final outsideMonth =
+                  _calendarMode == _CalendarMode.month &&
                   date.month != _selectedDate.month;
               final hasEntry = _hasRecordOnDate(date);
               final label = _calendarMode == _CalendarMode.week
@@ -954,8 +970,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                               : const Color(0xFFDED7D1),
                           fontSize: 12,
                           height: 1.15,
-                          fontWeight: selected ||
-                                  _calendarMode == _CalendarMode.week
+                          fontWeight:
+                              selected || _calendarMode == _CalendarMode.week
                               ? FontWeight.w700
                               : FontWeight.w500,
                         ),
@@ -987,7 +1003,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   Widget _buildDayCards() {
     if (_isSelectedToday) {
-      final draft = _draft ??
+      final draft =
+          _draft ??
           _DayDraft.fromRecords(
             entry: null,
             measurement: null,
@@ -1291,8 +1308,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                           )
                         : Image.memory(
                             draft
-                                .pendingImages[
-                                    index - draft.existingPhotoIds.length]
+                                .pendingImages[index -
+                                    draft.existingPhotoIds.length]
                                 .bytes,
                             fit: BoxFit.cover,
                           ),
@@ -1316,9 +1333,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: const Color(0xE8151619),
+                          color: const Color(0xE8241F1B),
                           borderRadius: BorderRadius.circular(9),
-                          border: Border.all(color: const Color(0x55FFFFFF)),
+                          border: Border.all(color: const Color(0x95ADA295)),
                         ),
                         child: const Icon(
                           Icons.close_rounded,
@@ -1464,7 +1481,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       hintText: '—',
                       hintStyle: const TextStyle(color: Color(0xFF77706A)),
                       filled: true,
-                      fillColor: const Color(0xC717191C),
+                      fillColor: const Color(0x99211E1C),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 10,
@@ -1587,8 +1604,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     required String notes,
     required bool interactive,
   }) {
-    final filled =
-        items.where((item) => item.result.trim().isNotEmpty).toList();
+    final filled = items
+        .where((item) => item.result.trim().isNotEmpty)
+        .toList();
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: InkWell(
@@ -1771,9 +1789,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   if (!isStarter)
                     IconButton(
                       tooltip: 'Xóa bài',
-                      onPressed: () => setState(
-                        () => draft.achievements.removeAt(index),
-                      ),
+                      onPressed: () =>
+                          setState(() => draft.achievements.removeAt(index)),
                       icon: const Icon(
                         Icons.close_rounded,
                         color: Color(0xFFFFAD95),
@@ -1796,7 +1813,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 ),
               ),
               onPressed: () => setState(() {
-                draft.achievements.add(_AchievementDraft(title: '', result: ''));
+                draft.achievements.add(
+                  _AchievementDraft(title: '', result: ''),
+                );
               }),
               icon: const Icon(Icons.add_rounded, size: 17),
               label: const Text(
@@ -1822,7 +1841,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     hintText: hint,
     hintStyle: const TextStyle(color: Color(0xFF77706A), fontSize: 12),
     filled: true,
-    fillColor: const Color(0xC717191C),
+    fillColor: const Color(0x99211E1C),
     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
@@ -2014,7 +2033,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     final minY = (rawMin - 0.6).floorToDouble();
                     final maxY = (rawMax + 0.6).ceilToDouble();
                     final span = (maxY - minY).clamp(1.0, 999.0);
-                    final yInterval = (span / 3).ceilToDouble().clamp(1.0, 99.0);
+                    final yInterval = (span / 3).ceilToDouble().clamp(
+                      1.0,
+                      99.0,
+                    );
                     return SizedBox(
                       height: 165,
                       child: Padding(
@@ -2296,7 +2318,7 @@ class _SegmentButton extends StatelessWidget {
     borderRadius: BorderRadius.circular(11),
     onTap: onTap,
     child: Container(
-      height: 38,
+      height: 44,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: active ? const Color(0xFF544037) : Colors.transparent,
@@ -2328,7 +2350,7 @@ class _CalendarNavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: tooltip,
-    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
     onPressed: onTap,
     icon: Icon(icon, color: const Color(0xFFE6D9D1), size: 22),
   );
@@ -2350,7 +2372,7 @@ class _ViewModeChip extends StatelessWidget {
     borderRadius: BorderRadius.circular(8),
     onTap: onTap,
     child: Container(
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 32),
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
@@ -2378,9 +2400,9 @@ class _PrimaryMetricBox extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
     decoration: BoxDecoration(
-      color: const Color(0x0AFFFFFF),
+      color: const Color(0x80211E1C),
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: const Color(0x16FFFFFF)),
+      border: Border.all(color: const Color(0x9A8C8176)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2496,7 +2518,7 @@ class _JournalPhotoState extends State<_JournalPhoto> {
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(11),
     child: Container(
-      color: const Color(0xFF17191C),
+      color: const Color(0xFF221E1B),
       child: FutureBuilder<Uri>(
         future: _accessUrl,
         builder: (context, snapshot) => snapshot.hasData

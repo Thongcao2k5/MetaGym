@@ -111,20 +111,26 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                     hintStyle: const TextStyle(color: Color(0xFFB8B0A8)),
                     prefixIcon: const Icon(
                       Icons.search_rounded,
-                      color: Color(0xFFFFB923),
+                      color: MetaGymTheme.brandOrange,
                     ),
                     filled: true,
                     fillColor: const Color(0xC42B2622),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        MetaGymTheme.radiusInput,
+                      ),
                       borderSide: const BorderSide(color: Color(0xA3A79D92)),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        MetaGymTheme.radiusInput,
+                      ),
                       borderSide: const BorderSide(color: Color(0xA3A79D92)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        MetaGymTheme.radiusInput,
+                      ),
                       borderSide: const BorderSide(
                         color: MetaGymTheme.brandOrange,
                         width: 1.5,
@@ -289,12 +295,13 @@ class _ExerciseItem extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xB8412E13),
+                  color: const Color(0x33FF5E36),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0x66FF5E36)),
                 ),
                 child: const Icon(
                   Icons.sports_gymnastics_rounded,
-                  color: Color(0xFFFFB923),
+                  color: MetaGymTheme.brandOrange,
                   size: 24,
                 ),
               ),
@@ -368,7 +375,7 @@ class ExerciseDetailPage extends StatelessWidget {
               ],
               if (item.instructions?.isNotEmpty == true ||
                   item.description?.isNotEmpty == true) ...[
-                _ExerciseDetailCard(
+                MetaGymHeroGlassCard(
                   child: _DetailSection(
                     title: 'Cách thực hiện',
                     icon: Icons.menu_book_outlined,
@@ -382,7 +389,7 @@ class ExerciseDetailPage extends StatelessWidget {
                                 ? item.targetMuscles.join(' · ')
                                 : item.category!,
                             style: const TextStyle(
-                              color: Color(0xFFFFB923),
+                              color: MetaGymTheme.brandOrange,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -432,7 +439,7 @@ class ExerciseDetailPage extends StatelessWidget {
                                 Text(
                                   '${i + 1}.',
                                   style: const TextStyle(
-                                    color: Color(0xFFFFB923),
+                                    color: MetaGymTheme.brandOrange,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -516,7 +523,7 @@ class _DetailSection extends StatelessWidget {
     children: [
       Row(
         children: [
-          Icon(icon, color: const Color(0xFFFFB923), size: 20),
+          Icon(icon, color: MetaGymTheme.brandOrange, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

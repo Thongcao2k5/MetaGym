@@ -179,6 +179,28 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     });
   }
 
+  void _showWarmSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Color(0xFFF7F9FC),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: const Color(0xF0241F1B),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+          ),
+        ),
+      );
+  }
+
   Future<void> _chooseTime() async {
     final parts = _time?.split(':');
     final picked = await showTimePicker(
@@ -186,6 +208,24 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       initialTime: parts == null
           ? TimeOfDay.now()
           : TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: MetaGymTheme.brandOrange,
+            onPrimary: Colors.white,
+            surface: Color(0xFF2B2622),
+            onSurface: Color(0xFFF7F9FC),
+          ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: const Color(0xF0241F1B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+            ),
+          ),
+        ),
+        child: child!,
+      ),
     );
     if (picked != null && mounted) {
       setState(
@@ -202,9 +242,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       items = await _catalog.getExercises();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không tải được Thư viện bài tập.')),
-        );
+        _showWarmSnackBar('Không tải được Thư viện bài tập.');
       }
       return;
     }
@@ -317,14 +355,11 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   Future<void> _save() async {
     if (_title.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Nhập tên buổi tập.')));
+      _showWarmSnackBar('Nhập tên buổi tập.');
       return;
     }
     if (_time == null || _exercises.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chọn giờ và ít nhất một bài tập.')),
-      );
+      _showWarmSnackBar('Chọn giờ và ít nhất một bài tập.');
       return;
     }
     setState(() => _saving = true);
@@ -356,18 +391,14 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         _editing = false;
         _expandedDetails = false;
       });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Đã lưu lịch tập.')));
+      _showWarmSnackBar('Đã lưu lịch tập.');
     } on ApiException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.message)));
+        _showWarmSnackBar(error.message);
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không lưu được lịch tập.')),
-        );
+        _showWarmSnackBar('Không lưu được lịch tập.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -388,9 +419,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       });
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không xóa được kế hoạch.')),
-        );
+        _showWarmSnackBar('Không xóa được kế hoạch.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -408,11 +437,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Bài tập này không còn trong thư viện.'),
-          ),
-        );
+        _showWarmSnackBar('Bài tập này không còn trong thư viện.');
       }
     }
   }
@@ -921,7 +946,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.5),
+        borderSide: const BorderSide(
+          color: MetaGymTheme.brandOrange,
+          width: 1.5,
+        ),
       ),
     );
   }
@@ -957,7 +985,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             ),
           ),
           onPressed: _chooseTime,
-          icon: const Icon(Icons.schedule_rounded, color: MetaGymTheme.brandOrange),
+          icon: const Icon(
+            Icons.schedule_rounded,
+            color: MetaGymTheme.brandOrange,
+          ),
           label: Text(_time == null ? 'Chọn giờ tập' : 'Bắt đầu $_time'),
         ),
         const SizedBox(height: 10),

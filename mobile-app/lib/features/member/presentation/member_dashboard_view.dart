@@ -6,6 +6,7 @@ import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
@@ -586,84 +587,16 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   Widget _buildHeader(BuildContext context, String userName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Squircle "MG" badge
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFFF6A42), Color(0xFFFF4520)],
-              ),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: const Color(0x40FFFFFF), width: 1.2),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x4DFF5A36),
-                  blurRadius: 10,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              'MG',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'META GYM',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: MetaGymTheme.brandOrange,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.4,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Chào, $userName',
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                    height: 1.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          _CircleHeaderGlassButton(
-            icon: Icons.search_rounded,
-            semanticLabel: 'Tìm kiếm phòng gym và thiết bị',
-            onTap: () => context.push('/member/features/gym'),
-          ),
-        ],
-      ),
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM',
+      title: 'Chào, $userName',
+      actions: [
+        _CircleHeaderGlassButton(
+          icon: Icons.search_rounded,
+          semanticLabel: 'Tìm kiếm phòng gym và thiết bị',
+          onTap: () => context.push('/member/features/gym'),
+        ),
+      ],
     );
   }
 

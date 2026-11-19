@@ -6,6 +6,7 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/presentation/live_call_page.dart';
@@ -416,8 +417,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
             id: 'm-3',
             senderId: 'coach-nam',
             messageType: 'TEXT',
-            content:
-                'Tuyệt vời! Nhớ khởi động kỹ khớp vai trước buổi Upper Body 17:30 nhé!',
+            content: 'Tuyệt vời! Nhớ khởi động kỹ khớp vai trước buổi Upper Body 17:30 nhé!',
             mediaId: null,
             sentAt: '14:20',
           ),
@@ -447,8 +447,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
             id: 'm-n1',
             senderId: 'coach-minh-anh',
             messageType: 'TEXT',
-            content:
-                'Mình đã cập nhật thực đơn 160g đạm tuần này cho bạn rồi đó. Bạn xem ở mục Dinh dưỡng nhé!',
+            content: 'Mình đã cập nhật thực đơn 160g đạm tuần này cho bạn rồi đó. Bạn xem ở mục Dinh dưỡng nhé!',
             mediaId: null,
             sentAt: '11:05',
           ),
@@ -477,8 +476,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
             id: 'm-s1',
             senderId: 'support-mg',
             messageType: 'TEXT',
-            content:
-                'Xin chào! Gói Meta Pro của bạn hiện còn 112 ngày hiệu lực. Nếu cần gia hạn hoặc đổi khung giờ check-in hãy nhắn tại đây nhé.',
+            content: 'Xin chào! Gói Meta Pro của bạn hiện còn 112 ngày hiệu lực. Nếu cần gia hạn hoặc đổi khung giờ check-in hãy nhắn tại đây nhé.',
             mediaId: null,
             sentAt: 'Hôm qua',
           ),
@@ -603,7 +601,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
         (item.lastMessageType == null &&
             (item.lastMessageContent == null ||
                 item.lastMessageContent!.trim().isEmpty)) ||
-        (cachedTime != null && (itemTime == null || cachedTime.isAfter(itemTime)));
+        (cachedTime != null &&
+            (itemTime == null || cachedTime.isAfter(itemTime)));
     if (!useCachedPreview) return item;
     return item.copyWith(
       lastMessageAt: newest.sentAt,
@@ -708,10 +707,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
       final items = await _service!.getConversations(targetPage);
       if (!_isActiveSession(requestEpoch, requestUserId)) return;
       setState(() {
-        _items = _sortAndDedupeConversations(
-          [..._items, ...items],
-          requestUserId,
-        );
+        _items = _sortAndDedupeConversations([
+          ..._items,
+          ...items,
+        ], requestUserId);
         _page = targetPage;
         _hasMore = items.length == 20;
       });
@@ -866,92 +865,94 @@ class _ConversationsPageState extends State<ConversationsPage> {
       child: Stack(
         children: [
           const _MessagingGymBackground(),
-          RefreshIndicator(
-            color: MetaGymTheme.brandOrange,
-            backgroundColor: const Color(0xFF282320),
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                MetaGymTheme.pageGutter,
-                0,
-                MetaGymTheme.pageGutter,
-                effectiveBottomPadding,
-              ),
-              children: [
-                const SizedBox(height: 6),
-                _buildHeader(context, initials),
-                if (_showSearch) ...[
-                  const SizedBox(height: 10),
-                  _buildSearchBar(),
-                ],
-                const SizedBox(height: 12),
-                _buildQuickFilterDock(),
-                const SizedBox(height: 10),
-                if (_loading && widget.isActive)
-                  _buildLiquidGlassCard(
-                    child: const SizedBox(
-                      height: 140,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: MetaGymTheme.brandOrange,
-                          strokeWidth: 2.4,
-                        ),
-                      ),
-                    ),
-                  )
-                else if (_error != null && !_usingMockShowcase)
-                  _buildErrorCard()
-                else if (_usingMockShowcase) ...[
-                  if (_filter == _MessageFilter.all ||
-                      _filter == _MessageFilter.coach) ...[
-                    _buildFeaturedCoachCard(),
+          SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              color: MetaGymTheme.brandOrange,
+              backgroundColor: const Color(0xFF282320),
+              onRefresh: _load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  MetaGymTheme.pageGutter,
+                  0,
+                  MetaGymTheme.pageGutter,
+                  effectiveBottomPadding,
+                ),
+                children: [
+                  const SizedBox(height: 6),
+                  _buildHeader(context, initials),
+                  if (_showSearch) ...[
                     const SizedBox(height: 10),
+                    _buildSearchBar(),
                   ],
-                  _buildSectionTitle('Cuộc trò chuyện gần đây'),
-                  const SizedBox(height: 8),
-                  if (_filteredMockThreads.isEmpty)
-                    _buildEmptyCard(
-                      title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
-                      subtitle:
-                          'Thử đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.',
-                    )
-                  else
-                    for (final thread in _filteredMockThreads)
-                      _buildMockConversationCard(thread),
-                ] else ...[
-                  if (_items.isEmpty)
-                    _buildEmptyCard(
-                      title: 'Bạn chưa có cuộc trò chuyện nào.',
-                      subtitle:
-                          'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
-                    )
-                  else ...[
-                    if (_filteredRealItems.isEmpty)
-                      _buildEmptyCard(
-                        title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
-                        subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
-                      )
-                    else
-                      for (final item in _filteredRealItems)
-                        _buildRealConversationCard(item),
-                    if (_hasMore)
-                      Center(
-                        child: TextButton(
-                          onPressed: _loadingMore ? null : _loadMore,
-                          child: Text(
-                            _loadingMore ? 'Đang tải…' : 'Tải thêm',
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  const SizedBox(height: 12),
+                  _buildQuickFilterDock(),
+                  const SizedBox(height: 10),
+                  if (_loading && widget.isActive)
+                    _buildLiquidGlassCard(
+                      child: const SizedBox(
+                        height: 140,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.brandOrange,
+                            strokeWidth: 2.4,
                           ),
                         ),
                       ),
+                    )
+                  else if (_error != null && !_usingMockShowcase)
+                    _buildErrorCard()
+                  else if (_usingMockShowcase) ...[
+                    if (_filter == _MessageFilter.all ||
+                        _filter == _MessageFilter.coach) ...[
+                      _buildFeaturedCoachCard(),
+                      const SizedBox(height: 10),
+                    ],
+                    _buildSectionTitle('Cuộc trò chuyện gần đây'),
+                    const SizedBox(height: 8),
+                    if (_filteredMockThreads.isEmpty)
+                      _buildEmptyCard(
+                        title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                        subtitle:
+                            'Thử đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.',
+                      )
+                    else
+                      for (final thread in _filteredMockThreads)
+                        _buildMockConversationCard(thread),
+                  ] else ...[
+                    if (_items.isEmpty)
+                      _buildEmptyCard(
+                        title: 'Bạn chưa có cuộc trò chuyện nào.',
+                        subtitle: 'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
+                      )
+                    else ...[
+                      if (_filteredRealItems.isEmpty)
+                        _buildEmptyCard(
+                          title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                          subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
+                        )
+                      else
+                        for (final item in _filteredRealItems)
+                          _buildRealConversationCard(item),
+                      if (_hasMore)
+                        Center(
+                          child: TextButton(
+                            onPressed: _loadingMore ? null : _loadMore,
+                            child: Text(
+                              _loadingMore ? 'Đang tải…' : 'Tải thêm',
+                              style: const TextStyle(
+                                color: MetaGymTheme.brandOrange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ],
+                  const SizedBox(height: 16),
                 ],
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
           ),
         ],
@@ -960,113 +961,46 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildHeader(BuildContext context, String initials) {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: MetaGymTheme.brandOrange,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'MG',
-                style: TextStyle(
-                  color: Color(0xFF111317),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'META GYM',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: MetaGymTheme.brandOrange,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.4,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Tin nhắn',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFFF7F9FC),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: 1),
-                  Text(
-                    'Trao đổi cùng Coach & hỗ trợ',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFF8E9AA8),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            _CircleGlassIconButton(
-              icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
-              tooltip: 'Tìm kiếm cuộc trò chuyện',
-              isActive: _showSearch,
-              onTap: () {
-                setState(() {
-                  _showSearch = !_showSearch;
-                  if (!_showSearch) {
-                    _searchController.clear();
-                    _searchQuery = '';
-                  }
-                });
-              },
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: MetaGymTheme.brandOrange,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  color: Color(0xFF111317),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
-          ],
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM',
+      title: 'Tin nhắn',
+      subtitle: 'Trao đổi cùng Coach & hỗ trợ',
+      inlineSubtitle: true,
+      actions: [
+        _CircleGlassIconButton(
+          icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
+          tooltip: 'Tìm kiếm cuộc trò chuyện',
+          isActive: _showSearch,
+          onTap: () {
+            setState(() {
+              _showSearch = !_showSearch;
+              if (!_showSearch) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            });
+          },
         ),
-      ),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0x9E2F2924),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0x95ADA295), width: 1.0),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Color(0xFFF7F9FC),
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1093,10 +1027,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 ),
                 decoration: const InputDecoration(
                   hintText: 'Tìm Coach hoặc nội dung tin nhắn...',
-                  hintStyle: TextStyle(
-                    color: Color(0xFF8E9AA8),
-                    fontSize: 13,
-                  ),
+                  hintStyle: TextStyle(color: Color(0xFF8E9AA8), fontSize: 13),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(vertical: 10),
@@ -1130,25 +1061,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterButton(
-              label: 'Tất cả',
-              filter: _MessageFilter.all,
-            ),
+            _buildFilterButton(label: 'Tất cả', filter: _MessageFilter.all),
             const SizedBox(width: 8),
-            _buildFilterButton(
-              label: 'Coach',
-              filter: _MessageFilter.coach,
-            ),
+            _buildFilterButton(label: 'Coach', filter: _MessageFilter.coach),
             const SizedBox(width: 8),
             _buildFilterButton(
               label: 'Chưa đọc',
               filter: _MessageFilter.unread,
             ),
             const SizedBox(width: 8),
-            _buildFilterButton(
-              label: 'Hỗ trợ',
-              filter: _MessageFilter.support,
-            ),
+            _buildFilterButton(label: 'Hỗ trợ', filter: _MessageFilter.support),
           ],
         ),
       ),
@@ -2013,8 +1935,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       _messages = widget.initialMockMessages!.reversed.toList();
       _loading = false;
     } else {
-      _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((id) {
-        if (mounted && id == widget.conversation.id) unawaited(_refreshLatest());
+      _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((
+        id,
+      ) {
+        if (mounted && id == widget.conversation.id)
+          unawaited(_refreshLatest());
       });
       final cached = _MessagingSessionCache.readThread(
         widget.currentUserId,
@@ -2050,10 +1975,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       _error = null;
     });
     try {
-      final messages = await widget.service!.getMessages(
-        requestKey,
-        1,
-      );
+      final messages = await widget.service!.getMessages(requestKey, 1);
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
       final hasMore = messages.length == 20;
       final merged = _mergeMessages(newer: messages, current: _messages);
@@ -2092,10 +2014,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     final requestKey = widget.conversation.messageKey;
     _polling = true;
     try {
-      final latest = await widget.service!.getMessages(
-        requestKey,
-        1,
-      );
+      final latest = await widget.service!.getMessages(requestKey, 1);
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
       final merged = _mergeMessages(newer: latest, current: _messages);
       setState(() => _messages = merged);
@@ -2230,11 +2149,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       _sendError = null;
     });
     try {
-      final created = await service.sendText(
-        requestKey,
-        text,
-        clientMessageId,
-      );
+      final created = await service.sendText(requestKey, text, clientMessageId);
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
       _textController.clear();
       _draftMessageId = null;
@@ -2259,7 +2174,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     if (_isMockMode || widget.service == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Chế độ xem trước giao diện — chưa kết nối upload ảnh.'),
+          content: Text(
+            'Chế độ xem trước giao diện — chưa kết nối upload ảnh.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -2337,10 +2254,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   void _showCallNotice(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -2384,9 +2298,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.mockTitle ??
+    final title =
+        widget.mockTitle ??
         widget.conversation.displayNameFor(widget.currentUserId);
-    final initials = widget.mockInitials ??
+    final initials =
+        widget.mockInitials ??
         widget.conversation.initialsFor(widget.currentUserId);
 
     return Scaffold(
@@ -2432,8 +2348,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                 ),
                                 const SizedBox(height: 6),
                                 TextButton(
-                                  onPressed:
-                                      _messages.isEmpty ? _load : _loadMore,
+                                  onPressed: _messages.isEmpty
+                                      ? _load
+                                      : _loadMore,
                                   child: const Text(
                                     'Thử lại',
                                     style: TextStyle(

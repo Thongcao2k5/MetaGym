@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
@@ -314,17 +315,18 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     MetaGymTheme.pageGutter,
-                    10,
+                    0,
                     MetaGymTheme.pageGutter,
                     bottom + 24,
                   ),
                   children: [
+                    const SizedBox(height: 6),
                     _TrainingHeader(
                       disableBlur: disableBlur,
                       onOpenLibrary: () => _open(const ExerciseLibraryPage()),
                       onOpenHistory: () => _open(const GymVisitsPage()),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
                     const _SectionTitle('Dịch vụ của bạn'),
                     const SizedBox(height: 10),
                     _ServiceHeroGlassCard(
@@ -709,50 +711,17 @@ class _TrainingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'META GYM · TẬP LUYỆN',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: MetaGymTheme.primary,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                  height: 1.2,
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                'Tập luyện',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 25,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                  height: 1.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM · TẬP LUYỆN',
+      title: 'Tập luyện',
+      actionSpacing: 4,
+      actions: [
         _CircleHeaderActionButton(
           disableBlur: disableBlur,
           icon: Icons.sports_gymnastics_outlined,
           semanticLabel: 'Mở thư viện bài tập',
           onTap: onOpenLibrary,
         ),
-        const SizedBox(width: 4),
         _CircleHeaderActionButton(
           disableBlur: disableBlur,
           icon: Icons.history_rounded,

@@ -144,6 +144,8 @@ class MetaGymGlassCard extends StatelessWidget {
     this.borderRadius,
     this.padding,
     this.margin,
+    this.borderColor,
+    this.onTap,
     this.featured = false,
     this.clipBehavior = Clip.antiAlias,
     super.key,
@@ -153,6 +155,8 @@ class MetaGymGlassCard extends StatelessWidget {
   final BorderRadius? borderRadius;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
+  final Color? borderColor;
+  final VoidCallback? onTap;
   final bool featured;
   final Clip clipBehavior;
 
@@ -166,12 +170,19 @@ class MetaGymGlassCard extends StatelessWidget {
         ? Padding(padding: padding!, child: child)
         : child;
 
+    final Widget interactiveContent = onTap != null
+        ? InkWell(onTap: onTap, borderRadius: radius, child: innerContent)
+        : innerContent;
+
     final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
         color: featured ? const Color(0xB82D2824) : const Color(0xC42B2622),
         borderRadius: radius,
-        border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
+        border: Border.all(
+          color: borderColor ?? const Color(0xA3A79D92),
+          width: 1.1,
+        ),
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -186,7 +197,7 @@ class MetaGymGlassCard extends StatelessWidget {
                 child: ColoredBox(color: Color(0x70FFF6EA)),
               ),
             ),
-            innerContent,
+            interactiveContent,
           ],
         ),
       ),
@@ -245,6 +256,150 @@ class MetaGymMetricPanel extends StatelessWidget {
   }
 }
 
+/// Header thương hiệu Meta Gym dùng chung cho các tab chính (Trang chủ,
+/// Tập luyện/Lịch dạy, Trợ lý AI, Tin nhắn, Hồ sơ):
+/// - Huy hiệu `MG` gradient cam bo góc 13px (`42x42`), viền sáng nhẹ + shadow.
+/// - Nhãn eyebrow cam viết hoa (`10.5px`, `w700`).
+/// - Tiêu đề chính (`18px`, `w700`, `#F7F9FC`) và mô tả phụ tùy chọn.
+class MetaGymBrandHeader extends StatelessWidget {
+  const MetaGymBrandHeader({
+    required this.eyebrow,
+    required this.title,
+    this.subtitle,
+    this.inlineSubtitle = false,
+    this.leading,
+    this.actions = const <Widget>[],
+    this.actionSpacing = 8,
+    super.key,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String? subtitle;
+  final bool inlineSubtitle;
+  final Widget? leading;
+  final List<Widget> actions;
+  final double actionSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmedSubtitle = subtitle?.trim();
+    final hasSubtitle = trimmedSubtitle != null && trimmedSubtitle.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 8)],
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFF6A42), Color(0xFFFF4520)],
+                  ),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: const Color(0x40FFFFFF),
+                    width: 1.2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x4DFF5A36),
+                      blurRadius: 10,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'MG',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      eyebrow,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.brandOrange,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.4,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                        height: 1.2,
+                      ),
+                    ),
+                    if (hasSubtitle && inlineSubtitle) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        trimmedSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFB8B0A8),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              for (final action in actions) ...[
+                SizedBox(width: actionSpacing),
+                action,
+              ],
+            ],
+          ),
+        ),
+        if (hasSubtitle && !inlineSubtitle) ...[
+          const SizedBox(height: 4),
+          Text(
+            trimmedSubtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: MetaGymTheme.darkTextSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// Nút tròn trên thanh tiêu đề giống `_CircleHeaderGlassButton` ở Trang chủ & Hồ sơ:
 /// - Vùng chạm Android: `48x48` (hình tròn hiển thị `44x44`)
 /// - Nền: `Color(0x9E2F2924)`
@@ -254,12 +409,14 @@ class MetaGymCircleIconButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.tooltip,
+    this.isActive = false,
     super.key,
   });
 
   final IconData icon;
   final VoidCallback? onTap;
   final String? tooltip;
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -279,8 +436,15 @@ class MetaGymCircleIconButton extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0x9E2F2924),
-                border: Border.all(color: const Color(0x95ADA295), width: 1),
+                color: isActive
+                    ? const Color(0x2EFF5A36)
+                    : const Color(0x9E2F2924),
+                border: Border.all(
+                  color: isActive
+                      ? MetaGymTheme.brandOrange
+                      : const Color(0x95ADA295),
+                  width: isActive ? 1.1 : 1,
+                ),
               ),
               child: Icon(icon, size: 20, color: const Color(0xFFF7F9FC)),
             ),
