@@ -81,6 +81,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -301,6 +302,7 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -656,9 +658,9 @@ class _EmptyStateCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: MetaGymTheme.elevatedSurface,
+              color: const Color(0x80211E1C),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: MetaGymTheme.cardBorder),
+              border: Border.all(color: const Color(0x9A8C8176)),
             ),
             child: Icon(icon, color: MetaGymTheme.reflectionBlue, size: 24),
           ),

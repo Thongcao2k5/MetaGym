@@ -78,11 +78,11 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
+        backgroundColor: const Color(0xF0241F1B),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: MetaGymTheme.cardBorder),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
         ),
         title: const Text(
           'Công bố giáo trình?',
@@ -95,7 +95,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
         content: const Text(
           'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
           style: TextStyle(
-            color: MetaGymTheme.textSecondary,
+            color: Color(0xFFC8C2BC),
             fontSize: 14,
             height: 1.45,
           ),
@@ -104,8 +104,8 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
-              foregroundColor: MetaGymTheme.textSecondary,
-              minimumSize: const Size(48, 44),
+              foregroundColor: const Color(0xFFC8C2BC),
+              minimumSize: const Size(48, 48),
             ),
             child: const Text('Quay lại'),
           ),
@@ -114,7 +114,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
             style: FilledButton.styleFrom(
               backgroundColor: MetaGymTheme.primary,
               foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(48, 44),
+              minimumSize: const Size(48, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
@@ -229,6 +229,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   Expanded(
                     child: RefreshIndicator(
                       color: MetaGymTheme.primary,
+                      backgroundColor: const Color(0xFF282320),
                       onRefresh: _load,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -255,9 +256,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   if (showBottomBar)
                     Container(
                       decoration: const BoxDecoration(
-                        color: MetaGymTheme.cardSurface,
+                        color: Color(0xF0241F1B),
                         border: Border(
-                          top: BorderSide(color: MetaGymTheme.cardBorder),
+                          top: BorderSide(color: Color(0xA3A79D92)),
                         ),
                       ),
                       child: SafeArea(

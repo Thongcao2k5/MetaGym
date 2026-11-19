@@ -77,10 +77,13 @@ class MemberExploreListPage extends StatelessWidget {
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
-          child: MetaGymCircleIconButton(
-            icon: Icons.arrow_back_rounded,
-            tooltip: 'Quay lại',
-            onTap: () => Navigator.of(context).maybePop(),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
           ),
         ),
         titleSpacing: 8,
@@ -191,95 +194,92 @@ class _ExploreArticleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return MetaGymGlassCard(
       padding: EdgeInsets.zero,
-      child: ColoredBox(
-        color: const Color(0xA0211E1C),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (showThumbnail)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: 72,
-                      height: 72,
-                      child: Image.asset(
-                        article.imageAsset,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
-                          color: const Color(0xFF282320),
-                          child: const Icon(
-                            Icons.fitness_center_rounded,
-                            color: MetaGymTheme.brandOrange,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: const Color(0x24A9C7E8),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x4DA9C7E8)),
-                    ),
-                    child: const Icon(
-                      Icons.menu_book_rounded,
-                      color: MetaGymTheme.reflectionBlue,
-                      size: 22,
-                    ),
-                  ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${article.categoryLabel} · ${article.readTimeLabel}',
-                        style: const TextStyle(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showThumbnail)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Image.asset(
+                      article.imageAsset,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: const Color(0xFF282320),
+                        child: const Icon(
+                          Icons.fitness_center_rounded,
                           color: MetaGymTheme.brandOrange,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        article.title,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        article.shortDescription,
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0x24A9C7E8),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0x4DA9C7E8)),
+                  ),
+                  child: const Icon(
+                    Icons.menu_book_rounded,
+                    color: MetaGymTheme.reflectionBlue,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFFC8C2BC),
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${article.categoryLabel} · ${article.readTimeLabel}',
+                      style: const TextStyle(
+                        color: MetaGymTheme.brandOrange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      article.shortDescription,
+                      style: const TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFFC8C2BC),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -373,10 +373,13 @@ class _MemberExploreArticleDetailPageState
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
-          child: MetaGymCircleIconButton(
-            icon: Icons.arrow_back_rounded,
-            tooltip: 'Quay lại',
-            onTap: () => Navigator.of(context).maybePop(),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
           ),
         ),
         titleSpacing: 8,
@@ -717,6 +720,7 @@ class _MemberExploreArticleDetailPageState
                 onPressed: () => context.push('/member/features/coaching'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFF7F9FC),
+                  backgroundColor: const Color(0x80211E1C),
                   side: const BorderSide(color: Color(0xA3A79D92)),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
@@ -820,35 +824,29 @@ class _MemberExploreArticleDetailPageState
     required List<Widget> children,
   }) {
     return MetaGymGlassCard(
-      padding: EdgeInsets.zero,
-      child: ColoredBox(
-        color: const Color(0xA0211E1C),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(icon, size: 19, color: iconColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+              Icon(icon, size: 19, color: iconColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 10),
-              ...children,
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          ...children,
+        ],
       ),
     );
   }

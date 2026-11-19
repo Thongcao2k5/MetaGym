@@ -784,9 +784,9 @@ class _LiveCallPageState extends State<LiveCallPage> {
             height: 148,
             child: Container(
               decoration: BoxDecoration(
-                color: MetaGymTheme.cardSurface,
+                color: const Color(0xF0241F1B),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x4AD4E4FF), width: 1),
+                border: Border.all(color: const Color(0xA3A79D92), width: 1),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x66000000),
@@ -872,11 +872,11 @@ class _LiveCallPageState extends State<LiveCallPage> {
           icon: _microphone ? Icons.mic_rounded : Icons.mic_off_rounded,
           backgroundColor: !_microphone
               ? MetaGymTheme.textPrimary
-              : const Color(0xB8181B22),
+              : const Color(0xB82B2622),
           foregroundColor: !_microphone
               ? const Color(0xFF090B0E)
               : MetaGymTheme.textPrimary,
-          borderColor: const Color(0x38D4E4FF),
+          borderColor: const Color(0xA3A79D92),
           size: 56,
           iconSize: 24,
           tooltip: _microphone ? 'Tắt mic' : 'Bật mic',
@@ -899,11 +899,11 @@ class _LiveCallPageState extends State<LiveCallPage> {
           icon: _camera ? Icons.videocam_rounded : Icons.videocam_off_rounded,
           backgroundColor: !_camera
               ? MetaGymTheme.textPrimary
-              : const Color(0xB8181B22),
+              : const Color(0xB82B2622),
           foregroundColor: !_camera
               ? const Color(0xFF090B0E)
               : MetaGymTheme.textPrimary,
-          borderColor: const Color(0x38D4E4FF),
+          borderColor: const Color(0xA3A79D92),
           size: 56,
           iconSize: 24,
           tooltip: _camera ? 'Tắt camera' : 'Bật camera',
@@ -915,9 +915,9 @@ class _LiveCallPageState extends State<LiveCallPage> {
           const SizedBox(width: 16),
           _CallActionCircle(
             icon: Icons.refresh_rounded,
-            backgroundColor: const Color(0xB8181B22),
+            backgroundColor: const Color(0xB82B2622),
             foregroundColor: MetaGymTheme.textPrimary,
-            borderColor: const Color(0x38D4E4FF),
+            borderColor: const Color(0xA3A79D92),
             size: 56,
             iconSize: 24,
             tooltip: 'Kết nối lại',
@@ -930,12 +930,12 @@ class _LiveCallPageState extends State<LiveCallPage> {
                 ? Icons.volume_up_rounded
                 : Icons.volume_down_rounded,
             backgroundColor: _speakerOn
-                ? const Color(0xB8181B22)
+                ? const Color(0xB82B2622)
                 : MetaGymTheme.textPrimary,
             foregroundColor: _speakerOn
                 ? MetaGymTheme.textPrimary
                 : const Color(0xFF090B0E),
-            borderColor: const Color(0x38D4E4FF),
+            borderColor: const Color(0xA3A79D92),
             size: 56,
             iconSize: 24,
             tooltip: _speakerOn ? 'Tắt loa ngoài' : 'Bật loa ngoài',
@@ -1032,9 +1032,9 @@ class _CallModeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: MetaGymTheme.cardSurface,
+        color: const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: MetaGymTheme.darkCardBorderSubtle),
+        border: Border.all(color: const Color(0xA3A79D92)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1073,11 +1073,11 @@ class _PeerAvatarRing extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: MetaGymTheme.elevatedSurface,
+        color: const Color(0xC42B2622),
         border: Border.all(
           color: pulseActive
-              ? const Color(0x52A9C7E8)
-              : MetaGymTheme.darkCardBorderSubtle,
+              ? const Color(0x99FF5E36)
+              : const Color(0xA3A79D92),
           width: 1.5,
         ),
       ),
@@ -1113,12 +1113,12 @@ class _AudioGridButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = active
         ? MetaGymTheme.textPrimary
-        : MetaGymTheme.elevatedSurface;
+        : const Color(0xC42B2622);
     final fgColor = active
         ? const Color(0xFF090B0E)
         : enabled
         ? MetaGymTheme.textPrimary
-        : MetaGymTheme.darkTextTertiary;
+        : const Color(0xFF9C948D);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1137,7 +1137,7 @@ class _AudioGridButton extends StatelessWidget {
                 border: Border.all(
                   color: active
                       ? Colors.transparent
-                      : MetaGymTheme.darkCardBorderSubtle,
+                      : const Color(0xA3A79D92),
                 ),
               ),
               child: Icon(icon, size: 26, color: fgColor),
@@ -1149,8 +1149,8 @@ class _AudioGridButton extends StatelessWidget {
           label,
           style: TextStyle(
             color: enabled
-                ? MetaGymTheme.textSecondary
-                : MetaGymTheme.darkTextTertiary,
+                ? const Color(0xFFC8C2BC)
+                : const Color(0xFF9C948D),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1253,8 +1253,8 @@ class _TopGlassIconButton extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0x9912171E),
-              border: Border.all(color: const Color(0x38D4E4FF)),
+              color: const Color(0x9E2F2924),
+              border: Border.all(color: const Color(0x95ADA295)),
             ),
             child: Icon(icon, size: 22, color: MetaGymTheme.textPrimary),
           ),
@@ -1274,7 +1274,7 @@ class _CallErrorPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xE6181B22),
+        color: const Color(0xF0241F1B),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0x80F15B64)),
       ),

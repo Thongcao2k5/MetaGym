@@ -246,7 +246,7 @@ class MetaGymMetricPanel extends StatelessWidget {
 }
 
 /// Nút tròn trên thanh tiêu đề giống `_CircleHeaderGlassButton` ở Trang chủ & Hồ sơ:
-/// - Kích thước: `44x44`
+/// - Vùng chạm Android: `48x48` (hình tròn hiển thị `44x44`)
 /// - Nền: `Color(0x9E2F2924)`
 /// - Viền: `1px Color(0x95ADA295)`
 class MetaGymCircleIconButton extends StatelessWidget {
@@ -263,8 +263,9 @@ class MetaGymCircleIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip ?? '',
+    final button = SizedBox(
+      width: 48,
+      height: 48,
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
@@ -272,18 +273,22 @@ class MetaGymCircleIconButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0x9E2F2924),
-              border: Border.all(color: const Color(0x95ADA295), width: 1),
+          child: Center(
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0x9E2F2924),
+                border: Border.all(color: const Color(0x95ADA295), width: 1),
+              ),
+              child: Icon(icon, size: 20, color: const Color(0xFFF7F9FC)),
             ),
-            child: Icon(icon, size: 20, color: const Color(0xFFF7F9FC)),
           ),
         ),
       ),
     );
+    if (tooltip == null || tooltip!.isEmpty) return button;
+    return Tooltip(message: tooltip!, child: button);
   }
 }

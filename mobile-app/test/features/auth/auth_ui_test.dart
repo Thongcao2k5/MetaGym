@@ -200,8 +200,11 @@ void main() {
           MaterialApp(theme: AppTheme.dark, home: const AppLoadingPage()),
         );
         await tester.pumpAndSettle();
-        expect(find.text('META GYM'), findsOneWidget);
-        expect(find.text('MG'), findsOneWidget);
+        expect(find.byType(CustomPaint), findsWidgets);
+        expect(
+          find.text('Đang khởi động không gian tập luyện...'),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
 
         final session = SessionController(

@@ -81,18 +81,16 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leadingWidth: canPop ? 68 : null,
+        leadingWidth: canPop ? 72 : null,
         leading: canPop
             ? Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Center(
-                  child: Tooltip(
-                    message: 'Quay lại',
-                    child: MetaGymCircleIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      tooltip: 'Quay lại',
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: () => Navigator.of(context).maybePop(),
                   ),
                 ),
               )
@@ -102,7 +100,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: Color(0xFFF7F9FC),
             fontSize: 19,
             fontWeight: FontWeight.w700,
           ),
@@ -137,11 +135,16 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
                       children: [
                         if (_error != null) ...[
                           CoachingErrorBanner(message: _error!),
@@ -221,7 +224,7 @@ class _MembersOverviewHero extends StatelessWidget {
             width: 1,
             height: 40,
             margin: const EdgeInsets.symmetric(horizontal: 14),
-            color: const Color(0x26FFFFFF),
+            color: const Color(0x26FFF5E9),
           ),
           Expanded(
             child: _MetricColumn(
@@ -262,7 +265,7 @@ class _MetricColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFFBEC3CB), fontSize: 12),
+          style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(
@@ -364,7 +367,7 @@ class _MemberRowCard extends StatelessWidget {
           const SizedBox(width: 8),
           const Icon(
             Icons.chevron_right_rounded,
-            color: MetaGymTheme.textSecondary,
+            color: Color(0xFFC8C2BC),
             size: 20,
           ),
         ],
@@ -398,7 +401,7 @@ class _TerminationCard extends StatelessWidget {
           Text(
             request.reason,
             style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+              color: Color(0xFFF7F9FC),
               fontSize: 14,
               fontWeight: FontWeight.w600,
               height: 1.45,
@@ -409,7 +412,7 @@ class _TerminationCard extends StatelessWidget {
             Text(
               'Ghi chú quản trị: ${request.adminNote}',
               style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
+                color: Color(0xFFC8C2BC),
                 fontSize: 12.5,
                 height: 1.4,
               ),
@@ -444,11 +447,11 @@ class _EmptySectionCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: MetaGymTheme.elevatedSurface,
+              color: const Color(0x80211E1C),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: MetaGymTheme.cardBorder),
+              border: Border.all(color: const Color(0x9A8C8176)),
             ),
-            child: Icon(icon, color: MetaGymTheme.textSecondary, size: 20),
+            child: Icon(icon, color: const Color(0xFFC8C2BC), size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -458,7 +461,7 @@ class _EmptySectionCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                    color: Color(0xFFF7F9FC),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -468,7 +471,7 @@ class _EmptySectionCard extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFC8C2BC),
                       fontSize: 12.5,
                       height: 1.45,
                     ),

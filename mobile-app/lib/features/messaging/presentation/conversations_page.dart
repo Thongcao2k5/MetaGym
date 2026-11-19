@@ -158,20 +158,20 @@ class _CircleGlassIconButton extends StatelessWidget {
             onTap: onTap,
             customBorder: const CircleBorder(),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               child: Center(
                 child: Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: isActive
                         ? const Color(0x2EFF5A36)
-                        : const Color(0xA6231F1C),
+                        : const Color(0x9E2F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isActive
                           ? MetaGymTheme.brandOrange
-                          : const Color(0x529C9084),
+                          : const Color(0x95ADA295),
                       width: 1.0,
                     ),
                   ),
@@ -868,7 +868,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
           const _MessagingGymBackground(),
           RefreshIndicator(
             color: MetaGymTheme.brandOrange,
-            backgroundColor: MetaGymTheme.darkSurface,
+            backgroundColor: const Color(0xFF282320),
             onRefresh: _load,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -1115,7 +1115,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   size: 18,
                 ),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               ),
           ],
         ),
@@ -1124,8 +1124,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildQuickFilterDock() {
-    return SizedBox(
-      height: 36,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -1161,21 +1161,21 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }) {
     final isActive = _filter == filter;
     final body = Container(
-      height: 34,
+      height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0x2EFF5A36) : const Color(0xA6231F1C),
+        color: isActive ? const Color(0xFF493025) : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive ? MetaGymTheme.brandOrange : const Color(0x4D9C9084),
-          width: isActive ? 1.1 : 0.9,
+          color: isActive ? MetaGymTheme.brandOrange : const Color(0xA3A79D92),
+          width: isActive ? 1.2 : 1.0,
         ),
       ),
       alignment: Alignment.center,
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? const Color(0xFFF7F9FC) : const Color(0xFFB8C2D0),
+          color: isActive ? const Color(0xFFF7F9FC) : const Color(0xFFC8C2BC),
           fontSize: 12,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
         ),
@@ -1192,7 +1192,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
         child: InkWell(
           onTap: () => setState(() => _filter = filter),
           borderRadius: BorderRadius.circular(20),
-          child: body,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: Center(child: body),
+          ),
         ),
       ),
     );
@@ -1317,22 +1320,34 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _openMockThread(coachThread),
-                  child: Container(
-                    height: 28,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Nhắn ngay ▶',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _openMockThread(coachThread),
+                    borderRadius: BorderRadius.circular(16),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      child: Center(
+                        child: Container(
+                          height: 32,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: MetaGymTheme.brandOrange,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'Nhắn ngay ▶',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1547,10 +1562,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0x1F223145),
+                  color: const Color(0x80211E1C),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0x38D4E4FF),
+                    color: const Color(0x9A8C8176),
                     width: 1.0,
                   ),
                 ),
@@ -1589,7 +1604,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             shape: BoxShape.circle,
                             color: item.canSend
                                 ? MetaGymTheme.progressGreen
-                                : MetaGymTheme.darkTextTertiary,
+                                : const Color(0xFFB8B0A8),
                           ),
                         ),
                         const SizedBox(width: 5),
@@ -1598,8 +1613,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             item.lastMessagePreview,
                             style: TextStyle(
                               color: item.unreadCount > 0
-                                  ? const Color(0xFFD5DEE8)
-                                  : MetaGymTheme.darkTextSecondary,
+                                  ? const Color(0xFFF7F9FC)
+                                  : const Color(0xFFC8C2BC),
                               fontSize: 11.5,
                               fontWeight: item.unreadCount > 0
                                   ? FontWeight.w600
@@ -1625,7 +1640,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       style: TextStyle(
                         color: item.unreadCount > 0
                             ? MetaGymTheme.brandOrange
-                            : const Color(0xFF8E9AA8),
+                            : const Color(0xFFB8B0A8),
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -1662,7 +1677,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   else if (timeLabel.isEmpty)
                     const Icon(
                       Icons.chevron_right,
-                      color: MetaGymTheme.darkTextTertiary,
+                      color: Color(0xFFB8B0A8),
                       size: 20,
                     ),
                 ],
@@ -1736,9 +1751,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: const Color(0x14A9C7E8),
+                  color: const Color(0x80211E1C),
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0x2EA9C7E8)),
+                  border: Border.all(color: const Color(0x9A8C8176)),
                 ),
                 child: const Icon(
                   Icons.chat_bubble_outline_rounded,
@@ -1761,7 +1776,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 subtitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: MetaGymTheme.darkTextTertiary,
+                  color: Color(0xFFC8C2BC),
                   fontSize: 12.5,
                 ),
               ),
@@ -2438,7 +2453,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                             child: Text(
                               'Chưa có tin nhắn.',
                               style: TextStyle(
-                                color: MetaGymTheme.darkTextTertiary,
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 14,
                               ),
                             ),
@@ -2474,17 +2489,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x24223145),
+                              color: const Color(0x99211E1C),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0x33D4E4FF),
+                                color: const Color(0x9A8C8176),
                                 width: 0.8,
                               ),
                             ),
                             child: const Text(
                               'Hôm nay',
                               style: TextStyle(
-                                color: Color(0xFFB8C2D0),
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2509,7 +2524,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                     shape: BoxShape.circle,
                                     color: widget.conversation.canSend
                                         ? MetaGymTheme.progressGreen
-                                        : MetaGymTheme.darkTextTertiary,
+                                        : const Color(0xFFB8B0A8),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -2536,7 +2551,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                               : 'Có thể nhắn tin.'))
                                   : 'Không thể gửi tin nhắn.',
                               style: const TextStyle(
-                                color: MetaGymTheme.darkTextSecondary,
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 12,
                               ),
                             ),
@@ -2563,9 +2578,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
     final bar = Container(
       decoration: const BoxDecoration(
-        color: Color(0x66101622),
+        color: Color(0xC8241F1B),
         border: Border(
-          bottom: BorderSide(color: Color(0x2ED4E4FF), width: 0.8),
+          bottom: BorderSide(color: Color(0x52A79D92), width: 0.9),
         ),
       ),
       child: SafeArea(
@@ -2747,72 +2762,96 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   ],
                 ),
               ),
-            SizedBox(
-              height: 32,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    GestureDetector(
-                      onTap: _imageSending ? null : _pickImage,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 11,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x26A9C7E8),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0x4DA9C7E8),
-                            width: 0.8,
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: _imageSending ? null : _pickImage,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.image_outlined,
-                              size: 14,
-                              color: MetaGymTheme.reflectionBlue,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _imageSending ? 'Đang gửi ảnh…' : 'Gửi ảnh',
-                              style: const TextStyle(
-                                color: MetaGymTheme.reflectionBlue,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x26A9C7E8),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0x4DA9C7E8),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.image_outlined,
+                                    size: 14,
+                                    color: MetaGymTheme.reflectionBlue,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    _imageSending ? 'Đang gửi ảnh…' : 'Gửi ảnh',
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.reflectionBlue,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                     for (final reply in _quickReplies) ...[
                       const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => _send(reply),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0x331E293B),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: const Color(0x38D4E4FF),
-                              width: 0.8,
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () => _send(reply),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: 48,
+                              minHeight: 48,
                             ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            reply,
-                            style: const TextStyle(
-                              color: Color(0xFFD5DEE8),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xA6231F1C),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(0x52A79D92),
+                                    width: 0.9,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  reply,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE6E0DA),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -2981,7 +3020,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   style: TextStyle(
                     color: isMe
                         ? Colors.white.withValues(alpha: 0.78)
-                        : MetaGymTheme.darkTextTertiary,
+                        : const Color(0xFFB8B0A8),
                     fontSize: 10,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),

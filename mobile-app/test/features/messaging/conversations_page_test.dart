@@ -95,6 +95,8 @@ void main() {
       find.byType(ListView).last,
       const Offset(0, 250),
     );
+    await tester.ensureVisible(find.text('Tải tin cũ'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Tải tin cũ'));
     await tester.pumpAndSettle();
     expect(service.messagePages, [1, 2]);

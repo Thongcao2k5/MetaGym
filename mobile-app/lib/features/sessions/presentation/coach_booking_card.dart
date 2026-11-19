@@ -130,13 +130,14 @@ class CoachMemberBookingCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             timeLabel,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: _isToday
                                   ? const Color(0xFFFF9B82)
-                                  : const Color(0xFFC9D0DB),
+                                  : const Color(0xFFE4DAD1),
                               fontSize: 12,
+                              height: 1.25,
                               fontWeight: FontWeight.w700,
                               fontFeatures: MetaGymTheme.tabularFigures,
                             ),
@@ -165,11 +166,9 @@ class CoachMemberBookingCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
+                        color: const Color(0x80211E1C),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: const Color(0x9A8C8176)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -186,7 +185,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Color(0xFFC9D0DB),
+                                color: Color(0xFFE4DAD1),
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -196,7 +195,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                           const Icon(
                             Icons.chevron_right_rounded,
                             size: 14,
-                            color: MetaGymTheme.textSecondary,
+                            color: Color(0xFFC8C2BC),
                           ),
                         ],
                       ),
@@ -212,15 +211,20 @@ class CoachMemberBookingCard extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isUpcoming
-                      ? MetaGymTheme.brandOrange.withValues(alpha: 0.16)
-                      : MetaGymTheme.elevatedSurface,
+                      ? MetaGymTheme.brandOrange.withValues(alpha: 0.18)
+                      : const Color(0x80211E1C),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isUpcoming
+                        ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+                        : const Color(0x9A8C8176),
+                  ),
                 ),
                 child: Icon(
                   Icons.fitness_center_rounded,
                   color: isUpcoming
                       ? MetaGymTheme.brandOrange
-                      : MetaGymTheme.textSecondary,
+                      : const Color(0xFFC8C2BC),
                   size: 20,
                 ),
               ),
@@ -231,25 +235,27 @@ class CoachMemberBookingCard extends StatelessWidget {
                   children: [
                     Text(
                       timeLabel,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _isToday
                             ? const Color(0xFFFF9B82)
-                            : MetaGymTheme.textPrimary,
+                            : const Color(0xFFF7F9FC),
                         fontWeight: FontWeight.w700,
                         fontSize: 14.5,
+                        height: 1.25,
                         fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       primaryTitle,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                        color: Color(0xFFC8C2BC),
                         fontSize: 13,
+                        height: 1.25,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -264,139 +270,156 @@ class CoachMemberBookingCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: MetaGymTheme.cardSurface,
+        color: _isToday ? null : const Color(0xC42B2622),
         gradient: _isToday
-            ? LinearGradient(
+            ? const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  MetaGymTheme.brandOrange.withValues(alpha: 0.11),
-                  MetaGymTheme.cardSurface,
-                ],
-                stops: const [0, 0.56],
+                colors: [Color(0xD4422C24), Color(0xC42B2622)],
+                stops: [0, 0.58],
               )
             : null,
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
         border: Border.all(
           color: _isToday
-              ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
-              : MetaGymTheme.cardBorder,
+              ? MetaGymTheme.brandOrange.withValues(alpha: 0.65)
+              : const Color(0xA3A79D92),
+          width: 1.1,
         ),
       ),
-      child: Stack(
-        children: [
-          if (_isToday)
-            Positioned(
-              left: 0,
-              top: 14,
-              bottom: 14,
-              child: Container(
-                width: 3,
-                decoration: const BoxDecoration(
-                  color: MetaGymTheme.brandOrange,
-                  borderRadius: BorderRadius.horizontal(
-                    right: Radius.circular(3),
-                  ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Stack(
+          children: [
+            const Positioned(
+              top: 0,
+              left: 18,
+              right: 18,
+              child: IgnorePointer(
+                child: SizedBox(
+                  height: 1,
+                  child: ColoredBox(color: Color(0x70FFF6EA)),
                 ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (onOpenCurriculum != null)
-                  InkWell(
-                    onTap: onOpenCurriculum,
-                    borderRadius: BorderRadius.circular(12),
-                    child: mainRow,
-                  )
-                else
-                  mainRow,
-                if (reason != null && reason.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Lý do: $reason',
-                    style: const TextStyle(
-                      color: Color(0xFFC4C8CE),
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
+            if (_isToday)
+              Positioned(
+                left: 0,
+                top: 14,
+                bottom: 14,
+                child: Container(
+                  width: 3,
+                  decoration: const BoxDecoration(
+                    color: MetaGymTheme.brandOrange,
+                    borderRadius: BorderRadius.horizontal(
+                      right: Radius.circular(3),
                     ),
                   ),
-                ],
-                if (showActions) ...[
-                  const SizedBox(height: 12),
-                  const Divider(color: Color(0x14FFFFFF), height: 1),
-                  const SizedBox(height: 11),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 44),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.14),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                          onPressed: busy ? null : onCancel,
-                          child: const Text(
-                            'Hủy buổi',
-                            style: TextStyle(
-                              color: Color(0xFFE08C87),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (onOpenCurriculum != null)
+                    InkWell(
+                      onTap: onOpenCurriculum,
+                      borderRadius: BorderRadius.circular(12),
+                      child: mainRow,
+                    )
+                  else
+                    mainRow,
+                  if (reason != null && reason.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Lý do: $reason',
+                      style: const TextStyle(
+                        color: Color(0xFFE4DAD1),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
                       ),
-                      if (canReschedule) ...[
-                        const SizedBox(width: 8),
+                    ),
+                  ],
+                  if (showActions) ...[
+                    const SizedBox(height: 12),
+                    const Divider(color: Color(0x26FFF5E9), height: 1),
+                    const SizedBox(height: 11),
+                    Row(
+                      children: [
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 44),
-                              backgroundColor: MetaGymTheme.elevatedSurface,
-                              foregroundColor: MetaGymTheme.textPrimary,
+                              minimumSize: const Size(0, 48),
+                              backgroundColor: const Color(0x80211E1C),
                               side: BorderSide(
-                                color: MetaGymTheme.brandOrange.withValues(
-                                  alpha: 0.45,
+                                color: MetaGymTheme.dangerCoral.withValues(
+                                  alpha: 0.55,
                                 ),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(11),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                               ),
                             ),
-                            onPressed: busy ? null : onReschedule,
-                            icon: const Icon(
-                              Icons.schedule_rounded,
-                              size: 15,
-                              color: MetaGymTheme.brandOrange,
-                            ),
-                            label: const Text(
-                              'Đổi giờ',
+                            onPressed: busy ? null : onCancel,
+                            child: const Text(
+                              'Hủy buổi',
                               style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                                color: Color(0xFFFF9A94),
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ),
+                        if (canReschedule) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 48),
+                                backgroundColor: const Color(0x80211E1C),
+                                foregroundColor: const Color(0xFFF7F9FC),
+                                side: BorderSide(
+                                  color: MetaGymTheme.brandOrange.withValues(
+                                    alpha: 0.65,
+                                  ),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                              ),
+                              onPressed: busy ? null : onReschedule,
+                              icon: const Icon(
+                                Icons.schedule_rounded,
+                                size: 15,
+                                color: MetaGymTheme.brandOrange,
+                              ),
+                              label: const Text(
+                                'Đổi giờ',
+                                style: TextStyle(
+                                  color: Color(0xFFF7F9FC),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

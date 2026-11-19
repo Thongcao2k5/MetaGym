@@ -227,7 +227,12 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
                       children: [
                         if (_error != null) ...[
                           CoachingErrorBanner(message: _error!),
@@ -276,17 +281,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                               },
                             ),
                             if (queuedPackage != null)
-                              Container(
+                              MetaGymGlassCard(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xC42B2622),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0xA3A79D92),
-                                    width: 1.1,
-                                  ),
-                                ),
                                 child: Row(
                                   children: [
                                     Container(
@@ -519,7 +516,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                             const SizedBox(height: 10),
                             _ActionRow(
                               icon: Icons.verified_outlined,
-                              title: 'Duyệt thành quả học viên',
+                              title: 'Duyệt thành quả của bạn',
                               subtitle:
                                   _outcomes.any(
                                     (item) => item.status == 'PENDING_MEMBER',
@@ -542,17 +539,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                               ),
                             ),
                             for (final item in previousRelationships)
-                              Container(
+                              MetaGymGlassCard(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xC42B2622),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0xA3A79D92),
-                                    width: 1.1,
-                                  ),
-                                ),
                                 child: Row(
                                   children: [
                                     CoachingAvatar(
@@ -777,19 +766,15 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(20);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: const Color(0xC42B2622),
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
+    final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             child: Row(

@@ -59,10 +59,13 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
-          child: MetaGymCircleIconButton(
-            icon: Icons.arrow_back_rounded,
-            tooltip: 'Quay lại',
-            onTap: () => Navigator.of(context).maybePop(),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
           ),
         ),
         titleSpacing: 8,
@@ -111,7 +114,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
                           onPressed: _load,
                           style: TextButton.styleFrom(
                             foregroundColor: MetaGymTheme.brandOrange,
-                            minimumSize: const Size(48, 44),
+                            minimumSize: const Size(48, 48),
                           ),
                           icon: const Icon(Icons.refresh_rounded, size: 18),
                           label: const Text('Thử lại'),
@@ -258,13 +261,8 @@ class _InfoCard extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => MetaGymGlassCard(
-    padding: EdgeInsets.zero,
-    child: ColoredBox(
-      color: const Color(0xA0211E1C),
-      child: Padding(padding: const EdgeInsets.all(16), child: child),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      MetaGymGlassCard(padding: const EdgeInsets.all(16), child: child);
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -282,12 +280,14 @@ class _SectionTitle extends StatelessWidget {
     children: [
       Icon(icon, size: 20, color: color),
       const SizedBox(width: 8),
-      Text(
-        title,
-        style: const TextStyle(
-          color: Color(0xFFF7F9FC),
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
+      Expanded(
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     ],

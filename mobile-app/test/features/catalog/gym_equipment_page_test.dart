@@ -21,6 +21,8 @@ void main() {
     expect(find.text('Máy chạy bộ'), findsOneWidget);
     expect(find.text('Máy ẩn'), findsNothing);
 
+    await tester.ensureVisible(find.text('Máy chạy bộ'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Máy chạy bộ'));
     await tester.pumpAndSettle();
     expect(find.text('Khởi động trước khi chạy'), findsOneWidget);

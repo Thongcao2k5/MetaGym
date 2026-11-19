@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_card.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 
@@ -76,7 +75,12 @@ class CoachBookingHistoryPage extends StatelessWidget {
                 ),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      6,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 32,
+                    ),
                     children: [
                       MetaGymHeroGlassCard(
                         margin: const EdgeInsets.only(bottom: 16),
@@ -166,7 +170,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                             Text(
                               '${bookings.length} buổi',
                               style: const TextStyle(
-                                color: MetaGymTheme.textSecondary,
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w500,
                                 fontFeatures: MetaGymTheme.tabularFigures,
@@ -177,13 +181,13 @@ class CoachBookingHistoryPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       if (bookings.isEmpty)
-                        const CoachingGraphiteCard(
+                        const MetaGymGlassCard(
                           padding: EdgeInsets.all(20),
                           child: Center(
                             child: Text(
                               'Chưa có lịch sử buổi tập với Coach.',
                               style: TextStyle(
-                                color: MetaGymTheme.textSecondary,
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 13,
                               ),
                             ),

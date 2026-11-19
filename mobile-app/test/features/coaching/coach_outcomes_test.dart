@@ -35,6 +35,7 @@ void main() {
         Provider<ApiClient>.value(
           value: api,
           child: MaterialApp(
+            key: const ValueKey('outcomes-step-1'),
             theme: AppTheme.dark,
             home: CoachMemberDetailPage(
               memberId: 'member-1',
@@ -69,11 +70,12 @@ void main() {
       expect(adapter.cases.first['status'], 'PENDING_MEMBER');
       expect(find.text('Chờ học viên duyệt'), findsOneWidget);
 
-      // 2. Member opens MemberCoachingPage -> Duyệt thành quả học viên -> approves anonymously -> enables real name -> withdraws.
+      // 2. Member opens MemberCoachingPage -> Duyệt thành quả của bạn -> approves anonymously -> enables real name -> withdraws.
       await tester.pumpWidget(
         Provider<ApiClient>.value(
           value: api,
           child: MaterialApp(
+            key: const ValueKey('outcomes-step-2'),
             theme: AppTheme.dark,
             home: const MemberCoachingPage(),
           ),
@@ -83,14 +85,15 @@ void main() {
 
       expect(find.text('Kết thúc quan hệ'), findsNothing);
       expect(tester.takeException(), isNull);
-      await tester.ensureVisible(find.text('Duyệt thành quả học viên'));
+      await tester.ensureVisible(find.text('Duyệt thành quả của bạn'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Duyệt thành quả học viên'));
+      await tester.tap(find.text('Duyệt thành quả của bạn'));
       await tester.pumpAndSettle();
 
       expect(find.text('Học viên ẩn danh'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.ensureVisible(find.text('Duyệt công khai'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Duyệt công khai'));
       await tester.pumpAndSettle();
       expect(adapter.cases.first['status'], 'APPROVED');
@@ -102,6 +105,7 @@ void main() {
         Provider<ApiClient>.value(
           value: api,
           child: MaterialApp(
+            key: const ValueKey('outcomes-step-3'),
             theme: AppTheme.dark,
             home: CoachDetailPage(
               coachId: 'coach-1',

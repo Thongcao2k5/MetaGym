@@ -97,7 +97,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   };
 
   Color _accentForKind(Object? kind, {required bool unread}) {
-    if (!unread) return MetaGymTheme.textSecondary;
+    if (!unread) return const Color(0xFFC8C2BC);
     return switch (kind) {
       'COMPLETED' || 'PACKAGE_ACTIVE' => MetaGymTheme.success,
       'CANCELLED' => MetaGymTheme.dangerCoral,
@@ -114,18 +114,16 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leadingWidth: canPop ? 68 : null,
+        leadingWidth: canPop ? 72 : null,
         leading: canPop
             ? Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Center(
-                  child: Tooltip(
-                    message: 'Back',
-                    child: MetaGymCircleIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      tooltip: 'Quay lại',
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: () => Navigator.of(context).maybePop(),
                   ),
                 ),
               )
@@ -139,7 +137,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: MetaGymTheme.textPrimary,
+                color: Color(0xFFF7F9FC),
                 fontSize: 18.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -195,11 +193,16 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                       : 'Không tải được thông báo.';
                   return RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
                       children: [
                         CoachingErrorBanner(message: message),
                         CoachingSecondaryButton(
@@ -220,11 +223,16 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                 if (items.isEmpty) {
                   return RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
                       children: [
                         MetaGymHeroGlassCard(
                           padding: const EdgeInsets.all(20),
@@ -254,7 +262,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                     Text(
                                       'Chưa có thông báo.',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
+                                        color: Color(0xFFF7F9FC),
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -281,11 +289,16 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
 
                 return RefreshIndicator(
                   color: MetaGymTheme.brandOrange,
-                  backgroundColor: MetaGymTheme.cardSurface,
+                  backgroundColor: const Color(0xFF282320),
                   onRefresh: _reload,
                   child: ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      12,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 28,
+                    ),
                     itemCount: items.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -321,7 +334,6 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                 const SizedBox(height: 12),
                                 SizedBox(
                                   width: double.infinity,
-                                  height: 44,
                                   child: OutlinedButton.icon(
                                     onPressed: _saving
                                         ? null
@@ -334,15 +346,19 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                     label: const Text(
                                       'Đánh dấu đã đọc hết',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
-                                        fontSize: 13,
+                                        color: Color(0xFFF7F9FC),
+                                        fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      backgroundColor: const Color(0x22FF5E36),
+                                      minimumSize: const Size(
+                                        double.infinity,
+                                        48,
+                                      ),
+                                      backgroundColor: const Color(0x28FF5E36),
                                       side: const BorderSide(
-                                        color: Color(0x66FF5E36),
+                                        color: Color(0x75FF5E36),
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
@@ -366,11 +382,11 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(15),
                         backgroundColor: unread
-                            ? const Color(0xE628221E)
-                            : const Color(0xD8211E1C),
+                            ? const Color(0xD4332A24)
+                            : const Color(0xC42B2622),
                         borderColor: unread
-                            ? MetaGymTheme.brandOrange.withValues(alpha: 0.55)
-                            : MetaGymTheme.cardBorder,
+                            ? const Color(0x88FF5E36)
+                            : const Color(0xA3A79D92),
                         onTap: unread && !_saving ? () => _read(item) : null,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,13 +396,13 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                               height: 44,
                               decoration: BoxDecoration(
                                 color: unread
-                                    ? accentColor.withValues(alpha: 0.16)
-                                    : MetaGymTheme.elevatedSurface,
+                                    ? accentColor.withValues(alpha: 0.18)
+                                    : const Color(0x80211E1C),
                                 borderRadius: BorderRadius.circular(13),
                                 border: Border.all(
                                   color: unread
-                                      ? accentColor.withValues(alpha: 0.45)
-                                      : MetaGymTheme.cardBorder,
+                                      ? accentColor.withValues(alpha: 0.48)
+                                      : const Color(0x9A8C8176),
                                 ),
                               ),
                               child: Icon(

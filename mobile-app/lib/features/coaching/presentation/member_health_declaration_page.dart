@@ -138,27 +138,30 @@ class _MemberHealthDeclarationPageState
     hintText: hint,
     helperText: helper,
     suffixText: suffixText,
+    helperMaxLines: 2,
     errorMaxLines: 2,
-    hintStyle: const TextStyle(color: Color(0xFF9E958C), fontSize: 13),
+    hintStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 13),
     helperStyle: const TextStyle(
-      color: Color(0xFFB8B0A8),
+      color: Color(0xFFC8C2BC),
       fontSize: 11.5,
+      height: 1.35,
     ),
     suffixStyle: const TextStyle(
       color: Color(0xFFC8C2BC),
       fontSize: 12.5,
       fontWeight: FontWeight.w600,
     ),
-    counterStyle: const TextStyle(
-      color: Color(0xFF9E958C),
-      fontSize: 11,
-    ),
+    counterStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 11),
     filled: true,
-    fillColor: const Color(0xFF181B22),
+    fillColor: const Color(0x99211E1C),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+    ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0xFF3E3731)),
+      borderSide: const BorderSide(color: Color(0x9A8C8176)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -303,10 +306,11 @@ class _MemberHealthDeclarationPageState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: const Color(0x26FF5E36),
                   borderRadius: BorderRadius.circular(12),
@@ -336,119 +340,123 @@ class _MemberHealthDeclarationPageState
                       'Đồng bộ trực tiếp với Huấn luyện viên phụ trách',
                       style: TextStyle(
                         color: Color(0xFFC8C2BC),
-                        fontSize: 11.5,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
-              CoachingPill(label: bmiLabel, tone: bmiTone),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: MetaGymMetricPanel(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Chiều cao',
-                        style: TextStyle(
-                          color: Color(0xFFB8B0A8),
-                          fontSize: 11,
+          const SizedBox(height: 10),
+          CoachingPill(label: bmiLabel, tone: bmiTone),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: MetaGymMetricPanel(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Chiều cao',
+                          style: TextStyle(
+                            color: Color(0xFFB8B0A8),
+                            fontSize: 11,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        h != null ? '${h.toStringAsFixed(0)} cm' : '-- cm',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: MetaGymTheme.tabularFigures,
+                        const SizedBox(height: 3),
+                        Text(
+                          h != null ? '${h.toStringAsFixed(0)} cm' : '-- cm',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFF7F9FC),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: MetaGymMetricPanel(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Cân nặng',
-                        style: TextStyle(
-                          color: Color(0xFFB8B0A8),
-                          fontSize: 11,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        w != null ? '${w.toStringAsFixed(1)} kg' : '-- kg',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: MetaGymTheme.tabularFigures,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: MetaGymMetricPanel(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Tỷ lệ mỡ',
-                        style: TextStyle(
-                          color: Color(0xFFB8B0A8),
-                          fontSize: 11,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: MetaGymMetricPanel(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Cân nặng',
+                          style: TextStyle(
+                            color: Color(0xFFB8B0A8),
+                            fontSize: 11,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        fat != null ? '${fat.toStringAsFixed(1)}%' : 'Tùy chọn',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: fat != null
-                              ? const Color(0xFFF7F9FC)
-                              : const Color(0xFF9E958C),
-                          fontSize: fat != null ? 16 : 13,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: MetaGymTheme.tabularFigures,
+                        const SizedBox(height: 3),
+                        Text(
+                          w != null ? '${w.toStringAsFixed(1)} kg' : '-- kg',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFF7F9FC),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: MetaGymMetricPanel(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Tỷ lệ mỡ',
+                          style: TextStyle(
+                            color: Color(0xFFB8B0A8),
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          fat != null ? '${fat.toStringAsFixed(1)}%' : 'Tùy chọn',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fat != null
+                                ? const Color(0xFFF7F9FC)
+                                : const Color(0xFFB8B0A8),
+                            fontSize: fat != null ? 16 : 13,
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -478,7 +486,14 @@ class _MemberHealthDeclarationPageState
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         child: SingleChildScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: EdgeInsets.fromLTRB(
+                            16,
+                            6,
+                            16,
+                            MediaQuery.paddingOf(context).bottom + 28,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -572,7 +587,7 @@ class _MemberHealthDeclarationPageState
                                     ),
                                     const SizedBox(height: 12),
                                     _labeledField(
-                                      label: 'Body fat · % · tùy chọn',
+                                      label: 'Tỷ lệ mỡ · % · tùy chọn',
                                       field: TextFormField(
                                         key: const Key('health-body-fat'),
                                         controller: _bodyFat,
@@ -591,7 +606,7 @@ class _MemberHealthDeclarationPageState
                                         decoration: _inputDecoration(
                                           hint: 'Nếu biết, hãy nhập tỷ lệ mỡ',
                                           helper:
-                                              'Không biết body fat? Bạn có thể để trống.',
+                                              'Không biết tỷ lệ mỡ? Bạn có thể để trống.',
                                           suffixText: '%',
                                         ),
                                         validator: (value) =>
@@ -600,7 +615,7 @@ class _MemberHealthDeclarationPageState
                                             : _requiredNumber(
                                                 value,
                                                 100,
-                                                'body fat',
+                                                'tỷ lệ mỡ',
                                               ),
                                       ),
                                     ),
@@ -715,48 +730,61 @@ class _MemberHealthDeclarationPageState
                                       runSpacing: 8,
                                       children: [
                                         for (final preset in _goalPresets)
-                                          InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            onTap: () => setState(
-                                              () => _goal.text = preset,
-                                            ),
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 11,
-                                                    vertical: 7,
-                                                  ),
-                                              decoration: BoxDecoration(
+                                          Material(
+                                            color: _goal.text.trim() == preset
+                                                ? const Color(0x38FF5E36)
+                                                : const Color(0x99211E1C),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              side: BorderSide(
                                                 color:
                                                     _goal.text.trim() == preset
-                                                    ? const Color(0x33FF5E36)
-                                                    : const Color(0xFF181B22),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                border: Border.all(
-                                                  color:
-                                                      _goal.text.trim() ==
-                                                          preset
-                                                      ? MetaGymTheme.brandOrange
-                                                      : const Color(0xFF3E3731),
-                                                ),
+                                                    ? MetaGymTheme.brandOrange
+                                                    : const Color(0x9A8C8176),
                                               ),
-                                              child: Text(
-                                                preset,
-                                                style: TextStyle(
-                                                  color:
-                                                      _goal.text.trim() ==
-                                                          preset
-                                                      ? const Color(0xFFF7F9FC)
-                                                      : const Color(0xFFC8C2BC),
-                                                  fontSize: 12,
-                                                  fontWeight:
-                                                      _goal.text.trim() ==
-                                                          preset
-                                                      ? FontWeight.w700
-                                                      : FontWeight.w500,
+                                            ),
+                                            clipBehavior: Clip.antiAlias,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              onTap: () => setState(
+                                                () => _goal.text = preset,
+                                              ),
+                                              child: ConstrainedBox(
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minHeight: 48,
+                                                    ),
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 10,
+                                                      ),
+                                                  child: Center(
+                                                    widthFactor: 1,
+                                                    child: Text(
+                                                      preset,
+                                                      style: TextStyle(
+                                                        color:
+                                                            _goal.text.trim() ==
+                                                                preset
+                                                            ? const Color(
+                                                                0xFFF7F9FC,
+                                                              )
+                                                            : const Color(
+                                                                0xFFE4DAD1,
+                                                              ),
+                                                        fontSize: 12.5,
+                                                        fontWeight:
+                                                            _goal.text.trim() ==
+                                                                preset
+                                                            ? FontWeight.w700
+                                                            : FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -822,7 +850,7 @@ class _MemberHealthDeclarationPageState
   );
 }
 
-/// Level 1 Solid / Warm Smoked Surface Card (no BackdropFilter behind dense forms per DESIGN.md).
+/// Level 1 Warm Smoked Surface Card (`featured: false`, no BackdropFilter behind dense forms).
 class _SolidFormSectionCard extends StatelessWidget {
   const _SolidFormSectionCard({
     required this.icon,
@@ -836,13 +864,8 @@ class _SolidFormSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return MetaGymGlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xE6221E1B),
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-        border: Border.all(color: const Color(0xFF4A423B), width: 1),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -920,17 +943,18 @@ class _ChoiceTile extends StatelessWidget {
       label: label,
       child: Material(
         color: selected
-            ? MetaGymTheme.brandOrange.withValues(alpha: 0.18)
-            : const Color(0xFF181B22),
+            ? MetaGymTheme.brandOrange.withValues(alpha: 0.22)
+            : const Color(0x99211E1C),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
           side: BorderSide(
             color: selected
                 ? MetaGymTheme.brandOrange
-                : const Color(0xFF3E3731),
+                : const Color(0x9A8C8176),
             width: selected ? 1.5 : 1,
           ),
         ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -945,18 +969,20 @@ class _ChoiceTile extends StatelessWidget {
                       : Icons.radio_button_off_rounded,
                   color: selected
                       ? MetaGymTheme.brandOrange
-                      : const Color(0xFF9E958C),
+                      : const Color(0xFFB8B0A8),
                   size: 18,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: selected
-                        ? const Color(0xFFF7F9FC)
-                        : const Color(0xFFD6DCE6),
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: selected
+                          ? const Color(0xFFF7F9FC)
+                          : const Color(0xFFEAE6E2),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
