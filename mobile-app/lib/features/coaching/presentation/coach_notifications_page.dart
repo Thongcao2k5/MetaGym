@@ -250,12 +250,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                       final unread = item['readAt'] == null;
                       final createdAt = item['createdAt'] as String?;
 
-                      return CoachingGraphiteCard(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        borderColor: unread
-                            ? MetaGymTheme.primary.withValues(alpha: 0.45)
-                            : MetaGymTheme.cardBorder,
+                      return MetaGymGlassCard(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
                         onTap: unread && !_saving ? () => _read(item) : null,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,12 +263,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                               decoration: BoxDecoration(
                                 color: unread
                                     ? const Color(0x24FF5E36)
-                                    : MetaGymTheme.elevatedSurface,
+                                    : const Color(0x80211E1C),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: unread
                                       ? const Color(0x55FF5E36)
-                                      : MetaGymTheme.cardBorder,
+                                      : const Color(0x9A8C8176),
                                 ),
                               ),
                               child: Icon(
@@ -280,7 +277,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                     : Icons.notifications_none_rounded,
                                 color: unread
                                     ? MetaGymTheme.brandOrange
-                                    : MetaGymTheme.textSecondary,
+                                    : const Color(0xFFB7B2AF),
                                 size: 20,
                               ),
                             ),
@@ -339,7 +336,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                         Text(
                                           formatVietnamTime(createdAt),
                                           style: const TextStyle(
-                                            color: MetaGymTheme.textSecondary,
+                                            color: Color(0xFFB7B2AF),
                                             fontSize: 12,
                                             fontFeatures:
                                                 MetaGymTheme.tabularFigures,

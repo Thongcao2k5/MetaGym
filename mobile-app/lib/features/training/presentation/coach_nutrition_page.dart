@@ -130,7 +130,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                   children: [
                                     CoachingAvatar(
                                       fullName: member.memberFullName,
-                                      size: 46,
+                                      size: 44,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -164,7 +164,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                     const SizedBox(width: 8),
                                     const Icon(
                                       Icons.chevron_right_rounded,
-                                      color: MetaGymTheme.textSecondary,
+                                      color: Color(0xFFB7B2AF),
                                     ),
                                   ],
                                 ),
@@ -558,11 +558,11 @@ class _NutritionEmptyCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: MetaGymTheme.elevatedSurface,
+              color: const Color(0x80211E1C),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: MetaGymTheme.cardBorder),
+              border: Border.all(color: const Color(0x9A8C8176)),
             ),
-            child: Icon(icon, color: MetaGymTheme.success, size: 24),
+            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 24),
           ),
           const SizedBox(height: 12),
           Text(
@@ -579,7 +579,7 @@ class _NutritionEmptyCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
+              color: Color(0xFFB7B2AF),
               fontSize: 13,
               height: 1.45,
             ),

@@ -396,37 +396,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _ => code,
   };
 
-  int get _profileCompletionPercent {
-    if (_role == UserRole.member) {
-      final checks = [
-        _fullName.trim().isNotEmpty,
-        _phone.trim().isNotEmpty,
-        _dateOfBirth.trim().isNotEmpty,
-        _gender.trim().isNotEmpty,
-        _heightCm > 0,
-        _fitnessGoal.trim().isNotEmpty,
-        _experienceLevel.trim().isNotEmpty,
-        _activityLevel.trim().isNotEmpty,
-        _healthNotes.trim().isNotEmpty || _injuryNotes.trim().isNotEmpty,
-        _dietaryPreferences.trim().isNotEmpty,
-      ];
-      final done = checks.where((c) => c).length;
-      return ((done / checks.length) * 100).round();
-    }
-    if (_role == UserRole.coach) {
-      final checks = [
-        _fullName.trim().isNotEmpty,
-        _phone.trim().isNotEmpty,
-        _biography.trim().isNotEmpty,
-        _specialties.isNotEmpty,
-        _qualifications.trim().isNotEmpty,
-        _availabilityNote.trim().isNotEmpty,
-      ];
-      final done = checks.where((c) => c).length;
-      return ((done / checks.length) * 100).round();
-    }
-    return _phone.trim().isNotEmpty ? 100 : 80;
-  }
 
   void _refreshBoth() {
     if (mounted) setState(() {});
@@ -561,6 +530,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildAppSettingsMenuCard(),
                   const SizedBox(height: 10),
                   _buildSupportInfoMenuCard(),
+                  const SizedBox(height: 16),
+                  _buildLogoutButton(),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -660,13 +631,6 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.edit_outlined,
             semanticLabel: 'Chỉnh sửa thông tin cá nhân',
             onTap: _openPersonalInfoPage,
-          ),
-          const SizedBox(width: 4),
-          _CircleHeaderGlassButton(
-            icon: Icons.logout_rounded,
-            iconColor: const Color(0xFFFF6961),
-            semanticLabel: 'Đăng xuất',
-            onTap: _confirmSignOut,
           ),
         ],
       ),
@@ -829,8 +793,6 @@ class _ProfilePageState extends State<ProfilePage> {
   // 3. HERO PROFILE CARD (GỌN GÀNG ĐỒNG BỘ MẪU WAYS STATION, GIỮ PHONG CÁCH KÍNH META GYM)
   // ===========================================================================
   Widget _buildHeroProfileCard() {
-    final completion = _profileCompletionPercent;
-
     return _MembershipGlassCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -991,23 +953,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               fontSize: 11,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            '·',
-                            style: TextStyle(
-                              color: Color(0xFF8C847E),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Hoàn thiện: $completion%',
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ],
                       ),
                     ],
@@ -1123,7 +1068,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 children: [
                                   const Expanded(
                                     child: Text(
-                                      'Hoàn thiện hồ sơ',
+                                      'Mục tiêu cá nhân',
                                       style: TextStyle(
                                         color: Color(0xFFEAE6E2),
                                         fontSize: 10,
@@ -1142,9 +1087,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                       color: const Color(0x242ECC71),
                                       borderRadius: BorderRadius.circular(5),
                                     ),
-                                    child: Text(
-                                      '$completion%',
-                                      style: const TextStyle(
+                                    child: const Text(
+                                      'ĐÃ BẬT',
+                                      style: TextStyle(
                                         color: MetaGymTheme.progressGreen,
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
@@ -1434,6 +1379,49 @@ class _ProfilePageState extends State<ProfilePage> {
         title: 'Thông tin phòng tập & Hỗ trợ',
         subtitle: 'Meta Gym · 05:30 – 22:00 hằng ngày · v1.0.0',
         onTap: _openSupportInfoPage,
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return _DashboardGlassCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _confirmSignOut,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0x26FF6961),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: Color(0xFFFF6961),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'Đăng xuất',
+                  style: TextStyle(
+                    color: Color(0xFFFF6961),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1888,13 +1876,11 @@ class _CircleHeaderGlassButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.onTap,
-    this.iconColor,
   });
 
   final IconData icon;
   final String semanticLabel;
   final VoidCallback onTap;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1924,7 +1910,7 @@ class _CircleHeaderGlassButton extends StatelessWidget {
                   ),
                   child: Icon(
                     icon,
-                    color: iconColor ?? MetaGymTheme.darkTextPrimary,
+                    color: MetaGymTheme.darkTextPrimary,
                     size: 20,
                   ),
                 ),

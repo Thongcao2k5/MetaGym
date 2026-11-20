@@ -39,7 +39,7 @@ class ApiException implements Exception {
       403 => ApiExceptionKind.forbidden,
       422 => ApiExceptionKind.validation,
       final int code when code >= 500 => ApiExceptionKind.server,
-      _ when _isNetworkFailure(exception) => ApiExceptionKind.network,
+      _ when isNetworkFailure(exception) => ApiExceptionKind.network,
       _ => ApiExceptionKind.request,
     };
 
@@ -72,7 +72,7 @@ class ApiException implements Exception {
   String toString() => 'ApiException($kind, $code, $statusCode)';
 }
 
-bool _isNetworkFailure(DioException exception) {
+bool isNetworkFailure(DioException exception) {
   return switch (exception.type) {
     DioExceptionType.connectionTimeout ||
     DioExceptionType.sendTimeout ||
