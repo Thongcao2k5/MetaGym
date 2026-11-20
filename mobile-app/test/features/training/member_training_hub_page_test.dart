@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:meta_gym_app/features/training/presentation/nutrition_tracking_page.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -20,6 +22,62 @@ import 'package:meta_gym_app/features/training/domain/member_self_training_day.d
 import 'package:meta_gym_app/features/training/presentation/member_training_hub_page.dart';
 
 void main() {
+  for (final useButton in [false, true]) {
+    testWidgets(
+      'nutrition tool opens diary via ${useButton ? 'button' : 'row'}',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final client = ApiClient.withAdapter(
+          config: ApiConfig.fromValues(environment: 'local'),
+          adapter: _NutritionAdapter(),
+        );
+        await tester.pumpWidget(
+          Provider<ApiClient>.value(
+            value: client,
+            child: MaterialApp(
+              theme: MetaGymTheme.dark,
+              home: MemberTrainingHubPage(
+                membershipController: MembershipController(
+                  _FakeMembershipService(),
+                ),
+                coachingService: _FakeCoachingService(),
+                selfTrainingApi: _FakeSelfTrainingApi(),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('nutrition-tool-open')),
+          200,
+        );
+        await tester.pumpAndSettle();
+        final button = find.byKey(const Key('nutrition-tool-open'));
+        expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+        expect(tester.getSize(button).width, greaterThanOrEqualTo(48));
+        expect(find.text('Theo dõi dinh dưỡng'), findsOneWidget);
+        final nutritionTop = tester
+            .getTopLeft(find.text('Theo dõi dinh dưỡng'))
+            .dy;
+        expect(
+          nutritionTop,
+          greaterThan(tester.getTopLeft(find.text('Lịch tập của tôi')).dy),
+        );
+        expect(
+          nutritionTop,
+          lessThan(tester.getTopLeft(find.text('Công cụ & Khám phá')).dy),
+        );
+        await tester.tap(useButton ? button : find.text('Theo dõi dinh dưỡng'));
+        await tester.pumpAndSettle();
+        expect(find.byType(NutritionTrackingPage), findsOneWidget);
+        expect(find.text('Chưa ghi món'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   void setPhoneViewport(WidgetTester tester) {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
@@ -138,6 +196,8 @@ void main() {
       expect(find.text('Lịch tập của tôi'), findsOneWidget);
       expect(find.text('Nhật ký tập luyện'), findsOneWidget);
       expect(find.text('Lịch sử tập luyện'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Thư viện bài tập'), 200);
+      await tester.pumpAndSettle();
       expect(find.text('Thư viện bài tập'), findsOneWidget);
       expect(find.text('Phòng gym & thiết bị'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -415,4 +475,21 @@ class _FakeSelfTrainingApi extends MemberSelfTrainingApi {
   @override
   Future<List<MemberSelfTrainingDay>> getRange(String from, String to) async =>
       plans;
+}
+
+class _NutritionAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async => ResponseBody.fromString(
+    '{"data":{"canWrite":false,"hasActiveMembership":false,"relationshipStatus":"NONE","entries":[]}}',
+    200,
+    headers: {
+      Headers.contentTypeHeader: [Headers.jsonContentType],
+    },
+  );
+  @override
+  void close({bool force = false}) {}
 }

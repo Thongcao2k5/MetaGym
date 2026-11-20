@@ -89,7 +89,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
           const MetaGymBackground(),
           RefreshIndicator(
             color: MetaGymTheme.primary,
-            backgroundColor: const Color(0xFF282320),
+            backgroundColor: MetaGymTheme.cardSurface,
             onRefresh: _load,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -108,24 +108,30 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                   onSubmitted: (_) => _searchExercises(),
                   decoration: InputDecoration(
                     hintText: 'Tìm tên bài tập',
-                    hintStyle: const TextStyle(color: Color(0xFFB8B0A8)),
+                    hintStyle: const TextStyle(
+                      color: MetaGymTheme.textSecondary,
+                    ),
                     prefixIcon: const Icon(
                       Icons.search_rounded,
                       color: MetaGymTheme.brandOrange,
                     ),
                     filled: true,
-                    fillColor: const Color(0xC42B2622),
+                    fillColor: MetaGymTheme.cardSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         MetaGymTheme.radiusInput,
                       ),
-                      borderSide: const BorderSide(color: Color(0xA3A79D92)),
+                      borderSide: const BorderSide(
+                        color: MetaGymTheme.cardBorder,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         MetaGymTheme.radiusInput,
                       ),
-                      borderSide: const BorderSide(color: Color(0xA3A79D92)),
+                      borderSide: const BorderSide(
+                        color: MetaGymTheme.cardBorder,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
@@ -183,7 +189,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                       Text(
                         '${visible.length} bài',
                         style: const TextStyle(
-                          color: Color(0xFFB8B0A8),
+                          color: MetaGymTheme.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -202,6 +208,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                   )
                 else if (_error != null) ...[
                   MetaGymGlassCard(
+                    solid: true,
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,6 +233,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                   ),
                 ] else if (visible.isEmpty)
                   const MetaGymGlassCard(
+                    solid: true,
                     padding: EdgeInsets.all(20),
                     child: Text(
                       'Chưa có bài tập phù hợp.',
@@ -254,12 +262,12 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       selectedColor: const Color(0xFF493025),
-      backgroundColor: const Color(0xC42B2622),
+      backgroundColor: MetaGymTheme.cardSurface,
       showCheckmark: false,
       side: BorderSide(
         color: _muscle == value
             ? MetaGymTheme.primary
-            : const Color(0xA3A79D92),
+            : MetaGymTheme.cardBorder,
       ),
       labelStyle: TextStyle(
         color: _muscle == value
@@ -277,6 +285,7 @@ class _ExerciseItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MetaGymGlassCard(
+    solid: true,
     padding: EdgeInsets.zero,
     child: Material(
       color: Colors.transparent,
@@ -326,7 +335,7 @@ class _ExerciseItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFB8B0A8),
+                          color: MetaGymTheme.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -502,8 +511,11 @@ class _ExerciseDetailCard extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) =>
-      MetaGymGlassCard(padding: const EdgeInsets.all(16), child: child);
+  Widget build(BuildContext context) => MetaGymGlassCard(
+    solid: true,
+    padding: const EdgeInsets.all(16),
+    child: child,
+  );
 }
 
 class _DetailSection extends StatelessWidget {

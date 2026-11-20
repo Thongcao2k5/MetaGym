@@ -147,6 +147,7 @@ class MetaGymGlassCard extends StatelessWidget {
     this.borderColor,
     this.onTap,
     this.featured = false,
+    this.solid = false,
     this.clipBehavior = Clip.antiAlias,
     super.key,
   });
@@ -158,13 +159,17 @@ class MetaGymGlassCard extends StatelessWidget {
   final Color? borderColor;
   final VoidCallback? onTap;
   final bool featured;
+
+  /// Stable Level 1 surface for forms, long lists and reading content.
+  final bool solid;
   final Clip clipBehavior;
 
   @override
   Widget build(BuildContext context) {
     final radius =
         borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-    final enableBlur = featured && !MetaGymTheme.isFlutterTestEnvironment;
+    final enableBlur =
+        !solid && featured && !MetaGymTheme.isFlutterTestEnvironment;
 
     final Widget innerContent = padding != null
         ? Padding(padding: padding!, child: child)
@@ -177,26 +182,33 @@ class MetaGymGlassCard extends StatelessWidget {
     final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: featured ? const Color(0xB82D2824) : const Color(0xC42B2622),
+        color: solid
+            ? MetaGymTheme.cardSurface
+            : featured
+            ? const Color(0xB82D2824)
+            : const Color(0xC42B2622),
         borderRadius: radius,
         border: Border.all(
-          color: borderColor ?? const Color(0xA3A79D92),
-          width: 1.1,
+          color:
+              borderColor ??
+              (solid ? MetaGymTheme.cardBorder : const Color(0xA3A79D92)),
+          width: solid ? 1 : 1.1,
         ),
       ),
       child: Material(
         type: MaterialType.transparency,
         child: Stack(
           children: [
-            const Positioned(
-              top: 0,
-              left: 18,
-              right: 18,
-              child: SizedBox(
-                height: 1,
-                child: ColoredBox(color: Color(0x70FFF6EA)),
+            if (!solid)
+              const Positioned(
+                top: 0,
+                left: 18,
+                right: 18,
+                child: SizedBox(
+                  height: 1,
+                  child: ColoredBox(color: Color(0x70FFF6EA)),
+                ),
               ),
-            ),
             interactiveContent,
           ],
         ),

@@ -167,6 +167,16 @@ export function createMembershipPlansRouter({ database, jwtSecret }) {
         name: 'name', description: 'description', price: 'price',
         durationDays: 'duration_days', status: 'status',
       }).filter(([key]) => key in parsed.data);
+      if (fields.some(([key]) => key === 'price' || key === 'durationDays')) {
+        const { rows: [purchase] } = await client.query(
+          "SELECT EXISTS (SELECT 1 FROM payments WHERE plan_id = $1 AND status = 'SUCCESS') AS purchased",
+          [before.id],
+        );
+        if (purchase.purchased) {
+          await client.query('ROLLBACK');
+          return error(response, 409, 'PLAN_TERMS_LOCKED', 'Không thể đổi giá hoặc thời hạn của gói đã được mua');
+        }
+      }
       await client.query(
         `UPDATE membership_plans SET ${fields.map(([, col], index) => `${col} = $${index + 1}`).join(', ')}
          WHERE id = $${fields.length + 1}`,

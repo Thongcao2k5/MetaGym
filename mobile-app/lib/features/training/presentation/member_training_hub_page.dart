@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'nutrition_tracking_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -391,6 +393,11 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                               _todaySelfPlan!.title,
                             ].join(' · '),
                       onTap: () => _open(const MemberSelfTrainingPage()),
+                    ),
+                    const SizedBox(height: 10),
+                    _NutritionToolCard(
+                      disableBlur: disableBlur,
+                      onTap: () => _open(const NutritionTrackingPage()),
                     ),
                     const SizedBox(height: 20),
                     const _SectionTitle('Công cụ & Khám phá'),
@@ -1282,6 +1289,79 @@ class _FeaturedPlanCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NutritionToolCard extends StatelessWidget {
+  const _NutritionToolCard({required this.disableBlur, required this.onTap});
+
+  final bool disableBlur;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => _TrainingContentCard(
+    disableBlur: disableBlur,
+    onTap: onTap,
+    child: Padding(
+      key: const Key('nutrition-tool-card'),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      child: Row(
+        children: [
+          const _IconBadge(
+            icon: Icons.restaurant_menu_rounded,
+            iconColor: MetaGymTheme.success,
+            locked: false,
+            size: 42,
+            iconSize: 21,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Theo dõi dinh dưỡng',
+                  style: TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Ghi món ăn · đối chiếu thực đơn Coach',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFFB7B2AF),
+                    fontSize: 11.5,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            key: const Key('nutrition-tool-open'),
+            onPressed: onTap,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              foregroundColor: MetaGymTheme.success,
+              backgroundColor: MetaGymTheme.success.withValues(alpha: .1),
+              side: BorderSide(
+                color: MetaGymTheme.success.withValues(alpha: .65),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text('Mở'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _BentoToolCard extends StatelessWidget {

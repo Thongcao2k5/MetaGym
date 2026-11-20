@@ -122,7 +122,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           RefreshIndicator(
             onRefresh: _load,
             color: MetaGymTheme.brandOrange,
-            backgroundColor: const Color(0xFF282320),
+            backgroundColor: MetaGymTheme.cardSurface,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
@@ -290,11 +290,11 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                     decoration: InputDecoration(
                       hintText: 'Tìm tên máy',
                       hintStyle: const TextStyle(
-                        color: Color(0xFFB8B0A8),
+                        color: MetaGymTheme.textSecondary,
                         fontSize: 13.5,
                       ),
                       filled: true,
-                      fillColor: const Color(0xC42B2622),
+                      fillColor: MetaGymTheme.cardSurface,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 14,
@@ -322,7 +322,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           MetaGymTheme.radiusInput,
                         ),
                         borderSide: const BorderSide(
-                          color: Color(0xA3A79D92),
+                          color: MetaGymTheme.cardBorder,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
@@ -330,7 +330,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           MetaGymTheme.radiusInput,
                         ),
                         borderSide: const BorderSide(
-                          color: Color(0xA3A79D92),
+                          color: MetaGymTheme.cardBorder,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -517,12 +517,12 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       selectedColor: const Color(0xFF493025),
-      backgroundColor: const Color(0xC42B2622),
+      backgroundColor: MetaGymTheme.cardSurface,
       showCheckmark: false,
       side: BorderSide(
         color: _category == value
             ? MetaGymTheme.brandOrange
-            : const Color(0xA3A79D92),
+            : MetaGymTheme.cardBorder,
       ),
       labelStyle: TextStyle(
         color: _category == value
@@ -534,6 +534,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
   );
 
   Widget _equipmentRow(CatalogItem item) => MetaGymGlassCard(
+    solid: true,
     padding: EdgeInsets.zero,
     child: Material(
       color: Colors.transparent,
@@ -605,6 +606,9 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
     ),
   );
 
-  Widget _surface(Widget child) =>
-      MetaGymGlassCard(padding: const EdgeInsets.all(16), child: child);
+  Widget _surface(Widget child) => MetaGymGlassCard(
+    solid: true,
+    padding: const EdgeInsets.all(16),
+    child: child,
+  );
 }

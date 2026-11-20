@@ -302,6 +302,18 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { price: 200000 });
       assert.equal(result.status, 409);
+      const lockedPlan = await database.query(
+        'SELECT price, duration_days FROM membership_plans WHERE id = $1', [planId],
+      );
+      assert.equal(Number(lockedPlan.rows[0].price), 100000);
+      assert.equal(lockedPlan.rows[0].duration_days, 30);
+      result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
+        'PATCH', { durationDays: 60 });
+      assert.equal(result.status, 409);
+      const lockedDuration = await database.query(
+        'SELECT duration_days FROM membership_plans WHERE id = $1', [planId],
+      );
+      assert.equal(lockedDuration.rows[0].duration_days, 30);
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { status: 'INACTIVE' });
       assert.equal(result.status, 200);
