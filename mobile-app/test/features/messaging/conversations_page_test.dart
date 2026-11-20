@@ -90,11 +90,16 @@ void main() {
     await tester.tap(find.text('Coach coach-1'));
     await tester.pumpAndSettle();
     expect(find.text('Tin 0'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('Tải tin cũ'),
-      find.byType(ListView).last,
-      const Offset(0, 250),
+    final scrollable = find.descendant(
+      of: find.byType(ListView).last,
+      matching: find.byType(Scrollable),
     );
+    await tester.scrollUntilVisible(
+      find.text('Tải tin cũ'),
+      50.0,
+      scrollable: scrollable,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Tải tin cũ'));
     await tester.pumpAndSettle();
     expect(service.messagePages, [1, 2]);

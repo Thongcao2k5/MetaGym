@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
@@ -59,8 +60,9 @@ class _MemberMealPageState extends State<MemberMealPage> {
   }
 
   Future<void> _edit([MealLog? meal]) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _MealFormPage(service: _service!, meal: meal),
       ),
     );
@@ -159,6 +161,7 @@ class _MealFormPageState extends State<_MealFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final date = parseProgressTime(_date.text);
     final calories = _calories.text.trim().isEmpty
         ? null

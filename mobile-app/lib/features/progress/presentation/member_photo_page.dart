@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
@@ -62,8 +63,9 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
   }
 
   Future<void> _add() async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _PhotoFormPage(service: _service!, picker: _picker!),
       ),
     );
@@ -105,8 +107,9 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                 subtitle: Text(formatProgressTime(photo.takenAt)),
                 leading: const Icon(Icons.image_outlined),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
+                onTap: () => MetaGymNavigation.pushOnce(
+                  context,
+                  MetaGymPageRoute<void>(
                     builder: (_) =>
                         _PhotoDetailPage(service: _service!, photo: photo),
                   ),
@@ -167,6 +170,7 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final image = _image;
     final date = parseProgressTime(_date.text);
     final validation = image == null

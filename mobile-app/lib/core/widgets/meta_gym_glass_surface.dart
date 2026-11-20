@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 
@@ -166,9 +168,12 @@ class MetaGymGlassCard extends StatelessWidget {
         : child;
 
     final Widget interactiveContent = onTap != null
-        ? InkWell(
+        ? MetaGymTap(
             onTap: onTap,
             borderRadius: radius,
+            splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+            highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
+            focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.16),
             child: innerContent,
           )
         : innerContent;
@@ -246,9 +251,12 @@ class MetaGymMetricPanel extends StatelessWidget {
         side: const BorderSide(color: Color(0x9A8C8176), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: radius,
+        splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+        highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
+        focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.16),
         child: Padding(padding: padding, child: child),
       ),
     );
@@ -259,7 +267,7 @@ class MetaGymMetricPanel extends StatelessWidget {
 /// - Kích thước: `44x44`
 /// - Nền: `Color(0x9E2F2924)`
 /// - Viền: `1px Color(0x95ADA295)`
-class MetaGymCircleIconButton extends StatelessWidget {
+class MetaGymCircleIconButton extends StatefulWidget {
   const MetaGymCircleIconButton({
     required this.icon,
     required this.onTap,
@@ -272,28 +280,78 @@ class MetaGymCircleIconButton extends StatelessWidget {
   final String? tooltip;
 
   @override
+  State<MetaGymCircleIconButton> createState() =>
+      _MetaGymCircleIconButtonState();
+}
+
+class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
+  bool _tapLocked = false;
+  Timer? _tapGuard;
+
+  void _handleTap() {
+    final callback = widget.onTap;
+    if (_tapLocked || callback == null) return;
+    setState(() => _tapLocked = true);
+    _tapGuard?.cancel();
+    _tapGuard = Timer(MetaGymTheme.pageTransitionDuration, () {
+      if (mounted) setState(() => _tapLocked = false);
+    });
+    callback();
+  }
+
+  @override
+  void dispose() {
+    _tapGuard?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip ?? '',
+    final label = widget.tooltip ?? _iconActionName(widget.icon);
+    final button = Semantics(
+      button: true,
+      enabled: widget.onTap != null && !_tapLocked,
+      label: label,
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
+        child: MetaGymTap(
+          onTap: widget.onTap == null || _tapLocked ? null : _handleTap,
           customBorder: const CircleBorder(),
+          splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+          highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.10),
+          focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.18),
           child: Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0x9E2F2924),
               border: Border.all(color: const Color(0x95ADA295), width: 1),
             ),
-            child: Icon(icon, size: 20, color: const Color(0xFFF7F9FC)),
+            child: Icon(widget.icon, size: 20, color: const Color(0xFFF7F9FC)),
           ),
         ),
       ),
     );
+    if (widget.tooltip == null) return button;
+    return Tooltip(message: widget.tooltip!, child: button);
   }
+}
+
+String _iconActionName(IconData icon) {
+  if (icon == Icons.arrow_back_rounded ||
+      icon == Icons.arrow_back_ios_new_rounded) {
+    return 'Quay lại';
+  }
+  if (icon == Icons.refresh_rounded) return 'Tải lại';
+  if (icon == Icons.notifications_none_rounded) return 'Thông báo';
+  if (icon == Icons.chat_bubble_outline_rounded) return 'Tin nhắn';
+  if (icon == Icons.close_rounded || icon == Icons.close) return 'Đóng';
+  if (icon == Icons.search_rounded) return 'Tìm kiếm';
+  if (icon == Icons.edit_outlined || icon == Icons.edit_rounded) {
+    return 'Chỉnh sửa';
+  }
+  return 'Hành động';
 }

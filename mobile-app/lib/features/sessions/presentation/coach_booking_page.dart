@@ -1,3 +1,6 @@
+import 'package:meta_gym_app/features/coaching/presentation/termination_reason_dialog.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -139,8 +142,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         ? 1
         : (remaining - bookedCount).clamp(0, remaining);
 
-    final changedCount = await Navigator.of(context).push<int>(
-      MaterialPageRoute(
+    final changedCount = await MetaGymNavigation.pushOnce<int>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachSchedulePickerPage(
           api: _api,
           pack: pack,
@@ -166,64 +170,16 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     }
   }
 
-  Future<String?> _reason(String heading) async {
-    var reason = '';
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
-        ),
-        title: Text(
-          heading,
-          style: const TextStyle(
-            color: MetaGymTheme.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: TextFormField(
+  Future<String?> _reason(String heading) =>
+      MetaGymNavigation.showDialogOnce<String>(
+        context: context,
+        builder: (_) => TerminationReasonDialog(
+          title: heading,
+          label: 'Lý do',
+          confirmLabel: 'Xác nhận',
           maxLength: 500,
-          autofocus: true,
-          style: const TextStyle(color: MetaGymTheme.textPrimary),
-          onChanged: (value) => reason = value.trim(),
-          decoration: const InputDecoration(
-            labelText: 'Lý do',
-            labelStyle: TextStyle(color: MetaGymTheme.textSecondary),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: MetaGymTheme.darkBorderStrong),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: MetaGymTheme.brandOrange),
-            ),
-          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Quay lại',
-              style: TextStyle(color: MetaGymTheme.textSecondary),
-            ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.brandOrange,
-              foregroundColor: MetaGymTheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              if (reason.isNotEmpty) Navigator.pop(ctx, reason);
-            },
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      ),
-    );
-  }
+      );
 
   Future<void> _resolve(CoachRecord booking, String action) async {
     if (!_isCoach &&
@@ -251,7 +207,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   Future<bool> _confirmCharge(String title) async {
     if (!mounted) return false;
-    return await showDialog<bool>(
+    return await MetaGymNavigation.showDialogOnce<bool>(
           context: context,
           builder: (dialog) => AlertDialog(
             backgroundColor: MetaGymTheme.cardSurface,
@@ -329,7 +285,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             .map((e) => e.toString())
             .toList();
 
-    final time = await showDialog<String>(
+    final time = await MetaGymNavigation.showDialogOnce<String>(
       context: context,
       builder: (ctx) => SimpleDialog(
         backgroundColor: MetaGymTheme.cardSurface,
@@ -402,7 +358,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 style: TextButton.styleFrom(
-                  minimumSize: const Size(64, 44),
+                  minimumSize: const Size(64, 48),
                   foregroundColor: MetaGymTheme.textSecondary,
                 ),
                 onPressed: () => Navigator.pop(ctx),
@@ -430,7 +386,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
   });
 
   Future<void> _editSchedule() async {
-    final result = await showDialog<List<CoachRecord>>(
+    final result = await MetaGymNavigation.showDialogOnce<List<CoachRecord>>(
       context: context,
       builder: (ctx) => _CoachScheduleBuilderDialog(initialDays: _days),
     );
@@ -829,7 +785,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                           const SizedBox(width: 8),
                                           TextButton(
                                             style: TextButton.styleFrom(
-                                              minimumSize: const Size(68, 44),
+                                              minimumSize: const Size(68, 48),
                                               foregroundColor:
                                                   MetaGymTheme.primary,
                                             ),
@@ -1035,8 +991,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             MetaGymCircleIconButton(
               icon: Icons.history_rounded,
               tooltip: 'Lịch sử buổi tập',
-              onTap: () => Navigator.of(context).push<void>(
-                MaterialPageRoute(
+              onTap: () => MetaGymNavigation.pushOnce<void>(
+                context,
+                MetaGymPageRoute(
                   builder: (_) => CoachBookingHistoryPage(
                     bookings: pastBookings,
                     matchPlanDay: _matchedPlanDay,
@@ -1053,8 +1010,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   icon: Icons.notifications_none_rounded,
                   tooltip: 'Thông báo Coach',
                   onTap: () async {
-                    await Navigator.of(context).push<void>(
-                      MaterialPageRoute(
+                    await MetaGymNavigation.pushOnce<void>(
+                      context,
+                      MetaGymPageRoute(
                         builder: (_) => const CoachNotificationsPage(),
                       ),
                     );
@@ -1492,8 +1450,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   void _openPlanDay(TrainingDay? day) {
     if (day == null) return;
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) =>
             MemberDayPlanPage(day: day, planTitle: _activePlan?.title),
       ),
@@ -1798,7 +1757,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               if (startsAt != null && startsAt.isAfter(now)) ...[
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(88, 44),
+                    minimumSize: const Size(88, 48),
                     side: const BorderSide(color: Color(0xFFFF6961)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1822,7 +1781,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 ))
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(88, 44),
+                      minimumSize: const Size(88, 48),
                       backgroundColor: MetaGymTheme.elevatedSurface,
                       foregroundColor: MetaGymTheme.brandOrange,
                       side: const BorderSide(color: MetaGymTheme.brandOrange),
@@ -1919,10 +1878,12 @@ class _SegmentTabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeBg = MetaGymTheme.primary.withValues(alpha: 0.22);
-    return InkWell(
+    return MetaGymTap(
       borderRadius: BorderRadius.circular(11),
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: MetaGymTheme.stateDurationOf(context),
+        curve: Curves.easeOutCubic,
         height: 44,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1941,9 +1902,7 @@ class _SegmentTabButton extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: active
-                ? Colors.white
-                : const Color(0xFFB7B2AF),
+            color: active ? Colors.white : const Color(0xFFB7B2AF),
             fontSize: 12.5,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
@@ -2111,7 +2070,10 @@ class _CoachScheduleBuilderDialogState
                 for (final preset in _presets)
                   ActionChip(
                     backgroundColor: const Color(0xC42B2622),
-                    side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+                    side: const BorderSide(
+                      color: Color(0xA3A79D92),
+                      width: 1.1,
+                    ),
                     materialTapTargetSize: MaterialTapTargetSize.padded,
                     label: Text(
                       preset['label'] as String,
@@ -2141,7 +2103,9 @@ class _CoachScheduleBuilderDialogState
                   final isActive = _daySlots.containsKey(weekday);
                   final slots = _daySlots[weekday] ?? [];
 
-                  return Container(
+                  return AnimatedContainer(
+                    duration: MetaGymTheme.stateDurationOf(context),
+                    curve: Curves.easeOutCubic,
                     constraints: const BoxConstraints(minHeight: 52),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,

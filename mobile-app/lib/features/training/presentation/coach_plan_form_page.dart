@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -222,6 +223,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
   };
 
   Future<void> _save() async {
+    if (_busy) return;
     final validation = _validate();
     if (validation != null) {
       setState(() => _error = validation);
@@ -317,7 +319,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
           ),
       ],
     );
-    await showDialog<void>(
+    await MetaGymNavigation.showDialogOnce<void>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
@@ -345,7 +347,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
             style: FilledButton.styleFrom(
               backgroundColor: MetaGymTheme.elevatedSurface,
               foregroundColor: MetaGymTheme.textPrimary,
-              minimumSize: const Size(48, 44),
+              minimumSize: const Size(48, 48),
               side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -723,7 +725,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: MetaGymTheme.reflectionBlue,
               backgroundColor: MetaGymTheme.elevatedSurface,
-              minimumSize: const Size(double.infinity, 44),
+              minimumSize: const Size(double.infinity, 48),
               side: const BorderSide(color: MetaGymTheme.cardBorder),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -750,7 +752,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: MetaGymTheme.success,
               backgroundColor: MetaGymTheme.elevatedSurface,
-              minimumSize: const Size(double.infinity, 44),
+              minimumSize: const Size(double.infinity, 48),
               side: const BorderSide(color: MetaGymTheme.cardBorder),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),

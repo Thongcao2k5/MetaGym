@@ -2,6 +2,7 @@ import 'package:meta_gym_app/features/admin/presentation/admin_home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/login_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
@@ -166,92 +167,116 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, state) => const ProfilePage(),
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const ProfilePage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.changePassword,
-        builder: (context, state) => const ChangePasswordPage(),
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const ChangePasswordPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.memberHome,
-        builder: (context, state) => const MemberHomePage(),
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const MemberHomePage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.coachHome,
-        builder: (context, state) => const CoachHomePage(),
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const CoachHomePage(),
+        ),
       ),
       for (final destination in memberDestinations)
         GoRoute(
           path: destination.path,
-          builder: (context, state) => destination.path == AppRoutes.membership
-              ? MembershipPage(
-                  key: ValueKey(state.uri.query),
-                  paymentReturnId:
-                      state.uri.queryParameters['momoPaymentId'] ??
-                      state.uri.queryParameters['vnpayPaymentId'],
-                  paymentReturnMethod:
-                      state.uri.queryParameters.containsKey('momoPaymentId')
-                      ? 'MOMO'
-                      : 'VNPAY',
-                )
-              : destination.path == '/member/features/payments'
-              ? const PaymentHistoryPage()
-              : destination.path == '/member/features/gym'
-              ? const GymEquipmentPage()
-              : destination.path == '/member/features/coaching'
-              ? const CoachSelectionPage()
-              : destination.path == '/member/features/my-coach'
-              ? const MemberCoachingPage()
-              : destination.path == '/member/features/training'
-              ? const MemberTrainingPage()
-              : destination.path == '/member/features/nutrition'
-              ? const MemberNutritionPage(structured: true)
-              : destination.path == '/member/features/sessions'
-              ? const CoachBookingPage()
-              : destination.path == '/member/features/progress'
-              ? const MemberProgressPage()
-              : destination.path == '/member/features/workouts'
-              ? const MemberJournalPage()
-              : destination.path == '/member/features/meals'
-              ? const MemberMealPage()
-              : destination.path == '/member/features/measurements'
-              ? const MemberMeasurementPage()
-              : destination.path == '/member/features/photos'
-              ? const MemberPhotoPage()
-              : destination.path == '/member/features/messages'
-              ? ConversationsPage(currentUserId: sessionController.user!.id)
-              : destination.path == '/member/features/calls'
-              ? CallsPage(currentUserId: sessionController.user!.id)
-              : destination.path == '/member/features/ai'
-              ? const AiConversationsPage()
-              : throw StateError('Thiếu trang Member: ${destination.path}'),
+          pageBuilder: (context, state) => _featureTransitionPage(
+            key: state.pageKey,
+            context: context,
+            child: destination.path == AppRoutes.membership
+                ? MembershipPage(
+                    key: ValueKey(state.uri.query),
+                    paymentReturnId:
+                        state.uri.queryParameters['momoPaymentId'] ??
+                        state.uri.queryParameters['vnpayPaymentId'],
+                    paymentReturnMethod:
+                        state.uri.queryParameters.containsKey('momoPaymentId')
+                        ? 'MOMO'
+                        : 'VNPAY',
+                  )
+                : destination.path == '/member/features/payments'
+                ? const PaymentHistoryPage()
+                : destination.path == '/member/features/gym'
+                ? const GymEquipmentPage()
+                : destination.path == '/member/features/coaching'
+                ? const CoachSelectionPage()
+                : destination.path == '/member/features/my-coach'
+                ? const MemberCoachingPage()
+                : destination.path == '/member/features/training'
+                ? const MemberTrainingPage()
+                : destination.path == '/member/features/nutrition'
+                ? const MemberNutritionPage(structured: true)
+                : destination.path == '/member/features/sessions'
+                ? const CoachBookingPage()
+                : destination.path == '/member/features/progress'
+                ? const MemberProgressPage()
+                : destination.path == '/member/features/workouts'
+                ? const MemberJournalPage()
+                : destination.path == '/member/features/meals'
+                ? const MemberMealPage()
+                : destination.path == '/member/features/measurements'
+                ? const MemberMeasurementPage()
+                : destination.path == '/member/features/photos'
+                ? const MemberPhotoPage()
+                : destination.path == '/member/features/messages'
+                ? ConversationsPage(currentUserId: sessionController.user!.id)
+                : destination.path == '/member/features/calls'
+                ? CallsPage(currentUserId: sessionController.user!.id)
+                : destination.path == '/member/features/ai'
+                ? const AiConversationsPage()
+                : throw StateError('Thiếu trang Member: ${destination.path}'),
+          ),
         ),
       for (final destination in coachDestinations)
         GoRoute(
           path: destination.path,
-          builder: (context, state) => destination.path == '/coach/features/gym'
-              ? const GymEquipmentPage()
-              : destination.path == '/coach/features/requests'
-              ? CoachRequestsPage(coachId: sessionController.user!.id)
-              : destination.path == '/coach/features/members'
-              ? const CoachMembersPage()
-              : destination.path == '/coach/features/training'
-              ? const CoachTrainingPage()
-              : destination.path == '/coach/features/nutrition'
-              ? const CoachNutritionPage(structured: true)
-              : destination.path == '/coach/features/sessions'
-              ? CoachSessionsPage(
-                  coachBooking: CoachBookingPage(
-                    coachId: sessionController.user!.id,
-                  ),
-                )
-              : destination.path == '/coach/features/messages'
-              ? ConversationsPage(currentUserId: sessionController.user!.id)
-              : destination.path == '/coach/features/calls'
-              ? CallsPage(currentUserId: sessionController.user!.id)
-              : destination.path == '/coach/features/ai'
-              ? const AiConversationsPage()
-              : throw StateError('Thiếu trang Coach: ${destination.path}'),
+          pageBuilder: (context, state) => _featureTransitionPage(
+            key: state.pageKey,
+            context: context,
+            child: destination.path == '/coach/features/gym'
+                ? const GymEquipmentPage()
+                : destination.path == '/coach/features/requests'
+                ? CoachRequestsPage(coachId: sessionController.user!.id)
+                : destination.path == '/coach/features/members'
+                ? const CoachMembersPage()
+                : destination.path == '/coach/features/training'
+                ? const CoachTrainingPage()
+                : destination.path == '/coach/features/nutrition'
+                ? const CoachNutritionPage(structured: true)
+                : destination.path == '/coach/features/sessions'
+                ? CoachSessionsPage(
+                    coachBooking: CoachBookingPage(
+                      coachId: sessionController.user!.id,
+                    ),
+                  )
+                : destination.path == '/coach/features/messages'
+                ? ConversationsPage(currentUserId: sessionController.user!.id)
+                : destination.path == '/coach/features/calls'
+                ? CallsPage(currentUserId: sessionController.user!.id)
+                : destination.path == '/coach/features/ai'
+                ? const AiConversationsPage()
+                : throw StateError('Thiếu trang Coach: ${destination.path}'),
+          ),
         ),
       GoRoute(
         path: AppRoutes.memberWorkbench,
@@ -298,6 +323,43 @@ CustomTransitionPage<void> _smoothAuthTransitionPage({
         child: SlideTransition(
           position: Tween<Offset>(
             begin: const Offset(0, 0.03),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+CustomTransitionPage<void> _featureTransitionPage({
+  required LocalKey key,
+  required BuildContext context,
+  required Widget child,
+}) {
+  final disableAnimations = MediaQuery.disableAnimationsOf(context);
+  final duration = disableAnimations
+      ? Duration.zero
+      : MetaGymTheme.pageTransitionDuration;
+  return CustomTransitionPage<void>(
+    key: key,
+    transitionDuration: duration,
+    reverseTransitionDuration: disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 240),
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      if (MediaQuery.disableAnimationsOf(context)) return child;
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.018),
             end: Offset.zero,
           ).animate(curved),
           child: child,

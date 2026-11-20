@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
@@ -101,8 +102,9 @@ class _CallsPageState extends State<CallsPage> {
     try {
       final call = await _service!.create(relationshipId, _callType);
       if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
+      await MetaGymNavigation.pushOnce(
+        context,
+        MetaGymPageRoute<void>(
           builder: (_) => CallDetailPage(
             service: _service!,
             call: call,
@@ -192,8 +194,9 @@ class _CallsPageState extends State<CallsPage> {
                       title: Text('${call.typeLabel} · ${call.statusLabel}'),
                       subtitle: Text(call.initiatedAt),
                       onTap: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
+                        await MetaGymNavigation.pushOnce(
+                          context,
+                          MetaGymPageRoute<void>(
                             builder: (_) => CallDetailPage(
                               service: _service!,
                               call: call,

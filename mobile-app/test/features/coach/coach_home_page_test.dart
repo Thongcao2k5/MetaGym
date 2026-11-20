@@ -18,6 +18,55 @@ import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 
 void main() {
+  for (final width in [375.0, 768.0]) {
+    testWidgets(
+      'Coach keeps work tab selection on revisit at $width with reduced motion',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: MetaGymTheme.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: const CoachHomePage(
+              previewMode: true,
+              useSolidGlassFallback: true,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final origin = tester.state(find.byType(CoachHomePage));
+        Future<void> tab(String label) async {
+          await tester.tap(
+            find.descendant(
+              of: find.byType(MetaGymBottomNav),
+              matching: find.text(label),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await tab('Lịch dạy');
+        await tester.tap(find.text('Học viên & Yêu cầu (2)'));
+        await tester.pumpAndSettle();
+        await tab('Trang chủ');
+        await tab('Lịch dạy');
+        await tab('Lịch dạy');
+        expect(find.text('Hội viên member-1'), findsOneWidget);
+        expect(
+          Navigator.of(tester.element(find.byType(CoachHomePage))).canPop(),
+          isFalse,
+        );
+        expect(tester.state(find.byType(CoachHomePage)), same(origin));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   const coachUser = AuthUser(
     id: 'coach-1',
     email: 'coach@metagym.test',

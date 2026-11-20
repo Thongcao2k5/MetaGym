@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -60,8 +61,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
             : plan.status != 'DRAFT')) {
       return;
     }
-    final saved = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<String>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachPlanFormPage(
           memberId: widget.memberId ?? '',
           plan: plan,
@@ -74,7 +76,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
 
   Future<void> _publish() async {
     if (_busy || _plan?.status != 'DRAFT') return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
@@ -105,7 +107,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
               foregroundColor: MetaGymTheme.textSecondary,
-              minimumSize: const Size(48, 44),
+              minimumSize: const Size(48, 48),
             ),
             child: const Text('Quay lại'),
           ),
@@ -114,7 +116,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
             style: FilledButton.styleFrom(
               backgroundColor: MetaGymTheme.primary,
               foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(48, 44),
+              minimumSize: const Size(48, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),

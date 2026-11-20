@@ -101,6 +101,24 @@ abstract final class MetaGymTheme {
   static const Duration pressDuration = Duration(milliseconds: 110);
   static const Duration localStateDuration = Duration(milliseconds: 220);
   static const Duration sheetTransitionDuration = Duration(milliseconds: 260);
+  static const Duration pageTransitionDuration = Duration(milliseconds: 280);
+
+  static Duration stateDurationOf(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : localStateDuration;
+
+  /// Shared pressed/focus feedback that stays visible on graphite and warm glass.
+  static Color interactionOverlay(Set<WidgetState> states) {
+    if (states.contains(WidgetState.focused) ||
+        states.contains(WidgetState.hovered)) {
+      return reflectionBlue.withValues(alpha: 0.16);
+    }
+    if (states.contains(WidgetState.pressed)) {
+      return brandOrange.withValues(alpha: 0.18);
+    }
+    return Colors.transparent;
+  }
 
   // Tabular figures feature for timers, calories, days, weights, reps.
   static const List<FontFeature> tabularFigures = <FontFeature>[
@@ -249,21 +267,60 @@ abstract final class MetaGymTheme {
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: roundedRectangle,
-          textStyle: textTheme.labelLarge,
-        ),
+        style:
+            FilledButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: roundedRectangle,
+              textStyle: textTheme.labelLarge,
+            ).copyWith(
+              overlayColor: WidgetStateProperty.resolveWith(interactionOverlay),
+            ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style:
+            ElevatedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: roundedRectangle,
+              textStyle: textTheme.labelLarge,
+            ).copyWith(
+              overlayColor: WidgetStateProperty.resolveWith(interactionOverlay),
+            ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: roundedRectangle,
-          side: BorderSide(color: outline),
-          textStyle: textTheme.labelLarge,
-        ),
+        style:
+            OutlinedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: roundedRectangle,
+              side: BorderSide(color: outline),
+              textStyle: textTheme.labelLarge,
+            ).copyWith(
+              overlayColor: WidgetStateProperty.resolveWith(interactionOverlay),
+            ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style:
+            TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              shape: roundedRectangle,
+              textStyle: textTheme.labelLarge,
+            ).copyWith(
+              overlayColor: WidgetStateProperty.resolveWith(interactionOverlay),
+            ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style:
+            IconButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              fixedSize: const Size(48, 48),
+              padding: EdgeInsets.zero,
+              shape: const CircleBorder(),
+            ).copyWith(
+              overlayColor: WidgetStateProperty.resolveWith(interactionOverlay),
+            ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
