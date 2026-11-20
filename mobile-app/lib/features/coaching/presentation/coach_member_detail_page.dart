@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -79,7 +80,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
   Future<void> _requestTermination() async {
     final member = _member;
     if (_busy || member == null) return;
-    final reason = await showDialog<String>(
+    final reason = await MetaGymNavigation.showDialogOnce<String>(
       context: context,
       builder: (_) => const _TerminationRequestDialog(),
     );
@@ -118,7 +119,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
     final apiClient = optionalProvider<ApiClient>(context);
     if (_busy || apiClient == null) return;
     final api = CoachOutcomeApi(apiClient);
-    final created = await showDialog<CoachOutcomeCase>(
+    final created = await MetaGymNavigation.showDialogOnce<CoachOutcomeCase>(
       context: context,
       builder: (_) => _CreateOutcomeDialog(
         memberId: widget.memberId,
@@ -318,7 +319,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                     style: FilledButton.styleFrom(
                                       backgroundColor: MetaGymTheme.primary,
                                       foregroundColor: MetaGymTheme.onPrimary,
-                                      minimumSize: const Size(48, 44),
+                                      minimumSize: const Size(48, 48),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 14,
                                         vertical: 10,
@@ -390,7 +391,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                       style: TextButton.styleFrom(
                                         foregroundColor:
                                             MetaGymTheme.dangerCoral,
-                                        minimumSize: const Size(48, 44),
+                                        minimumSize: const Size(48, 48),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                         ),
@@ -683,6 +684,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
   }
 
   Future<void> _submit() async {
+    if (_saving) return;
     final goal = _goal.text.trim();
     final weeks = int.tryParse(_weeks.text.trim());
     final bw = _parseNumber(_beforeWeight.text);
@@ -862,7 +864,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: MetaGymTheme.textPrimary,
                       backgroundColor: MetaGymTheme.elevatedSurface,
-                      minimumSize: const Size(48, 46),
+                      minimumSize: const Size(48, 48),
                       side: BorderSide(
                         color: _beforePhoto != null
                             ? MetaGymTheme.success
@@ -888,7 +890,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: MetaGymTheme.textPrimary,
                       backgroundColor: MetaGymTheme.elevatedSurface,
-                      minimumSize: const Size(48, 46),
+                      minimumSize: const Size(48, 48),
                       side: BorderSide(
                         color: _afterPhoto != null
                             ? MetaGymTheme.success

@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -122,8 +123,9 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
   });
 
   Future<bool> _openHealthDeclaration({bool checkoutFlow = false}) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => MemberHealthDeclarationPage(
           submitLabel: checkoutFlow
               ? 'Lưu và tiếp tục thanh toán'
@@ -186,7 +188,7 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
     showCoachingSnackBar(context, 'Thanh toán mô phỏng thành công');
     final isRootRoute = ModalRoute.of(context)?.isFirst ?? false;
     Navigator.of(context).pushAndRemoveUntil<void>(
-      MaterialPageRoute(builder: (_) => const MemberCoachingPage()),
+      MetaGymPageRoute(builder: (_) => const MemberCoachingPage()),
       (route) => !isRootRoute && route.isFirst,
     );
   });
@@ -392,9 +394,10 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                   const SizedBox(height: 12),
                                   CoachingSecondaryButton(
                                     label: 'Xem gói Gym',
-                                    onPressed: () => Navigator.of(context)
-                                        .push<void>(
-                                          MaterialPageRoute(
+                                    onPressed: () =>
+                                        MetaGymNavigation.pushOnce<void>(
+                                          context,
+                                          MetaGymPageRoute(
                                             builder: (_) =>
                                                 const MembershipPage(),
                                           ),
@@ -463,9 +466,10 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                   const SizedBox(height: 10),
                                   CoachingSecondaryButton(
                                     label: 'Coach của tôi',
-                                    onPressed: () => Navigator.of(context)
-                                        .push<void>(
-                                          MaterialPageRoute(
+                                    onPressed: () =>
+                                        MetaGymNavigation.pushOnce<void>(
+                                          context,
+                                          MetaGymPageRoute(
                                             builder: (_) =>
                                                 const MemberCoachingPage(),
                                           ),
@@ -811,7 +815,9 @@ class _OfferPackageCard extends StatelessWidget {
           Text(
             formatVnd((offer['price'] as num?) ?? 0),
             style: TextStyle(
-              color: selected ? MetaGymTheme.brandOrange : const Color(0xFFF7F9FC),
+              color: selected
+                  ? MetaGymTheme.brandOrange
+                  : const Color(0xFFF7F9FC),
               fontSize: 16.5,
               fontWeight: FontWeight.w800,
               fontFeatures: MetaGymTheme.tabularFigures,
@@ -845,10 +851,7 @@ class _SummaryLine extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFFB7B2AF),
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Color(0xFFB7B2AF), fontSize: 13),
             ),
           ),
           const SizedBox(width: 12),

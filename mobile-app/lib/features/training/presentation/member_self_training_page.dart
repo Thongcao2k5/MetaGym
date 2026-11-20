@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -210,7 +212,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
     if (!mounted) return;
     final selected = _exercises.map((item) => item.id).toSet();
-    final picked = await showModalBottomSheet<List<String>>(
+    final picked = await MetaGymNavigation.showSheetOnce<List<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: MetaGymTheme.cardSurface,
@@ -284,6 +286,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     if (_title.text.trim().isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Nhập tên buổi tập.')));
@@ -343,6 +346,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Future<void> _delete() async {
+    if (_saving) return;
     setState(() => _saving = true);
     try {
       await _api.delete(_selectedKey);
@@ -371,8 +375,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       final item = matches.where((item) => item.id == exercise.id).firstOrNull;
       if (!mounted) return;
       if (item == null) throw StateError('missing exercise');
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => ExerciseDetailPage(item: item)),
+      MetaGymNavigation.pushOnce(
+        context,
+        MetaGymPageRoute<void>(builder: (_) => ExerciseDetailPage(item: item)),
       );
     } catch (_) {
       if (mounted) {
@@ -570,7 +575,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     final selected = key == _selectedKey;
     final hasPlan = _plans.containsKey(key);
     final outside = showNumber && day.month != _selected.month;
-    return InkWell(
+    return MetaGymTap(
       onTap: () {
         final monthChanged =
             day.month != _selected.month || day.year != _selected.year;
@@ -582,7 +587,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         if (_mode == _CalendarMode.month && monthChanged) _load();
       },
       borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: AnimatedContainer(
+        duration: MetaGymTheme.stateDurationOf(context),
+        curve: Curves.easeOutCubic,
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: selected ? MetaGymTheme.primary : const Color(0xAA211E1C),
@@ -603,7 +610,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             ),
             if (hasPlan) ...[
               if (showNumber) const SizedBox(height: 4),
-              Container(
+              AnimatedContainer(
+                duration: MetaGymTheme.stateDurationOf(context),
+                curve: Curves.easeOutCubic,
                 width: 5,
                 height: 5,
                 decoration: BoxDecoration(
@@ -666,7 +675,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          InkWell(
+          MetaGymTap(
             onTap: () => setState(() => _expandedDetails = !_expandedDetails),
             borderRadius: BorderRadius.circular(12),
             child: Row(
@@ -793,7 +802,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 44),
+                      minimumSize: const Size(0, 48),
                       foregroundColor: MetaGymTheme.textPrimary,
                       side: BorderSide(
                         color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
@@ -815,7 +824,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 44),
+                      minimumSize: const Size(0, 48),
                       foregroundColor: const Color(0xFFE08C87),
                       side: BorderSide(
                         color: Colors.white.withValues(alpha: 0.14),

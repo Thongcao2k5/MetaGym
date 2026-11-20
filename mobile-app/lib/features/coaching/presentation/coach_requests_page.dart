@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -59,8 +60,9 @@ class _CoachRequestsPageState extends State<CoachRequestsPage> {
   }
 
   Future<void> _openRequest(CoachIncomingRequest request) async {
-    final changed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final changed = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) =>
             CoachRequestDetailPage(requestId: request.id, service: _service!),
       ),

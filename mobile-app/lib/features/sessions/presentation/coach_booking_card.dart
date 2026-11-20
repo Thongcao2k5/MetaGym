@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
@@ -304,7 +305,7 @@ class CoachMemberBookingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (onOpenCurriculum != null)
-                  InkWell(
+                  MetaGymTap(
                     onTap: onOpenCurriculum,
                     borderRadius: BorderRadius.circular(12),
                     child: mainRow,
@@ -331,7 +332,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 44),
+                            minimumSize: const Size(0, 48),
                             side: BorderSide(
                               color: Colors.white.withValues(alpha: 0.14),
                             ),
@@ -356,7 +357,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 44),
+                              minimumSize: const Size(0, 48),
                               backgroundColor: MetaGymTheme.elevatedSurface,
                               foregroundColor: MetaGymTheme.textPrimary,
                               side: BorderSide(

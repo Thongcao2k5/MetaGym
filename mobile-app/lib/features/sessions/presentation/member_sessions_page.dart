@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -55,16 +57,18 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
   }
 
   void _openCoachBooking() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => widget.coachBooking ?? const CoachBookingPage(),
       ),
     );
   }
 
   void _openDetail(TrainingSession session) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _SessionDetailPage(service: _service!, id: session.id),
       ),
     );
@@ -422,7 +426,7 @@ class _MemberSessionsPageState extends State<MemberSessionsPage> {
                                   MetaGymGlassCard(
                                     margin: const EdgeInsets.only(bottom: 10),
                                     padding: const EdgeInsets.all(16),
-                                    child: InkWell(
+                                    child: MetaGymTap(
                                       borderRadius: BorderRadius.circular(14),
                                       onTap: () => _openDetail(session),
                                       child: Row(
@@ -499,10 +503,12 @@ class _SegmentTabButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
+  Widget build(BuildContext context) => MetaGymTap(
     borderRadius: BorderRadius.circular(11),
     onTap: onTap,
-    child: Container(
+    child: AnimatedContainer(
+      duration: MetaGymTheme.stateDurationOf(context),
+      curve: Curves.easeOutCubic,
       height: 38,
       alignment: Alignment.center,
       decoration: BoxDecoration(

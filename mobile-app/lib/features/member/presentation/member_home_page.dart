@@ -48,7 +48,10 @@ class _MemberHomePageState extends State<MemberHomePage> {
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,
           warmGlass: true,
-          onTap: (value) => setState(() => _index = value),
+          onTap: (value) {
+            if (value == _index) return;
+            setState(() => _index = value);
+          },
         ),
       ),
     );

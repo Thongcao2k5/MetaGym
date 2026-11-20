@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
@@ -60,15 +61,17 @@ class _MemberWorkoutPageState extends State<MemberWorkoutPage> {
   }
 
   Future<void> _create() async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => _WorkoutFormPage(service: _service!)),
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(builder: (_) => _WorkoutFormPage(service: _service!)),
     );
     if (saved == true && mounted) await _load();
   }
 
   Future<void> _open(WorkoutLog log) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _WorkoutDetailPage(log: log, service: _service!),
       ),
     );
@@ -82,8 +85,9 @@ class _MemberWorkoutPageState extends State<MemberWorkoutPage> {
       actions: [
         IconButton(
           tooltip: 'Ảnh thành quả',
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const MemberPhotoPage()),
+          onPressed: () => MetaGymNavigation.pushOnce(
+            context,
+            MetaGymPageRoute<void>(builder: (_) => const MemberPhotoPage()),
           ),
           icon: const Icon(Icons.photo_library_outlined),
         ),
@@ -169,8 +173,9 @@ class _WorkoutDetailPage extends StatelessWidget {
           ),
         FilledButton(
           onPressed: () async {
-            final saved = await Navigator.of(context).push<bool>(
-              MaterialPageRoute(
+            final saved = await MetaGymNavigation.pushOnce<bool>(
+              context,
+              MetaGymPageRoute(
                 builder: (_) => _WorkoutFormPage(service: service, log: log),
               ),
             );
@@ -221,6 +226,7 @@ class _WorkoutFormPageState extends State<_WorkoutFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final date = parseProgressTime(_date.text);
     final minutes = int.tryParse(_duration.text.trim());
     final names = _exercises.text

@@ -63,6 +63,78 @@ import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 
 void main() {
+  for (final width in [375.0, 768.0]) {
+    testWidgets(
+      'Member tabs preserve state and avoid duplicate routes at $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(tester.view.reset);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        final controller = SessionController(
+          _MemoryTokenStorage('valid-token'),
+          (_) async => const AuthUser(
+            id: 'member-1',
+            email: 'member@metagym.test',
+            fullName: 'Member Demo',
+            role: UserRole.member,
+            status: 'ACTIVE',
+          ),
+        );
+        await tester.pumpWidget(
+          MetaGymApp(
+            sessionController: controller,
+            membershipService: _EmptyMembershipService(),
+            coachSelectionService: _EmptyCoachSelectionService(),
+            memberTrainingService: _EmptyMemberTrainingService(),
+            memberNutritionService: _EmptyMemberNutritionService(),
+            memberSessionsService: _EmptyMemberSessionsService(),
+            memberProgressService: _EmptyMemberProgressService(),
+            memberWorkoutService: _EmptyMemberWorkoutService(),
+            memberJournalService: _EmptyMemberJournalService(),
+            memberMealService: _EmptyMemberMealService(),
+            memberMeasurementService: _EmptyMemberMeasurementService(),
+            memberPhotoService: _EmptyMemberPhotoService(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final origin = tester.state(find.byType(MemberHomePage));
+        Future<void> tab(String label) async {
+          await tester.tap(
+            find.descendant(
+              of: find.byType(MetaGymBottomNav),
+              matching: find.text(label),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await tab('Tập luyện');
+        final training = tester.state(find.byType(MemberTrainingHubPage));
+        await tab('AI');
+        await tab('Tin nhắn');
+        await tab('Hồ sơ');
+        await tab('Trang chủ');
+        await tab('Trang chủ');
+        expect(
+          GoRouter.of(tester.element(find.byType(MemberHomePage))).canPop(),
+          isFalse,
+        );
+        await tab('Tập luyện');
+        expect(
+          tester.state(find.byType(MemberTrainingHubPage)),
+          same(training),
+        );
+        expect(tester.state(find.byType(MemberHomePage)), same(origin));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('shows the public page when no session is stored', (
     tester,
   ) async {
@@ -127,6 +199,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Khám phá Coach', findRichText: true), findsWidgets);
     expect(find.byType(CoachSelectionPage), findsOneWidget);
+    expect(find.byType(MetaGymBottomNav), findsNothing);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();

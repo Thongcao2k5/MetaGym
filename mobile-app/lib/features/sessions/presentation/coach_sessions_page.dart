@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -75,13 +77,16 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   void _openCoachBooking() {
     final booking = widget.coachBooking;
     if (booking == null) return;
-    Navigator.of(context)
-        .push<void>(MaterialPageRoute(builder: (_) => booking));
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(builder: (_) => booking),
+    );
   }
 
   Future<void> _edit([TrainingSession? session]) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _SessionFormPage(
           service: _service!,
           session: session,
@@ -95,13 +100,13 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   Future<void> _changeStatus(TrainingSession session, String status) async {
     String? reason;
     if (status == 'CANCELLED') {
-      reason = await showDialog<String>(
+      reason = await MetaGymNavigation.showDialogOnce<String>(
         context: context,
         builder: (_) => const _CancellationDialog(),
       );
       if (reason == null || !mounted) return;
     } else {
-      final submitted = await showDialog<bool>(
+      final submitted = await MetaGymNavigation.showDialogOnce<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: MetaGymTheme.cardSurface,
@@ -130,7 +135,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
           actions: [
             TextButton(
               style: TextButton.styleFrom(
-                minimumSize: const Size(64, 44),
+                minimumSize: const Size(64, 48),
                 foregroundColor: MetaGymTheme.textSecondary,
               ),
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -140,7 +145,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: MetaGymTheme.primary,
                 foregroundColor: MetaGymTheme.onPrimary,
-                minimumSize: const Size(96, 44),
+                minimumSize: const Size(96, 48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -430,10 +435,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
           if (notes != null && notes.isNotEmpty) ...[
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
               decoration: BoxDecoration(
                 color: const Color(0x80211E1C),
                 borderRadius: BorderRadius.circular(10),
@@ -482,10 +484,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                   onPressed: () => _changeStatus(session, 'COMPLETED'),
                   child: const Text(
                     'Hoàn thành',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
                 FilledButton.tonal(
@@ -502,10 +501,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                   onPressed: () => _changeStatus(session, 'MEMBER_ABSENT'),
                   child: const Text(
                     'Vắng mặt',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
                 OutlinedButton(
@@ -516,23 +512,20 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                     side: const BorderSide(color: Color(0xFF642B32)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: () => _changeStatus(session, 'CANCELLED'),
-                    child: const Text(
-                      'Hủy buổi',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
                     ),
                   ),
-                ],
-              ),
-            ],
+                  onPressed: () => _changeStatus(session, 'CANCELLED'),
+                  child: const Text(
+                    'Hủy buổi',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ],
-        ),
-      );
+        ],
+      ),
+    );
   }
 
   @override
@@ -714,10 +707,12 @@ class _SessionTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return MetaGymTap(
       borderRadius: BorderRadius.circular(11),
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: MetaGymTheme.stateDurationOf(context),
+        curve: Curves.easeOutCubic,
         height: 44,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -806,7 +801,7 @@ class _CancellationDialogState extends State<_CancellationDialog> {
     actions: [
       TextButton(
         style: TextButton.styleFrom(
-          minimumSize: const Size(64, 44),
+          minimumSize: const Size(64, 48),
           foregroundColor: MetaGymTheme.textSecondary,
         ),
         onPressed: () => Navigator.pop(context),
@@ -816,7 +811,7 @@ class _CancellationDialogState extends State<_CancellationDialog> {
         style: FilledButton.styleFrom(
           backgroundColor: MetaGymTheme.primary,
           foregroundColor: MetaGymTheme.onPrimary,
-          minimumSize: const Size(112, 44),
+          minimumSize: const Size(112, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -921,6 +916,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final start = parseSessionLocalTime(_start.text);
     final end = _end.text.trim().isEmpty
         ? null
@@ -1123,6 +1119,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                       if (_error != null) CoachingErrorBanner(message: _error!),
                       CoachingPrimaryButton(
                         label: _saving ? 'Đang lưu…' : 'Lưu',
+                        loading: _saving,
                         icon: Icons.check_rounded,
                         onPressed: _saving ? null : _save,
                       ),

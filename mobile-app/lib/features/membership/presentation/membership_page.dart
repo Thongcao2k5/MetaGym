@@ -1,5 +1,6 @@
 import 'dart:ui' show PointerDeviceKind;
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
@@ -13,7 +14,11 @@ import 'package:provider/provider.dart';
 /// Màn hình Gói tập hội viên đồng bộ bảng màu Warm Smoked Glass
 /// (`DESIGN.md` / `MASTER.md`) cùng Trang chủ Hội viên & Hồ sơ.
 class MembershipPage extends StatefulWidget {
-  const MembershipPage({super.key, this.paymentReturnId, this.paymentReturnMethod});
+  const MembershipPage({
+    super.key,
+    this.paymentReturnId,
+    this.paymentReturnMethod,
+  });
 
   final String? paymentReturnId;
   final String? paymentReturnMethod;
@@ -31,7 +36,8 @@ class _MembershipPageState extends State<MembershipPage> {
       final controller = context.read<MembershipController>();
       final paymentId = widget.paymentReturnId;
       final method = widget.paymentReturnMethod;
-      if (paymentId != null && method != null &&
+      if (paymentId != null &&
+          method != null &&
           await controller.resumeOnlinePayment(paymentId, method: method)) {
         if (mounted) await _openCheckout(const MembershipCheckoutPage());
         return;
@@ -49,14 +55,16 @@ class _MembershipPageState extends State<MembershipPage> {
 
   Future<void> _openCheckout(MembershipCheckoutPage page) async {
     final controller = context.read<MembershipController>();
-    await Navigator.of(
+    await MetaGymNavigation.pushOnce<void>(
       context,
-    ).push<void>(MaterialPageRoute<void>(builder: (_) => page));
+      MetaGymPageRoute<void>(builder: (_) => page),
+    );
     if (mounted && controller.pendingPayment == null) await controller.load();
   }
 
-  Future<void> _openHistory() => Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(builder: (_) => const PaymentHistoryPage()),
+  Future<void> _openHistory() => MetaGymNavigation.pushOnce<void>(
+    context,
+    MetaGymPageRoute<void>(builder: (_) => const PaymentHistoryPage()),
   );
 
   @override
@@ -1092,11 +1100,7 @@ class _HistoryMembershipTile extends StatelessWidget {
               color: color.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(
-              Icons.history_rounded,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(Icons.history_rounded, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

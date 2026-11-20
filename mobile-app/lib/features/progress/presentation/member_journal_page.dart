@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +17,7 @@ import 'package:meta_gym_app/features/progress/data/member_progress_service.dart
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/domain/journal_entry.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:provider/provider.dart';
 
 enum _JournalTab { journal, progress }
@@ -164,8 +167,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         final memberships = await _membershipService!.getCurrentMemberships();
         canWrite = memberships.any((item) => item.status == 'ACTIVE');
       } catch (_) {
-        accessError =
-            'Không kiểm tra được gói tập. Nhật ký tạm thời chỉ xem.';
+        accessError = 'Không kiểm tra được gói tập. Nhật ký tạm thời chỉ xem.';
       }
 
       List<BodyMeasurement> measurements = const [];
@@ -358,7 +360,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     if (draft == null || !_canEditSelectedDay || _saving) return;
 
     // Validate custom achievements: both name & result must be present if either is non-empty
-    for (var i = _starterAchievements.length; i < draft.achievements.length; i++) {
+    for (
+      var i = _starterAchievements.length;
+      i < draft.achievements.length;
+      i++
+    ) {
       final row = draft.achievements[i];
       final hasTitle = row.title.trim().isNotEmpty;
       final hasResult = row.result.trim().isNotEmpty;
@@ -405,8 +411,13 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
       // 2. Filter non-empty achievements
       final achievementsPayload = draft.achievements
-          .where((row) => row.title.trim().isNotEmpty && row.result.trim().isNotEmpty)
-          .map((row) => {'title': row.title.trim(), 'result': row.result.trim()})
+          .where(
+            (row) =>
+                row.title.trim().isNotEmpty && row.result.trim().isNotEmpty,
+          )
+          .map(
+            (row) => {'title': row.title.trim(), 'result': row.result.trim()},
+          )
           .toList();
 
       final journalPayload = <String, Object?>{
@@ -456,14 +467,17 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     } on ApiException catch (error) {
       if (mounted) setState(() => _saveError = error.message);
     } catch (_) {
-      if (mounted) setState(() => _saveError = 'Không lưu được nhật ký hôm nay.');
+      if (mounted) {
+        setState(() => _saveError = 'Không lưu được nhật ký hôm nay.');
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _deleteEntry(JournalEntry entry) async {
-    final accepted = await showDialog<bool>(
+    if (_saving) return;
+    final accepted = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF2B2622),
@@ -473,7 +487,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         ),
         title: const Text(
           'Xóa nhật ký?',
-          style: TextStyle(color: Color(0xFFF7F9FC), fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: Text(
           'Nhật ký ngày ${_shortDate(_parseIsoDate(entry.journalDate) ?? _today)} sẽ bị xóa.',
@@ -482,7 +499,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Giữ lại', style: TextStyle(color: Color(0xFFB7B2AF))),
+            child: const Text(
+              'Giữ lại',
+              style: TextStyle(color: Color(0xFFB7B2AF)),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -496,11 +516,18 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
       ),
     );
     if (accepted != true || !mounted) return;
+    setState(() => _saving = true);
     try {
       await _service!.delete(entry.id);
       if (mounted) await _load();
     } on ApiException catch (error) {
       if (mounted) setState(() => _saveError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saveError = 'Không thể xóa nhật ký. Hãy thử lại.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -524,9 +551,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   String _calendarTitleText() {
     if (_calendarMode == _CalendarMode.week) {
-      final offset = _weekMonday(_selectedDate)
-          .difference(_weekMonday(_today))
-          .inDays ~/
+      final offset =
+          _weekMonday(_selectedDate).difference(_weekMonday(_today)).inDays ~/
           7;
       if (offset == 0) return 'Tuần này';
       if (offset == -1) return 'Tuần trước';
@@ -539,7 +565,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   @override
   Widget build(BuildContext context) {
-    final showSaveBar = _tab == _JournalTab.journal &&
+    final showSaveBar =
+        _tab == _JournalTab.journal &&
         _canEditSelectedDay &&
         _isDirty &&
         !_loading;
@@ -716,10 +743,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 SizedBox(height: 2),
                 Text(
                   'Hành trình và kết quả của bạn',
-                  style: TextStyle(
-                    color: Color(0xFFBCB5AE),
-                    fontSize: 11.5,
-                  ),
+                  style: TextStyle(color: Color(0xFFBCB5AE), fontSize: 11.5),
                 ),
               ],
             ),
@@ -730,7 +754,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             MetaGymCircleIconButton(
               icon: Icons.delete_outline_rounded,
               tooltip: 'Xóa nhật ký hôm nay',
-              onTap: () => _deleteEntry(todayEntry),
+              onTap: _saving ? null : () => _deleteEntry(todayEntry),
             ),
             const SizedBox(width: 8),
           ],
@@ -823,8 +847,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final gridStart = _calendarMode == _CalendarMode.week
         ? _weekMonday(_selectedDate)
         : _weekMonday(monthStart);
-    final daysInMonth =
-        DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+    final daysInMonth = DateTime(
+      _selectedDate.year,
+      _selectedDate.month + 1,
+      0,
+    ).day;
     final cellCount = _calendarMode == _CalendarMode.week
         ? 7
         : ((((monthStart.weekday - 1) + daysInMonth) / 7).ceil() * 7);
@@ -922,17 +949,20 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             itemBuilder: (context, index) {
               final date = gridStart.add(Duration(days: index));
               final selected = _isSameDay(date, _selectedDate);
-              final outsideMonth = _calendarMode == _CalendarMode.month &&
+              final outsideMonth =
+                  _calendarMode == _CalendarMode.month &&
                   date.month != _selectedDate.month;
               final hasEntry = _hasRecordOnDate(date);
               final label = _calendarMode == _CalendarMode.week
                   ? '${_weekdayShort[index]}\n${date.day}'
                   : '${date.day}';
 
-              return InkWell(
+              return MetaGymTap(
                 borderRadius: BorderRadius.circular(11),
                 onTap: () => _selectDate(date),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: MetaGymTheme.stateDurationOf(context),
+                  curve: Curves.easeOutCubic,
                   margin: const EdgeInsets.all(1.5),
                   decoration: BoxDecoration(
                     color: selected
@@ -956,8 +986,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                               ? 10.5
                               : 12,
                           height: 1.15,
-                          fontWeight: selected ||
-                                  _calendarMode == _CalendarMode.week
+                          fontWeight:
+                              selected || _calendarMode == _CalendarMode.week
                               ? FontWeight.w700
                               : FontWeight.w500,
                         ),
@@ -965,7 +995,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       if (hasEntry)
                         Positioned(
                           bottom: 3,
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: MetaGymTheme.stateDurationOf(context),
+                            curve: Curves.easeOutCubic,
                             width: 4,
                             height: 4,
                             decoration: BoxDecoration(
@@ -989,7 +1021,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   Widget _buildDayCards() {
     if (_isSelectedToday) {
-      final draft = _draft ??
+      final draft =
+          _draft ??
           _DayDraft.fromRecords(
             entry: null,
             measurement: null,
@@ -1088,7 +1121,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final count = photoIds.length + pendingImages.length;
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
         onTap: interactive
             ? () => setState(() => _openCard = _EditCard.photos)
@@ -1249,7 +1282,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             itemCount: total < 3 ? total + 1 : total,
             itemBuilder: (context, index) {
               if (index == total) {
-                return InkWell(
+                return MetaGymTap(
                   borderRadius: BorderRadius.circular(12),
                   onTap: _saving ? null : _pickPhoto,
                   child: Container(
@@ -1293,8 +1326,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                           )
                         : Image.memory(
                             draft
-                                .pendingImages[
-                                    index - draft.existingPhotoIds.length]
+                                .pendingImages[index -
+                                    draft.existingPhotoIds.length]
                                 .bytes,
                             fit: BoxFit.cover,
                           ),
@@ -1302,7 +1335,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: InkWell(
+                    child: MetaGymTap(
                       onTap: _saving
                           ? null
                           : () => setState(() {
@@ -1352,7 +1385,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
         onTap: interactive
             ? () => setState(() => _openCard = _EditCard.measurements)
@@ -1589,11 +1622,12 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     required String notes,
     required bool interactive,
   }) {
-    final filled =
-        items.where((item) => item.result.trim().isNotEmpty).toList();
+    final filled = items
+        .where((item) => item.result.trim().isNotEmpty)
+        .toList();
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
         onTap: interactive
             ? () => setState(() => _openCard = _EditCard.achievements)
@@ -1773,9 +1807,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   if (!isStarter)
                     IconButton(
                       tooltip: 'Xóa bài',
-                      onPressed: () => setState(
-                        () => draft.achievements.removeAt(index),
-                      ),
+                      onPressed: () =>
+                          setState(() => draft.achievements.removeAt(index)),
                       icon: const Icon(
                         Icons.close_rounded,
                         color: Color(0xFFFFAD95),
@@ -1798,7 +1831,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 ),
               ),
               onPressed: () => setState(() {
-                draft.achievements.add(_AchievementDraft(title: '', result: ''));
+                draft.achievements.add(
+                  _AchievementDraft(title: '', result: ''),
+                );
               }),
               icon: const Icon(Icons.add_rounded, size: 17),
               label: const Text(
@@ -2016,7 +2051,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     final minY = (rawMin - 0.6).floorToDouble();
                     final maxY = (rawMax + 0.6).ceilToDouble();
                     final span = (maxY - minY).clamp(1.0, 999.0);
-                    final yInterval = (span / 3).ceilToDouble().clamp(1.0, 99.0);
+                    final yInterval = (span / 3).ceilToDouble().clamp(
+                      1.0,
+                      99.0,
+                    );
                     return SizedBox(
                       height: 165,
                       child: Padding(
@@ -2151,7 +2189,19 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     onPressed: () {
                       final router = GoRouter.maybeOf(context);
                       if (router != null) {
-                        router.push('/member/features/measurements');
+                        MetaGymNavigation.pushPathOnce(
+                          context,
+                          '/member/features/measurements',
+                        );
+                      } else if (_measurementService != null) {
+                        MetaGymNavigation.pushOnce<void>(
+                          context,
+                          MetaGymPageRoute(
+                            builder: (_) => MemberMeasurementPage(
+                              service: _measurementService,
+                            ),
+                          ),
+                        );
                       }
                     },
                     child: const Text(
@@ -2294,10 +2344,12 @@ class _SegmentButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
+  Widget build(BuildContext context) => MetaGymTap(
     borderRadius: BorderRadius.circular(11),
     onTap: onTap,
-    child: Container(
+    child: AnimatedContainer(
+      duration: MetaGymTheme.stateDurationOf(context),
+      curve: Curves.easeOutCubic,
       height: 38,
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -2348,10 +2400,12 @@ class _ViewModeChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
+  Widget build(BuildContext context) => MetaGymTap(
     borderRadius: BorderRadius.circular(8),
     onTap: onTap,
-    child: Container(
+    child: AnimatedContainer(
+      duration: MetaGymTheme.stateDurationOf(context),
+      curve: Curves.easeOutCubic,
       constraints: const BoxConstraints(minWidth: 44, minHeight: 32),
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),

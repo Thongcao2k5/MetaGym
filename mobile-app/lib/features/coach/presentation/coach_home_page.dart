@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
@@ -22,6 +23,7 @@ import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_request_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/coaching/presentation/termination_reason_dialog.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
@@ -97,6 +99,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
   bool _initialized = false;
   bool _isLoading = true;
   bool _isMutating = false;
+  bool _openingPage = false;
   String? _loadError;
   _CoachSnapshot _snapshot = _CoachSnapshot.empty();
 
@@ -330,6 +333,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
   }
 
   void _selectTab(int index) {
+    if (index == _index) return;
     setState(() {
       _visitedTabs.add(index);
       _index = index;
@@ -345,11 +349,12 @@ class _CoachHomePageState extends State<CoachHomePage> {
   }
 
   Future<void> _pushRouteAndReload(String path) async {
-    await context.push(path);
+    await MetaGymNavigation.pushPathOnce(context, path);
     if (mounted) await _loadCoachData();
   }
 
   Future<void> _openNotificationsPage() async {
+    if (_openingPage) return;
     final api = _tryReadProvider<ApiClient>(context);
     if (api == null || !_snapshot.hasLiveApi) {
       showCoachingSnackBar(
@@ -358,13 +363,20 @@ class _CoachHomePageState extends State<CoachHomePage> {
       );
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
-    );
-    if (mounted) await _loadCoachData();
+    setState(() => _openingPage = true);
+    try {
+      await MetaGymNavigation.pushOnce<void>(
+        context,
+        MetaGymPageRoute(builder: (_) => const CoachNotificationsPage()),
+      );
+      if (mounted) await _loadCoachData();
+    } finally {
+      if (mounted) setState(() => _openingPage = false);
+    }
   }
 
   Future<void> _openOffersPage() async {
+    if (_openingPage) return;
     final coachId =
         _tryReadProvider<SessionController>(context)?.user?.id ?? '';
     final api = _tryReadProvider<ApiClient>(context);
@@ -372,10 +384,16 @@ class _CoachHomePageState extends State<CoachHomePage> {
       showCoachingSnackBar(context, 'Chưa có thông tin tài khoản Coach.');
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => CoachOffersPage(coachId: coachId)),
-    );
-    if (mounted) await _loadCoachData();
+    setState(() => _openingPage = true);
+    try {
+      await MetaGymNavigation.pushOnce<void>(
+        context,
+        MetaGymPageRoute(builder: (_) => CoachOffersPage(coachId: coachId)),
+      );
+      if (mounted) await _loadCoachData();
+    } finally {
+      if (mounted) setState(() => _openingPage = false);
+    }
   }
 
   Future<void> _completeBooking(_CoachBookingEntry entry) async {
@@ -392,15 +410,13 @@ class _CoachHomePageState extends State<CoachHomePage> {
     try {
       if (entry.isV2Booking) {
         final apiClient = _tryReadProvider<ApiClient>(context);
-        if (apiClient != null) {
-          await CoachV2Api(apiClient)
-              .patch('/coach-bookings/${entry.id}', {'action': 'COMPLETE'});
-        }
+        if (apiClient == null) throw StateError('Chưa kết nối máy chủ.');
+        await CoachV2Api(apiClient)
+            .patch('/coach-bookings/${entry.id}', {'action': 'COMPLETE'});
       } else {
         final sessionsService = _tryReadProvider<CoachSessionsService>(context);
-        if (sessionsService != null) {
-          await sessionsService.update(entry.id, {'status': 'COMPLETED'});
-        }
+        if (sessionsService == null) throw StateError('Chưa kết nối máy chủ.');
+        await sessionsService.update(entry.id, {'status': 'COMPLETED'});
       }
       if (mounted) {
         await _loadCoachData();
@@ -439,20 +455,18 @@ class _CoachHomePageState extends State<CoachHomePage> {
     try {
       if (entry.isV2Booking) {
         final apiClient = _tryReadProvider<ApiClient>(context);
-        if (apiClient != null) {
-          await CoachV2Api(apiClient).patch('/coach-bookings/${entry.id}', {
-            'action': 'CANCEL',
-            'reason': reason,
-          });
-        }
+        if (apiClient == null) throw StateError('Chưa kết nối máy chủ.');
+        await CoachV2Api(apiClient).patch('/coach-bookings/${entry.id}', {
+          'action': 'CANCEL',
+          'reason': reason,
+        });
       } else {
         final sessionsService = _tryReadProvider<CoachSessionsService>(context);
-        if (sessionsService != null) {
-          await sessionsService.update(entry.id, {
-            'status': 'CANCELLED',
-            'cancellationReason': reason,
-          });
-        }
+        if (sessionsService == null) throw StateError('Chưa kết nối máy chủ.');
+        await sessionsService.update(entry.id, {
+          'status': 'CANCELLED',
+          'cancellationReason': reason,
+        });
       }
       if (mounted) {
         await _loadCoachData();
@@ -523,6 +537,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
   }
 
   Future<void> _saveWeeklyWorkdays(Set<int> weekdays) async {
+    if (_isMutating) return;
     if (weekdays.length < 6) {
       showCoachingSnackBar(
         context,
@@ -530,7 +545,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
       );
       return;
     }
-    if (widget.previewMode || !_snapshot.hasLiveApi) {
+    if (widget.previewMode) {
       setState(() {
         _snapshot = _snapshot.copyWith(activeWorkWeekdays: weekdays);
       });
@@ -538,7 +553,13 @@ class _CoachHomePageState extends State<CoachHomePage> {
       return;
     }
     final apiClient = _tryReadProvider<ApiClient>(context);
-    if (apiClient == null) return;
+    if (apiClient == null || !_snapshot.hasLiveApi) {
+      showCoachingSnackBar(
+        context,
+        'Chưa kết nối máy chủ. Lịch chưa được lưu.',
+      );
+      return;
+    }
 
     final sorted = weekdays.toList()..sort();
     final existingMap = <int, List<String>>{
@@ -583,7 +604,8 @@ class _CoachHomePageState extends State<CoachHomePage> {
     required bool blocked,
     String? reason,
   }) async {
-    if (widget.previewMode || !_snapshot.hasLiveApi) {
+    if (_isMutating) return;
+    if (widget.previewMode) {
       final updated = Set<String>.from(_snapshot.blockedSlotKeys);
       if (blocked) {
         updated.add(slotKey);
@@ -601,7 +623,13 @@ class _CoachHomePageState extends State<CoachHomePage> {
     }
 
     final apiClient = _tryReadProvider<ApiClient>(context);
-    if (apiClient == null) return;
+    if (apiClient == null || !_snapshot.hasLiveApi) {
+      showCoachingSnackBar(
+        context,
+        'Chưa kết nối máy chủ. Khung giờ chưa được cập nhật.',
+      );
+      return;
+    }
     setState(() => _isMutating = true);
     try {
       await CoachV2Api(apiClient).put('/coach-bookings/blocks', {
@@ -632,55 +660,18 @@ class _CoachHomePageState extends State<CoachHomePage> {
   Future<String?> _askReasonDialog({
     required String title,
     required String label,
-  }) async {
-    var reason = '';
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: MetaGymTheme.cardSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: MetaGymTheme.cardBorder),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: MetaGymTheme.darkTextPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: TextFormField(
-          autofocus: true,
-          maxLength: 300,
-          style: const TextStyle(color: MetaGymTheme.darkTextPrimary),
-          onChanged: (value) => reason = value.trim(),
-          decoration: InputDecoration(labelText: label),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Đóng',
-              style: TextStyle(color: MetaGymTheme.darkTextSecondary),
-            ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.brandOrange,
-              foregroundColor: MetaGymTheme.onPrimary,
-            ),
-            onPressed: () {
-              if (reason.isNotEmpty) Navigator.pop(ctx, reason);
-            },
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      ),
-    );
-  }
+  }) => MetaGymNavigation.showDialogOnce<String>(
+    context: context,
+    builder: (_) => TerminationReasonDialog(
+      title: title,
+      label: label,
+      confirmLabel: 'Xác nhận',
+      maxLength: 300,
+    ),
+  );
 
   Future<void> _confirmSignOut() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: MetaGymTheme.cardSurface,
@@ -1258,7 +1249,10 @@ class _CoachDashboardView extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      onPressed: () => context.push(AppRoutes.coachWorkbench),
+                      onPressed: () => MetaGymNavigation.pushPathOnce(
+                        context,
+                        AppRoutes.coachWorkbench,
+                      ),
                       child: const Text(
                         'Kiểm thử các luồng Coach',
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -1394,7 +1388,7 @@ class _CoachDashboardView extends StatelessWidget {
           Semantics(
             button: true,
             label: 'Hồ sơ Coach',
-            child: InkWell(
+            child: MetaGymTap(
               onTap: () => onNavigateTab(4),
               customBorder: const CircleBorder(),
               child: ConstrainedBox(
@@ -1553,7 +1547,7 @@ class _CoachDashboardView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        InkWell(
+        MetaGymTap(
           onTap: () => onOpenWorkHub(0),
           borderRadius: BorderRadius.circular(8),
           child: ConstrainedBox(
@@ -1835,7 +1829,7 @@ class _CoachDashboardView extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: MetaGymTheme.brandOrange,
                     foregroundColor: MetaGymTheme.onPrimary,
-                    minimumSize: const Size(88, 44),
+                    minimumSize: const Size(88, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1903,7 +1897,7 @@ class _CoachDashboardView extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: MetaGymTheme.brandOrange,
                     foregroundColor: MetaGymTheme.onPrimary,
-                    minimumSize: const Size(84, 44),
+                    minimumSize: const Size(84, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -2238,7 +2232,7 @@ class _CoachDashboardView extends StatelessWidget {
                 icon: Icons.today_rounded,
               ),
             ),
-            InkWell(
+            MetaGymTap(
               onTap: () => onOpenWorkHub(0),
               borderRadius: BorderRadius.circular(10),
               child: ConstrainedBox(
@@ -2281,10 +2275,7 @@ class _CoachDashboardView extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     'Hôm nay chưa có ca dạy nào được đặt.',
-                    style: TextStyle(
-                      color: Color(0xFFB7B2AF),
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 13),
                   ),
                 ),
               ],
@@ -2299,7 +2290,6 @@ class _CoachDashboardView extends StatelessWidget {
       ],
     );
   }
-
 
   Widget _buildFullFeatureDirectory(BuildContext context) {
     return Theme(
@@ -2327,8 +2317,7 @@ class _CoachDashboardView extends StatelessWidget {
             child: Column(
               children: [
                 for (var i = 0; i < coachDestinations.length; i++) ...[
-                  if (i > 0)
-                    const Divider(height: 1, color: Color(0x26FFFFFF)),
+                  if (i > 0) const Divider(height: 1, color: Color(0x26FFFFFF)),
                   ListTile(
                     minVerticalPadding: 10,
                     title: Text(
@@ -2365,10 +2354,7 @@ class _CoachDashboardView extends StatelessWidget {
                   ),
                   subtitle: const Text(
                     'Hệ thống · Lịch & Gói PT',
-                    style: TextStyle(
-                      color: Color(0xFFB7B2AF),
-                      fontSize: 11.5,
-                    ),
+                    style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 11.5),
                   ),
                   trailing: const Icon(
                     Icons.chevron_right_rounded,
@@ -2388,10 +2374,7 @@ class _CoachDashboardView extends StatelessWidget {
                   ),
                   subtitle: const Text(
                     'Huấn luyện · Thanh toán',
-                    style: TextStyle(
-                      color: Color(0xFFB7B2AF),
-                      fontSize: 11.5,
-                    ),
+                    style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 11.5),
                   ),
                   trailing: const Icon(
                     Icons.chevron_right_rounded,
@@ -2411,7 +2394,7 @@ class _CoachDashboardView extends StatelessWidget {
     BuildContext context,
     _CoachBookingEntry entry,
   ) async {
-    await showModalBottomSheet<void>(
+    await MetaGymNavigation.showSheetOnce<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _CoachModalSheet(
@@ -2426,10 +2409,7 @@ class _CoachDashboardView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0x382B2622),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: const Color(0xA3A79D92),
-                  width: 1.1,
-                ),
+                border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
               ),
               child: Row(
                 children: [
@@ -2548,7 +2528,7 @@ class _CoachDashboardView extends StatelessWidget {
       7: 'Chủ nhật',
     };
 
-    await showModalBottomSheet<void>(
+    await MetaGymNavigation.showSheetOnce<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
@@ -2631,7 +2611,7 @@ class _CoachDashboardView extends StatelessWidget {
     ];
     final currentBlocked = Set<String>.from(snapshot.blockedSlotKeys);
 
-    await showModalBottomSheet<void>(
+    await MetaGymNavigation.showSheetOnce<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
@@ -2957,7 +2937,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                             icon: Icons.groups_outlined,
                           ),
                         ),
-                        InkWell(
+                        MetaGymTap(
                           onTap: () =>
                               widget.onPushRoute('/coach/features/members'),
                           borderRadius: BorderRadius.circular(10),
@@ -3085,7 +3065,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(48, 44),
+                      minimumSize: const Size(48, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       foregroundColor: const Color(0xFFF7F9FC),
                       side: const BorderSide(
@@ -3105,7 +3085,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(48, 44),
+                      minimumSize: const Size(48, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       foregroundColor: MetaGymTheme.dangerCoral,
                       side: BorderSide(
@@ -3126,7 +3106,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                 Expanded(
                   child: FilledButton(
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size(48, 44),
+                      minimumSize: const Size(48, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       backgroundColor: MetaGymTheme.brandOrange,
                       foregroundColor: MetaGymTheme.onPrimary,
@@ -3159,8 +3139,9 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
       onTap: service == null
           ? null
           : () async {
-              final changed = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
+              final changed = await MetaGymNavigation.pushOnce<bool>(
+                context,
+                MetaGymPageRoute(
                   builder: (_) => CoachRequestDetailPage(
                     requestId: req.id,
                     service: service,
@@ -3226,7 +3207,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
               Expanded(
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(48, 44),
+                    minimumSize: const Size(48, 48),
                     foregroundColor: MetaGymTheme.dangerCoral,
                     side: BorderSide(
                       color: MetaGymTheme.dangerCoral.withValues(alpha: 0.45),
@@ -3242,7 +3223,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
               Expanded(
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size(48, 44),
+                    minimumSize: const Size(48, 48),
                     backgroundColor: MetaGymTheme.brandOrange,
                     foregroundColor: MetaGymTheme.onPrimary,
                   ),
@@ -3269,8 +3250,9 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
       onTap: service == null
           ? null
           : () async {
-              await Navigator.of(context).push<void>(
-                MaterialPageRoute(
+              await MetaGymNavigation.pushOnce<void>(
+                context,
+                MetaGymPageRoute(
                   builder: (_) => CoachMemberDetailPage(
                     memberId: member.memberId,
                     service: service,
@@ -3366,7 +3348,7 @@ class _CoachQuickActionTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
           ),
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             borderRadius: BorderRadius.circular(18),
             splashColor: const Color(0x20FFFFFF),
@@ -3443,7 +3425,9 @@ class _CoachWeekBubble extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        AnimatedContainer(
+          duration: MetaGymTheme.stateDurationOf(context),
+          curve: Curves.easeOutCubic,
           width: 17,
           height: 17,
           decoration: BoxDecoration(
@@ -3552,7 +3536,7 @@ class _CoachMenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return MetaGymTap(
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 56),
@@ -3699,6 +3683,7 @@ class _WeekdaySelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      animationDuration: MetaGymTheme.stateDurationOf(context),
       color: selected ? MetaGymTheme.brandOrange : const Color(0xC42B2622),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -3707,7 +3692,7 @@ class _WeekdaySelectorButton extends StatelessWidget {
           width: 1.1,
         ),
       ),
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: ConstrainedBox(
@@ -3718,16 +3703,16 @@ class _WeekdaySelectorButton extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: selected
-                      ? Colors.white
-                      : const Color(0xFFB7B2AF),
+                  color: selected ? Colors.white : const Color(0xFFB7B2AF),
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               if (hasSessions) ...[
                 const SizedBox(height: 3),
-                Container(
+                AnimatedContainer(
+                  duration: MetaGymTheme.stateDurationOf(context),
+                  curve: Curves.easeOutCubic,
                   width: 5,
                   height: 5,
                   decoration: BoxDecoration(
@@ -3758,6 +3743,7 @@ class _SegmentPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      animationDuration: MetaGymTheme.stateDurationOf(context),
       color: selected
           ? MetaGymTheme.brandOrange.withValues(alpha: 0.20)
           : const Color(0xC42B2622),
@@ -3768,7 +3754,7 @@ class _SegmentPill extends StatelessWidget {
           width: 1.1,
         ),
       ),
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: ConstrainedBox(
@@ -3817,9 +3803,7 @@ class _CoachModalSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(MetaGymTheme.radiusGlassDock),
         ),
-        border: Border(
-          top: BorderSide(color: Color(0xA3A79D92), width: 1.1),
-        ),
+        border: Border(top: BorderSide(color: Color(0xA3A79D92), width: 1.1)),
       ),
       child: Stack(
         children: [

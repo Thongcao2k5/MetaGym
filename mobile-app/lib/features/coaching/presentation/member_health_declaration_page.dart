@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -481,6 +482,7 @@ class _ChoiceTile extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
+        animationDuration: MetaGymTheme.stateDurationOf(context),
         color: selected
             ? MetaGymTheme.primary.withValues(alpha: 0.16)
             : MetaGymTheme.elevatedSurface,
@@ -493,7 +495,7 @@ class _ChoiceTile extends StatelessWidget {
             width: selected ? 1.4 : 1,
           ),
         ),
-        child: InkWell(
+        child: MetaGymTap(
           onTap: onTap,
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
           child: Container(

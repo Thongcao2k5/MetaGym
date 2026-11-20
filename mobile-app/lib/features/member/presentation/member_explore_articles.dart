@@ -1,5 +1,6 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
@@ -86,11 +87,12 @@ class MemberExploreListPage extends StatelessWidget {
           return Material(
             color: _cardBg,
             borderRadius: BorderRadius.circular(16),
-            child: InkWell(
+            child: MetaGymTap(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute(
+                MetaGymNavigation.pushOnce<void>(
+                  context,
+                  MetaGymPageRoute(
                     builder: (_) =>
                         MemberExploreArticleDetailPage(article: article),
                   ),
@@ -482,11 +484,14 @@ class _MemberExploreArticleDetailPageState
             Align(
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
-                onPressed: () => context.push('/member/features/gym'),
+                onPressed: () => MetaGymNavigation.pushPathOnce(
+                  context,
+                  '/member/features/gym',
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _coralLight,
                   side: const BorderSide(color: _coralPrimary),
-                  minimumSize: const Size(44, 44),
+                  minimumSize: const Size(48, 48),
                 ),
                 icon: const Icon(Icons.fitness_center_rounded, size: 18),
                 label: const Text('Mở danh mục Phòng gym & thiết bị'),
@@ -547,11 +552,14 @@ class _MemberExploreArticleDetailPageState
             Align(
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
-                onPressed: () => context.push('/member/features/coaching'),
+                onPressed: () => MetaGymNavigation.pushPathOnce(
+                  context,
+                  '/member/features/coaching',
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _coralLight,
                   side: const BorderSide(color: _coralPrimary),
-                  minimumSize: const Size(44, 44),
+                  minimumSize: const Size(48, 48),
                 ),
                 icon: const Icon(Icons.person_search_rounded, size: 18),
                 label: const Text('Xem danh sách Coach thực tế'),

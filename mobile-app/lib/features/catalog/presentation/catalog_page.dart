@@ -41,6 +41,7 @@ class _CatalogPageState extends State<CatalogPage> {
             decoration: InputDecoration(
               labelText: 'Tìm thiết bị hoặc bài tập',
               suffixIcon: IconButton(
+                tooltip: 'Tìm kiếm',
                 onPressed: () => catalog.search(_searchController.text),
                 icon: const Icon(Icons.search),
               ),

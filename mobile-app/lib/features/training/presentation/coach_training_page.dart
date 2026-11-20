@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -111,8 +112,9 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                               CoachingGraphiteCard(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 onTap: () async {
-                                  await Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  await MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => _MemberPlansPage(
                                         member: member,
                                         service: _service!,
@@ -215,8 +217,9 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
   }
 
   Future<void> _openPlan(String id) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachPlanDetailPage(
           id: id,
           service: widget.service,
@@ -228,8 +231,9 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
   }
 
   Future<void> _create() async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
+    final id = await MetaGymNavigation.pushOnce<String>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachPlanFormPage(
           memberId: widget.member.memberId,
           service: widget.service,

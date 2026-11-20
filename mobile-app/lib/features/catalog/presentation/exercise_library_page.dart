@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -256,9 +258,10 @@ class _ExerciseItem extends StatelessWidget {
     padding: EdgeInsets.zero,
     child: Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
+      child: MetaGymTap(
+        onTap: () => MetaGymNavigation.pushOnce(
+          context,
+          MetaGymPageRoute<void>(
             builder: (_) => ExerciseDetailPage(item: item),
           ),
         ),

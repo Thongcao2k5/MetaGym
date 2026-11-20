@@ -1,10 +1,11 @@
 import 'dart:io' show Directory, File;
 import 'dart:ui' show ImageFilter;
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show MethodChannel, Uint8List;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
@@ -152,9 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
           user?.avatarUrl != null &&
           user!.avatarUrl!.isNotEmpty &&
           controller != null) {
-        final serverBytes = await controller.fetchAvatarBytes(
-          user.avatarUrl!,
-        );
+        final serverBytes = await controller.fetchAvatarBytes(user.avatarUrl!);
         if (serverBytes != null && serverBytes.isNotEmpty) {
           if (file != null) {
             await file.writeAsBytes(serverBytes, flush: true);
@@ -396,7 +395,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _ => code,
   };
 
-
   void _refreshBoth() {
     if (mounted) setState(() {});
     _activeSectionRefresh?.call();
@@ -445,13 +443,18 @@ class _ProfilePageState extends State<ProfilePage> {
       );
   }
 
-  void _navigateOrPushWidget({required String route, Widget? fallbackPage}) {
+  Future<void> _navigateOrPushWidget({
+    required String route,
+    Widget? fallbackPage,
+  }) async {
     try {
-      context.push(route);
+      await MetaGymNavigation.pushPathOnce(context, route);
     } catch (_) {
-      if (fallbackPage != null) {
-        Navigator.of(context)
-            .push<void>(MaterialPageRoute(builder: (_) => fallbackPage));
+      if (fallbackPage != null && mounted) {
+        MetaGymNavigation.pushOnce<void>(
+          context,
+          MetaGymPageRoute(builder: (_) => fallbackPage),
+        );
       }
     }
   }
@@ -676,8 +679,9 @@ class _ProfilePageState extends State<ProfilePage> {
               label: 'Thông báo',
               icon: Icons.notifications_none_rounded,
               onTap: () {
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute(
+                MetaGymNavigation.pushOnce<void>(
+                  context,
+                  MetaGymPageRoute(
                     builder: (_) => const CoachNotificationsPage(),
                   ),
                 );
@@ -695,8 +699,9 @@ class _ProfilePageState extends State<ProfilePage> {
             label: 'Điểm danh QR',
             icon: Icons.qr_code_scanner_rounded,
             onTap: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute(builder: (_) => const GymVisitsPage()),
+              MetaGymNavigation.pushOnce<void>(
+                context,
+                MetaGymPageRoute(builder: (_) => const GymVisitsPage()),
               );
             },
           ),
@@ -727,8 +732,9 @@ class _ProfilePageState extends State<ProfilePage> {
             label: 'Thông báo',
             icon: Icons.notifications_none_rounded,
             onTap: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute(
+              MetaGymNavigation.pushOnce<void>(
+                context,
+                MetaGymPageRoute(
                   builder: (_) => const CoachNotificationsPage(),
                 ),
               );
@@ -759,7 +765,7 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
           ),
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             borderRadius: BorderRadius.circular(18),
             splashColor: const Color(0x20FFFFFF),
@@ -801,7 +807,7 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Row(
               children: [
-                GestureDetector(
+                MetaGymTap(
                   onTap: _openPersonalInfoPage,
                   child: Stack(
                     clipBehavior: Clip.none,
@@ -1200,8 +1206,8 @@ class _ProfilePageState extends State<ProfilePage> {
         subtitle: _role == UserRole.coach
             ? '$_experienceYears năm kinh nghiệm · ${_specialties.length} chuyên môn'
             : _heightCm > 0
-                ? '${_heightCm.round()} cm · ${_fitnessGoal.isEmpty ? 'Chưa có mục tiêu' : _fitnessGoal}'
-                : 'Chưa khai báo thể trạng',
+            ? '${_heightCm.round()} cm · ${_fitnessGoal.isEmpty ? 'Chưa có mục tiêu' : _fitnessGoal}'
+            : 'Chưa khai báo thể trạng',
         onTap: _role == UserRole.coach
             ? _openCoachProfilePage
             : _openTrainingProfilePage,
@@ -1238,8 +1244,9 @@ class _ProfilePageState extends State<ProfilePage> {
       subtitle: 'Chiều cao, cân nặng, bệnh nền và chấn thương',
       badge: 'Riêng tư',
       onTap: () async {
-        final saved = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(builder: (_) => const MemberHealthDeclarationPage()),
+        final saved = await MetaGymNavigation.pushOnce<bool>(
+          context,
+          MetaGymPageRoute(builder: (_) => const MemberHealthDeclarationPage()),
         );
         if (saved == true && mounted) await _reloadProfile();
       },
@@ -1280,7 +1287,8 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.groups_outlined,
             title: 'Hội viên đang phụ trách',
             subtitle: 'Danh sách học viên & tiến độ tập luyện',
-            onTap: () => _navigateOrPushWidget(route: '/coach/features/members'),
+            onTap: () =>
+                _navigateOrPushWidget(route: '/coach/features/members'),
           ),
         ),
         const SizedBox(height: 10),
@@ -1289,7 +1297,8 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.calendar_month_rounded,
             title: 'Lịch dạy & Giáo trình',
             subtitle: 'Quản lý ca dạy 90 phút & bài tập học viên',
-            onTap: () => _navigateOrPushWidget(route: '/coach/features/sessions'),
+            onTap: () =>
+                _navigateOrPushWidget(route: '/coach/features/sessions'),
           ),
         ),
         const SizedBox(height: 10),
@@ -1299,8 +1308,9 @@ class _ProfilePageState extends State<ProfilePage> {
             title: 'Thông báo',
             subtitle: 'Yêu cầu ghép Coach & thông báo hệ thống',
             onTap: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute(
+              MetaGymNavigation.pushOnce<void>(
+                context,
+                MetaGymPageRoute(
                   builder: (_) => const CoachNotificationsPage(),
                 ),
               );
@@ -1328,7 +1338,8 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.calendar_month_rounded,
           title: 'Huấn luyện viên & Lịch hẹn',
           subtitle: 'Xem Coach đồng hành & đặt lịch tập 1-1',
-          onTap: () => _navigateOrPushWidget(route: '/member/features/sessions'),
+          onTap: () =>
+              _navigateOrPushWidget(route: '/member/features/sessions'),
         ),
       ),
       const SizedBox(height: 10),
@@ -1338,10 +1349,9 @@ class _ProfilePageState extends State<ProfilePage> {
           title: 'Thông báo',
           subtitle: 'Tin tức phòng tập, nhắc lịch & phản hồi từ Coach',
           onTap: () {
-            Navigator.of(context).push<void>(
-              MaterialPageRoute(
-                builder: (_) => const CoachNotificationsPage(),
-              ),
+            MetaGymNavigation.pushOnce<void>(
+              context,
+              MetaGymPageRoute(builder: (_) => const CoachNotificationsPage()),
             );
           },
         ),
@@ -1387,7 +1397,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return _DashboardGlassCard(
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: MetaGymTap(
           onTap: _confirmSignOut,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
@@ -1427,20 +1437,19 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openPrivacySettingsPage() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _PrivacySettingsDetailPage(
           accessMode: _photoAccessMode,
           shareJournalWithCoach: _shareJournalWithCoach,
           shareMeasurementsWithCoach: _shareMeasurementsWithCoach,
           onSave: (newMode, shareJournal, shareMeasurements) async {
             if (!MetaGymTheme.isFlutterTestEnvironment) {
-              try {
-                await _secureStorage.write(
-                  key: _permissionStorageKey,
-                  value: newMode.name,
-                );
-              } catch (_) {}
+              await _secureStorage.write(
+                key: _permissionStorageKey,
+                value: newMode.name,
+              );
             }
             if (!mounted) return;
             setState(() {
@@ -1456,8 +1465,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openAppSettingsPage() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _AppSettingsDetailPage(
           unitSystem: _unitSystem,
           workoutReminderEnabled: _workoutReminderEnabled,
@@ -1476,16 +1486,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openSupportInfoPage() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _SupportInfoDetailPage(onShowToast: _showToast),
       ),
     );
   }
 
   Future<void> _openPersonalInfoPage() async {
-    final updated = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final updated = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _PersonalInfoDetailPage(
           fullName: _fullName,
           phone: _phone,
@@ -1528,8 +1540,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openTrainingProfilePage() async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _TrainingProfileDetailPage(
           fitnessGoal: _fitnessGoal,
           heightCm: _heightCm,
@@ -1555,8 +1568,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openHealthNutritionPage() async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _HealthNutritionDetailPage(
           healthNotes: _healthNotes,
           injuryNotes: _injuryNotes,
@@ -1579,8 +1593,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openSecurityAccountPage() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _SecurityAccountDetailPage(
           email: _email,
           status: _status,
@@ -1602,8 +1617,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openCoachProfilePage() async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _CoachProfileDetailPage(
           biography: _biography,
           specialties: _specialties,
@@ -1648,7 +1664,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _confirmSignOut() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF162232),
@@ -1834,7 +1850,7 @@ class _MetricPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(17),
         side: const BorderSide(color: Color(0x9A8C8176), width: 1),
       ),
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(17),
         child: ConstrainedBox(
@@ -1891,7 +1907,7 @@ class _CircleHeaderGlassButton extends StatelessWidget {
         message: semanticLabel,
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             customBorder: const CircleBorder(),
             child: ConstrainedBox(
@@ -1942,7 +1958,7 @@ class _ProfileMenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -2161,10 +2177,12 @@ class _SheetChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return MetaGymTap(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
-      child: Container(
+      child: AnimatedContainer(
+        duration: MetaGymTheme.stateDurationOf(context),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? const Color(0x38FF5A36) : const Color(0x80211E1C),
@@ -2320,6 +2338,7 @@ class _PersonalInfoDetailPageState extends State<_PersonalInfoDetailPage> {
   }
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
     final trimmedName = _nameCtrl.text.trim();
     if (trimmedName.length < 2) {
       widget.onShowToast('Họ và tên cần ít nhất 2 ký tự', isError: true);
@@ -2358,7 +2377,7 @@ class _PersonalInfoDetailPageState extends State<_PersonalInfoDetailPage> {
                 children: [
                   Row(
                     children: [
-                      GestureDetector(
+                      MetaGymTap(
                         onTap: _handleAvatarUpload,
                         child: Stack(
                           clipBehavior: Clip.none,
@@ -2442,7 +2461,7 @@ class _PersonalInfoDetailPageState extends State<_PersonalInfoDetailPage> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            InkWell(
+                            MetaGymTap(
                               onTap: _handleAvatarUpload,
                               borderRadius: BorderRadius.circular(8),
                               child: Container(
@@ -2510,11 +2529,13 @@ class _PersonalInfoDetailPageState extends State<_PersonalInfoDetailPage> {
                         itemBuilder: (_, i) {
                           final photoBytes = _allowedPhotos[i];
                           final isSelected = _avatar == photoBytes;
-                          return GestureDetector(
+                          return MetaGymTap(
                             onTap: () {
                               setState(() => _avatar = photoBytes);
                             },
-                            child: Container(
+                            child: AnimatedContainer(
+                              duration: MetaGymTheme.stateDurationOf(context),
+                              curve: Curves.easeOutCubic,
                               width: 52,
                               height: 52,
                               decoration: BoxDecoration(
@@ -2559,7 +2580,7 @@ class _PersonalInfoDetailPageState extends State<_PersonalInfoDetailPage> {
                   ),
                   if (widget.role == UserRole.member) ...[
                     const SizedBox(height: 14),
-                    GestureDetector(
+                    MetaGymTap(
                       onTap: () async {
                         final initialDate =
                             DateTime.tryParse(_dob) ?? DateTime(2000);
@@ -2735,6 +2756,7 @@ class _TrainingProfileDetailPageState
   }
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
     setState(() => _isSaving = true);
     final nextGoal = _goalCtrl.text.trim().isNotEmpty
         ? _goalCtrl.text.trim()
@@ -2953,6 +2975,7 @@ class _HealthNutritionDetailPageState
   }
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
     setState(() => _isSaving = true);
     final nextHealth = _healthCtrl.text.trim().isNotEmpty
         ? _healthCtrl.text.trim()
@@ -3099,6 +3122,7 @@ class _SecurityAccountDetailPageState
   }
 
   Future<void> _handlePasswordChange() async {
+    if (_isSaving) return;
     final current = _currentCtrl.text;
     final next = _newCtrl.text;
     final confirm = _confirmCtrl.text;
@@ -3306,7 +3330,7 @@ class _SecurityAccountDetailPageState
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    height: 44,
+                    height: 48,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
                         backgroundColor: MetaGymTheme.brandOrange,
@@ -3335,7 +3359,7 @@ class _SecurityAccountDetailPageState
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: double.infinity,
-                height: 46,
+                height: 48,
                 child: OutlinedButton.icon(
                   icon: const Icon(
                     Icons.logout_rounded,
@@ -3422,6 +3446,7 @@ class _CoachProfileDetailPageState extends State<_CoachProfileDetailPage> {
   }
 
   Future<void> _handleSave() async {
+    if (_isSaving) return;
     setState(() => _isSaving = true);
     final parsedSpecs = _specsCtrl.text
         .split(',')
@@ -3588,11 +3613,20 @@ class _PrivacySettingsDetailPageState
   bool _saving = false;
 
   Future<void> _handleSave() async {
+    if (_saving) return;
     setState(() => _saving = true);
-    await widget.onSave(_mode, _shareJournal, _shareMeasurements);
-    if (!mounted) return;
-    setState(() => _saving = false);
-    Navigator.of(context).pop();
+    try {
+      await widget.onSave(_mode, _shareJournal, _shareMeasurements);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không lưu được cài đặt. Hãy thử lại.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -3623,7 +3657,10 @@ class _PrivacySettingsDetailPageState
                     activeTrackColor: MetaGymTheme.brandOrange,
                     title: const Text(
                       'Nhật ký tập luyện hằng ngày',
-                      style: TextStyle(color: Color(0xFFF7F9FC), fontSize: 13.5),
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 13.5,
+                      ),
                     ),
                     subtitle: const Text(
                       'Cho phép Coach xem lịch sử bài tập & cảm nhận buổi tập',
@@ -3638,7 +3675,10 @@ class _PrivacySettingsDetailPageState
                     activeTrackColor: MetaGymTheme.brandOrange,
                     title: const Text(
                       'Số đo 3 vòng & Cân nặng',
-                      style: TextStyle(color: Color(0xFFF7F9FC), fontSize: 13.5),
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 13.5,
+                      ),
                     ),
                     subtitle: const Text(
                       'Đồng bộ số đo cơ thể để Coach điều chỉnh giáo trình',
@@ -3668,7 +3708,7 @@ class _PrivacySettingsDetailPageState
                   ),
                   const SizedBox(height: 8),
                   for (final option in _PhotoAccessMode.values)
-                    InkWell(
+                    MetaGymTap(
                       borderRadius: BorderRadius.circular(10),
                       onTap: () => setState(() => _mode = option),
                       child: Padding(
@@ -3780,7 +3820,7 @@ class _AppSettingsDetailPageState extends State<_AppSettingsDetailPage> {
                     children: [
                       for (final unit in const ['cm / kg', 'inch / lbs']) ...[
                         Expanded(
-                          child: InkWell(
+                          child: MetaGymTap(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => setState(() => _unit = unit),
                             child: Container(
@@ -3849,7 +3889,10 @@ class _AppSettingsDetailPageState extends State<_AppSettingsDetailPage> {
                     const SizedBox(height: 10),
                     const Text(
                       'Khung giờ nhắc',
-                      style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 12.5),
+                      style: TextStyle(
+                        color: Color(0xFFB7B2AF),
+                        fontSize: 12.5,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -3944,10 +3987,7 @@ class _SupportInfoDetailPage extends StatelessWidget {
                     value: '05:30 – 22:00 (Thứ 2 – CN)',
                   ),
                   SizedBox(height: 8),
-                  _InfoKeyValueRow(
-                    label: 'Hotline hỗ trợ',
-                    value: '1900 6868',
-                  ),
+                  _InfoKeyValueRow(label: 'Hotline hỗ trợ', value: '1900 6868'),
                   SizedBox(height: 8),
                   _InfoKeyValueRow(
                     label: 'Email CSKH',
@@ -3996,7 +4036,7 @@ class _SupportInfoDetailPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    height: 44,
+                    height: 48,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: MetaGymTheme.brandOrange,
@@ -4005,14 +4045,10 @@ class _SupportInfoDetailPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
-                        onShowToast(
-                          'Đã gửi yêu cầu hỗ trợ tới bộ phận CSKH Meta Gym',
-                        );
-                      },
+                      onPressed: null,
                       icon: const Icon(Icons.headset_mic_outlined, size: 18),
                       label: const Text(
-                        'Liên hệ bộ phận hỗ trợ',
+                        'Hỗ trợ trực tiếp chưa khả dụng',
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),

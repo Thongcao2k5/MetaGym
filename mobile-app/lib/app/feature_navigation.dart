@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 
 class FeatureDestination {
   const FeatureDestination(this.title, this.path, this.task, this.section);
@@ -183,20 +183,22 @@ class FeatureMenu extends StatelessWidget {
               title: Text(destination.title),
               subtitle: Text('Giao diện cơ bản: ${destination.task}'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(destination.path),
+              onTap: () =>
+                  MetaGymNavigation.pushPathOnce(context, destination.path),
             ),
         ],
         if (profilePath != null)
           ListTile(
             title: const Text('Hồ sơ của tôi'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(profilePath!),
+            onTap: () => MetaGymNavigation.pushPathOnce(context, profilePath!),
           ),
         if (workbenchPath != null)
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: OutlinedButton(
-              onPressed: () => context.push(workbenchPath!),
+              onPressed: () =>
+                  MetaGymNavigation.pushPathOnce(context, workbenchPath!),
               child: Text(
                 workbenchPath!.startsWith('/member')
                     ? 'Kiểm thử các luồng hội viên'

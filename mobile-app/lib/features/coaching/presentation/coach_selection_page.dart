@@ -1,8 +1,8 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
@@ -93,31 +93,11 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
     }).toList();
   }
 
-  void _handleBottomNavTap(BuildContext context, int index) {
-    final router = GoRouter.maybeOf(context);
-    switch (index) {
-      case 0:
-        if (router != null) {
-          router.go('/member');
-        } else {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      case 1:
-        break;
-      case 2:
-        router?.push('/member/features/ai');
-      case 3:
-        router?.push('/member/features/messages');
-      case 4:
-        router?.push('/profile');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final specialties = _specialtyFilters;
     final filtered = _filteredCoaches;
-    final bottomPadding = MetaGymBottomNav.contentBottomPadding(context);
+    final bottomPadding = 24 + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
@@ -136,11 +116,6 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      bottomNavigationBar: MetaGymBottomNav(
-        currentIndex: 1,
-        warmGlass: true,
-        onTap: (index) => _handleBottomNavTap(context, index),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -318,8 +293,9 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                             for (final coach in filtered)
                               _CoachDiscoveryCard(
                                 coach: coach,
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
+                                onTap: () => MetaGymNavigation.pushOnce<void>(
+                                  context,
+                                  MetaGymPageRoute(
                                     builder: (_) => CoachDetailPage(
                                       coachId: coach.id,
                                       service: _service!,
@@ -352,6 +328,7 @@ class _FilterChipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      animationDuration: MetaGymTheme.stateDurationOf(context),
       color: selected
           ? MetaGymTheme.primary.withValues(alpha: 0.2)
           : MetaGymTheme.elevatedSurface,
@@ -363,7 +340,8 @@ class _FilterChipButton extends StatelessWidget {
               : MetaGymTheme.darkBorderStrong,
         ),
       ),
-      child: InkWell(
+      child: MetaGymTap(
+        selected: selected,
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Padding(

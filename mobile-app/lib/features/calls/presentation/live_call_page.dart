@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart' as rtc;
@@ -38,7 +40,7 @@ class LiveCallPage extends StatefulWidget {
     if (!_open.add(navigator)) return;
     try {
       await navigator.push(
-        MaterialPageRoute<void>(
+        MetaGymPageRoute<void>(
           builder: (_) => LiveCallPage(
             api: api,
             call: call,
@@ -1125,7 +1127,7 @@ class _AudioGridButton extends StatelessWidget {
       children: [
         Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: MetaGymTap(
             onTap: enabled ? onTap : null,
             customBorder: const CircleBorder(),
             child: Ink(
@@ -1187,7 +1189,7 @@ class _CallActionCircle extends StatelessWidget {
   Widget build(BuildContext context) {
     final button = Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: Ink(
@@ -1245,7 +1247,7 @@ class _TopGlassIconButton extends StatelessWidget {
       message: tooltip,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: MetaGymTap(
           onTap: onTap,
           customBorder: const CircleBorder(),
           child: Ink(

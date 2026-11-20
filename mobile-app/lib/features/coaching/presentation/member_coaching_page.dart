@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -120,8 +121,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
     try {
       final conversation = await messaging.startConversation(coachId: coachId);
       if (!mounted) return;
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
+      await MetaGymNavigation.pushOnce<void>(
+        context,
+        MetaGymPageRoute(
           builder: (_) => ConversationDetailPage(
             conversation: conversation,
             service: messaging,
@@ -142,8 +144,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
   }
 
   Future<void> _openOutcomeConsent() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => const MemberOutcomeConsentPage()),
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(builder: (_) => const MemberOutcomeConsentPage()),
     );
     if (mounted) await _load();
   }
@@ -215,14 +218,16 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                               onPrimaryAction: () {
                                 if (current.status == 'PAUSED' &&
                                     current.pauseReason != 'COACH_LOCKED') {
-                                  Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => const MembershipPage(),
                                     ),
                                   );
                                 } else {
-                                  Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => const CoachBookingPage(),
                                     ),
                                   );
@@ -284,8 +289,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                 icon: Icons.fitness_center_rounded,
                                 title: 'Giáo trình',
                                 subtitle: 'Tập luyện và dinh dưỡng',
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
+                                onTap: () => MetaGymNavigation.pushOnce<void>(
+                                  context,
+                                  MetaGymPageRoute(
                                     builder: (_) => const MemberTrainingPage(),
                                   ),
                                 ),
@@ -303,8 +309,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                   icon: Icons.receipt_long_outlined,
                                   title: 'Gói Coach',
                                   subtitle: 'Xem quyền lợi và thời hạn',
-                                  onTap: () => Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  onTap: () => MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => CoachOffersPage(
                                         coachId: current.coachId,
                                       ),
@@ -316,8 +323,9 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                 icon: Icons.fitness_center_rounded,
                                 title: 'Xem giáo trình',
                                 subtitle: 'Đang tạm khóa',
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
+                                onTap: () => MetaGymNavigation.pushOnce<void>(
+                                  context,
+                                  MetaGymPageRoute(
                                     builder: (_) => const MemberTrainingPage(),
                                   ),
                                 ),
@@ -374,9 +382,10 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                   const SizedBox(height: 14),
                                   CoachingPrimaryButton(
                                     label: 'Tiếp tục thanh toán',
-                                    onPressed: () => Navigator.of(context)
-                                        .push<void>(
-                                          MaterialPageRoute(
+                                    onPressed: () =>
+                                        MetaGymNavigation.pushOnce<void>(
+                                          context,
+                                          MetaGymPageRoute(
                                             builder: (_) => CoachOffersPage(
                                               coachId:
                                                   pendingHold['coachId']
@@ -421,9 +430,10 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                   const SizedBox(height: 16),
                                   CoachingPrimaryButton(
                                     label: 'Khám phá Coach',
-                                    onPressed: () => Navigator.of(context)
-                                        .push<void>(
-                                          MaterialPageRoute(
+                                    onPressed: () =>
+                                        MetaGymNavigation.pushOnce<void>(
+                                          context,
+                                          MetaGymPageRoute(
                                             builder: (_) =>
                                                 const CoachSelectionPage(),
                                           ),

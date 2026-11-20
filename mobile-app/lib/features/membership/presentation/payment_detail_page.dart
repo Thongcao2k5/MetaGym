@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -49,9 +50,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
   Future<void> _copyCode(String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã sao chép mã giao dịch.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Đã sao chép mã giao dịch.')));
   }
 
   @override
@@ -115,7 +116,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                               payment.method!,
                                             ),
                                             style: const TextStyle(
-                                              color: MetaGymTheme.reflectionBlue,
+                                              color:
+                                                  MetaGymTheme.reflectionBlue,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -182,9 +184,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                       _DetailRow(
                                         label: 'Mã giao dịch',
                                         value: payment.transactionCode!,
-                                        onCopy: () => _copyCode(
-                                          payment.transactionCode!,
-                                        ),
+                                        onCopy: () =>
+                                            _copyCode(payment.transactionCode!),
                                       ),
                                     if (payment.createdAt != null)
                                       _DetailRow(
@@ -222,11 +223,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 }
 
 class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.onCopy,
-  });
+  const _DetailRow({required this.label, required this.value, this.onCopy});
 
   final String label;
   final String value;
@@ -242,10 +239,7 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFFB7B2AF),
-                fontSize: 13.5,
-              ),
+              style: const TextStyle(color: Color(0xFFB7B2AF), fontSize: 13.5),
             ),
           ),
           const SizedBox(width: 12),
@@ -272,7 +266,7 @@ class _DetailRow extends StatelessWidget {
                   Semantics(
                     button: true,
                     label: 'Sao chép $label',
-                    child: InkWell(
+                    child: MetaGymTap(
                       onTap: onCopy,
                       borderRadius: BorderRadius.circular(10),
                       child: const SizedBox(
