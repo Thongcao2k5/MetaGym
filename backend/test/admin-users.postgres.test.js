@@ -58,19 +58,19 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.status, 403);
       result = await request(app, '/admin/coaches', adminToken, 'POST', {
         email: ' COACH@EXAMPLE.COM ', fullName: 'Coach One',
-        password: 'StrongPass1', memberLimit: 5,
+        password: 'StrongPass1',
       });
       assert.equal(result.status, 201);
       coachId = result.body.data.id;
       assert.equal(result.body.data.email, 'coach@example.com');
-      assert.equal(result.body.data.memberLimit, 5);
+      assert.equal(result.body.data.memberLimit, 8);
       assert.equal(JSON.stringify(result.body).includes('password'), false);
       const stored = await database.query('SELECT password_hash FROM users WHERE id = $1', [coachId]);
       assert.equal(await bcrypt.compare('StrongPass1', stored.rows[0].password_hash), true);
 
       result = await request(app, '/admin/coaches', adminToken, 'POST', {
         email: 'coach@example.com', fullName: 'Coach Two',
-        password: 'StrongPass1', memberLimit: 5,
+        password: 'StrongPass1', memberLimit: 8,
       });
       assert.equal(result.status, 409);
       result = await request(app, '/admin/users?role=COACH&search=coach%40example.com', adminToken);
@@ -265,7 +265,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.status, 200);
       result = await request(app, '/admin/coaches', adminToken, 'POST', {
         email: 'second-coach@example.com', fullName: 'Second Coach',
-        password: 'StrongPass1', memberLimit: 1,
+        password: 'StrongPass1',
       });
       assert.equal(result.status, 201);
       secondCoachId = result.body.data.id;
@@ -326,15 +326,19 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/users/${coachId}`, adminToken, 'PATCH', {
         fullName: 'Coach Updated', memberLimit: 2,
       });
+      assert.equal(result.status, 422);
+      result = await request(app, `/admin/users/${coachId}`, adminToken, 'PATCH', {
+        fullName: 'Coach Updated',
+      });
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.memberLimit, 2);
+      assert.equal(result.body.data.memberLimit, 8);
       result = await request(app, `/admin/users/${memberId}`, adminToken, 'PATCH', { memberLimit: 1 });
       assert.equal(result.status, 422);
       result = await request(app, `/admin/users/${coachId}/status`, adminToken, 'PATCH', {
         status: 'DISABLED', reason: 'Policy test',
       });
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.status, 'DISABLED');
+      assert.equal(result.body.data.user.status, 'DISABLED');
       assert.equal((await request(app, '/users/me', token(coachId, 'COACH'))).status, 401);
       result = await request(app, `/admin/users/${coachId}/status`, adminToken, 'PATCH', {
         status: 'ACTIVE',
@@ -350,6 +354,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         adminToken, 'POST', {});
       assert.equal(result.status, 201);
       assert.ok(result.body.data.temporaryPassword.length >= 20);
+      assert.ok(result.body.data.reminder);
       const resetHash = await database.query('SELECT password_hash FROM users WHERE id = $1', [coachId]);
       assert.equal(await bcrypt.compare(result.body.data.temporaryPassword,
         resetHash.rows[0].password_hash), true);
@@ -358,6 +363,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/users/${memberId}/status`, adminToken,
         'PATCH', { status: 'DISABLED', reason: 'Security regression' });
       assert.equal(result.status, 200);
+      assert.equal(result.body.data.user.status, 'DISABLED');
       for (const path of ['/users/me', '/workout-logs', '/progress/me/summary',
         '/payments/me']) {
         assert.equal((await request(app, path, memberToken)).status, 401, path);
@@ -365,8 +371,12 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/users/${memberId}/status`, adminToken,
         'PATCH', { status: 'ACTIVE' });
       assert.equal(result.status, 200);
+      assert.equal(result.body.data.user.status, 'ACTIVE');
       assert.equal((await request(app, '/workout-logs', memberToken)).status, 401);
     } finally {
+      await database.query('DELETE FROM coach_notifications WHERE user_id IN ($1, $2, $3)',
+        [memberId, coachId ?? adminId, secondCoachId ?? adminId]);
+      await database.query('DELETE FROM coach_lock_incidents WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM progress_comments WHERE member_id = $1', [memberId]);
       await database.query(
         `DELETE FROM workout_log_exercises WHERE workout_log_id IN

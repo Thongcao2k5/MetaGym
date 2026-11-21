@@ -56,7 +56,7 @@ test('PostgreSQL payment and coaching flow preserves ownership, capacity and his
           otherId, `${otherId}@example.com`, coachId, `${coachId}@example.com`],
       );
       await database.query(
-        `INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 1)`, [coachId],
+        `INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 8)`, [coachId],
       );
       await database.query(
         `INSERT INTO membership_plans
@@ -161,7 +161,7 @@ test('PostgreSQL payment and coaching flow preserves ownership, capacity and his
       assert.equal((await call(base, `/coach/requests/${requested.body.data.id}`, coach,
         'PATCH', { decision: 'ACCEPTED' })).status, 404);
       assert.equal((await call(base, '/coaches', member)).body.data.find(
-        (item) => item.id === coachId).availableSlots, 0);
+        (item) => item.id === coachId).availableSlots, 7);
       assert.equal((await call(base, '/coach-requests', member, 'POST',
         { coachId })).status, 409);
       const ended = await call(base, `/relationships/${relationshipId}/terminations`,
@@ -171,7 +171,7 @@ test('PostgreSQL payment and coaching flow preserves ownership, capacity and his
       assert.equal((await call(base, '/relationships/me/history', member)).body.data[0].id,
         relationshipId);
       assert.equal((await call(base, '/coaches', member)).body.data.find(
-        (item) => item.id === coachId).availableSlots, 1);
+        (item) => item.id === coachId).availableSlots, 8);
     } finally {
       await database.query('DELETE FROM conversation_participants WHERE user_id IN ($1, $2)',
         [memberId, coachId]);

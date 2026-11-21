@@ -59,7 +59,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         assert.equal(login.status, 200, JSON.stringify(login.body));
         tokens.set(account, login.body.data.accessToken);
       }
-      await database.query('INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 20)', [coach]);
+      await database.query('INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 8)', [coach]);
       await database.query(
         `INSERT INTO membership_plans (id, name, price, duration_days, status, created_by)
          VALUES ($1, 'Gym fixture', 1, 30, 'ACTIVE', $2)`, [planId, admin],
@@ -261,7 +261,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       assert.equal((await call(winner, endpoint, 'POST', offer, randomUUID())).body.error.code, 'QUEUED_EXISTS');
       await database.query(
         `UPDATE coach_entitlements SET starts_on = CURRENT_DATE - 38,
-           original_ends_on = CURRENT_DATE - 9, ends_on = CURRENT_DATE - 2 WHERE id = $1`,
+           original_ends_on = CURRENT_DATE - 9, grace_days_added = 7, ends_on = CURRENT_DATE - 2 WHERE id = $1`,
         [settled[0].entitlementId],
       );
       const { reconcileMembershipLifecycles } = await import('../src/services/membership-lifecycle.js');

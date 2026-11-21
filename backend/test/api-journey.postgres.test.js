@@ -73,7 +73,7 @@ test('PostgreSQL API journey from registration through coaching and termination'
         { coachId: randomUUID() })).body.error.code, 'MEMBERSHIP_REQUIRED');
 
       coachId = expected(await call(base, '/admin/coaches', admin, 'POST', {
-        email: coachEmail, fullName: 'Journey Coach', password, memberLimit: 1,
+        email: coachEmail, fullName: 'Journey Coach', password,
       }), 201).id;
       const coach = expected(await call(base, '/auth/sessions', undefined,
         'POST', { email: coachEmail, password }), 200).accessToken;

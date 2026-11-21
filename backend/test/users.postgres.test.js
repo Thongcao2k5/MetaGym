@@ -52,7 +52,7 @@ test('PostgreSQL users API: profile ownership, role fields, and password revocat
       );
       await database.query('INSERT INTO member_profiles (user_id) VALUES ($1)', [memberId]);
       await database.query(
-        'INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 5)', [coachId],
+        'INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 8)', [coachId],
       );
 
       const memberToken = token(memberId);

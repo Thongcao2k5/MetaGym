@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 52 THEN
-    RAISE EXCEPTION 'Expected 52 public tables, found %', table_count;
+  IF table_count <> 53 THEN
+    RAISE EXCEPTION 'Expected 53 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -34,7 +34,7 @@ DECLARE
     'coach_notifications', 'nutrition_foods', 'training_plan_day_meals',
     'gym_checkin_code', 'gym_visits', 'member_self_training_days',
     'coach_outcome_cases', 'nutrition_guide_revisions',
-    'member_nutrition_days'
+    'member_nutrition_days', 'coach_lock_incidents'
   ];
   missing_tables text[];
 BEGIN
@@ -61,7 +61,8 @@ DECLARE
     'fk_participant_read_cursor',
     'fk_ai_reply_conversation', 'uq_member_journal_day',
     'fk_journal_photo_entry_owner', 'fk_journal_photo_media_owner',
-    'ck_direct_conversation_pair', 'ck_coach_package_fixed_terms',
+    'ck_direct_conversation_pair', 'ck_coach_profiles_member_limit_fixed',
+    'ck_coach_package_code_format', 'ck_coach_entitlement_origin',
     'ex_coach_weekly_slot_overlap', 'uq_coach_hold_request',
     'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap',
     'uq_member_self_training_day', 'ck_coach_outcome_different_pair',
@@ -137,6 +138,20 @@ BEGIN
       AND indexname = 'uq_payments_zalopay_pending_member'
   ) THEN
     RAISE EXCEPTION 'Missing ZaloPay pending payment unique index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_coach_entitlement_origin_hold'
+  ) THEN
+    RAISE EXCEPTION 'Missing coach entitlement origin hold unique index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_coach_lock_incident_open'
+  ) THEN
+    RAISE EXCEPTION 'Missing coach lock incident open unique index';
   END IF;
 
   IF NOT EXISTS (

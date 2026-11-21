@@ -147,6 +147,28 @@ async function resumeCoachRelationship(client, memberId) {
      pause_reason = NULL WHERE member_id = $1 AND status = 'PAUSED'
      AND pause_reason = 'MEMBERSHIP_EXPIRED'`, [memberId],
   );
+  // T2 §2 D1 edge case: if Member renews Gym while under COACH_LOCKED with un-frozen entitlement, start freeze now.
+  await client.query(
+    `WITH newly_frozen AS (
+       UPDATE coach_entitlements e
+       SET frozen_at = statement_timestamp()
+       FROM coach_relationships r
+       JOIN coach_lock_incidents i ON i.relationship_id = r.id AND i.status = 'OPEN'
+       WHERE e.relationship_id = r.id
+         AND r.member_id = $1
+         AND r.status = 'PAUSED'
+         AND r.pause_reason = 'COACH_LOCKED'
+         AND e.status = 'ACTIVE'
+         AND e.frozen_at IS NULL
+         AND i.frozen_started_at IS NULL
+       RETURNING i.id AS incident_id, e.frozen_at
+     )
+     UPDATE coach_lock_incidents i
+     SET frozen_started_at = nf.frozen_at
+     FROM newly_frozen nf
+     WHERE i.id = nf.incident_id AND i.frozen_started_at IS NULL`,
+    [memberId],
+  );
 }
 
 async function gatewayPaymentByReference(client, reference, method) {
