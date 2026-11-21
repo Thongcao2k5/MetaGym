@@ -7,8 +7,7 @@ Hook deploy đúng commit đã kiểm tra. Job thành công nghĩa là Render đ
 yêu cầu, chưa khẳng định deploy/migration đã hoàn thành: kiểm tra Render Deploys.
 
 Database production chỉ được truy cập từ Render. Actions dùng PostgreSQL 17
-tạm, kiểm tra rollback, lịch sử, baseline, chạy đồng thời, chạy toàn bộ migration
-hai lần và chạy `database/tests/schema_assertions.sql`.
+tạm, chạy toàn bộ migration hai lần và chạy `database/tests/schema_assertions.sql`.
 
 ## Cấu hình service metagym-api hiện có
 
@@ -89,3 +88,104 @@ privileges cho đúng role tạo object. Runner không tự đổi quyền các 
 Tài liệu chính thức: [Deploy hooks](https://render.com/docs/deploy-hooks),
 [Root directory](https://render.com/docs/monorepo-support#setting-a-root-directory),
 [Build pipeline](https://render.com/docs/build-pipeline).
+
+## Hiểu luồng thực thi
+
+```text
+Bạn thêm migration rồi push/merge main
+  → GitHub Actions tạo PostgreSQL 17 tạm trên runner
+  → npm ci, kiểm tra cú pháp và chạy bộ test sẵn có của backend
+  → Chạy 0001 đến migration mới nhất trên database tạm
+  → Chạy lần hai: phải báo 0 migration mới
+  → Kiểm tra schema_assertions.sql
+  → Nếu tất cả đạt: gọi Deploy Hook với SHA của commit đã kiểm tra
+  → Render lấy đúng commit, cài dependency
+  → start:render kết nối DATABASE_URL của Render
+  → Lấy khóa để không có hai tiến trình migrate cùng lúc
+  → Đọc metagym_ops.schema_migrations và đối chiếu checksum
+  → Chạy từng file mới, ghi lịch sử trong cùng transaction
+  → Chạy API, Render kiểm tra /api/v1/health
+```
+
+Database tạm bị xóa khi job kết thúc. Không có database test chạy lâu dài và
+không thêm endpoint test vào API. Bộ test riêng cho runner đã được dùng để xác
+minh triển khai rồi bỏ khỏi thay đổi theo yêu cầu; giữ bộ test hiện hữu của đồ án.
+
+## Các bước tự thiết lập lại từ đầu
+
+1. Trong repo đồ án, kiểm tra đã có `backend/scripts/migrate.js`, hai script
+   `db:migrate` / `start:render` trong `backend/package.json` và file workflow.
+2. Chạy `npm ci --prefix backend`. Database mới có thể dùng `db:migrate` ngay;
+   database cũ cần sao lưu và xác nhận baseline theo phần phía trên trước.
+3. Vào Render → service `metagym-api` → Settings, điền đủ các mục trong bảng
+   cấu hình. Khi đổi Root Directory, modal Verify Settings sẽ xuất hiện: sửa
+   cả Build Command và Start Command theo bảng rồi bấm Update Fields.
+4. Giữ `DATABASE_URL`, `JWT_SECRET` và các cấu hình backend trong Render →
+   Environment. Root Directory đổi không cần chuyển các secret sang GitHub.
+5. Ở Render → Settings → Deploy Hook, copy URL. Sang repo GitHub → Settings →
+   Secrets and variables → Actions → New repository secret; nhập tên
+   `RENDER_DEPLOY_HOOK_URL`, dán URL vào Secret và bấm Add secret.
+6. Push/merge thay đổi vào `main`. Trên GitHub mở Actions →
+   **Database migrations and Render deploy** → chọn run mới nhất.
+7. Nếu cần chạy lại mà không sửa code: ở trang workflow chọn **Run workflow**,
+   chọn nhánh `main`, rồi bấm nút chạy. Nút này xuất hiện sau khi workflow đã
+   có trên nhánh mặc định. Chạy trên nhánh khác chỉ kiểm thử, không deploy.
+8. Sau khi job **Request Render deploy** xanh, sang Render → Deploys → mở
+   deployment mới. Chờ trạng thái Live và xem log migration/API.
+
+## Cách thêm migration tiếp theo (ví dụ 0032)
+
+Tại gốc repo, tạo `database/migrations/0032_ten_thay_doi.up.sql`:
+
+```sql
+BEGIN;
+-- Đặt ALTER TABLE / CREATE TABLE thật của tính năng tại đây.
+COMMIT;
+```
+
+Tạo file rollback `0032_ten_thay_doi.down.sql` tương ứng. Ví dụ trên chỉ là khung,
+không tạo/commit file rỗng. Không chỉnh sửa file `0001`–`0031` đã được ghi lịch sử.
+Cập nhật schema assertions nếu thay đổi số bảng/constraint được kiểm tra.
+
+Sau đó chạy trên database development của bạn:
+
+```powershell
+# DATABASE_URL trỏ đến database development riêng, đã đặt bằng cấu hình kín.
+npm run db:migrate --prefix backend
+npm run db:migrate --prefix backend
+psql -X $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
+git diff --check
+git add database/migrations database/tests/schema_assertions.sql
+git commit -m "feat: add migration for the new feature"
+git push
+```
+
+Nếu làm ở nhánh tính năng thì tạo PR vào `main`, đợi check xanh rồi merge.
+Actions tự chạy khi đường dẫn liên quan thay đổi; không cần bấm Run workflow
+mỗi lần. Thay đổi chỉ ở mobile/frontend không kích hoạt workflow backend này.
+
+## Đọc kết quả và xử lý lỗi
+
+| Dấu hiệu | Ý nghĩa / cách làm |
+| --- | --- |
+| `Applying 0032_...up.sql` | Render đang áp dụng file chưa có trong lịch sử. |
+| `Database ready: 0 migration(s) applied.` | Schema đã theo kịp các file, không chạy lại SQL cũ. |
+| Job check đỏ | Render chưa được workflow này gọi. Mở step lỗi, sửa rồi push commit mới. |
+| Thiếu `RENDER_DEPLOY_HOOK_URL` | Thêm secret đúng repo, sau đó chạy lại workflow trên main. |
+| `Existing database has no migration history` | Chưa khởi tạo baseline; xác nhận mốc thật trước khi dùng `--baseline`. |
+| `Migration checksum changed` | File đã chạy bị sửa; khôi phục đúng nội dung gốc và tạo migration mới. |
+| `Migration failed: ... (PostgreSQL ...)` | File đó đã rollback. Xem mã lỗi, kiểm tra schema/dữ liệu; không xóa lịch sử hoặc chạy lại cả thư mục thủ công. |
+| Actions xanh, Render chưa Live | Actions chỉ xác nhận gửi yêu cầu; mở Render Deploys để xem build/start/migration. |
+| Health 200 | API kết nối được database; đối chiếu lịch sử migration để xác nhận đúng phiên bản schema. |
+
+Kiểm tra lịch sử bằng Supabase SQL Editor hoặc `psql`:
+
+```sql
+SELECT name, applied_at
+FROM metagym_ops.schema_migrations
+ORDER BY name;
+```
+
+Không chạy file `.down.sql` thủ công trong khi giữ nguyên lịch sử: runner sẽ hiểu
+file up vẫn đã áp dụng. Khi có sự cố production, xác định file đã commit và phục
+hồi backup theo kế hoạch hoặc viết migration sửa tiếp; không xóa bảng lịch sử.
