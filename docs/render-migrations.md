@@ -189,3 +189,40 @@ ORDER BY name;
 Không chạy file `.down.sql` thủ công trong khi giữ nguyên lịch sử: runner sẽ hiểu
 file up vẫn đã áp dụng. Khi có sự cố production, xác định file đã commit và phục
 hồi backup theo kế hoạch hoặc viết migration sửa tiếp; không xóa bảng lịch sử.
+
+## Nhật ký tích hợp thực tế — 21/11/2026
+
+1. Kiểm tra repo `main`: có migration `0001`–`0031`, chưa có migration runner
+   hoặc lịch sử database. Service Render Free dùng Root Directory `backend`.
+2. Đọc schema Supabase và chạy schema assertions của bản cũ: xác nhận mốc
+   `0023`, không có dấu vết schema của `0024`–`0031`.
+3. Sao lưu schema `public` và dữ liệu ứng dụng bằng `pg_dump --format=custom`.
+   Đây là backup phần ứng dụng, không bao gồm Supabase Auth/Storage.
+4. Kiểm thử runner trên PostgreSQL 17 tạm: chạy đồng thời, rollback khi lỗi,
+   checksum, baseline và thứ tự migration. Chạy đủ 31 file rồi chạy lại được 0
+   file; schema assertions đạt. Khôi phục backup production vào database tạm
+   và nâng từ `0023` lên `0031` cũng đạt.
+5. Ghi baseline `0023` trên database thật, không chạy lại SQL cũ. Thu hồi default
+   privileges cho object public mới của role tạo migration theo mô hình chỉ
+   backend truy cập database.
+6. Tạo workflow, runner và tài liệu. Kiểm thử Actions trên PR thành công.
+   Bỏ file test runner mới theo yêu cầu; giữ test và schema checks sẵn có.
+7. Với sự cho phép của chủ repo, lưu Deploy Hook vào secret
+   `RENDER_DEPLOY_HOOK_URL`. Đổi Root Directory về gốc repo và lưu các lệnh
+   build/start, Auto-Deploy Off và health check như bảng phía trên.
+8. Merge [PR #15](https://github.com/Thongcao2k5/MetaGym/pull/15) thành commit
+   `d5d7b6a`. [Workflow main đầu tiên](https://github.com/Thongcao2k5/MetaGym/actions/runs/44902511102)
+   kiểm tra đạt và gọi Deploy Hook thành công.
+9. Render deploy đúng commit: log ghi `Database ready: 8 migration(s) applied.`;
+   trạng thái **Deploy succeeded | Live**. Truy vấn database xác nhận 31 bản
+   ghi lịch sử, mới nhất `0031`; schema assertions đạt; health trả HTTP 200.
+   Bảng mới vẫn không cho role `anon` / `authenticated` đọc trực tiếp.
+10. Tích hợp cùng cấu hình vào repo đồ án local `F:\AndroidProjects\MetaGym`
+    trên nhánh `thong`, không đưa các tính năng đang phát triển khác lên main.
+    Xóa môi trường/script kiểm thử tạm và file environment tải xuống sau khi
+    xác minh; giữ backup để phục hồi khi cần.
+
+**Mốc production sau thiết lập là `0031`.** Migration ở nhánh khác (ví dụ `0032`
+trong repo local) chỉ lên production sau khi PR/merge vào `main` và workflow đạt.
+Các lệnh baseline trong hướng dẫn là để thiết lập một database cũ khác; không
+chạy lại baseline trên database production đã được ghi lịch sử này.
