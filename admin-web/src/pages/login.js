@@ -138,12 +138,8 @@ export function renderLoginPage({ root, params, onLoginSuccess }) {
       </div>
 
       <button type="submit" class="btn btn-primary" id="login-submit" style="width:100%">
-        ${icon('lock', 16)} ${expired && returnUrl ? 'Đăng nhập & quay lại trang trước' : 'Đăng nhập cổng quản trị'}
+        ${icon('lock', 16)} Đăng nhập
       </button>
-
-      <div style="padding-top:8px;border-top:1px solid var(--meta-border);font-size:12px;color:var(--meta-text-secondary)">
-        Múi giờ vận hành: Asia/Ho_Chi_Minh (GMT+7)
-      </div>
     </form>
   </main>`;
 

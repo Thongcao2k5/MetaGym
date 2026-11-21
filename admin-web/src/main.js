@@ -214,6 +214,13 @@ if (typeof document !== 'undefined' && document.querySelector?.('#app')) {
     globalThis.window.history?.replaceState?.(null, '', `/${globalThis.window.location.hash || '#/admin/dashboard'}`);
   }
   const app = createApp();
+  if (getToken() && !getCurrentUser()) {
+    api('/users/me')
+      .then((res) => {
+        if (res?.data?.role === 'ADMIN') setCurrentUser(res.data);
+      })
+      .catch(() => {});
+  }
   playAppSplash(() => {
     globalThis.window?.addEventListener?.('hashchange', () => app.route());
     app.route();

@@ -1,4 +1,4 @@
-import { esc, initials } from './format.js';
+import { esc, emailInitial } from './format.js';
 import { icon } from './icons.js';
 import { getTheme, toggleTheme } from '../services/theme.js';
 
@@ -168,12 +168,8 @@ export function renderShell({
   </button>`;
   const accountHtml = `<div class="topbar-account">
     ${themeBtnHtml}
-    <a class="admin-user-link topbar-user-link" href="#/admin/profile" ${section === 'profile' ? 'aria-current="page"' : ''} title="Hồ sơ quản trị viên">
-      <span class="meta-avatar">${esc(initials(user?.fullName || 'Admin'))}</span>
-      <span class="admin-user-meta">
-        <span class="admin-user-name">${esc(user?.fullName || 'Quản trị viên')}</span>
-        <span class="admin-user-role">${esc(user?.email || 'ADMIN')}</span>
-      </span>
+    <a class="admin-user-link topbar-user-link" href="#/admin/profile" ${section === 'profile' ? 'aria-current="page"' : ''} aria-label="Hồ sơ quản trị viên" title="Hồ sơ quản trị viên">
+      <span class="meta-avatar">${esc(emailInitial(user?.email, 'A'))}</span>
     </a>
     <button type="button" class="btn btn-ghost btn-sm" id="logout" aria-label="Đăng xuất">
       ${icon('logout', 16)} <span class="logout-label">Đăng xuất</span>

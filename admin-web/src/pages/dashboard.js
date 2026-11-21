@@ -117,7 +117,6 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     const contentHtml = `<div class="stack-20">
       <form class="filter-bar" id="dashboard-period-form">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
-          <span class="meta-badge meta-badge-info">Asia/Ho_Chi_Minh (GMT+7)</span>
           <input type="date" id="dash-from" name="from" class="form-control tabular" style="max-width:170px" aria-label="Từ ngày" value="${esc(data.from || from)}" required />
           <span style="color:var(--meta-text-secondary)">đến</span>
           <input type="date" id="dash-to" name="to" class="form-control tabular" style="max-width:170px" aria-label="Đến ngày" value="${esc(data.to || to)}" required />
