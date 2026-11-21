@@ -46,6 +46,8 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     const grossRevenue = Number(rev.grossRevenue ?? rev.amount ?? 0);
     const totalRefunds = Number(rev.totalSimulatedRefunds ?? 0);
     const totalVoidReversals = Number(rev.totalVoidReversals ?? 0);
+    const voidReversalCount = Number(rev.voidReversalCount ?? 0);
+    const simulatedRefundCount = Number(rev.simulatedRefundCount ?? 0);
     const netRevenue = Number(rev.netRevenue ?? (grossRevenue - totalRefunds));
     const byDay = Array.isArray(rev.byDay) ? rev.byDay : [];
 
@@ -56,7 +58,7 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
       title: `Việc cần Admin xử lý ngay (${urgentTotal} hồ sơ)`,
       textHtml: `<strong>${coachLockedWaiting} hội viên</strong> đang đóng băng gói Coach do <code>COACH_LOCKED</code>${coachLockedRefundReq ? ` (${coachLockedRefundReq} yêu cầu hoàn mô phỏng)` : ''} và <strong>${disputedCount} tranh chấp</strong> kết thúc sớm (<code>DISPUTED</code>).`,
       actionsHtml: `
-        ${coachLockedWaiting > 0 ? `<a class="btn btn-primary btn-sm" href="#/admin/coach-incidents?status=OPEN">Xử lý sự cố Coach (${coachLockedWaiting})</a>` : ''}
+        ${coachLockedWaiting > 0 ? `<a class="btn btn-primary btn-sm" href="#/admin/incidents?status=OPEN">Xử lý sự cố Coach (${coachLockedWaiting})</a>` : ''}
         ${disputedCount > 0 ? `<a class="btn btn-danger btn-sm" href="#/admin/relationships?tab=terminations&status=DISPUTED">Phân xử tranh chấp (${disputedCount})</a>` : ''}
       `,
       ariaLabel: 'Việc cần xử lý khẩn',
@@ -96,7 +98,7 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
         value: String(coachLockedWaiting),
         meta: 'Gói Coach đóng băng · Gym vẫn chạy',
         iconName: 'alert',
-        href: '#/admin/coach-incidents?status=OPEN',
+        href: '#/admin/incidents?status=OPEN',
         tone: coachLockedWaiting > 0 ? 'var(--meta-warning)' : null,
       },
       {
@@ -134,17 +136,17 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
         <a class="kpi-card" href="${paymentsLink}">
           <div class="kpi-top"><span class="kpi-label">Doanh thu gộp (Gross)</span><span class="kpi-icon">${icon('receipt', 17)}</span></div>
           <div class="kpi-val tabular">${vnd(grossRevenue)}</div>
-          <div class="kpi-meta"><span>${totalVoidReversals > 0 ? `Đã trừ đảo D6: ${vnd(totalVoidReversals)}` : 'Gói Gym & Gói Coach trong kỳ'}</span><span class="kpi-link-hint">Xem giao dịch →</span></div>
+          <div class="kpi-meta"><span>${totalVoidReversals > 0 ? `Đã trừ đảo D6: ${vnd(totalVoidReversals)}${voidReversalCount ? ` (${voidReversalCount} GD)` : ''}` : 'Đã trừ đảo D6: 0 ₫ · Gym & Coach'}</span><span class="kpi-link-hint">Xem giao dịch →</span></div>
         </a>
-        <a class="kpi-card" href="#/admin/coach-incidents">
+        <a class="kpi-card" href="#/admin/incidents?tab=refunds">
           <div class="kpi-top"><span class="kpi-label">Hoàn tiền mô phỏng (D3)</span><span class="kpi-icon" style="color:var(--meta-danger)">${icon('refund', 17)}</span></div>
           <div class="kpi-val tabular" style="color:var(--meta-danger-text)">${vnd(totalRefunds > 0 ? -totalRefunds : 0)}</div>
-          <div class="kpi-meta"><span>Chỉ bút toán mô phỏng sự cố Coach</span><span class="kpi-link-hint">Xem chi tiết →</span></div>
+          <div class="kpi-meta"><span>${simulatedRefundCount > 0 ? `${simulatedRefundCount} bút toán hoàn sự cố Coach` : 'Chỉ bút toán mô phỏng sự cố Coach'}</span><span class="kpi-link-hint">Xem chi tiết →</span></div>
         </a>
         <a class="kpi-card" href="${paymentsLink}">
           <div class="kpi-top"><span class="kpi-label">Doanh thu ròng (Net)</span><span class="kpi-icon" style="color:var(--meta-success)">${icon('check', 17)}</span></div>
           <div class="kpi-val tabular" style="color:var(--meta-success)">${vnd(netRevenue)}</div>
-          <div class="kpi-meta"><span>Gross trừ hoàn tiền mô phỏng</span><span class="kpi-link-hint">Đối soát →</span></div>
+          <div class="kpi-meta"><span>Gross trừ đảo D6 & hoàn mô phỏng D3</span><span class="kpi-link-hint">Đối soát →</span></div>
         </a>
       </div>
 
