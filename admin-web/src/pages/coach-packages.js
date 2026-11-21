@@ -1,7 +1,9 @@
 import { api, buildQuery } from '../services/api.js';
 import { debounce, esc, formatDateVN, initials, statusBadge, vnd } from '../components/format.js';
 import { icon } from '../components/icons.js';
-import { renderDataTable } from '../components/data-table.js';
+import { renderActionButton } from '../components/action-button.js';
+import { bindDataTableSelection, renderDataTable } from '../components/data-table.js';
+import { exportToExcel } from '../components/export.js';
 import { openModal } from '../components/modal.js';
 import { bindPagination, renderPagination } from '../components/pagination.js';
 import {
@@ -9,9 +11,9 @@ import {
   renderEmptyState,
   renderErrorState,
   renderFilterEmptyState,
-  renderSkeletonPage,
+  renderTableSkeleton,
 } from '../components/states.js';
-import { notice } from '../components/toast.js';
+import { notice, toast } from '../components/toast.js';
 import { renderToggle } from '../components/toggle.js';
 import { updateQuery } from '../state/router.js';
 
@@ -168,9 +170,52 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
   const statusFilter = params?.get('status') || '';
   const frozenOnly = params?.get('frozenOnly') === 'true';
   const page = Math.max(1, Number(params?.get('page')) || 1);
+  const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const hasFilter = Boolean(search || statusFilter || frozenOnly);
 
-  shell({ section: 'coach-packages', contentHtml: renderSkeletonPage({ cards: 0, rows: 5 }) });
+  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý gói Coach">
+    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'catalog'}" data-cp-tab="catalog">Danh mục gói Coach</button>
+    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'entitlements'}" data-cp-tab="entitlements">Quyền lợi gói Coach</button>
+  </div>`;
+
+  const buildFilterHtml = (canExport = false) => (tab === 'catalog'
+    ? `<form class="filter-bar" id="cp-filter-form">
+      <input type="search" id="cp-search" class="form-control filter-grow" placeholder="Tìm theo mã gói, tên hoặc mô tả…" value="${esc(search)}" aria-label="Tìm gói Coach" />
+      <select id="cp-status-filter" class="form-select filter-fixed" aria-label="Lọc trạng thái gói Coach">
+        <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+        <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang bán (ACTIVE)</option>
+        <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>Ngừng bán (INACTIVE)</option>
+      </select>
+      ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="cp-clear">Xóa bộ lọc</button>' : ''}
+      <button type="button" class="btn btn-graphite btn-sm" id="cp-export-excel" ${canExport ? '' : 'disabled'}>
+        ${icon('download', 16)} <span id="cp-export-label">Xuất Excel</span>
+      </button>
+    </form>`
+    : `<form class="filter-bar" id="cp-filter-form">
+      <select id="cp-status-filter" class="form-select filter-fixed" aria-label="Lọc trạng thái quyền lợi Coach">
+        <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+        <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>ACTIVE · Đang hiệu lực</option>
+        <option value="QUEUED" ${statusFilter === 'QUEUED' ? 'selected' : ''}>QUEUED · Chờ nối tiếp</option>
+        <option value="ENDED" ${statusFilter === 'ENDED' ? 'selected' : ''}>ENDED · Đã kết thúc</option>
+      </select>
+      ${renderToggle({
+        id: 'cp-frozen-only',
+        checked: frozenOnly,
+        label: 'Chỉ gói đang đóng băng (COACH_LOCKED)',
+      })}
+      ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="cp-clear">Xóa bộ lọc</button>' : ''}
+      <button type="button" class="btn btn-graphite btn-sm" id="cp-export-excel" ${canExport ? '' : 'disabled'}>
+        ${icon('download', 16)} <span id="cp-export-label">Xuất Excel</span>
+      </button>
+    </form>`);
+
+  const topbarActionsHtml = `<button type="button" class="btn btn-primary" id="create-cp">${icon('plus', 16)} Tạo gói Coach</button>`;
+
+  shell({
+    section: 'coach-packages',
+    topbarActionsHtml,
+    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml(false)}${renderTableSkeleton(5)}</div>`,
+  });
 
   const reloadWith = (patch = {}) => {
     const nextTab = patch.tab !== undefined ? patch.tab : tab;
@@ -180,6 +225,7 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
       ? patch.frozenOnly
       : Boolean(root.querySelector('#cp-frozen-only')?.checked);
     const nextPage = patch.page !== undefined ? patch.page : page;
+    const nextPageSize = patch.pageSize !== undefined ? patch.pageSize : pageSize;
 
     const nextParams = new URLSearchParams();
     if (nextTab !== 'catalog') nextParams.set('tab', nextTab);
@@ -187,6 +233,7 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
     if (nextStatus) nextParams.set('status', nextStatus);
     if (nextTab === 'entitlements' && nextFrozen) nextParams.set('frozenOnly', 'true');
     if (nextPage > 1) nextParams.set('page', String(nextPage));
+    if (nextPageSize !== 10) nextParams.set('pageSize', String(nextPageSize));
 
     updateQuery({
       tab: nextTab !== 'catalog' ? nextTab : null,
@@ -194,6 +241,7 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
       status: nextStatus || null,
       frozenOnly: nextTab === 'entitlements' && nextFrozen ? 'true' : null,
       page: nextPage > 1 ? nextPage : null,
+      pageSize: nextPageSize !== 10 ? nextPageSize : null,
     }, { replace: true });
 
     return renderCoachPackagesPage({ root, params: nextParams, shell });
@@ -207,43 +255,18 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
         frozenOnly: frozenOnly ? 'true' : '',
         search,
         page,
-        pageSize: 20,
+        pageSize,
       })
       : buildQuery({ status: statusFilter, search });
 
     const result = await api(`${endpoint}${query}`);
     const rows = result?.data || [];
-    const pagination = result?.pagination || { page, pageSize: 20, totalItems: rows.length, totalPages: 1 };
-
-    const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý gói Coach">
-      <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'catalog'}" data-cp-tab="catalog">Danh mục gói Coach</button>
-      <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'entitlements'}" data-cp-tab="entitlements">Quyền lợi gói Coach</button>
-    </div>`;
-
-    const filterHtml = tab === 'catalog'
-      ? `<form class="filter-bar" id="cp-filter-form">
-        <input type="search" id="cp-search" class="form-control filter-grow" placeholder="Tìm theo mã gói, tên hoặc mô tả…" value="${esc(search)}" aria-label="Tìm gói Coach" />
-        <select id="cp-status-filter" class="form-select filter-fixed" aria-label="Lọc trạng thái gói Coach">
-          <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-          <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang bán (ACTIVE)</option>
-          <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>Ngừng bán (INACTIVE)</option>
-        </select>
-        ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="cp-clear">Xóa bộ lọc</button>' : ''}
-      </form>`
-      : `<form class="filter-bar" id="cp-filter-form">
-        <select id="cp-status-filter" class="form-select filter-fixed" aria-label="Lọc trạng thái quyền lợi Coach">
-          <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-          <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>ACTIVE · Đang hiệu lực</option>
-          <option value="QUEUED" ${statusFilter === 'QUEUED' ? 'selected' : ''}>QUEUED · Chờ nối tiếp</option>
-          <option value="ENDED" ${statusFilter === 'ENDED' ? 'selected' : ''}>ENDED · Đã kết thúc</option>
-        </select>
-        ${renderToggle({
-          id: 'cp-frozen-only',
-          checked: frozenOnly,
-          label: 'Chỉ gói đang đóng băng (COACH_LOCKED)',
-        })}
-        ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="cp-clear">Xóa bộ lọc</button>' : ''}
-      </form>`;
+    const pagination = result?.pagination || {
+      page,
+      pageSize,
+      totalItems: rows.length,
+      totalPages: Math.max(1, Math.ceil(rows.length / pageSize)),
+    };
 
     const tableHtml = tab === 'catalog'
       ? renderDataTable({
@@ -284,10 +307,20 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
           {
             label: 'Thao tác',
             align: 'right',
-            render: (row) => `<div class="cell-actions"><button type="button" class="btn btn-ghost btn-sm edit-cp" data-code="${esc(row.code)}">${icon('edit', 14)} Sửa cấu hình</button></div>`,
+            render: (row) => `<div class="cell-actions">
+              ${renderActionButton({
+                iconName: 'edit',
+                label: 'Sửa cấu hình',
+                className: 'edit-cp',
+                permission: 'coach_packages:update',
+                attrs: `data-code="${esc(row.code)}"`,
+              })}
+            </div>`,
           },
         ],
         rows,
+        selectable: true,
+        rowId: (_row, idx) => String(idx),
         emptyHtml: hasFilter
           ? renderFilterEmptyState({ resetId: 'cp-filter-reset' })
           : renderEmptyState({
@@ -344,6 +377,8 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
           },
         ],
         rows,
+        selectable: true,
+        rowId: (_row, idx) => String(idx),
         emptyHtml: hasFilter
           ? renderFilterEmptyState({ resetId: 'cp-filter-reset' })
           : renderEmptyState({
@@ -357,14 +392,14 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
 
     const contentHtml = `<div class="stack-20">
       ${tabsHtml}
-      ${filterHtml}
+      ${buildFilterHtml(rows.length > 0)}
       ${tableHtml}
     </div>`;
 
     shell({
       section: 'coach-packages',
       contentHtml,
-      topbarActionsHtml: `<button type="button" class="btn btn-primary" id="create-cp">${icon('plus', 16)} Tạo gói Coach</button>`,
+      topbarActionsHtml,
     });
 
     root.querySelectorAll('[data-cp-tab]').forEach((btn) => {
@@ -400,7 +435,58 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
         totalPages: pagination.totalPages,
         prefix: 'ce',
         onChange: (nextPage) => reloadWith({ page: nextPage }),
+        onPageSizeChange: (nextSize) => reloadWith({ pageSize: nextSize, page: 1 }),
       });
+    }
+
+    const exportLabel = root.querySelector('#cp-export-label');
+    const getSelectedIndices = bindDataTableSelection(root, {
+      onSelectionChange: (ids) => {
+        if (exportLabel) {
+          exportLabel.textContent = ids.length > 0 ? `Xuất Excel (${ids.length})` : 'Xuất Excel';
+        }
+      },
+    });
+
+    const exportBtn = root.querySelector('#cp-export-excel');
+    if (exportBtn) {
+      exportBtn.onclick = () => {
+        const selected = getSelectedIndices();
+        const targetRows = selected.length > 0
+          ? selected.map((idx) => rows[Number(idx)]).filter(Boolean)
+          : rows;
+        if (!targetRows.length) {
+          toast('Chưa có dữ liệu để xuất Excel.', 'warn');
+          return;
+        }
+        const ok = tab === 'catalog'
+          ? exportToExcel({
+            filename: 'metagym-coach-packages.csv',
+            columns: [
+              { label: 'Mã gói', value: (r) => r.code || '' },
+              { label: 'Tên gói Coach', value: (r) => r.name || '' },
+              { label: 'Số buổi', value: (r) => r.sessionCount ?? 0 },
+              { label: 'Thời hạn (ngày)', value: (r) => r.durationDays ?? 0 },
+              { label: 'Giá bán (VND)', value: (r) => r.price ?? 0 },
+              { label: 'Trạng thái', value: (r) => r.status || '' },
+            ],
+            rows: targetRows,
+          })
+          : exportToExcel({
+            filename: 'metagym-coach-entitlements.csv',
+            columns: [
+              { label: 'Hội viên', value: (r) => r.memberName || '' },
+              { label: 'Huấn luyện viên', value: (r) => r.coachName || '' },
+              { label: 'Gói Coach', value: (r) => r.planName || r.planCode || '' },
+              { label: 'Giá snapshot (VND)', value: (r) => r.snapshotPrice ?? 0 },
+              { label: 'Buổi còn/tổng', value: (r) => `${r.remainingSessions ?? 0}/${r.totalSessions ?? 0}` },
+              { label: 'Hạn dùng', value: (r) => (r.endsOn ? formatDateVN(r.endsOn) : 'Chờ kích hoạt') },
+              { label: 'Trạng thái', value: (r) => r.status || '' },
+            ],
+            rows: targetRows,
+          });
+        if (ok) toast(`Đã xuất ${targetRows.length} dòng ra file Excel (.csv).`);
+      };
     }
 
     const createBtns = [root.querySelector('#create-cp'), root.querySelector('#create-cp-empty')].filter(Boolean);
@@ -417,6 +503,7 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
   } catch (error) {
     shell({
       section: 'coach-packages',
+      topbarActionsHtml,
       contentHtml: renderErrorState({
         title: tab === 'entitlements' ? 'Không tải được quyền lợi gói Coach' : 'Không tải được danh mục gói Coach',
         message: error.message,

@@ -1,7 +1,9 @@
 import { api, buildQuery } from '../services/api.js';
 import { debounce, esc, formatDateVN, initials, statusBadge, vnd } from '../components/format.js';
 import { icon } from '../components/icons.js';
-import { renderDataTable } from '../components/data-table.js';
+import { renderActionButton } from '../components/action-button.js';
+import { bindDataTableSelection, renderDataTable } from '../components/data-table.js';
+import { exportToExcel } from '../components/export.js';
 import { openModal } from '../components/modal.js';
 import { bindPagination, renderPagination } from '../components/pagination.js';
 import {
@@ -9,9 +11,9 @@ import {
   renderEmptyState,
   renderErrorState,
   renderFilterEmptyState,
-  renderSkeletonPage,
+  renderTableSkeleton,
 } from '../components/states.js';
-import { notice } from '../components/toast.js';
+import { notice, toast } from '../components/toast.js';
 import { updateQuery } from '../state/router.js';
 
 const SNAPSHOT_BANNER_TEXT = 'Thay đổi chỉ áp dụng cho giao dịch mới; gói đã mua giữ nguyên snapshot về giá bán và số ngày hiệu lực.';
@@ -110,27 +112,77 @@ export async function renderPlansPage({ root, params, shell }) {
   const search = params?.get('search') || '';
   const statusFilter = params?.get('status') || '';
   const page = Math.max(1, Number(params?.get('page')) || 1);
+  const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const hasFilter = Boolean(search || statusFilter);
 
-  shell({ section: 'plans', contentHtml: renderSkeletonPage({ cards: 0, rows: 5 }) });
+  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý gói Gym">
+    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'catalog'}" data-plans-tab="catalog">Danh mục gói Gym</button>
+    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'entitlements'}" data-plans-tab="entitlements">Quyền sử dụng gói Gym</button>
+  </div>`;
+
+  const snapshotBannerHtml = renderBanner({
+    kind: 'info',
+    iconName: 'info',
+    title: 'Quy tắc Snapshot gói Gym',
+    text: SNAPSHOT_BANNER_TEXT,
+  });
+
+  const buildFilterHtml = (canExport = false) => (tab === 'catalog'
+    ? `<form class="filter-bar" id="plans-filter-form">
+      <input type="search" id="plans-search" class="form-control filter-grow" placeholder="Tìm tên hoặc mô tả gói Gym…" value="${esc(search)}" aria-label="Tìm gói Gym" />
+      <select id="plans-status" class="form-select filter-fixed" aria-label="Lọc trạng thái gói Gym">
+        <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+        <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang bán (ACTIVE)</option>
+        <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>Ngừng bán (INACTIVE)</option>
+      </select>
+      ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="plans-clear">Xóa bộ lọc</button>' : ''}
+      <button type="button" class="btn btn-graphite btn-sm" id="plans-export-excel" ${canExport ? '' : 'disabled'}>
+        ${icon('download', 16)} <span id="plans-export-label">Xuất Excel</span>
+      </button>
+    </form>`
+    : `<form class="filter-bar" id="plans-filter-form">
+      <input type="search" id="plans-search" class="form-control filter-grow" placeholder="Tìm theo tên hội viên, email hoặc tên gói…" value="${esc(search)}" aria-label="Tìm quyền sử dụng gói Gym" />
+      <select id="plans-status" class="form-select filter-fixed" aria-label="Lọc trạng thái quyền sử dụng">
+        <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+        <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>ACTIVE · Đang hiệu lực</option>
+        <option value="SCHEDULED" ${statusFilter === 'SCHEDULED' ? 'selected' : ''}>SCHEDULED · Đã xếp lịch</option>
+        <option value="EXPIRED" ${statusFilter === 'EXPIRED' ? 'selected' : ''}>EXPIRED · Hết hạn</option>
+        <option value="CANCELLED" ${statusFilter === 'CANCELLED' ? 'selected' : ''}>CANCELLED · Đã hủy</option>
+      </select>
+      ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="plans-clear">Xóa bộ lọc</button>' : ''}
+      <button type="button" class="btn btn-graphite btn-sm" id="plans-export-excel" ${canExport ? '' : 'disabled'}>
+        ${icon('download', 16)} <span id="plans-export-label">Xuất Excel</span>
+      </button>
+    </form>`);
+
+  const topbarActionsHtml = `<button type="button" class="btn btn-primary" id="create-plan">${icon('plus', 16)} Tạo gói Gym</button>`;
+
+  shell({
+    section: 'plans',
+    topbarActionsHtml,
+    contentHtml: `<div class="stack-20">${tabsHtml}${snapshotBannerHtml}${buildFilterHtml(false)}${renderTableSkeleton(5)}</div>`,
+  });
 
   const reloadWith = (patch = {}) => {
     const nextTab = patch.tab !== undefined ? patch.tab : tab;
     const nextSearch = patch.search !== undefined ? patch.search : (root.querySelector('#plans-search')?.value?.trim() || '');
     const nextStatus = patch.status !== undefined ? patch.status : (root.querySelector('#plans-status')?.value || '');
     const nextPage = patch.page !== undefined ? patch.page : page;
+    const nextPageSize = patch.pageSize !== undefined ? patch.pageSize : pageSize;
 
     const nextParams = new URLSearchParams();
     if (nextTab !== 'catalog') nextParams.set('tab', nextTab);
     if (nextSearch) nextParams.set('search', nextSearch);
     if (nextStatus) nextParams.set('status', nextStatus);
     if (nextPage > 1) nextParams.set('page', String(nextPage));
+    if (nextPageSize !== 10) nextParams.set('pageSize', String(nextPageSize));
 
     updateQuery({
       tab: nextTab !== 'catalog' ? nextTab : null,
       search: nextSearch || null,
       status: nextStatus || null,
       page: nextPage > 1 ? nextPage : null,
+      pageSize: nextPageSize !== 10 ? nextPageSize : null,
     }, { replace: true });
 
     return renderPlansPage({ root, params: nextParams, shell });
@@ -138,37 +190,15 @@ export async function renderPlansPage({ root, params, shell }) {
 
   try {
     const endpoint = tab === 'entitlements' ? '/admin/memberships' : '/admin/membership-plans';
-    const query = buildQuery({ status: statusFilter, search, page, pageSize: 20 });
+    const query = buildQuery({ status: statusFilter, search, page, pageSize });
     const result = await api(`${endpoint}${query}`);
     const rows = result?.data || [];
-    const pagination = result?.pagination || { page, pageSize: 20, totalItems: rows.length, totalPages: 1 };
-
-    const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý gói Gym">
-      <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'catalog'}" data-plans-tab="catalog">Danh mục gói Gym</button>
-      <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'entitlements'}" data-plans-tab="entitlements">Quyền sử dụng gói Gym</button>
-    </div>`;
-
-    const filterHtml = tab === 'catalog'
-      ? `<form class="filter-bar" id="plans-filter-form">
-        <input type="search" id="plans-search" class="form-control filter-grow" placeholder="Tìm tên hoặc mô tả gói Gym…" value="${esc(search)}" aria-label="Tìm gói Gym" />
-        <select id="plans-status" class="form-select filter-fixed" aria-label="Lọc trạng thái gói Gym">
-          <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-          <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang bán (ACTIVE)</option>
-          <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>Ngừng bán (INACTIVE)</option>
-        </select>
-        ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="plans-clear">Xóa bộ lọc</button>' : ''}
-      </form>`
-      : `<form class="filter-bar" id="plans-filter-form">
-        <input type="search" id="plans-search" class="form-control filter-grow" placeholder="Tìm theo tên hội viên, email hoặc tên gói…" value="${esc(search)}" aria-label="Tìm quyền sử dụng gói Gym" />
-        <select id="plans-status" class="form-select filter-fixed" aria-label="Lọc trạng thái quyền sử dụng">
-          <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-          <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>ACTIVE · Đang hiệu lực</option>
-          <option value="SCHEDULED" ${statusFilter === 'SCHEDULED' ? 'selected' : ''}>SCHEDULED · Đã xếp lịch</option>
-          <option value="EXPIRED" ${statusFilter === 'EXPIRED' ? 'selected' : ''}>EXPIRED · Hết hạn</option>
-          <option value="CANCELLED" ${statusFilter === 'CANCELLED' ? 'selected' : ''}>CANCELLED · Đã hủy</option>
-        </select>
-        ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="plans-clear">Xóa bộ lọc</button>' : ''}
-      </form>`;
+    const pagination = result?.pagination || {
+      page,
+      pageSize,
+      totalItems: rows.length,
+      totalPages: Math.max(1, Math.ceil(rows.length / pageSize)),
+    };
 
     const tableHtml = tab === 'catalog'
       ? renderDataTable({
@@ -201,10 +231,20 @@ export async function renderPlansPage({ root, params, shell }) {
           {
             label: 'Thao tác',
             align: 'right',
-            render: (row) => `<div class="cell-actions"><button type="button" class="btn btn-ghost btn-sm edit-plan" data-id="${esc(row.id)}">${icon('edit', 14)} Sửa giá / ngày</button></div>`,
+            render: (row) => `<div class="cell-actions">
+              ${renderActionButton({
+                iconName: 'edit',
+                label: 'Sửa giá / ngày',
+                className: 'edit-plan',
+                permission: 'plans:update',
+                attrs: `data-id="${esc(row.id)}"`,
+              })}
+            </div>`,
           },
         ],
         rows,
+        selectable: true,
+        rowId: (_row, idx) => String(idx),
         emptyHtml: hasFilter
           ? renderFilterEmptyState({ resetId: 'plans-filter-reset' })
           : renderEmptyState({
@@ -243,6 +283,8 @@ export async function renderPlansPage({ root, params, shell }) {
           },
         ],
         rows,
+        selectable: true,
+        rowId: (_row, idx) => String(idx),
         emptyHtml: hasFilter
           ? renderFilterEmptyState({ resetId: 'plans-filter-reset' })
           : renderEmptyState({
@@ -256,20 +298,15 @@ export async function renderPlansPage({ root, params, shell }) {
 
     const contentHtml = `<div class="stack-20">
       ${tabsHtml}
-      ${renderBanner({
-        kind: 'info',
-        iconName: 'info',
-        title: 'Quy tắc Snapshot gói Gym',
-        text: SNAPSHOT_BANNER_TEXT,
-      })}
-      ${filterHtml}
+      ${snapshotBannerHtml}
+      ${buildFilterHtml(rows.length > 0)}
       ${tableHtml}
     </div>`;
 
     shell({
       section: 'plans',
       contentHtml,
-      topbarActionsHtml: `<button type="button" class="btn btn-primary" id="create-plan">${icon('plus', 16)} Tạo gói Gym</button>`,
+      topbarActionsHtml,
     });
 
     root.querySelectorAll('[data-plans-tab]').forEach((btn) => {
@@ -301,7 +338,57 @@ export async function renderPlansPage({ root, params, shell }) {
       totalPages: pagination.totalPages,
       prefix: tab === 'catalog' ? 'gp' : 'ge',
       onChange: (nextPage) => reloadWith({ page: nextPage }),
+      onPageSizeChange: (nextSize) => reloadWith({ pageSize: nextSize, page: 1 }),
     });
+
+    const exportLabel = root.querySelector('#plans-export-label');
+    const getSelectedIndices = bindDataTableSelection(root, {
+      onSelectionChange: (ids) => {
+        if (exportLabel) {
+          exportLabel.textContent = ids.length > 0 ? `Xuất Excel (${ids.length})` : 'Xuất Excel';
+        }
+      },
+    });
+
+    const exportBtn = root.querySelector('#plans-export-excel');
+    if (exportBtn) {
+      exportBtn.onclick = () => {
+        const selected = getSelectedIndices();
+        const targetRows = selected.length > 0
+          ? selected.map((idx) => rows[Number(idx)]).filter(Boolean)
+          : rows;
+        if (!targetRows.length) {
+          toast('Chưa có dữ liệu để xuất Excel.', 'warn');
+          return;
+        }
+        const ok = tab === 'catalog'
+          ? exportToExcel({
+            filename: 'metagym-gym-plans.csv',
+            columns: [
+              { label: 'Tên gói Gym', value: (r) => r.name || '' },
+              { label: 'Thời hạn (ngày)', value: (r) => r.durationDays ?? '' },
+              { label: 'Giá bán (VND)', value: (r) => r.price ?? 0 },
+              { label: 'Đang hiệu lực', value: (r) => r.activeMembershipCount ?? 0 },
+              { label: 'Đã xếp lịch', value: (r) => r.scheduledMembershipCount ?? 0 },
+              { label: 'Trạng thái', value: (r) => r.status || '' },
+            ],
+            rows: targetRows,
+          })
+          : exportToExcel({
+            filename: 'metagym-gym-memberships.csv',
+            columns: [
+              { label: 'Hội viên', value: (r) => r.memberName || '' },
+              { label: 'Email', value: (r) => r.memberEmail || '' },
+              { label: 'Gói Gym', value: (r) => r.planName || '' },
+              { label: 'Ngày bắt đầu', value: (r) => formatDateVN(r.startDate) },
+              { label: 'Ngày kết thúc', value: (r) => formatDateVN(r.endDate) },
+              { label: 'Trạng thái', value: (r) => r.status || '' },
+            ],
+            rows: targetRows,
+          });
+        if (ok) toast(`Đã xuất ${targetRows.length} dòng ra file Excel (.csv).`);
+      };
+    }
 
     const createBtns = [root.querySelector('#create-plan'), root.querySelector('#create-plan-empty')].filter(Boolean);
     createBtns.forEach((btn) => {
@@ -317,6 +404,7 @@ export async function renderPlansPage({ root, params, shell }) {
   } catch (error) {
     shell({
       section: 'plans',
+      topbarActionsHtml,
       contentHtml: renderErrorState({
         title: tab === 'entitlements' ? 'Không tải được quyền sử dụng gói Gym' : 'Không tải được danh mục gói Gym',
         message: error.message,

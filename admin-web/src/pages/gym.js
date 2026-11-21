@@ -1,9 +1,62 @@
-import { api } from '../services/api.js';
+import { api, getToken } from '../services/api.js';
 import { esc } from '../components/format.js';
 import { icon } from '../components/icons.js';
 import { openConfirmModal } from '../components/modal.js';
 import { renderBanner, renderErrorState, renderSkeletonPage } from '../components/states.js';
 import { toast } from '../components/toast.js';
+
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+function getApiBase() {
+  try {
+    return (import.meta.env?.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
+  } catch {
+    return '/api/v1';
+  }
+}
+
+function publicMediaUrl(mediaId) {
+  if (!mediaId) return '';
+  return `${getApiBase()}/media/public/${encodeURIComponent(mediaId)}`;
+}
+
+async function uploadGymCoverImage(file) {
+  if (!file) throw new Error('Vui lòng chọn tệp ảnh bìa phòng gym.');
+  const mimeType = String(file.type || '').toLowerCase();
+  if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+    throw new Error('Chỉ hỗ trợ ảnh định dạng JPEG (.jpg, .jpeg) hoặc PNG (.png).');
+  }
+  if (Number(file.size || 0) > MAX_IMAGE_BYTES) {
+    throw new Error('Ảnh bìa vượt quá giới hạn tối đa 5 MB.');
+  }
+
+  const token = getToken();
+  const binaryBody = typeof file.arrayBuffer === 'function' ? await file.arrayBuffer() : file;
+  const response = await globalThis.fetch(`${getApiBase()}/media/images`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': mimeType,
+      'x-image-purpose': 'GYM',
+      'x-file-name': encodeURIComponent(file.name || 'gym-cover').slice(0, 200),
+    },
+    body: binaryBody,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || `Tải ảnh bìa thất bại (HTTP ${response.status})`);
+  }
+  const mediaId = payload?.data?.id;
+  if (!mediaId) {
+    throw new Error('Máy chủ không trả về mã ảnh bìa hợp lệ.');
+  }
+  return {
+    id: mediaId,
+    publicUrl: payload?.data?.publicUrl || publicMediaUrl(mediaId),
+  };
+}
 
 export async function renderGymPage({ root, params, shell, QRCodeLib }) {
   shell({ section: 'gym', contentHtml: renderSkeletonPage({ cards: 0, rows: 5 }) });
@@ -13,6 +66,22 @@ export async function renderGymPage({ root, params, shell, QRCodeLib }) {
     const hoursText = typeof data.openingHours === 'string'
       ? data.openingHours
       : (data.openingHours?.summary || (data.openingHours ? JSON.stringify(data.openingHours) : ''));
+
+    let currentCoverMediaId = data.coverMediaId || null;
+
+    const renderCoverPreviewHtml = (mediaId) => (mediaId
+      ? `<div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap">
+        <img id="gym-cover-preview" src="${esc(publicMediaUrl(mediaId))}" alt="Ảnh bìa phòng gym" width="144" height="84" loading="lazy" decoding="async" style="width:144px;height:84px;object-fit:cover;border-radius:12px;border:1px solid var(--meta-border)" />
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span class="meta-badge meta-badge-success">Đã gắn ảnh bìa công khai</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="gym-cover-remove">Gỡ ảnh bìa</button>
+        </div>
+      </div>`
+      : '<span class="field-hint">Chưa có ảnh bìa phòng gym. Hỗ trợ JPEG/PNG tối đa 5 MB.</span>');
+
+    const renderAppPreviewCoverHtml = (mediaId) => (mediaId
+      ? `<img src="${esc(publicMediaUrl(mediaId))}" alt="Ảnh bìa Meta Gym" loading="lazy" decoding="async" style="width:100%;max-height:160px;object-fit:cover;border-radius:12px;border:1px solid var(--meta-border);margin-bottom:8px" />`
+      : '');
 
     const contentHtml = `<div class="grid-split">
       <form id="gym-form" class="meta-card stack-16 no-print" novalidate>
@@ -25,6 +94,12 @@ export async function renderGymPage({ root, params, shell, QRCodeLib }) {
         <div class="grid-2">
           <div class="field"><label class="field-label" for="gym-phone">Số điện thoại</label><input id="gym-phone" class="form-control tabular" name="phone" value="${esc(data.phone || '')}" /></div>
           <div class="field"><label class="field-label" for="gym-email">Email liên hệ</label><input id="gym-email" class="form-control" name="email" type="email" value="${esc(data.email || '')}" /></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="gym-cover-file">Ảnh bìa phòng gym công khai (JPEG / PNG, tối đa 5 MB)</label>
+          <input id="gym-cover-file" class="form-control" type="file" accept="image/jpeg,image/png" />
+          <span class="field-hint" id="gym-cover-status"></span>
+          <div id="gym-cover-preview-wrap">${renderCoverPreviewHtml(currentCoverMediaId)}</div>
         </div>
         <div class="field"><label class="field-label" for="gym-desc">Mô tả phòng gym</label><textarea id="gym-desc" class="form-control" name="description">${esc(data.description || '')}</textarea></div>
         <div class="field"><label class="field-label" for="gym-rules">Nội quy phòng tập</label><textarea id="gym-rules" class="form-control" name="rules">${esc(data.rules || '')}</textarea></div>
@@ -50,6 +125,7 @@ export async function renderGymPage({ root, params, shell, QRCodeLib }) {
         <section class="meta-card no-print stack-12" aria-label="Xem trước công khai">
           <h2 class="card-title-text">Xem trước trên ứng dụng</h2>
           <div class="impact-box">
+            <div id="gym-app-preview-cover">${renderAppPreviewCoverHtml(currentCoverMediaId)}</div>
             <div style="font-size:16px;font-weight:700;color:var(--meta-text-strong)">${esc(data.name || '')}</div>
             <div style="font-size:13px;color:var(--meta-text-secondary)">${esc(data.address || '')}</div>
             ${hoursText ? `<div class="field-hint">Giờ mở cửa: ${esc(hoursText)}</div>` : ''}
@@ -60,6 +136,52 @@ export async function renderGymPage({ root, params, shell, QRCodeLib }) {
     </div>`;
 
     shell({ section: 'gym', contentHtml });
+
+    const coverFileInput = root.querySelector('#gym-cover-file');
+    const coverStatusEl = root.querySelector('#gym-cover-status');
+    const coverPreviewWrap = root.querySelector('#gym-cover-preview-wrap');
+    const appPreviewCover = root.querySelector('#gym-app-preview-cover');
+    let coverUploading = false;
+
+    const syncCoverPreviews = () => {
+      if (coverPreviewWrap) {
+        coverPreviewWrap.innerHTML = renderCoverPreviewHtml(currentCoverMediaId);
+        const removeBtn = coverPreviewWrap.querySelector('#gym-cover-remove');
+        if (removeBtn) {
+          removeBtn.onclick = () => {
+            currentCoverMediaId = null;
+            if (coverFileInput) coverFileInput.value = '';
+            if (coverStatusEl) coverStatusEl.textContent = 'Đã gỡ ảnh bìa. Bấm Lưu hồ sơ phòng gym để áp dụng.';
+            syncCoverPreviews();
+          };
+        }
+      }
+      if (appPreviewCover) {
+        appPreviewCover.innerHTML = renderAppPreviewCoverHtml(currentCoverMediaId);
+      }
+    };
+
+    syncCoverPreviews();
+
+    if (coverFileInput) {
+      coverFileInput.onchange = async () => {
+        const file = coverFileInput.files?.[0];
+        if (!file) return;
+        coverUploading = true;
+        if (coverStatusEl) coverStatusEl.textContent = 'Đang tải ảnh bìa lên máy chủ…';
+        try {
+          const uploaded = await uploadGymCoverImage(file);
+          currentCoverMediaId = uploaded.id;
+          if (coverStatusEl) coverStatusEl.textContent = 'Đã tải ảnh bìa thành công. Bấm Lưu hồ sơ phòng gym để lưu.';
+          syncCoverPreviews();
+        } catch (error) {
+          if (coverStatusEl) coverStatusEl.textContent = '';
+          toast(error.message, 'danger');
+        } finally {
+          coverUploading = false;
+        }
+      };
+    }
 
     async function showCode(payload) {
       const qrBox = root.querySelector('#checkin-qr');
@@ -118,6 +240,10 @@ export async function renderGymPage({ root, params, shell, QRCodeLib }) {
     if (form) {
       form.onsubmit = async (event) => {
         event.preventDefault();
+        if (coverUploading) {
+          toast('Ảnh bìa đang được tải lên, vui lòng đợi hoàn tất.', 'warn');
+          return;
+        }
         const saveBtn = root.querySelector('#gym-save-btn');
         if (saveBtn) saveBtn.disabled = true;
         try {
@@ -128,6 +254,7 @@ export async function renderGymPage({ root, params, shell, QRCodeLib }) {
             email: (form.querySelector('[name="email"]')?.value || '').trim() || null,
             description: (form.querySelector('[name="description"]')?.value || '').trim() || null,
             rules: (form.querySelector('[name="rules"]')?.value || '').trim() || null,
+            coverMediaId: currentCoverMediaId || null,
           };
           await api('/admin/gym-profile', 'PATCH', payload);
           toast('Đã cập nhật hồ sơ phòng gym.');
