@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:provider/provider.dart';
@@ -144,17 +145,83 @@ void main() {
       expect(find.text('Đang giữ suất · Chờ thanh toán'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'renders custom Admin Coach package PRO_40 with description, tabularFigures, and reserves it',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final adapter = _OffersAdapter(
+        customOffers: const [
+          {
+            'code': 'PRO_40',
+            'name': 'Chuyên sâu 40 buổi',
+            'description':
+                'Lộ trình 120 ngày dành cho mục tiêu thi đấu/tăng cơ dài hạn',
+            'sessionCount': 40,
+            'durationDays': 120,
+            'price': 7200000,
+            'status': 'ACTIVE',
+          },
+        ],
+      );
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+      );
+
+      await tester.pumpWidget(
+        Provider.value(
+          value: api,
+          child: const MaterialApp(home: CoachOffersPage(coachId: 'coach-1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chuyên sâu 40 buổi'), findsWidgets);
+      expect(
+        find.text(
+          'Lộ trình 120 ngày dành cho mục tiêu thi đấu/tăng cơ dài hạn',
+        ),
+        findsWidgets,
+      );
+      final termsFinder = find.text('40 buổi · 120 ngày');
+      expect(termsFinder, findsOneWidget);
+      final termsText = tester.widget<Text>(termsFinder);
+      expect(termsText.style?.fontFeatures, MetaGymTheme.tabularFigures);
+      expect(find.text('7.200.000 ₫'), findsWidgets);
+
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'Thanh toán'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Thanh toán'));
+      await tester.pumpAndSettle();
+
+      expect(adapter.lastReservedPlanCode, 'PRO_40');
+      expect(find.text('Đang giữ suất · Chờ thanh toán'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _OffersAdapter implements HttpClientAdapter {
-  _OffersAdapter({this.fullFlow = false, this.withAvatar = false});
+  _OffersAdapter({
+    this.fullFlow = false,
+    this.withAvatar = false,
+    this.customOffers,
+  });
 
   final bool fullFlow;
   final bool withAvatar;
+  final List<Map<String, Object?>>? customOffers;
   bool healthDeclared = false;
   bool holdCreated = false;
   bool cancelledHold = false;
   bool confirmedMock = false;
+  String? lastReservedPlanCode;
   final List<String> requestedPaths = [];
   final List<String?> holdKeys = [];
 
@@ -182,14 +249,39 @@ class _OffersAdapter implements HttpClientAdapter {
       holdCreated = true;
       cancelledHold = false;
       holdKeys.add(options.headers['idempotency-key'] as String?);
+      String planCode = 'BASIC';
+      if (requestStream != null) {
+        final raw = utf8.decode(
+          (await requestStream.toList()).expand((chunk) => chunk).toList(),
+        );
+        if (raw.isNotEmpty) {
+          final parsed = jsonDecode(raw) as Map<String, dynamic>;
+          planCode = (parsed['planCode'] as String?) ?? planCode;
+        }
+      }
+      lastReservedPlanCode = planCode;
+      final offersList = customOffers ??
+          const [
+            {
+              'code': 'BASIC',
+              'name': 'Gói cơ bản',
+              'sessionCount': 10,
+              'durationDays': 30,
+              'price': 500000,
+            },
+          ];
+      final matched = offersList.firstWhere(
+        (item) => item['code'] == planCode,
+        orElse: () => offersList.first,
+      );
       return _json({
         'id': 'hold-1',
         'coachId': 'coach-1',
-        'planCode': 'BASIC',
-        'planName': 'Gói cơ bản',
-        'sessionCount': 10,
-        'durationDays': 30,
-        'amount': 500000,
+        'planCode': matched['code'],
+        'planName': matched['name'],
+        'sessionCount': matched['sessionCount'],
+        'durationDays': matched['durationDays'],
+        'amount': matched['price'],
         'status': 'HELD',
         'expiresAt': '2099-01-01T00:15:00Z',
       });
@@ -227,15 +319,16 @@ class _OffersAdapter implements HttpClientAdapter {
     }
 
     final Object? data = switch (options.path) {
-      '/coach-packages' => [
-        {
-          'code': 'BASIC',
-          'name': 'Gói cơ bản',
-          'sessionCount': 10,
-          'durationDays': 30,
-          'price': 500000,
-        },
-      ],
+      '/coach-packages' => customOffers ??
+          [
+            {
+              'code': 'BASIC',
+              'name': 'Gói cơ bản',
+              'sessionCount': 10,
+              'durationDays': 30,
+              'price': 500000,
+            },
+          ],
       '/coaches/coach-1/work-slots' => {'days': []},
       '/coach-payment-holds' =>
         holdCreated && !confirmedMock && !cancelledHold

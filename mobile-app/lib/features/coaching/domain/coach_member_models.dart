@@ -4,6 +4,7 @@ class CoachMemberSummary {
     required this.memberId,
     required this.memberFullName,
     required this.status,
+    this.pauseReason,
   });
 
   factory CoachMemberSummary.fromJson(Object? value) {
@@ -13,6 +14,7 @@ class CoachMemberSummary {
       memberId: json['memberId'] as String,
       memberFullName: json['memberFullName'] as String,
       status: json['status'] as String,
+      pauseReason: json['pauseReason'] as String?,
     );
   }
 
@@ -20,10 +22,15 @@ class CoachMemberSummary {
   final String memberId;
   final String memberFullName;
   final String status;
+  final String? pauseReason;
 
   String get statusLabel => switch (status) {
     'ACTIVE' => 'Đang hoạt động',
-    'PAUSED' => 'Tạm dừng',
+    'PAUSED' => switch (pauseReason) {
+      'MEMBER_LOCKED' => 'Tài khoản hội viên tạm khóa',
+      'COACH_LOCKED' => 'Coach đang tạm khóa',
+      _ => 'Tạm dừng',
+    },
     _ => status,
   };
 }
@@ -34,6 +41,7 @@ class CoachMemberDetail extends CoachMemberSummary {
     required super.memberId,
     required super.memberFullName,
     required super.status,
+    super.pauseReason,
     required this.email,
     this.fitnessGoal,
     this.healthNotes,
@@ -52,6 +60,7 @@ class CoachMemberDetail extends CoachMemberSummary {
       memberId: member['id'] as String,
       memberFullName: member['fullName'] as String,
       status: json['status'] as String,
+      pauseReason: json['pauseReason'] as String?,
       email: member['email'] as String,
       fitnessGoal: member['fitnessGoal'] as String?,
       healthNotes: member['healthNotes'] as String?,

@@ -33,7 +33,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.reason, 'Đổi lịch làm việc');
     expect(find.text('Yêu cầu đang chờ duyệt'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Quay lại'));
     await tester.pumpAndSettle();
     expect(find.text('Yêu cầu ngừng phụ trách'), findsOneWidget);
     expect(find.text('Đang chờ duyệt'), findsOneWidget);

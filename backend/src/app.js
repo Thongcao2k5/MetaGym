@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { createAuthRouter } from './routes/auth.routes.js';
+import { createAdminAuditRouter } from './routes/admin-audit.routes.js';
 import { createAdminUsersRouter } from './routes/admin-users.routes.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
@@ -23,6 +24,7 @@ import { createStructuredNutritionRouter } from './routes/structured-nutrition.r
 import { createSessionsRouter } from './routes/sessions.routes.js';
 import { createMessagingRouter } from './routes/messaging.routes.js';
 import { createRealtimeRouter } from './config/realtime.js';
+import { createMemberNutritionRouter } from './routes/member-nutrition.routes.js';
 import { createProgressRouter } from './routes/progress.routes.js';
 import { createJournalRouter } from './routes/journal.routes.js';
 import { createMemberSelfTrainingRouter } from './routes/member-self-training.routes.js';
@@ -120,6 +122,7 @@ export function createApp({
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
+  app.use('/api/v1', createAdminAuditRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
@@ -131,6 +134,7 @@ export function createApp({
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));
   app.use('/api/v1', createRealtimeRouter({ database, jwtSecret, realtime }));
   app.use('/api/v1', createMessagingRouter({ database, jwtSecret, realtime }));
+  app.use('/api/v1', createMemberNutritionRouter({ database, jwtSecret }));
   app.use('/api/v1', createProgressRouter({ database, jwtSecret }));
   app.use('/api/v1', createJournalRouter({ database, jwtSecret }));
   app.use('/api/v1', createMemberSelfTrainingRouter({ database, jwtSecret }));

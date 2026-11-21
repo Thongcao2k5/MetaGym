@@ -331,10 +331,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
       if (currentPick == null &&
           maxAllowed > 0 &&
           _pickedByDate.length >= maxAllowed) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gói hiện chỉ còn đặt thêm tối đa $maxAllowed buổi.'),
-          ),
+        showCoachingSnackBar(
+          context,
+          'Gói hiện chỉ còn đặt thêm tối đa $maxAllowed buổi.',
         );
         return;
       }
@@ -392,6 +391,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
   }
 
   Widget _buildCalendarCard() {
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     final monthStart = DateTime.utc(_selectedDate.year, _selectedDate.month, 1);
     final gridStart = _calMode == _PickerCalMode.week
         ? _weekMonday(_selectedDate)
@@ -404,66 +404,111 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     final cellCount = _calMode == _PickerCalMode.week
         ? 7
         : ((((monthStart.weekday - 1) + daysInMonth) / 7).ceil() * 7);
+    final cellExtent = (46 * textScale.clamp(1.0, 1.5))
+        .ceilToDouble()
+        .clamp(48.0, 84.0)
+        .toDouble();
 
-    return CoachingGraphiteCard(
+    final prevButton = _CalendarArrowButton(
+      icon: Icons.chevron_left_rounded,
+      tooltip: _calMode == _PickerCalMode.week ? 'Tuần trước' : 'Tháng trước',
+      onTap: () => _movePeriod(-1),
+    );
+    final nextButton = _CalendarArrowButton(
+      icon: Icons.chevron_right_rounded,
+      tooltip: _calMode == _PickerCalMode.week ? 'Tuần sau' : 'Tháng sau',
+      onTap: () => _movePeriod(1),
+    );
+
+    Widget buildModeToggle({bool expand = false}) {
+      Widget wrapChip(_CalModeChip chip) => expand ? Expanded(child: chip) : chip;
+      return Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: const Color(0x80211E1C),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0x9A8C8176)),
+        ),
+        child: Row(
+          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+          children: [
+            wrapChip(
+              _CalModeChip(
+                label: 'Tuần',
+                active: _calMode == _PickerCalMode.week,
+                onTap: () => setState(() => _calMode = _PickerCalMode.week),
+              ),
+            ),
+            SizedBox(width: expand ? 4 : 2),
+            wrapChip(
+              _CalModeChip(
+                label: 'Tháng',
+                active: _calMode == _PickerCalMode.month,
+                onTap: () => setState(() => _calMode = _PickerCalMode.month),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return MetaGymHeroGlassCard(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       child: Column(
         children: [
-          Row(
-            children: [
-              _CalendarArrowButton(
-                icon: Icons.chevron_left_rounded,
-                tooltip: _calMode == _PickerCalMode.week
-                    ? 'Tuần trước'
-                    : 'Tháng trước',
-                onTap: () => _movePeriod(-1),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  _calendarTitleText(),
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              _CalendarArrowButton(
-                icon: Icons.chevron_right_rounded,
-                tooltip: _calMode == _PickerCalMode.week
-                    ? 'Tuần sau'
-                    : 'Tháng sau',
-                onTap: () => _movePeriod(1),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF211E1C),
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: const Color(0x808C7766)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compactHeader =
+                  constraints.maxWidth < 312 || textScale > 1.1;
+              if (compactHeader) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _CalModeChip(
-                      label: 'Tuần',
-                      active: _calMode == _PickerCalMode.week,
-                      onTap: () =>
-                          setState(() => _calMode = _PickerCalMode.week),
+                    Row(
+                      children: [
+                        prevButton,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _calendarTitleText(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: MetaGymTheme.textPrimary,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        nextButton,
+                      ],
                     ),
-                    const SizedBox(width: 2),
-                    _CalModeChip(
-                      label: 'Tháng',
-                      active: _calMode == _PickerCalMode.month,
-                      onTap: () =>
-                          setState(() => _calMode = _PickerCalMode.month),
-                    ),
+                    const SizedBox(height: 6),
+                    buildModeToggle(expand: true),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+              return Row(
+                children: [
+                  prevButton,
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      _calendarTitleText(),
+                      style: const TextStyle(
+                        color: MetaGymTheme.textPrimary,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  nextButton,
+                  const SizedBox(width: 4),
+                  buildModeToggle(),
+                ],
+              );
+            },
           ),
           if (_calMode == _PickerCalMode.month) ...[
             const SizedBox(height: 8),
@@ -475,7 +520,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         child: Text(
                           label,
                           style: const TextStyle(
-                            color: Color(0xFFA99F98),
+                            color: Color(0xFFB8B0A8),
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -491,115 +536,117 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              mainAxisExtent: 44,
+              mainAxisExtent: cellExtent,
             ),
             itemCount: cellCount,
             itemBuilder: (context, index) {
-              final date = gridStart.add(Duration(days: index));
-              final ymd = _ymd(date);
-              final selected = ymd == _ymd(_selectedDate);
-              final isToday = ymd == _ymd(_todayGym);
-              final isPickedDay = _pickedByDate.containsKey(ymd);
-              final outsideMonth =
-                  _calMode == _PickerCalMode.month &&
-                  date.month != _selectedDate.month;
-              final disabled = _isOutOfBounds(date);
-              final hasWork =
-                  !disabled &&
-                  (_weeklyWorkStarts.isEmpty ||
-                      (_weeklyWorkStarts[date.weekday]?.isNotEmpty ?? false));
+                  final date = gridStart.add(Duration(days: index));
+                  final ymd = _ymd(date);
+                  final selected = ymd == _ymd(_selectedDate);
+                  final isToday = ymd == _ymd(_todayGym);
+                  final isPickedDay = _pickedByDate.containsKey(ymd);
+                  final outsideMonth =
+                      _calMode == _PickerCalMode.month &&
+                      date.month != _selectedDate.month;
+                  final disabled = _isOutOfBounds(date);
+                  final hasWork =
+                      !disabled &&
+                      (_weeklyWorkStarts.isEmpty ||
+                          (_weeklyWorkStarts[date.weekday]?.isNotEmpty ??
+                              false));
 
-              return MetaGymTap(
-                borderRadius: BorderRadius.circular(11),
-                onTap: disabled ? null : () => _selectDate(date),
-                child: AnimatedContainer(
-                  duration: MetaGymTheme.stateDurationOf(context),
-                  curve: Curves.easeOutCubic,
-                  margin: const EdgeInsets.all(1.5),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? MetaGymTheme.brandOrange
-                        : isPickedDay
-                        ? MetaGymTheme.progressGreen.withValues(alpha: 0.16)
-                        : Colors.transparent,
+                  return MetaGymTap(
                     borderRadius: BorderRadius.circular(11),
-                    border: !selected && isPickedDay
-                        ? Border.all(
-                            color: MetaGymTheme.progressGreen.withValues(
-                              alpha: 0.65,
-                            ),
-                          )
-                        : (!selected && isToday
-                              ? Border.all(
-                                  color: MetaGymTheme.brandOrange.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                )
-                              : null),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    onTap: disabled ? null : () => _selectDate(date),
+                    child: AnimatedContainer(
+                      duration: MetaGymTheme.stateDurationOf(context),
+                      curve: Curves.easeOutCubic,
+                      margin: const EdgeInsets.all(1.5),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? MetaGymTheme.brandOrange
+                            : isPickedDay
+                            ? MetaGymTheme.progressGreen.withValues(alpha: 0.16)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(11),
+                        border: !selected && isPickedDay
+                            ? Border.all(
+                                color: MetaGymTheme.progressGreen.withValues(
+                                  alpha: 0.65,
+                                ),
+                              )
+                            : (!selected && isToday
+                                  ? Border.all(
+                                      color: MetaGymTheme.brandOrange
+                                          .withValues(alpha: 0.6),
+                                    )
+                                  : null),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          if (_calMode == _PickerCalMode.week)
-                            Text(
-                              _weekdaysShort[index],
-                              style: TextStyle(
-                                color: selected
-                                    ? MetaGymTheme.onPrimary
-                                    : disabled
-                                    ? const Color(0xFF5E6472)
-                                    : const Color(0xFFA99F98),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                height: 1.0,
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_calMode == _PickerCalMode.week)
+                                Text(
+                                  _weekdaysShort[index],
+                                  style: TextStyle(
+                                    color: selected
+                                        ? MetaGymTheme.onPrimary
+                                        : disabled
+                                        ? const Color(0xFF7D756F)
+                                        : const Color(0xFFB8B0A8),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.05,
+                                  ),
+                                ),
+                              Text(
+                                '${date.day}',
+                                style: TextStyle(
+                                  color: selected
+                                      ? MetaGymTheme.onPrimary
+                                      : disabled
+                                      ? const Color(0xFF7D756F)
+                                      : outsideMonth
+                                      ? const Color(0xFF9B9188)
+                                      : const Color(0xFFF7F9FC),
+                                  fontSize: 12.5,
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  height: 1.15,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isPickedDay || hasWork)
+                            Positioned(
+                              bottom: 3,
+                              child: AnimatedContainer(
+                                duration: MetaGymTheme.stateDurationOf(context),
+                                curve: Curves.easeOutCubic,
+                                width: 4,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? Colors.white
+                                      : isPickedDay
+                                      ? const Color(0xFF59E59A)
+                                      : MetaGymTheme.brandOrange,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
-                          Text(
-                            '${date.day}',
-                            style: TextStyle(
-                              color: selected
-                                  ? MetaGymTheme.onPrimary
-                                  : disabled
-                                  ? const Color(0xFF5E6472)
-                                  : outsideMonth
-                                  ? const Color(0xFF8D827B)
-                                  : const Color(0xFFDED7D1),
-                              fontSize: 12.5,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
-                              height: 1.15,
-                            ),
-                          ),
                         ],
                       ),
-                      if (isPickedDay || hasWork)
-                        Positioned(
-                          bottom: 3,
-                          child: AnimatedContainer(
-                            duration: MetaGymTheme.stateDurationOf(context),
-                            curve: Curves.easeOutCubic,
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? Colors.white
-                                  : isPickedDay
-                                  ? const Color(0xFF59E59A)
-                                  : MetaGymTheme.brandOrange,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
+                    ),
+                  );
             },
           ),
         ],
@@ -639,13 +686,13 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     }
 
     if (groups.isEmpty) {
-      return const CoachingGraphiteCard(
+      return const MetaGymGlassCard(
         padding: EdgeInsets.all(18),
         child: Center(
           child: Text(
             'Coach không có ca trống trong ngày này. Hãy chọn ngày khác trên lịch.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: MetaGymTheme.textSecondary, fontSize: 13),
+            style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
           ),
         ),
       );
@@ -657,12 +704,13 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
         if (alreadyHasDayBooking) ...[
           Container(
             margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(11),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: MetaGymTheme.cardSurface,
-              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xC42B2622),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: MetaGymTheme.brandOrange.withValues(alpha: 0.35),
+                color: MetaGymTheme.brandOrange.withValues(alpha: 0.55),
+                width: 1.1,
               ),
             ),
             child: const Row(
@@ -678,7 +726,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                   child: Text(
                     'Bạn đã có 1 buổi tập trong ngày này. Mỗi ngày chỉ được đặt tối đa 1 buổi.',
                     style: TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFE4DAD1),
                       fontSize: 12,
                       height: 1.4,
                     ),
@@ -694,108 +742,139 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             child: Text(
               label,
               style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
+                color: Color(0xFFC8C2BC),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          GridView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              mainAxisExtent: 58,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final picked =
-                  _pickedByDate[dateKey]?.startsAt == item.startsAt &&
-                  item.startsAt != null;
-              final blockedByDay = alreadyHasDayBooking && item.isOpen;
-              final enabled = item.isOpen && !blockedByDay;
-
-              final bgColor = picked
-                  ? MetaGymTheme.brandOrange.withValues(alpha: 0.20)
-                  : item.isMine
-                  ? MetaGymTheme.brandOrange.withValues(alpha: 0.08)
-                  : enabled
-                  ? MetaGymTheme.elevatedSurface
-                  : MetaGymTheme.cardSurface.withValues(alpha: 0.72);
-              final borderColor = picked
-                  ? MetaGymTheme.brandOrange
-                  : item.isMine
-                  ? MetaGymTheme.brandOrange.withValues(alpha: 0.35)
-                  : enabled
-                  ? MetaGymTheme.darkBorderStrong
-                  : MetaGymTheme.cardBorder;
-              final metaColor = picked
-                  ? const Color(0xFFFF987E)
-                  : item.isMine
-                  ? MetaGymTheme.brandOrange
-                  : enabled
-                  ? const Color(0xFF59E59A)
-                  : MetaGymTheme.textSecondary;
-              final metaText = picked
-                  ? 'Đang chọn'
-                  : blockedByDay
-                  ? 'Đã đủ 1 buổi/ngày'
-                  : item.statusLabel;
-
-              return Material(
-                color: bgColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: BorderSide(color: borderColor),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: MetaGymTap(
-                  onTap: enabled ? () => _toggleShift(dateKey, item) : null,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${item.startLabel} – ${item.endLabel}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: enabled || picked
-                                ? MetaGymTheme.textPrimary
-                                : MetaGymTheme.textSecondary,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          metaText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: metaColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+          for (var i = 0; i < items.length; i += 2) ...[
+            if (i > 0) const SizedBox(height: 8),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _buildShiftTile(
+                      dateKey,
+                      items[i],
+                      alreadyHasDayBooking,
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                  const SizedBox(width: 8),
+                  if (i + 1 < items.length)
+                    Expanded(
+                      child: _buildShiftTile(
+                        dateKey,
+                        items[i + 1],
+                        alreadyHasDayBooking,
+                      ),
+                    )
+                  else
+                    const Expanded(child: SizedBox()),
+                ],
+              ),
+            ),
+          ],
         ],
       ],
+    );
+  }
+
+  Widget _buildShiftTile(
+    String dateKey,
+    _ShiftDisplayItem item,
+    bool alreadyHasDayBooking,
+  ) {
+    final picked =
+        _pickedByDate[dateKey]?.startsAt == item.startsAt &&
+        item.startsAt != null;
+    final blockedByDay = alreadyHasDayBooking && item.isOpen;
+    final enabled = item.isOpen && !blockedByDay;
+
+    final Color bgColor;
+    final Color borderColor;
+    final double borderWidth;
+    final Color timeColor;
+    final Color metaColor;
+
+    if (picked) {
+      bgColor = const Color(0xFF472C22);
+      borderColor = MetaGymTheme.brandOrange;
+      borderWidth = 1.5;
+      timeColor = const Color(0xFFFFFFFF);
+      metaColor = const Color(0xFFFF987E);
+    } else if (item.isMine) {
+      bgColor = const Color(0xD4352620);
+      borderColor = const Color(0x88FF5E36);
+      borderWidth = 1.2;
+      timeColor = const Color(0xFFF7F9FC);
+      metaColor = MetaGymTheme.brandOrange;
+    } else if (enabled) {
+      bgColor = const Color(0xC42B2622);
+      borderColor = const Color(0xA3A79D92);
+      borderWidth = 1.1;
+      timeColor = const Color(0xFFF7F9FC);
+      metaColor = const Color(0xFF59E59A);
+    } else {
+      bgColor = const Color(0x7A211E1C);
+      borderColor = const Color(0x528C8176);
+      borderWidth = 1.0;
+      timeColor = const Color(0xFFACA39B);
+      metaColor = const Color(0xFF9C948D);
+    }
+
+    final metaText = picked
+        ? 'Đang chọn'
+        : blockedByDay
+        ? 'Đã đủ 1 buổi/ngày'
+        : item.statusLabel;
+
+    return Material(
+      color: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: borderColor, width: borderWidth),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: enabled ? () => _toggleShift(dateKey, item) : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 62),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${item.startLabel} – ${item.endLabel}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: timeColor,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  metaText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: metaColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -806,10 +885,11 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: MetaGymTheme.cardSurface,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xC42B2622),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: MetaGymTheme.brandOrange.withValues(alpha: 0.35),
+          color: MetaGymTheme.brandOrange.withValues(alpha: 0.55),
+          width: 1.1,
         ),
       ),
       child: Column(
@@ -823,16 +903,17 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       ? 'Ca tập mới đã chọn'
                       : 'Đã chọn ${sorted.length}/${widget.availableToBook} buổi tập',
                   style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                    color: Color(0xFFF7F9FC),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
+                    fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
               ),
               TextButton(
                 style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(48, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onPressed: _submitting
@@ -841,7 +922,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                 child: const Text(
                   'Xóa hết',
                   style: TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                    color: Color(0xFFC8C2BC),
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -864,13 +945,13 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 11,
-                    vertical: 6,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                    color: const Color(0xFF472C22),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.55),
+                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.7),
                     ),
                   ),
                   child: Row(
@@ -879,9 +960,10 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       Text(
                         '$ddmm · ${pick.startLabel}–${pick.endLabel}',
                         style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                          color: Color(0xFFF7F9FC),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
+                          fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -966,21 +1048,26 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                 ),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 36),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      4,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 32,
+                    ),
                     children: [
                       if (_error != null) ...[
                         Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0x33FF453A),
+                            color: const Color(0xD4331E1E),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0x66FF453A)),
+                            border: Border.all(color: const Color(0x99F15B64)),
                           ),
                           child: Text(
                             _error!,
                             style: const TextStyle(
-                              color: Color(0xFFFF857D),
+                              color: Color(0xFFFFB2B6),
                               fontSize: 13,
                             ),
                           ),
@@ -989,6 +1076,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       _buildCalendarCard(),
                       const SizedBox(height: 14),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Icon(
                             Icons.schedule_rounded,
@@ -997,27 +1085,34 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _selectedDayHeading(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            alreadyHasDayBooking
-                                ? 'Đã có lịch ngày này'
-                                : openCount > 0
-                                ? '$openCount ca trống · 1h30/ca'
-                                : 'Nghỉ / Kín lịch',
-                            style: const TextStyle(
-                              color: MetaGymTheme.textSecondary,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 2,
+                              children: [
+                                Text(
+                                  _selectedDayHeading(),
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.textPrimary,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  alreadyHasDayBooking
+                                      ? 'Đã có lịch ngày này'
+                                      : openCount > 0
+                                      ? '$openCount ca trống · 1h30/ca'
+                                      : 'Nghỉ / Kín lịch',
+                                  style: const TextStyle(
+                                    color: Color(0xFFC8C2BC),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                    fontFeatures: MetaGymTheme.tabularFigures,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1039,12 +1134,12 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         ),
                       ],
                       const SizedBox(height: 14),
-                      CoachingGraphiteCard(
-                        padding: const EdgeInsets.symmetric(
+                      const MetaGymGlassCard(
+                        padding: EdgeInsets.symmetric(
                           horizontal: 13,
                           vertical: 11,
                         ),
-                        child: const Row(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
@@ -1057,7 +1152,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                               child: Text(
                                 'Lưu ý: Có thể chọn nhiều ngày để đặt cùng lúc (tối đa 1 buổi/ngày). Hủy hoặc đổi giờ dưới 12 giờ sẽ bị trừ 1 lượt.',
                                 style: TextStyle(
-                                  color: MetaGymTheme.textSecondary,
+                                  color: Color(0xFFC8C2BC),
                                   fontSize: 12,
                                   height: 1.45,
                                 ),
@@ -1093,18 +1188,29 @@ class _CalendarArrowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
-      child: MetaGymTap(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: const Color(0xFF211E1C),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0x738C7766)),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: MetaGymTap(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0x80211E1C),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0x9A8C8176)),
+                ),
+                child: Icon(icon, size: 18, color: const Color(0xFFF7F9FC)),
+              ),
+            ),
           ),
-          child: Icon(icon, size: 18, color: const Color(0xFFF6F3F0)),
         ),
       ),
     );
@@ -1124,23 +1230,35 @@ class _CalModeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MetaGymTap(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: AnimatedContainer(
-        duration: MetaGymTheme.stateDurationOf(context),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: active ? MetaGymTheme.brandOrange : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? MetaGymTheme.onPrimary : MetaGymTheme.textSecondary,
-            fontSize: 11,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(9),
+      clipBehavior: Clip.antiAlias,
+      child: MetaGymTap(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: AnimatedContainer(
+          duration: MetaGymTheme.stateDurationOf(context),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? MetaGymTheme.brandOrange : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: active
+                    ? MetaGymTheme.onPrimary
+                    : const Color(0xFFC8C2BC),
+                fontSize: 11.5,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ),

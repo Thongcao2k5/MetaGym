@@ -35,6 +35,7 @@ test('Coach requests enforce ownership, membership, capacity and lifecycle under
     const base = `http://127.0.0.1:${server.address().port}`;
     const adminId = randomUUID();
     const members = Array.from({ length: 3 }, () => randomUUID());
+    const fillerMembers = Array.from({ length: 7 }, () => randomUUID());
     const coaches = Array.from({ length: 2 }, () => randomUUID());
     const planId = randomUUID();
     const m = members.map((id) => token(id, 'MEMBER'));
@@ -42,6 +43,7 @@ test('Coach requests enforce ownership, membership, capacity and lifecycle under
     try {
       for (const [id, role] of [
         [adminId, 'ADMIN'], ...members.map((id) => [id, 'MEMBER']),
+        ...fillerMembers.map((id) => [id, 'MEMBER']),
         ...coaches.map((id) => [id, 'COACH']),
       ]) {
         await database.query(
@@ -52,7 +54,14 @@ test('Coach requests enforce ownership, membership, capacity and lifecycle under
       }
       for (const id of coaches) {
         await database.query(
-          'INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 1)', [id],
+          'INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 8)', [id],
+        );
+      }
+      for (const fillerId of fillerMembers) {
+        await database.query(
+          `INSERT INTO coach_relationships (id, member_id, coach_id)
+           VALUES ($1, $2, $3)`,
+          [randomUUID(), fillerId, coaches[0]],
         );
       }
       await database.query(
@@ -169,34 +178,35 @@ test('Coach requests enforce ownership, membership, capacity and lifecycle under
       assert.equal((await database.query(
         `SELECT count(*)::int AS count FROM coach_relationships
          WHERE coach_id = $1 AND status IN ('ACTIVE', 'PAUSED')`,
-        [coaches[0]])).rows[0].count, 1);
+        [coaches[0]])).rows[0].count, 8);
       assert.equal((await call(base, '/coach-requests/me', m[0])).body.data.length, 3);
       assert.equal((await call(base, '/coach-requests/me', c[0])).status, 403);
     } finally {
+      const allMembers = [...members, ...fillerMembers];
       await database.query(
         `DELETE FROM conversation_participants WHERE conversation_id IN
          (SELECT c.id FROM conversations c JOIN coach_relationships r
-          ON r.id = c.relationship_id WHERE r.member_id = ANY($1::uuid[]))`, [members],
+          ON r.id = c.relationship_id WHERE r.member_id = ANY($1::uuid[]))`, [allMembers],
       );
       await database.query(
         `DELETE FROM conversations WHERE relationship_id IN
-         (SELECT id FROM coach_relationships WHERE member_id = ANY($1::uuid[]))`, [members],
+         (SELECT id FROM coach_relationships WHERE member_id = ANY($1::uuid[]))`, [allMembers],
       );
       await database.query(
-        'DELETE FROM coach_relationships WHERE member_id = ANY($1::uuid[])', [members],
+        'DELETE FROM coach_relationships WHERE member_id = ANY($1::uuid[])', [allMembers],
       );
       await database.query('DELETE FROM coach_requests WHERE member_id = ANY($1::uuid[])',
-        [members]);
+        [allMembers]);
       await database.query(
-        'DELETE FROM member_memberships WHERE member_id = ANY($1::uuid[])', [members],
+        'DELETE FROM member_memberships WHERE member_id = ANY($1::uuid[])', [allMembers],
       );
       await database.query('DELETE FROM payments WHERE member_id = ANY($1::uuid[])',
-        [members]);
+        [allMembers]);
       await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
       await database.query('DELETE FROM coach_profiles WHERE user_id = ANY($1::uuid[])',
         [coaches]);
       await database.query('DELETE FROM users WHERE id = ANY($1::uuid[])',
-        [[adminId, ...members, ...coaches]]);
+        [[adminId, ...allMembers, ...coaches]]);
       await new Promise((resolve) => server.close(resolve));
       await database.end();
     }

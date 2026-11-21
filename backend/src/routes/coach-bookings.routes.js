@@ -102,7 +102,8 @@ async function charge(client, entitlementId, actorId) {
   const { rows: [item] } = await client.query(
     `UPDATE coach_entitlements SET remaining_sessions = remaining_sessions - 1,
        status = CASE WHEN remaining_sessions = 1 THEN 'ENDED' ELSE status END,
-       ended_at = CASE WHEN remaining_sessions = 1 THEN statement_timestamp() ELSE ended_at END
+       ended_at = CASE WHEN remaining_sessions = 1 THEN statement_timestamp() ELSE ended_at END,
+       close_reason = CASE WHEN remaining_sessions = 1 THEN 'COMPLETED_SESSIONS' ELSE close_reason END
      WHERE id = $1 AND status = 'ACTIVE' RETURNING *`, [entitlementId],
   );
   if (!item) reject(409, 'COACH_PACKAGE_REQUIRED', 'Gói Coach không còn hiệu lực');
@@ -165,13 +166,14 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
     if (request.authUser.role !== 'MEMBER') return error(response, 403, 'FORBIDDEN', 'Chỉ Member xem gói của mình');
     return transact(database, response, async (client) => {
       const { rows } = await client.query(
-        `SELECT e.id, e.coach_id AS "coachId", h.plan_name AS "planName", e.status,
+        `SELECT e.id, e.coach_id AS "coachId", COALESCE(e.plan_name, h.plan_name) AS "planName", e.status,
            r.status AS "relationshipStatus",
            e.remaining_sessions AS "remainingSessions", e.total_sessions AS "totalSessions",
-           e.starts_on::text AS "startsOn", e.ends_on::text AS "endsOn"
-         FROM coach_entitlements e JOIN coach_payment_holds h ON h.id = e.hold_id
+           e.starts_on::text AS "startsOn", e.ends_on::text AS "endsOn",
+           e.frozen_at AS "frozenAt", e.frozen_days_total AS "frozenDaysTotal"
+         FROM coach_entitlements e LEFT JOIN coach_payment_holds h ON h.id = e.hold_id
          JOIN coach_relationships r ON r.id = e.relationship_id
-         WHERE e.member_id = $1 ORDER BY h.created_at DESC LIMIT 100`, [request.authUser.id],
+         WHERE e.member_id = $1 ORDER BY COALESCE(h.created_at, r.started_at) DESC LIMIT 100`, [request.authUser.id],
       );
       return { data: rows };
     });

@@ -46,7 +46,213 @@ function publicMembership(row) {
     startDate: row.start_date, endDate: row.end_date,
     status: row.status,
     planName: row.plan_name_snapshot ?? null,
+    ...(row.member_name !== undefined ? { memberName: row.member_name } : {}),
+    ...(row.member_email !== undefined ? { memberEmail: row.member_email } : {}),
+    ...(row.activated_at !== undefined ? { activatedAt: row.activated_at } : {}),
+    ...(row.expired_at !== undefined ? { expiredAt: row.expired_at } : {}),
   };
+}
+
+function escapeLike(value) {
+  return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+}
+
+function adjustmentView(row, newMembershipStatus) {
+  if (!row) return null;
+  const derivedNewStatus = newMembershipStatus
+    ?? (row.restored_end_date === null ? 'CANCELLED' : row.current_membership_status ?? null);
+  return {
+    id: row.id,
+    paymentId: row.payment_id,
+    adjustmentType: row.adjustment_type,
+    reversedAmount: Number(row.reversed_amount),
+    affectedMembershipId: row.affected_membership_id,
+    previousMembershipStatus: row.previous_membership_status,
+    ...(derivedNewStatus !== undefined ? { newMembershipStatus: derivedNewStatus } : {}),
+    previousEndDate: row.previous_end_date,
+    restoredEndDate: row.restored_end_date ?? null,
+    reason: row.reason,
+    createdBy: row.created_by,
+    ...(row.created_by_name !== undefined ? { createdByName: row.created_by_name } : {}),
+    createdAt: row.created_at,
+  };
+}
+
+function adminPaymentView(row, eligibility) {
+  const adjustment = row.adj_id
+    ? adjustmentView({
+        id: row.adj_id,
+        payment_id: row.id,
+        adjustment_type: row.adj_type,
+        reversed_amount: row.adj_reversed_amount,
+        affected_membership_id: row.adj_affected_membership_id,
+        previous_membership_status: row.adj_previous_membership_status,
+        current_membership_status: row.linked_membership_status,
+        previous_end_date: row.adj_previous_end_date,
+        restored_end_date: row.adj_restored_end_date,
+        reason: row.adj_reason,
+        created_by: row.adj_created_by,
+        created_by_name: row.adj_created_by_name,
+        created_at: row.adj_created_at,
+      })
+    : null;
+  return {
+    id: row.id,
+    memberId: row.member_id,
+    memberName: row.member_name ?? null,
+    memberEmail: row.member_email ?? null,
+    planId: row.plan_id,
+    planName: row.plan_name_snapshot,
+    durationDays: row.duration_days_snapshot,
+    amount: Number(row.amount),
+    method: row.method,
+    status: row.status,
+    transactionCode: row.transaction_code,
+    renewedMembershipId: row.renewed_membership_id ?? null,
+    ...(row.renewed_membership_id ? { membershipId: row.renewed_membership_id } : {}),
+    failureReason: row.failure_reason ?? null,
+    confirmedAt: row.confirmed_at,
+    decidedAt: row.decided_at ?? null,
+    createdAt: row.created_at,
+    adjustment,
+    canVoidReversal: eligibility.allowed,
+    voidBlockedReason: eligibility.allowed ? null : eligibility.message,
+    voidBlockedCode: eligibility.allowed ? null : eligibility.code,
+  };
+}
+
+async function evaluateVoidReversal(client, payment, membership, todayVn) {
+  if (payment.method !== 'FRONT_DESK' || payment.status !== 'SUCCESS') {
+    return {
+      allowed: false,
+      code: 'ONLY_FRONT_DESK_ADJUSTABLE',
+      message: 'Chỉ giao dịch tại quầy (FRONT_DESK) đã thành công mới được đảo VOID_REVERSAL',
+    };
+  }
+  const existingAdj = await client.query(
+    'SELECT id FROM payment_adjustments WHERE payment_id = $1 LIMIT 1',
+    [payment.id],
+  );
+  if (existingAdj.rows.length) {
+    return {
+      allowed: false,
+      code: 'PAYMENT_ALREADY_REVERSED',
+      message: 'Giao dịch này đã được đảo VOID_REVERSAL trước đó',
+    };
+  }
+  if (!membership) {
+    return {
+      allowed: false,
+      code: 'ONLY_FRONT_DESK_ADJUSTABLE',
+      message: 'Không tìm thấy gói tập gắn với giao dịch này',
+    };
+  }
+
+  // LIFO check for renewal extensions on the same member_memberships row
+  // Compare directly against payments p1 in SQL to preserve full microsecond precision.
+  if (payment.renewed_membership_id) {
+    const newerRenewal = await client.query(
+      `SELECT 1 FROM payments p2
+       JOIN payments p1 ON p1.id = $2
+       WHERE p2.renewed_membership_id = $1
+         AND p2.id <> p1.id
+         AND p2.status = 'SUCCESS'
+         AND (p2.confirmed_at, p2.id) > (p1.confirmed_at, p1.id)
+         AND NOT EXISTS (SELECT 1 FROM payment_adjustments pa WHERE pa.payment_id = p2.id)
+       LIMIT 1`,
+      [payment.renewed_membership_id, payment.id],
+    );
+    if (newerRenewal.rows.length) {
+      return {
+        allowed: false,
+        code: 'RENEWAL_LIFO_REQUIRED',
+        message: 'Cần đảo các giao dịch gia hạn mới hơn trên cùng gói tập trước theo thứ tự LIFO',
+      };
+    }
+  } else {
+    const unreversedRenewal = await client.query(
+      `SELECT 1 FROM payments p2
+       WHERE p2.renewed_membership_id = $1
+         AND p2.status = 'SUCCESS'
+         AND NOT EXISTS (SELECT 1 FROM payment_adjustments pa WHERE pa.payment_id = p2.id)
+       LIMIT 1`,
+      [membership.id],
+    );
+    if (unreversedRenewal.rows.length) {
+      return {
+        allowed: false,
+        code: 'RENEWAL_LIFO_REQUIRED',
+        message: 'Cần đảo các giao dịch gia hạn gộp mới hơn trên cùng gói tập trước theo thứ tự LIFO',
+      };
+    }
+  }
+
+  // Compute the exact date range covered by THIS payment (standalone vs renewal tail)
+  const { rows: [coverage] } = await client.query(
+    `SELECT CASE WHEN p1.renewed_membership_id IS NULL THEN $2::date
+                 ELSE ($3::date - p1.duration_days_snapshot + 1)::date END::text AS covered_start,
+            $3::date::text AS covered_end,
+            ((p1.confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = $4::date) AS same_vn_day
+     FROM payments p1
+     WHERE p1.id = $1`,
+    [payment.id, membership.start_date, membership.end_date, todayVn],
+  );
+
+  // Guard: Coach dependency — block if a Coach hold (HELD/CONSUMED) or ACTIVE/QUEUED entitlement
+  // depends on this payment's covered date segment with no other Gym membership wrapping it.
+  const coachDep = await client.query(
+    `WITH src AS (SELECT member_id, confirmed_at FROM payments WHERE id = $1)
+     SELECT 1 FROM coach_payment_holds h, src
+     WHERE h.member_id = src.member_id
+       AND h.status IN ('HELD', 'CONSUMED')
+       AND h.created_at >= src.confirmed_at
+       AND (h.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $2::date AND $3::date
+     UNION ALL
+     SELECT 1 FROM coach_entitlements e
+     CROSS JOIN src
+     LEFT JOIN coach_payment_holds h ON h.id = COALESCE(e.original_hold_id, e.hold_id)
+     JOIN coach_relationships r ON r.id = e.relationship_id
+     WHERE e.member_id = src.member_id
+       AND e.status IN ('ACTIVE', 'QUEUED')
+       AND (
+         (COALESCE(h.created_at, r.started_at) >= src.confirmed_at
+           AND (COALESCE(h.created_at, r.started_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+               BETWEEN $2::date AND $3::date)
+         OR (e.starts_on IS NOT NULL AND e.starts_on BETWEEN $2::date AND $3::date
+             AND COALESCE(h.created_at, r.started_at) >= src.confirmed_at)
+       )
+     LIMIT 1`,
+    [payment.id, coverage.covered_start, coverage.covered_end],
+  );
+  if (coachDep.rows.length) {
+    return {
+      allowed: false,
+      code: 'PAYMENT_HAS_COACH_DEPENDENCY',
+      message: 'Không thể đảo giao dịch vì đã phát sinh suất giữ hoặc gói Coach phụ thuộc gói Gym này',
+    };
+  }
+
+  // Allowed if same VN business day OR zero gym_visits usage in this payment's covered segment
+  if (!coverage.same_vn_day) {
+    const usage = await client.query(
+      `SELECT 1 FROM gym_visits v
+       JOIN payments p1 ON p1.id = $1
+       WHERE v.member_id = p1.member_id
+         AND v.checked_in_at >= p1.confirmed_at
+         AND v.visit_day BETWEEN $2::date AND $3::date
+       LIMIT 1`,
+      [payment.id, coverage.covered_start, coverage.covered_end],
+    );
+    if (usage.rows.length) {
+      return {
+        allowed: false,
+        code: 'PAYMENT_ADJUSTMENT_WINDOW_EXPIRED',
+        message: 'Giao dịch đã qua ngày làm việc Việt Nam và đã phát sinh lượt sử dụng nên không thể đảo',
+      };
+    }
+  }
+
+  return { allowed: true, code: null, message: null, coverage };
 }
 
 async function currentActor(client, user, role) {
@@ -146,6 +352,28 @@ async function resumeCoachRelationship(client, memberId) {
     `UPDATE coach_relationships SET status = 'ACTIVE', paused_at = NULL,
      pause_reason = NULL WHERE member_id = $1 AND status = 'PAUSED'
      AND pause_reason = 'MEMBERSHIP_EXPIRED'`, [memberId],
+  );
+  // T2 §2 D1 edge case: if Member renews Gym while under COACH_LOCKED with un-frozen entitlement, start freeze now.
+  await client.query(
+    `WITH newly_frozen AS (
+       UPDATE coach_entitlements e
+       SET frozen_at = statement_timestamp()
+       FROM coach_relationships r
+       JOIN coach_lock_incidents i ON i.relationship_id = r.id AND i.status = 'OPEN'
+       WHERE e.relationship_id = r.id
+         AND r.member_id = $1
+         AND r.status = 'PAUSED'
+         AND r.pause_reason = 'COACH_LOCKED'
+         AND e.status = 'ACTIVE'
+         AND e.frozen_at IS NULL
+         AND i.frozen_started_at IS NULL
+       RETURNING i.id AS incident_id, e.frozen_at
+     )
+     UPDATE coach_lock_incidents i
+     SET frozen_started_at = nf.frozen_at
+     FROM newly_frozen nf
+     WHERE i.id = nf.incident_id AND i.frozen_started_at IS NULL`,
+    [memberId],
   );
 }
 
@@ -825,24 +1053,471 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
 
   router.get('/admin/payments', async (request, response) => {
     if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
+    const parsed = z.strictObject({
+      status: z.enum(['PENDING', 'SUCCESS', 'FAILED', 'CANCELLED']).optional(),
+      method: z.enum(['FRONT_DESK', 'MOCK_QR', 'VNPAY', 'MOMO', 'ZALOPAY']).optional(),
+      memberId: uuid.optional(),
+      search: z.string().trim().max(120).optional(),
+      from: z.iso.date().optional(),
+      to: z.iso.date().optional(),
+      adjusted: z.enum(['true', 'false']).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      pageSize: z.coerce.number().int().min(1).max(100).default(20),
+    }).safeParse(request.query);
+    if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Bộ lọc giao dịch không hợp lệ');
+    const { status, method, memberId, search, from, to, adjusted, page, pageSize } = parsed.data;
+    if (from && to && from > to) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Khoảng ngày lọc không hợp lệ');
+    }
+    const filters = [];
+    const values = [];
+    if (status) {
+      values.push(status);
+      filters.push(`p.status = $${values.length}`);
+    }
+    if (method) {
+      values.push(method);
+      filters.push(`p.method = $${values.length}`);
+    }
+    if (memberId) {
+      values.push(memberId);
+      filters.push(`p.member_id = $${values.length}`);
+    }
+    if (from) {
+      values.push(from);
+      filters.push(`COALESCE(p.confirmed_at, p.created_at) >= ($${values.length}::date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')`);
+    }
+    if (to) {
+      values.push(to);
+      filters.push(`COALESCE(p.confirmed_at, p.created_at) < (($${values.length}::date + 1)::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')`);
+    }
+    if (adjusted === 'true') {
+      filters.push('pa.id IS NOT NULL');
+    } else if (adjusted === 'false') {
+      filters.push('pa.id IS NULL');
+    }
+    if (search) {
+      values.push(`%${escapeLike(search)}%`);
+      const param = `$${values.length}`;
+      filters.push(
+        `(p.transaction_code ILIKE ${param} ESCAPE '\\' OR u.full_name ILIKE ${param} ESCAPE '\\' OR u.email::text ILIKE ${param} ESCAPE '\\' OR p.plan_name_snapshot ILIKE ${param} ESCAPE '\\')`,
+      );
+    }
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
     try {
-      const result = await database.query('SELECT * FROM payments ORDER BY created_at DESC, id DESC');
-      return response.json({ data: result.rows.map(publicPayment) });
+      const [{ rows: [{ today_vn: todayVn }] }, totalRes, rowsRes] = await Promise.all([
+        database.query(`SELECT (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS today_vn`),
+        database.query(
+          `SELECT count(*)::int AS count
+           FROM payments p
+           JOIN users u ON u.id = p.member_id
+           LEFT JOIN payment_adjustments pa ON pa.payment_id = p.id
+           ${whereClause}`,
+          values,
+        ),
+        database.query(
+          `SELECT p.*,
+                  u.full_name AS member_name,
+                  u.email::text AS member_email,
+                  pa.id AS adj_id,
+                  pa.adjustment_type AS adj_type,
+                  pa.reversed_amount AS adj_reversed_amount,
+                  pa.affected_membership_id AS adj_affected_membership_id,
+                  pa.previous_membership_status AS adj_previous_membership_status,
+                  pa.previous_end_date::text AS adj_previous_end_date,
+                  pa.restored_end_date::text AS adj_restored_end_date,
+                  pa.reason AS adj_reason,
+                  pa.created_by AS adj_created_by,
+                  adj_u.full_name AS adj_created_by_name,
+                  pa.created_at AS adj_created_at,
+                  m.id AS linked_membership_id,
+                  m.start_date::text AS linked_membership_start_date,
+                  m.end_date::text AS linked_membership_end_date,
+                  m.status AS linked_membership_status
+           FROM payments p
+           JOIN users u ON u.id = p.member_id
+           LEFT JOIN payment_adjustments pa ON pa.payment_id = p.id
+           LEFT JOIN users adj_u ON adj_u.id = pa.created_by
+           LEFT JOIN member_memberships m
+             ON (p.renewed_membership_id IS NULL AND m.source_payment_id = p.id)
+             OR (p.renewed_membership_id IS NOT NULL AND m.id = p.renewed_membership_id)
+           ${whereClause}
+           ORDER BY p.created_at DESC, p.id DESC
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
+      const data = [];
+      for (const row of rowsRes.rows) {
+        const linkedMembership = row.linked_membership_id
+          ? {
+              id: row.linked_membership_id,
+              start_date: row.linked_membership_start_date,
+              end_date: row.linked_membership_end_date,
+              status: row.linked_membership_status,
+            }
+          : null;
+        const eligibility = await evaluateVoidReversal(database, row, linkedMembership, todayVn);
+        data.push(adminPaymentView(row, eligibility));
+      }
+      const totalItems = totalRes.rows[0].count;
+      return response.json({
+        data,
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages: Math.ceil(totalItems / pageSize),
+        },
+      });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được giao dịch'); }
+  });
+
+  router.get('/admin/payments/:paymentId', async (request, response) => {
+    if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
+    if (!uuid.safeParse(request.params.paymentId).success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Mã giao dịch không hợp lệ');
+    }
+    try {
+      const [{ rows: [{ today_vn: todayVn }] }, { rows: [row] }] = await Promise.all([
+        database.query(`SELECT (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS today_vn`),
+        database.query(
+          `SELECT p.*,
+                  u.full_name AS member_name,
+                  u.email::text AS member_email,
+                  pa.id AS adj_id,
+                  pa.adjustment_type AS adj_type,
+                  pa.reversed_amount AS adj_reversed_amount,
+                  pa.affected_membership_id AS adj_affected_membership_id,
+                  pa.previous_membership_status AS adj_previous_membership_status,
+                  pa.previous_end_date::text AS adj_previous_end_date,
+                  pa.restored_end_date::text AS adj_restored_end_date,
+                  pa.reason AS adj_reason,
+                  pa.created_by AS adj_created_by,
+                  adj_u.full_name AS adj_created_by_name,
+                  pa.created_at AS adj_created_at,
+                  m.id AS linked_membership_id,
+                  m.plan_id AS linked_membership_plan_id,
+                  m.source_payment_id AS linked_membership_source_payment_id,
+                  m.start_date::text AS linked_membership_start_date,
+                  m.end_date::text AS linked_membership_end_date,
+                  m.status AS linked_membership_status,
+                  m.activated_at AS linked_membership_activated_at,
+                  m.expired_at AS linked_membership_expired_at,
+                  orig.plan_name_snapshot AS linked_membership_plan_name
+           FROM payments p
+           JOIN users u ON u.id = p.member_id
+           LEFT JOIN payment_adjustments pa ON pa.payment_id = p.id
+           LEFT JOIN users adj_u ON adj_u.id = pa.created_by
+           LEFT JOIN member_memberships m
+             ON (p.renewed_membership_id IS NULL AND m.source_payment_id = p.id)
+             OR (p.renewed_membership_id IS NOT NULL AND m.id = p.renewed_membership_id)
+           LEFT JOIN payments orig ON orig.id = m.source_payment_id
+           WHERE p.id = $1`,
+          [request.params.paymentId],
+        ),
+      ]);
+      if (!row) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giao dịch');
+      const linkedMembership = row.linked_membership_id
+        ? {
+            id: row.linked_membership_id,
+            member_id: row.member_id,
+            plan_id: row.linked_membership_plan_id,
+            source_payment_id: row.linked_membership_source_payment_id,
+            start_date: row.linked_membership_start_date,
+            end_date: row.linked_membership_end_date,
+            status: row.linked_membership_status,
+            activated_at: row.linked_membership_activated_at,
+            expired_at: row.linked_membership_expired_at,
+            plan_name_snapshot: row.linked_membership_plan_name,
+          }
+        : null;
+      const eligibility = await evaluateVoidReversal(database, row, linkedMembership, todayVn);
+      return response.json({
+        data: {
+          ...adminPaymentView(row, eligibility),
+          membership: linkedMembership ? publicMembership(linkedMembership) : null,
+        },
+      });
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được chi tiết giao dịch');
+    }
+  });
+
+  router.post('/admin/payments/:paymentId/void-reversal', async (request, response) => {
+    if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
+    if (!uuid.safeParse(request.params.paymentId).success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Mã giao dịch không hợp lệ');
+    }
+    const keyParsed = uuid.safeParse(request.get('idempotency-key'));
+    const parsed = z.strictObject({
+      reason: z.string().trim().min(1).max(500),
+    }).safeParse(request.body);
+    if (!keyParsed.success || !parsed.success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Lý do hoặc Idempotency-Key (UUID) không hợp lệ');
+    }
+    const idempotencyKey = keyParsed.data;
+    const { reason } = parsed.data;
+    const paymentId = request.params.paymentId;
+    const requestHash = createHash('sha256')
+      .update(JSON.stringify({ paymentId, reason }))
+      .digest('hex');
+
+    const client = await database.connect().catch(() => null);
+    if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
+    try {
+      await client.query('BEGIN');
+      await client.query(`SELECT pg_advisory_xact_lock(hashtext('meta-gym-membership-lifecycle'))`);
+      const admin = await client.query(
+        `SELECT id FROM users WHERE id = $1 AND role = 'ADMIN' AND status = 'ACTIVE'
+         AND session_version = $2 FOR SHARE`,
+        [request.authUser.id, request.authUser.session_version],
+      );
+      if (admin.rows.length !== 1) {
+        await client.query('ROLLBACK');
+        return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
+      }
+
+      // Check idempotency key first
+      const priorAdjRes = await client.query(
+        `SELECT pa.*,
+                pa.previous_end_date::text AS previous_end_date,
+                pa.restored_end_date::text AS restored_end_date,
+                m.status AS current_membership_status
+         FROM payment_adjustments pa
+         JOIN member_memberships m ON m.id = pa.affected_membership_id
+         WHERE pa.created_by = $1 AND pa.idempotency_key = $2
+         FOR UPDATE OF pa`,
+        [request.authUser.id, idempotencyKey],
+      );
+      if (priorAdjRes.rows.length) {
+        const prior = priorAdjRes.rows[0];
+        if (prior.request_hash !== requestHash || prior.payment_id !== paymentId) {
+          await client.query('ROLLBACK');
+          return fail(response, 409, 'IDEMPOTENCY_KEY_CONFLICT', 'Idempotency-Key đã được sử dụng với nội dung khác');
+        }
+        const payment = await paymentById(client, prior.payment_id);
+        await client.query('COMMIT');
+        return response.status(200).json({
+          data: {
+            adjustment: adjustmentView(prior),
+            payment: {
+              id: payment.id,
+              status: payment.status,
+              amount: Number(payment.amount),
+            },
+          },
+        });
+      }
+
+      const lookup = await client.query('SELECT member_id FROM payments WHERE id = $1', [paymentId]);
+      if (!lookup.rows.length) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giao dịch');
+      }
+
+      // Canonical lock order: users -> payments -> member_memberships
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [lookup.rows[0].member_id]);
+      const payment = await paymentById(client, paymentId, true);
+      if (!payment) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giao dịch');
+      }
+
+      const membershipRes = await client.query(
+        `SELECT id, member_id, plan_id, source_payment_id,
+                start_date::text, end_date::text, status, activated_at, expired_at
+         FROM member_memberships
+         WHERE CASE WHEN $2::uuid IS NULL THEN source_payment_id = $1 ELSE id = $2 END
+         FOR UPDATE`,
+        [payment.id, payment.renewed_membership_id ?? null],
+      );
+      const membership = membershipRes.rows[0] ?? null;
+      const { rows: [{ today_vn: todayVn }] } = await client.query(
+        `SELECT (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS today_vn`,
+      );
+
+      const eligibility = await evaluateVoidReversal(client, payment, membership, todayVn);
+      if (!eligibility.allowed) {
+        await client.query('ROLLBACK');
+        return fail(response, 409, eligibility.code, eligibility.message);
+      }
+
+      // Apply D6 reversal to member_memberships WITHOUT ever mutating payments!
+      let newMembershipStatus;
+      let restoredEndDate = null;
+      if (!payment.renewed_membership_id) {
+        newMembershipStatus = 'CANCELLED';
+        await client.query(
+          `UPDATE member_memberships
+           SET status = 'CANCELLED', expired_at = NULL
+           WHERE id = $1`,
+          [membership.id],
+        );
+      } else {
+        const { rows: [calc] } = await client.query(
+          `SELECT ($1::date - $2::int)::text AS restored_end_date,
+                  (($1::date - $2::int) < $3::date) AS became_expired`,
+          [membership.end_date, payment.duration_days_snapshot, todayVn],
+        );
+        restoredEndDate = calc.restored_end_date;
+        if (calc.became_expired) {
+          newMembershipStatus = 'EXPIRED';
+          await client.query(
+            `UPDATE member_memberships
+             SET end_date = $2::date,
+                 status = 'EXPIRED',
+                 activated_at = COALESCE(activated_at, start_date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh'),
+                 expired_at = statement_timestamp()
+             WHERE id = $1`,
+            [membership.id, restoredEndDate],
+          );
+        } else {
+          newMembershipStatus = membership.status;
+          await client.query(
+            `UPDATE member_memberships
+             SET end_date = $2::date
+             WHERE id = $1`,
+            [membership.id, restoredEndDate],
+          );
+        }
+      }
+
+      const adjustmentId = randomUUID();
+      const { rows: [createdAdj] } = await client.query(
+        `INSERT INTO payment_adjustments (
+           id, payment_id, member_id, affected_membership_id,
+           adjustment_type, reversed_amount,
+           previous_membership_status, previous_end_date, restored_end_date,
+           reason, idempotency_key, request_hash, created_by
+         ) VALUES (
+           $1, $2, $3, $4, 'VOID_REVERSAL', $5, $6, $7::date, $8::date, $9, $10, $11, $12
+         )
+         RETURNING *, previous_end_date::text AS previous_end_date,
+                      restored_end_date::text AS restored_end_date`,
+        [
+          adjustmentId,
+          payment.id,
+          payment.member_id,
+          membership.id,
+          payment.amount,
+          membership.status,
+          membership.end_date,
+          restoredEndDate,
+          reason,
+          idempotencyKey,
+          requestHash,
+          request.authUser.id,
+        ],
+      );
+
+      await client.query(
+        `INSERT INTO admin_audit_logs
+         (id, admin_id, action, entity_type, entity_id, summary, metadata)
+         VALUES ($1, $2, 'PAYMENT_VOID_REVERSED', 'PAYMENT', $3, $4, $5)`,
+        [
+          randomUUID(),
+          request.authUser.id,
+          payment.id,
+          `Đảo giao dịch tại quầy (VOID_REVERSAL): ${payment.transaction_code}`,
+          JSON.stringify({
+            adjustmentId,
+            paymentId: payment.id,
+            memberId: payment.member_id,
+            affectedMembershipId: membership.id,
+            reversedAmount: Number(payment.amount),
+            previousMembershipStatus: membership.status,
+            newMembershipStatus,
+            previousEndDate: membership.end_date,
+            restoredEndDate,
+            reason,
+          }),
+        ],
+      );
+
+      await client.query('COMMIT');
+      return response.status(201).json({
+        data: {
+          adjustment: adjustmentView(createdAdj, newMembershipStatus),
+          payment: {
+            id: payment.id,
+            status: payment.status,
+            amount: Number(payment.amount),
+          },
+        },
+      });
+    } catch {
+      await client.query('ROLLBACK').catch(() => {});
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không thể đảo giao dịch tại quầy');
+    } finally { client.release(); }
   });
 
   router.get('/admin/memberships', async (request, response) => {
     if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
-    try {
-      const result = await database.query(
-        `SELECT id, member_id, plan_id, source_payment_id,
-                start_date::text, end_date::text, status
-         FROM member_memberships
-         WHERE NOT EXISTS (SELECT 1 FROM payments WHERE id = source_payment_id
-                           AND renewed_membership_id IS NOT NULL)
-         ORDER BY start_date DESC, id DESC`,
+    const parsed = z.strictObject({
+      status: z.enum(['SCHEDULED', 'ACTIVE', 'EXPIRED', 'CANCELLED']).optional(),
+      memberId: uuid.optional(),
+      search: z.string().trim().max(120).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      pageSize: z.coerce.number().int().min(1).max(100).default(20),
+    }).safeParse(request.query);
+    if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Bộ lọc không hợp lệ');
+    const { status, memberId, search, page, pageSize } = parsed.data;
+    const filters = [
+      'p.renewed_membership_id IS NULL',
+    ];
+    const values = [];
+    if (status) {
+      values.push(status);
+      filters.push(`m.status = $${values.length}`);
+    }
+    if (memberId) {
+      values.push(memberId);
+      filters.push(`m.member_id = $${values.length}`);
+    }
+    if (search) {
+      const escaped = search.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      values.push(`%${escaped}%`);
+      const param = `$${values.length}`;
+      filters.push(
+        `(u.full_name ILIKE ${param} ESCAPE '\\' OR u.email::text ILIKE ${param} ESCAPE '\\' OR p.plan_name_snapshot ILIKE ${param} ESCAPE '\\')`,
       );
-      return response.json({ data: result.rows.map(publicMembership) });
+    }
+    const whereClause = `WHERE ${filters.join(' AND ')}`;
+    try {
+      const [totalRes, result] = await Promise.all([
+        database.query(
+          `SELECT count(*)::int AS count
+           FROM member_memberships m
+           JOIN users u ON u.id = m.member_id
+           JOIN payments p ON p.id = m.source_payment_id
+           ${whereClause}`,
+          values,
+        ),
+        database.query(
+          `SELECT m.id, m.member_id, u.full_name AS member_name, u.email::text AS member_email,
+                  m.plan_id, m.source_payment_id, p.plan_name_snapshot,
+                  m.start_date::text, m.end_date::text, m.status,
+                  m.activated_at, m.expired_at
+           FROM member_memberships m
+           JOIN users u ON u.id = m.member_id
+           JOIN payments p ON p.id = m.source_payment_id
+           ${whereClause}
+           ORDER BY m.start_date DESC, m.id DESC
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
+      const totalItems = totalRes.rows[0].count;
+      return response.json({
+        data: result.rows.map(publicMembership),
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages: Math.ceil(totalItems / pageSize),
+        },
+      });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được gói tập'); }
   });
 

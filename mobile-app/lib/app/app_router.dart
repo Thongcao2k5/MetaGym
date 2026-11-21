@@ -10,7 +10,6 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
@@ -19,16 +18,13 @@ import 'package:meta_gym_app/features/membership/presentation/membership_page.da
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/calls/presentation/calls_page.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
-import 'package:meta_gym_app/features/profile/presentation/change_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/forgot_password_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart';
-import 'package:meta_gym_app/features/public/presentation/welcome_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_progress_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
@@ -40,13 +36,11 @@ import 'package:meta_gym_app/features/workbench/flow_workbench_page.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 
 abstract final class AppRoutes {
-  static const welcome = '/';
   static const loading = '/loading';
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
   static const profile = '/profile';
-  static const changePassword = '/profile/change-password';
   static const memberHome = '/member';
   static const membership = '/member/features/membership';
   static const coachHome = '/coach';
@@ -58,7 +52,7 @@ abstract final class AppRoutes {
 GoRouter createAppRouter({
   required SessionController sessionController,
   GlobalKey<NavigatorState>? navigatorKey,
-  String initialLocation = AppRoutes.welcome,
+  String initialLocation = AppRoutes.login,
 }) {
   String? pendingPaymentReturn;
   final paymentIdPattern = RegExp(
@@ -90,14 +84,13 @@ GoRouter createAppRouter({
       }
       if (sessionController.status == SessionStatus.unauthenticated) {
         const publicRoutes = {
-          AppRoutes.welcome,
           AppRoutes.login,
           AppRoutes.register,
           AppRoutes.forgotPassword,
         };
         return publicRoutes.contains(state.matchedLocation)
             ? null
-            : AppRoutes.welcome;
+            : AppRoutes.login;
       }
 
       final home = _homeForRole(sessionController.user!.role);
@@ -108,10 +101,7 @@ GoRouter createAppRouter({
           state.uri.toString() != returnLocation) {
         return returnLocation;
       }
-      const sharedProtectedRoutes = {
-        AppRoutes.profile,
-        AppRoutes.changePassword,
-      };
+      const sharedProtectedRoutes = {AppRoutes.profile};
       if (state.matchedLocation == home ||
           (home == AppRoutes.memberHome &&
               memberDestinations.any(
@@ -127,7 +117,8 @@ GoRouter createAppRouter({
           (FlowWorkbenchConfig.enabled &&
               home == AppRoutes.coachHome &&
               state.matchedLocation == AppRoutes.coachWorkbench) ||
-          sharedProtectedRoutes.contains(state.matchedLocation)) {
+          (home != AppRoutes.adminHome &&
+              sharedProtectedRoutes.contains(state.matchedLocation))) {
         return null;
       }
       return home;
@@ -138,13 +129,6 @@ GoRouter createAppRouter({
         pageBuilder: (context, state) => _smoothAuthTransitionPage(
           key: state.pageKey,
           child: const AppLoadingPage(),
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.welcome,
-        pageBuilder: (context, state) => _smoothAuthTransitionPage(
-          key: state.pageKey,
-          child: const WelcomePage(),
         ),
       ),
       GoRoute(
@@ -163,7 +147,10 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
-        builder: (context, state) => const ForgotPasswordPage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const ForgotPasswordPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.profile,
@@ -174,26 +161,16 @@ GoRouter createAppRouter({
         ),
       ),
       GoRoute(
-        path: AppRoutes.changePassword,
-        pageBuilder: (context, state) => _featureTransitionPage(
-          key: state.pageKey,
-          context: context,
-          child: const ChangePasswordPage(),
-        ),
-      ),
-      GoRoute(
         path: AppRoutes.memberHome,
-        pageBuilder: (context, state) => _featureTransitionPage(
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
           key: state.pageKey,
-          context: context,
           child: const MemberHomePage(),
         ),
       ),
       GoRoute(
         path: AppRoutes.coachHome,
-        pageBuilder: (context, state) => _featureTransitionPage(
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
           key: state.pageKey,
-          context: context,
           child: const CoachHomePage(),
         ),
       ),
@@ -232,8 +209,6 @@ GoRouter createAppRouter({
                 ? const MemberProgressPage()
                 : destination.path == '/member/features/workouts'
                 ? const MemberJournalPage()
-                : destination.path == '/member/features/meals'
-                ? const MemberMealPage()
                 : destination.path == '/member/features/measurements'
                 ? const MemberMeasurementPage()
                 : destination.path == '/member/features/photos'
@@ -255,8 +230,6 @@ GoRouter createAppRouter({
             context: context,
             child: destination.path == '/coach/features/gym'
                 ? const GymEquipmentPage()
-                : destination.path == '/coach/features/requests'
-                ? CoachRequestsPage(coachId: sessionController.user!.id)
                 : destination.path == '/coach/features/members'
                 ? const CoachMembersPage()
                 : destination.path == '/coach/features/training'
@@ -290,7 +263,10 @@ GoRouter createAppRouter({
       ),
       GoRoute(
         path: AppRoutes.adminHome,
-        builder: (context, state) => const AdminHomePage(),
+        pageBuilder: (context, state) => _smoothAuthTransitionPage(
+          key: state.pageKey,
+          child: const AdminHomePage(),
+        ),
       ),
     ],
     errorBuilder: (context, state) =>
@@ -310,22 +286,38 @@ CustomTransitionPage<void> _smoothAuthTransitionPage({
 }) {
   return CustomTransitionPage<void>(
     key: key,
-    transitionDuration: const Duration(milliseconds: 380),
-    reverseTransitionDuration: const Duration(milliseconds: 280),
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 240),
     child: child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
+      if (MediaQuery.disableAnimationsOf(context)) {
+        return child;
+      }
+      final incoming = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,
       );
+      final outgoing = CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeInCubic,
+      );
       return FadeTransition(
-        opacity: curved,
+        opacity: incoming,
         child: SlideTransition(
           position: Tween<Offset>(
             begin: const Offset(0, 0.03),
             end: Offset.zero,
-          ).animate(curved),
-          child: child,
+          ).animate(incoming),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.985, end: 1.0).animate(incoming),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 1.0, end: 0.0).animate(outgoing),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 1.0, end: 0.97).animate(outgoing),
+                child: child,
+              ),
+            ),
+          ),
         ),
       );
     },

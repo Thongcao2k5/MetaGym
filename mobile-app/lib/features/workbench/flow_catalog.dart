@@ -59,15 +59,6 @@ const memberFlows = <FlowGroup>[
       '/workout-logs/:logId',
       sampleBody: _empty,
     ),
-    FlowAction('Nhật ký ăn', 'GET', '/meal-logs'),
-    FlowAction(
-      'Ghi bữa ăn',
-      'POST',
-      '/meal-logs',
-      sampleBody:
-          '{"eatenAt":"2026-10-23T12:00:00+07:00","mealName":"Bữa trưa"}',
-    ),
-    FlowAction('Sửa bữa ăn', 'PATCH', '/meal-logs/:logId', sampleBody: _empty),
     FlowAction('Lịch sử số đo', 'GET', '/body-measurements'),
     FlowAction(
       'Thêm số đo',
@@ -264,7 +255,6 @@ const coachFlows = <FlowGroup>[
       '/coach/members/:memberId/progress/summary',
     ),
     FlowAction('Nhật ký tập', 'GET', '/coach/members/:memberId/workout-logs'),
-    FlowAction('Nhật ký ăn', 'GET', '/coach/members/:memberId/meal-logs'),
     FlowAction('Số đo', 'GET', '/coach/members/:memberId/body-measurements'),
     FlowAction(
       'Ảnh tiến trình',

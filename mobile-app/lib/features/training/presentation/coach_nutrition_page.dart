@@ -81,6 +81,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -277,6 +278,7 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),

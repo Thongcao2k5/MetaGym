@@ -31,6 +31,7 @@ class SessionController extends ChangeNotifier {
   bool _rememberMe = true;
   String? _rememberedEmail;
   Future<void>? _expiryOperation;
+  Completer<void>? _splashGate;
 
   SessionStatus get status => _status;
   AuthUser? get user => _user;
@@ -38,10 +39,31 @@ class SessionController extends ChangeNotifier {
   bool get rememberMe => _rememberMe;
   String? get rememberedEmail => _rememberedEmail;
 
+  /// Được gọi bởi `AppLoadingPage` ngay khi toàn bộ animation Splash đã chạy xong 100%.
+  void completeSplashGate() {
+    final gate = _splashGate;
+    if (gate != null && !gate.isCompleted) {
+      gate.complete();
+    }
+  }
+
   Future<void> restore() async {
-    final minimumSplash = MetaGymTheme.isFlutterTestEnvironment
-        ? Future<void>.value()
-        : Future<void>.delayed(const Duration(milliseconds: 2200));
+    if (_status != SessionStatus.restoring) {
+      _status = SessionStatus.restoring;
+      notifyListeners();
+    }
+
+    final Future<void> minimumSplash;
+    if (MetaGymTheme.isFlutterTestEnvironment) {
+      minimumSplash = Future<void>.value();
+    } else {
+      final gate = Completer<void>();
+      _splashGate = gate;
+      minimumSplash = gate.future.timeout(
+        const Duration(milliseconds: 9500),
+        onTimeout: () {},
+      );
+    }
 
     await Future.wait([_restoreInternal(), minimumSplash]);
 

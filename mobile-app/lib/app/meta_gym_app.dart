@@ -12,7 +12,6 @@ import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
-import 'package:meta_gym_app/features/catalog/presentation/catalog_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
@@ -33,7 +32,6 @@ import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart'
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
-import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
@@ -64,7 +62,6 @@ class MetaGymApp extends StatefulWidget {
     this.memberProgressService,
     this.memberWorkoutService,
     this.memberJournalService,
-    this.memberMealService,
     this.memberMeasurementService,
     this.memberPhotoService,
     this.messagingService,
@@ -91,7 +88,6 @@ class MetaGymApp extends StatefulWidget {
   final MemberProgressService? memberProgressService;
   final MemberWorkoutService? memberWorkoutService;
   final MemberJournalService? memberJournalService;
-  final MemberMealService? memberMealService;
   final MemberMeasurementService? memberMeasurementService;
   final MemberPhotoService? memberPhotoService;
   final MessagingService? messagingService;
@@ -111,7 +107,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final ProfileController _profileController;
   late final PasswordResetController _passwordResetController;
   late final CatalogService _catalogService;
-  late final CatalogController _catalogController;
   late final MembershipService _membershipService;
   late final MembershipController _membershipController;
   late final CoachSelectionService _coachSelectionService;
@@ -127,7 +122,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final MemberProgressService _memberProgressService;
   late final MemberWorkoutService _memberWorkoutService;
   late final MemberJournalService _memberJournalService;
-  late final MemberMealService _memberMealService;
   late final MemberMeasurementService _memberMeasurementService;
   late final MemberPhotoService _memberPhotoService;
   late final MessagingService _messagingService;
@@ -169,7 +163,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileController = ProfileController(_profileService, _sessionController);
     _passwordResetController = PasswordResetController(_profileService);
     _catalogService = widget.catalogService ?? CatalogApi(_apiClient);
-    _catalogController = CatalogController(_catalogService);
     _membershipService = widget.membershipService ?? MembershipApi(_apiClient);
     _membershipController = MembershipController(
       _membershipService,
@@ -201,7 +194,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
         widget.memberWorkoutService ?? MemberWorkoutApi(_apiClient);
     _memberJournalService =
         widget.memberJournalService ?? MemberJournalApi(_apiClient);
-    _memberMealService = widget.memberMealService ?? MemberMealApi(_apiClient);
     _memberMeasurementService =
         widget.memberMeasurementService ?? MemberMeasurementApi(_apiClient);
     _memberPhotoService =
@@ -226,7 +218,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _authController.dispose();
     _profileController.dispose();
     _passwordResetController.dispose();
-    _catalogController.dispose();
     _membershipController.dispose();
     super.dispose();
   }
@@ -247,9 +238,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
           value: _passwordResetController,
         ),
         Provider<CatalogService>.value(value: _catalogService),
-        ChangeNotifierProvider<CatalogController>.value(
-          value: _catalogController,
-        ),
         Provider<MembershipService>.value(value: _membershipService),
         Provider<CoachSelectionService>.value(value: _coachSelectionService),
         Provider<CoachRequestsService>.value(value: _coachRequestsService),
@@ -264,7 +252,6 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<MemberProgressService>.value(value: _memberProgressService),
         Provider<MemberWorkoutService>.value(value: _memberWorkoutService),
         Provider<MemberJournalService>.value(value: _memberJournalService),
-        Provider<MemberMealService>.value(value: _memberMealService),
         Provider<MemberMeasurementService>.value(
           value: _memberMeasurementService,
         ),
@@ -282,7 +269,9 @@ class _MetaGymAppState extends State<MetaGymApp> {
       child: MaterialApp.router(
         title: 'Meta Gym',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
+        theme: AppTheme.dark,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.dark,
         routerConfig: _router,
         builder: (context, child) {
           final api = _callsService;

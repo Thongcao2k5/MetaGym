@@ -1,0 +1,260 @@
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+import { createDomEnvironment, flush, jsonResponse } from './helpers/dom-harness.js';
+import { api, clearSession, setCurrentUser, setToken } from '../src/services/api.js';
+import { buildHash, parseHash } from '../src/state/router.js';
+import { renderShell } from '../src/components/layout.js';
+import { closeModal, openConfirmModal } from '../src/components/modal.js';
+import { closeDrawer, openDrawer } from '../src/components/drawer.js';
+import { renderLoginPage } from '../src/pages/login.js';
+import { renderDashboardPage } from '../src/pages/dashboard.js';
+import { renderAuditLogsPage } from '../src/pages/audit-logs.js';
+
+function collectJsFiles(dir) {
+  const files = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) files.push(...collectJsFiles(full));
+    else if (full.endsWith('.js')) files.push(full);
+  }
+  return files;
+}
+
+test('T8 Static Gate: ZERO native confirm()/prompt()/alert() and ZERO backdrop-filter blur on data surfaces', () => {
+  const srcDir = fileURLToPath(new URL('../src', import.meta.url));
+  const jsFiles = collectJsFiles(srcDir);
+  assert.ok(jsFiles.length >= 12, 'Modular ESM architecture should split src into >= 12 files');
+
+  for (const file of jsFiles) {
+    const raw = readFileSync(file, 'utf8');
+    const codeOnly = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    assert.equal(/\b(?:window\.)?(?:confirm|prompt|alert)\s*\(/.test(codeOnly), false, `Forbidden native dialog in ${file}`);
+  }
+
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.equal(/backdrop-filter\s*:\s*blur/i.test(css), false, 'style.css must not use backdrop-filter blur on Admin surfaces');
+  assert.equal(css.includes('#0F1115'), true, 'Must include Dark Graphite canvas #0F1115');
+  assert.equal(css.includes('#181B22'), true, 'Must include Solid Card #181B22');
+  assert.equal(css.includes('#FF5E36'), true, 'Must include Coral Orange #FF5E36');
+  assert.equal(css.includes('Be Vietnam Pro'), true, 'Must use Be Vietnam Pro font');
+  assert.equal(css.includes('tabular-nums'), true, 'Must include tabular-nums');
+  assert.equal(css.includes('@media print'), true, 'Must preserve @media print for Counter QR');
+
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.equal(html.includes('data-bs-theme="dark"'), true, 'index.html must default to Dark Graphite Operate Mode');
+  assert.equal(html.includes('Be+Vietnam+Pro'), true, 'index.html must load Be Vietnam Pro');
+});
+
+test('T8 Router preserves query params and resolves route aliases cleanly', () => {
+  const parsed = parseHash('#/admin/gym-plans?tab=entitlements&status=ACTIVE&page=2');
+  assert.equal(parsed.section, 'plans');
+  assert.equal(parsed.params.get('tab'), 'entitlements');
+  assert.equal(parsed.params.get('status'), 'ACTIVE');
+  assert.equal(parsed.params.get('page'), '2');
+
+  const rebuilt = buildHash('accounts', { role: 'COACH', status: 'ACTIVE', search: 'Nam', page: 2 });
+  assert.equal(rebuilt, '#/admin/accounts?role=COACH&status=ACTIVE&search=Nam&page=2');
+});
+
+test('T8 401 session expired preserves returnUrl in sessionStorage and re-login navigates back', async () => {
+  const env = createDomEnvironment({
+    hash: '#/admin/payments?status=SUCCESS&page=2',
+    token: 'expired-token',
+  });
+  let unauthorizedReturn = null;
+  const { configureApi } = await import('../src/services/api.js');
+  configureApi({ onUnauthorized: (hash) => { unauthorizedReturn = hash; } });
+
+  globalThis.fetch = async (url, options = {}) => {
+    const path = new URL(url, 'http://localhost').pathname;
+    if (path === '/api/v1/admin/payments') {
+      return jsonResponse({ error: { code: 'UNAUTHORIZED', message: 'Phiên hết hạn' } }, 401);
+    }
+    if (path === '/api/v1/auth/sessions' && options.method === 'POST') {
+      return jsonResponse({
+        data: {
+          accessToken: 'fresh-token',
+          user: { id: 'adm-1', role: 'ADMIN', fullName: 'Admin One', email: 'admin@metagym.vn' },
+        },
+      });
+    }
+    throw new Error(`Unexpected ${path}`);
+  };
+
+  await assert.rejects(() => api('/admin/payments'), (err) => err.status === 401 && err.code === 'UNAUTHORIZED');
+  assert.equal(unauthorizedReturn, '#/admin/payments?status=SUCCESS&page=2');
+  assert.equal(env.sessionStorage.getItem('metagym_admin_return_url'), '#/admin/payments?status=SUCCESS&page=2');
+  assert.equal(env.sessionStorage.getItem('metagym_admin_session_expired'), '1');
+
+  let navigatedTarget = null;
+  renderLoginPage({
+    root: env.root,
+    params: new URLSearchParams(),
+    onLoginSuccess: async (target) => { navigatedTarget = target; },
+  });
+
+  assert.equal(env.root.innerHTML.includes('Phiên đăng nhập đã hết hạn'), true);
+  assert.equal(env.root.innerHTML.includes('#/admin/payments?status=SUCCESS&amp;page=2'), true);
+
+  env.root.querySelector('#login-email').value = 'admin@metagym.vn';
+  env.root.querySelector('#login-password').value = 'Admin123!';
+  env.root.querySelector('#login').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(navigatedTarget, '#/admin/payments?status=SUCCESS&page=2');
+  assert.equal(env.sessionStorage.getItem('metagym_admin_token'), 'fresh-token');
+  clearSession();
+});
+
+test('T8 Login preserves email on 401 error and rejects non-ADMIN accounts', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/login', token: null });
+  clearSession();
+
+  globalThis.fetch = async () => jsonResponse({
+    error: { code: 'INVALID_CREDENTIALS', message: 'Sai email hoặc mật khẩu' },
+  }, 401);
+
+  renderLoginPage({ root: env.root, params: new URLSearchParams(), onLoginSuccess: async () => {} });
+  env.root.querySelector('#login-email').value = 'admin@metagym.vn';
+  env.root.querySelector('#login-password').value = 'wrong';
+  env.root.querySelector('#login').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(env.root.querySelector('#login-email').value, 'admin@metagym.vn', 'Email must be preserved on error');
+  assert.equal(env.root.innerHTML.includes('Sai email hoặc mật khẩu'), true);
+});
+
+test('T8 Dashboard & Shell contain ZERO legacy PENDING Coach Request KPI and deep-link to real queues', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/dashboard', token: 'tok' });
+  setToken('tok');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Meta Admin', email: 'admin@metagym.vn' });
+
+  globalThis.fetch = async (url) => {
+    const path = new URL(url, 'http://localhost').pathname;
+    if (path === '/api/v1/admin/dashboard') {
+      return jsonResponse({
+        data: {
+          from: '2026-10-23',
+          to: '2026-11-21',
+          timezone: 'Asia/Ho_Chi_Minh',
+          members: { active: 142, disabled: 5 },
+          coaches: { active: 8, disabled: 1 },
+          activeMemberships: 96,
+          activeCoachRelationships: 38,
+          pausedCoachRelationships: { total: 3, membershipExpired: 1, coachLocked: 2, memberLocked: 0 },
+          actionQueue: { coachLockedWaitingCount: 2, coachLockedRefundRequestedCount: 1, disputedTerminationCount: 1 },
+          revenue: {
+            grossRevenue: 45000000,
+            totalSimulatedRefunds: 3783000,
+            netRevenue: 41217000,
+            byDay: [{ day: '2026-11-21', grossRevenue: 5000000, simulatedRefunds: 0, netRevenue: 5000000 }],
+          },
+        },
+      });
+    }
+    throw new Error(`Unexpected ${path}`);
+  };
+
+  await renderDashboardPage({
+    root: env.root,
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Meta Admin', email: 'admin@metagym.vn' }, ...opts }),
+    ChartCtor: class { destroy() {} },
+  });
+
+  const html = env.root.innerHTML;
+  assert.equal(html.includes('Yêu cầu chọn Coach'), false);
+  assert.equal(html.includes('pendingCoachRequests'), false);
+  assert.equal(html.includes('Doanh thu gộp (Gross)'), true);
+  assert.equal(html.includes('Hoàn tiền mô phỏng (D3)'), true);
+  assert.equal(html.includes('Doanh thu ròng (Net)'), true);
+  assert.equal(html.includes('COACH_LOCKED'), true);
+});
+
+test('T8 Custom modal preserves entered reason on API error and Escape closes modal/drawer', async () => {
+  const env = createDomEnvironment();
+  let calls = 0;
+
+  openConfirmModal({
+    title: 'Xác nhận thao tác rủi ro cao',
+    requireReason: true,
+    onConfirm: async () => {
+      calls += 1;
+      throw new Error('Lỗi xung đột 409');
+    },
+  });
+
+  const textarea = env.modalDialog.querySelector('#meta-confirm-reason');
+  const submit = env.modalDialog.querySelector('#meta-confirm-submit');
+  assert.equal(submit.disabled, true);
+
+  textarea.value = 'Lý do quan trọng cần giữ lại';
+  textarea.dispatchEvent({ type: 'input' });
+  assert.equal(submit.disabled, false);
+
+  env.modalDialog.querySelector('#meta-confirm-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(calls, 1);
+  assert.equal(env.modalOverlay.hidden, false, 'Modal remains open on error');
+  assert.equal(textarea.value, 'Lý do quan trọng cần giữ lại', 'Input text preserved on error');
+  assert.equal(env.modalDialog.innerHTML.includes('Lỗi xung đột 409'), true);
+
+  env.document.dispatchEvent({ type: 'keydown', key: 'Escape' });
+  assert.equal(env.modalOverlay.hidden, true, 'Escape closes modal');
+
+  openDrawer({ title: 'Drawer Test', bodyHtml: '<p>Chi tiết kỹ thuật</p>' });
+  assert.equal(env.drawerOverlay.hidden, false);
+  env.document.dispatchEvent({ type: 'keydown', key: 'Escape' });
+  assert.equal(env.drawerOverlay.hidden, true, 'Escape closes drawer');
+
+  closeModal();
+  closeDrawer();
+});
+
+test('T8 Audit Logs page loads GET /admin/audit-logs and displays technical UUID only in Detail Drawer', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/audit-logs', token: 'tok' });
+  setToken('tok');
+
+  globalThis.fetch = async (url) => {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.pathname === '/api/v1/admin/audit-logs') {
+      return jsonResponse({
+        data: [{
+          id: 'aud-uuid-9999',
+          adminId: 'adm-1',
+          adminName: 'Meta Gym Admin',
+          action: 'PAYMENT_VOID_REVERSED',
+          entityType: 'PAYMENT',
+          entityId: 'pay-uuid-8888',
+          summary: 'Đảo giao dịch tại quầy MG-001',
+          metadata: { reason: 'Nhập nhầm gói' },
+          createdAt: '2026-11-21T07:10:00.000Z',
+        }],
+        pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+      });
+    }
+    throw new Error(`Unexpected ${parsed.pathname}`);
+  };
+
+  await renderAuditLogsPage({
+    root: env.root,
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Meta Gym Admin' }, ...opts }),
+  });
+
+  const tableHtml = env.root.querySelector('table')?.innerHTML || '';
+  assert.equal(tableHtml.includes('Meta Gym Admin'), true);
+  assert.equal(tableHtml.includes('PAYMENT_VOID_REVERSED'), true);
+  assert.equal(tableHtml.includes('pay-uuid-8888'), false, 'List table must not show raw target UUID');
+
+  env.root.querySelector('.view-audit').click();
+  assert.equal(env.drawerOverlay.hidden, false);
+  assert.equal(env.drawerPanel.innerHTML.includes('aud-uuid-9999'), true);
+  assert.equal(env.drawerPanel.innerHTML.includes('pay-uuid-8888'), true);
+  assert.equal(env.drawerPanel.innerHTML.includes('Nhập nhầm gói'), true);
+});

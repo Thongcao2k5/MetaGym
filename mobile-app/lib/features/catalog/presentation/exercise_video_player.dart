@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -106,13 +107,8 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: const Color(0xFF181B22),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xFF665B52)),
-    ),
-    clipBehavior: Clip.antiAlias,
+  Widget build(BuildContext context) => MetaGymGlassCard(
+    padding: EdgeInsets.zero,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -126,6 +122,10 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
                     _error!,
                     action: TextButton.icon(
                       onPressed: () => setState(_openVideo),
+                      style: TextButton.styleFrom(
+                        foregroundColor: MetaGymTheme.brandOrange,
+                        minimumSize: const Size(48, 48),
+                      ),
                       icon: const Icon(Icons.refresh_rounded),
                       label: const Text('Thử lại'),
                     ),
@@ -204,6 +204,10 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
                 children: [
                   IconButton(
                     tooltip: value.isPlaying ? 'Tạm dừng' : 'Phát video',
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
                     onPressed: value.isPlaying
                         ? controller.pause
                         : controller.play,
@@ -240,13 +244,13 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
   }
 
   Widget _videoMessage(String text, {Widget? action}) => Container(
-    color: const Color(0xFF111318),
+    color: const Color(0xFF1C1816),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Icon(
           Icons.videocam_off_outlined,
-          color: Color(0xFF8E95A5),
+          color: Color(0xFFB8B0A8),
           size: 30,
         ),
         const SizedBox(height: 8),

@@ -71,12 +71,20 @@ class MemberCoachRelationship {
   final String? startedAt;
   final String? endedAt;
 
+  bool get isPaused => status == 'PAUSED';
+  bool get isCoachLocked => isPaused && pauseReason == 'COACH_LOCKED';
+  bool get isMemberLocked => isPaused && pauseReason == 'MEMBER_LOCKED';
+  bool get isMembershipExpired =>
+      isPaused && (pauseReason == null || pauseReason == 'MEMBERSHIP_EXPIRED');
+
   String get statusLabel => switch (status) {
     'ACTIVE' => 'Đang hoạt động',
-    'PAUSED' =>
-      pauseReason == 'COACH_LOCKED'
-          ? 'Coach đang tạm khóa'
-          : 'Tạm ngưng do Gym hết hạn',
+    'PAUSED' => switch (pauseReason) {
+      'COACH_LOCKED' => 'Coach đang tạm khóa',
+      'MEMBER_LOCKED' => 'Tài khoản đang tạm khóa',
+      'MEMBERSHIP_EXPIRED' || null => 'Tạm ngưng do Gym hết hạn',
+      _ => 'Đang tạm ngưng',
+    },
     'ENDED' => 'Đã kết thúc',
     _ => status,
   };

@@ -143,33 +143,53 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
   Widget build(BuildContext context) {
     final coach = _coach;
     final hasApiClient = optionalProvider<ApiClient>(context) != null;
+    final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leadingWidth: canPop ? 72 : null,
+        leading: canPop
+            ? Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+              )
+            : null,
+        titleSpacing: canPop ? 8 : 16,
         title: const Text(
           'Chi tiết Coach',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.2,
+            color: Color(0xFFF7F9FC),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
           ),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: MetaGymCircleIconButton(
-              icon: Icons.chat_bubble_outline_rounded,
-              tooltip: 'Nhắn Coach',
-              onTap: _openingChat ? null : _openChat,
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: MetaGymCircleIconButton(
+                icon: Icons.chat_bubble_outline_rounded,
+                tooltip: 'Nhắn Coach',
+                onTap: _openingChat ? null : _openChat,
+              ),
             ),
           ),
         ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
+        foregroundColor: const Color(0xFFF7F9FC),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -184,7 +204,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: const Color(0xFF181B22),
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -192,12 +212,24 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                       children: [
                         if (_loadError != null) ...[
                           CoachingErrorBanner(message: _loadError!),
-                          TextButton(
-                            onPressed: _load,
-                            style: TextButton.styleFrom(
-                              foregroundColor: MetaGymTheme.brandOrange,
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: _load,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: MetaGymTheme.primary,
+                                foregroundColor: MetaGymTheme.onPrimary,
+                                minimumSize: const Size(120, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text(
+                                'Thử lại',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ),
-                            child: const Text('Thử lại'),
                           ),
                         ],
                         if (coach != null) ...[
@@ -222,7 +254,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                           Text(
                                             coach.fullName,
                                             style: const TextStyle(
-                                              color: Colors.white,
+                                              color: Color(0xFFF7F9FC),
                                               fontSize: 19,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -232,8 +264,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                             Text(
                                               coach.specialties.join(' · '),
                                               style: const TextStyle(
-                                                color:
-                                                    MetaGymTheme.textSecondary,
+                                                color: Color(0xFFC8C2BC),
                                                 fontSize: 13,
                                               ),
                                             ),
@@ -257,7 +288,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                   Text(
                                     coach.biography!,
                                     style: const TextStyle(
-                                      color: Color(0xFFE0E1E4),
+                                      color: Color(0xFFE4DAD1),
                                       fontSize: 13.5,
                                       height: 1.55,
                                     ),
@@ -267,235 +298,266 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                     coach.qualifications?.isNotEmpty ==
                                         true) ...[
                                   const SizedBox(height: 14),
-                                  const Divider(
-                                    color: Color(0x26FFFFFF),
-                                    height: 1,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (coach.experienceYears != null)
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '${coach.experienceYears} năm',
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 14.5,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                  IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (coach.experienceYears != null)
+                                          Expanded(
+                                            child: MetaGymMetricPanel(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    '${coach.experienceYears} năm',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFF7F9FC),
+                                                      fontSize: 15,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      fontFeatures: MetaGymTheme
+                                                          .tabularFigures,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  const Text(
+                                                    'Kinh nghiệm huấn luyện',
+                                                    style: TextStyle(
+                                                      color: Color(0xFFC8C2BC),
+                                                      fontSize: 11.5,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(height: 2),
-                                              const Text(
-                                                'Kinh nghiệm huấn luyện',
-                                                style: TextStyle(
-                                                  color: Color(0xFFC4C8CE),
-                                                  fontSize: 11.5,
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
-                                        ),
-                                      if (coach.experienceYears != null &&
-                                          coach.qualifications?.isNotEmpty ==
-                                              true)
-                                        Container(
-                                          width: 1,
-                                          height: 34,
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                          ),
-                                          color: const Color(0x26FFFFFF),
-                                        ),
-                                      if (coach.qualifications?.isNotEmpty ==
-                                          true)
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                coach.qualifications!,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                        if (coach.experienceYears != null &&
+                                            coach.qualifications?.isNotEmpty ==
+                                                true)
+                                          const SizedBox(width: 8),
+                                        if (coach.qualifications?.isNotEmpty ==
+                                            true)
+                                          Expanded(
+                                            child: MetaGymMetricPanel(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    coach.qualifications!,
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFF7F9FC),
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  const Text(
+                                                    'Bằng cấp / chứng chỉ',
+                                                    style: TextStyle(
+                                                      color: Color(0xFFC8C2BC),
+                                                      fontSize: 11.5,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(height: 2),
-                                              const Text(
-                                                'Bằng cấp / chứng chỉ',
-                                                style: TextStyle(
-                                                  color: Color(0xFFC4C8CE),
-                                                  fontSize: 11.5,
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
-                                        ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ],
                             ),
                           ),
                           const SizedBox(height: 14),
-                          CoachingGraphiteCard(
+                          Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 4,
                             ),
-                            child: Theme(
-                              data: Theme.of(context)
-                                  .copyWith(dividerColor: Colors.transparent),
-                              child: ExpansionTile(
-                                tilePadding: EdgeInsets.zero,
-                                childrenPadding: const EdgeInsets.only(
-                                  bottom: 12,
-                                ),
-                                iconColor: Colors.white70,
-                                collapsedIconColor: Colors.white70,
-                                leading: const Icon(
-                                  Icons.calendar_month_outlined,
-                                  color: MetaGymTheme.reflectionBlue,
-                                  size: 20,
-                                ),
-                                title: const Text(
-                                  'Xem lịch làm việc',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
+                            decoration: BoxDecoration(
+                              color: const Color(0xC42B2622),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xA3A79D92),
+                                width: 1.1,
+                              ),
+                            ),
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: Theme(
+                                data: Theme.of(context)
+                                    .copyWith(dividerColor: Colors.transparent),
+                                child: ExpansionTile(
+                                  tilePadding: EdgeInsets.zero,
+                                  childrenPadding: const EdgeInsets.only(
+                                    bottom: 12,
                                   ),
-                                ),
-                                children: [
-                                  if (_workDays.isEmpty &&
-                                      coach.availabilityNote?.isNotEmpty !=
-                                          true)
+                                  iconColor: const Color(0xFFF7F9FC),
+                                  collapsedIconColor: const Color(0xFFC8C2BC),
+                                  leading: const Icon(
+                                    Icons.calendar_month_outlined,
+                                    color: MetaGymTheme.reflectionBlue,
+                                    size: 20,
+                                  ),
+                                  title: const Text(
+                                    'Xem lịch làm việc',
+                                    style: TextStyle(
+                                      color: Color(0xFFF7F9FC),
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  children: [
+                                    if (_workDays.isEmpty &&
+                                        coach.availabilityNote?.isNotEmpty !=
+                                            true)
+                                      const Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Coach chưa cấu hình lịch cố định.',
+                                          style: TextStyle(
+                                            color: Color(0xFFC8C2BC),
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                      ),
+                                    if (_workDays.isNotEmpty)
+                                      SizedBox(
+                                        height: 64,
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _workDays.length,
+                                          separatorBuilder: (_, _) =>
+                                              const SizedBox(width: 8),
+                                          itemBuilder: (_, index) {
+                                            final day = _workDays[index];
+                                            final starts =
+                                                (day['starts'] as List? ??
+                                                        const [])
+                                                    .cast<String>();
+                                            return Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0x80211E1C),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      MetaGymTheme.radiusInput,
+                                                    ),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0x9A8C8176,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    _weekdayName(
+                                                      day['weekday'] as int,
+                                                    ),
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFF7F9FC),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                    starts.take(2).join(' · '),
+                                                    style: const TextStyle(
+                                                      color: Color(0xFFC8C2BC),
+                                                      fontSize: 11,
+                                                      fontFeatures: MetaGymTheme
+                                                          .tabularFigures,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    if (coach.availabilityNote?.isNotEmpty ==
+                                        true) ...[
+                                      const SizedBox(height: 8),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          coach.availabilityNote!,
+                                          style: const TextStyle(
+                                            color: Color(0xFFE4DAD1),
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
                                     const Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        'Coach chưa cấu hình lịch cố định.',
+                                        'Khung giờ để tham khảo; hệ thống kiểm tra suất khi thanh toán.',
                                         style: TextStyle(
-                                          color: MetaGymTheme.textSecondary,
-                                          fontSize: 12.5,
-                                        ),
-                                      ),
-                                    ),
-                                  if (_workDays.isNotEmpty)
-                                    SizedBox(
-                                      height: 64,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: _workDays.length,
-                                        separatorBuilder: (_, _) =>
-                                            const SizedBox(width: 8),
-                                        itemBuilder: (_, index) {
-                                          final day = _workDays[index];
-                                          final starts =
-                                              (day['starts'] as List? ??
-                                                      const [])
-                                                  .cast<String>();
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  MetaGymTheme.elevatedSurface,
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                    MetaGymTheme.radiusInput,
-                                                  ),
-                                              border: Border.all(
-                                                color: MetaGymTheme
-                                                    .darkBorderStrong,
-                                              ),
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  _weekdayName(
-                                                    day['weekday'] as int,
-                                                  ),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 3),
-                                                Text(
-                                                  starts.take(2).join(' · '),
-                                                  style: const TextStyle(
-                                                    color: Color(0xFFB8BCC5),
-                                                    fontSize: 11,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  if (coach.availabilityNote?.isNotEmpty ==
-                                      true) ...[
-                                    const SizedBox(height: 8),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        coach.availabilityNote!,
-                                        style: const TextStyle(
-                                          color: Color(0xFFBFC4CD),
-                                          fontSize: 12,
+                                          color: Color(0xFFC8C2BC),
+                                          fontSize: 11.5,
+                                          height: 1.4,
                                         ),
                                       ),
                                     ),
                                   ],
-                                  const SizedBox(height: 8),
-                                  const Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Khung giờ để tham khảo; hệ thống kiểm tra suất khi thanh toán.',
-                                      style: TextStyle(
-                                        color: MetaGymTheme.textSecondary,
-                                        fontSize: 11.5,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
                           if (hasApiClient) ...[
                             const Padding(
                               padding: EdgeInsets.only(top: 18, bottom: 10),
-                              child: Text(
-                                'Thành quả học viên',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.verified_outlined,
+                                    color: MetaGymTheme.brandOrange,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Thành quả học viên',
+                                    style: TextStyle(
+                                      color: Color(0xFFF7F9FC),
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             if (_outcomes.isEmpty)
-                              const CoachingGraphiteCard(
-                                margin: EdgeInsets.only(bottom: 6),
-                                padding: EdgeInsets.all(14),
-                                child: Text(
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xC42B2622),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(0xA3A79D92),
+                                    width: 1.1,
+                                  ),
+                                ),
+                                child: const Text(
                                   'Chưa có thành quả được học viên đồng ý công khai.',
                                   style: TextStyle(
-                                    color: MetaGymTheme.textSecondary,
+                                    color: Color(0xFFC8C2BC),
                                     fontSize: 12.5,
                                   ),
                                 ),
@@ -522,12 +584,20 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                               ),
                             )
                           else
-                            const CoachingGraphiteCard(
-                              padding: EdgeInsets.all(14),
-                              child: Text(
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xC42B2622),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xA3A79D92),
+                                  width: 1.1,
+                                ),
+                              ),
+                              child: const Text(
                                 'Vào mục Chọn gói Coach khi kết nối máy chủ để xem giá và thuê Coach.',
                                 style: TextStyle(
-                                  color: MetaGymTheme.textSecondary,
+                                  color: Color(0xFFC8C2BC),
                                   fontSize: 12.5,
                                 ),
                               ),

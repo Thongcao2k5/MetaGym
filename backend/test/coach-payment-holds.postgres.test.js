@@ -59,7 +59,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         assert.equal(login.status, 200, JSON.stringify(login.body));
         tokens.set(account, login.body.data.accessToken);
       }
-      await database.query('INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 20)', [coach]);
+      await database.query('INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 8)', [coach]);
       await database.query(
         `INSERT INTO membership_plans (id, name, price, duration_days, status, created_by)
          VALUES ($1, 'Gym fixture', 1, 30, 'ACTIVE', $2)`, [planId, admin],
@@ -261,7 +261,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
       assert.equal((await call(winner, endpoint, 'POST', offer, randomUUID())).body.error.code, 'QUEUED_EXISTS');
       await database.query(
         `UPDATE coach_entitlements SET starts_on = CURRENT_DATE - 38,
-           original_ends_on = CURRENT_DATE - 9, ends_on = CURRENT_DATE - 2 WHERE id = $1`,
+           original_ends_on = CURRENT_DATE - 9, grace_days_added = 7, ends_on = CURRENT_DATE - 2 WHERE id = $1`,
         [settled[0].entitlementId],
       );
       const { reconcileMembershipLifecycles } = await import('../src/services/membership-lifecycle.js');
@@ -278,24 +278,30 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         [queued.entitlementId]);
       assert.equal(activated.status, 'ACTIVE');
     } finally {
-      await database.query('DELETE FROM nutrition_guides WHERE coach_id = $1', [coach]);
-      await database.query("DELETE FROM nutrition_foods WHERE name = 'Fixture food'");
-      await database.query('DELETE FROM coach_notifications WHERE user_id = ANY($1::uuid[])',
-        [[coach, ...members]]);
-      await database.query("UPDATE coach_package_plans SET status = 'INACTIVE', price = 0 WHERE code = 'BASIC'");
-      await database.query('DELETE FROM coach_bookings WHERE coach_id = $1', [coach]);
-      await database.query('DELETE FROM coach_slot_blocks WHERE coach_id = $1', [coach]);
-      await database.query('DELETE FROM coach_entitlements WHERE coach_id = $1', [coach]);
-      await database.query('DELETE FROM coach_payment_holds WHERE coach_id = $1', [coach]);
-      await database.query('DELETE FROM coach_weekly_slots WHERE coach_id = $1', [coach]);
-      await database.query('DELETE FROM coach_relationships WHERE coach_id = $1', [coach]);
-      await database.query('DELETE FROM member_memberships WHERE plan_id = $1', [planId]);
-      await database.query('DELETE FROM payments WHERE plan_id = $1', [planId]);
-      await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
-      await database.query('DELETE FROM coach_profiles WHERE user_id = $1', [coach]);
-      await database.query('DELETE FROM member_profiles WHERE user_id = ANY($1::uuid[])', [members]);
-      await database.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[admin, coach, ...members]]);
-      await new Promise((resolve) => server.close(resolve));
-      await database.end();
+      try {
+        await database.query(`DELETE FROM nutrition_guide_revisions WHERE guide_id IN
+          (SELECT id FROM nutrition_guides WHERE coach_id = $1)`, [coach]);
+        await database.query('DELETE FROM nutrition_guides WHERE coach_id = $1', [coach]);
+        await database.query("DELETE FROM nutrition_foods WHERE name = 'Fixture food'");
+        await database.query('DELETE FROM coach_notifications WHERE user_id = ANY($1::uuid[])',
+          [[coach, ...members]]);
+        await database.query("UPDATE coach_package_plans SET status = 'INACTIVE', price = 0 WHERE code = 'BASIC'");
+        await database.query('DELETE FROM coach_bookings WHERE coach_id = $1', [coach]);
+        await database.query('DELETE FROM coach_slot_blocks WHERE coach_id = $1', [coach]);
+        await database.query('DELETE FROM coach_entitlements WHERE coach_id = $1', [coach]);
+        await database.query('DELETE FROM coach_payment_holds WHERE coach_id = $1', [coach]);
+        await database.query('DELETE FROM coach_weekly_slots WHERE coach_id = $1', [coach]);
+        await database.query('DELETE FROM coach_relationships WHERE coach_id = $1', [coach]);
+        await database.query('DELETE FROM member_memberships WHERE plan_id = $1', [planId]);
+        await database.query('DELETE FROM payments WHERE plan_id = $1', [planId]);
+        await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
+        await database.query('DELETE FROM coach_profiles WHERE user_id = $1', [coach]);
+        await database.query('DELETE FROM member_profiles WHERE user_id = ANY($1::uuid[])', [members]);
+        await database.query('DELETE FROM admin_audit_logs WHERE admin_id = $1', [admin]);
+        await database.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[admin, coach, ...members]]);
+      } finally {
+        await new Promise((resolve) => server.close(resolve));
+        await database.end();
+      }
     }
   });

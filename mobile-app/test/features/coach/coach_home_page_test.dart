@@ -51,12 +51,12 @@ void main() {
         }
 
         await tab('Lịch dạy');
-        await tester.tap(find.text('Học viên & Yêu cầu (2)'));
+        await tester.tap(find.text('Học viên (2)'));
         await tester.pumpAndSettle();
         await tab('Trang chủ');
         await tab('Lịch dạy');
         await tab('Lịch dạy');
-        expect(find.text('Hội viên member-1'), findsOneWidget);
+        expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
         expect(
           Navigator.of(tester.element(find.byType(CoachHomePage))).canPop(),
           isFalse,
@@ -105,20 +105,20 @@ void main() {
       final avatarText = find.text('LN');
       expect(avatarText, findsWidgets);
 
-      // Live Hero Work Summary metrics
+      // Live Hero Work Summary metrics (hard cap 8)
       expect(find.text('Tổng quan công việc'), findsOneWidget);
-      expect(find.text('8/12'), findsOneWidget);
-      expect(find.text('Còn 4 suất'), findsOneWidget);
-      expect(find.text('1 yêu cầu chờ duyệt'), findsOneWidget);
+      expect(find.text('6/8'), findsOneWidget);
+      expect(find.text('Còn 2 suất'), findsOneWidget);
+      expect(find.text('Thông báo Coach'), findsWidgets);
+      expect(find.text('1 thông báo chưa đọc'), findsWidgets);
 
-      // Quick actions present
-      expect(find.text('Yêu cầu'), findsOneWidget);
+      // Quick actions present (no Coach request approval flow)
+      expect(find.text('Học viên'), findsOneWidget);
       expect(find.text('Giáo trình'), findsOneWidget);
       expect(find.text('Dinh dưỡng'), findsOneWidget);
       expect(find.text('Lịch tập'), findsOneWidget);
-
-      // Full feature directory is initially collapsed
       expect(find.text('Yêu cầu chọn Coach'), findsNothing);
+      expect(find.textContaining('yêu cầu chờ duyệt'), findsNothing);
 
       // Scroll to Next session + Bento cards
       await tester.scrollUntilVisible(find.text('Ca dạy tiếp theo'), 200);
@@ -181,12 +181,13 @@ void main() {
       expect(tester.getSize(find.text('Nhắn tin')).height, lessThan(26));
       expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
       expect(tester.getSize(find.text('Hoàn tất')).height, lessThan(26));
-      expect(find.text('Học viên & Yêu cầu (1)'), findsOneWidget);
+      expect(find.text('Học viên (1)'), findsOneWidget);
 
-      await tester.tap(find.text('Học viên & Yêu cầu (1)'));
+      await tester.tap(find.text('Học viên (1)'));
       await tester.pumpAndSettle();
-      expect(find.text('Hội viên member-9'), findsOneWidget);
       expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
+      expect(find.text('Chấp nhận'), findsNothing);
+      expect(find.text('Từ chối'), findsNothing);
 
       expect(tester.takeException(), isNull);
     },
@@ -207,7 +208,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Xin chào, Lê Hoàng Nam'), findsOneWidget);
-      expect(find.text('8/12'), findsOneWidget);
+      expect(find.text('6/8'), findsOneWidget);
+      expect(find.text('8/12'), findsNothing);
 
       await tester.scrollUntilVisible(find.text('Nguyễn Minh Tuấn').first, 200);
       expect(find.text('Nguyễn Minh Tuấn'), findsWidgets);
@@ -231,6 +233,38 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('enforces hard cap of 8 even if API returns stale memberLimit 12', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final adapter = _CoachHomeAdapter(
+      memberLimit: 12,
+      usedSlots: 8,
+      availableSlots: 4,
+    );
+    final api = ApiClient.withAdapter(
+      config: ApiConfig.fromValues(environment: 'local'),
+      adapter: adapter,
+    );
+    final controller = SessionController(
+      _MemoryTokenStorage('coach-token'),
+      (_) async => coachUser,
+    );
+
+    await tester.pumpWidget(
+      MetaGymApp(sessionController: controller, apiClient: api),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('8/8'), findsOneWidget);
+    expect(find.text('Đã đủ suất'), findsOneWidget);
+    expect(find.text('8/12'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _MemoryTokenStorage implements TokenStorage {
@@ -249,6 +283,15 @@ class _MemoryTokenStorage implements TokenStorage {
 }
 
 class _CoachHomeAdapter implements HttpClientAdapter {
+  _CoachHomeAdapter({
+    this.memberLimit = 8,
+    this.usedSlots = 6,
+    this.availableSlots = 2,
+  });
+
+  final int memberLimit;
+  final int usedSlots;
+  final int availableSlots;
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -284,9 +327,9 @@ class _CoachHomeAdapter implements HttpClientAdapter {
       '/coaches/coach-1' => {
         'id': 'coach-1',
         'fullName': 'Lê Hoàng Nam',
-        'memberLimit': 12,
-        'usedSlots': 8,
-        'availableSlots': 4,
+        'memberLimit': memberLimit,
+        'usedSlots': usedSlots,
+        'availableSlots': availableSlots,
         'specialties': ['Tăng cơ'],
       },
       '/coach/members' => [

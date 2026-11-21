@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
-
 class FeatureDestination {
   const FeatureDestination(this.title, this.path, this.task, this.section);
 
@@ -66,7 +63,6 @@ const memberDestinations = <FeatureDestination>[
     'UI16',
     'Tiến độ',
   ),
-  FeatureDestination('Nhật ký ăn', '/member/features/meals', 'UI17', 'Tiến độ'),
   FeatureDestination(
     'Số đo cơ thể',
     '/member/features/measurements',
@@ -95,12 +91,6 @@ const memberDestinations = <FeatureDestination>[
 ];
 
 const coachDestinations = <FeatureDestination>[
-  FeatureDestination(
-    'Yêu cầu chọn Coach',
-    '/coach/features/requests',
-    'UI06',
-    'Hội viên',
-  ),
   FeatureDestination(
     'Hội viên của tôi',
     '/coach/features/members',
@@ -145,68 +135,3 @@ const coachDestinations = <FeatureDestination>[
     'Khám phá',
   ),
 ];
-
-class FeatureMenu extends StatelessWidget {
-  const FeatureMenu({
-    required this.heading,
-    required this.destinations,
-    this.workbenchPath,
-    this.profilePath,
-    super.key,
-  });
-
-  final String heading;
-  final List<FeatureDestination> destinations;
-  final String? workbenchPath;
-  final String? profilePath;
-
-  @override
-  Widget build(BuildContext context) {
-    final sections = destinations.map((item) => item.section).toSet();
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(heading, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        for (final section in sections) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 16, bottom: 4),
-            child: Text(
-              section,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          for (final destination in destinations.where(
-            (item) => item.section == section,
-          ))
-            ListTile(
-              title: Text(destination.title),
-              subtitle: Text('Giao diện cơ bản: ${destination.task}'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () =>
-                  MetaGymNavigation.pushPathOnce(context, destination.path),
-            ),
-        ],
-        if (profilePath != null)
-          ListTile(
-            title: const Text('Hồ sơ của tôi'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => MetaGymNavigation.pushPathOnce(context, profilePath!),
-          ),
-        if (workbenchPath != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: OutlinedButton(
-              onPressed: () =>
-                  MetaGymNavigation.pushPathOnce(context, workbenchPath!),
-              child: Text(
-                workbenchPath!.startsWith('/member')
-                    ? 'Kiểm thử các luồng hội viên'
-                    : 'Kiểm thử các luồng Coach',
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}

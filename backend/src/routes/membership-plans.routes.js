@@ -19,11 +19,24 @@ function error(response, status, code, message) {
   return response.status(status).json({ error: { code, details: {}, message } });
 }
 
+function escapeLike(value) {
+  return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+}
+
 function publicPlan(row) {
   return {
-    id: row.id, name: row.name, description: row.description,
-    price: Number(row.price), durationDays: row.duration_days,
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    price: Number(row.price),
+    durationDays: row.duration_days,
     status: row.status,
+    ...(row.active_membership_count !== undefined
+      ? { activeMembershipCount: Number(row.active_membership_count) }
+      : {}),
+    ...(row.scheduled_membership_count !== undefined
+      ? { scheduledMembershipCount: Number(row.scheduled_membership_count) }
+      : {}),
   };
 }
 
@@ -81,17 +94,41 @@ export function createMembershipPlansRouter({ database, jwtSecret }) {
 
   router.get('/admin/membership-plans', async (request, response) => {
     const parsed = z.strictObject({
+      status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+      search: z.string().trim().max(120).optional(),
       page: z.coerce.number().int().min(1).default(1),
       pageSize: z.coerce.number().int().min(1).max(100).default(20),
     }).safeParse(request.query);
-    if (!parsed.success) return error(response, 422, 'VALIDATION_ERROR', 'Phân trang không hợp lệ');
-    const { page, pageSize } = parsed.data;
+    if (!parsed.success) return error(response, 422, 'VALIDATION_ERROR', 'Bộ lọc không hợp lệ');
+    const { status, search, page, pageSize } = parsed.data;
+    const filters = [];
+    const values = [];
+    if (status) {
+      values.push(status);
+      filters.push(`p.status = $${values.length}`);
+    }
+    if (search) {
+      values.push(`%${escapeLike(search)}%`);
+      const param = `$${values.length}`;
+      filters.push(`(p.name ILIKE ${param} ESCAPE '\\' OR COALESCE(p.description, '') ILIKE ${param} ESCAPE '\\')`);
+    }
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
     try {
-      const total = await database.query('SELECT count(*)::int AS count FROM membership_plans');
+      const total = await database.query(
+        `SELECT count(*)::int AS count FROM membership_plans p ${whereClause}`,
+        values,
+      );
       const result = await database.query(
-        `SELECT id, name, description, price, duration_days, status
-         FROM membership_plans ORDER BY created_at DESC, id DESC LIMIT $1 OFFSET $2`,
-        [pageSize, (page - 1) * pageSize],
+        `SELECT p.id, p.name, p.description, p.price, p.duration_days, p.status,
+                (SELECT count(*)::int FROM member_memberships m
+                 WHERE m.plan_id = p.id AND m.status = 'ACTIVE') AS active_membership_count,
+                (SELECT count(*)::int FROM member_memberships m
+                 WHERE m.plan_id = p.id AND m.status = 'SCHEDULED') AS scheduled_membership_count
+         FROM membership_plans p
+         ${whereClause}
+         ORDER BY p.created_at DESC, p.id DESC
+         LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+        [...values, pageSize, (page - 1) * pageSize],
       );
       const totalItems = total.rows[0].count;
       return response.json({ data: result.rows.map(publicPlan), pagination: {
@@ -127,8 +164,8 @@ export function createMembershipPlansRouter({ database, jwtSecret }) {
       await client.query(
         `INSERT INTO admin_audit_logs
          (id, admin_id, action, entity_type, entity_id, summary, metadata)
-         VALUES ($1, $2, 'MEMBERSHIP_PLAN_CREATED', 'MEMBERSHIP_PLAN', $3, 'Created plan', $4)`,
-        [randomUUID(), request.authUser.id, id, JSON.stringify({ after: p })],
+         VALUES ($1, $2, 'MEMBERSHIP_PLAN_CREATED', 'MEMBERSHIP_PLAN', $3, $4, $5)`,
+        [randomUUID(), request.authUser.id, id, `Tạo gói Gym: ${p.name}`, JSON.stringify({ after: p })],
       );
       const plan = await planById(client, id);
       await client.query('COMMIT');
@@ -176,9 +213,14 @@ export function createMembershipPlansRouter({ database, jwtSecret }) {
       await client.query(
         `INSERT INTO admin_audit_logs
          (id, admin_id, action, entity_type, entity_id, summary, metadata)
-         VALUES ($1, $2, 'MEMBERSHIP_PLAN_UPDATED', 'MEMBERSHIP_PLAN', $3, 'Updated plan', $4)`,
-        [randomUUID(), request.authUser.id, before.id,
-          JSON.stringify({ before: publicPlan(before), after: publicPlan(after) })],
+         VALUES ($1, $2, 'MEMBERSHIP_PLAN_UPDATED', 'MEMBERSHIP_PLAN', $3, $4, $5)`,
+        [
+          randomUUID(),
+          request.authUser.id,
+          before.id,
+          `Cập nhật gói Gym: ${after.name}`,
+          JSON.stringify({ before: publicPlan(before), after: publicPlan(after) }),
+        ],
       );
       await client.query('COMMIT');
       return response.json({ data: publicPlan(after) });

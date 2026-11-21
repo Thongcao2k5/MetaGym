@@ -49,6 +49,9 @@ class ApiException implements Exception {
       ApiExceptionKind.authentication => 'Thông tin đăng nhập không chính xác.',
       ApiExceptionKind.sessionExpired =>
         'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      ApiExceptionKind.forbidden
+          when error.code == 'RECIPIENT_ACCOUNT_DISABLED' =>
+        'Không thể gửi tin nhắn vì tài khoản người nhận đang bị khóa',
       ApiExceptionKind.forbidden =>
         'Bạn không có quyền thực hiện thao tác này.',
       ApiExceptionKind.validation => 'Dữ liệu gửi lên không hợp lệ.',

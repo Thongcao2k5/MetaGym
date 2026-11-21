@@ -14,7 +14,6 @@ import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
@@ -52,9 +51,6 @@ import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
-import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
-import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
@@ -96,7 +92,6 @@ void main() {
             memberProgressService: _EmptyMemberProgressService(),
             memberWorkoutService: _EmptyMemberWorkoutService(),
             memberJournalService: _EmptyMemberJournalService(),
-            memberMealService: _EmptyMemberMealService(),
             memberMeasurementService: _EmptyMemberMeasurementService(),
             memberPhotoService: _EmptyMemberPhotoService(),
           ),
@@ -146,7 +141,7 @@ void main() {
     await tester.pumpWidget(MetaGymApp(sessionController: controller));
     await tester.pumpAndSettle();
 
-    expect(find.text('Meta Gym'), findsOneWidget);
+    expect(find.text('Chào mừng trở lại'), findsOneWidget);
     expect(find.text('Không gian dành cho hội viên'), findsNothing);
   });
 
@@ -175,7 +170,6 @@ void main() {
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
         memberJournalService: _EmptyMemberJournalService(),
-        memberMealService: _EmptyMemberMealService(),
         memberMeasurementService: _EmptyMemberMeasurementService(),
         memberPhotoService: _EmptyMemberPhotoService(),
       ),
@@ -201,7 +195,7 @@ void main() {
     expect(find.byType(CoachSelectionPage), findsOneWidget);
     expect(find.byType(MetaGymBottomNav), findsNothing);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
@@ -267,13 +261,6 @@ void main() {
     GoRouter.of(tester.element(find.byType(MemberJournalPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
-        .go('/member/features/meals');
-    await tester.pumpAndSettle();
-    expect(find.byType(MemberMealPage), findsOneWidget);
-    expect(find.text('Bạn chưa có nhật ký ăn.'), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(MemberMealPage))).go('/member');
-    await tester.pumpAndSettle();
-    GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/measurements');
     await tester.pumpAndSettle();
     expect(find.byType(MemberMeasurementPage), findsOneWidget);
@@ -330,8 +317,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Đăng nhập'));
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pump();
@@ -353,17 +338,14 @@ void main() {
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
     expect(find.text('Yêu cầu chọn Coach'), findsNothing);
     GoRouter.of(tester.element(find.byType(CoachHomePage)))
-        .push<void>('/coach/features/requests');
+        .go('/coach/features/requests');
     await tester.pumpAndSettle();
-    expect(find.byType(CoachRequestsPage), findsOneWidget);
-    expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
+    expect(find.byType(CoachHomePage), findsOneWidget);
     await tester.tap(find.text('Hội viên của tôi'));
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
@@ -423,8 +405,6 @@ void main() {
         profileService: _FakeProfileService(member),
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Đăng nhập'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Quên mật khẩu?'));
     await tester.pumpAndSettle();
@@ -734,17 +714,6 @@ class _EmptyMembershipService implements MembershipService {
   }) => throw UnimplementedError();
   @override
   Future<PurchaseResult> confirmMockPayment(String paymentId) =>
-      throw UnimplementedError();
-}
-
-class _EmptyMemberMealService implements MemberMealService {
-  @override
-  Future<List<MealLog>> getPage(int page) async => const [];
-  @override
-  Future<MealLog> create(Map<String, Object?> payload) =>
-      throw UnimplementedError();
-  @override
-  Future<MealLog> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError();
 }
 

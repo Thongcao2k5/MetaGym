@@ -91,86 +91,176 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
     }
   }
 
+  Widget _buildHeader(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: Row(
+        children: [
+          if (canPop) ...[
+            MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: _busy ? null : () => Navigator.of(context).maybePop(),
+            ),
+            const SizedBox(width: 12),
+          ],
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'HÀNH TRÌNH TẬP LUYỆN',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: MetaGymTheme.brandOrange,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Thành quả của bạn',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          MetaGymCircleIconButton(
+            icon: Icons.refresh_rounded,
+            tooltip: 'Tải lại',
+            onTap: _loading || _busy ? null : _load,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text(
-          'Thành quả học viên',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
           const MetaGymBackground(),
           SafeArea(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: MetaGymTheme.brandOrange,
-                    ),
-                  )
-                : RefreshIndicator(
-                    color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
-                    onRefresh: _load,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
-                      children: [
-                        const Text(
-                          'Chỉ những thành quả bạn đồng ý mới hiển thị trên hồ sơ Coach. Bạn có thể chọn ẩn danh hoặc thu hồi bất cứ lúc nào.',
-                          style: TextStyle(
-                            color: Color(0xFFD4D8DF),
-                            fontSize: 13,
-                            height: 1.5,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _loading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.brandOrange,
+                          ),
+                        )
+                      : RefreshIndicator(
+                          color: MetaGymTheme.brandOrange,
+                          backgroundColor: const Color(0xFF282320),
+                          onRefresh: _load,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              8,
+                              16,
+                              MediaQuery.paddingOf(context).bottom + 28,
+                            ),
+                            children: [
+                              const Text(
+                                'Chỉ những thành quả bạn đồng ý mới hiển thị trên hồ sơ Coach. Bạn có thể chọn ẩn danh hoặc thu hồi bất cứ lúc nào.',
+                                style: TextStyle(
+                                  color: Color(0xFFC8C2BC),
+                                  fontSize: 13,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              if (_error != null) ...[
+                                CoachingErrorBanner(message: _error!),
+                                if (_outcomes.isEmpty) ...[
+                                  CoachingSecondaryButton(
+                                    label: 'Thử lại',
+                                    expand: true,
+                                    onPressed: _load,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                              ],
+                              if (_outcomes.isEmpty && _error == null)
+                                CoachingGraphiteCard(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x80211E1C),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0x9A8C8176),
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.verified_outlined,
+                                          color: Color(0xFFC8C2BC),
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Expanded(
+                                        child: Text(
+                                          'Chưa có thành quả nào từ Coach.',
+                                          style: TextStyle(
+                                            color: Color(0xFFC8C2BC),
+                                            fontSize: 13.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              for (final item in _outcomes)
+                                _ConsentOutcomeItem(
+                                  item: item,
+                                  busy: _busy,
+                                  onApprove: (allowRealName) => _respond(
+                                    item,
+                                    decision: 'APPROVED',
+                                    allowRealName: allowRealName,
+                                  ),
+                                  onDecline: () => _respond(
+                                    item,
+                                    decision: 'DECLINED',
+                                    removePhotos: true,
+                                  ),
+                                  onToggleName: (next) =>
+                                      _respond(item, allowRealName: next),
+                                  onWithdraw: () => _respond(
+                                    item,
+                                    decision: 'WITHDRAWN',
+                                    removePhotos: true,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        if (_error != null)
-                          CoachingErrorBanner(message: _error!),
-                        if (_outcomes.isEmpty)
-                          const CoachingGraphiteCard(
-                            child: Text(
-                              'Chưa có thành quả nào từ Coach.',
-                              style: TextStyle(
-                                color: MetaGymTheme.textSecondary,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                          ),
-                        for (final item in _outcomes)
-                          _ConsentOutcomeItem(
-                            item: item,
-                            busy: _busy,
-                            onApprove: (allowRealName) => _respond(
-                              item,
-                              decision: 'APPROVED',
-                              allowRealName: allowRealName,
-                            ),
-                            onDecline: () => _respond(
-                              item,
-                              decision: 'DECLINED',
-                              removePhotos: true,
-                            ),
-                            onToggleName: (next) =>
-                                _respond(item, allowRealName: next),
-                            onWithdraw: () => _respond(
-                              item,
-                              decision: 'WITHDRAWN',
-                              removePhotos: true,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -249,10 +339,7 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
           if (item.coachName != null) ...[
             Text(
               'Gửi bởi: ${item.coachName}',
-              style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
             ),
             const SizedBox(height: 8),
           ],
@@ -261,6 +348,8 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
               contentPadding: EdgeInsets.zero,
               value: _allowRealName,
               activeTrackColor: MetaGymTheme.primary,
+              inactiveTrackColor: const Color(0xFF3A322C),
+              inactiveThumbColor: const Color(0xFFC8C2BC),
               onChanged: widget.busy
                   ? null
                   : (next) {
@@ -270,8 +359,8 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
               title: const Text(
                 'Học viên cho phép hiện tên thật',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
+                  color: Color(0xFFF7F9FC),
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -279,10 +368,7 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
                 _allowRealName
                     ? 'Hiển thị tên thật trên hồ sơ Coach'
                     : 'Đang hiển thị là Học viên ẩn danh',
-                style: const TextStyle(
-                  color: MetaGymTheme.textSecondary,
-                  fontSize: 11.5,
-                ),
+                style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
               ),
             ),
           if (status == 'PENDING_MEMBER') ...[

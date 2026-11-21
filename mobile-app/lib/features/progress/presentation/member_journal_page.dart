@@ -954,7 +954,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   date.month != _selectedDate.month;
               final hasEntry = _hasRecordOnDate(date);
               final label = _calendarMode == _CalendarMode.week
-                  ? '${_weekdayShort[index]}\n${date.day}'
+                  ? _weekdayShort[index]
                   : '${date.day}';
 
               return MetaGymTap(
@@ -982,9 +982,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                               : outsideMonth
                               ? const Color(0xFF8D827B)
                               : const Color(0xFFDED7D1),
-                          fontSize: _calendarMode == _CalendarMode.week
-                              ? 10.5
-                              : 12,
+                          fontSize: 12,
                           height: 1.15,
                           fontWeight:
                               selected || _calendarMode == _CalendarMode.week
@@ -1351,9 +1349,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: const Color(0xE8151619),
+                          color: const Color(0xE8241F1B),
                           borderRadius: BorderRadius.circular(9),
-                          border: Border.all(color: const Color(0x55FFFFFF)),
+                          border: Border.all(color: const Color(0x95ADA295)),
                         ),
                         child: const Icon(
                           Icons.close_rounded,
@@ -1499,7 +1497,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       hintText: '—',
                       hintStyle: const TextStyle(color: Color(0xFF77706A)),
                       filled: true,
-                      fillColor: const Color(0xC717191C),
+                      fillColor: const Color(0x99211E1C),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 10,
@@ -1859,7 +1857,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     hintText: hint,
     hintStyle: const TextStyle(color: Color(0xFF77706A), fontSize: 12),
     filled: true,
-    fillColor: const Color(0xC717191C),
+    fillColor: const Color(0x99211E1C),
     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
@@ -2350,7 +2348,7 @@ class _SegmentButton extends StatelessWidget {
     child: AnimatedContainer(
       duration: MetaGymTheme.stateDurationOf(context),
       curve: Curves.easeOutCubic,
-      height: 38,
+      height: 44,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: active ? const Color(0xFF544037) : Colors.transparent,
@@ -2382,7 +2380,7 @@ class _CalendarNavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: tooltip,
-    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
     onPressed: onTap,
     icon: Icon(icon, color: const Color(0xFFE6D9D1), size: 22),
   );
@@ -2406,7 +2404,7 @@ class _ViewModeChip extends StatelessWidget {
     child: AnimatedContainer(
       duration: MetaGymTheme.stateDurationOf(context),
       curve: Curves.easeOutCubic,
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 32),
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
@@ -2434,9 +2432,9 @@ class _PrimaryMetricBox extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
     decoration: BoxDecoration(
-      color: const Color(0x0AFFFFFF),
+      color: const Color(0x80211E1C),
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: const Color(0x16FFFFFF)),
+      border: Border.all(color: const Color(0x9A8C8176)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2552,7 +2550,7 @@ class _JournalPhotoState extends State<_JournalPhoto> {
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(11),
     child: Container(
-      color: const Color(0xFF17191C),
+      color: const Color(0xFF221E1B),
       child: FutureBuilder<Uri>(
         future: _accessUrl,
         builder: (context, snapshot) => snapshot.hasData

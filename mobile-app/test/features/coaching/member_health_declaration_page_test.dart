@@ -58,6 +58,67 @@ void main() {
       expect(adapter.saved?['hasInjury'], false);
     },
   );
+
+  testWidgets(
+    'renders summary pill and body fat copy cleanly at 360x640 with 130% text scale and scrolls to save',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final adapter = _HealthAdapter();
+      final client = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+      );
+      await tester.pumpWidget(
+        Provider.value(
+          value: client,
+          child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(1.3),
+              ),
+              child: child!,
+            ),
+            home: const MemberHealthDeclarationPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chờ nhập chỉ số'), findsOneWidget);
+      expect(find.text('Tỷ lệ mỡ · % · tùy chọn'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.enterText(find.byKey(const Key('health-height')), '172');
+      await tester.enterText(find.byKey(const Key('health-weight')), '68');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Không').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Không').first);
+      await tester.ensureVisible(find.text('Không').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Không').last);
+
+      final saveButton = find.widgetWithText(FilledButton, 'Lưu khai báo');
+      await tester.ensureVisible(saveButton);
+      await tester.pumpAndSettle();
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      expect(adapter.saved?['heightCm'], 172);
+      expect(adapter.saved?['weightKg'], 68);
+      expect(adapter.saved?['hasCondition'], false);
+      expect(adapter.saved?['hasInjury'], false);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _HealthAdapter implements HttpClientAdapter {

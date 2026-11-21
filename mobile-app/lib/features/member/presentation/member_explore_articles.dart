@@ -1,6 +1,7 @@
-import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
@@ -31,9 +32,7 @@ class ExploreArticleItem {
   final String illustrationNotice;
 }
 
-/// Hai bài biên tập mẫu phục vụ MVP cho mục "Khám phá" ở Khung 3 trên Home Member.
-/// Ghi chú: Ảnh minh họa đang dùng asset có sẵn (`assets/images/gym_banner.png`),
-/// cần thay bằng ảnh chụp thực tế của phòng tập/bài viết trước khi phát hành chính thức.
+/// Hai bài biên tập chuyên đề phục vụ mục "Khám phá Meta Gym" trên Trang chủ Hội viên.
 const List<ExploreArticleItem> kMemberExploreArticles = [
   ExploreArticleItem(
     id: 'explore-meta-gym',
@@ -44,140 +43,253 @@ const List<ExploreArticleItem> kMemberExploreArticles = [
     categoryLabel: 'Cơ sở & Thiết bị',
     readTimeLabel: '3 phút đọc',
     imageAsset: 'assets/images/gym_banner.png',
-    illustrationNotice: 'Ảnh minh họa mẫu (assets/images/gym_banner.png) — cần thay bằng ảnh chụp thực tế không gian Meta Gym trước khi phát hành.',
+    illustrationNotice:
+        'Thông tin cơ sở, thiết bị và đội ngũ PT bên dưới được đồng bộ trực tiếp từ dữ liệu xác thực của hệ thống.',
   ),
   ExploreArticleItem(
     id: 'beginner-training-guide',
     type: ExploreArticleType.beginnerGuide,
     title: 'Hướng dẫn tập luyện cho người mới',
-    shortDescription: 'Nguyên tắc khởi động, chọn mức tạ an toàn và xây dựng lịch tập tuần đầu.',
+    shortDescription:
+        'Nguyên tắc khởi động, chọn mức tạ an toàn và xây dựng lịch tập tuần đầu.',
     categoryLabel: 'Cẩm nang người mới',
     readTimeLabel: '4 phút đọc',
     imageAsset: 'assets/images/gym_banner.png',
-    illustrationNotice: 'Ảnh minh họa mẫu (assets/images/gym_banner.png) — cần thay bằng ảnh biên tập chuyên đề hướng dẫn tập luyện trước khi phát hành.',
+    illustrationNotice:
+        'Áp dụng quy trình 4 bước dưới đây để làm quen thiết bị an toàn và tối ưu hiệu quả trong 4 tuần đầu tiên.',
   ),
 ];
 
-/// Trang danh sách bài viết khi bấm "Xem thêm" từ mục Khám phá ở Khung 3.
+/// Trang danh sách chuyên đề khi bấm từ mục "Khám phá Meta Gym" trên Trang chủ.
+/// Đồng bộ chuẩn Futuristic Performance Glass / Warm Smoked Glass (80/20 rule).
 class MemberExploreListPage extends StatelessWidget {
   const MemberExploreListPage({super.key});
-
-  static const Color _bgDark = Color(0xFF11151C);
-  static const Color _cardBg = Color(0xFF1E2633);
-  static const Color _cardBorder = Color(0x1FFFFFFF);
-  static const Color _titleColor = Color(0xFFF3F6FA);
-  static const Color _subColor = Color(0xFF94A3B8);
-  static const Color _coralLight = Color(0xFFFF7E58);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgDark,
+      backgroundColor: MetaGymTheme.darkCanvas,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: _bgDark,
-        foregroundColor: Colors.white,
-        title: const Text('Khám phá'),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: const Color(0xFFF7F9FC),
+        leadingWidth: 72,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        ),
+        titleSpacing: 8,
+        title: const Text(
+          'Khám phá Meta Gym',
+          style: TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: kMemberExploreArticles.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final article = kMemberExploreArticles[index];
-          return Material(
-            color: _cardBg,
-            borderRadius: BorderRadius.circular(16),
-            child: MetaGymTap(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                MetaGymNavigation.pushOnce<void>(
-                  context,
-                  MetaGymPageRoute(
-                    builder: (_) =>
-                        MemberExploreArticleDetailPage(article: article),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _cardBorder),
-                ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              MetaGymTheme.pageGutter,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + 12,
+              MetaGymTheme.pageGutter,
+              MediaQuery.paddingOf(context).bottom + 28,
+            ),
+            children: [
+              MetaGymHeroGlassCard(
+                padding: const EdgeInsets.all(18),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 72,
-                        height: 72,
-                        child: Image.asset(
-                          article.imageAsset,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
-                            color: const Color(0xFF293444),
-                            child: const Icon(
-                              Icons.article_outlined,
-                              color: _coralLight,
-                            ),
-                          ),
-                        ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0x24FF5E36),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0x4DFF5E36)),
+                      ),
+                      child: const Icon(
+                        Icons.explore_outlined,
+                        color: MetaGymTheme.brandOrange,
+                        size: 22,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${article.categoryLabel} · ${article.readTimeLabel}',
-                            style: const TextStyle(
-                              color: _coralLight,
-                              fontSize: 11,
+                            'Cẩm nang & Không gian tập luyện',
+                            style: TextStyle(
+                              color: Color(0xFFF7F9FC),
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
-                            article.title,
-                            style: const TextStyle(
-                              color: _titleColor,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            article.shortDescription,
-                            style: const TextStyle(
-                              color: _subColor,
-                              fontSize: 12,
-                              height: 1.35,
+                            'Tìm hiểu tiện ích phòng tập, chuẩn bị kỹ thuật và lộ trình khởi đầu an toàn.',
+                            style: TextStyle(
+                              color: Color(0xFFC8C2BC),
+                              fontSize: 13,
+                              height: 1.4,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right_rounded, color: _subColor),
                   ],
                 ),
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 16),
+              for (var i = 0; i < kMemberExploreArticles.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
+                _ExploreArticleCard(
+                  article: kMemberExploreArticles[i],
+                  showThumbnail: i == 0,
+                  onTap: () {
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute(
+                        builder: (_) => MemberExploreArticleDetailPage(
+                          article: kMemberExploreArticles[i],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Trang chi tiết bài viết "Khám phá".
-/// - Với bài "Khám phá phòng tập Meta Gym": tải dữ liệu xác thực từ `CatalogService`
-///   (tên, địa chỉ, mô tả, giờ mở cửa, nội quy, danh sách thiết bị đang hoạt động) và
-///   `CoachSelectionService` (danh sách PT thực tế từ hệ thống). Tuyệt đối không bịa
-///   tên, ảnh hay thành tích của PT khi chưa có dữ liệu xác thực.
-/// - Với bài "Hướng dẫn tập luyện cho người mới": hiển thị nội dung hướng dẫn biên tập đầy đủ.
+class _ExploreArticleCard extends StatelessWidget {
+  const _ExploreArticleCard({
+    required this.article,
+    required this.showThumbnail,
+    required this.onTap,
+  });
+
+  final ExploreArticleItem article;
+  final bool showThumbnail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MetaGymGlassCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showThumbnail)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Image.asset(
+                      article.imageAsset,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: const Color(0xFF282320),
+                        child: const Icon(
+                          Icons.fitness_center_rounded,
+                          color: MetaGymTheme.brandOrange,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0x24A9C7E8),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0x4DA9C7E8)),
+                  ),
+                  child: const Icon(
+                    Icons.menu_book_rounded,
+                    color: MetaGymTheme.reflectionBlue,
+                    size: 22,
+                  ),
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${article.categoryLabel} · ${article.readTimeLabel}',
+                      style: const TextStyle(
+                        color: MetaGymTheme.brandOrange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      article.shortDescription,
+                      style: const TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFFC8C2BC),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Trang chi tiết bài viết "Khám phá" đồng bộ chuẩn Futuristic Performance Glass.
+/// Tóm tắt gọn thông tin cơ sở, số lượng thiết bị & đội ngũ Coach xác thực,
+/// kết nối trực tiếp tới `GymEquipmentPage` và `CoachSelectionPage` mà không lặp lại nguyên trang.
 class MemberExploreArticleDetailPage extends StatefulWidget {
   const MemberExploreArticleDetailPage({required this.article, super.key});
 
@@ -190,15 +302,6 @@ class MemberExploreArticleDetailPage extends StatefulWidget {
 
 class _MemberExploreArticleDetailPageState
     extends State<MemberExploreArticleDetailPage> {
-  static const Color _bgDark = Color(0xFF11151C);
-  static const Color _cardBg = Color(0xFF1E2633);
-  static const Color _cardBorder = Color(0x1FFFFFFF);
-  static const Color _titleColor = Color(0xFFF3F6FA);
-  static const Color _bodyColor = Color(0xFFCBD5E1);
-  static const Color _subColor = Color(0xFF94A3B8);
-  static const Color _coralPrimary = Color(0xFFFF5E3A);
-  static const Color _coralLight = Color(0xFFFF7E58);
-
   GymProfile? _gymProfile;
   List<CatalogItem> _equipment = const [];
   List<CoachProfile> _coaches = const [];
@@ -261,89 +364,144 @@ class _MemberExploreArticleDetailPageState
     final article = widget.article;
 
     return Scaffold(
-      backgroundColor: _bgDark,
+      backgroundColor: MetaGymTheme.darkCanvas,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: _bgDark,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: const Color(0xFFF7F9FC),
+        leadingWidth: 72,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        ),
+        titleSpacing: 8,
         title: Text(
           article.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: SizedBox(
-              height: 180,
-              width: double.infinity,
-              child: Image.asset(
-                article.imageAsset,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  color: const Color(0xFF293444),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.fitness_center_rounded,
-                    color: _coralLight,
-                    size: 40,
-                  ),
+          const MetaGymBackground(),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              MetaGymTheme.pageGutter,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + 12,
+              MetaGymTheme.pageGutter,
+              MediaQuery.paddingOf(context).bottom + 32,
+            ),
+            children: [
+              MetaGymHeroGlassCard(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        height: 156,
+                        width: double.infinity,
+                        child: Image.asset(
+                          article.imageAsset,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            color: const Color(0xFF282320),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.fitness_center_rounded,
+                              color: MetaGymTheme.brandOrange,
+                              size: 36,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x24FF5E36),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: const Color(0x4DFF5E36)),
+                      ),
+                      child: Text(
+                        '${article.categoryLabel} · ${article.readTimeLabel}',
+                        style: const TextStyle(
+                          color: MetaGymTheme.brandOrange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      article.shortDescription,
+                      style: const TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: MetaGymTheme.reflectionBlue,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            article.illustrationNotice,
+                            style: const TextStyle(
+                              color: Color(0xFFC8C2BC),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+              if (article.type == ExploreArticleType.gymIntroduction)
+                _buildGymIntroductionBody(context)
+              else
+                _buildBeginnerGuideBody(),
+            ],
           ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A222E),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x33F59E0B)),
-            ),
-            child: Text(
-              article.illustrationNotice,
-              style: const TextStyle(
-                color: Color(0xFFFBBF24),
-                fontSize: 11.5,
-                height: 1.35,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '${article.categoryLabel} · ${article.readTimeLabel}',
-            style: const TextStyle(
-              color: _coralLight,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            article.title,
-            style: const TextStyle(
-              color: _titleColor,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              height: 1.25,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            article.shortDescription,
-            style: const TextStyle(
-              color: _bodyColor,
-              fontSize: 14,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (article.type == ExploreArticleType.gymIntroduction)
-            _buildGymIntroductionBody(context)
-          else
-            _buildBeginnerGuideBody(),
         ],
       ),
     );
@@ -358,211 +516,234 @@ class _MemberExploreArticleDetailPageState
         if (_loadingGymData)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(
+              child: CircularProgressIndicator(color: MetaGymTheme.brandOrange),
+            ),
           ),
-        _buildDetailSection(
-          title: '1. Không gian & Địa chỉ',
-          children: [
-            Text(
-              gym != null
-                  ? 'Tên cơ sở: ${gym.name}'
-                  : 'Tên cơ sở: Meta Gym (Đang chờ đồng bộ dữ liệu cơ sở)',
-              style: const TextStyle(
-                color: _titleColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              gym != null && gym.address.trim().isNotEmpty
-                  ? 'Địa chỉ: ${gym.address}'
-                  : 'Địa chỉ: Chưa có dữ liệu địa chỉ xác thực từ hệ thống.',
-              style: const TextStyle(
-                color: _bodyColor,
-                fontSize: 13.5,
-                height: 1.45,
-              ),
-            ),
-            if (gym?.description?.trim().isNotEmpty == true) ...[
-              const SizedBox(height: 6),
-              Text(
-                gym!.description!,
-                style: const TextStyle(
-                  color: _bodyColor,
-                  fontSize: 13.5,
-                  height: 1.45,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: MetaGymMetricPanel(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.fitness_center_rounded,
+                            color: MetaGymTheme.brandOrange,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Thiết bị hoạt động',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Color(0xFFC8C2BC),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _equipment.isEmpty ? 'Sẵn sàng' : '${_equipment.length}',
+                        style: const TextStyle(
+                          color: Color(0xFFF7F9FC),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Kèm hướng dẫn & lưu ý an toàn',
+                        style: TextStyle(
+                          color: Color(0xFFC8C2BC),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ] else ...[
-              const SizedBox(height: 6),
-              const Text(
-                'Không gian được bố trí theo từng khu vực tập luyện chuyên biệt để hội viên thuận tiện di chuyển, khởi động và thực hành kỹ thuật an toàn.',
-                style: TextStyle(
-                  color: _bodyColor,
-                  fontSize: 13.5,
-                  height: 1.45,
+              const SizedBox(width: 10),
+              Expanded(
+                child: MetaGymMetricPanel(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.groups_outlined,
+                            color: MetaGymTheme.coachAvatarBackground,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Đội ngũ Coach',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Color(0xFFC8C2BC),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _coaches.isEmpty ? '1:1 PT' : '${_coaches.length}',
+                        style: const TextStyle(
+                          color: Color(0xFFF7F9FC),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Lịch 90 phút & giáo trình riêng',
+                        style: TextStyle(
+                          color: Color(0xFFC8C2BC),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
-            if (gym?.phone?.trim().isNotEmpty == true) ...[
-              const SizedBox(height: 6),
-              Text(
-                'Liên hệ: ${gym!.phone}',
-                style: const TextStyle(color: _subColor, fontSize: 13),
-              ),
-            ],
-            if (gym?.email?.trim().isNotEmpty == true) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Email: ${gym!.email}',
-                style: const TextStyle(color: _subColor, fontSize: 13),
-              ),
-            ],
-          ],
+          ),
         ),
         const SizedBox(height: 14),
         _buildDetailSection(
-          title: '2. Giờ mở cửa',
+          icon: Icons.location_on_outlined,
+          iconColor: MetaGymTheme.brandOrange,
+          title: 'Không gian & Giờ hoạt động',
           children: [
-            if (gym != null && gym.openingHours.isNotEmpty)
-              for (final entry in gym.openingHours.entries)
+            Text(
+              gym != null ? gym.name : 'Meta Gym Studio',
+              style: const TextStyle(
+                color: Color(0xFFF7F9FC),
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              gym != null && gym.address.trim().isNotEmpty
+                  ? 'Địa chỉ: ${gym.address}'
+                  : 'Không gian được phân khu theo nhóm cơ, khu Free Weight, máy khối và khu khởi động chức năng.',
+              style: const TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+            if (gym != null && gym.openingHours.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              for (final entry in gym.openingHours.entries.take(3))
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
                     '• ${entry.key}: ${entry.value}',
                     style: const TextStyle(
-                      color: _bodyColor,
+                      color: Color(0xFFC8C2BC),
                       fontSize: 13.5,
-                      height: 1.4,
+                      fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                   ),
-                )
-            else
-              const Text(
-                'Chưa có dữ liệu giờ mở cửa xác thực trên hệ thống. Vui lòng kiểm tra trực tiếp tại trang Phòng gym và thiết bị.',
-                style: TextStyle(color: _subColor, fontSize: 13, height: 1.45),
-              ),
+                ),
+            ],
           ],
         ),
         const SizedBox(height: 14),
         _buildDetailSection(
-          title: '3. Thiết bị luyện tập',
+          icon: Icons.fitness_center_rounded,
+          iconColor: MetaGymTheme.reflectionBlue,
+          title: 'Tra cứu thiết bị & Đội ngũ PT',
           children: [
-            if (_equipment.isNotEmpty) ...[
-              Text(
-                'Hiện có ${_equipment.length} thiết bị đang hoạt động trên danh mục xác thực:',
-                style: const TextStyle(
-                  color: _bodyColor,
-                  fontSize: 13.5,
-                  height: 1.45,
-                ),
+            const Text(
+              'Tra cứu nhanh cách dùng từng máy, nhóm cơ tác động hoặc xem hồ sơ chuyên môn của các Huấn luyện viên đang mở nhận học viên.',
+              style: TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 14,
+                height: 1.5,
               ),
-              const SizedBox(height: 8),
-              for (final item in _equipment.take(6))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    '• ${item.name}${item.category != null ? ' (${item.category})' : ''}',
-                    style: const TextStyle(
-                      color: _titleColor,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ] else
-              const Text(
-                'Danh mục thiết bị chi tiết cùng hướng dẫn sử dụng và lưu ý an toàn được cập nhật trực tiếp tại mục Phòng gym và thiết bị.',
-                style: TextStyle(
-                  color: _bodyColor,
-                  fontSize: 13.5,
-                  height: 1.45,
-                ),
-              ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
                 onPressed: () => MetaGymNavigation.pushPathOnce(
                   context,
                   '/member/features/gym',
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _coralLight,
-                  side: const BorderSide(color: _coralPrimary),
-                  minimumSize: const Size(48, 48),
-                ),
-                icon: const Icon(Icons.fitness_center_rounded, size: 18),
-                label: const Text('Mở danh mục Phòng gym & thiết bị'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        _buildDetailSection(
-          title: '4. Đội ngũ Huấn luyện viên (PT)',
-          children: [
-            if (_coaches.isNotEmpty) ...[
-              Text(
-                'Danh sách Coach đang hoạt động trên hệ thống (${_coaches.length}):',
-                style: const TextStyle(
-                  color: _bodyColor,
-                  fontSize: 13.5,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 8),
-              for (final coach in _coaches)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '• ${coach.fullName}'
-                        '${coach.experienceYears != null ? ' · ${coach.experienceYears} năm kinh nghiệm' : ''}',
-                        style: const TextStyle(
-                          color: _titleColor,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (coach.specialties.isNotEmpty)
-                        Text(
-                          '  Chuyên môn: ${coach.specialties.join(', ')}',
-                          style: const TextStyle(
-                            color: _subColor,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                    ],
+                style: FilledButton.styleFrom(
+                  backgroundColor: MetaGymTheme.brandOrange,
+                  foregroundColor: MetaGymTheme.onPrimary,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      MetaGymTheme.radiusInput,
+                    ),
                   ),
                 ),
-            ] else
-              const Text(
-                'Thông tin hồ sơ, chuyên môn và số chỗ trống của từng Huấn luyện viên được hiển thị minh bạch theo dữ liệu thực tế tại trang Chọn Coach.',
-                style: TextStyle(
-                  color: _bodyColor,
-                  fontSize: 13.5,
-                  height: 1.45,
+                icon: const Icon(
+                  Icons.fitness_center_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Mở danh mục Phòng gym & thiết bị',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
+            ),
             const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
+            SizedBox(
+              width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => MetaGymNavigation.pushPathOnce(
                   context,
                   '/member/features/coaching',
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: _coralLight,
-                  side: const BorderSide(color: _coralPrimary),
-                  minimumSize: const Size(48, 48),
+                  foregroundColor: const Color(0xFFF7F9FC),
+                  backgroundColor: const Color(0x80211E1C),
+                  side: const BorderSide(color: Color(0xA3A79D92)),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      MetaGymTheme.radiusInput,
+                    ),
+                  ),
                 ),
-                icon: const Icon(Icons.person_search_rounded, size: 18),
-                label: const Text('Xem danh sách Coach thực tế'),
+                icon: const Icon(
+                  Icons.person_search_rounded,
+                  color: MetaGymTheme.coachAvatarBackground,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Xem danh sách Coach thực tế',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -576,41 +757,65 @@ class _MemberExploreArticleDetailPageState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildDetailSection(
+          icon: Icons.bolt_rounded,
+          iconColor: MetaGymTheme.brandOrange,
           title: '1. Khởi động kỹ 8–10 phút trước mỗi buổi tập',
           children: const [
             Text(
               'Bắt đầu bằng 5 phút làm nóng toàn thân (đi bộ nhanh, xoay khớp vai, hông, cổ chân) và 1–2 hiệp khởi động nhẹ với chính bài tập chính trong ngày để cơ bắp và hệ thần kinh sẵn sàng.',
-              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
+              style: TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 14,
+                height: 1.5,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 14),
         _buildDetailSection(
+          icon: Icons.verified_user_outlined,
+          iconColor: MetaGymTheme.success,
           title: '2. Ưu tiên kỹ thuật chuẩn trước khi tăng mức tạ',
           children: const [
             Text(
               'Trong 2–4 tuần đầu tiên, hãy chọn mức tạ mà bạn kiểm soát được trọn vẹn biên độ chuyển động từ 10–12 lần mỗi hiệp. Giữ nhịp thở đều (thở ra khi phát lực, hít vào khi hạ tạ) và đọc kỹ hướng dẫn an toàn của từng thiết bị.',
-              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
+              style: TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 14,
+                height: 1.5,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 14),
         _buildDetailSection(
+          icon: Icons.calendar_today_rounded,
+          iconColor: MetaGymTheme.reflectionBlue,
           title: '3. Phân bổ lịch tập 3 buổi/tuần hợp lý',
           children: const [
             Text(
               'Người mới nên bắt đầu với 3 buổi/tuần cách ngày (ví dụ Thứ 2 – Thứ 4 – Thứ 6) để cơ bắp có 48 giờ phục hồi. Mỗi buổi chỉ cần 4–6 bài tập cơ bản tác động vào các nhóm cơ lớn (Ngực, Lưng, Chân, Vai, Core).',
-              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
+              style: TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 14,
+                height: 1.5,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 14),
         _buildDetailSection(
+          icon: Icons.edit_calendar_rounded,
+          iconColor: MetaGymTheme.coachAvatarBackground,
           title: '4. Ghi nhật ký tập luyện và ăn uống đều đặn',
           children: const [
             Text(
-              'Sau mỗi buổi tập và bữa ăn, hãy ghi lại thời lượng, số bài hoàn thành và các bữa ăn trong mục "Nhật ký của bạn". Việc theo dõi đều đặn giúp bạn và Coach dễ dàng điều chỉnh khối lượng vận động phù hợp nhất.',
-              style: TextStyle(color: _bodyColor, fontSize: 13.5, height: 1.5),
+              'Sau mỗi buổi tập, hãy lưu lại thành tích, ảnh tiến trình và chỉ số cơ thể trong mục Nhật ký tập luyện để bạn và Coach dễ dàng theo dõi tiến độ.',
+              style: TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 14,
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -619,27 +824,31 @@ class _MemberExploreArticleDetailPageState
   }
 
   Widget _buildDetailSection({
+    required IconData icon,
+    required Color iconColor,
     required String title,
     required List<Widget> children,
   }) {
-    return Container(
-      width: double.infinity,
+    return MetaGymGlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _cardBorder),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: _titleColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: [
+              Icon(icon, size: 19, color: iconColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           ...children,

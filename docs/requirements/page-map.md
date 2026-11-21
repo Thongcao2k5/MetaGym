@@ -98,9 +98,6 @@ Gửi yêu cầu, hủy yêu cầu và kết thúc quan hệ dùng dialog xác n
 | `/member/progress/workouts` | Nhật ký tập luyện |
 | `/member/progress/workouts/new` | Ghi nhật ký tập luyện |
 | `/member/progress/workouts/:logId/edit` | Sửa nhật ký tập luyện |
-| `/member/progress/meals` | Nhật ký ăn uống |
-| `/member/progress/meals/new` | Ghi bữa ăn |
-| `/member/progress/meals/:logId/edit` | Sửa bữa ăn |
 | `/member/progress/measurements` | Lịch sử số đo |
 | `/member/progress/measurements/new` | Cập nhật số đo |
 | `/member/progress/photos` | Ảnh tiến trình |
@@ -163,7 +160,6 @@ Chọn bài tập và cấu hình hiệp/lần/nghỉ được thực hiện tro
 | `/coach/sessions/:sessionId` | Chi tiết và cập nhật trạng thái |
 | `/coach/members/:memberId/progress` | Tổng quan tiến độ Member |
 | `/coach/members/:memberId/workouts` | Nhật ký tập luyện |
-| `/coach/members/:memberId/meals` | Nhật ký ăn uống |
 | `/coach/members/:memberId/measurements` | Số đo và biểu đồ |
 | `/coach/members/:memberId/photos` | Ảnh tiến trình |
 
