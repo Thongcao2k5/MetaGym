@@ -168,14 +168,14 @@ function paintFallingAndReboundingDroplet(ctx, cx, cy, progress) {
   ctx.closePath();
 
   const fill = ctx.createLinearGradient(0, -24, 0, 24);
-  fill.addColorStop(0, mixColor([255, 253, 247], [255, 196, 77], warmMix));
-  fill.addColorStop(1, mixColor([255, 229, 180], [255, 94, 54], warmMix));
+  fill.addColorStop(0, mixColor([255, 253, 247], [255, 94, 54], warmMix));
+  fill.addColorStop(1, mixColor([255, 229, 180], [232, 78, 39], warmMix));
   ctx.fillStyle = fill;
   ctx.fill();
   ctx.restore();
 }
 
-function paintInvertedDropletAndAthlete(ctx, cx, cy, athleteMorph, flexWave) {
+function paintInvertedDropletAndAthlete(ctx, cx, cy, athleteMorph, flexWave, isLight = false) {
   ctx.save();
   ctx.translate(cx, cy);
 
@@ -183,29 +183,29 @@ function paintInvertedDropletAndAthlete(ctx, cx, cy, athleteMorph, flexWave) {
   const overshoot = clamp(athleteMorph - 1, 0, 0.12);
 
   const fill = ctx.createLinearGradient(0, -56, 0, 44);
-  fill.addColorStop(0, '#FFC145');
-  fill.addColorStop(0.55, '#F59E0B');
-  fill.addColorStop(1, '#FF5E36');
+  fill.addColorStop(0, '#FF5E36');
+  fill.addColorStop(0.68, '#FF5E36');
+  fill.addColorStop(1, '#E84E27');
   ctx.fillStyle = fill;
 
-  const topY = lerp(-18, -21, m);
-  const botY = lerp(22, 39, m);
-  const topW = lerp(16.5, 28 + flexWave * 1.2, m);
-  const midW = lerp(13.5, 22.5 + flexWave * 0.8, m);
+  const topY = lerp(-18, -22, m);
+  const botY = lerp(22, 40, m);
+  const topW = lerp(16.5, 33 + flexWave * 1.6, m);
+  const midW = lerp(13.5, 25 + flexWave * 1.0, m);
 
   ctx.beginPath();
   ctx.moveTo(0, topY);
-  ctx.bezierCurveTo(topW * 0.55, topY, topW, topY + 2.5, topW * 0.96, topY + 13);
-  ctx.bezierCurveTo(midW, 10, 8.5, botY - 6, 0, botY);
-  ctx.bezierCurveTo(-8.5, botY - 6, -midW, 10, -topW * 0.96, topY + 13);
-  ctx.bezierCurveTo(-topW, topY + 2.5, -topW * 0.55, topY, 0, topY);
+  ctx.bezierCurveTo(topW * 0.58, topY, topW, topY + 3.5, topW * 0.96, topY + 15);
+  ctx.bezierCurveTo(midW, 11, 10.5, botY - 6, 0, botY);
+  ctx.bezierCurveTo(-10.5, botY - 6, -midW, 11, -topW * 0.96, topY + 15);
+  ctx.bezierCurveTo(-topW, topY + 3.5, -topW * 0.58, topY, 0, topY);
   ctx.closePath();
   ctx.fill();
 
   if (m > 0.05) {
     const headT = segment(m, 0.05, 0.88, easeOutCubic);
-    const headY = lerp(-10, -37.5 - overshoot * 14, headT);
-    const headR = lerp(8, 12.2, headT);
+    const headY = lerp(-10, -38.5 - overshoot * 14, headT);
+    const headR = lerp(8, 12.5, headT);
     ctx.beginPath();
     ctx.arc(0, headY, headR, 0, Math.PI * 2);
     ctx.fill();
@@ -220,26 +220,61 @@ function paintInvertedDropletAndAthlete(ctx, cx, cy, athleteMorph, flexWave) {
       ctx.save();
       ctx.scale(dir, 1);
 
-      const shoulderTopY = lerp(0, -19.5, spreadT);
-      const shoulderBotY = lerp(12, -3.5, spreadT);
-      const shoulderX = lerp(11, 21, spreadT);
-      const elbowX = lerp(15, 49 + flexWave * 1.5, spreadT);
-      const elbowY = lerp(12, lerp(5, -10 - flexWave * 1.2, curlT), spreadT);
-      const fistX = lerp(lerp(17, 52, spreadT), 41.5 - flexWave * 1.2, curlClamped);
-      const fistY = lerp(lerp(14, 2, spreadT), -39 - overshoot * 18 - flexWave * 1.8, curlClamped);
-      const bicepPeakX = lerp(18, 33.5, spreadT);
-      const bicepPeakY = lerp(4, -22.5 - flexWave * 2, clamp(curlT, 0, 1.1));
-      const fistR = lerp(3.5, 6.8, clamp(spreadT));
+      const shoulderTopY = lerp(0, -20.5, spreadT);
+      const shoulderBotY = lerp(12, -1.5, spreadT);
+      const shoulderX = lerp(11, 23.5, spreadT);
+      const elbowX = lerp(15, 55 + flexWave * 1.8, spreadT);
+      const elbowY = lerp(12, lerp(6, -8 - flexWave * 1.2, curlT), spreadT);
+      const wristX = lerp(lerp(17, 56, spreadT), 44 - flexWave * 1.2, curlClamped);
+      const wristY = lerp(lerp(14, 2, spreadT), -34 - overshoot * 18 - flexWave * 1.8, curlClamped);
+      const bicepPeakX = lerp(18, 37.5, spreadT);
+      const bicepPeakY = lerp(4, -26 - flexWave * 2.4, clamp(curlT, 0, 1.1));
 
+      // Muscular upper arm, bicep peak, and forearm tapering into wrist
       ctx.beginPath();
       ctx.moveTo(shoulderX, shoulderTopY);
-      ctx.bezierCurveTo(bicepPeakX - 5, bicepPeakY, bicepPeakX + 3, bicepPeakY + 1.5, elbowX - 11.5, elbowY - 8.5);
-      ctx.bezierCurveTo(elbowX - 11, lerp(elbowY - 4, fistY + 12, clamp(curlT)), fistX - fistR * 1.1, fistY + 4, fistX - fistR * 0.7, fistY);
-      ctx.arc(fistX + fistR * 0.1, fistY + 1, fistR, Math.PI, 0, false);
-      ctx.bezierCurveTo(elbowX + 4.5, lerp(elbowY, fistY + 16, clamp(curlT)), elbowX + 4, elbowY - 4, elbowX, elbowY + 3.5);
-      ctx.bezierCurveTo(elbowX - 6, elbowY + 9, shoulderX + 10, shoulderBotY + 2, shoulderX - 2, shoulderBotY);
+      ctx.bezierCurveTo(bicepPeakX - 5, bicepPeakY, bicepPeakX + 4, bicepPeakY + 2, elbowX - 13, elbowY - 9.5);
+      ctx.bezierCurveTo(elbowX - 12.5, lerp(elbowY - 3, wristY + 13, clamp(curlT)), wristX - 6.5, wristY + 4, wristX - 4.5, wristY);
+      ctx.lineTo(wristX + 4.5, wristY + 1);
+      ctx.bezierCurveTo(elbowX + 6.5, lerp(elbowY + 2, wristY + 18, clamp(curlT)), elbowX + 6, elbowY - 3, elbowX + 1.5, elbowY + 5);
+      ctx.bezierCurveTo(elbowX - 6, elbowY + 11, shoulderX + 12, shoulderBotY + 3, shoulderX - 2, shoulderBotY);
       ctx.closePath();
       ctx.fill();
+
+      // Clenched fist (nắm đấm)
+      const fistScale = clamp(spreadT * 1.15, 0.25, 1);
+      const fistAngle = lerp(0.15, -0.28, curlClamped);
+      ctx.save();
+      ctx.translate(wristX, wristY - 3.5 * fistScale);
+      ctx.rotate(fistAngle);
+      ctx.scale(fistScale, fistScale);
+
+      // Fist silhouette with knuckle crown and tucked thumb
+      ctx.beginPath();
+      ctx.moveTo(-7.5, 4.5);
+      ctx.bezierCurveTo(-9, 1.5, -9, -4.5, -6.5, -6.5);
+      ctx.quadraticCurveTo(-4, -8.5, -1.5, -7);
+      ctx.quadraticCurveTo(1, -8.5, 3.5, -7);
+      ctx.quadraticCurveTo(6.5, -8.2, 8, -5.2);
+      ctx.bezierCurveTo(9.5, -2.5, 9, 3, 6.5, 5.2);
+      ctx.bezierCurveTo(4, 7, -3.5, 7, -7.5, 4.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Subtle finger-curl & thumb crease so the fist reads clearly
+      if (spreadT > 0.35) {
+        ctx.strokeStyle = isLight ? 'rgba(245, 247, 250, 0.55)' : 'rgba(15, 17, 21, 0.48)';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-4.5, -1.5);
+        ctx.quadraticCurveTo(0, -0.5, 4.5, -1.5);
+        ctx.moveTo(-5.5, 2.2);
+        ctx.quadraticCurveTo(-1.5, 3.8, 1.5, 1.2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
       ctx.restore();
     }
   }
@@ -380,7 +415,7 @@ function renderMorphFrame(ctx, w, h, progress, pulse, isLight) {
     const collapseT = segment(progress, 0.37, 0.45, easeInOutCubic);
     const athleteMorph = clamp(sproutT * (1 - collapseT), 0, 1.08);
     const flexWave = progress >= 0.26 && progress < 0.37 ? Math.sin(segment(progress, 0.26, 0.37) * Math.PI) : 0;
-    paintInvertedDropletAndAthlete(ctx, cx, cy + 2 - flexWave * 2.5, athleteMorph, flexWave);
+    paintInvertedDropletAndAthlete(ctx, cx, cy + 2 - flexWave * 2.5, athleteMorph, flexWave, isLight);
   }
 
   if (progress >= 0.45 && progress < 0.635) {
@@ -479,15 +514,17 @@ export function playAppSplash(onDone) {
 
   const width = 310;
   const height = 204;
+  const displayWidth = 480;
+  const displayHeight = 316;
   const dpr = Math.min(globalThis.window?.devicePixelRatio || 1, 2);
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
+  canvas.width = displayWidth * dpr;
+  canvas.height = displayHeight * dpr;
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     onDone();
     return;
   }
-  ctx.scale(dpr, dpr);
+  ctx.scale((displayWidth / width) * dpr, (displayHeight / height) * dpr);
 
   const isLight = document.documentElement.getAttribute('data-bs-theme') === 'light';
   const durationMs = 3600;
@@ -515,8 +552,7 @@ export function playAppSplash(onDone) {
     if (elapsed < durationMs + holdMs) {
       requestAnimationFrame(frame);
     } else {
-      splashEl.classList.add('leaving');
-      setTimeout(onDone, 180);
+      onDone();
     }
   };
 

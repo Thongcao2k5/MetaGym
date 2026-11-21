@@ -677,12 +677,12 @@ class _MetaGymMorphPainter extends CustomPainter {
 
     final topColor = Color.lerp(
       const Color(0xFFFFFDF7),
-      const Color(0xFFFFC44D),
+      MetaGymTheme.brandOrange,
       warmColorMix,
     )!;
     final botColor = Color.lerp(
       const Color(0xFFFFE5B4),
-      MetaGymTheme.brandOrange,
+      const Color(0xFFE84E27),
       warmColorMix,
     )!;
 
@@ -780,51 +780,49 @@ class _MetaGymMorphPainter extends CustomPainter {
         const Offset(0, -56),
         const Offset(0, 44),
         const [
-          Color(0xFFFFC145),
-          Color(0xFFF59E0B),
           MetaGymTheme.brandOrange,
+          MetaGymTheme.brandOrange,
+          Color(0xFFE84E27),
         ],
-        const [0.0, 0.55, 1.0],
+        const [0.0, 0.68, 1.0],
       );
 
-    // 1. Thân V-Taper (Inverted Teardrop Shield):
-    // Khi m = 0: Giọt nước ngược bầu ở trên (topW = 16.5), thon ở dưới (botY = 22)
-    // Khi m = 1: Thân V-Taper vai rộng (topW = 28), đáy vát tròn uy lực (botY = 39)
-    final topY = ui.lerpDouble(-18.0, -21.0, m)!;
-    final botY = ui.lerpDouble(22.0, 39.0, m)!;
-    final topW = ui.lerpDouble(16.5, 28.0 + flexWave * 1.2, m)!;
-    final midW = ui.lerpDouble(13.5, 22.5 + flexWave * 0.8, m)!;
+    // 1. Thân V-Taper (Inverted Teardrop Shield) vạm vỡ hơn:
+    final topY = ui.lerpDouble(-18.0, -22.0, m)!;
+    final botY = ui.lerpDouble(22.0, 40.0, m)!;
+    final topW = ui.lerpDouble(16.5, 33.0 + flexWave * 1.6, m)!;
+    final midW = ui.lerpDouble(13.5, 25.0 + flexWave * 1.0, m)!;
 
     final torsoPath = Path()
       ..moveTo(0, topY)
       ..cubicTo(
-        topW * 0.55,
+        topW * 0.58,
         topY,
         topW,
-        topY + 2.5,
+        topY + 3.5,
         topW * 0.96,
-        topY + 13.0,
+        topY + 15.0,
       )
       ..cubicTo(
         midW,
-        10.0,
-        8.5,
+        11.0,
+        10.5,
         botY - 6.0,
         0,
         botY,
       )
       ..cubicTo(
-        -8.5,
+        -10.5,
         botY - 6.0,
         -midW,
-        10.0,
+        11.0,
         -topW * 0.96,
-        topY + 13.0,
+        topY + 15.0,
       )
       ..cubicTo(
         -topW,
-        topY + 2.5,
-        -topW * 0.55,
+        topY + 3.5,
+        -topW * 0.58,
         topY,
         0,
         topY,
@@ -833,108 +831,127 @@ class _MetaGymMorphPainter extends CustomPainter {
 
     canvas.drawPath(torsoPath, fillPaint);
 
-    // 2. Đầu tròn tách từ đỉnh thân lên trên cổ (có khoảng hở rõ ràng như frame 1.28s -> 2.12s)
+    // 2. Đầu tròn tách từ đỉnh thân lên trên cổ
     if (m > 0.05) {
       final headT = _segment(m, 0.05, 0.88, Curves.easeOutCubic);
-      final headY = ui.lerpDouble(-10.0, -37.5 - overshoot * 14.0, headT)!;
-      final headRadius = ui.lerpDouble(8.0, 12.2, headT)!;
+      final headY = ui.lerpDouble(-10.0, -38.5 - overshoot * 14.0, headT)!;
+      final headRadius = ui.lerpDouble(8.0, 12.5, headT)!;
       canvas.drawCircle(Offset(0, headY), headRadius, fillPaint);
     }
 
-    // 3. Hai cánh tay mọc từ hông (1.04s), vươn ngang (1.16s) rồi gập lên gồng cơ (1.28s -> 2.12s)
-    // Khi thu gọn (collapsePhase > 0): Cẳng tay gập xuống vai trước (2.36s) rồi rút gọn vào thân (2.48s)
+    // 3. Hai cánh tay vạm vỡ & 2 nắm đấm (Double Front Biceps)
     if (m > 0.04) {
       final spreadT = _segment(m, 0.04, 0.55, Curves.easeOutCubic);
       final curlT = _segment(m, 0.36, 1.0, Curves.easeOutBack);
+      final curlClamped = _clamp(curlT, 0.0, 1.15);
 
       for (final dir in const [-1.0, 1.0]) {
         canvas.save();
         canvas.scale(dir, 1.0);
 
-        // Điểm gốc nối liền vào vai/thân trên
-        final shoulderTopY = ui.lerpDouble(0.0, -19.5, spreadT)!;
-        final shoulderBotY = ui.lerpDouble(12.0, -3.5, spreadT)!;
-        final shoulderX = ui.lerpDouble(11.0, 21.0, spreadT)!;
+        final shoulderTopY = ui.lerpDouble(0.0, -20.5, spreadT)!;
+        final shoulderBotY = ui.lerpDouble(12.0, -1.5, spreadT)!;
+        final shoulderX = ui.lerpDouble(11.0, 23.5, spreadT)!;
 
-        // Khuỷu tay (elbow): lúc mới nhú (1.04s) chúc xuống (+11), sau đó nâng ngang vai (-8..-14)
-        final elbowX = ui.lerpDouble(15.0, 49.0 + flexWave * 1.5, spreadT)!;
+        final elbowX = ui.lerpDouble(15.0, 55.0 + flexWave * 1.8, spreadT)!;
         final elbowY = ui.lerpDouble(
           12.0,
-          ui.lerpDouble(5.0, -10.0 - flexWave * 1.2, curlT)!,
+          ui.lerpDouble(6.0, -8.0 - flexWave * 1.2, curlT)!,
           spreadT,
         )!;
 
-        // Cổ tay & nắm đấm (fist):
-        // - Khi curlT = 0 (1.04s - 1.16s): vươn ra ngoài/dưới
-        // - Khi curlT = 1 (1.28s - 2.12s): cuộn cao lên (-39) và hướng nhẹ vào đầu (x = 41)
-        final fistX = ui.lerpDouble(
-          ui.lerpDouble(17.0, 52.0, spreadT)!,
-          41.5 - flexWave * 1.2,
-          _clamp(curlT, 0.0, 1.15),
+        final wristX = ui.lerpDouble(
+          ui.lerpDouble(17.0, 56.0, spreadT)!,
+          44.0 - flexWave * 1.2,
+          curlClamped,
         )!;
-        final fistY = ui.lerpDouble(
+        final wristY = ui.lerpDouble(
           ui.lerpDouble(14.0, 2.0, spreadT)!,
-          -39.0 - overshoot * 18.0 - flexWave * 1.8,
-          _clamp(curlT, 0.0, 1.15),
+          -34.0 - overshoot * 18.0 - flexWave * 1.8,
+          curlClamped,
         )!;
 
-        // Đỉnh cơ chuột (bicep peak) phồng lên khi gập tay
-        final bicepPeakX = ui.lerpDouble(18.0, 33.5, spreadT)!;
+        final bicepPeakX = ui.lerpDouble(18.0, 37.5, spreadT)!;
         final bicepPeakY = ui.lerpDouble(
           4.0,
-          -22.5 - flexWave * 2.0,
+          -26.0 - flexWave * 2.4,
           _clamp(curlT, 0.0, 1.1),
         )!;
 
-        final fistRadius = ui.lerpDouble(3.5, 6.8, _clamp(spreadT))!;
-
         final armPath = Path()
           ..moveTo(shoulderX, shoulderTopY)
-          // Đường cong trên của vai + đỉnh cơ Bicep chạy tới mặt trong cổ tay
           ..cubicTo(
             bicepPeakX - 5.0,
             bicepPeakY,
-            bicepPeakX + 3.0,
-            bicepPeakY + 1.5,
-            elbowX - 11.5,
-            elbowY - 8.5,
+            bicepPeakX + 4.0,
+            bicepPeakY + 2.0,
+            elbowX - 13.0,
+            elbowY - 9.5,
           )
-          // Mặt trong cẳng tay vươn lên nắm đấm cuộn vào trong
           ..cubicTo(
-            elbowX - 11.0,
-            ui.lerpDouble(elbowY - 4.0, fistY + 12.0, _clamp(curlT))!,
-            fistX - fistRadius * 1.1,
-            fistY + 4.0,
-            fistX - fistRadius * 0.7,
-            fistY,
+            elbowX - 12.5,
+            ui.lerpDouble(elbowY - 3.0, wristY + 13.0, _clamp(curlT))!,
+            wristX - 6.5,
+            wristY + 4.0,
+            wristX - 4.5,
+            wristY,
           )
-          // Vòm tròn nắm đấm (fist)
-          ..arcToPoint(
-            Offset(fistX + fistRadius * 0.9, fistY + 2.0),
-            radius: Radius.circular(fistRadius),
-            clockwise: true,
-          )
-          // Mặt ngoài cẳng tay chạy xuống khuỷu tay ngoài
+          ..lineTo(wristX + 4.5, wristY + 1.0)
           ..cubicTo(
-            elbowX + 4.5,
-            ui.lerpDouble(elbowY, fistY + 16.0, _clamp(curlT))!,
-            elbowX + 4.0,
-            elbowY - 4.0,
-            elbowX,
-            elbowY + 3.5,
+            elbowX + 6.5,
+            ui.lerpDouble(elbowY + 2.0, wristY + 18.0, _clamp(curlT))!,
+            elbowX + 6.0,
+            elbowY - 3.0,
+            elbowX + 1.5,
+            elbowY + 5.0,
           )
-          // Mặt dưới bắp tay (tricep) nối mượt về nách/thân V-Taper
           ..cubicTo(
             elbowX - 6.0,
-            elbowY + 9.0,
-            shoulderX + 10.0,
-            shoulderBotY + 2.0,
+            elbowY + 11.0,
+            shoulderX + 12.0,
+            shoulderBotY + 3.0,
             shoulderX - 2.0,
             shoulderBotY,
           )
           ..close();
 
         canvas.drawPath(armPath, fillPaint);
+
+        // Nắm đấm (clenched fist) ở cổ tay
+        final fistScale = _clamp(spreadT * 1.15, 0.25, 1.0);
+        final fistAngle = ui.lerpDouble(0.15, -0.28, curlClamped)!;
+        canvas.save();
+        canvas.translate(wristX, wristY - 3.5 * fistScale);
+        canvas.rotate(fistAngle);
+        canvas.scale(fistScale, fistScale);
+
+        final fistPath = Path()
+          ..moveTo(-7.5, 4.5)
+          ..cubicTo(-9.0, 1.5, -9.0, -4.5, -6.5, -6.5)
+          ..quadraticBezierTo(-4.0, -8.5, -1.5, -7.0)
+          ..quadraticBezierTo(1.0, -8.5, 3.5, -7.0)
+          ..quadraticBezierTo(6.5, -8.2, 8.0, -5.2)
+          ..cubicTo(9.5, -2.5, 9.0, 3.0, 6.5, 5.2)
+          ..cubicTo(4.0, 7.0, -3.5, 7.0, -7.5, 4.5)
+          ..close();
+
+        canvas.drawPath(fistPath, fillPaint);
+
+        if (spreadT > 0.35) {
+          final creasePaint = Paint()
+            ..style = PaintingStyle.stroke
+            ..color = const Color(0x7A0F1115)
+            ..strokeWidth = 1.5
+            ..strokeCap = StrokeCap.round;
+          final creasePath = Path()
+            ..moveTo(-4.5, -1.5)
+            ..quadraticBezierTo(0.0, -0.5, 4.5, -1.5)
+            ..moveTo(-5.5, 2.2)
+            ..quadraticBezierTo(-1.5, 3.8, 1.5, 1.2);
+          canvas.drawPath(creasePath, creasePaint);
+        }
+
+        canvas.restore();
         canvas.restore();
       }
     }
