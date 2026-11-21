@@ -220,27 +220,34 @@ hồi backup theo kế hoạch hoặc viết migration sửa tiếp; không xóa
 10. Tích hợp cùng cấu hình vào repo đồ án local `F:\AndroidProjects\MetaGym`
     trên nhánh `thong`, không đưa các tính năng đang phát triển khác lên main.
     File test runner mới đã bỏ khỏi thay đổi cuối; môi trường PostgreSQL tạm
-    đã dừng. Bộ duyệt tự động từ chối lệnh xóa thư mục tạm và file environment
-    tải xuống (`blocked by policy`), nên hai mục này cần chủ máy dọn thủ công.
-    Giữ backup để phục hồi khi cần.
+    đã dừng. Đã xóa nhánh triển khai trên GitHub; chuyển ảnh test phát sinh,
+    database/script test tạm và file environment tải xuống vào Thùng rác.
+    Bản clone tạm ngoài repo còn lại chưa chuyển được vào Thùng rác do Windows
+    từ chối quyền truy cập; giữ backup hợp lệ để phục hồi khi cần.
 
 **Mốc production sau thiết lập là `0031`.** Migration ở nhánh khác (ví dụ `0032`
 trong repo local) chỉ lên production sau khi PR/merge vào `main` và workflow đạt.
 Các lệnh baseline trong hướng dẫn là để thiết lập một database cũ khác; không
 chạy lại baseline trên database production đã được ghi lịch sử này.
 
-### Dọn thủ công phần tạm còn lại
+### Kết quả dọn dẹp
 
-Hai đường dẫn dưới đây được tạo riêng cho lần thiết lập này, không phải repo
-đồ án `F:\AndroidProjects\MetaGym`. Đóng tiến trình đang dùng chúng rồi xóa bằng
-File Explorer hoặc chạy PowerShell:
+Nhánh `codex/render-migration-actions` đã xóa trên GitHub. Repo đồ án không còn
+`mobile-app/test_artifacts/` hoặc file test runner mới. Các test nguồn sẵn có,
+workflow và schema assertions vẫn được giữ để bảo vệ việc deploy.
+
+Đã chuyển vào Thùng rác: ảnh test phát sinh, database PostgreSQL tạm, script
+kiểm thử/vận hành tạm, file `Downloads\metagym-api.env` và bản dump rỗng bị lỗi.
+
+Bản clone ở đường dẫn dưới đây nằm ngoài repo đồ án. Lệnh xóa vĩnh viễn bị
+bộ duyệt tự động chặn (`blocked by policy`); chuyển cả bản clone vào Thùng rác
+cũng bị Windows từ chối quyền truy cập. Đóng tiến trình đang dùng nó rồi dọn
+bằng File Explorer hoặc PowerShell khi chủ máy có quyền:
 
 ```powershell
 Remove-Item -LiteralPath 'C:\Users\thong\OneDrive\Đính kèm\Documents\ChatGPT\Meta Gym\.tmp\metagym-render-migrations' -Recurse -Force
-Remove-Item -LiteralPath 'C:\Users\thong\Downloads\metagym-api.env' -Force
 ```
 
-File `.env` tải xuống chứa cấu hình kín, không chia sẻ hoặc commit. Backup hợp
-lệ được giữ tại `C:\Users\thong\AppData\Local\MetaGym\backups\before-automated-migrations-1795262696183.dump`
-(195.081 byte); bản dump dung lượng 0 cùng thư mục là lần sao lưu không thành công,
-không dùng để phục hồi.
+Backup hợp lệ được giữ tại
+`C:\Users\thong\AppData\Local\MetaGym\backups\before-automated-migrations-1795262696183.dump`
+(195.081 byte).
