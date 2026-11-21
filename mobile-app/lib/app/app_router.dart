@@ -117,7 +117,8 @@ GoRouter createAppRouter({
           (FlowWorkbenchConfig.enabled &&
               home == AppRoutes.coachHome &&
               state.matchedLocation == AppRoutes.coachWorkbench) ||
-          sharedProtectedRoutes.contains(state.matchedLocation)) {
+          (home != AppRoutes.adminHome &&
+              sharedProtectedRoutes.contains(state.matchedLocation))) {
         return null;
       }
       return home;
