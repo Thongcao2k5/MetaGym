@@ -23,7 +23,7 @@ Chi tiết, phụ thuộc, nghiệm thu và cách kiểm chứng của từng ta
 - [x] Checkpoint 2. Luồng tài khoản/gói/thanh toán chạy đầu-cuối (migration `0001`..`0031` / 55 bảng + `schema_assertions.sql` PASS, `backend` check & Postgres tests PASS, `admin-web` tests & build PASS, `mobile-app` `flutter analyze` & `flutter test` PASS)
 
 ## Giai đoạn 3 — Quan hệ và ngoại lệ
-- [ ] T12. Quan hệ và kết thúc sớm
+- [x] T12. Quan hệ và kết thúc sớm — **Backend + Migration `0032` đã hoàn tất & xác minh (`e47ad89`, 95/96 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [ ] T13. Hàng chờ sự cố và chuyển Coach
 - [ ] T14. Hoàn tiền mô phỏng
 - [ ] T15. Dashboard theo dữ liệu thật

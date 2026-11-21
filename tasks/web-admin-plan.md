@@ -1,8 +1,8 @@
 # Kế hoạch thiết kế và triển khai Web Admin Meta Gym
 
 **Ngày lập:** 21/11/2026  
-**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0), Giai đoạn 1 (T4–T6, Checkpoint 1) và Giai đoạn 2 (T7–T11, Checkpoint 2); sẵn sàng triển khai Giai đoạn 3 (T12–T15)  
-**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng migration `0001`..`0031` (55 bảng `public` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11 (audit logs + active lock + chặn chat tài khoản bị khóa, hard cap 8 + D1/D4 khóa/mở khóa Coach & Member, CRUD đầy đủ gói Gym/Coach + snapshot + sửa cửa sổ công suất `QUEUED`, giao dịch tại quầy Gym + D6 `VOID_REVERSAL`), và đồng bộ Flutter (gỡ/chặn `AdminHomePage`, trạng thái `COACH_LOCKED`/`MEMBER_LOCKED`/đóng băng, hard cap 8, gói Coach động, lỗi chat `403 RECIPIENT_ACCOUNT_DISABLED`).
+**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0), Giai đoạn 1 (T4–T6, Checkpoint 1), Giai đoạn 2 (T7–T11, Checkpoint 2) và **T12 Backend + Migration `0032`** (UI tạm dừng theo chỉ đạo người dùng — tiếp tục từng task Backend + DB + test)  
+**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng migration `0001`..`0032` (55 bảng `public` + `uq_termination_open_relationship` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11, đồng bộ Flutter T7–T10, và hoàn tất **T12 Backend + Migration `0032` (`e47ad89`)** (Relationships V2 API + D5 kết thúc sớm thỏa thuận 2 bên 72h + tự động chuyển `DISPUTED` + Admin phán quyết tranh chấp + retire luồng ghi cũ `410 LEGACY_WORKFLOW_RETIRED`, 95/96 backend tests PASS).
 
 **Tài liệu & sản phẩm đã hoàn tất (Wave 1):**
 - T1 Audit: [`docs/requirements/web-admin-t1-audit.md`](../docs/requirements/web-admin-t1-audit.md)
@@ -164,6 +164,6 @@ Trước khi code, lập bảng cho từng endpoint: dữ liệu trả về, quy
 
 ## 11. Việc cần làm ngay
 
-1. **Giai đoạn 3 (tiếp theo):** triển khai T12 (quan hệ & kết thúc sớm/tranh chấp D5 + migration `0032`), T13 (hàng chờ sự cố Coach `COACH_LOCKED` & chuyển Coach D2), T14 (hoàn tiền mô phỏng D3), T15 (Dashboard dữ liệu thật Gross/Refund/Net & việc cần xử lý) trên nhánh `feat/web-admin`.
+1. **Giai đoạn 3 (tiếp theo — Backend + DB + test, UI tạm dừng theo chỉ đạo người dùng):** đã hoàn tất **T12 Backend + Migration `0032` (`e47ad89`)**; tiếp tục từng task T13 (hàng chờ sự cố Coach `COACH_LOCKED` & chuyển Coach D2), T14 (hoàn tiền mô phỏng D3), T15 (Dashboard dữ liệu thật Gross/Refund/Net & việc cần xử lý) trên nhánh `thong`.
 2. Hoàn thiện Giai đoạn 4 (T16 Thực phẩm & kcal, T17 Phòng gym, Thiết bị & Thư viện bài tập `exercises`, T18 Audit/bảo mật/khả dụng, T19 Staging & diễn tập migration) và nghiệm thu tại Checkpoint 3 & Checkpoint cuối.
 
