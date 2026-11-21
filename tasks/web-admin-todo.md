@@ -26,12 +26,12 @@ Chi tiết, phụ thuộc, nghiệm thu và cách kiểm chứng của từng ta
 - [x] T12. Quan hệ và kết thúc sớm — **Backend + Migration `0032` đã hoàn tất & xác minh (`e47ad89`, 95/96 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [x] T13. Hàng chờ sự cố và chuyển Coach — **Backend đã hoàn tất & xác minh (`7f88e93`, 98/99 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [x] T14. Hoàn tiền mô phỏng — **Backend đã hoàn tất & xác minh (`3673153`, 100/101 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
-- [ ] T15. Dashboard theo dữ liệu thật
-- [ ] Checkpoint 3. Khóa/chờ/chuyển/hoàn/kết thúc được kiểm chứng đầu-cuối
+- [x] T15. Dashboard theo dữ liệu thật — **Backend + Migration `0033` đã hoàn tất & xác minh (`2666ab3`, 101/102 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] Checkpoint 3. Khóa/chờ/chuyển/hoàn/kết thúc được kiểm chứng đầu-cuối — **Backend + DB (`0001`..`0033`) đã hoàn tất & xác minh (UI tạm dừng theo chỉ đạo người dùng)**
 
 ## Giai đoạn 4 — Hoàn thiện và phát hành
-- [ ] T16. Thực phẩm và kcal
-- [ ] T17. Phòng gym và thiết bị
+- [x] T16. Thực phẩm và kcal — **Backend đã hoàn tất & xác minh (`465d04f`, 101/102 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T17. Phòng gym và thiết bị — **Backend đã hoàn tất & xác minh (`cb0fe19`, 102/103 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [ ] T18. Audit, bảo mật, khả dụng và hiệu năng
 - [ ] T19. Staging, diễn tập migration và phát hành
 - [ ] Checkpoint cuối. Nghiệm thu staging và smoke test production
