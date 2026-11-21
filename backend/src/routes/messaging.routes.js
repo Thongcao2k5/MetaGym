@@ -241,6 +241,20 @@ export function createMessagingRouter({ database, jwtSecret, realtime }) {
         await client.query('ROLLBACK');
         return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy cuộc trò chuyện');
       }
+      const recipientId = found.member_id === request.authUser.id ? found.coach_id : found.member_id;
+      const recipientStatus = await client.query(
+        'SELECT status FROM users WHERE id = $1',
+        [recipientId],
+      );
+      if (recipientStatus.rows[0]?.status === 'DISABLED') {
+        await client.query('ROLLBACK');
+        return fail(
+          response,
+          403,
+          'RECIPIENT_ACCOUNT_DISABLED',
+          'Không thể gửi tin nhắn vì tài khoản người nhận đang bị khóa',
+        );
+      }
       const data = parsed.data;
       const existing = await client.query(
         `SELECT m.*, $3::uuid AS relationship_id FROM messages m

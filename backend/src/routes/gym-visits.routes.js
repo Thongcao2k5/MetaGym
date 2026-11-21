@@ -31,6 +31,15 @@ export function createGymVisitsRouter({ database, jwtSecret }) {
     try {
       client = await database.connect();
       await client.query('BEGIN');
+      const admin = await client.query(
+        `SELECT u.id FROM users u WHERE u.id = $1 AND u.role = 'ADMIN' AND u.status = 'ACTIVE'
+         AND u.session_version = $2 FOR SHARE`,
+        [request.authUser.id, request.authUser.session_version],
+      );
+      if (admin.rows.length !== 1) {
+        await client.query('ROLLBACK');
+        return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
+      }
       const code = randomUUID();
       const { rows: [row] } = await client.query(
         'UPDATE gym_checkin_code SET code = $1, updated_at = now() WHERE id = 1 RETURNING updated_at', [code],

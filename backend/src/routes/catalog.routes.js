@@ -58,6 +58,15 @@ function serialize(key, value) {
   return ['openingHours', 'usageSteps'].includes(key) ? JSON.stringify(value) : value;
 }
 
+async function activeAdmin(client, user) {
+  const result = await client.query(
+    `SELECT u.id FROM users u WHERE u.id = $1 AND u.role = 'ADMIN' AND u.status = 'ACTIVE'
+     AND u.session_version = $2 FOR SHARE`,
+    [user.id, user.session_version],
+  );
+  return result.rows.length === 1;
+}
+
 export function createCatalogRouter({ database, jwtSecret }) {
   const router = Router();
   router.get('/gym-profile', async (_request, response) => {
@@ -149,6 +158,10 @@ export function createCatalogRouter({ database, jwtSecret }) {
       if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
       try {
         await client.query('BEGIN');
+        if (!await activeAdmin(client, request.authUser)) {
+          await client.query('ROLLBACK');
+          return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
+        }
         await client.query(
           `INSERT INTO ${table} (id, created_by, ${entries.map(([, col]) => col).join(', ')}) VALUES ($1, $2, ${entries.map((_, index) => `$${index + 3}`).join(', ')})`,
           [id, request.authUser.id, ...entries.map(([key]) => serialize(key, parsed.data[key]))],
@@ -175,6 +188,10 @@ export function createCatalogRouter({ database, jwtSecret }) {
       if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
       try {
         await client.query('BEGIN');
+        if (!await activeAdmin(client, request.authUser)) {
+          await client.query('ROLLBACK');
+          return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
+        }
         const result = await client.query(
           `UPDATE ${table} SET ${entries.map(([, col], index) => `${col} = $${index + 1}`).join(', ')} WHERE id = $${entries.length + 1} RETURNING *`,
           [...entries.map(([key]) => serialize(key, parsed.data[key])), request.params.itemId],
@@ -207,6 +224,10 @@ export function createCatalogRouter({ database, jwtSecret }) {
     if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
     try {
       await client.query('BEGIN');
+      if (!await activeAdmin(client, request.authUser)) {
+        await client.query('ROLLBACK');
+        return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
+      }
       const result = await client.query(
         `UPDATE gym_profile SET ${entries.map(([, col], index) => `${col} = $${index + 1}`).join(', ')}, updated_by = $${entries.length + 1} WHERE id = 1 RETURNING *`,
         [...entries.map(([key]) => serialize(key, parsed.data[key])), request.authUser.id],

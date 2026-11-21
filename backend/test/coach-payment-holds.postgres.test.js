@@ -297,6 +297,7 @@ test('Coach holds serialize the final seat and release it on expiry or cancellat
         await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
         await database.query('DELETE FROM coach_profiles WHERE user_id = $1', [coach]);
         await database.query('DELETE FROM member_profiles WHERE user_id = ANY($1::uuid[])', [members]);
+        await database.query('DELETE FROM admin_audit_logs WHERE admin_id = $1', [admin]);
         await database.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[admin, coach, ...members]]);
       } finally {
         await new Promise((resolve) => server.close(resolve));

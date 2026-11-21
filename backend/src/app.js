@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { createAuthRouter } from './routes/auth.routes.js';
+import { createAdminAuditRouter } from './routes/admin-audit.routes.js';
 import { createAdminUsersRouter } from './routes/admin-users.routes.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
@@ -121,6 +122,7 @@ export function createApp({
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
+  app.use('/api/v1', createAdminAuditRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));

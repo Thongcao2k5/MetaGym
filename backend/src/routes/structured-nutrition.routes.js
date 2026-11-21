@@ -23,8 +23,17 @@ const plan = z.strictObject({
 
 function fail(response, status, message) {
   return response.status(status).json({ error: { code: ({
-    403: 'FORBIDDEN', 404: 'NOT_FOUND', 422: 'VALIDATION_ERROR',
+    401: 'UNAUTHORIZED', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 422: 'VALIDATION_ERROR',
   })[status] ?? 'INTERNAL_SERVER_ERROR', message, details: {} } });
+}
+
+async function activeAdmin(client, user) {
+  const result = await client.query(
+    `SELECT u.id FROM users u WHERE u.id = $1 AND u.role = 'ADMIN' AND u.status = 'ACTIVE'
+     AND u.session_version = $2 FOR SHARE`,
+    [user.id, user.session_version],
+  );
+  return result.rows.length === 1;
 }
 
 async function renderPlan(db, row) {
@@ -63,11 +72,48 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
     const parsed = food.safeParse(request.body);
     if (!parsed.success) return fail(response, 422, 'Thông tin thực phẩm không hợp lệ');
     const { name, kcalPer100g, active } = parsed.data;
-    const { rows: [item] } = await database.query(
-      `INSERT INTO nutrition_foods (id, name, kcal_per_100g, active) VALUES ($1, $2, $3, $4)
-       RETURNING id, name, kcal_per_100g::float8 AS "kcalPer100g", active`, [randomUUID(), name, kcalPer100g, active],
-    );
-    return response.status(201).json({ data: item });
+    const client = await database.connect().catch(() => null);
+    if (!client) return fail(response, 500, 'Không kết nối được database');
+    try {
+      await client.query('BEGIN');
+      if (!await activeAdmin(client, request.authUser)) {
+        await client.query('ROLLBACK');
+        return fail(response, 401, 'Phiên đăng nhập đã hết hiệu lực');
+      }
+      const id = randomUUID();
+      const { rows: [item] } = await client.query(
+        `INSERT INTO nutrition_foods (id, name, kcal_per_100g, active) VALUES ($1, $2, $3, $4)
+         RETURNING id, name, kcal_per_100g::float8 AS "kcalPer100g", active`,
+        [id, name, kcalPer100g, active],
+      );
+      await client.query(
+        `INSERT INTO admin_audit_logs
+         (id, admin_id, action, entity_type, entity_id, summary, metadata)
+         VALUES ($1, $2, 'NUTRITION_FOOD_CREATED', 'NUTRITION_FOOD', $3, $4, $5)`,
+        [
+          randomUUID(),
+          request.authUser.id,
+          item.id,
+          `Tạo thực phẩm dinh dưỡng: ${item.name}`,
+          JSON.stringify({
+            before: null,
+            after: {
+              id: item.id,
+              name: item.name,
+              kcalPer100g: item.kcalPer100g,
+              active: item.active,
+            },
+          }),
+        ],
+      );
+      await client.query('COMMIT');
+      return response.status(201).json({ data: item });
+    } catch {
+      await client.query('ROLLBACK').catch(() => {});
+      return fail(response, 500, 'Không thêm được thực phẩm');
+    } finally {
+      client.release();
+    }
   });
 
   router.patch('/admin/nutrition-foods/:id', async (request, response) => {
@@ -77,12 +123,61 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
       return fail(response, 422, 'Thông tin thực phẩm không hợp lệ');
     }
     const { name, kcalPer100g, active } = parsed.data;
-    const { rows: [item] } = await database.query(
-      `UPDATE nutrition_foods SET name = $2, kcal_per_100g = $3, active = $4 WHERE id = $1
-       RETURNING id, name, kcal_per_100g::float8 AS "kcalPer100g", active`,
-      [request.params.id, name, kcalPer100g, active],
-    );
-    return item ? response.json({ data: item }) : fail(response, 404, 'Không tìm thấy thực phẩm');
+    const client = await database.connect().catch(() => null);
+    if (!client) return fail(response, 500, 'Không kết nối được database');
+    try {
+      await client.query('BEGIN');
+      if (!await activeAdmin(client, request.authUser)) {
+        await client.query('ROLLBACK');
+        return fail(response, 401, 'Phiên đăng nhập đã hết hiệu lực');
+      }
+      const { rows: [before] } = await client.query(
+        `SELECT id, name, kcal_per_100g::float8 AS "kcalPer100g", active
+         FROM nutrition_foods WHERE id = $1 FOR UPDATE`,
+        [request.params.id],
+      );
+      if (!before) {
+        await client.query('ROLLBACK');
+        return fail(response, 404, 'Không tìm thấy thực phẩm');
+      }
+      const { rows: [item] } = await client.query(
+        `UPDATE nutrition_foods SET name = $2, kcal_per_100g = $3, active = $4 WHERE id = $1
+         RETURNING id, name, kcal_per_100g::float8 AS "kcalPer100g", active`,
+        [request.params.id, name, kcalPer100g, active],
+      );
+      await client.query(
+        `INSERT INTO admin_audit_logs
+         (id, admin_id, action, entity_type, entity_id, summary, metadata)
+         VALUES ($1, $2, 'NUTRITION_FOOD_UPDATED', 'NUTRITION_FOOD', $3, $4, $5)`,
+        [
+          randomUUID(),
+          request.authUser.id,
+          item.id,
+          `Cập nhật thực phẩm dinh dưỡng: ${item.name}`,
+          JSON.stringify({
+            before: {
+              id: before.id,
+              name: before.name,
+              kcalPer100g: before.kcalPer100g,
+              active: before.active,
+            },
+            after: {
+              id: item.id,
+              name: item.name,
+              kcalPer100g: item.kcalPer100g,
+              active: item.active,
+            },
+          }),
+        ],
+      );
+      await client.query('COMMIT');
+      return response.json({ data: item });
+    } catch {
+      await client.query('ROLLBACK').catch(() => {});
+      return fail(response, 500, 'Không cập nhật được thực phẩm');
+    } finally {
+      client.release();
+    }
   });
 
   router.get('/meal-plans/me', async (request, response) => {
