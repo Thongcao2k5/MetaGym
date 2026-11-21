@@ -173,4 +173,35 @@ BEGIN
 END
 $$;
 
+DO $$
+DECLARE
+  required_reporting_indexes text[] := ARRAY[
+    'ix_audit_created_desc',
+    'ix_audit_action_created',
+    'ix_payments_confirmed_success',
+    'ix_coach_holds_consumed_settled',
+    'ix_coach_incidents_status_created',
+    'ix_simulated_refunds_created_at',
+    'ix_payment_adjustments_created_at',
+    'ix_termination_disputed_created',
+    'ix_nutrition_foods_name_lower'
+  ];
+  missing_indexes text[];
+BEGIN
+  SELECT array_agg(name ORDER BY name)
+    INTO missing_indexes
+    FROM unnest(required_reporting_indexes) AS name
+   WHERE NOT EXISTS (
+     SELECT 1
+       FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname = name
+   );
+
+  IF missing_indexes IS NOT NULL THEN
+    RAISE EXCEPTION 'Missing 0033 reporting/audit indexes: %', missing_indexes;
+  END IF;
+END
+$$;
+
 SELECT 'schema assertions passed' AS result;
