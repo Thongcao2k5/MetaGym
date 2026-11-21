@@ -1,69 +1,142 @@
+/* ==========================================================================
+   Meta Gym — Bootstrap 5.3 Theme Adapter (Aligned with DESIGN.md)
+   Operate Mode defaults to Dark Graphite ([data-bs-theme="dark"]).
+   Solid surfaces ONLY on data tables, forms, charts, and Admin cards.
+   Load bootstrap.min.css first, then this file.
+   ========================================================================== */
+
 :root,
 [data-bs-theme="light"] {
   color-scheme: light;
 
-  --meta-primary: #ff5a36;
-  --meta-primary-hover: #e84729;
-  --meta-on-primary: #090b0e;
-  --meta-secondary: #70aee8;
-  --meta-accent: #23c997;
-  --meta-background: #f5f7fa;
-  --meta-surface: #ffffff;
-  --meta-surface-raised: #edf1f5;
-  --meta-text-primary: #11151a;
-  --meta-text-secondary: #4d5968;
-  --meta-border: #cbd4df;
-  --meta-focus: #8dbcf0;
-  --meta-success: #23c997;
-  --meta-warning: #f2a93b;
-  --meta-danger: #f15b64;
-  --meta-info: #70aee8;
-  --meta-radius-sm: 0.625rem;
-  --meta-radius-md: 0.875rem;
-  --meta-radius-lg: 1.25rem;
+  /* Brand & semantic tokens (exact DESIGN.md) */
+  --meta-primary: #FF5E36;
+  --meta-primary-hover: #E84E27;
+  --meta-on-primary: #FFFFFF;
+  --meta-on-primary-hover: #FFFFFF;
+  --meta-reflection: #A9C7E8;
+  --meta-secondary: #70AEE8;
+  --meta-accent: #2ECC71;
 
+  /* Light surface palette (exact DESIGN.md) */
+  --meta-background: #F5F7FA;
+  --meta-surface: #FFFFFF;
+  --meta-surface-raised: #EDF1F5;
+  --meta-text-primary: #11151A;
+  --meta-text-strong: #11151A;
+  --meta-text-secondary: #4D5968;
+  --meta-text-tertiary: #4D5968;
+  --meta-border: #CBD4DF;
+  --meta-border-strong: #B4C0CF;
+
+  /* Semantics & special tokens (exact DESIGN.md) */
+  --meta-success: #2ECC71;
+  --meta-on-success: #06261D;
+  --meta-warning: #F39C12;
+  --meta-on-warning: #2A1900;
+  --meta-danger: #F15B64;
+  --meta-danger-text: #9F1239;
+  --meta-on-danger: #2C080B;
+  --meta-info: #70AEE8;
+  --meta-on-info: #071A2C;
+  --meta-focus: #8DBCF0;
+  --meta-coach-avatar: #F5B041;
+  --meta-on-coach-avatar: #181B22;
+  --meta-scrim: rgba(4, 6, 9, 0.72);
+
+  /* Radii (exact DESIGN.md) */
+  --meta-radius-xs: 6px;
+  --meta-radius-sm: 10px;
+  --meta-radius-md: 14px;
+  --meta-radius-lg: 20px;
+  --meta-radius-xl: 24px;
+  --meta-radius-full: 999px;
+
+  /* Bootstrap 5.3 variable bindings */
   --bs-body-font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bs-font-sans-serif: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
   --bs-body-bg: var(--meta-background);
   --bs-body-color: var(--meta-text-primary);
+  --bs-emphasis-color: var(--meta-text-strong);
   --bs-secondary-color: var(--meta-text-secondary);
+  --bs-tertiary-bg: var(--meta-surface-raised);
+  --bs-secondary-bg: var(--meta-surface-raised);
   --bs-border-color: var(--meta-border);
   --bs-primary: var(--meta-primary);
-  --bs-primary-rgb: 255, 90, 54;
+  --bs-primary-rgb: 255, 94, 54;
   --bs-secondary: var(--meta-secondary);
   --bs-secondary-rgb: 112, 174, 232;
   --bs-success: var(--meta-success);
+  --bs-success-rgb: 46, 204, 113;
   --bs-warning: var(--meta-warning);
+  --bs-warning-rgb: 243, 156, 18;
   --bs-danger: var(--meta-danger);
+  --bs-danger-rgb: 241, 91, 100;
   --bs-info: var(--meta-info);
+  --bs-info-rgb: 112, 174, 232;
+  --bs-link-color: #1D68B2;
+  --bs-link-hover-color: #15518D;
   --bs-border-radius: var(--meta-radius-sm);
+  --bs-border-radius-sm: var(--meta-radius-xs);
   --bs-border-radius-lg: var(--meta-radius-md);
-  --bs-focus-ring-color: rgb(141 188 240 / 35%);
+  --bs-border-radius-xl: var(--meta-radius-lg);
+  --bs-focus-ring-width: 0.2rem;
+  --bs-focus-ring-color: rgba(141, 188, 240, 0.35);
 }
 
 [data-bs-theme="dark"] {
   color-scheme: dark;
 
-  --meta-background: #080a0d;
-  --meta-surface: #11161c;
-  --meta-surface-raised: #181f27;
-  --meta-text-primary: #f7f9fc;
-  --meta-text-secondary: #b8c2d0;
-  --meta-border: #3a4654;
+  /* Dark Graphite Operate Mode palette (exact DESIGN.md) */
+  --meta-background: #0F1115;
+  --meta-surface: #181B22;
+  --meta-surface-raised: #1F232C;
+  --meta-text-primary: #F7F9FC;
+  --meta-text-strong: #FFFFFF;
+  --meta-text-secondary: #8E95A5;
+  --meta-text-tertiary: #8E95A5;
+  --meta-border: #262A34;
+  --meta-border-strong: #323846;
+  --meta-danger-text: #FF7C84;
 
+  /* Bootstrap 5.3 dark variable bindings */
   --bs-body-bg: var(--meta-background);
   --bs-body-color: var(--meta-text-primary);
+  --bs-emphasis-color: var(--meta-text-strong);
   --bs-secondary-color: var(--meta-text-secondary);
+  --bs-tertiary-color: var(--meta-text-secondary);
+  --bs-secondary-bg: var(--meta-surface);
+  --bs-tertiary-bg: var(--meta-surface-raised);
   --bs-border-color: var(--meta-border);
-  --bs-tertiary-bg: var(--meta-surface);
+  --bs-border-color-translucent: rgba(212, 228, 255, 0.14);
+  --bs-link-color: var(--meta-info);
+  --bs-link-hover-color: var(--meta-reflection);
+  --bs-card-bg: var(--meta-surface);
+  --bs-card-border-color: var(--meta-border);
+  --bs-modal-bg: var(--meta-surface);
+  --bs-modal-border-color: var(--meta-border-strong);
+  --bs-offcanvas-bg: var(--meta-surface);
+  --bs-dropdown-bg: var(--meta-surface);
+  --bs-dropdown-border-color: var(--meta-border-strong);
+  --bs-table-bg: var(--meta-surface);
+  --bs-table-color: var(--meta-text-primary);
+  --bs-table-hover-bg: var(--meta-surface-raised);
+  --bs-table-hover-color: var(--meta-text-strong);
+  --bs-table-border-color: var(--meta-border);
 }
 
+/* Typography & tabular figures */
 body {
+  font-family: var(--bs-body-font-family);
   font-variant-numeric: proportional-nums;
+  background-color: var(--meta-background);
+  color: var(--meta-text-primary);
 }
 
 h1,
 h2,
 h3,
+h4,
 .display-1,
 .display-2,
 .display-3,
@@ -72,65 +145,273 @@ h3,
 .display-6 {
   font-family: "Be Vietnam Pro", system-ui, sans-serif;
   font-weight: 700;
+  color: var(--meta-text-strong);
 }
 
 .font-data,
+.meta-kpi-value,
+.meta-currency,
 table,
-.chart-label {
+.chart-label,
+.pagination {
   font-variant-numeric: tabular-nums;
 }
 
+/* Ergonomics: >= 44px touch targets & crisp focus rings */
 .btn {
-  --bs-btn-border-radius: var(--meta-radius-sm);
+  --bs-btn-border-radius: var(--meta-radius-md);
   --bs-btn-font-weight: 600;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out, transform 120ms ease-out;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.btn-sm {
+  --bs-btn-border-radius: var(--meta-radius-sm);
   min-block-size: 44px;
 }
 
+/* Coral Orange Primary CTA: mandatory #FFFFFF text & icons */
 .btn-primary {
   --bs-btn-color: var(--meta-on-primary);
   --bs-btn-bg: var(--meta-primary);
   --bs-btn-border-color: var(--meta-primary);
-  --bs-btn-hover-color: var(--meta-on-primary);
+  --bs-btn-hover-color: var(--meta-on-primary-hover);
   --bs-btn-hover-bg: var(--meta-primary-hover);
   --bs-btn-hover-border-color: var(--meta-primary-hover);
-  --bs-btn-active-color: var(--meta-on-primary);
+  --bs-btn-active-color: var(--meta-on-primary-hover);
   --bs-btn-active-bg: var(--meta-primary-hover);
   --bs-btn-active-border-color: var(--meta-primary-hover);
+  --bs-btn-disabled-color: var(--meta-on-primary);
+  --bs-btn-disabled-bg: var(--meta-primary);
+  --bs-btn-disabled-border-color: var(--meta-primary);
 }
 
+.btn-danger {
+  --bs-btn-color: var(--meta-on-danger);
+  --bs-btn-bg: var(--meta-danger);
+  --bs-btn-border-color: var(--meta-danger);
+  --bs-btn-hover-color: var(--meta-on-danger);
+  --bs-btn-hover-bg: #F4727A;
+  --bs-btn-hover-border-color: #F4727A;
+  --bs-btn-active-color: var(--meta-on-danger);
+  --bs-btn-active-bg: #F4727A;
+  --bs-btn-active-border-color: #F4727A;
+  font-weight: 700;
+}
+
+.btn-graphite,
+.btn-outline-secondary {
+  --bs-btn-color: var(--meta-text-primary);
+  --bs-btn-bg: var(--meta-surface-raised);
+  --bs-btn-border-color: var(--meta-border-strong);
+  --bs-btn-hover-color: var(--meta-text-strong);
+  --bs-btn-hover-bg: var(--meta-surface);
+  --bs-btn-hover-border-color: var(--meta-focus);
+  --bs-btn-active-color: var(--meta-text-strong);
+  --bs-btn-active-bg: var(--meta-surface);
+}
+
+/* Forms: solid surfaces, zero blur */
 .form-control,
 .form-select {
   min-block-size: 44px;
-  background-color: var(--meta-surface);
-  border-color: var(--meta-border);
+  border-radius: var(--meta-radius-md);
+  color: var(--meta-text-primary);
+  background-color: var(--meta-background);
+  border-color: var(--meta-border-strong);
+}
+
+.form-control::placeholder {
+  color: var(--meta-text-secondary);
 }
 
 .form-control:focus,
 .form-select:focus,
 .btn:focus-visible,
-.nav-link:focus-visible {
+.nav-link:focus-visible,
+.page-link:focus-visible,
+a:focus-visible {
   border-color: var(--meta-focus);
-  box-shadow: 0 0 0 0.2rem rgb(141 188 240 / 35%);
-  outline: 2px solid transparent;
+  box-shadow: 0 0 0 0.2rem rgba(141, 188, 240, 0.35);
+  outline: 2px solid var(--meta-focus);
+  outline-offset: 2px;
 }
 
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--meta-danger);
+}
+
+/* Solid Level 1 Admin surfaces (NO backdrop-filter on data surfaces) */
 .card,
 .modal-content,
 .offcanvas,
 .dropdown-menu {
   color: var(--meta-text-primary);
   background-color: var(--meta-surface);
-  border-color: var(--meta-border);
+  border: 1px solid var(--meta-border);
+  backdrop-filter: none;
 }
 
 .card {
-  --bs-card-border-radius: var(--meta-radius-md);
+  --bs-card-border-radius: var(--meta-radius-lg);
   box-shadow: none;
 }
 
 .modal-content,
 .offcanvas {
   --bs-modal-border-radius: var(--meta-radius-lg);
+  border-color: var(--meta-border-strong);
+}
+
+.modal-backdrop.show,
+.offcanvas-backdrop.show {
+  background-color: #040609;
+  opacity: 0.72;
+}
+
+/* Data tables: crisp solid graphite, tabular figures */
+.table {
+  --bs-table-bg: var(--meta-surface);
+  --bs-table-color: var(--meta-text-primary);
+  --bs-table-hover-bg: var(--meta-surface-raised);
+  --bs-table-hover-color: var(--meta-text-strong);
+  --bs-table-border-color: var(--meta-border);
+  margin-bottom: 0;
+}
+
+.table > thead > tr > th {
+  background-color: var(--meta-surface-raised);
+  color: var(--meta-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom-color: var(--meta-border);
+}
+
+/* Navigation & Pagination (>= 44px hit areas) */
+.nav-link,
+.page-link {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-tabs {
+  border-bottom-color: var(--meta-border);
+}
+
+.nav-tabs .nav-link {
+  color: var(--meta-text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--meta-text-strong);
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--meta-text-strong);
+  background-color: transparent;
+  border-bottom-color: var(--meta-primary);
+}
+
+.page-link {
+  color: var(--meta-text-primary);
+  background-color: var(--meta-surface);
+  border-color: var(--meta-border);
+}
+
+.page-link:hover {
+  color: var(--meta-text-strong);
+  background-color: var(--meta-surface-raised);
+  border-color: var(--meta-border-strong);
+}
+
+.page-item.active .page-link {
+  color: var(--meta-on-primary);
+  background-color: var(--meta-primary);
+  border-color: var(--meta-primary);
+}
+
+/* Subtle Tinted Status Badges (Never flood orange on small pills) */
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--meta-radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.meta-badge-success {
+  background-color: rgba(46, 204, 113, 0.14);
+  border-color: rgba(46, 204, 113, 0.38);
+  color: var(--meta-success);
+}
+
+.meta-badge-warning {
+  background-color: rgba(243, 156, 18, 0.15);
+  border-color: rgba(243, 156, 18, 0.40);
+  color: var(--meta-warning);
+}
+
+.meta-badge-danger {
+  background-color: rgba(241, 91, 100, 0.12);
+  border-color: rgba(241, 91, 100, 0.42);
+  color: var(--meta-danger-text);
+}
+
+.meta-badge-info {
+  background-color: rgba(112, 174, 232, 0.14);
+  border-color: rgba(112, 174, 232, 0.38);
+  color: var(--meta-info);
+}
+
+.meta-badge-neutral {
+  background-color: rgba(142, 149, 165, 0.12);
+  border-color: rgba(142, 149, 165, 0.32);
+  color: var(--meta-text-secondary);
+}
+
+.meta-badge-coral {
+  background-color: rgba(255, 94, 54, 0.12);
+  border-color: rgba(255, 94, 54, 0.40);
+  color: #FF8768;
+}
+
+[data-bs-theme="light"] .meta-badge-success { color: #166534; }
+[data-bs-theme="light"] .meta-badge-warning { color: #92400E; }
+[data-bs-theme="light"] .meta-badge-danger { color: #9F1239; }
+[data-bs-theme="light"] .meta-badge-info { color: #1E40AF; }
+[data-bs-theme="light"] .meta-badge-coral { color: #C23616; }
+
+/* Signature Coach Avatar (exact DESIGN.md: #F5B041 bg + #181B22 bold text) */
+.meta-avatar-coach {
+  background-color: var(--meta-coach-avatar);
+  color: var(--meta-on-coach-avatar);
+  font-weight: 800;
+  border-radius: var(--meta-radius-full);
+  display: inline-grid;
+  place-items: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
