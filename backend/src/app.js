@@ -97,6 +97,15 @@ export function createApp({
   app.use(morgan((tokens, request, response) =>
     `${tokens.method(request, response)} ${request.originalUrl.split('?')[0]} ${tokens.status(request, response)} ${tokens['response-time'](request, response)} ms`));
 
+  app.get('/ping', (_request, response) => {
+    response.status(200).json({
+      data: {
+        status: 'ok',
+        uptimeSeconds: Math.floor(process.uptime()),
+      },
+    });
+  });
+
   app.use('/api-docs', createDocsRouter());
   app.use(
     '/api/v1/auth',
