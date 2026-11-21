@@ -41,6 +41,7 @@ const app = createApp({
   vnpay,
   momo,
   zalopay,
+  preferredPaymentGateway: process.env.PAYMENT_GATEWAY,
   realtime: createRealtimeFromEnv(),
   imageStorage,
   sendPasswordResetCode: createPasswordResetSenderFromEnv(),

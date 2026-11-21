@@ -101,6 +101,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
   }
 
   Future<void> _openOnlinePayment(Payment payment) async {
+    if (payment.method == 'ZALOPAY') return;
     final url = _paymentCheckoutUri(payment);
     if (url != null) {
       try {
@@ -286,7 +287,8 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                 ),
                               ),
                             ),
-                          if (checkoutUri != null) ...[
+                          if (checkoutUri != null &&
+                              payment.method != 'ZALOPAY') ...[
                             const SizedBox(height: 10),
                             MembershipPrimaryButton(
                               label:
@@ -545,7 +547,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                           label: busy
                               ? 'Đang tạo giao dịch…'
                               : 'Thanh toán bằng ZaloPay',
-                          icon: busy ? null : Icons.open_in_new_rounded,
+                          icon: busy ? null : Icons.qr_code_2_rounded,
                           onPressed: busy
                               ? null
                               : () async {

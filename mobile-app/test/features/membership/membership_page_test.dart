@@ -101,6 +101,8 @@ void main() {
       findsWidgets,
     );
     expect(find.text('Mã QR ZaloPay Sandbox'), findsOneWidget);
+    expect(find.text('Mở lại ZaloPay Sandbox'), findsNothing);
+    expect(find.text('Kiểm tra trạng thái'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

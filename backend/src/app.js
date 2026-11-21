@@ -85,6 +85,7 @@ export function createApp({
   vnpay,
   momo,
   zalopay,
+  preferredPaymentGateway,
   corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS,
   nodeEnv = process.env.NODE_ENV,
   enableLegacyWrites = false,
@@ -144,7 +145,7 @@ export function createApp({
   app.use('/api/v1', createDashboardRouter({ database, jwtSecret }));
   app.use('/api/v1', createAiConversationsRouter({ database, jwtSecret, aiResponder }));
   app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime }));
-  app.use('/api/v1', createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay,
+  app.use('/api/v1', createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay, preferredPaymentGateway,
     allowMockPayments: nodeEnv !== 'production' && !vnpay && !momo && !zalopay }));
   app.use('/api/v1', createCoachingRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachIncidentsRouter({ database, jwtSecret }));
