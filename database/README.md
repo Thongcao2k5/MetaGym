@@ -6,6 +6,9 @@ thuộc và có file rollback tương ứng.
 
 ## Yêu cầu
 
+Tự động cập nhật database trên Render và ghi lịch sử migration: xem
+[hướng dẫn GitHub Actions + Render](../docs/render-migrations.md).
+
 - PostgreSQL 17 hoặc phiên bản tương thích.
 - Quyền tạo extension `citext` và `btree_gist`.
 - Một database trống.
@@ -76,7 +79,7 @@ psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/migrations/0021_member_sel
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 ```
 
-Không chạy lại toàn bộ migration hoặc seed trên database đã có dữ liệu. Repository hiện chưa lưu lịch sử migration đã chạy trong database, vì vậy cần xác nhận điểm xuất phát trước khi nâng cấp. Nếu muốn **hai máy có cùng cả dữ liệu**, xuất một bản `pg_dump` và phục hồi vào database trống của máy còn lại; sao chép thêm thư mục `MEDIA_STORAGE_DIR` nếu có ảnh. Hai database tách rời sẽ tiếp tục khác nhau sau đó. Nếu cả hai cần cùng dữ liệu theo thời gian thực, hãy trỏ backend của hai máy tới cùng một PostgreSQL server.
+Không chạy lại toàn bộ migration hoặc seed trên database đã có dữ liệu. Với database từng chạy SQL thủ công, cần xác nhận điểm xuất phát và khởi tạo baseline trước khi dùng runner `npm run db:migrate --prefix backend`; sau đó runner lưu lịch sử trong `metagym_ops.schema_migrations`. Xem hướng dẫn Render ở trên. Nếu muốn **hai máy có cùng cả dữ liệu**, xuất một bản `pg_dump` và phục hồi vào database trống của máy còn lại; sao chép thêm thư mục `MEDIA_STORAGE_DIR` nếu có ảnh. Hai database tách rời sẽ tiếp tục khác nhau sau đó. Nếu cả hai cần cùng dữ liệu theo thời gian thực, hãy trỏ backend của hai máy tới cùng một PostgreSQL server.
 
 Mã QR tĩnh ở migration `0020` được tạo ngẫu nhiên trên từng database. Sau khi nâng cấp, Admin mở trang Phòng gym để in mã của đúng database mà ứng dụng Member đang kết nối.
 
