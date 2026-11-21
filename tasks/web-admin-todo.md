@@ -25,7 +25,7 @@ Chi tiết, phụ thuộc, nghiệm thu và cách kiểm chứng của từng ta
 ## Giai đoạn 3 — Quan hệ và ngoại lệ
 - [x] T12. Quan hệ và kết thúc sớm — **Backend + Migration `0032` đã hoàn tất & xác minh (`e47ad89`, 95/96 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [x] T13. Hàng chờ sự cố và chuyển Coach — **Backend đã hoàn tất & xác minh (`7f88e93`, 98/99 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
-- [ ] T14. Hoàn tiền mô phỏng
+- [x] T14. Hoàn tiền mô phỏng — **Backend đã hoàn tất & xác minh (`3673153`, 100/101 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [ ] T15. Dashboard theo dữ liệu thật
 - [ ] Checkpoint 3. Khóa/chờ/chuyển/hoàn/kết thúc được kiểm chứng đầu-cuối
 

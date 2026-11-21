@@ -1,8 +1,8 @@
 # Kế hoạch thiết kế và triển khai Web Admin Meta Gym
 
 **Ngày lập:** 21/11/2026  
-**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0), Giai đoạn 1 (T4–T6, Checkpoint 1), Giai đoạn 2 (T7–T11, Checkpoint 2), **T12 Backend + Migration `0032`** và **T13 Backend** (UI tạm dừng theo chỉ đạo người dùng — tiếp tục từng task Backend + DB + test)  
-**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng migration `0001`..`0032` (55 bảng `public` + `uq_termination_open_relationship` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11, đồng bộ Flutter T7–T10, hoàn tất **T12 Backend + Migration `0032` (`e47ad89`)** (Relationships V2 API + D5 kết thúc sớm thỏa thuận 2 bên 72h + tự động chuyển `DISPUTED` + Admin phán quyết tranh chấp + retire luồng ghi cũ `410 LEGACY_WORKFLOW_RETIRED`), và hoàn tất **T13 Backend (`7f88e93`)** (Hàng chờ sự cố Coach `COACH_LOCKED`, Member chọn `WAIT`/`REFUND`, kiểm tra công suất Coach đủ điều kiện nhận chuyển và chuyển Coach D2 bảo toàn cả gói `ACTIVE` kèm ngày đóng băng đúng 1 lần + gói `QUEUED`, 98/99 backend tests PASS).
+**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0), Giai đoạn 1 (T4–T6, Checkpoint 1), Giai đoạn 2 (T7–T11, Checkpoint 2), **T12 Backend + Migration `0032`**, **T13 Backend** và **T14 Backend** (UI tạm dừng theo chỉ đạo người dùng — tiếp tục từng task Backend + DB + test)  
+**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng migration `0001`..`0032` (55 bảng `public` + `uq_termination_open_relationship` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11, đồng bộ Flutter T7–T10, hoàn tất **T12 Backend + Migration `0032` (`e47ad89`)**, **T13 Backend (`7f88e93`)**, và **T14 Backend (`3673153`)** (Hoàn tiền mô phỏng D2+D3 `POST /api/v1/admin/coach-incidents/:incidentId/simulated-refunds` & `GET /api/v1/admin/simulated-refunds`, làm tròn BigInt xuống bội số 1.000 VND + hoàn 100% gói `QUEUED`, chống hoàn 2 lần & idempotency SHA-256, 100/101 backend tests PASS).
 
 **Tài liệu & sản phẩm đã hoàn tất (Wave 1):**
 - T1 Audit: [`docs/requirements/web-admin-t1-audit.md`](../docs/requirements/web-admin-t1-audit.md)
@@ -164,6 +164,6 @@ Trước khi code, lập bảng cho từng endpoint: dữ liệu trả về, quy
 
 ## 11. Việc cần làm ngay
 
-1. **Giai đoạn 3 (tiếp theo — Backend + DB + test, UI tạm dừng theo chỉ đạo người dùng):** đã hoàn tất **T12 Backend + Migration `0032` (`e47ad89`)** và **T13 Backend (`7f88e93`)**; tiếp tục từng task T14 (hoàn tiền mô phỏng D3), T15 (Dashboard dữ liệu thật Gross/Refund/Net & việc cần xử lý) trên nhánh `thong`.
+1. **Giai đoạn 3 (tiếp theo — Backend + DB + test, UI tạm dừng theo chỉ đạo người dùng):** đã hoàn tất **T12 Backend + Migration `0032` (`e47ad89`)**, **T13 Backend (`7f88e93`)** và **T14 Backend (`3673153`)**; tiếp tục task T15 (Dashboard dữ liệu thật Gross/Refund/Net & việc cần xử lý) trên nhánh `thong`.
 2. Hoàn thiện Giai đoạn 4 (T16 Thực phẩm & kcal, T17 Phòng gym, Thiết bị & Thư viện bài tập `exercises`, T18 Audit/bảo mật/khả dụng, T19 Staging & diễn tập migration) và nghiệm thu tại Checkpoint 3 & Checkpoint cuối.
 
