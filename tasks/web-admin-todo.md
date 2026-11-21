@@ -32,6 +32,6 @@ Chi tiết, phụ thuộc, nghiệm thu và cách kiểm chứng của từng ta
 ## Giai đoạn 4 — Hoàn thiện và phát hành
 - [x] T16. Thực phẩm và kcal — **Backend đã hoàn tất & xác minh (`465d04f`, 101/102 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
 - [x] T17. Phòng gym và thiết bị — **Backend đã hoàn tất & xác minh (`cb0fe19`, 102/103 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
-- [ ] T18. Audit, bảo mật, khả dụng và hiệu năng
-- [ ] T19. Staging, diễn tập migration và phát hành
-- [ ] Checkpoint cuối. Nghiệm thu staging và smoke test production
+- [x] T18. Audit, bảo mật, khả dụng và hiệu năng — **Backend Security, Role Privacy Matrix & 7 nhóm bất biến trước phát hành đã hoàn tất & xác minh (`74ba61c`, 111/111 active PG17 tests PASS [112 total, 1 optional Supabase skipped]; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T19. Staging, diễn tập migration và phát hành — **Diễn tập PG17 `0001`..`0033` up → `0033`..`0029` down → `0029`..`0033` up + `schema_assertions.sql` (55 bảng + 9 chỉ mục `0033`) + `REVOKE ALL` + smoke test & runbook `docs/deployment/meta-gym-cloud-step-by-step.md` đã hoàn tất & xác minh (`84c7105`)**
+- [x] Checkpoint cuối. Nghiệm thu staging và smoke test production — **Toàn bộ hạng mục Backend + Database + Security + Release `T1`–`T19` đã hoàn tất 100% trên nhánh `thong` (`origin/thong`); phần UI `T12`–`T18` tạm dừng theo chỉ đạo người dùng**
