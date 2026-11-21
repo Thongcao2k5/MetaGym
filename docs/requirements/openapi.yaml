@@ -1,0 +1,2446 @@
+openapi: 3.0.3
+info:
+  title: Meta Gym REST API
+  version: 1.0.0
+  description: |
+    Tài liệu OpenAPI 3.0 (Swagger) cho hệ thống **Meta Gym**, đối chiếu trực tiếp từ schema PostgreSQL (`database/migrations/0001`–`0024`) và các route Express trong `backend/src/routes/`.
+
+    ### Quy ước chung
+    - **Base URL:** `/api/v1`
+    - **Xác thực:** JWT Bearer Token (`Authorization: Bearer <accessToken>`), hết hạn sau `3600` giây.
+    - **Vai trò (RBAC):** `MEMBER`, `COACH`, `ADMIN`.
+    - **Định dạng dữ liệu:** JSON key dùng `camelCase`, enum dùng `UPPER_SNAKE_CASE`, ngày dùng `YYYY-MM-DD`, timestamp dùng ISO 8601.
+    - **Envelope phản hồi:**
+      - Đơn lẻ: `{ "data": { ... } }`
+      - Danh sách phân trang: `{ "data": [ ... ], "pagination": { "page": 1, "pageSize": 20, "totalItems": 0, "totalPages": 0 } }`
+      - Lỗi: `{ "error": { "code": "...", "message": "...", "details": {} } }`
+
+servers:
+  - url: /api/v1
+    description: Current Server (Same Origin — Local / Render)
+  - url: http://localhost:3000/api/v1
+    description: Local Development
+  - url: https://your-backend.onrender.com/api/v1
+    description: Cloud Production (Render)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: System
+    description: Kiểm tra trạng thái backend & PostgreSQL
+  - name: Auth & Password Reset
+    description: Đăng ký, đăng nhập và khôi phục mật khẩu (`users`, `password_reset_codes`)
+  - name: Users & Profile
+    description: Hồ sơ cá nhân, khai báo sức khỏe, avatar (`users`, `member_profiles`, `coach_profiles`)
+  - name: Admin Users & Dashboard
+    description: Quản lý tài khoản và thống kê tổng quan (`users`, `admin_audit_logs`)
+  - name: Membership & Payments
+    description: Gói hội viên, thanh toán online/tại quầy (`membership_plans`, `payments`, `member_memberships`)
+  - name: Coaching, Packages & Bookings
+    description: Gói coach, giữ chỗ, lịch tuần, đặt lịch, yêu cầu kết nối/chấm dứt/chuyển coach (`coach_package_plans`, `coach_payment_holds`, `coach_weekly_slots`, `coach_entitlements`, `coach_bookings`, `coach_slot_blocks`, `coach_notifications`, `coach_requests`, `coach_relationships`, `coach_termination_requests`, `coach_transfer_history`)
+  - name: Coach Outcomes
+    description: Kết quả huấn luyện before/after của Coach (`coach_outcome_cases`)
+  - name: Catalog & Gym Check-in
+    description: Thông tin phòng gym, thiết bị, bài tập, mã QR check-in (`gym_profile`, `equipment`, `exercises`, `gym_checkin_code`, `gym_visits`)
+  - name: Training & Self-Training
+    description: Giáo án tập luyện, buổi tập, ngày tự tập (`training_plans`, `training_plan_days`, `training_plan_exercises`, `training_sessions`, `member_self_training_days`)
+  - name: Nutrition
+    description: Hướng dẫn dinh dưỡng, thực phẩm chuẩn, thực đơn và nhật ký dinh dưỡng (`nutrition_guides`, `nutrition_guide_revisions`, `nutrition_foods`, `training_plan_day_meals`, `member_nutrition_days`)
+  - name: Progress & Journal
+    description: Theo dõi buổi tập, chỉ số cơ thể, ảnh tiến độ, bình luận và nhật ký (`workout_logs`, `workout_log_exercises`, `meal_logs`, `body_measurements`, `progress_photos`, `progress_comments`, `member_journal_entries`, `member_journal_photos`)
+  - name: Messaging & Realtime
+    description: Hội thoại trực tiếp Member–Coach (`conversations`, `conversation_participants`, `messages`)
+  - name: Calls
+    description: Cuộc gọi thoại/video qua LiveKit (`call_logs`)
+  - name: AI Assistant
+    description: Trợ lý AI hội thoại (`ai_conversations`, `ai_messages`)
+  - name: Media
+    description: Tải lên và cấp quyền truy cập ảnh (`media_assets`)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Khóa chống tạo giao dịch trùng khi client retry
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Thiếu token hoặc token hết hạn/vô hiệu (`UNAUTHORIZED`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Không có quyền truy cập hoặc chưa có gói tập (`FORBIDDEN` / `MEMBERSHIP_REQUIRED`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Không tìm thấy tài nguyên (`NOT_FOUND`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Dữ liệu đầu vào không hợp lệ (`VALIDATION_ERROR`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Provider ngoài chưa được cấu hình (`SERVICE_UNAVAILABLE`)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Dữ liệu không hợp lệ
+            details:
+              type: object
+              additionalProperties: true
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        totalItems:
+          type: integer
+          example: 42
+        totalPages:
+          type: integer
+          example: 3
+
+    User:
+      type: object
+      description: Bảng `users` + profile mở rộng (`member_profiles` / `coach_profiles`)
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [MEMBER, COACH, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED]
+        phone:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        healthDeclaration:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MembershipPlan:
+      type: object
+      description: Bảng `membership_plans`
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        durationDays:
+          type: integer
+        priceVnd:
+          type: integer
+        isActive:
+          type: boolean
+
+    Payment:
+      type: object
+      description: Bảng `payments`
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        planId:
+          type: string
+          format: uuid
+        amountVnd:
+          type: integer
+        method:
+          type: string
+          enum: [ONLINE_MOCK, CASH, BANK_TRANSFER, CARD]
+        status:
+          type: string
+          enum: [PENDING, PAID, FAILED, CANCELLED]
+        idempotencyKey:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CoachPackagePlan:
+      type: object
+      description: Bảng `coach_package_plans`
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        sessionsCount:
+          type: integer
+        durationDays:
+          type: integer
+        priceVnd:
+          type: integer
+        isActive:
+          type: boolean
+
+    CoachBooking:
+      type: object
+      description: Bảng `coach_bookings`
+      properties:
+        id:
+          type: string
+          format: uuid
+        relationshipId:
+          type: string
+          format: uuid
+        coachId:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        slotDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+          example: '08:00'
+        endTime:
+          type: string
+          example: '09:00'
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, COMPLETED, CANCELLED, REJECTED]
+
+    TrainingPlan:
+      type: object
+      description: Bảng `training_plans` + `training_plan_days` + `training_plan_exercises`
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        coachId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, ARCHIVED]
+        days:
+          type: array
+          items:
+            type: object
+            properties:
+              dayIndex:
+                type: integer
+              title:
+                type: string
+              exercises:
+                type: array
+                items:
+                  type: object
+
+    NutritionFood:
+      type: object
+      description: Bảng `nutrition_foods`
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        caloriesPer100g:
+          type: number
+        proteinPer100g:
+          type: number
+        carbsPer100g:
+          type: number
+        fatPer100g:
+          type: number
+        isActive:
+          type: boolean
+
+    MemberNutritionDay:
+      type: object
+      description: Bảng `member_nutrition_days`
+      properties:
+        date:
+          type: string
+          format: date
+        targetCalories:
+          type: number
+        consumedCalories:
+          type: number
+        entries:
+          type: array
+          items:
+            type: object
+
+    GymVisit:
+      type: object
+      description: Bảng `gym_visits`
+      properties:
+        id:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        checkedInAt:
+          type: string
+          format: date-time
+
+    MediaAsset:
+      type: object
+      description: Bảng `media_assets`
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        mimeType:
+          type: string
+          enum: [image/jpeg, image/png]
+        sizeBytes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Kiểm tra tình trạng API và PostgreSQL
+      security: []
+      responses:
+        '200':
+          description: Hệ thống sẵn sàng
+
+  /auth/registrations:
+    post:
+      tags: [Auth & Password Reset]
+      summary: Đăng ký tài khoản Member mới
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password]
+              properties:
+                fullName:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 72
+      responses:
+        '201':
+          description: Tạo tài khoản Member thành công
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/sessions:
+    post:
+      tags: [Auth & Password Reset]
+      summary: Đăng nhập (Member / Coach / Admin)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Trả về accessToken JWT và thông tin user
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Vượt quá giới hạn đăng nhập (`auth_login_rate_limits`)
+
+  /password-reset-requests:
+    post:
+      tags: [Auth & Password Reset]
+      summary: Yêu cầu gửi mã đặt lại mật khẩu qua email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '202':
+          description: Đã tiếp nhận yêu cầu
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /password-reset-verifications:
+    post:
+      tags: [Auth & Password Reset]
+      summary: Xác minh mã đặt lại mật khẩu
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Mã hợp lệ
+
+  /password-resets:
+    post:
+      tags: [Auth & Password Reset]
+      summary: Đặt mật khẩu mới sau khi xác minh mã
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, newPassword]
+              properties:
+                email:
+                  type: string
+                code:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Đổi mật khẩu thành công
+
+  /users/me:
+    get:
+      tags: [Users & Profile]
+      summary: Lấy thông tin người dùng hiện tại
+      responses:
+        '200':
+          description: Hồ sơ user hiện tại
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+    patch:
+      tags: [Users & Profile]
+      summary: Cập nhật hồ sơ cá nhân
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /users/me/health-declaration:
+    patch:
+      tags: [Users & Profile]
+      summary: Cập nhật khai báo sức khỏe của Member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Cập nhật khai báo sức khỏe thành công
+
+  /users/me/password:
+    patch:
+      tags: [Users & Profile]
+      summary: Đổi mật khẩu (vô hiệu hóa các JWT cũ)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Đổi mật khẩu thành công
+
+  /users/me/avatar:
+    post:
+      tags: [Users & Profile]
+      summary: Tải lên ảnh đại diện (PNG/JPEG, xử lý qua Sharp)
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Cập nhật avatar thành công
+    delete:
+      tags: [Users & Profile]
+      summary: Xóa ảnh đại diện hiện tại
+      responses:
+        '200':
+          description: Đã xóa avatar
+
+  /users/{id}/avatar:
+    get:
+      tags: [Users & Profile]
+      summary: Lấy ảnh đại diện của user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dữ liệu ảnh avatar
+
+  /admin/users:
+    get:
+      tags: [Admin Users & Dashboard]
+      summary: Danh sách Member/Coach (Admin)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [MEMBER, COACH]
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Danh sách tài khoản
+
+  /admin/users/{userId}:
+    get:
+      tags: [Admin Users & Dashboard]
+      summary: Chi tiết tài khoản (Admin)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết user
+    patch:
+      tags: [Admin Users & Dashboard]
+      summary: Cập nhật thông tin user hoặc giới hạn học viên của Coach (Admin)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /admin/users/{userId}/status:
+    patch:
+      tags: [Admin Users & Dashboard]
+      summary: Khóa hoặc mở khóa tài khoản (Admin)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, SUSPENDED]
+      responses:
+        '200':
+          description: Đã cập nhật trạng thái
+
+  /admin/coaches:
+    post:
+      tags: [Admin Users & Dashboard]
+      summary: Tạo tài khoản Coach mới (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password]
+              properties:
+                fullName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Tạo Coach thành công
+
+  /admin/coaches/{coachId}/password-resets:
+    post:
+      tags: [Admin Users & Dashboard]
+      summary: Đặt mật khẩu tạm thời cho Coach (Admin)
+      parameters:
+        - name: coachId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã đặt lại mật khẩu tạm thời
+
+  /admin/dashboard:
+    get:
+      tags: [Admin Users & Dashboard]
+      summary: Số liệu thống kê tổng quan cho Admin Web
+      responses:
+        '200':
+          description: Dữ liệu KPI và biểu đồ
+
+  /membership-plans:
+    get:
+      tags: [Membership & Payments]
+      summary: Danh sách gói hội viên đang mở bán
+      responses:
+        '200':
+          description: Danh sách gói tập
+
+  /membership-plans/{planId}:
+    get:
+      tags: [Membership & Payments]
+      summary: Chi tiết gói hội viên
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết gói tập
+
+  /membership-plans/{planId}/quote:
+    get:
+      tags: [Membership & Payments]
+      summary: Báo giá và thời hạn dự kiến khi mua/gia hạn gói
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Thông tin báo giá
+
+  /payments:
+    post:
+      tags: [Membership & Payments]
+      summary: Tạo giao dịch thanh toán gói hội viên (Member)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Giao dịch được tạo
+
+  /payments/me:
+    get:
+      tags: [Membership & Payments]
+      summary: Lịch sử thanh toán của Member hiện tại
+      responses:
+        '200':
+          description: Danh sách giao dịch
+
+  /payments/{paymentId}:
+    get:
+      tags: [Membership & Payments]
+      summary: Chi tiết giao dịch thanh toán
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết giao dịch
+
+  /payments/{paymentId}/mock-confirmations:
+    post:
+      tags: [Membership & Payments]
+      summary: Xác nhận thanh toán giả lập (development/demo)
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Kích hoạt membership tương ứng
+
+  /payments/{paymentId}/cancellations:
+    post:
+      tags: [Membership & Payments]
+      summary: Hủy giao dịch đang chờ
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã hủy giao dịch
+
+  /memberships/me:
+    get:
+      tags: [Membership & Payments]
+      summary: Gói hội viên đang hiệu lực của Member
+      responses:
+        '200':
+          description: Thông tin membership hiện tại
+
+  /memberships/me/history:
+    get:
+      tags: [Membership & Payments]
+      summary: Lịch sử gói hội viên của Member
+      responses:
+        '200':
+          description: Danh sách lịch sử gói tập
+
+  /admin/membership-plans:
+    get:
+      tags: [Membership & Payments]
+      summary: Danh sách tất cả gói hội viên (Admin)
+      responses:
+        '200':
+          description: Danh sách gói tập
+    post:
+      tags: [Membership & Payments]
+      summary: Tạo gói hội viên mới (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipPlan'
+      responses:
+        '201':
+          description: Tạo gói thành công
+
+  /admin/membership-plans/{planId}:
+    patch:
+      tags: [Membership & Payments]
+      summary: Cập nhật gói hội viên (Admin)
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /admin/front-desk-payments:
+    post:
+      tags: [Membership & Payments]
+      summary: Ghi nhận thanh toán tại quầy (Admin)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '201':
+          description: Thanh toán tại quầy thành công
+
+  /admin/payments:
+    get:
+      tags: [Membership & Payments]
+      summary: Danh sách giao dịch toàn hệ thống (Admin)
+      responses:
+        '200':
+          description: Danh sách thanh toán
+
+  /admin/payments/{paymentId}:
+    patch:
+      tags: [Membership & Payments]
+      summary: Cập nhật trạng thái giao dịch (Admin)
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /admin/memberships:
+    get:
+      tags: [Membership & Payments]
+      summary: Danh sách hội viên & gói tập (Admin)
+      responses:
+        '200':
+          description: Danh sách memberships
+
+  /admin/members/{memberId}/memberships:
+    get:
+      tags: [Membership & Payments]
+      summary: Lịch sử gói tập của một Member (Admin)
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách memberships của Member
+
+  /coaches:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách Coach khả dụng
+      responses:
+        '200':
+          description: Danh sách Coach
+
+  /coaches/{coachId}:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Hồ sơ chi tiết của Coach
+      parameters:
+        - name: coachId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết Coach
+
+  /coaches/{coachId}/work-slots:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Khung giờ làm việc hằng tuần của Coach (`coach_weekly_slots`)
+      parameters:
+        - name: coachId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách khung giờ tuần
+
+  /coach/work-slots:
+    put:
+      tags: [Coaching, Packages & Bookings]
+      summary: Cập nhật lịch làm việc hằng tuần của Coach hiện tại
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /coach-packages:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách gói Coach đang mở bán (`coach_package_plans`)
+      responses:
+        '200':
+          description: Danh sách gói Coach
+
+  /admin/coach-packages:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Quản lý danh sách gói Coach (Admin)
+      responses:
+        '200':
+          description: Danh sách gói Coach
+
+  /admin/coach-packages/{code}:
+    patch:
+      tags: [Coaching, Packages & Bookings]
+      summary: Cập nhật gói Coach theo mã (Admin)
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /coach-payment-holds:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách giao dịch giữ chỗ/đặt gói Coach (`coach_payment_holds`)
+      responses:
+        '200':
+          description: Danh sách holds
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Tạo giữ chỗ thanh toán gói Coach
+      responses:
+        '201':
+          description: Tạo hold thành công
+
+  /coach-payment-holds/{id}:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Chi tiết giữ chỗ thanh toán gói Coach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết hold
+
+  /coach-payment-holds/{id}/cancel:
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Hủy giữ chỗ thanh toán gói Coach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã hủy hold
+
+  /coach-payment-holds/{id}/mock-confirmations:
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Xác nhận thanh toán giả lập gói Coach (tạo `coach_entitlements`)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Kích hoạt quyền buổi tập Coach
+
+  /coach-entitlements:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Số buổi & quyền tập Coach còn hiệu lực (`coach_entitlements`)
+      responses:
+        '200':
+          description: Danh sách entitlements
+
+  /coach-bookings:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách lịch đặt buổi tập với Coach (`coach_bookings`)
+      responses:
+        '200':
+          description: Danh sách bookings
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Đặt lịch buổi tập với Coach
+      responses:
+        '201':
+          description: Đặt lịch thành công
+
+  /coach-bookings/{id}:
+    patch:
+      tags: [Coaching, Packages & Bookings]
+      summary: Cập nhật/xác nhận/hủy lịch đặt buổi tập
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /coach-bookings/available-slots:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Lấy các khung giờ trống của Coach theo ngày
+      responses:
+        '200':
+          description: Danh sách slot trống
+
+  /coach-bookings/blocks:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách khung giờ bị Coach khóa (`coach_slot_blocks`)
+      responses:
+        '200':
+          description: Danh sách slot bị khóa
+    put:
+      tags: [Coaching, Packages & Bookings]
+      summary: Cập nhật các khung giờ khóa lịch của Coach
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /coach-notifications:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Thông báo của Coach (`coach_notifications`)
+      responses:
+        '200':
+          description: Danh sách thông báo
+
+  /coach-notifications/{id}/read:
+    patch:
+      tags: [Coaching, Packages & Bookings]
+      summary: Đánh dấu đã đọc thông báo Coach
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã đánh dấu đã đọc
+
+  /coach-requests:
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Member gửi yêu cầu kết nối Coach (`coach_requests`)
+      responses:
+        '201':
+          description: Gửi yêu cầu thành công
+
+  /coach-requests/me:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách yêu cầu kết nối Coach của Member
+      responses:
+        '200':
+          description: Danh sách yêu cầu
+
+  /coach-requests/{requestId}:
+    delete:
+      tags: [Coaching, Packages & Bookings]
+      summary: Hủy yêu cầu kết nối Coach đang chờ
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã hủy yêu cầu
+
+  /coach/requests:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách yêu cầu kết nối gửi tới Coach
+      responses:
+        '200':
+          description: Danh sách yêu cầu
+
+  /coach/requests/{requestId}:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Chi tiết yêu cầu kết nối gửi tới Coach
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết yêu cầu
+    patch:
+      tags: [Coaching, Packages & Bookings]
+      summary: Coach chấp nhận hoặc từ chối yêu cầu kết nối
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã xử lý yêu cầu
+
+  /relationships/me:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Quan hệ Coach–Member đang hoạt động của Member
+      responses:
+        '200':
+          description: Quan hệ hiện tại
+
+  /relationships/me/history:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Lịch sử quan hệ Coach–Member của Member
+      responses:
+        '200':
+          description: Lịch sử quan hệ
+
+  /relationships/{relationshipId}/terminations:
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Member chấm dứt quan hệ Coach–Member
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã chấm dứt quan hệ
+
+  /coach/members:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách Member đang được Coach phụ trách
+      responses:
+        '200':
+          description: Danh sách Member
+
+  /coach/members/{memberId}:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Chi tiết Member đang được Coach phụ trách
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết Member
+
+  /coach/termination-requests:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách yêu cầu chấm dứt hợp tác do Coach gửi
+      responses:
+        '200':
+          description: Danh sách yêu cầu
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Coach gửi yêu cầu chấm dứt đồng hành với Member
+      responses:
+        '201':
+          description: Đã gửi yêu cầu
+
+  /admin/relationships:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách quan hệ Coach–Member toàn hệ thống (Admin)
+      responses:
+        '200':
+          description: Danh sách quan hệ
+
+  /admin/relationships/{relationshipId}:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Chi tiết quan hệ Coach–Member (Admin)
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết quan hệ
+
+  /admin/termination-requests:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Danh sách yêu cầu chấm dứt chờ Admin duyệt
+      responses:
+        '200':
+          description: Danh sách yêu cầu
+
+  /admin/termination-requests/{requestId}:
+    patch:
+      tags: [Coaching, Packages & Bookings]
+      summary: Admin duyệt hoặc từ chối yêu cầu chấm dứt
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã xử lý yêu cầu
+
+  /admin/coach-transfers:
+    get:
+      tags: [Coaching, Packages & Bookings]
+      summary: Lịch sử chuyển đổi Coach (`coach_transfer_history`)
+      responses:
+        '200':
+          description: Lịch sử chuyển Coach
+    post:
+      tags: [Coaching, Packages & Bookings]
+      summary: Admin thực hiện chuyển Member sang Coach khác
+      responses:
+        '201':
+          description: Chuyển Coach thành công
+
+  /coaches/{coachId}/outcomes:
+    get:
+      tags: [Coach Outcomes]
+      summary: Danh sách case kết quả công khai của Coach (`coach_outcome_cases`)
+      parameters:
+        - name: coachId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách outcome cases
+
+  /coach-outcomes/{outcomeId}/photos/{side}:
+    get:
+      tags: [Coach Outcomes]
+      summary: Lấy ảnh before/after của một outcome case
+      parameters:
+        - name: outcomeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: side
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [before, after]
+      responses:
+        '200':
+          description: Ảnh kết quả
+
+  /coach/members/{memberId}/outcomes:
+    get:
+      tags: [Coach Outcomes]
+      summary: Danh sách outcome cases của Member (Coach)
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách outcomes
+    post:
+      tags: [Coach Outcomes]
+      summary: Coach tạo outcome case mới cho Member
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Tạo outcome thành công
+
+  /coach/outcomes/{outcomeId}:
+    delete:
+      tags: [Coach Outcomes]
+      summary: Coach xóa outcome case
+      parameters:
+        - name: outcomeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã xóa
+
+  /member/coach-outcomes:
+    get:
+      tags: [Coach Outcomes]
+      summary: Danh sách outcome cases của chính Member
+      responses:
+        '200':
+          description: Danh sách outcomes
+
+  /member/coach-outcomes/{outcomeId}:
+    patch:
+      tags: [Coach Outcomes]
+      summary: Member đồng ý/từ chối công khai outcome case
+      parameters:
+        - name: outcomeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /gym-profile:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Thông tin phòng gym (`gym_profile`)
+      responses:
+        '200':
+          description: Thông tin phòng gym
+
+  /admin/gym-profile:
+    patch:
+      tags: [Catalog & Gym Check-in]
+      summary: Cập nhật thông tin phòng gym (Admin)
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /equipment:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Danh sách thiết bị phòng gym (`equipment`)
+      responses:
+        '200':
+          description: Danh sách thiết bị
+
+  /equipment/{itemId}:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Chi tiết thiết bị
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết thiết bị
+
+  /exercises:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Thư viện bài tập (`exercises`)
+      responses:
+        '200':
+          description: Danh sách bài tập
+
+  /exercises/{itemId}:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Chi tiết bài tập
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết bài tập
+
+  /admin/equipment:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Quản lý thiết bị (Admin)
+      responses:
+        '200':
+          description: Danh sách thiết bị
+    post:
+      tags: [Catalog & Gym Check-in]
+      summary: Thêm thiết bị mới (Admin)
+      responses:
+        '201':
+          description: Tạo thiết bị thành công
+
+  /admin/equipment/{itemId}:
+    patch:
+      tags: [Catalog & Gym Check-in]
+      summary: Cập nhật thiết bị (Admin)
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /admin/exercises:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Quản lý bài tập (Admin)
+      responses:
+        '200':
+          description: Danh sách bài tập
+    post:
+      tags: [Catalog & Gym Check-in]
+      summary: Thêm bài tập mới (Admin)
+      responses:
+        '201':
+          description: Tạo bài tập thành công
+
+  /admin/exercises/{itemId}:
+    patch:
+      tags: [Catalog & Gym Check-in]
+      summary: Cập nhật bài tập (Admin)
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /admin/gym-checkin-code:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Lấy mã QR check-in tĩnh hiện tại của phòng gym (`gym_checkin_code`)
+      responses:
+        '200':
+          description: Mã check-in hiện tại
+
+  /admin/gym-checkin-code/rotate:
+    post:
+      tags: [Catalog & Gym Check-in]
+      summary: Đổi mã QR check-in phòng gym (Admin)
+      responses:
+        '200':
+          description: Mã check-in mới
+
+  /gym-visits/me:
+    get:
+      tags: [Catalog & Gym Check-in]
+      summary: Lịch sử check-in phòng gym của Member (`gym_visits`)
+      responses:
+        '200':
+          description: Danh sách lượt check-in
+
+  /gym-visits/check-in:
+    post:
+      tags: [Catalog & Gym Check-in]
+      summary: Member quét mã QR check-in tại phòng gym
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+      responses:
+        '201':
+          description: Check-in thành công
+
+  /training-plans/me/active:
+    get:
+      tags: [Training & Self-Training]
+      summary: Giáo án đang hiệu lực của Member
+      responses:
+        '200':
+          description: Giáo án hiện tại
+
+  /training-plans/me/history:
+    get:
+      tags: [Training & Self-Training]
+      summary: Lịch sử giáo án của Member
+      responses:
+        '200':
+          description: Danh sách giáo án
+
+  /training-plans/{planId}:
+    get:
+      tags: [Training & Self-Training]
+      summary: Chi tiết một giáo án
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết giáo án
+
+  /coach/members/{memberId}/training-plans:
+    get:
+      tags: [Training & Self-Training]
+      summary: Danh sách giáo án của Member (Coach)
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách giáo án
+    post:
+      tags: [Training & Self-Training]
+      summary: Coach tạo giáo án mới cho Member
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Tạo giáo án thành công
+
+  /coach/members/{memberId}/training-plans/current:
+    put:
+      tags: [Training & Self-Training]
+      summary: Coach cập nhật đồng bộ giáo án hiện tại của Member
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /coach/training-plans/{planId}:
+    patch:
+      tags: [Training & Self-Training]
+      summary: Cập nhật giáo án nháp/hiện tại
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /coach/training-plans/{planId}/publications:
+    post:
+      tags: [Training & Self-Training]
+      summary: Phát hành giáo án cho Member
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Phát hành thành công
+
+  /training-sessions/me:
+    get:
+      tags: [Training & Self-Training]
+      summary: Lịch buổi tập của Member (`training_sessions`)
+      responses:
+        '200':
+          description: Danh sách buổi tập
+
+  /coach/training-sessions:
+    get:
+      tags: [Training & Self-Training]
+      summary: Lịch buổi tập của Coach
+      responses:
+        '200':
+          description: Danh sách buổi tập
+    post:
+      tags: [Training & Self-Training]
+      summary: Coach tạo buổi tập mới
+      responses:
+        '201':
+          description: Tạo buổi tập thành công
+
+  /training-sessions/{sessionId}:
+    get:
+      tags: [Training & Self-Training]
+      summary: Chi tiết buổi tập
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết buổi tập
+
+  /coach/training-sessions/{sessionId}:
+    patch:
+      tags: [Training & Self-Training]
+      summary: Coach cập nhật trạng thái/nội dung buổi tập
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /member/self-training-days:
+    get:
+      tags: [Training & Self-Training]
+      summary: Lịch tự tập của Member (`member_self_training_days`)
+      responses:
+        '200':
+          description: Danh sách ngày tự tập
+
+  /member/self-training-days/{date}:
+    put:
+      tags: [Training & Self-Training]
+      summary: Lưu/cập nhật kế hoạch tự tập theo ngày (`YYYY-MM-DD`)
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lưu thành công
+    delete:
+      tags: [Training & Self-Training]
+      summary: Xóa ngày tự tập
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Đã xóa
+
+  /nutrition-guides/me/active:
+    get:
+      tags: [Nutrition]
+      summary: Hướng dẫn dinh dưỡng đang hiệu lực của Member
+      responses:
+        '200':
+          description: Hướng dẫn dinh dưỡng hiện tại
+
+  /nutrition-guides/me/history:
+    get:
+      tags: [Nutrition]
+      summary: Lịch sử hướng dẫn dinh dưỡng của Member
+      responses:
+        '200':
+          description: Lịch sử hướng dẫn
+
+  /coach/members/{memberId}/nutrition-guides:
+    get:
+      tags: [Nutrition]
+      summary: Danh sách hướng dẫn dinh dưỡng của Member (Coach)
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách hướng dẫn
+    post:
+      tags: [Nutrition]
+      summary: Coach tạo hướng dẫn dinh dưỡng mới cho Member
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /coach/nutrition-guides/{guideId}:
+    patch:
+      tags: [Nutrition]
+      summary: Coach cập nhật hướng dẫn dinh dưỡng
+      parameters:
+        - name: guideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /nutrition-foods:
+    get:
+      tags: [Nutrition]
+      summary: Danh mục thực phẩm chuẩn (`nutrition_foods`)
+      responses:
+        '200':
+          description: Danh sách thực phẩm
+
+  /admin/nutrition-foods:
+    get:
+      tags: [Nutrition]
+      summary: Quản lý danh mục thực phẩm (Admin)
+      responses:
+        '200':
+          description: Danh sách thực phẩm
+    post:
+      tags: [Nutrition]
+      summary: Thêm thực phẩm vào danh mục (Admin)
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /admin/nutrition-foods/{id}:
+    patch:
+      tags: [Nutrition]
+      summary: Cập nhật thực phẩm (Admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /meal-plans/me:
+    get:
+      tags: [Nutrition]
+      summary: Thực đơn cấu trúc theo ngày của Member (`training_plan_day_meals`)
+      responses:
+        '200':
+          description: Thực đơn của Member
+
+  /coach/meal-plans/{memberId}:
+    get:
+      tags: [Nutrition]
+      summary: Xem thực đơn cấu trúc của Member (Coach)
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Thực đơn Member
+    put:
+      tags: [Nutrition]
+      summary: Coach cập nhật thực đơn cấu trúc cho Member
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /member/nutrition/foods:
+    get:
+      tags: [Nutrition]
+      summary: Danh sách thực phẩm gợi ý cho tính năng theo dõi dinh dưỡng
+      responses:
+        '200':
+          description: Danh sách thực phẩm
+
+  /member/nutrition/day:
+    get:
+      tags: [Nutrition]
+      summary: Dữ liệu dinh dưỡng theo ngày của Member (`member_nutrition_days`)
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Tổng hợp calo, macro và bữa ăn trong ngày
+
+  /member/nutrition/entries:
+    post:
+      tags: [Nutrition]
+      summary: Ghi nhận bữa ăn linh hoạt vào ngày dinh dưỡng
+      responses:
+        '201':
+          description: Đã lưu bữa ăn
+
+  /member/nutrition/entries/{id}:
+    patch:
+      tags: [Nutrition]
+      summary: Cập nhật mục bữa ăn dinh dưỡng
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+    delete:
+      tags: [Nutrition]
+      summary: Xóa mục bữa ăn dinh dưỡng
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Đã xóa
+
+  /progress/me/summary:
+    get:
+      tags: [Progress & Journal]
+      summary: Tổng quan tiến độ cá nhân
+      responses:
+        '200':
+          description: Summary tiến độ
+
+  /progress/me/charts:
+    get:
+      tags: [Progress & Journal]
+      summary: Dữ liệu biểu đồ tiến độ theo thời gian
+      responses:
+        '200':
+          description: Dữ liệu biểu đồ
+
+  /workout-logs:
+    get:
+      tags: [Progress & Journal]
+      summary: Danh sách nhật ký buổi tập (`workout_logs`)
+      responses:
+        '200':
+          description: Danh sách workout logs
+    post:
+      tags: [Progress & Journal]
+      summary: Tạo nhật ký buổi tập mới
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /meal-logs:
+    get:
+      tags: [Progress & Journal]
+      summary: Danh sách nhật ký bữa ăn (`meal_logs`)
+      responses:
+        '200':
+          description: Danh sách meal logs
+    post:
+      tags: [Progress & Journal]
+      summary: Ghi nhận nhật ký bữa ăn
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /body-measurements:
+    get:
+      tags: [Progress & Journal]
+      summary: Danh sách số đo cơ thể (`body_measurements`)
+      responses:
+        '200':
+          description: Danh sách số đo
+    post:
+      tags: [Progress & Journal]
+      summary: Ghi nhận số đo cơ thể mới
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /progress-photos:
+    get:
+      tags: [Progress & Journal]
+      summary: Danh sách ảnh tiến độ (`progress_photos`)
+      responses:
+        '200':
+          description: Danh sách ảnh tiến độ
+    post:
+      tags: [Progress & Journal]
+      summary: Lưu ảnh tiến độ mới
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /progress-comments:
+    get:
+      tags: [Progress & Journal]
+      summary: Danh sách nhận xét tiến độ (`progress_comments`)
+      responses:
+        '200':
+          description: Danh sách nhận xét
+
+  /coach/progress-comments:
+    post:
+      tags: [Progress & Journal]
+      summary: Coach gửi nhận xét tiến độ cho Member
+      responses:
+        '201':
+          description: Tạo nhận xét thành công
+
+  /journal:
+    get:
+      tags: [Progress & Journal]
+      summary: Danh sách nhật ký tập luyện/cơ thể (`member_journal_entries`)
+      responses:
+        '200':
+          description: Danh sách journal
+    post:
+      tags: [Progress & Journal]
+      summary: Tạo mục nhật ký mới
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /journal/charts:
+    get:
+      tags: [Progress & Journal]
+      summary: Dữ liệu biểu đồ từ nhật ký Member
+      responses:
+        '200':
+          description: Dữ liệu biểu đồ
+
+  /journal/{id}:
+    get:
+      tags: [Progress & Journal]
+      summary: Chi tiết một mục nhật ký
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết journal
+    patch:
+      tags: [Progress & Journal]
+      summary: Cập nhật mục nhật ký
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+    delete:
+      tags: [Progress & Journal]
+      summary: Xóa mục nhật ký
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã xóa
+
+  /conversations:
+    get:
+      tags: [Messaging & Realtime]
+      summary: Danh sách hội thoại của người dùng (`conversations`)
+      responses:
+        '200':
+          description: Danh sách hội thoại
+    post:
+      tags: [Messaging & Realtime]
+      summary: Tạo hoặc mở hội thoại cho quan hệ Coach–Member
+      responses:
+        '201':
+          description: Hội thoại đã sẵn sàng
+
+  /conversations/{relationshipId}/messages:
+    get:
+      tags: [Messaging & Realtime]
+      summary: Danh sách tin nhắn trong hội thoại (`messages`)
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách tin nhắn
+    post:
+      tags: [Messaging & Realtime]
+      summary: Gửi tin nhắn mới
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Đã gửi tin nhắn
+
+  /conversations/{relationshipId}/read-state:
+    patch:
+      tags: [Messaging & Realtime]
+      summary: Đánh dấu đã đọc tin nhắn
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã cập nhật trạng thái đọc
+
+  /calls:
+    get:
+      tags: [Calls]
+      summary: Lịch sử cuộc gọi (`call_logs`)
+      responses:
+        '200':
+          description: Danh sách cuộc gọi
+    post:
+      tags: [Calls]
+      summary: Khởi tạo cuộc gọi thoại/video
+      responses:
+        '201':
+          description: Đã tạo lời mời gọi
+
+  /calls/incoming:
+    get:
+      tags: [Calls]
+      summary: Kiểm tra cuộc gọi đến đang chờ
+      responses:
+        '200':
+          description: Danh sách cuộc gọi đến
+
+  /calls/{callId}:
+    get:
+      tags: [Calls]
+      summary: Chi tiết cuộc gọi
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết cuộc gọi
+    patch:
+      tags: [Calls]
+      summary: Cập nhật trạng thái cuộc gọi (chấp nhận, từ chối, kết thúc)
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /calls/{callId}/access-tokens:
+    post:
+      tags: [Calls]
+      summary: Cấp token tham gia phòng LiveKit
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Token phòng LiveKit
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /ai-conversations:
+    get:
+      tags: [AI Assistant]
+      summary: Danh sách hội thoại với Trợ lý AI (`ai_conversations`)
+      responses:
+        '200':
+          description: Danh sách hội thoại AI
+    post:
+      tags: [AI Assistant]
+      summary: Tạo cuộc hội thoại AI mới
+      responses:
+        '201':
+          description: Tạo thành công
+
+  /ai-conversations/{conversationId}:
+    get:
+      tags: [AI Assistant]
+      summary: Chi tiết hội thoại AI
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Chi tiết hội thoại AI
+    patch:
+      tags: [AI Assistant]
+      summary: Đổi tên/cập nhật hội thoại AI
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cập nhật thành công
+    delete:
+      tags: [AI Assistant]
+      summary: Xóa hội thoại AI
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã xóa
+
+  /ai-conversations/{conversationId}/messages:
+    get:
+      tags: [AI Assistant]
+      summary: Danh sách tin nhắn trong hội thoại AI (`ai_messages`)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Danh sách tin nhắn AI
+    post:
+      tags: [AI Assistant]
+      summary: Gửi câu hỏi cho Trợ lý AI (OpenAI Responses API)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Phản hồi từ AI
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /media/images:
+    post:
+      tags: [Media]
+      summary: Tải lên ảnh PNG/JPEG (lưu local hoặc Supabase Storage, metadata vào `media_assets`)
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Đã lưu ảnh và trả về metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MediaAsset'
+        '413':
+          description: Vượt quá dung lượng cho phép
+
+  /media/images/{mediaId}:
+    get:
+      tags: [Media]
+      summary: Tải nội dung ảnh theo ID
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dữ liệu nhị phân của ảnh
+
+  /media/images/{mediaId}/access-url:
+    get:
+      tags: [Media]
+      summary: Lấy URL truy cập ảnh ngắn hạn (signed URL / access token)
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: URL truy cập ảnh

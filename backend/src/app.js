@@ -30,6 +30,7 @@ import { createGymVisitsRouter } from './routes/gym-visits.routes.js';
 import { createDashboardRouter } from './routes/dashboard.routes.js';
 import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
 import { createCallsRouter } from './routes/calls.routes.js';
+import { createDocsRouter } from './routes/docs.routes.js';
 import { createPasswordResetsRouter } from './routes/password-resets.routes.js';
 import { createMediaRouter } from './routes/media.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
@@ -93,6 +94,7 @@ export function createApp({
   app.use(morgan((tokens, request, response) =>
     `${tokens.method(request, response)} ${request.originalUrl.split('?')[0]} ${tokens.status(request, response)} ${tokens['response-time'](request, response)} ms`));
 
+  app.use('/api-docs', createDocsRouter());
   app.use(
     '/api/v1/auth',
     createAuthRouter({ database, jwtSecret, loginRateLimiter }),
