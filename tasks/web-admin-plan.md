@@ -1,8 +1,8 @@
 # Kế hoạch thiết kế và triển khai Web Admin Meta Gym
 
 **Ngày lập:** 21/11/2026  
-**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0) và Giai đoạn 1 (T4–T6); chờ duyệt preview tại Checkpoint 1 trước khi triển khai `admin-web/src/`  
-**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `feat/web-admin` (chỉ push nhánh tính năng, không merge vào `main`). Đã đồng bộ `origin/main` (`0024_membership_renewals`..`0027_zalopay_sandbox` + VNPay/MoMo/ZaloPay sandbox + PR #14 interaction helpers), đánh lại số `0028_member_nutrition_tracking.{up,down}.sql`, vượt qua `schema_assertions.sql` (52 bảng), `backend` (`npm run check` + 87/88 Postgres test PASS), `admin-web` (`npm test` 7/7 + `npm run build` PASS) và `mobile-app` (`flutter analyze` 0 lỗi, `flutter test` 216/216 PASS).
+**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0), Giai đoạn 1 (T4–T6, Checkpoint 1) và Giai đoạn 2 (T7–T11, Checkpoint 2); sẵn sàng triển khai Giai đoạn 3 (T12–T15)  
+**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng migration `0001`..`0031` (55 bảng `public` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11 (audit logs + active lock + chặn chat tài khoản bị khóa, hard cap 8 + D1/D4 khóa/mở khóa Coach & Member, CRUD đầy đủ gói Gym/Coach + snapshot + sửa cửa sổ công suất `QUEUED`, giao dịch tại quầy Gym + D6 `VOID_REVERSAL`), và đồng bộ Flutter (gỡ/chặn `AdminHomePage`, trạng thái `COACH_LOCKED`/`MEMBER_LOCKED`/đóng băng, hard cap 8, gói Coach động, lỗi chat `403 RECIPIENT_ACCOUNT_DISABLED`).
 
 **Tài liệu & sản phẩm đã hoàn tất (Wave 1):**
 - T1 Audit: [`docs/requirements/web-admin-t1-audit.md`](../docs/requirements/web-admin-t1-audit.md)
@@ -164,7 +164,6 @@ Trước khi code, lập bảng cho từng endpoint: dữ liệu trả về, quy
 
 ## 11. Việc cần làm ngay
 
-1. **Checkpoint 1 (đang chờ duyệt):** mở [`docs/previews/admin-web-preview.html`](../docs/previews/admin-web-preview.html) và rà soát cùng brief [`design-system/meta-gym/pages/admin-web.md`](../design-system/meta-gym/pages/admin-web.md) + hợp đồng [`docs/requirements/web-admin-api-contract.md`](../docs/requirements/web-admin-api-contract.md).
-2. Sau khi duyệt Checkpoint 1, triển khai Giai đoạn 2 (T7–T11 + migration `0029`–`0033` + gỡ/chặn `AdminHomePage` trên Flutter) trên nhánh `feat/web-admin`.
-3. Tiếp tục Giai đoạn 3 (T12–T15) và Giai đoạn 4 (T16–T19) qua các Checkpoint 2, 3 và cuối.
+1. **Giai đoạn 3 (tiếp theo):** triển khai T12 (quan hệ & kết thúc sớm/tranh chấp D5 + migration `0032`), T13 (hàng chờ sự cố Coach `COACH_LOCKED` & chuyển Coach D2), T14 (hoàn tiền mô phỏng D3), T15 (Dashboard dữ liệu thật Gross/Refund/Net & việc cần xử lý) trên nhánh `feat/web-admin`.
+2. Hoàn thiện Giai đoạn 4 (T16 Thực phẩm & kcal, T17 Phòng gym, Thiết bị & Thư viện bài tập `exercises`, T18 Audit/bảo mật/khả dụng, T19 Staging & diễn tập migration) và nghiệm thu tại Checkpoint 3 & Checkpoint cuối.
 
