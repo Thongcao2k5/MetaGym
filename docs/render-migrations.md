@@ -219,10 +219,28 @@ hồi backup theo kế hoạch hoặc viết migration sửa tiếp; không xóa
    Bảng mới vẫn không cho role `anon` / `authenticated` đọc trực tiếp.
 10. Tích hợp cùng cấu hình vào repo đồ án local `F:\AndroidProjects\MetaGym`
     trên nhánh `thong`, không đưa các tính năng đang phát triển khác lên main.
-    Xóa môi trường/script kiểm thử tạm và file environment tải xuống sau khi
-    xác minh; giữ backup để phục hồi khi cần.
+    File test runner mới đã bỏ khỏi thay đổi cuối; môi trường PostgreSQL tạm
+    đã dừng. Bộ duyệt tự động từ chối lệnh xóa thư mục tạm và file environment
+    tải xuống (`blocked by policy`), nên hai mục này cần chủ máy dọn thủ công.
+    Giữ backup để phục hồi khi cần.
 
 **Mốc production sau thiết lập là `0031`.** Migration ở nhánh khác (ví dụ `0032`
 trong repo local) chỉ lên production sau khi PR/merge vào `main` và workflow đạt.
 Các lệnh baseline trong hướng dẫn là để thiết lập một database cũ khác; không
 chạy lại baseline trên database production đã được ghi lịch sử này.
+
+### Dọn thủ công phần tạm còn lại
+
+Hai đường dẫn dưới đây được tạo riêng cho lần thiết lập này, không phải repo
+đồ án `F:\AndroidProjects\MetaGym`. Đóng tiến trình đang dùng chúng rồi xóa bằng
+File Explorer hoặc chạy PowerShell:
+
+```powershell
+Remove-Item -LiteralPath 'C:\Users\thong\OneDrive\Đính kèm\Documents\ChatGPT\Meta Gym\.tmp\metagym-render-migrations' -Recurse -Force
+Remove-Item -LiteralPath 'C:\Users\thong\Downloads\metagym-api.env' -Force
+```
+
+File `.env` tải xuống chứa cấu hình kín, không chia sẻ hoặc commit. Backup hợp
+lệ được giữ tại `C:\Users\thong\AppData\Local\MetaGym\backups\before-automated-migrations-1795262696183.dump`
+(195.081 byte); bản dump dung lượng 0 cùng thư mục là lần sao lưu không thành công,
+không dùng để phục hồi.
