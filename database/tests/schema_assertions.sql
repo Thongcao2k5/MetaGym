@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 53 THEN
-    RAISE EXCEPTION 'Expected 53 public tables, found %', table_count;
+  IF table_count <> 55 THEN
+    RAISE EXCEPTION 'Expected 55 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -34,7 +34,8 @@ DECLARE
     'coach_notifications', 'nutrition_foods', 'training_plan_day_meals',
     'gym_checkin_code', 'gym_visits', 'member_self_training_days',
     'coach_outcome_cases', 'nutrition_guide_revisions',
-    'member_nutrition_days', 'coach_lock_incidents'
+    'member_nutrition_days', 'coach_lock_incidents',
+    'simulated_refunds', 'payment_adjustments'
   ];
   missing_tables text[];
 BEGIN
@@ -68,7 +69,8 @@ DECLARE
     'uq_member_self_training_day', 'ck_coach_outcome_different_pair',
     'uq_member_membership_owner', 'fk_payment_renewed_membership',
     'ck_payments_vnpay_confirmation', 'ck_payments_momo_confirmation',
-    'ck_payments_zalopay_confirmation'
+    'ck_payments_zalopay_confirmation', 'uq_simulated_refund_idempotency',
+    'ck_simulated_refund_formula', 'uq_payment_adjustment_idempotency'
   ];
   missing_constraints text[];
 BEGIN
