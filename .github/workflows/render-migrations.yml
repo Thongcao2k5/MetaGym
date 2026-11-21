@@ -1,0 +1,88 @@
+name: Database migrations and Render deploy
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'database/**'
+      - 'backend/**'
+      - '.github/workflows/render-migrations.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'database/**'
+      - 'backend/**'
+      - '.github/workflows/render-migrations.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check migrations on PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: metagym_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d metagym_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Disposable runner-local service only; never uses the production DATABASE_URL.
+      DATABASE_URL: postgresql://postgres@localhost:5432/metagym_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - name: Backend syntax and unit tests
+        working-directory: backend
+        run: |
+          npm run check
+          npm test
+      - name: Verify history, rollback, baseline and concurrent migration runners
+        run: node --test backend/test/migrations.postgres.test.js
+        env:
+          MIGRATION_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+      - name: Apply all migrations and verify repeat execution
+        working-directory: backend
+        run: |
+          npm run db:migrate
+          npm run db:migrate
+      - name: Verify schema
+        run: psql -X "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
+
+  deploy:
+    name: Request Render deploy
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Trigger the checked commit on Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo '::error::Set the RENDER_DEPLOY_HOOK_URL repository secret first.'
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 60 --output /tmp/render-deploy.json \
+            --request POST --get --data-urlencode "ref=$DEPLOY_SHA" "$RENDER_DEPLOY_HOOK_URL"
+          echo 'Render accepted the deploy request. Check Render deploy logs for migration/startup completion.' >> "$GITHUB_STEP_SUMMARY"
