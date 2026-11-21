@@ -8,6 +8,7 @@ import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:provider/provider.dart';
@@ -188,11 +189,55 @@ class _MemberCoachingFixture implements MemberCoachingService {
   Future<void> cancelRequest(String id) async {}
 
   @override
-  Future<void> terminateRelationship(String id, String reason) async {
-    endedId = id;
+  Future<CoachLockChoiceResult> submitCoachLockChoice({
+    required String choice,
+    String? note,
+  }) async => CoachLockChoiceResult(
+    incidentId: 'inc-1',
+    relationshipId: 'relationship-1',
+    status: 'OPEN',
+    memberChoice: choice,
+    memberChoiceNote: note?.trim().isEmpty == true ? null : note?.trim(),
+  );
+
+  @override
+  Future<List<CoachTerminationRequest>> getEarlyTerminationRequests() async =>
+      const [];
+
+  @override
+  Future<CoachTerminationRequest> requestEarlyTermination(
+    String relationshipId,
+    String reason,
+  ) async {
+    endedId = relationshipId;
     endReason = reason;
-    ended = true;
+    return CoachTerminationRequest(
+      id: 'term-1',
+      relationshipId: relationshipId,
+      requestedByRole: 'MEMBER',
+      reason: reason,
+      status: 'PENDING_COUNTERPARTY',
+      responseDeadlineAt: '2026-11-24T09:00:00.000Z',
+    );
   }
+
+  @override
+  Future<CoachTerminationRequest> respondEarlyTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) async => CoachTerminationRequest(
+    id: requestId,
+    relationshipId: 'relationship-1',
+    requestedByRole: 'COACH',
+    reason: 'Đổi lịch',
+    status: decision == 'ACCEPT'
+        ? 'ACCEPTED'
+        : decision == 'REJECT'
+        ? 'DISPUTED'
+        : 'CANCELLED',
+    counterpartyReason: reason,
+  );
 }
 
 class _FrozenEntitlementAdapter implements HttpClientAdapter {

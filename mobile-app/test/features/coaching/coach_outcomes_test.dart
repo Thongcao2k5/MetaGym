@@ -144,6 +144,13 @@ class _SingleMemberFixture implements CoachMembersService {
 
   @override
   Future<void> requestTermination(String relationshipId, String reason) async {}
+
+  @override
+  Future<CoachTerminationRequest> respondTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) => throw UnimplementedError();
 }
 
 class _SingleCoachFixture implements CoachSelectionService {

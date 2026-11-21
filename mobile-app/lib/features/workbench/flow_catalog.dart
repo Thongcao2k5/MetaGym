@@ -25,10 +25,27 @@ const memberFlows = <FlowGroup>[
     FlowAction('Coach hiện tại', 'GET', '/relationships/me'),
     FlowAction('Lịch sử Coach', 'GET', '/relationships/me/history'),
     FlowAction(
-      'Kết thúc quan hệ',
+      'Chọn xử lý khóa Coach',
       'POST',
-      '/relationships/:relationshipId/terminations',
+      '/relationships/me/coach-lock-choice',
+      sampleBody: '{"choice":"WAIT","note":"Tôi muốn chờ Coach mở khóa"}',
+    ),
+    FlowAction(
+      'Yêu cầu kết thúc sớm (72h)',
+      'POST',
+      '/relationships/:relationshipId/early-termination-requests',
       sampleBody: '{"reason":"Tôi muốn đổi Coach"}',
+    ),
+    FlowAction(
+      'Danh sách yêu cầu kết thúc sớm',
+      'GET',
+      '/early-termination-requests/me',
+    ),
+    FlowAction(
+      'Phản hồi yêu cầu kết thúc sớm',
+      'PATCH',
+      '/early-termination-requests/:requestId/respond',
+      sampleBody: '{"decision":"ACCEPT"}',
     ),
   ]),
   FlowGroup('Tập luyện và dinh dưỡng', [
@@ -182,13 +199,22 @@ const coachFlows = <FlowGroup>[
     FlowAction('Hội viên đang phụ trách', 'GET', '/coach/members'),
     FlowAction('Hồ sơ hội viên', 'GET', '/coach/members/:memberId'),
     FlowAction(
-      'Xin ngừng phụ trách',
+      'Xin ngừng phụ trách (72h)',
       'POST',
-      '/coach/termination-requests',
-      sampleBody:
-          '{"relationshipId":"","reason":"Không thể tiếp tục phụ trách"}',
+      '/relationships/:relationshipId/early-termination-requests',
+      sampleBody: '{"reason":"Không thể tiếp tục phụ trách"}',
     ),
-    FlowAction('Theo dõi yêu cầu ngừng', 'GET', '/coach/termination-requests'),
+    FlowAction(
+      'Theo dõi yêu cầu ngừng',
+      'GET',
+      '/early-termination-requests/me',
+    ),
+    FlowAction(
+      'Phản hồi yêu cầu ngừng',
+      'PATCH',
+      '/early-termination-requests/:requestId/respond',
+      sampleBody: '{"decision":"ACCEPT"}',
+    ),
   ]),
   FlowGroup('Giáo trình và lịch tập', [
     FlowAction(

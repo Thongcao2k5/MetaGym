@@ -560,6 +560,13 @@ class _EmptyCoachMembersService implements CoachMembersService {
   @override
   Future<void> requestTermination(String relationshipId, String reason) =>
       throw UnimplementedError('No relationship in this fixture');
+
+  @override
+  Future<CoachTerminationRequest> respondTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) => throw UnimplementedError('No termination request in this fixture');
 }
 
 class _EmptyMemberTrainingService implements MemberTrainingService {
