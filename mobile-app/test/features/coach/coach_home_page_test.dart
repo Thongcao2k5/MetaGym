@@ -51,12 +51,12 @@ void main() {
         }
 
         await tab('Lịch dạy');
-        await tester.tap(find.text('Học viên & Yêu cầu (2)'));
+        await tester.tap(find.text('Học viên (2)'));
         await tester.pumpAndSettle();
         await tab('Trang chủ');
         await tab('Lịch dạy');
         await tab('Lịch dạy');
-        expect(find.text('Hội viên member-1'), findsOneWidget);
+        expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
         expect(
           Navigator.of(tester.element(find.byType(CoachHomePage))).canPop(),
           isFalse,

@@ -73,7 +73,11 @@ void main() {
         await tester.tap(useButton ? button : find.text('Theo dõi dinh dưỡng'));
         await tester.pumpAndSettle();
         expect(find.byType(NutritionTrackingPage), findsOneWidget);
-        expect(find.text('Chưa ghi món'), findsWidgets);
+        expect(find.text('Chưa có bữa ăn nào'), findsOneWidget);
+        expect(
+          find.text('Không có món ăn nào được ghi trong ngày này.'),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
       },
     );
