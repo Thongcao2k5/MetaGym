@@ -1,14 +1,25 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Meta Gym administration portal" />
+    <meta name="description" content="Meta Gym Web Admin — Cổng quản trị vận hành phòng gym Dark Graphite" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>Meta Gym Admin</title>
   </head>
   <body>
-    <main id="app"></main>
+    <a class="skip-link" href="#main-content">Chuyển đến nội dung chính</a>
+    <div id="app"></div>
+    <div class="meta-overlay" id="meta-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="meta-modal-title" hidden>
+      <div class="meta-modal-dialog" id="meta-modal-dialog"></div>
+    </div>
+    <div class="meta-drawer-overlay" id="meta-drawer-overlay" role="dialog" aria-modal="true" aria-labelledby="meta-drawer-title" hidden>
+      <div class="meta-drawer-panel" id="meta-drawer-panel"></div>
+    </div>
+    <div class="meta-toast-region" id="meta-toast-region" aria-live="polite" aria-atomic="true"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
