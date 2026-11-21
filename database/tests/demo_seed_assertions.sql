@@ -23,7 +23,7 @@ BEGIN
        AND u.email = 'coach@metagym.local'::citext
        AND u.role = 'COACH'
        AND u.status = 'ACTIVE'
-       AND cp.member_limit = 10
+       AND cp.member_limit = 8
   ) THEN
     RAISE EXCEPTION 'demo coach account/profile is missing or invalid';
   END IF;

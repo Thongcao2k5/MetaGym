@@ -110,7 +110,7 @@ VALUES (
   'Chứng chỉ huấn luyện viên thể hình demo',
   5,
   'Thứ Hai đến Thứ Sáu, 08:00–18:00',
-  10
+  8
 )
 ON CONFLICT (user_id) DO UPDATE
 SET biography = EXCLUDED.biography,

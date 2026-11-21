@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 
@@ -18,7 +20,12 @@ class MetaGymBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const Image(image: bannerAsset, fit: BoxFit.cover),
+          Image(
+            image: bannerAsset,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) =>
+                const ColoredBox(color: MetaGymTheme.darkCanvas),
+          ),
           // Ambient glow: Cool blue ở góc trên bên phải
           Container(
             decoration: const BoxDecoration(
@@ -142,6 +149,7 @@ class MetaGymGlassCard extends StatelessWidget {
     this.borderColor,
     this.onTap,
     this.featured = false,
+    this.solid = false,
     this.clipBehavior = Clip.antiAlias,
     super.key,
   });
@@ -153,45 +161,63 @@ class MetaGymGlassCard extends StatelessWidget {
   final Color? borderColor;
   final VoidCallback? onTap;
   final bool featured;
+
+  /// Stable Level 1 surface for forms, long lists and reading content.
+  final bool solid;
   final Clip clipBehavior;
 
   @override
   Widget build(BuildContext context) {
     final radius =
         borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-    final enableBlur = featured && !MetaGymTheme.isFlutterTestEnvironment;
+    final enableBlur =
+        !solid && featured && !MetaGymTheme.isFlutterTestEnvironment;
 
     final Widget innerContent = padding != null
         ? Padding(padding: padding!, child: child)
         : child;
 
     final Widget interactiveContent = onTap != null
-        ? InkWell(onTap: onTap, borderRadius: radius, child: innerContent)
+        ? MetaGymTap(
+            onTap: onTap,
+            borderRadius: radius,
+            splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+            highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
+            focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.16),
+            child: innerContent,
+          )
         : innerContent;
 
     final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: featured ? const Color(0xB82D2824) : const Color(0xC42B2622),
+        color: solid
+            ? MetaGymTheme.cardSurface
+            : featured
+            ? const Color(0xB82D2824)
+            : const Color(0xC42B2622),
         borderRadius: radius,
         border: Border.all(
-          color: borderColor ?? const Color(0xA3A79D92),
-          width: 1.1,
+          color:
+              borderColor ??
+              (solid ? MetaGymTheme.cardBorder : const Color(0xA3A79D92)),
+          width: solid ? 1 : 1.1,
         ),
       ),
       child: Material(
         type: MaterialType.transparency,
         child: Stack(
           children: [
-            const Positioned(
-              top: 0,
-              left: 18,
-              right: 18,
-              child: SizedBox(
-                height: 1,
-                child: ColoredBox(color: Color(0x70FFF6EA)),
+            if (!solid)
+              const Positioned(
+                top: 0,
+                left: 18,
+                right: 18,
+                child: SizedBox(
+                  height: 1,
+                  child: ColoredBox(color: Color(0x70FFF6EA)),
+                ),
               ),
-            ),
             interactiveContent,
           ],
         ),
@@ -242,9 +268,12 @@ class MetaGymMetricPanel extends StatelessWidget {
         side: const BorderSide(color: Color(0x9A8C8176), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: radius,
+        splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+        highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
+        focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.16),
         child: Padding(padding: padding, child: child),
       ),
     );
@@ -252,15 +281,16 @@ class MetaGymMetricPanel extends StatelessWidget {
 }
 
 /// Header thương hiệu Meta Gym dùng chung cho các tab chính (Trang chủ,
-/// Lịch dạy, Trợ lý AI, Tin nhắn, Hồ sơ):
+/// Tập luyện/Lịch dạy, Trợ lý AI, Tin nhắn, Hồ sơ):
 /// - Huy hiệu `MG` gradient cam bo góc 13px (`42x42`), viền sáng nhẹ + shadow.
-/// - Nhãn eyebrow cam viết hoa (`10.5px`, `w700`, `letterSpacing: 1.3`).
-/// - Tiêu đề chính (`18px`, `w700`, `#F7F9FC`) và mô tả phụ tùy chọn (`12px`).
+/// - Nhãn eyebrow cam viết hoa (`10.5px`, `w700`).
+/// - Tiêu đề chính (`18px`, `w700`, `#F7F9FC`) và mô tả phụ tùy chọn.
 class MetaGymBrandHeader extends StatelessWidget {
   const MetaGymBrandHeader({
     required this.eyebrow,
     required this.title,
     this.subtitle,
+    this.inlineSubtitle = false,
     this.leading,
     this.actions = const <Widget>[],
     this.actionSpacing = 8,
@@ -270,6 +300,7 @@ class MetaGymBrandHeader extends StatelessWidget {
   final String eyebrow;
   final String title;
   final String? subtitle;
+  final bool inlineSubtitle;
   final Widget? leading;
   final List<Widget> actions;
   final double actionSpacing;
@@ -277,6 +308,7 @@ class MetaGymBrandHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trimmedSubtitle = subtitle?.trim();
+    final hasSubtitle = trimmedSubtitle != null && trimmedSubtitle.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -334,7 +366,7 @@ class MetaGymBrandHeader extends StatelessWidget {
                         color: MetaGymTheme.brandOrange,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.3,
+                        letterSpacing: 1.4,
                         height: 1.2,
                       ),
                     ),
@@ -351,6 +383,19 @@ class MetaGymBrandHeader extends StatelessWidget {
                         height: 1.2,
                       ),
                     ),
+                    if (hasSubtitle && inlineSubtitle) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        trimmedSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFB8B0A8),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -361,7 +406,7 @@ class MetaGymBrandHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (trimmedSubtitle != null && trimmedSubtitle.isNotEmpty) ...[
+        if (hasSubtitle && !inlineSubtitle) ...[
           const SizedBox(height: 4),
           Text(
             trimmedSubtitle,
@@ -380,10 +425,10 @@ class MetaGymBrandHeader extends StatelessWidget {
 }
 
 /// Nút tròn trên thanh tiêu đề giống `_CircleHeaderGlassButton` ở Trang chủ & Hồ sơ:
-/// - Kích thước: `44x44`
+/// - Vùng chạm Android: `48x48` (hình tròn hiển thị `44x44`)
 /// - Nền: `Color(0x9E2F2924)`
 /// - Viền: `1px Color(0x95ADA295)`
-class MetaGymCircleIconButton extends StatelessWidget {
+class MetaGymCircleIconButton extends StatefulWidget {
   const MetaGymCircleIconButton({
     required this.icon,
     required this.onTap,
@@ -398,35 +443,95 @@ class MetaGymCircleIconButton extends StatelessWidget {
   final bool isActive;
 
   @override
+  State<MetaGymCircleIconButton> createState() =>
+      _MetaGymCircleIconButtonState();
+}
+
+class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
+  bool _tapLocked = false;
+  Timer? _tapGuard;
+
+  void _handleTap() {
+    final callback = widget.onTap;
+    if (_tapLocked || callback == null) return;
+    setState(() => _tapLocked = true);
+    _tapGuard?.cancel();
+    _tapGuard = Timer(MetaGymTheme.pageTransitionDuration, () {
+      if (mounted) setState(() => _tapLocked = false);
+    });
+    callback();
+  }
+
+  @override
+  void dispose() {
+    _tapGuard?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip ?? '',
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive
-                  ? const Color(0x2EFF5A36)
-                  : const Color(0x9E2F2924),
-              border: Border.all(
-                color: isActive
-                    ? MetaGymTheme.brandOrange
-                    : const Color(0x95ADA295),
-                width: isActive ? 1.1 : 1,
+    final label = widget.tooltip ?? _iconActionName(widget.icon);
+    final button = Semantics(
+      button: true,
+      enabled: widget.onTap != null && !_tapLocked,
+      label: label,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: MetaGymTap(
+            onTap: widget.onTap == null || _tapLocked ? null : _handleTap,
+            customBorder: const CircleBorder(),
+            splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+            highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.10),
+            focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.18),
+            child: Center(
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.isActive
+                      ? const Color(0x2EFF5A36)
+                      : const Color(0x9E2F2924),
+                  border: Border.all(
+                    color: widget.isActive
+                        ? MetaGymTheme.brandOrange
+                        : const Color(0x95ADA295),
+                    width: widget.isActive ? 1.1 : 1,
+                  ),
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 20,
+                  color: const Color(0xFFF7F9FC),
+                ),
               ),
             ),
-            child: Icon(icon, size: 20, color: const Color(0xFFF7F9FC)),
           ),
         ),
       ),
     );
+    if (widget.tooltip == null || widget.tooltip!.isEmpty) return button;
+    return Tooltip(message: widget.tooltip!, child: button);
   }
+}
+
+String _iconActionName(IconData icon) {
+  if (icon == Icons.arrow_back_rounded ||
+      icon == Icons.arrow_back_ios_new_rounded) {
+    return 'Quay lại';
+  }
+  if (icon == Icons.refresh_rounded) return 'Tải lại';
+  if (icon == Icons.notifications_none_rounded) return 'Thông báo';
+  if (icon == Icons.chat_bubble_outline_rounded) return 'Tin nhắn';
+  if (icon == Icons.close_rounded || icon == Icons.close) return 'Đóng';
+  if (icon == Icons.search_rounded) return 'Tìm kiếm';
+  if (icon == Icons.edit_outlined || icon == Icons.edit_rounded) {
+    return 'Chỉnh sửa';
+  }
+  return 'Hành động';
 }

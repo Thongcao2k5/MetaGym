@@ -1,11 +1,15 @@
 import 'dart:ui';
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'nutrition_tracking_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
@@ -20,9 +24,9 @@ import 'package:meta_gym_app/features/progress/presentation/member_journal_page.
 import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
+import 'package:meta_gym_app/features/training/presentation/gym_visits_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_self_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
-import 'package:meta_gym_app/features/training/presentation/training_history_page.dart';
 import 'package:provider/provider.dart';
 
 /// Overview of the Member training area. Synchronized with Member Home's
@@ -154,11 +158,12 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       _relationship != null && _relationship!.status == 'ACTIVE';
 
   void _open(Widget page) {
-    Navigator.of(context)
-        .push<void>(MaterialPageRoute(builder: (_) => page))
-        .then((_) {
-          if (mounted) _load();
-        });
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(builder: (_) => page),
+    ).then((_) {
+      if (mounted) _load();
+    });
   }
 
   Future<void> _requirePackage({
@@ -166,7 +171,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     required String feature,
   }) async {
     final isExpired = !coach && _hadGym;
-    final destination = await showModalBottomSheet<bool>(
+    final destination = await MetaGymNavigation.showSheetOnce<bool>(
       context: context,
       backgroundColor: const Color(0xFF24201D),
       shape: const RoundedRectangleBorder(
@@ -314,17 +319,18 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     MetaGymTheme.pageGutter,
-                    10,
+                    0,
                     MetaGymTheme.pageGutter,
                     bottom + 24,
                   ),
                   children: [
+                    const SizedBox(height: 6),
                     _TrainingHeader(
                       disableBlur: disableBlur,
                       onOpenLibrary: () => _open(const ExerciseLibraryPage()),
-                      onOpenHistory: () => _open(const TrainingHistoryPage()),
+                      onOpenHistory: () => _open(const GymVisitsPage()),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
                     const _SectionTitle('Dịch vụ của bạn'),
                     const SizedBox(height: 10),
                     _ServiceHeroGlassCard(
@@ -390,6 +396,11 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                             ].join(' · '),
                       onTap: () => _open(const MemberSelfTrainingPage()),
                     ),
+                    const SizedBox(height: 10),
+                    _NutritionToolCard(
+                      disableBlur: disableBlur,
+                      onTap: () => _open(const NutritionTrackingPage()),
+                    ),
                     const SizedBox(height: 20),
                     const _SectionTitle('Công cụ & Khám phá'),
                     const SizedBox(height: 10),
@@ -427,7 +438,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                               locked: false,
                               title: 'Lịch sử tập luyện',
                               detail: 'Xem các ngày và lượt đến phòng gym',
-                              onTap: () => _open(const TrainingHistoryPage()),
+                              onTap: () => _open(const GymVisitsPage()),
                             ),
                           ),
                         ],
@@ -709,50 +720,17 @@ class _TrainingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'META GYM · TẬP LUYỆN',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: MetaGymTheme.primary,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                  height: 1.2,
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                'Tập luyện',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 25,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                  height: 1.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM · TẬP LUYỆN',
+      title: 'Tập luyện',
+      actionSpacing: 4,
+      actions: [
         _CircleHeaderActionButton(
           disableBlur: disableBlur,
           icon: Icons.sports_gymnastics_outlined,
           semanticLabel: 'Mở thư viện bài tập',
           onTap: onOpenLibrary,
         ),
-        const SizedBox(width: 4),
         _CircleHeaderActionButton(
           disableBlur: disableBlur,
           icon: Icons.history_rounded,
@@ -786,7 +764,7 @@ class _CircleHeaderActionButton extends StatelessWidget {
         message: semanticLabel,
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             customBorder: const CircleBorder(),
             child: ConstrainedBox(
@@ -949,7 +927,7 @@ class _ServiceMetricPanel extends StatelessWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: radius,
         child: ConstrainedBox(
@@ -1108,7 +1086,7 @@ class _ServiceErrorPanel extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: MetaGymTheme.primary,
               foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(120, 44),
+              minimumSize: const Size(120, 48),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1158,7 +1136,7 @@ class _TrainingContentCard extends StatelessWidget {
         side: BorderSide(color: borderColor, width: 1.1),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: radius,
         child: Stack(
@@ -1313,6 +1291,79 @@ class _FeaturedPlanCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NutritionToolCard extends StatelessWidget {
+  const _NutritionToolCard({required this.disableBlur, required this.onTap});
+
+  final bool disableBlur;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => _TrainingContentCard(
+    disableBlur: disableBlur,
+    onTap: onTap,
+    child: Padding(
+      key: const Key('nutrition-tool-card'),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      child: Row(
+        children: [
+          const _IconBadge(
+            icon: Icons.restaurant_menu_rounded,
+            iconColor: MetaGymTheme.success,
+            locked: false,
+            size: 42,
+            iconSize: 21,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Theo dõi dinh dưỡng',
+                  style: TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Ghi món ăn · đối chiếu thực đơn Coach',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFFB7B2AF),
+                    fontSize: 11.5,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            key: const Key('nutrition-tool-open'),
+            onPressed: onTap,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              foregroundColor: MetaGymTheme.success,
+              backgroundColor: MetaGymTheme.success.withValues(alpha: .1),
+              side: BorderSide(
+                color: MetaGymTheme.success.withValues(alpha: .65),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text('Mở'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _BentoToolCard extends StatelessWidget {

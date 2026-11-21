@@ -160,20 +160,20 @@ class _CircleGlassIconButton extends StatelessWidget {
             onTap: onTap,
             customBorder: const CircleBorder(),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               child: Center(
                 child: Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: isActive
                         ? const Color(0x2EFF5A36)
-                        : const Color(0xA6231F1C),
+                        : const Color(0x9E2F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isActive
                           ? MetaGymTheme.brandOrange
-                          : const Color(0x529C9084),
+                          : const Color(0x95ADA295),
                       width: 1.0,
                     ),
                   ),
@@ -875,103 +875,149 @@ class _ConversationsPageState extends State<ConversationsPage> {
     final initials = _userInitials(context);
     final useCoachHeader = _resolveCoachHeader(context);
 
-    final listView = RefreshIndicator(
-      color: MetaGymTheme.brandOrange,
-      backgroundColor: MetaGymTheme.darkSurface,
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-          MetaGymTheme.pageGutter,
-          0,
-          MetaGymTheme.pageGutter,
-          effectiveBottomPadding,
-        ),
-        children: [
-          const SizedBox(height: 6),
-          useCoachHeader
-              ? _buildCoachHeader(context, initials)
-              : _buildHeader(context, initials),
-          if (_showSearch) ...[
-            const SizedBox(height: 10),
-            _buildSearchBar(useCoachHeader: useCoachHeader),
-          ],
-          const SizedBox(height: 12),
-          _buildQuickFilterDock(),
-          const SizedBox(height: 10),
-          if (_loading && widget.isActive)
-            _buildLiquidGlassCard(
-              child: const SizedBox(
-                height: 140,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: MetaGymTheme.brandOrange,
-                    strokeWidth: 2.4,
-                  ),
-                ),
-              ),
-            )
-          else if (_error != null && !_usingMockShowcase)
-            _buildErrorCard()
-          else if (_usingMockShowcase) ...[
-            if (_filter == _MessageFilter.all ||
-                _filter == _MessageFilter.coach) ...[
-              _buildFeaturedCoachCard(),
-              const SizedBox(height: 10),
-            ],
-            _buildSectionTitle('Cuộc trò chuyện gần đây'),
-            const SizedBox(height: 8),
-            if (_filteredMockThreads.isEmpty)
-              _buildEmptyCard(
-                title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
-                subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.',
-              )
-            else
-              for (final thread in _filteredMockThreads)
-                _buildMockConversationCard(thread),
-          ] else ...[
-            if (_items.isEmpty)
-              _buildEmptyCard(
-                title: 'Bạn chưa có cuộc trò chuyện nào.',
-                subtitle: 'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
-              )
-            else ...[
-              if (_filteredRealItems.isEmpty)
-                _buildEmptyCard(
-                  title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
-                  subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
-                )
-              else
-                for (final item in _filteredRealItems)
-                  _buildRealConversationCard(item),
-              if (_hasMore)
-                Center(
-                  child: TextButton(
-                    onPressed: _loadingMore ? null : _loadMore,
-                    child: Text(
-                      _loadingMore ? 'Đang tải…' : 'Tải thêm',
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ],
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-
     return Material(
       color: MetaGymTheme.darkCanvas,
       child: Stack(
         children: [
           const _MessagingGymBackground(),
-          useCoachHeader ? SafeArea(bottom: false, child: listView) : listView,
+          SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              color: MetaGymTheme.brandOrange,
+              backgroundColor: const Color(0xFF282320),
+              onRefresh: _load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  MetaGymTheme.pageGutter,
+                  0,
+                  MetaGymTheme.pageGutter,
+                  effectiveBottomPadding,
+                ),
+                children: [
+                  const SizedBox(height: 6),
+                  useCoachHeader
+                      ? _buildCoachHeader(context, initials)
+                      : _buildHeader(context, initials),
+                  if (_showSearch) ...[
+                    const SizedBox(height: 10),
+                    _buildSearchBar(useCoachHeader: useCoachHeader),
+                  ],
+                  const SizedBox(height: 12),
+                  _buildQuickFilterDock(),
+                  const SizedBox(height: 10),
+                  if (_loading && widget.isActive)
+                    _buildLiquidGlassCard(
+                      child: const SizedBox(
+                        height: 140,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.brandOrange,
+                            strokeWidth: 2.4,
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (_error != null && !_usingMockShowcase)
+                    _buildErrorCard()
+                  else if (_usingMockShowcase) ...[
+                    if (_filter == _MessageFilter.all ||
+                        _filter == _MessageFilter.coach) ...[
+                      _buildFeaturedCoachCard(),
+                      const SizedBox(height: 10),
+                    ],
+                    _buildSectionTitle('Cuộc trò chuyện gần đây'),
+                    const SizedBox(height: 8),
+                    if (_filteredMockThreads.isEmpty)
+                      _buildEmptyCard(
+                        title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                        subtitle:
+                            'Thử đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.',
+                      )
+                    else
+                      for (final thread in _filteredMockThreads)
+                        _buildMockConversationCard(thread),
+                  ] else ...[
+                    if (_items.isEmpty)
+                      _buildEmptyCard(
+                        title: 'Bạn chưa có cuộc trò chuyện nào.',
+                        subtitle: 'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
+                      )
+                    else ...[
+                      if (_filteredRealItems.isEmpty)
+                        _buildEmptyCard(
+                          title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                          subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
+                        )
+                      else
+                        for (final item in _filteredRealItems)
+                          _buildRealConversationCard(item),
+                      if (_hasMore)
+                        Center(
+                          child: TextButton(
+                            onPressed: _loadingMore ? null : _loadMore,
+                            child: Text(
+                              _loadingMore ? 'Đang tải…' : 'Tải thêm',
+                              style: const TextStyle(
+                                color: MetaGymTheme.brandOrange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, String initials) {
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM',
+      title: 'Tin nhắn',
+      subtitle: 'Trao đổi cùng Coach & hỗ trợ',
+      inlineSubtitle: true,
+      actions: [
+        _CircleGlassIconButton(
+          icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
+          tooltip: 'Tìm kiếm cuộc trò chuyện',
+          isActive: _showSearch,
+          onTap: () {
+            setState(() {
+              _showSearch = !_showSearch;
+              if (!_showSearch) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            });
+          },
+        ),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0x9E2F2924),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0x95ADA295), width: 1.0),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: Color(0xFFF7F9FC),
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1001,13 +1047,13 @@ class _ConversationsPageState extends State<ConversationsPage> {
       subtitle: 'Trao đổi cùng học viên & hỗ trợ',
       leading: canPop
           ? MetaGymCircleIconButton(
-              icon: Icons.arrow_back_ios_new_rounded,
+              icon: Icons.arrow_back_rounded,
               tooltip: 'Quay lại',
               onTap: () => Navigator.of(context).maybePop(),
             )
           : null,
       actions: [
-        MetaGymCircleIconButton(
+        _CircleGlassIconButton(
           icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
           tooltip: 'Tìm kiếm cuộc trò chuyện',
           isActive: _showSearch,
@@ -1030,8 +1076,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   customBorder: const CircleBorder(),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
+                      minWidth: 48,
+                      minHeight: 48,
                     ),
                     child: Center(child: avatarCircle),
                   ),
@@ -1039,117 +1085,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
               )
             : avatarCircle,
       ],
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, String initials) {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: MetaGymTheme.brandOrange,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'MG',
-                style: TextStyle(
-                  color: Color(0xFF111317),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'META GYM',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: MetaGymTheme.brandOrange,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.4,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Tin nhắn',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFFF7F9FC),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: 1),
-                  Text(
-                    'Trao đổi cùng Coach & hỗ trợ',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFF8E9AA8),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            _CircleGlassIconButton(
-              icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
-              tooltip: 'Tìm kiếm cuộc trò chuyện',
-              isActive: _showSearch,
-              onTap: () {
-                setState(() {
-                  _showSearch = !_showSearch;
-                  if (!_showSearch) {
-                    _searchController.clear();
-                    _searchQuery = '';
-                  }
-                });
-              },
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: MetaGymTheme.brandOrange,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  color: Color(0xFF111317),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1178,10 +1113,13 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   hintText: useCoachHeader
                       ? 'Tìm học viên hoặc nội dung tin nhắn...'
                       : 'Tìm Coach hoặc nội dung tin nhắn...',
-                  hintStyle: TextStyle(color: Color(0xFF8E9AA8), fontSize: 13),
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF8E9AA8),
+                    fontSize: 13,
+                  ),
                   border: InputBorder.none,
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
@@ -1197,7 +1135,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   size: 18,
                 ),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               ),
           ],
         ),
@@ -1206,8 +1144,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildQuickFilterDock() {
-    return SizedBox(
-      height: 36,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -1234,21 +1172,21 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }) {
     final isActive = _filter == filter;
     final body = Container(
-      height: 34,
+      height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0x2EFF5A36) : const Color(0xA6231F1C),
+        color: isActive ? const Color(0xFF493025) : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive ? MetaGymTheme.brandOrange : const Color(0x4D9C9084),
-          width: isActive ? 1.1 : 0.9,
+          color: isActive ? MetaGymTheme.brandOrange : const Color(0xA3A79D92),
+          width: isActive ? 1.2 : 1.0,
         ),
       ),
       alignment: Alignment.center,
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? const Color(0xFFF7F9FC) : const Color(0xFFB8C2D0),
+          color: isActive ? const Color(0xFFF7F9FC) : const Color(0xFFC8C2BC),
           fontSize: 12,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
         ),
@@ -1265,7 +1203,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
         child: InkWell(
           onTap: () => setState(() => _filter = filter),
           borderRadius: BorderRadius.circular(20),
-          child: body,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: Center(child: body),
+          ),
         ),
       ),
     );
@@ -1390,22 +1331,34 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _openMockThread(coachThread),
-                  child: Container(
-                    height: 28,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Nhắn ngay ▶',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _openMockThread(coachThread),
+                    borderRadius: BorderRadius.circular(16),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      child: Center(
+                        child: Container(
+                          height: 32,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: MetaGymTheme.brandOrange,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'Nhắn ngay ▶',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1620,10 +1573,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0x1F223145),
+                  color: const Color(0x80211E1C),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0x38D4E4FF),
+                    color: const Color(0x9A8C8176),
                     width: 1.0,
                   ),
                 ),
@@ -1662,7 +1615,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             shape: BoxShape.circle,
                             color: item.canSend
                                 ? MetaGymTheme.progressGreen
-                                : MetaGymTheme.darkTextTertiary,
+                                : const Color(0xFFB8B0A8),
                           ),
                         ),
                         const SizedBox(width: 5),
@@ -1671,8 +1624,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             item.lastMessagePreview,
                             style: TextStyle(
                               color: item.unreadCount > 0
-                                  ? const Color(0xFFD5DEE8)
-                                  : MetaGymTheme.darkTextSecondary,
+                                  ? const Color(0xFFF7F9FC)
+                                  : const Color(0xFFC8C2BC),
                               fontSize: 11.5,
                               fontWeight: item.unreadCount > 0
                                   ? FontWeight.w600
@@ -1698,7 +1651,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       style: TextStyle(
                         color: item.unreadCount > 0
                             ? MetaGymTheme.brandOrange
-                            : const Color(0xFF8E9AA8),
+                            : const Color(0xFFB8B0A8),
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -1735,7 +1688,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   else if (timeLabel.isEmpty)
                     const Icon(
                       Icons.chevron_right,
-                      color: MetaGymTheme.darkTextTertiary,
+                      color: Color(0xFFB8B0A8),
                       size: 20,
                     ),
                 ],
@@ -1809,9 +1762,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: const Color(0x14A9C7E8),
+                  color: const Color(0x80211E1C),
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0x2EA9C7E8)),
+                  border: Border.all(color: const Color(0x9A8C8176)),
                 ),
                 child: const Icon(
                   Icons.chat_bubble_outline_rounded,
@@ -1834,7 +1787,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 subtitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: MetaGymTheme.darkTextTertiary,
+                  color: Color(0xFFC8C2BC),
                   fontSize: 12.5,
                 ),
               ),
@@ -1875,6 +1828,9 @@ class ConversationDetailPage extends StatefulWidget {
 }
 
 class _ConversationDetailPageState extends State<ConversationDetailPage> {
+  static const String _recipientDisabledMessage =
+      'Không thể gửi tin nhắn vì tài khoản người nhận đang bị khóa';
+
   StreamSubscription<String>? _realtimeMessages;
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
@@ -1884,6 +1840,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   bool _sending = false;
   bool _imageSending = false;
   bool _creatingCall = false;
+  bool _recipientDisabled = false;
   String? _error;
   String? _sendError;
   String? _draftMessageId;
@@ -1983,6 +1940,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         _sending = false;
         _imageSending = false;
         _polling = false;
+        _recipientDisabled = false;
         _error = null;
         _sendError = null;
         _imageError = null;
@@ -2038,6 +1996,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         _sending = false;
         _imageSending = false;
         _polling = false;
+        _recipientDisabled = false;
         _page = 1;
         _error = null;
         _sendError = null;
@@ -2074,8 +2033,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((
         id,
       ) {
-        if (mounted && id == widget.conversation.id)
+        if (mounted && id == widget.conversation.id) {
           unawaited(_refreshLatest());
+        }
       });
       final cached = _MessagingSessionCache.readThread(
         widget.currentUserId,
@@ -2258,7 +2218,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   Future<void> _send([String? overrideText]) async {
-    if (_sending) return;
+    if (_sending || _recipientDisabled) return;
     final candidate = overrideText ?? _textController.text;
     final text = candidate.trim().isNotEmpty
         ? candidate.trim()
@@ -2295,7 +2255,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       });
     } on ApiException catch (error) {
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      setState(() => _sendError = error.message);
+      if (error.code == 'RECIPIENT_ACCOUNT_DISABLED') {
+        _draftMessageId = null;
+        _draftContent = null;
+        setState(() {
+          _recipientDisabled = true;
+          _sendError = null;
+          _imageError = null;
+        });
+      } else {
+        setState(() => _sendError = error.message);
+      }
     } catch (_) {
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
       setState(() => _sendError = 'Không gửi được tin nhắn.');
@@ -2318,7 +2288,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       );
       return;
     }
-    if (_imageSending) return;
+    if (_imageSending || _recipientDisabled) return;
     final requestEpoch = _sessionEpoch;
     final requestUserId = widget.currentUserId;
     final requestKey = widget.conversation.messageKey;
@@ -2364,7 +2334,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       setState(() => _saveMessage(created));
     } on ApiException catch (error) {
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      setState(() => _imageError = error.message);
+      if (error.code == 'RECIPIENT_ACCOUNT_DISABLED') {
+        _pendingImage = null;
+        _pendingMediaId = null;
+        _pendingImageMessageId = null;
+        setState(() {
+          _recipientDisabled = true;
+          _sendError = null;
+          _imageError = null;
+        });
+      } else {
+        setState(() => _imageError = error.message);
+      }
     } catch (_) {
       if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
       setState(() => _imageError = 'Không gửi được hình ảnh.');
@@ -2506,7 +2487,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                             child: Text(
                               'Chưa có tin nhắn.',
                               style: TextStyle(
-                                color: MetaGymTheme.darkTextTertiary,
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 14,
                               ),
                             ),
@@ -2542,17 +2523,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x24223145),
+                              color: const Color(0x99211E1C),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0x33D4E4FF),
+                                color: const Color(0x9A8C8176),
                                 width: 0.8,
                               ),
                             ),
                             child: const Text(
                               'Hôm nay',
                               style: TextStyle(
-                                color: Color(0xFFB8C2D0),
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2577,7 +2558,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                     shape: BoxShape.circle,
                                     color: widget.conversation.canSend
                                         ? MetaGymTheme.progressGreen
-                                        : MetaGymTheme.darkTextTertiary,
+                                        : const Color(0xFFB8B0A8),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -2604,7 +2585,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                               : 'Có thể nhắn tin.'))
                                   : 'Không thể gửi tin nhắn.',
                               style: const TextStyle(
-                                color: MetaGymTheme.darkTextSecondary,
+                                color: Color(0xFFC8C2BC),
                                 fontSize: 12,
                               ),
                             ),
@@ -2631,9 +2612,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
     final bar = Container(
       decoration: const BoxDecoration(
-        color: Color(0x66101622),
+        color: Color(0xC8241F1B),
         border: Border(
-          bottom: BorderSide(color: Color(0x2ED4E4FF), width: 0.8),
+          bottom: BorderSide(color: Color(0x52A79D92), width: 0.9),
         ),
       ),
       child: SafeArea(
@@ -2694,7 +2675,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                           height: 6,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: widget.conversation.canSend
+                            color: _recipientDisabled
+                                ? MetaGymTheme.dangerCoral
+                                : widget.conversation.canSend
                                 ? MetaGymTheme.progressGreen
                                 : MetaGymTheme.darkTextTertiary,
                           ),
@@ -2702,13 +2685,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                         const SizedBox(width: 5),
                         Flexible(
                           child: Text(
-                            widget.conversation.canSend
+                            _recipientDisabled
+                                ? 'Tài khoản bị khóa'
+                                : widget.conversation.canSend
                                 ? 'Đang hoạt động'
                                 : 'Chỉ đọc',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: widget.conversation.canSend
+                              color: _recipientDisabled
+                                  ? MetaGymTheme.dangerCoral
+                                  : widget.conversation.canSend
                                   ? MetaGymTheme.progressGreen
                                   : const Color(0xFF8E9AA8),
                               fontSize: 11,
@@ -2757,7 +2744,57 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_sendError != null)
+            if (_recipientDisabled)
+              Container(
+                key: const Key('chat-recipient-disabled-banner'),
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF24161A),
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                  border: Border.all(
+                    color: MetaGymTheme.dangerCoral.withValues(alpha: 0.55),
+                    width: 1,
+                  ),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.block_rounded,
+                      color: MetaGymTheme.dangerCoral,
+                      size: 20,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _recipientDisabledMessage,
+                            style: TextStyle(
+                              color: Color(0xFFFFB2B6),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Bạn vẫn có thể xem lại toàn bộ lịch sử tin nhắn.',
+                            style: TextStyle(
+                              color: Color(0xFFC8C2BC),
+                              fontSize: 11.5,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_sendError != null && !_recipientDisabled)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
@@ -2815,81 +2852,108 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   ],
                 ),
               ),
-            SizedBox(
-              height: 32,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _imageSending ? null : _pickImage,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 11,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x26A9C7E8),
+            if (!_recipientDisabled)
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0x4DA9C7E8),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.image_outlined,
-                              size: 14,
-                              color: MetaGymTheme.reflectionBlue,
+                          onTap: _imageSending ? null : _pickImage,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: 48,
+                              minHeight: 48,
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _imageSending ? 'Đang gửi ảnh…' : 'Gửi ảnh',
-                              style: const TextStyle(
-                                color: MetaGymTheme.reflectionBlue,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 11,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x26A9C7E8),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(0x4DA9C7E8),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.image_outlined,
+                                      size: 14,
+                                      color: MetaGymTheme.reflectionBlue,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      _imageSending
+                                          ? 'Đang gửi ảnh…'
+                                          : 'Gửi ảnh',
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.reflectionBlue,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                    for (final reply in _quickReplies) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => _send(reply),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0x331E293B),
+                      for (final reply in _quickReplies) ...[
+                        const SizedBox(width: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: const Color(0x38D4E4FF),
-                              width: 0.8,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            reply,
-                            style: const TextStyle(
-                              color: Color(0xFFD5DEE8),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
+                            onTap: () => _send(reply),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xA6231F1C),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0x52A79D92),
+                                      width: 0.9,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    reply,
+                                    style: const TextStyle(
+                                      color: Color(0xFFE6E0DA),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(28),
@@ -2917,7 +2981,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       child: Row(
         children: [
           IconButton(
-            onPressed: _imageSending ? null : _pickImage,
+            onPressed: (_imageSending || _recipientDisabled)
+                ? null
+                : _pickImage,
             tooltip: 'Gửi ảnh',
             icon: _imageSending
                 ? const SizedBox(
@@ -2928,15 +2994,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                       color: Color(0xFFD5DEE8),
                     ),
                   )
-                : const Icon(
+                : Icon(
                     Icons.image_outlined,
-                    color: Color(0xFFD5DEE8),
+                    color: _recipientDisabled
+                        ? MetaGymTheme.textSecondary
+                        : const Color(0xFFD5DEE8),
                     size: 21,
                   ),
           ),
           Expanded(
             child: TextField(
               controller: _textController,
+              enabled: !_recipientDisabled,
               maxLength: 5000,
               minLines: 1,
               maxLines: 4,
@@ -2944,16 +3013,22 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 color: MetaGymTheme.darkTextPrimary,
                 fontSize: 14,
               ),
-              decoration: const InputDecoration(
-                hintText: 'Nhắn tin cho Coach...',
-                hintStyle: TextStyle(color: Color(0xFF8E9AA8), fontSize: 13.5),
+              decoration: InputDecoration(
+                hintText: _recipientDisabled
+                    ? 'Không thể gửi tin nhắn lúc này'
+                    : 'Nhắn tin cho Coach...',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF8E9AA8),
+                  fontSize: 13.5,
+                ),
                 filled: false,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 counterText: '',
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 4,
                   vertical: 8,
                 ),
@@ -2964,20 +3039,24 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: _sending ? null : _send,
+              onTap: (_sending || _recipientDisabled) ? null : _send,
               borderRadius: BorderRadius.circular(20),
               child: Ink(
                 height: 38,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange,
+                  color: _recipientDisabled
+                      ? MetaGymTheme.cardBorder
+                      : MetaGymTheme.brandOrange,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     'Gửi',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: _recipientDisabled
+                          ? MetaGymTheme.textSecondary
+                          : Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -3049,7 +3128,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   style: TextStyle(
                     color: isMe
                         ? Colors.white.withValues(alpha: 0.78)
-                        : MetaGymTheme.darkTextTertiary,
+                        : const Color(0xFFB8B0A8),
                     fontSize: 10,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),

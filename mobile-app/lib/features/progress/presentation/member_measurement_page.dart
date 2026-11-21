@@ -1,9 +1,67 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_time.dart';
 import 'package:provider/provider.dart';
+
+AppBar _buildMeasurementAppBar(BuildContext context, String title) => AppBar(
+  automaticallyImplyLeading: false,
+  leadingWidth: 72,
+  leading: Navigator.of(context).canPop()
+      ? Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        )
+      : null,
+  titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
+  title: Text(
+    title,
+    style: const TextStyle(
+      color: MetaGymTheme.textPrimary,
+      fontSize: 20,
+      fontWeight: FontWeight.w700,
+    ),
+  ),
+  backgroundColor: Colors.transparent,
+  surfaceTintColor: Colors.transparent,
+  elevation: 0,
+);
+
+InputDecoration _warmMeasurementInputDecoration(String label) =>
+    InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFFB8B0A8)),
+      counterStyle: const TextStyle(color: Color(0xFFB8B0A8)),
+      filled: true,
+      fillColor: const Color(0x80211E1C),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+        borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+        borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+        borderSide: const BorderSide(
+          color: MetaGymTheme.brandOrange,
+          width: 1.4,
+        ),
+      ),
+    );
 
 class MemberMeasurementPage extends StatefulWidget {
   const MemberMeasurementPage({this.service, super.key});
@@ -59,8 +117,9 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
   }
 
   Future<void> _edit([BodyMeasurement? measurement]) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) =>
             _MeasurementFormPage(service: _service!, measurement: measurement),
       ),
@@ -69,59 +128,167 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Số đo cơ thể')),
-    floatingActionButton: FloatingActionButton.extended(
-      onPressed: () => _edit(),
-      icon: const Icon(Icons.add),
-      label: const Text('Thêm số đo'),
-    ),
-    body: RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
+    return Scaffold(
+      backgroundColor: MetaGymTheme.darkCanvas,
+      extendBodyBehindAppBar: true,
+      appBar: _buildMeasurementAppBar(context, 'Số đo cơ thể'),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: MetaGymTheme.brandOrange,
+        foregroundColor: Colors.white,
+        onPressed: () => _edit(),
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Thêm số đo',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          if (_loading && _items.isEmpty)
-            const Center(child: CircularProgressIndicator()),
-          if (_error != null) ...[
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          const MetaGymBackground(),
+          RefreshIndicator(
+            color: MetaGymTheme.brandOrange,
+            backgroundColor: const Color(0xFF282320),
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, topInset, 16, 96),
+              children: [
+                if (_loading && _items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: MetaGymTheme.brandOrange,
+                      ),
+                    ),
+                  ),
+                if (_error != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF24161A),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF642B32)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: MetaGymTheme.dangerCoral,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(color: Color(0xFFFFB2B6)),
+                          ),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: MetaGymTheme.brandOrange,
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: () => _load(more: _items.isNotEmpty),
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (!_loading && _error == null && _items.isEmpty)
+                  const MetaGymGlassCard(
+                    padding: EdgeInsets.all(20),
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.monitor_weight_outlined,
+                        color: MetaGymTheme.brandOrange,
+                      ),
+                      title: Text(
+                        'Bạn chưa có số đo nào.',
+                        style: TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                for (final item in _items)
+                  MetaGymGlassCard(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: EdgeInsets.zero,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0x80211E1C),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0x9A8C8176)),
+                        ),
+                        child: const Icon(
+                          Icons.monitor_weight_outlined,
+                          color: MetaGymTheme.brandOrange,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        '${item.weightKg} kg · ${formatProgressTime(item.measuredAt)}',
+                        style: const TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                      subtitle: Text(
+                        item.waistCm == null
+                            ? 'Chạm để xem và sửa'
+                            : 'Vòng eo: ${item.waistCm} cm',
+                        style: const TextStyle(
+                          color: Color(0xFFC8C2BC),
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      trailing: const Icon(
+                        Icons.edit_outlined,
+                        color: Color(0xFFC8C2BC),
+                      ),
+                      onTap: () => _edit(item),
+                    ),
+                  ),
+                if (_loading && _items.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: MetaGymTheme.brandOrange,
+                      ),
+                    ),
+                  ),
+                if (_hasMore && !_loading)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: MetaGymTheme.brandOrange,
+                      minimumSize: const Size(48, 48),
+                    ),
+                    onPressed: () => _load(more: true),
+                    child: const Text('Tải thêm'),
+                  ),
+              ],
             ),
-            TextButton(
-              onPressed: () => _load(more: _items.isNotEmpty),
-              child: const Text('Thử lại'),
-            ),
-          ],
-          if (!_loading && _error == null && _items.isEmpty)
-            const ListTile(title: Text('Bạn chưa có số đo nào.')),
-          for (final item in _items)
-            Card(
-              child: ListTile(
-                title: Text(
-                  '${item.weightKg} kg · ${formatProgressTime(item.measuredAt)}',
-                ),
-                subtitle: Text(
-                  item.waistCm == null
-                      ? 'Chạm để xem và sửa'
-                      : 'Vòng eo: ${item.waistCm} cm',
-                ),
-                trailing: const Icon(Icons.edit_outlined),
-                onTap: () => _edit(item),
-              ),
-            ),
-          if (_loading && _items.isNotEmpty)
-            const Center(child: CircularProgressIndicator()),
-          if (_hasMore && !_loading)
-            TextButton(
-              onPressed: () => _load(more: true),
-              child: const Text('Tải thêm'),
-            ),
+          ),
         ],
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _MeasurementFormPage extends StatefulWidget {
@@ -181,6 +348,7 @@ class _MeasurementFormPageState extends State<_MeasurementFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final date = parseProgressTime(_date.text);
     final weight = double.tryParse(_weight.text.trim());
     final fat = _optionalNumber(_fat);
@@ -248,61 +416,123 @@ class _MeasurementFormPageState extends State<_MeasurementFormPage> {
     String label,
     TextEditingController controller, {
     Key? key,
-  }) => TextField(
-    key: key,
-    controller: controller,
-    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-    decoration: InputDecoration(labelText: label),
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      key: key,
+      controller: controller,
+      style: const TextStyle(
+        color: MetaGymTheme.textPrimary,
+        fontFeatures: MetaGymTheme.tabularFigures,
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: _warmMeasurementInputDecoration(label),
+    ),
   );
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(widget.measurement == null ? 'Thêm số đo' : 'Sửa số đo'),
-    ),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        TextField(
-          key: const Key('measurement-date'),
-          controller: _date,
-          keyboardType: TextInputType.datetime,
-          decoration: const InputDecoration(
-            labelText: 'Ngày đo (dd/MM/yyyy HH:mm)',
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
+    return Scaffold(
+      backgroundColor: MetaGymTheme.darkCanvas,
+      extendBodyBehindAppBar: true,
+      appBar: _buildMeasurementAppBar(
+        context,
+        widget.measurement == null ? 'Thêm số đo' : 'Sửa số đo',
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          ListView(
+            padding: EdgeInsets.fromLTRB(16, topInset, 16, 32),
+            children: [
+              MetaGymGlassCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TextField(
+                        key: const Key('measurement-date'),
+                        controller: _date,
+                        style: const TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                        keyboardType: TextInputType.datetime,
+                        decoration: _warmMeasurementInputDecoration(
+                          'Ngày đo (dd/MM/yyyy HH:mm)',
+                        ),
+                      ),
+                    ),
+                    _numberField(
+                      'Cân nặng (kg)',
+                      _weight,
+                      key: const Key('measurement-weight'),
+                    ),
+                    _numberField(
+                      'Mỡ cơ thể (%)',
+                      _fat,
+                      key: const Key('measurement-fat'),
+                    ),
+                    _numberField('Vòng ngực (cm)', _chest),
+                    _numberField(
+                      'Vòng eo (cm)',
+                      _waist,
+                      key: const Key('measurement-waist'),
+                    ),
+                    _numberField('Vòng hông (cm)', _hips),
+                    _numberField('Vòng tay (cm)', _arm),
+                    _numberField('Vòng đùi (cm)', _thigh),
+                    TextField(
+                      controller: _notes,
+                      maxLength: 5000,
+                      maxLines: 3,
+                      style: const TextStyle(color: MetaGymTheme.textPrimary),
+                      decoration: _warmMeasurementInputDecoration('Ghi chú'),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF24161A),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF642B32)),
+                        ),
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: Color(0xFFFFB2B6)),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.brandOrange,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            MetaGymTheme.radiusInput,
+                          ),
+                        ),
+                      ),
+                      onPressed: _saving ? null : _save,
+                      child: Text(
+                        _saving ? 'Đang lưu…' : 'Lưu',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        _numberField(
-          'Cân nặng (kg)',
-          _weight,
-          key: const Key('measurement-weight'),
-        ),
-        _numberField('Mỡ cơ thể (%)', _fat, key: const Key('measurement-fat')),
-        _numberField('Vòng ngực (cm)', _chest),
-        _numberField(
-          'Vòng eo (cm)',
-          _waist,
-          key: const Key('measurement-waist'),
-        ),
-        _numberField('Vòng hông (cm)', _hips),
-        _numberField('Vòng tay (cm)', _arm),
-        _numberField('Vòng đùi (cm)', _thigh),
-        TextField(
-          controller: _notes,
-          maxLength: 5000,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Ghi chú'),
-        ),
-        if (_error != null)
-          Text(
-            _error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _saving ? null : _save,
-          child: Text(_saving ? 'Đang lưu…' : 'Lưu'),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

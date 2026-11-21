@@ -9,7 +9,7 @@ import { createAuthentication } from './users.routes.js';
 const uuid = z.uuid();
 const holdSchema = z.strictObject({
   coachId: uuid,
-  planCode: z.enum(['BASIC', 'STANDARD', 'ADVANCED']),
+  planCode: z.string().trim().regex(/^[A-Z0-9][A-Z0-9_-]{1,39}$/),
 });
 
 function fail(response, status, code, message) {

@@ -14,7 +14,6 @@ import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_requests_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
@@ -52,9 +51,6 @@ import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/domain/workout_log.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
-import 'package:meta_gym_app/features/progress/data/member_meal_service.dart';
-import 'package:meta_gym_app/features/progress/domain/meal_log.dart';
-import 'package:meta_gym_app/features/progress/presentation/member_meal_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
@@ -63,6 +59,77 @@ import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 
 void main() {
+  for (final width in [375.0, 768.0]) {
+    testWidgets(
+      'Member tabs preserve state and avoid duplicate routes at $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(tester.view.reset);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        final controller = SessionController(
+          _MemoryTokenStorage('valid-token'),
+          (_) async => const AuthUser(
+            id: 'member-1',
+            email: 'member@metagym.test',
+            fullName: 'Member Demo',
+            role: UserRole.member,
+            status: 'ACTIVE',
+          ),
+        );
+        await tester.pumpWidget(
+          MetaGymApp(
+            sessionController: controller,
+            membershipService: _EmptyMembershipService(),
+            coachSelectionService: _EmptyCoachSelectionService(),
+            memberTrainingService: _EmptyMemberTrainingService(),
+            memberNutritionService: _EmptyMemberNutritionService(),
+            memberSessionsService: _EmptyMemberSessionsService(),
+            memberProgressService: _EmptyMemberProgressService(),
+            memberWorkoutService: _EmptyMemberWorkoutService(),
+            memberJournalService: _EmptyMemberJournalService(),
+            memberMeasurementService: _EmptyMemberMeasurementService(),
+            memberPhotoService: _EmptyMemberPhotoService(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final origin = tester.state(find.byType(MemberHomePage));
+        Future<void> tab(String label) async {
+          await tester.tap(
+            find.descendant(
+              of: find.byType(MetaGymBottomNav),
+              matching: find.text(label),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await tab('Tập luyện');
+        final training = tester.state(find.byType(MemberTrainingHubPage));
+        await tab('AI');
+        await tab('Tin nhắn');
+        await tab('Hồ sơ');
+        await tab('Trang chủ');
+        await tab('Trang chủ');
+        expect(
+          GoRouter.of(tester.element(find.byType(MemberHomePage))).canPop(),
+          isFalse,
+        );
+        await tab('Tập luyện');
+        expect(
+          tester.state(find.byType(MemberTrainingHubPage)),
+          same(training),
+        );
+        expect(tester.state(find.byType(MemberHomePage)), same(origin));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('shows the public page when no session is stored', (
     tester,
   ) async {
@@ -74,7 +141,7 @@ void main() {
     await tester.pumpWidget(MetaGymApp(sessionController: controller));
     await tester.pumpAndSettle();
 
-    expect(find.text('Meta Gym'), findsOneWidget);
+    expect(find.text('Chào mừng trở lại'), findsOneWidget);
     expect(find.text('Không gian dành cho hội viên'), findsNothing);
   });
 
@@ -103,7 +170,6 @@ void main() {
         memberProgressService: _EmptyMemberProgressService(),
         memberWorkoutService: _EmptyMemberWorkoutService(),
         memberJournalService: _EmptyMemberJournalService(),
-        memberMealService: _EmptyMemberMealService(),
         memberMeasurementService: _EmptyMemberMeasurementService(),
         memberPhotoService: _EmptyMemberPhotoService(),
       ),
@@ -127,8 +193,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Khám phá Coach', findRichText: true), findsWidgets);
     expect(find.byType(CoachSelectionPage), findsOneWidget);
+    expect(find.byType(MetaGymBottomNav), findsNothing);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
@@ -194,13 +261,6 @@ void main() {
     GoRouter.of(tester.element(find.byType(MemberJournalPage))).go('/member');
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(MemberHomePage)))
-        .go('/member/features/meals');
-    await tester.pumpAndSettle();
-    expect(find.byType(MemberMealPage), findsOneWidget);
-    expect(find.text('Bạn chưa có nhật ký ăn.'), findsOneWidget);
-    GoRouter.of(tester.element(find.byType(MemberMealPage))).go('/member');
-    await tester.pumpAndSettle();
-    GoRouter.of(tester.element(find.byType(MemberHomePage)))
         .go('/member/features/measurements');
     await tester.pumpAndSettle();
     expect(find.byType(MemberMeasurementPage), findsOneWidget);
@@ -257,8 +317,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Đăng nhập'));
-    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pump();
@@ -280,17 +338,14 @@ void main() {
     expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
     expect(find.text('Yêu cầu chọn Coach'), findsNothing);
     GoRouter.of(tester.element(find.byType(CoachHomePage)))
-        .push<void>('/coach/features/requests');
+        .go('/coach/features/requests');
     await tester.pumpAndSettle();
-    expect(find.byType(CoachRequestsPage), findsOneWidget);
-    expect(find.text('Chưa có yêu cầu nào.'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
+    expect(find.byType(CoachHomePage), findsOneWidget);
     await tester.tap(find.text('Hội viên của tôi'));
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
@@ -313,7 +368,7 @@ void main() {
     expect(find.text('Chưa có buổi tập nào.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Khám phá & Liên lạc'), 300);
+    await tester.scrollUntilVisible(find.text('Danh mục tính năng Coach'), 300);
     expect(find.text('Kiểm thử các luồng Coach'), findsNothing);
     GoRouter.of(tester.element(find.byType(CoachHomePage)))
         .push<void>(AppRoutes.coachWorkbench);
@@ -346,8 +401,6 @@ void main() {
         profileService: _FakeProfileService(member),
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Đăng nhập'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Quên mật khẩu?'));
     await tester.pumpAndSettle();
@@ -657,17 +710,6 @@ class _EmptyMembershipService implements MembershipService {
   }) => throw UnimplementedError();
   @override
   Future<PurchaseResult> confirmMockPayment(String paymentId) =>
-      throw UnimplementedError();
-}
-
-class _EmptyMemberMealService implements MemberMealService {
-  @override
-  Future<List<MealLog>> getPage(int page) async => const [];
-  @override
-  Future<MealLog> create(Map<String, Object?> payload) =>
-      throw UnimplementedError();
-  @override
-  Future<MealLog> update(String id, Map<String, Object?> payload) =>
       throw UnimplementedError();
 }
 

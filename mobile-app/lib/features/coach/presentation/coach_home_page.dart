@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -14,17 +15,17 @@ import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart'
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
-import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_request_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:provider/provider.dart';
+
+const int _coachHardMemberCap = 8;
 
 const List<String> _weekdayShortLabels = <String>[
   'T2',
@@ -57,23 +58,6 @@ String _formatSlotClock(DateTime time) =>
 
 String _formatIsoDate(DateTime time) =>
     '${time.year}-${_twoDigits(time.month)}-${_twoDigits(time.day)}';
-
-String _formatDayMonth(DateTime time) =>
-    '${_twoDigits(time.day)}/${_twoDigits(time.month)}';
-
-String _formatFullDate(DateTime time) =>
-    '${_twoDigits(time.day)}/${_twoDigits(time.month)}/${time.year}';
-
-String _slotDateTimeKey(DateTime gymLocalTime) =>
-    '${_formatIsoDate(gymLocalTime)}T${_formatSlotClock(gymLocalTime)}';
-
-String _normalizeBlockSlotKey(String raw) {
-  final parsed = DateTime.tryParse(raw.trim());
-  if (parsed != null) {
-    return _slotDateTimeKey(_toGymLocal(parsed));
-  }
-  return raw.trim();
-}
 
 T? _tryReadProvider<T>(BuildContext context) {
   try {
@@ -164,7 +148,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
       membersService,
     );
 
-    List<CoachIncomingRequest> requests = const [];
     CoachProfile? profile;
     List<CoachMemberSummary> members = const [];
     List<TrainingSession> trainingSessions = const [];
@@ -175,18 +158,11 @@ class _CoachHomePageState extends State<CoachHomePage> {
     List<CoachRecord> blocks = const [];
     Object? firstError;
 
-    if (requestsService != null) {
+    if (requestsService != null && coachId.isNotEmpty) {
       try {
-        requests = await requestsService.getRequests();
-      } catch (error) {
-        firstError ??= error;
-      }
-      if (coachId.isNotEmpty) {
-        try {
-          profile = await requestsService.getCoach(coachId);
-        } catch (_) {
-          // Fixtures without getCoach support should degrade silently.
-        }
+        profile = await requestsService.getCoach(coachId);
+      } catch (_) {
+        // Fixtures without getCoach support should degrade silently.
       }
     }
 
@@ -251,15 +227,13 @@ class _CoachHomePageState extends State<CoachHomePage> {
 
     final blockedKeys = <String>{
       for (final block in blocks)
-        if (block['startsAt'] is String)
-          _normalizeBlockSlotKey(block['startsAt'] as String),
+        if (block['startsAt'] is String) block['startsAt'] as String,
     };
 
     if (!mounted) return;
     setState(() {
       _snapshot = _CoachSnapshot(
         profile: profile,
-        requests: requests,
         members: members,
         bookings: mergedBookings,
         notifications: notifications,
@@ -345,6 +319,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
   }
 
   void _selectTab(int index) {
+    if (index == _index) return;
     setState(() {
       _visitedTabs.add(index);
       _index = index;
@@ -374,9 +349,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
       return;
     }
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => const CoachNotificationsPage(coachRole: true),
-      ),
+      MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
     );
     if (mounted) await _loadCoachData();
   }
@@ -390,9 +363,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
       return;
     }
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => CoachOffersPage(coachId: coachId, coachView: true),
-      ),
+      MaterialPageRoute(builder: (_) => CoachOffersPage(coachId: coachId)),
     );
     if (mounted) await _loadCoachData();
   }
@@ -486,61 +457,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
     }
   }
 
-  Future<void> _decideRequest(
-    CoachIncomingRequest request,
-    String decision,
-  ) async {
-    if (_isMutating) return;
-    String? reason;
-    if (decision == 'REJECTED') {
-      reason = await _askReasonDialog(
-        title: 'Từ chối yêu cầu',
-        label: 'Lý do từ chối',
-      );
-      if (reason == null || !mounted) return;
-    }
-
-    if (widget.previewMode) {
-      setState(() {
-        _snapshot = _snapshot.withoutRequest(request.id);
-      });
-      showCoachingSnackBar(
-        context,
-        decision == 'ACCEPTED'
-            ? 'Đã chấp nhận học viên.'
-            : 'Đã từ chối yêu cầu.',
-      );
-      return;
-    }
-
-    final requestsService = _tryReadProvider<CoachRequestsService>(context);
-    if (requestsService == null) return;
-
-    setState(() => _isMutating = true);
-    try {
-      await requestsService.decide(request.id, decision, reason: reason);
-      if (mounted) {
-        await _loadCoachData();
-        if (mounted) {
-          showCoachingSnackBar(
-            context,
-            decision == 'ACCEPTED'
-                ? 'Đã chấp nhận yêu cầu chọn Coach.'
-                : 'Đã từ chối yêu cầu.',
-          );
-        }
-      }
-    } on ApiException catch (error) {
-      if (mounted) showCoachingSnackBar(context, error.message);
-    } catch (_) {
-      if (mounted) {
-        showCoachingSnackBar(context, 'Không xử lý được yêu cầu.');
-      }
-    } finally {
-      if (mounted) setState(() => _isMutating = false);
-    }
-  }
-
   Future<void> _saveWeeklyWorkdays(Set<int> weekdays) async {
     if (weekdays.length < 6) {
       showCoachingSnackBar(
@@ -602,13 +518,12 @@ class _CoachHomePageState extends State<CoachHomePage> {
     required bool blocked,
     String? reason,
   }) async {
-    final canonicalKey = _normalizeBlockSlotKey(slotKey);
     if (widget.previewMode || !_snapshot.hasLiveApi) {
       final updated = Set<String>.from(_snapshot.blockedSlotKeys);
       if (blocked) {
-        updated.add(canonicalKey);
+        updated.add(slotKey);
       } else {
-        updated.remove(canonicalKey);
+        updated.remove(slotKey);
       }
       setState(() {
         _snapshot = _snapshot.copyWith(blockedSlotKeys: updated);
@@ -654,67 +569,123 @@ class _CoachHomePageState extends State<CoachHomePage> {
     required String label,
   }) async {
     var reason = '';
-    String? validationError;
     return showDialog<String>(
       context: context,
-      barrierColor: const Color(0xB8040609),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: coachingWarmOverlaySurface,
-          surfaceTintColor: Colors.transparent,
-          shape: coachingDialogShape,
-          title: Text(
-            title,
-            style: const TextStyle(
-              color: coachingWarmTextPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: TextFormField(
-            autofocus: true,
-            maxLength: 300,
-            maxLines: 3,
-            style: const TextStyle(
-              color: MetaGymTheme.darkTextPrimary,
-              fontSize: 14,
-            ),
-            onChanged: (value) {
-              reason = value.trim();
-              if (validationError != null && reason.isNotEmpty) {
-                setDialogState(() => validationError = null);
-              }
-            },
-            decoration: coachingInputDecoration(
-              label: label,
-              errorText: validationError,
-            ),
-          ),
-          actions: [
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(64, 44),
-                foregroundColor: MetaGymTheme.darkTextSecondary,
-              ),
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Đóng'),
-            ),
-            CoachingCompactAccentButton(
-              label: 'Xác nhận',
-              onPressed: () {
-                if (reason.isEmpty) {
-                  setDialogState(
-                    () => validationError = 'Vui lòng nhập lý do.',
-                  );
-                  return;
-                }
-                Navigator.pop(ctx, reason);
-              },
-            ),
-          ],
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xF0241F1B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
         ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: TextFormField(
+          autofocus: true,
+          maxLength: 300,
+          style: const TextStyle(color: Color(0xFFF7F9FC)),
+          onChanged: (value) => reason = value.trim(),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(color: Color(0xFFC8C2BC)),
+            filled: true,
+            fillColor: const Color(0x99211E1C),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              borderSide: const BorderSide(color: Color(0x9A8C8176)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              borderSide: const BorderSide(color: Color(0x9A8C8176)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              borderSide: const BorderSide(
+                color: MetaGymTheme.brandOrange,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(64, 48),
+              foregroundColor: const Color(0xFFC8C2BC),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Đóng'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.brandOrange,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(96, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () {
+              if (reason.isNotEmpty) Navigator.pop(ctx, reason);
+            },
+            child: const Text('Xác nhận'),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xF0241F1B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+        ),
+        title: const Text(
+          'Đăng xuất',
+          style: TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Coach không?',
+          style: TextStyle(color: Color(0xFFE4DAD1), height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(64, 48),
+              foregroundColor: const Color(0xFFC8C2BC),
+            ),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.dangerCoral,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(96, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _tryReadProvider<SessionController>(context)?.signOut();
+    }
   }
 
   @override
@@ -741,6 +712,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
         onCancelBooking: _cancelBooking,
         onSaveWeeklyWorkdays: _saveWeeklyWorkdays,
         onToggleBlockedSlot: _toggleBlockedSlot,
+        onSignOut: _confirmSignOut,
       ),
       if (_visitedTabs.contains(1))
         _CoachWorkHubView(
@@ -756,7 +728,6 @@ class _CoachHomePageState extends State<CoachHomePage> {
           onOpenOffers: _openOffersPage,
           onCompleteBooking: _completeBooking,
           onCancelBooking: _cancelBooking,
-          onDecideRequest: _decideRequest,
         )
       else
         const SizedBox.shrink(),
@@ -853,7 +824,6 @@ class _CoachBookingEntry {
 class _CoachSnapshot {
   const _CoachSnapshot({
     required this.profile,
-    required this.requests,
     required this.members,
     required this.bookings,
     required this.notifications,
@@ -867,7 +837,6 @@ class _CoachSnapshot {
 
   factory _CoachSnapshot.empty() => const _CoachSnapshot(
     profile: null,
-    requests: [],
     members: [],
     bookings: [],
     notifications: [],
@@ -902,27 +871,11 @@ class _CoachSnapshot {
       profile: const CoachProfile(
         id: 'preview-coach',
         fullName: 'Lê Hoàng Nam',
-        memberLimit: 12,
-        usedSlots: 8,
-        availableSlots: 4,
+        memberLimit: _coachHardMemberCap,
+        usedSlots: 6,
+        availableSlots: 2,
         specialties: ['Hypertrophy', 'Giảm mỡ'],
       ),
-      requests: const [
-        CoachIncomingRequest(
-          id: 'req-1',
-          memberId: 'member-1',
-          coachId: 'preview-coach',
-          status: 'PENDING',
-          message: 'Mình muốn tập khung 18h các ngày 2-4-6.',
-        ),
-        CoachIncomingRequest(
-          id: 'req-2',
-          memberId: 'member-2',
-          coachId: 'preview-coach',
-          status: 'PENDING',
-          message: 'Người mới bắt đầu, cần hướng dẫn kỹ thuật cơ bản.',
-        ),
-      ],
       members: const [
         CoachMemberSummary(
           relationshipId: 'rel-1',
@@ -1022,13 +975,12 @@ class _CoachSnapshot {
       ],
       activeWorkWeekdays: const {1, 2, 3, 4, 5, 6},
       blocks: const [],
-      blockedSlotKeys: {'${_formatIsoDate(gymNow)}T12:00'},
+      blockedSlotKeys: const {'12:00 – 13:30'},
       hasLiveApi: false,
     );
   }
 
   final CoachProfile? profile;
-  final List<CoachIncomingRequest> requests;
   final List<CoachMemberSummary> members;
   final List<_CoachBookingEntry> bookings;
   final List<CoachRecord> notifications;
@@ -1038,9 +990,6 @@ class _CoachSnapshot {
   final List<CoachRecord> blocks;
   final Set<String> blockedSlotKeys;
   final bool hasLiveApi;
-
-  int get pendingRequestsCount =>
-      requests.where((item) => item.status == 'PENDING').length;
 
   int get activeMembersCount =>
       members.where((item) => item.status == 'ACTIVE').length;
@@ -1078,7 +1027,6 @@ class _CoachSnapshot {
   }) {
     return _CoachSnapshot(
       profile: profile,
-      requests: requests,
       members: members,
       bookings: bookings,
       notifications: notifications,
@@ -1094,7 +1042,6 @@ class _CoachSnapshot {
   _CoachSnapshot withBookingStatus(String bookingId, String newStatus) {
     return _CoachSnapshot(
       profile: profile,
-      requests: requests,
       members: members,
       bookings: [
         for (final entry in bookings)
@@ -1103,22 +1050,6 @@ class _CoachSnapshot {
           else
             entry,
       ],
-      notifications: notifications,
-      offers: offers,
-      workDays: workDays,
-      activeWorkWeekdays: activeWorkWeekdays,
-      blocks: blocks,
-      blockedSlotKeys: blockedSlotKeys,
-      hasLiveApi: hasLiveApi,
-    );
-  }
-
-  _CoachSnapshot withoutRequest(String requestId) {
-    return _CoachSnapshot(
-      profile: profile,
-      requests: requests.where((item) => item.id != requestId).toList(),
-      members: members,
-      bookings: bookings,
       notifications: notifications,
       offers: offers,
       workDays: workDays,
@@ -1152,6 +1083,7 @@ class _CoachDashboardView extends StatelessWidget {
     required this.onCancelBooking,
     required this.onSaveWeeklyWorkdays,
     required this.onToggleBlockedSlot,
+    required this.onSignOut,
   });
 
   final double bottomPadding;
@@ -1175,6 +1107,7 @@ class _CoachDashboardView extends StatelessWidget {
     String? reason,
   })
   onToggleBlockedSlot;
+  final Future<void> Function() onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -1193,7 +1126,7 @@ class _CoachDashboardView extends StatelessWidget {
             bottom: false,
             child: RefreshIndicator(
               color: MetaGymTheme.brandOrange,
-              backgroundColor: MetaGymTheme.darkSurface,
+              backgroundColor: const Color(0xFF2B2622),
               onRefresh: onRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -1215,27 +1148,45 @@ class _CoachDashboardView extends StatelessWidget {
                   ],
                   // Warm Smoked Glass Hero Work Summary (<= 20% glass budget)
                   _buildHeroSummaryCard(context, coachName),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
+                  // Warm Smoked Cards (>= 80% non-blurred surface budget)
                   const _CoachSectionHeader(
                     title: 'Quản lý & Thiết lập lịch',
                     icon: Icons.tune_rounded,
                   ),
                   const SizedBox(height: 8),
                   _buildManagementCard(context),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   _buildNextSessionCard(context),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   _buildBentoSection(context),
                   const SizedBox(height: 16),
                   _buildTodayBookingsSection(context),
-                  const SizedBox(height: 20),
-                  const _CoachSectionHeader(
-                    title: 'Khám phá & Liên lạc',
-                    icon: Icons.explore_outlined,
+                  const SizedBox(height: 14),
+                  _buildFullFeatureDirectory(context),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: MetaGymTheme.dangerCoral,
+                      backgroundColor: const Color(0xC42B2622),
+                      minimumSize: const Size(double.infinity, 48),
+                      side: const BorderSide(
+                        color: Color(0xA3A79D92),
+                        width: 1.1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusCard,
+                        ),
+                      ),
+                    ),
+                    onPressed: onSignOut,
+                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    label: const Text(
+                      'Đăng xuất',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  _buildUtilitiesCard(),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -1267,7 +1218,7 @@ class _CoachDashboardView extends StatelessWidget {
             onTap: () => onNavigateTab(4),
             customBorder: const CircleBorder(),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               child: Center(
                 child: Container(
                   width: 42,
@@ -1295,16 +1246,14 @@ class _CoachDashboardView extends StatelessWidget {
   }
 
   Widget _buildQuickActionDock() {
-    final pending = snapshot.pendingRequestsCount;
     return Row(
       children: [
         Expanded(
           child: _CoachQuickActionTile(
-            icon: Icons.pending_actions_rounded,
-            label: 'Yêu cầu',
-            badgeCount: pending,
+            icon: Icons.groups_outlined,
+            label: 'Học viên',
             useSolidFallback: useSolidGlassFallback,
-            onTap: () => onPushRoute('/coach/features/requests'),
+            onTap: () => onPushRoute('/coach/features/members'),
           ),
         ),
         const SizedBox(width: 8),
@@ -1342,10 +1291,11 @@ class _CoachDashboardView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
       decoration: BoxDecoration(
-        color: MetaGymTheme.warningAmber.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xD435281C),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: MetaGymTheme.warningAmber.withValues(alpha: 0.30),
+          color: MetaGymTheme.warningAmber.withValues(alpha: 0.55),
+          width: 1.1,
         ),
       ),
       child: Row(
@@ -1359,16 +1309,13 @@ class _CoachDashboardView extends StatelessWidget {
           Expanded(
             child: Text(
               loadError!,
-              style: const TextStyle(
-                color: MetaGymTheme.darkTextSecondary,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFFE4DAD1), fontSize: 12),
             ),
           ),
           IconButton(
             onPressed: onRefresh,
             tooltip: 'Thử lại',
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             icon: const Icon(
               Icons.refresh_rounded,
               color: MetaGymTheme.warningAmber,
@@ -1404,15 +1351,21 @@ class _CoachDashboardView extends StatelessWidget {
 
     final profile = snapshot.profile;
     final activeMembers = snapshot.activeMembersCount;
-    final pendingRequests = snapshot.pendingRequestsCount;
+    final unreadNotifications = snapshot.unreadNotificationsCount;
     final upcomingCount = snapshot.bookings
         .where((b) => b.isUpcomingOrActive)
         .length;
     final hasCapacityData = profile != null;
-    final isFull = hasCapacityData && profile.availableSlots <= 0;
+    final effectiveLimit = hasCapacityData
+        ? math.min(profile.memberLimit, _coachHardMemberCap)
+        : _coachHardMemberCap;
+    final effectiveAvailableSlots = hasCapacityData
+        ? math.max(0, effectiveLimit - profile.usedSlots)
+        : 0;
+    final isFull = hasCapacityData && effectiveAvailableSlots <= 0;
     final statusLabel = !hasCapacityData
         ? 'Hoạt động'
-        : (isFull ? 'Đã đủ suất' : 'Còn ${profile.availableSlots} suất');
+        : (isFull ? 'Đã đủ suất' : 'Còn $effectiveAvailableSlots suất');
     final statusTone = !hasCapacityData
         ? CoachingPillTone.green
         : (isFull ? CoachingPillTone.amber : CoachingPillTone.green);
@@ -1425,7 +1378,7 @@ class _CoachDashboardView extends StatelessWidget {
           onTap: () => onOpenWorkHub(0),
           borderRadius: BorderRadius.circular(8),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
+            constraints: const BoxConstraints(minHeight: 48),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -1452,7 +1405,7 @@ class _CoachDashboardView extends StatelessWidget {
                   const SizedBox(width: 4),
                   const Icon(
                     Icons.chevron_right_rounded,
-                    color: MetaGymTheme.darkTextSecondary,
+                    color: Color(0xFFC8C2BC),
                     size: 20,
                   ),
                 ],
@@ -1477,7 +1430,7 @@ class _CoachDashboardView extends StatelessWidget {
                     children: [
                       Text(
                         hasCapacityData
-                            ? '${profile.usedSlots}/${profile.memberLimit}'
+                            ? '${profile.usedSlots}/$effectiveLimit'
                             : '$activeMembers',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1533,7 +1486,7 @@ class _CoachDashboardView extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: MetaGymMetricPanel(
-                  onTap: () => onPushRoute('/coach/features/requests'),
+                  onTap: onOpenNotifications,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 10,
@@ -1578,7 +1531,7 @@ class _CoachDashboardView extends StatelessWidget {
                                   ),
                                 ),
                                 const Text(
-                                  'Yêu cầu & Thông báo',
+                                  'Thông báo Coach',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1593,13 +1546,13 @@ class _CoachDashboardView extends StatelessWidget {
                       ),
                       const SizedBox(height: 9),
                       Text(
-                        pendingRequests > 0
-                            ? '$pendingRequests yêu cầu chờ duyệt'
-                            : 'Không có yêu cầu chờ',
+                        unreadNotifications > 0
+                            ? '$unreadNotifications thông báo chưa đọc'
+                            : 'Chưa có thông báo mới',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: pendingRequests > 0
+                          color: unreadNotifications > 0
                               ? MetaGymTheme.warningAmber
                               : const Color(0xFFEAE6E2),
                           fontSize: 11,
@@ -1633,9 +1586,6 @@ class _CoachDashboardView extends StatelessWidget {
     final next = snapshot.nextUpcomingBooking;
     return MetaGymGlassCard(
       padding: const EdgeInsets.all(16),
-      onTap: next == null
-          ? () => onOpenWorkHub(0)
-          : () => _openBookingDetailSheet(context, next),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1691,7 +1641,7 @@ class _CoachDashboardView extends StatelessWidget {
                       Text(
                         'Thiết lập lịch tuần hoặc xem toàn bộ lịch đặt ca 90 phút.',
                         style: TextStyle(
-                          color: MetaGymTheme.darkTextSecondary,
+                          color: Color(0xFFC8C2BC),
                           fontSize: 12,
                         ),
                       ),
@@ -1699,9 +1649,18 @@ class _CoachDashboardView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                CoachingCompactAccentButton(
-                  label: 'Lịch dạy',
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.brandOrange,
+                    foregroundColor: MetaGymTheme.onPrimary,
+                    minimumSize: const Size(88, 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                   onPressed: () => onOpenWorkHub(0),
+                  child: const Text('Lịch dạy'),
                 ),
               ],
             )
@@ -1712,10 +1671,10 @@ class _CoachDashboardView extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.50),
+                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.55),
                     ),
                   ),
                   alignment: Alignment.center,
@@ -1745,11 +1704,11 @@ class _CoachDashboardView extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${_formatDayMonth(next.gymStart)} · ${next.timeRange} · ${next.focusTitle}',
+                        '${next.timeRange} · ${next.focusTitle}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: MetaGymTheme.darkTextSecondary,
+                          color: Color(0xFFC8C2BC),
                           fontSize: 12,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
@@ -1758,9 +1717,18 @@ class _CoachDashboardView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                CoachingCompactAccentButton(
-                  label: 'Chi tiết',
-                  onPressed: () => _openBookingDetailSheet(context, next),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.brandOrange,
+                    foregroundColor: MetaGymTheme.onPrimary,
+                    minimumSize: const Size(84, 48),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => onOpenWorkHub(0),
+                  child: const Text('Chi tiết'),
                 ),
               ],
             ),
@@ -1778,8 +1746,11 @@ class _CoachDashboardView extends StatelessWidget {
     final offerPrice = firstOffer?['price'] as num?;
     final offerSessions = (firstOffer?['sessionCount'] as num?)?.toInt();
     final profile = snapshot.profile;
-    final usedRatio = (profile != null && profile.memberLimit > 0)
-        ? (profile.usedSlots / profile.memberLimit).clamp(0.0, 1.0)
+    final effectiveLimit = profile != null
+        ? math.min(profile.memberLimit, _coachHardMemberCap)
+        : _coachHardMemberCap;
+    final usedRatio = (profile != null && effectiveLimit > 0)
+        ? (profile.usedSlots / effectiveLimit).clamp(0.0, 1.0)
         : 0.0;
 
     return IntrinsicHeight(
@@ -1788,94 +1759,101 @@ class _CoachDashboardView extends StatelessWidget {
         children: [
           Expanded(
             child: MetaGymGlassCard(
-              padding: const EdgeInsets.all(12),
-              onTap: () => onPushRoute('/coach/features/sessions'),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 112),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                onTap: () => onPushRoute('/coach/features/sessions'),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 112),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.calendar_view_week_rounded,
-                          color: MetaGymTheme.brandOrange,
-                          size: 14,
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_view_week_rounded,
+                              color: MetaGymTheme.brandOrange,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 5),
+                            const Expanded(
+                              child: Text(
+                                'Lịch tuần',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: MetaGymTheme.darkTextPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _CompactBentoBadge(
+                              label: '$configuredDays/7 ngày',
+                              color: configuredDays >= 6
+                                  ? MetaGymTheme.progressGreen
+                                  : MetaGymTheme.warningAmber,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 5),
-                        const Expanded(
-                          child: Text(
-                            'Lịch tuần',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: MetaGymTheme.darkTextPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            for (var i = 0; i < _weekdayShortLabels.length; i++)
+                              _CoachWeekBubble(
+                                label: _weekdayShortLabels[i],
+                                active: activeWeekdays.contains(i + 1),
+                              ),
+                          ],
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Khóa: ${snapshot.blockedCount} giờ',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: MetaGymTheme.darkTextPrimary,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _CompactBentoBadge(
+                              label: configuredDays >= 6
+                                  ? 'Đủ chuẩn'
+                                  : 'Cập nhật',
+                              color: configuredDays >= 6
+                                  ? MetaGymTheme.progressGreen
+                                  : MetaGymTheme.warningAmber,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: (configuredDays / 7).clamp(0.0, 1.0),
+                            minHeight: 3,
+                            backgroundColor: const Color(0x80211E1C),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              configuredDays >= 6
+                                  ? MetaGymTheme.progressGreen
+                                  : MetaGymTheme.warningAmber,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        _CompactBentoBadge(
-                          label: '$configuredDays/7 ngày',
-                          color: configuredDays >= 6
-                              ? MetaGymTheme.progressGreen
-                              : MetaGymTheme.warningAmber,
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        for (var i = 0; i < _weekdayShortLabels.length; i++)
-                          _CoachWeekBubble(
-                            label: _weekdayShortLabels[i],
-                            active: activeWeekdays.contains(i + 1),
-                          ),
-                      ],
-                    ),
-                    const Spacer(),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Khóa: ${snapshot.blockedCount} giờ',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: MetaGymTheme.darkTextPrimary,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              fontFeatures: MetaGymTheme.tabularFigures,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        _CompactBentoBadge(
-                          label: configuredDays >= 6 ? 'Đủ chuẩn' : 'Cập nhật',
-                          color: configuredDays >= 6
-                              ? MetaGymTheme.progressGreen
-                              : MetaGymTheme.warningAmber,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: (configuredDays / 7).clamp(0.0, 1.0),
-                        minHeight: 3,
-                        backgroundColor: const Color(0x26FFFFFF),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          configuredDays >= 6
-                              ? MetaGymTheme.progressGreen
-                              : MetaGymTheme.warningAmber,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -1883,103 +1861,108 @@ class _CoachDashboardView extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: MetaGymGlassCard(
-              padding: const EdgeInsets.all(12),
-              onTap: onOpenOffers,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 112),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+                onTap: onOpenOffers,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 112),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.local_offer_outlined,
-                          color: MetaGymTheme.brandOrange,
-                          size: 14,
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.local_offer_outlined,
+                              color: MetaGymTheme.brandOrange,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 5),
+                            const Expanded(
+                              child: Text(
+                                'Gói PT',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: MetaGymTheme.darkTextPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _CompactBentoBadge(
+                              label: '${offers.length} gói',
+                              color: MetaGymTheme.progressGreen,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 5),
-                        const Expanded(
-                          child: Text(
-                            'Gói PT',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: MetaGymTheme.darkTextPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                        const SizedBox(height: 8),
+                        Text(
+                          offerTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: MetaGymTheme.darkTextPrimary,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          offerPrice != null
+                              ? '${formatVnd(offerPrice)} · ${offerSessions ?? 0} buổi'
+                              : 'Xem bảng giá gói 1:1',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFC8C2BC),
+                            fontSize: 10.5,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                profile != null
+                                    ? 'Suất: ${profile.usedSlots}/$effectiveLimit'
+                                    : 'HV: ${snapshot.activeMembersCount}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: MetaGymTheme.darkTextPrimary,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const _CompactBentoBadge(
+                              label: 'Mở',
+                              color: MetaGymTheme.progressGreen,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: profile != null ? usedRatio : 0.25,
+                            minHeight: 3,
+                            backgroundColor: const Color(0x80211E1C),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              MetaGymTheme.progressGreen,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        _CompactBentoBadge(
-                          label: '${offers.length} gói',
-                          color: MetaGymTheme.progressGreen,
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      offerTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextPrimary,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      offerPrice != null
-                          ? '${formatVnd(offerPrice)} · ${offerSessions ?? 0} buổi'
-                          : 'Xem bảng giá gói 1:1',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextSecondary,
-                        fontSize: 10.5,
-                        fontFeatures: MetaGymTheme.tabularFigures,
-                      ),
-                    ),
-                    const Spacer(),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            profile != null
-                                ? 'Suất: ${profile.usedSlots}/${profile.memberLimit}'
-                                : 'HV: ${snapshot.activeMembersCount}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: MetaGymTheme.darkTextPrimary,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              fontFeatures: MetaGymTheme.tabularFigures,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const _CompactBentoBadge(
-                          label: 'Mở',
-                          color: MetaGymTheme.progressGreen,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: profile != null ? usedRatio : 0.25,
-                        minHeight: 3,
-                        backgroundColor: const Color(0x26FFFFFF),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          MetaGymTheme.progressGreen,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -2008,13 +1991,7 @@ class _CoachDashboardView extends StatelessWidget {
                 : 'Danh sách học viên đang phụ trách',
             onTap: () => onPushRoute('/coach/features/members'),
           ),
-          const Divider(
-            height: 1,
-            thickness: 1,
-            indent: 64,
-            endIndent: 16,
-            color: Color(0x2EADA295),
-          ),
+          const Divider(height: 1, color: Color(0x26FFF5E9)),
           _CoachMenuRow(
             icon: Icons.event_repeat_rounded,
             accent: MetaGymTheme.reflectionBlue,
@@ -2022,13 +1999,7 @@ class _CoachDashboardView extends StatelessWidget {
             subtitle: 'Đang mở $configuredDays/7 ngày · Khung 90 phút',
             onTap: () => _openWeeklyScheduleSheet(context),
           ),
-          const Divider(
-            height: 1,
-            thickness: 1,
-            indent: 64,
-            endIndent: 16,
-            color: Color(0x2EADA295),
-          ),
+          const Divider(height: 1, color: Color(0x26FFF5E9)),
           _CoachMenuRow(
             icon: Icons.block_rounded,
             accent: MetaGymTheme.warningAmber,
@@ -2038,13 +2009,7 @@ class _CoachDashboardView extends StatelessWidget {
                 : 'Đang chặn $blockedCount khung giờ',
             onTap: () => _openBlockedSlotsSheet(context),
           ),
-          const Divider(
-            height: 1,
-            thickness: 1,
-            indent: 64,
-            endIndent: 16,
-            color: Color(0x2EADA295),
-          ),
+          const Divider(height: 1, color: Color(0x26FFF5E9)),
           _CoachMenuRow(
             icon: Icons.local_offer_outlined,
             accent: MetaGymTheme.brandOrange,
@@ -2054,13 +2019,7 @@ class _CoachDashboardView extends StatelessWidget {
                 : '${snapshot.offers.length} gói đang mở bán',
             onTap: onOpenOffers,
           ),
-          const Divider(
-            height: 1,
-            thickness: 1,
-            indent: 64,
-            endIndent: 16,
-            color: Color(0x2EADA295),
-          ),
+          const Divider(height: 1, color: Color(0x26FFF5E9)),
           _CoachMenuRow(
             icon: Icons.notifications_active_outlined,
             accent: MetaGymTheme.infoSteelBlue,
@@ -2092,9 +2051,9 @@ class _CoachDashboardView extends StatelessWidget {
               onTap: () => onOpenWorkHub(0),
               borderRadius: BorderRadius.circular(10),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
+                constraints: const BoxConstraints(minHeight: 48),
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   child: Text(
                     'Xem tất cả >',
                     style: TextStyle(
@@ -2118,12 +2077,13 @@ class _CoachDashboardView extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0x26ADA295),
+                    color: const Color(0x80211E1C),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0x9A8C8176)),
                   ),
                   child: const Icon(
                     Icons.event_available_rounded,
-                    color: Color(0xFFB7B2AF),
+                    color: Color(0xFFC8C2BC),
                     size: 20,
                   ),
                 ),
@@ -2131,7 +2091,7 @@ class _CoachDashboardView extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     'Hôm nay chưa có ca dạy nào được đặt.',
-                    style: TextStyle(color: Color(0xFFB7B2AF), fontSize: 13),
+                    style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
                   ),
                 ),
               ],
@@ -2147,25 +2107,102 @@ class _CoachDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildUtilitiesCard() {
-    return MetaGymGlassCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _CoachMenuRow(
-            icon: Icons.call_outlined,
-            accent: MetaGymTheme.progressGreen,
-            title: 'Cuộc gọi thoại & video',
-            subtitle: 'Gọi trực tiếp và xem lịch sử cuộc gọi với học viên',
-            onTap: () => onPushRoute('/coach/features/calls'),
+  Widget _buildFullFeatureDirectory(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        tilePadding: EdgeInsets.zero,
+        title: const Text(
+          'Danh mục tính năng Coach',
+          style: TextStyle(
+            color: MetaGymTheme.darkTextPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
-          const Divider(height: 1, color: Color(0x2EADA295)),
-          _CoachMenuRow(
-            icon: Icons.fitness_center_outlined,
-            accent: MetaGymTheme.reflectionBlue,
-            title: 'Phòng gym và thiết bị',
-            subtitle: 'Tra cứu thông tin phòng tập, khu tập & máy móc',
-            onTap: () => onPushRoute('/coach/features/gym'),
+        ),
+        subtitle: const Text(
+          'Tất cả màn hình nghiệp vụ & liên lạc',
+          style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
+        ),
+        iconColor: MetaGymTheme.reflectionBlue,
+        collapsedIconColor: const Color(0xFFC8C2BC),
+        children: [
+          MetaGymGlassCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (var i = 0; i < coachDestinations.length; i++) ...[
+                  if (i > 0) const Divider(height: 1, color: Color(0x26FFF5E9)),
+                  ListTile(
+                    minTileHeight: 52,
+                    minVerticalPadding: 10,
+                    title: Text(
+                      coachDestinations[i].title,
+                      style: const TextStyle(
+                        color: MetaGymTheme.darkTextPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${coachDestinations[i].section} · ${coachDestinations[i].task}',
+                      style: const TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 11.5,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFFC8C2BC),
+                    ),
+                    onTap: () => onPushRoute(coachDestinations[i].path),
+                  ),
+                ],
+                const Divider(height: 1, color: Color(0x26FFF5E9)),
+                ListTile(
+                  minTileHeight: 52,
+                  title: const Text(
+                    'Thông báo Coach',
+                    style: TextStyle(
+                      color: MetaGymTheme.darkTextPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Hệ thống · Lịch & Gói PT',
+                    style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 11.5),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFFC8C2BC),
+                  ),
+                  onTap: onOpenNotifications,
+                ),
+                const Divider(height: 1, color: Color(0x26FFF5E9)),
+                ListTile(
+                  minTileHeight: 52,
+                  title: const Text(
+                    'Gói PT & Bảng giá',
+                    style: TextStyle(
+                      color: MetaGymTheme.darkTextPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Huấn luyện · Thanh toán',
+                    style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 11.5),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFFC8C2BC),
+                  ),
+                  onTap: onOpenOffers,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -2178,64 +2215,19 @@ class _CoachDashboardView extends StatelessWidget {
   ) async {
     await showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => CoachingOverlaySheet(
+      builder: (ctx) => _CoachModalSheet(
         title: entry.memberName,
-        subtitle:
-            '${_formatFullDate(entry.gymStart)} · ${entry.timeRange} (90 phút)',
+        subtitle: '${entry.timeRange} (90 phút)',
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0x382B2622),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.fitness_center_rounded,
-                      color: MetaGymTheme.brandOrange,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Mục tiêu buổi tập',
-                          style: TextStyle(
-                            color: Color(0xFFB7B2AF),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          entry.focusTitle,
-                          style: const TextStyle(
-                            color: Color(0xFFF7F9FC),
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            Text(
+              'Nội dung: ${entry.focusTitle}',
+              style: const TextStyle(
+                color: MetaGymTheme.darkTextPrimary,
+                fontSize: 13.5,
               ),
             ),
             const SizedBox(height: 16),
@@ -2244,7 +2236,6 @@ class _CoachDashboardView extends StatelessWidget {
                 Expanded(
                   child: CoachingSecondaryButton(
                     label: 'Nhắn tin',
-                    expand: true,
                     onPressed: () {
                       Navigator.pop(ctx);
                       onNavigateTab(3);
@@ -2254,15 +2245,19 @@ class _CoachDashboardView extends StatelessWidget {
                 if (entry.isUpcomingOrActive) ...[
                   const SizedBox(width: 10),
                   Expanded(
-                    child: CoachingCompactAccentButton(
-                      label: 'Hoàn tất',
-                      expand: true,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.brandOrange,
+                        foregroundColor: MetaGymTheme.onPrimary,
+                        minimumSize: const Size(48, 48),
+                      ),
                       onPressed: isMutating
                           ? null
                           : () {
                               Navigator.pop(ctx);
                               onCompleteBooking(entry);
                             },
+                      child: const Text('Hoàn tất'),
                     ),
                   ),
                 ],
@@ -2271,17 +2266,17 @@ class _CoachDashboardView extends StatelessWidget {
             if (entry.isUpcomingOrActive) ...[
               const SizedBox(height: 8),
               TextButton(
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(48, 44),
-                  foregroundColor: MetaGymTheme.dangerCoral,
-                ),
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
                 onPressed: isMutating
                     ? null
                     : () {
                         Navigator.pop(ctx);
                         onCancelBooking(entry);
                       },
-                child: const Text('Hủy buổi dạy này'),
+                child: const Text(
+                  'Hủy buổi dạy này',
+                  style: TextStyle(color: MetaGymTheme.dangerCoral),
+                ),
               ),
             ],
           ],
@@ -2304,11 +2299,10 @@ class _CoachDashboardView extends StatelessWidget {
 
     await showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => CoachingOverlaySheet(
-          title: 'Lịch làm việc cố định theo tuần',
+        builder: (ctx, setModalState) => _CoachModalSheet(
+          title: 'Lịch làm việc cố định',
           subtitle: 'Chọn tối thiểu 6 ngày mở nhận đặt ca 90 phút',
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2322,23 +2316,23 @@ class _CoachDashboardView extends StatelessWidget {
                     FilterChip(
                       label: Text(entry.value),
                       selected: selectedDays.contains(entry.key),
-                      selectedColor: const Color(0xFF33201B),
-                      surfaceTintColor: Colors.transparent,
+                      selectedColor: const Color(0xFF472C22),
                       checkmarkColor: MetaGymTheme.brandOrange,
-                      backgroundColor: const Color(0xC42B2622),
+                      backgroundColor: const Color(0x80211E1C),
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
                       side: BorderSide(
                         color: selectedDays.contains(entry.key)
                             ? MetaGymTheme.brandOrange
-                            : const Color(0xA3A79D92),
-                        width: 1.1,
+                            : const Color(0x9A8C8176),
                       ),
                       labelStyle: TextStyle(
                         color: selectedDays.contains(entry.key)
-                            ? const Color(0xFFF7F9FC)
-                            : const Color(0xFFB7B2AF),
-                        fontWeight: selectedDays.contains(entry.key)
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                            ? MetaGymTheme.darkTextPrimary
+                            : const Color(0xFFC8C2BC),
                       ),
                       onSelected: (selected) {
                         setModalState(() {
@@ -2377,144 +2371,84 @@ class _CoachDashboardView extends StatelessWidget {
   }
 
   Future<void> _openBlockedSlotsSheet(BuildContext context) async {
-    final gymNow = _toGymLocal(DateTime.now());
-    final baseDate = DateTime.utc(gymNow.year, gymNow.month, gymNow.day);
-    final candidateDates = [
-      for (var offset = 0; offset < 14; offset++)
-        baseDate.add(Duration(days: offset)),
+    final today = _formatIsoDate(
+      _toGymLocal(DateTime.now().add(const Duration(days: 1))),
+    );
+    final candidateSlots = [
+      for (final start in _defaultSlotStarts) '${today}T$start:00+07:00',
     ];
-    var selectedDate = candidateDates[1];
     final currentBlocked = Set<String>.from(snapshot.blockedSlotKeys);
-
-    List<String> slotsForWeekday(int weekday) {
-      for (final day in snapshot.workDays) {
-        if ((day['weekday'] as num?)?.toInt() == weekday) {
-          final starts = (day['starts'] as List? ?? const [])
-              .map((item) => item.toString().trim())
-              .where((item) => item.isNotEmpty)
-              .toList();
-          if (starts.isNotEmpty) return starts;
-        }
-      }
-      return _defaultSlotStarts;
-    }
 
     await showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final dateStr = _formatIsoDate(selectedDate);
-          final slotStarts = slotsForWeekday(selectedDate.weekday);
-          return CoachingOverlaySheet(
-            title: 'Chặn khung giờ bận',
-            subtitle:
-                'Chọn ngày và chạm vào khung giờ 90 phút để khóa hoặc mở lại',
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final date in candidateDates)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(
-                              '${_weekdayShortLabels[date.weekday - 1]} ${_formatDayMonth(date)}',
-                            ),
-                            selected: date == selectedDate,
-                            selectedColor: coachingWarmSelectedChip,
-                            surfaceTintColor: Colors.transparent,
-                            checkmarkColor: MetaGymTheme.brandOrange,
-                            backgroundColor: coachingWarmGlassSurface,
-                            side: BorderSide(
-                              color: date == selectedDate
-                                  ? MetaGymTheme.brandOrange
-                                  : coachingWarmGlassBorder,
-                              width: 1.1,
-                            ),
-                            labelStyle: TextStyle(
-                              color: date == selectedDate
-                                  ? coachingWarmTextPrimary
-                                  : coachingWarmTextSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              fontFeatures: MetaGymTheme.tabularFigures,
-                            ),
-                            onSelected: (_) =>
-                                setModalState(() => selectedDate = date),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final start in slotStarts)
-                      Builder(
-                        builder: (context) {
-                          final canonical = '${dateStr}T$start';
-                          final isBlocked = currentBlocked.contains(canonical);
-                          return FilterChip(
-                            label: Text(start),
-                            selected: isBlocked,
-                            selectedColor: const Color(0xFF312819),
-                            surfaceTintColor: Colors.transparent,
-                            checkmarkColor: MetaGymTheme.warningAmber,
-                            backgroundColor: coachingWarmGlassSurface,
-                            side: BorderSide(
-                              color: isBlocked
-                                  ? MetaGymTheme.warningAmber
-                                  : coachingWarmGlassBorder,
-                              width: 1.1,
-                            ),
-                            labelStyle: TextStyle(
-                              color: isBlocked
-                                  ? MetaGymTheme.warningAmber
-                                  : coachingWarmTextPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontFeatures: MetaGymTheme.tabularFigures,
-                            ),
-                            onSelected: (selected) async {
-                              final payloadIso = '${dateStr}T$start:00+07:00';
-                              setModalState(() {
-                                if (selected) {
-                                  currentBlocked.add(canonical);
-                                } else {
-                                  currentBlocked.remove(canonical);
-                                }
-                              });
-                              await onToggleBlockedSlot(
-                                slotKey: payloadIso,
-                                blocked: selected,
-                                reason: selected ? 'Lịch bận cá nhân' : null,
-                              );
-                            },
-                          );
-                        },
+        builder: (ctx, setModalState) => _CoachModalSheet(
+          title: 'Chặn khung giờ bận',
+          subtitle: 'Học viên không thể đặt các khung giờ bạn đã khóa',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var i = 0; i < _defaultSlotStarts.length; i++)
+                    FilterChip(
+                      label: Text(_defaultSlotStarts[i]),
+                      selected:
+                          currentBlocked.contains(candidateSlots[i]) ||
+                          currentBlocked.contains(_defaultSlotStarts[i]),
+                      selectedColor: const Color(0xFF45311D),
+                      checkmarkColor: MetaGymTheme.warningAmber,
+                      backgroundColor: const Color(0x80211E1C),
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
                       ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                CoachingSecondaryButton(
-                  label: 'Quản lý khóa lịch theo ngày',
-                  expand: true,
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    onPushRoute('/coach/features/sessions');
-                  },
-                ),
-              ],
-            ),
-          );
-        },
+                      side: BorderSide(
+                        color:
+                            (currentBlocked.contains(candidateSlots[i]) ||
+                                currentBlocked.contains(_defaultSlotStarts[i]))
+                            ? MetaGymTheme.warningAmber
+                            : const Color(0x9A8C8176),
+                      ),
+                      labelStyle: const TextStyle(
+                        color: MetaGymTheme.darkTextPrimary,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                      onSelected: (selected) async {
+                        final key = candidateSlots[i];
+                        setModalState(() {
+                          if (selected) {
+                            currentBlocked.add(key);
+                          } else {
+                            currentBlocked.remove(key);
+                          }
+                        });
+                        await onToggleBlockedSlot(
+                          slotKey: key,
+                          blocked: selected,
+                          reason: selected ? 'Lịch bận cá nhân' : null,
+                        );
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              CoachingSecondaryButton(
+                label: 'Quản lý khóa lịch theo ngày',
+                expand: true,
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  onPushRoute('/coach/features/sessions');
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2523,57 +2457,6 @@ class _CoachDashboardView extends StatelessWidget {
 // =============================================================================
 // Tab 1: Quản lý Lịch dạy 90p & Học viên / Yêu cầu
 // =============================================================================
-
-class _CoachNotificationIconButton extends StatelessWidget {
-  const _CoachNotificationIconButton({
-    required this.unreadCount,
-    required this.onTap,
-  });
-
-  final int unreadCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        MetaGymCircleIconButton(
-          icon: Icons.notifications_none_rounded,
-          tooltip: 'Thông báo Coach',
-          onTap: onTap,
-        ),
-        if (unreadCount > 0)
-          Positioned(
-            right: -2,
-            top: -2,
-            child: IgnorePointer(
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: MetaGymTheme.darkCanvas, width: 2),
-                ),
-                child: Text(
-                  unreadCount > 9 ? '9+' : '$unreadCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    height: 1.0,
-                    fontFeatures: MetaGymTheme.tabularFigures,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
 
 class _CoachWorkHubView extends StatefulWidget {
   const _CoachWorkHubView({
@@ -2589,7 +2472,6 @@ class _CoachWorkHubView extends StatefulWidget {
     required this.onOpenOffers,
     required this.onCompleteBooking,
     required this.onCancelBooking,
-    required this.onDecideRequest,
   });
 
   final double bottomPadding;
@@ -2604,8 +2486,6 @@ class _CoachWorkHubView extends StatefulWidget {
   final Future<void> Function() onOpenOffers;
   final Future<void> Function(_CoachBookingEntry entry) onCompleteBooking;
   final Future<void> Function(_CoachBookingEntry entry) onCancelBooking;
-  final Future<void> Function(CoachIncomingRequest request, String decision)
-  onDecideRequest;
 
   @override
   State<_CoachWorkHubView> createState() => _CoachWorkHubViewState();
@@ -2613,24 +2493,13 @@ class _CoachWorkHubView extends StatefulWidget {
 
 class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
   late int _segment;
-  late DateTime _selectedDate;
-
-  DateTime get _todayGym {
-    final gymNow = _toGymLocal(DateTime.now());
-    return DateTime.utc(gymNow.year, gymNow.month, gymNow.day);
-  }
-
-  DateTime _weekMonday(DateTime date) =>
-      date.subtract(Duration(days: date.weekday - 1));
-
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  late int _selectedWeekdayIndex;
 
   @override
   void initState() {
     super.initState();
     _segment = widget.initialSegment;
-    _selectedDate = _todayGym;
+    _selectedWeekdayIndex = _toGymLocal(DateTime.now()).weekday - 1;
   }
 
   @override
@@ -2643,21 +2512,11 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
 
   @override
   Widget build(BuildContext context) {
-    final todayGym = _todayGym;
-    final weekStart = _weekMonday(_selectedDate);
-    final weekEnd = weekStart.add(const Duration(days: 6));
-    final weekDates = [
-      for (var i = 0; i < 7; i++) weekStart.add(Duration(days: i)),
-    ];
+    final selectedWeekday = _selectedWeekdayIndex + 1;
     final dayBookings = widget.snapshot.bookings
-        .where((entry) => _isSameDay(entry.gymStart, _selectedDate))
-        .toList();
-    final pendingRequests = widget.snapshot.requests
-        .where((item) => item.status == 'PENDING')
+        .where((entry) => entry.gymStart.weekday == selectedWeekday)
         .toList();
     final members = widget.snapshot.members;
-    final memberNames = {for (final m in members) m.memberId: m.memberFullName};
-    final requestsService = _tryReadProvider<CoachRequestsService>(context);
     final membersService = _tryReadProvider<CoachMembersService>(context);
 
     return Material(
@@ -2670,7 +2529,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
             bottom: false,
             child: RefreshIndicator(
               color: MetaGymTheme.brandOrange,
-              backgroundColor: const Color(0xC42B2622),
+              backgroundColor: const Color(0xFF2B2622),
               onRefresh: widget.onRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -2700,25 +2559,35 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _SegmentPill(
-                          label: 'Lịch dạy (90p)',
-                          selected: _segment == 0,
-                          onTap: () => setState(() => _segment = 0),
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xB8211E1C),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0x9A8C8176),
+                        width: 1.1,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _SegmentPill(
-                          label:
-                              'Học viên & Yêu cầu (${pendingRequests.length})',
-                          selected: _segment == 1,
-                          onTap: () => setState(() => _segment = 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _SegmentPill(
+                            label: 'Lịch dạy (90p)',
+                            selected: _segment == 0,
+                            onTap: () => setState(() => _segment = 0),
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: _SegmentPill(
+                            label: 'Học viên (${members.length})',
+                            selected: _segment == 1,
+                            onTap: () => setState(() => _segment = 1),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 14),
                   if (widget.isLoading)
@@ -2731,99 +2600,23 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                       ),
                     )
                   else if (_segment == 0) ...[
-                    CoachingGraphiteCard(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            tooltip: 'Tuần trước',
-                            constraints: const BoxConstraints(
-                              minWidth: 44,
-                              minHeight: 44,
-                            ),
-                            onPressed: () => setState(
-                              () => _selectedDate = _selectedDate.subtract(
-                                const Duration(days: 7),
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.chevron_left_rounded,
-                              color: MetaGymTheme.darkTextPrimary,
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Tuần ${_formatDayMonth(weekStart)} – ${_formatFullDate(weekEnd)}',
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.darkTextPrimary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    fontFeatures: MetaGymTheme.tabularFigures,
-                                  ),
-                                ),
-                                if (!_isSameDay(_selectedDate, todayGym))
-                                  GestureDetector(
-                                    onTap: () => setState(
-                                      () => _selectedDate = todayGym,
-                                    ),
-                                    child: const Padding(
-                                      padding: EdgeInsets.only(top: 2),
-                                      child: Text(
-                                        'Về hôm nay',
-                                        style: TextStyle(
-                                          color: MetaGymTheme.brandOrange,
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Tuần sau',
-                            constraints: const BoxConstraints(
-                              minWidth: 44,
-                              minHeight: 44,
-                            ),
-                            onPressed: () => setState(
-                              () => _selectedDate = _selectedDate.add(
-                                const Duration(days: 7),
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.chevron_right_rounded,
-                              color: MetaGymTheme.darkTextPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     Row(
                       children: [
-                        for (var i = 0; i < weekDates.length; i++) ...[
+                        for (
+                          var i = 0;
+                          i < _weekdayShortLabels.length;
+                          i++
+                        ) ...[
                           if (i > 0) const SizedBox(width: 5),
                           Expanded(
                             child: _WeekdaySelectorButton(
                               label: _weekdayShortLabels[i],
-                              dayNumber: '${weekDates[i].day}',
-                              isToday: _isSameDay(weekDates[i], todayGym),
-                              selected: _isSameDay(weekDates[i], _selectedDate),
+                              selected: _selectedWeekdayIndex == i,
                               hasSessions: widget.snapshot.bookings.any(
-                                (b) => _isSameDay(b.gymStart, weekDates[i]),
+                                (b) => b.gymStart.weekday == i + 1,
                               ),
                               onTap: () =>
-                                  setState(() => _selectedDate = weekDates[i]),
+                                  setState(() => _selectedWeekdayIndex = i),
                             ),
                           ),
                         ],
@@ -2833,44 +2626,33 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                     if (dayBookings.isEmpty)
                       MetaGymGlassCard(
                         padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Chưa có ca dạy nào ngày ${_formatFullDate(_selectedDate)}.',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFB7B2AF),
-                                fontSize: 13.5,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Chưa có ca dạy nào trong ngày này.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFC8C2BC),
+                                  fontSize: 13.5,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            CoachingSecondaryButton(
-                              label: 'Mở lịch Coach đầy đủ',
-                              onPressed: () => widget.onPushRoute(
-                                '/coach/features/sessions',
+                              const SizedBox(height: 12),
+                              CoachingSecondaryButton(
+                                label: 'Mở lịch Coach đầy đủ',
+                                onPressed: () => widget.onPushRoute(
+                                  '/coach/features/sessions',
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       )
                     else
                       for (final booking in dayBookings)
                         _buildWorkHubBookingCard(booking),
                   ] else ...[
-                    if (pendingRequests.isNotEmpty) ...[
-                      const _CoachSectionHeader(
-                        title: 'Yêu cầu chờ duyệt',
-                        icon: Icons.pending_actions_rounded,
-                      ),
-                      const SizedBox(height: 8),
-                      for (final req in pendingRequests)
-                        _buildRequestCard(
-                          req,
-                          requestsService,
-                          memberNames[req.memberId],
-                        ),
-                      const SizedBox(height: 12),
-                    ],
                     Row(
                       children: [
                         const Expanded(
@@ -2884,11 +2666,11 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                               widget.onPushRoute('/coach/features/members'),
                           borderRadius: BorderRadius.circular(10),
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(minHeight: 44),
+                            constraints: const BoxConstraints(minHeight: 48),
                             child: const Padding(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 8,
-                                vertical: 10,
+                                vertical: 12,
                               ),
                               child: Text(
                                 'Tất cả >',
@@ -2907,22 +2689,25 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                     if (members.isEmpty)
                       MetaGymGlassCard(
                         padding: const EdgeInsets.all(18),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Chưa có hội viên đang phụ trách.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFFB7B2AF),
-                                fontSize: 13,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Chưa có hội viên đang phụ trách.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFC8C2BC),
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            CoachingSecondaryButton(
-                              label: 'Xem gói PT & Bảng giá',
-                              onPressed: widget.onOpenOffers,
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                              CoachingSecondaryButton(
+                                label: 'Xem gói PT & Bảng giá',
+                                onPressed: widget.onOpenOffers,
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     else
@@ -2955,8 +2740,8 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
     };
 
     return MetaGymGlassCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2964,7 +2749,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
             children: [
               Expanded(
                 child: Text(
-                  '${_formatDayMonth(booking.gymStart)} · ${booking.timeRange}',
+                  booking.timeRange,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -2995,10 +2780,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
             booking.focusTitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.darkTextSecondary,
-              fontSize: 12.5,
-            ),
+            style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12.5),
           ),
           if (booking.isUpcomingOrActive) ...[
             const SizedBox(height: 12),
@@ -3007,12 +2789,13 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(48, 44),
+                      minimumSize: const Size(48, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
-                      foregroundColor: const Color(0xFFF7F9FC),
-                      side: const BorderSide(
-                        color: Color(0xA3A79D92),
-                        width: 1.1,
+                      backgroundColor: const Color(0x80211E1C),
+                      foregroundColor: MetaGymTheme.darkTextPrimary,
+                      side: const BorderSide(color: Color(0x9A8C8176)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: widget.onOpenMessages,
@@ -3027,11 +2810,15 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                 Expanded(
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(48, 44),
+                      minimumSize: const Size(48, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
+                      backgroundColor: const Color(0x80211E1C),
                       foregroundColor: MetaGymTheme.dangerCoral,
                       side: BorderSide(
-                        color: MetaGymTheme.dangerCoral.withValues(alpha: 0.45),
+                        color: MetaGymTheme.dangerCoral.withValues(alpha: 0.55),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: widget.isMutating
@@ -3046,11 +2833,24 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: CoachingCompactAccentButton(
-                    label: 'Hoàn tất',
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      backgroundColor: MetaGymTheme.brandOrange,
+                      foregroundColor: MetaGymTheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     onPressed: widget.isMutating
                         ? null
                         : () => widget.onCompleteBooking(booking),
+                    child: const Text(
+                      'Hoàn tất',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -3061,142 +2861,12 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
     );
   }
 
-  Widget _buildRequestCard(
-    CoachIncomingRequest req,
-    CoachRequestsService? service,
-    String? resolvedMemberName,
-  ) {
-    final displayName = (resolvedMemberName?.trim().isNotEmpty ?? false)
-        ? resolvedMemberName!.trim()
-        : 'Hội viên ${req.memberId}';
-    return MetaGymGlassCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      onTap: service == null
-          ? null
-          : () async {
-              final changed = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => CoachRequestDetailPage(
-                    requestId: req.id,
-                    service: service,
-                  ),
-                ),
-              );
-              if (changed == true && mounted) {
-                await widget.onRefresh();
-              }
-            },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CoachingAvatar(fullName: displayName, size: 38, round: true),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextPrimary,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      req.statusLabel,
-                      style: const TextStyle(
-                        color: MetaGymTheme.warningAmber,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const CoachingPill(
-                label: 'Chờ duyệt',
-                tone: CoachingPillTone.amber,
-              ),
-            ],
-          ),
-          if (req.message != null && req.message!.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              '"${req.message!.trim()}"',
-              style: const TextStyle(
-                color: MetaGymTheme.darkTextSecondary,
-                fontSize: 12.5,
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    foregroundColor: MetaGymTheme.dangerCoral,
-                    backgroundColor: coachingWarmNestedSurface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        MetaGymTheme.radiusInput,
-                      ),
-                    ),
-                    side: BorderSide(
-                      color: MetaGymTheme.dangerCoral.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  onPressed: widget.isMutating
-                      ? null
-                      : () => widget.onDecideRequest(req, 'REJECTED'),
-                  child: const Text('Từ chối'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CoachingCompactAccentButton(
-                  label: 'Chấp nhận',
-                  expand: true,
-                  onPressed: widget.isMutating
-                      ? null
-                      : () => widget.onDecideRequest(req, 'ACCEPTED'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMemberCard(
     CoachMemberSummary member,
     CoachMembersService? service,
   ) {
-    return MetaGymGlassCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      onTap: service == null
-          ? null
-          : () async {
-              await Navigator.of(context).push<void>(
-                MaterialPageRoute(
-                  builder: (_) => CoachMemberDetailPage(
-                    memberId: member.memberId,
-                    service: service,
-                  ),
-                ),
-              );
-              if (mounted) await widget.onRefresh();
-            },
+    final content = Padding(
+      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           CoachingAvatar(
@@ -3231,7 +2901,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
           ),
           IconButton(
             tooltip: 'Nhắn tin',
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: widget.onOpenMessages,
             icon: const Icon(
               Icons.chat_bubble_outline_rounded,
@@ -3241,6 +2911,27 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
           ),
         ],
       ),
+    );
+
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: service == null
+          ? content
+          : InkWell(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+              onTap: () async {
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => CoachMemberDetailPage(
+                      memberId: member.memberId,
+                      service: service,
+                    ),
+                  ),
+                );
+                if (mounted) await widget.onRefresh();
+              },
+              child: content,
+            ),
     );
   }
 }
@@ -3255,14 +2946,12 @@ class _CoachQuickActionTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     required this.useSolidFallback,
-    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool useSolidFallback;
-  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -3298,36 +2987,7 @@ class _CoachQuickActionTile extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
-                        if (badgeCount > 0)
-                          Positioned(
-                            right: -8,
-                            top: -5,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: MetaGymTheme.brandOrange,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                badgeCount > 9 ? '9+' : '$badgeCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  fontFeatures: MetaGymTheme.tabularFigures,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    Icon(icon, size: 22, color: MetaGymTheme.brandOrange),
                     const SizedBox(height: 6),
                     Text(
                       label,
@@ -3366,11 +3026,11 @@ class _CoachWeekBubble extends StatelessWidget {
           height: 17,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active ? MetaGymTheme.brandOrange : const Color(0x1AFFFFFF),
+            color: active ? MetaGymTheme.brandOrange : const Color(0x80211E1C),
             border: Border.all(
               color: active
                   ? MetaGymTheme.brandOrange
-                  : const Color(0x33FFFFFF),
+                  : const Color(0x9A8C8176),
               width: 0.9,
             ),
           ),
@@ -3385,7 +3045,7 @@ class _CoachWeekBubble extends StatelessWidget {
           style: TextStyle(
             color: active
                 ? MetaGymTheme.darkTextPrimary
-                : MetaGymTheme.darkTextSecondary,
+                : const Color(0xFFC8C2BC),
             fontSize: 9.5,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
@@ -3473,56 +3133,51 @@ class _CoachMenuRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
+        constraints: const BoxConstraints(minHeight: 58),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           child: Row(
             children: [
               Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.16),
+                  color: accent.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: accent, size: 20),
+                child: Icon(icon, color: accent, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                        color: MetaGymTheme.darkTextPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        height: 1.4,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFB7B2AF),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        height: 1.35,
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFB7B2AF),
+                color: Color(0xFFC8C2BC),
                 size: 20,
               ),
             ],
@@ -3557,45 +3212,49 @@ class _CoachBookingTile extends StatelessWidget {
     };
 
     return MetaGymGlassCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      onTap: onTap,
-      child: Row(
-        children: [
-          CoachingAvatar(fullName: entry.memberName, size: 44, round: true),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  entry.memberName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              CoachingAvatar(fullName: entry.memberName, size: 38, round: true),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.memberName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.darkTextPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${entry.timeRange} · ${entry.focusTitle}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 11.5,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${entry.timeRange} · ${entry.focusTitle}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFB7B2AF),
-                    fontSize: 13,
-                    fontFeatures: MetaGymTheme.tabularFigures,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              pill,
+            ],
           ),
-          const SizedBox(width: 8),
-          pill,
-        ],
+        ),
       ),
     );
   }
@@ -3604,16 +3263,12 @@ class _CoachBookingTile extends StatelessWidget {
 class _WeekdaySelectorButton extends StatelessWidget {
   const _WeekdaySelectorButton({
     required this.label,
-    required this.dayNumber,
-    required this.isToday,
     required this.selected,
     required this.hasSessions,
     required this.onTap,
   });
 
   final String label;
-  final String dayNumber;
-  final bool isToday;
   final bool selected;
   final bool hasSessions;
   final VoidCallback onTap;
@@ -3621,63 +3276,43 @@ class _WeekdaySelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFF33201B) : const Color(0xC42B2622),
+      color: selected ? MetaGymTheme.brandOrange : const Color(0xC42B2622),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: selected
-              ? MetaGymTheme.brandOrange
-              : (isToday
-                    ? MetaGymTheme.reflectionBlue.withValues(alpha: 0.70)
-                    : const Color(0xA3A79D92)),
-          width: selected ? 1.5 : 1.1,
+          color: selected ? MetaGymTheme.brandOrange : const Color(0x9A8C8176),
+          width: 1.1,
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 54),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: selected
-                        ? const Color(0xFFF7F9FC)
-                        : const Color(0xFFB7B2AF),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : const Color(0xFFC8C2BC),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  dayNumber,
-                  style: TextStyle(
-                    color: selected
-                        ? MetaGymTheme.brandOrange
-                        : const Color(0xFFF7F9FC),
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: MetaGymTheme.tabularFigures,
-                  ),
-                ),
+              ),
+              if (hasSessions) ...[
                 const SizedBox(height: 3),
                 Container(
                   width: 5,
                   height: 5,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: hasSessions
-                        ? MetaGymTheme.brandOrange
-                        : Colors.transparent,
+                    color: selected ? Colors.white : MetaGymTheme.brandOrange,
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -3699,21 +3334,19 @@ class _SegmentPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected
-          ? MetaGymTheme.brandOrange.withValues(alpha: 0.20)
-          : const Color(0xC42B2622),
+      color: selected ? const Color(0xFF472C22) : Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: selected ? MetaGymTheme.brandOrange : const Color(0xA3A79D92),
-          width: 1.1,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        side: selected
+            ? const BorderSide(color: MetaGymTheme.brandOrange, width: 1.2)
+            : BorderSide.none,
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
+          constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Center(
@@ -3723,9 +3356,9 @@ class _SegmentPill extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: selected
-                      ? const Color(0xFFF7F9FC)
-                      : const Color(0xFFB7B2AF),
-                  fontSize: 12,
+                      ? MetaGymTheme.darkTextPrimary
+                      : const Color(0xFFC8C2BC),
+                  fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
@@ -3733,6 +3366,120 @@ class _SegmentPill extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CoachModalSheet extends StatelessWidget {
+  const _CoachModalSheet({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        18,
+        12,
+        18,
+        22 + MediaQuery.paddingOf(context).bottom,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xF0241F1B),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0x9A8C8176),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: const TextStyle(
+                color: MetaGymTheme.darkTextPrimary,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12.5),
+            ),
+            const SizedBox(height: 14),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CoachNotificationIconButton extends StatelessWidget {
+  const _CoachNotificationIconButton({
+    required this.unreadCount,
+    required this.onTap,
+  });
+
+  final int unreadCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        MetaGymCircleIconButton(
+          icon: Icons.notifications_none_rounded,
+          tooltip: 'Thông báo Coach',
+          onTap: onTap,
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: IgnorePointer(
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: MetaGymTheme.brandOrange,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: MetaGymTheme.darkCanvas, width: 2),
+                ),
+                child: Text(
+                  unreadCount > 9 ? '9+' : '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

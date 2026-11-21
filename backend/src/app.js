@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { createAuthRouter } from './routes/auth.routes.js';
+import { createAdminAuditRouter } from './routes/admin-audit.routes.js';
 import { createAdminUsersRouter } from './routes/admin-users.routes.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
@@ -15,6 +16,7 @@ import { createCoachBookingsRouter } from './routes/coach-bookings.routes.js';
 import { createPaymentsRouter, createVnpayCallbacksRouter, createMomoCallbacksRouter,
   createZalopayCallbacksRouter } from './routes/payments.routes.js';
 import { createCoachingRouter } from './routes/coaching.routes.js';
+import { createCoachIncidentsRouter } from './routes/coach-incidents.routes.js';
 import { createCoachOutcomesRouter } from './routes/coach-outcomes.routes.js';
 import { createCatalogRouter } from './routes/catalog.routes.js';
 import { createTrainingRouter } from './routes/training.routes.js';
@@ -23,6 +25,7 @@ import { createStructuredNutritionRouter } from './routes/structured-nutrition.r
 import { createSessionsRouter } from './routes/sessions.routes.js';
 import { createMessagingRouter } from './routes/messaging.routes.js';
 import { createRealtimeRouter } from './config/realtime.js';
+import { createMemberNutritionRouter } from './routes/member-nutrition.routes.js';
 import { createProgressRouter } from './routes/progress.routes.js';
 import { createJournalRouter } from './routes/journal.routes.js';
 import { createMemberSelfTrainingRouter } from './routes/member-self-training.routes.js';
@@ -30,6 +33,7 @@ import { createGymVisitsRouter } from './routes/gym-visits.routes.js';
 import { createDashboardRouter } from './routes/dashboard.routes.js';
 import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
 import { createCallsRouter } from './routes/calls.routes.js';
+import { createDocsRouter } from './routes/docs.routes.js';
 import { createPasswordResetsRouter } from './routes/password-resets.routes.js';
 import { createMediaRouter } from './routes/media.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
@@ -97,6 +101,16 @@ export function createApp({
   app.use(morgan((tokens, request, response) =>
     `${tokens.method(request, response)} ${request.originalUrl.split('?')[0]} ${tokens.status(request, response)} ${tokens['response-time'](request, response)} ms`));
 
+  app.get('/ping', (_request, response) => {
+    response.status(200).json({
+      data: {
+        status: 'ok',
+        uptimeSeconds: Math.floor(process.uptime()),
+      },
+    });
+  });
+
+  app.use('/api-docs', createDocsRouter());
   app.use(
     '/api/v1/auth',
     createAuthRouter({ database, jwtSecret, loginRateLimiter }),
@@ -110,6 +124,7 @@ export function createApp({
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
+  app.use('/api/v1', createAdminAuditRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
@@ -121,6 +136,7 @@ export function createApp({
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));
   app.use('/api/v1', createRealtimeRouter({ database, jwtSecret, realtime }));
   app.use('/api/v1', createMessagingRouter({ database, jwtSecret, realtime }));
+  app.use('/api/v1', createMemberNutritionRouter({ database, jwtSecret }));
   app.use('/api/v1', createProgressRouter({ database, jwtSecret }));
   app.use('/api/v1', createJournalRouter({ database, jwtSecret }));
   app.use('/api/v1', createMemberSelfTrainingRouter({ database, jwtSecret }));
@@ -131,6 +147,7 @@ export function createApp({
   app.use('/api/v1', createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay,
     allowMockPayments: nodeEnv !== 'production' && !vnpay && !momo && !zalopay }));
   app.use('/api/v1', createCoachingRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachIncidentsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachOutcomesRouter({ database, jwtSecret, imageStorage }));
 
   return app;

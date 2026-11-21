@@ -1,31 +1,16 @@
+import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_action_button.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:provider/provider.dart';
 
-enum CoachingPillTone { green, amber, coral, neutral }
-
-const coachingWarmGlassSurface = Color(0xC42B2622);
-const coachingWarmGlassBorder = Color(0xA3A79D92);
-const coachingWarmDivider = Color(0x2EADA295);
-const coachingWarmOverlaySurface = Color(0xF526211D);
-const coachingWarmInputFill = Color(0xCC221E1B);
-const coachingWarmInputBorder = Color(0x66A79D92);
-const coachingWarmNestedSurface = Color(0x80211E1C);
-const coachingWarmSelectedChip = Color(0xFF33201B);
-const coachingWarmTextPrimary = Color(0xFFF7F9FC);
-const coachingWarmTextSecondary = Color(0xFFB7B2AF);
-
-RoundedRectangleBorder get coachingDialogShape => RoundedRectangleBorder(
-  borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-  side: const BorderSide(color: coachingWarmGlassBorder, width: 1.1),
-);
+enum CoachingPillTone { green, amber, coral, info, neutral }
 
 T? optionalProvider<T>(BuildContext context) {
   try {
@@ -239,9 +224,14 @@ class CoachingPill extends StatelessWidget {
         const Color(0xFF3D241D),
         const Color(0xFFA54E36),
       ),
+      CoachingPillTone.info => (
+        const Color(0xFF9ACBF5),
+        const Color(0xFF14283B),
+        const Color(0xFF2D5D8A),
+      ),
       CoachingPillTone.neutral => (
-        const Color(0xFFEAE6E2),
-        const Color(0x80211E1C),
+        const Color(0xFFE6E0DA),
+        const Color(0xB82A2521),
         const Color(0x9A8C8176),
       ),
     };
@@ -284,6 +274,7 @@ class CoachingGraphiteCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin,
+    this.backgroundColor,
     this.borderColor,
     this.onTap,
     super.key,
@@ -292,18 +283,49 @@ class CoachingGraphiteCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
+  final Color? backgroundColor;
   final Color? borderColor;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return MetaGymGlassCard(
-      margin: margin,
-      padding: padding,
-      borderColor: borderColor,
-      onTap: onTap,
-      child: child,
+    final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
+    final content = Stack(
+      children: [
+        Padding(padding: padding, child: child),
+        const Positioned(
+          top: 0,
+          left: 18,
+          right: 18,
+          child: IgnorePointer(
+            child: SizedBox(
+              height: 1,
+              child: ColoredBox(color: Color(0x70FFF6EA)),
+            ),
+          ),
+        ),
+      ],
     );
+    final body = Material(
+      color: backgroundColor ?? const Color(0xC42B2622),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(
+          color: borderColor ?? const Color(0xA3A79D92),
+          width: 1.1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null
+          ? content
+          : MetaGymTap(
+              onTap: onTap,
+              borderRadius: radius,
+              child: content,
+            ),
+    );
+    if (margin == null) return body;
+    return Padding(padding: margin!, child: body);
   }
 }
 
@@ -313,300 +335,43 @@ class CoachingPrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.loading = false,
+    this.status = MetaGymActionButtonStatus.idle,
+    this.showSuccessOnCompletion = false,
     super.key,
   });
 
   final String label;
-  final VoidCallback? onPressed;
+  final FutureOr<void> Function()? onPressed;
   final IconData? icon;
   final bool loading;
+  final MetaGymActionButtonStatus status;
+  final bool showSuccessOnCompletion;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: MetaGymTheme.primary,
-          foregroundColor: MetaGymTheme.onPrimary,
-          disabledBackgroundColor: const Color(0xFF3A2924),
-          disabledForegroundColor: Colors.white60,
-          minimumSize: const Size(double.infinity, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          ),
-          textStyle: const TextStyle(
-            fontFamily: MetaGymTheme.fontFamily,
-            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-            fontSize: 18.5,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: MetaGymTheme.onPrimary,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  if (icon != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(icon, size: 20),
-                  ],
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-/// Compact accent action button on Warm Smoked surface so smaller inline
-/// buttons satisfy >= 4.5:1 contrast.
-class CoachingCompactAccentButton extends StatelessWidget {
-  const CoachingCompactAccentButton({
-    required this.label,
-    required this.onPressed,
-    this.icon,
-    this.loading = false,
-    this.expand = false,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final IconData? icon;
-  final bool loading;
-  final bool expand;
-
-  @override
-  Widget build(BuildContext context) {
-    final button = OutlinedButton(
-      onPressed: loading ? null : onPressed,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: MetaGymTheme.brandOrange,
-        backgroundColor: const Color(0xCC2B231E),
-        disabledForegroundColor: coachingWarmTextSecondary,
-        minimumSize: const Size(48, 48),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        side: BorderSide(
-          color: onPressed == null || loading
-              ? coachingWarmInputBorder
-              : MetaGymTheme.brandOrange.withValues(alpha: 0.78),
-        ),
+    return MetaGymActionButton(
+      label: label,
+      icon: icon,
+      onPressed: onPressed,
+      status: loading ? MetaGymActionButtonStatus.loading : status,
+      autoLoading: false,
+      showSuccessOnCompletion: showSuccessOnCompletion,
+      style: FilledButton.styleFrom(
+        backgroundColor: MetaGymTheme.primary,
+        foregroundColor: MetaGymTheme.onPrimary,
+        disabledBackgroundColor: const Color(0xFF3A2924),
+        disabledForegroundColor: Colors.white60,
+        minimumSize: const Size(double.infinity, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
         ),
         textStyle: const TextStyle(
           fontFamily: MetaGymTheme.fontFamily,
           fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-          fontSize: 13.5,
+          fontSize: 16,
           fontWeight: FontWeight.w700,
         ),
-      ),
-      child: loading
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: MetaGymTheme.brandOrange,
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 17),
-                  const SizedBox(width: 6),
-                ],
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-    );
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
-  }
-}
-
-/// Shared Warm Smoked form decoration aligned with `DESIGN.md` & Member Home.
-InputDecoration coachingInputDecoration({
-  required String label,
-  String? hint,
-  String? errorText,
-  IconData? prefixIcon,
-  Widget? suffixIcon,
-}) {
-  return InputDecoration(
-    labelText: label,
-    hintText: hint,
-    errorText: errorText,
-    labelStyle: const TextStyle(
-      color: coachingWarmTextSecondary,
-      fontSize: 13.5,
-    ),
-    floatingLabelStyle: const TextStyle(
-      color: MetaGymTheme.focusBlue,
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-    ),
-    hintStyle: const TextStyle(color: Color(0x99B7B2AF), fontSize: 13.5),
-    counterStyle: const TextStyle(
-      color: coachingWarmTextSecondary,
-      fontSize: 11.5,
-    ),
-    errorStyle: const TextStyle(color: MetaGymTheme.dangerCoral, fontSize: 12),
-    prefixIcon: prefixIcon == null
-        ? null
-        : Icon(prefixIcon, size: 19, color: coachingWarmTextSecondary),
-    suffixIcon: suffixIcon,
-    filled: true,
-    fillColor: coachingWarmInputFill,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: coachingWarmInputBorder),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: coachingWarmInputBorder),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 2),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral, width: 2),
-    ),
-  );
-}
-
-/// Level 3 Overlay Glass modal bottom sheet in Warm Smoked Glass with solid
-/// fallback for reduced motion and widget tests.
-class CoachingOverlaySheet extends StatelessWidget {
-  const CoachingOverlaySheet({
-    required this.title,
-    required this.child,
-    this.subtitle,
-    super.key,
-  });
-
-  final String title;
-  final String? subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    final enableBlur =
-        !media.disableAnimations && !MetaGymTheme.isFlutterTestEnvironment;
-    final bottomInset = media.viewInsets.bottom + media.padding.bottom;
-    const radius = BorderRadius.vertical(
-      top: Radius.circular(MetaGymTheme.radiusGlassDock),
-    );
-
-    final content = Container(
-      decoration: const BoxDecoration(
-        color: coachingWarmOverlaySurface,
-        borderRadius: radius,
-        border: Border(
-          top: BorderSide(color: coachingWarmGlassBorder, width: 1.1),
-        ),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            left: 20,
-            right: 20,
-            top: 0,
-            child: SizedBox(
-              height: 1,
-              child: ColoredBox(color: Color(0x70FFF6EA)),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(18, 12, 18, 20 + bottomInset),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 38,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0x75FFF5E9),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: coachingWarmTextPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (subtitle != null && subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle!,
-                      style: const TextStyle(
-                        color: coachingWarmTextSecondary,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  child,
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (!enableBlur) return content;
-    return ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: MetaGymTheme.overlayGlassBlur,
-          sigmaY: MetaGymTheme.overlayGlassBlur,
-        ),
-        child: content,
       ),
     );
   }
@@ -630,8 +395,8 @@ class CoachingSecondaryButton extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: const Color(0xFFF7F9FC),
-        backgroundColor: const Color(0x332B2622),
-        disabledForegroundColor: MetaGymTheme.textSecondary,
+        backgroundColor: const Color(0xA82B2622),
+        disabledForegroundColor: const Color(0xFF9E958C),
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
@@ -645,7 +410,12 @@ class CoachingSecondaryButton extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      child: Text(
+        label,
+        maxLines: 2,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
@@ -659,17 +429,17 @@ void showCoachingSnackBar(BuildContext context, String message) {
         content: Text(
           message,
           style: const TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: Color(0xFFF7F9FC),
             fontFamily: MetaGymTheme.fontFamily,
             fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: MetaGymTheme.elevatedSurface,
+        backgroundColor: const Color(0xF0241F1B),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          side: const BorderSide(color: MetaGymTheme.darkBorderStrong),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
         ),
       ),
     );
@@ -744,8 +514,8 @@ class CoachOutcomeCard extends StatelessWidget {
                 child: Text(
                   'Hành trình thực tế',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.5,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -760,22 +530,23 @@ class CoachOutcomeCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(bottom: 11),
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0x20FFFFFF))),
+              border: Border(bottom: BorderSide(color: Color(0x26FFF5E9))),
             ),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF324050),
+                  decoration: BoxDecoration(
+                    color: const Color(0x99352D26),
                     shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0x9A8C8176)),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     outcome.studentInitials,
                     style: const TextStyle(
-                      color: Color(0xFFDBE9FA),
+                      color: Color(0xFFF7F9FC),
                       fontSize: 12.5,
                       fontWeight: FontWeight.w800,
                     ),
@@ -789,8 +560,8 @@ class CoachOutcomeCard extends StatelessWidget {
                       Text(
                         outcome.studentName,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.5,
+                          color: Color(0xFFF7F9FC),
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -798,8 +569,8 @@ class CoachOutcomeCard extends StatelessWidget {
                       Text(
                         'Mục tiêu: ${outcome.goal}',
                         style: const TextStyle(
-                          color: Color(0xFFC7CBD2),
-                          fontSize: 11.5,
+                          color: Color(0xFFC8C2BC),
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -816,16 +587,17 @@ class CoachOutcomeCard extends StatelessWidget {
                 const Flexible(
                   child: Text(
                     'Thời gian đồng hành',
-                    style: TextStyle(color: Color(0xFFBFC3CC), fontSize: 11.5),
+                    style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '${outcome.durationWeeks} tuần',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.5,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
+                    fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
               ],
@@ -836,34 +608,35 @@ class CoachOutcomeCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 11),
             decoration: const BoxDecoration(
               border: Border(
-                top: BorderSide(color: Color(0x20FFFFFF)),
-                bottom: BorderSide(color: Color(0x20FFFFFF)),
+                top: BorderSide(color: Color(0x26FFF5E9)),
+                bottom: BorderSide(color: Color(0x26FFF5E9)),
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _MetricCompareColumn(
-                    title: 'Ban đầu',
-                    weightKg: outcome.beforeWeightKg,
-                    bodyFatPercent: outcome.beforeBodyFatPercent,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _MetricCompareColumn(
+                      title: 'Ban đầu',
+                      weightKg: outcome.beforeWeightKg,
+                      bodyFatPercent: outcome.beforeBodyFatPercent,
+                    ),
                   ),
-                ),
-                Container(
-                  width: 1,
-                  height: 44,
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  color: const Color(0x20FFFFFF),
-                ),
-                Expanded(
-                  child: _MetricCompareColumn(
-                    title: 'Sau quá trình tập',
-                    weightKg: outcome.afterWeightKg,
-                    bodyFatPercent: outcome.afterBodyFatPercent,
+                  Container(
+                    width: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    color: const Color(0x26FFF5E9),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: _MetricCompareColumn(
+                      title: 'Sau quá trình tập',
+                      weightKg: outcome.afterWeightKg,
+                      bodyFatPercent: outcome.afterBodyFatPercent,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           if (hasPhotos) ...[
@@ -911,22 +684,27 @@ class _MetricCompareColumn extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(color: Color(0xFFAEB5C0), fontSize: 10.5),
+          style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 11.5),
         ),
         const SizedBox(height: 4),
         Text(
           '${CoachOutcomeCase.formatNumber(weightKg)} kg',
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
+            color: Color(0xFFF7F9FC),
+            fontSize: 16,
             fontWeight: FontWeight.w700,
+            fontFeatures: MetaGymTheme.tabularFigures,
           ),
         ),
         if (bodyFatPercent != null) ...[
           const SizedBox(height: 2),
           Text(
             '${CoachOutcomeCase.formatNumber(bodyFatPercent!)}% mỡ cơ thể',
-            style: const TextStyle(color: Color(0xFFCCD0D7), fontSize: 10.5),
+            style: const TextStyle(
+              color: Color(0xFFE4DAD1),
+              fontSize: 11.5,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
           ),
         ],
       ],
@@ -942,13 +720,13 @@ class _OutcomePhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(13);
+    final radius = BorderRadius.circular(14);
     final placeholder = Container(
       height: 156,
       decoration: BoxDecoration(
-        color: MetaGymTheme.elevatedSurface,
+        color: const Color(0x80211E1C),
         borderRadius: radius,
-        border: Border.all(color: MetaGymTheme.darkBorderStrong),
+        border: Border.all(color: const Color(0x9A8C8176)),
       ),
       alignment: Alignment.center,
       child: Column(
@@ -956,15 +734,15 @@ class _OutcomePhotoTile extends StatelessWidget {
         children: [
           const Icon(
             Icons.person_outline_rounded,
-            color: MetaGymTheme.textSecondary,
+            color: Color(0xFFC8C2BC),
             size: 26,
           ),
           const SizedBox(height: 6),
           Text(
             '$label · tùy chọn',
             style: const TextStyle(
-              color: Color(0xFFB7BCC5),
-              fontSize: 11,
+              color: Color(0xFFC8C2BC),
+              fontSize: 11.5,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -990,14 +768,15 @@ class _OutcomePhotoTile extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: MetaGymTheme.darkCanvas.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(7),
+                color: const Color(0xDE1B1714),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0x66FFF5E9)),
               ),
               child: Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
+                  color: Color(0xFFF7F9FC),
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                 ),
               ),

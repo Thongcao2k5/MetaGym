@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
@@ -64,7 +65,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Giờ kết thúc phải sau giờ bắt đầu.'), findsOneWidget);
       expect(sessions.updated, isNull);
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Quay lại'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hủy buổi'));
       await tester.pumpAndSettle();
@@ -156,6 +157,37 @@ void main() {
       await tester.tap(find.text('Quản lý lịch làm việc Coach'));
       await tester.pumpAndSettle();
       expect(find.text('Booking'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'renders header subtitle without truncation or overflow at 375x812',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final sessions = _SessionsFixture(seed: true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CoachSessionsPage(
+            service: sessions,
+            membersService: _MembersFixture(),
+            coachBooking: const Scaffold(body: Center(child: Text('Booking'))),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final subtitleFinder = find.text('Buổi tập 1:1 & điểm danh');
+      expect(find.text('Quản lý buổi tập'), findsOneWidget);
+      expect(subtitleFinder, findsOneWidget);
+      final renderParagraph = tester.renderObject<RenderParagraph>(subtitleFinder);
+      expect(renderParagraph.didExceedMaxLines, isFalse);
       expect(tester.takeException(), isNull);
     },
   );

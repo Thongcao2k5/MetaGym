@@ -43,6 +43,14 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  void _submit(AuthController auth) {
+    auth.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+      rememberMe: _rememberMe,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
@@ -53,45 +61,53 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           AuthStaggeredEntrance(
             delayMs: 0,
-            child: AuthTopHeader(
-              onBack: auth.isSubmitting
-                  ? null
-                  : () {
-                      auth.clearErrors();
-                      context.go(AppRoutes.welcome);
-                    },
+            child: const AuthTopHeader(
+              onBack: null,
+              showBackButton: false,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           AuthStaggeredEntrance(
             delayMs: 70,
             child: WarmSmokeGlass(
-              padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  AuthModeSegmentSwitch(
+                    isLogin: true,
+                    onSelectLogin: null,
+                    onSelectRegister: auth.isSubmitting
+                        ? null
+                        : () {
+                            auth.clearErrors();
+                            context.go(AppRoutes.register);
+                          },
+                  ),
+                  const SizedBox(height: 14),
                   const Text(
-                    'Đăng nhập',
-                    textAlign: TextAlign.center,
+                    'Chào mừng trở lại',
+                    textAlign: TextAlign.left,
                     style: TextStyle(
-                      color: MetaGymTheme.textPrimary,
-                      fontSize: 27,
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   const Text(
-                    'Tiếp tục lịch tập và kết nối cùng\nHuấn luyện viên của bạn.',
-                    textAlign: TextAlign.center,
+                    'Đăng nhập để tiếp tục lịch tập và kết nối cùng Coach của bạn.',
+                    textAlign: TextAlign.left,
                     style: TextStyle(
-                      color: Color(0xFFD5CCBF),
-                      fontSize: 13.5,
-                      height: 1.45,
+                      color: Color(0xFFB7B2AF),
+                      fontSize: 13,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 14),
                   AuthGlassField(
                     fieldKey: const Key('login-email'),
                     controller: _emailController,
@@ -99,10 +115,11 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: 'name@example.com',
                     icon: Icons.alternate_email_rounded,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.email],
                     errorText: auth.fieldErrors['email'],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   AuthGlassField(
                     fieldKey: const Key('login-password'),
                     controller: _passwordController,
@@ -110,15 +127,19 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: 'Nhập mật khẩu của bạn',
                     icon: Icons.lock_outline_rounded,
                     obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: auth.isSubmitting
+                        ? null
+                        : (_) => _submit(auth),
                     autofillHints: const [AutofillHints.password],
                     errorText: auth.fieldErrors['password'],
                     suffixIcon: IconButton(
                       key: const Key('login-toggle-password'),
-                      tooltip:
-                          _obscurePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
-                      onPressed: () => setState(
-                        () => _obscurePassword = !_obscurePassword,
-                      ),
+                      tooltip: _obscurePassword
+                          ? 'Hiện mật khẩu'
+                          : 'Ẩn mật khẩu',
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
@@ -128,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Wrap(
                     alignment: WrapAlignment.spaceBetween,
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -141,58 +162,68 @@ class _LoginPageState extends State<LoginPage> {
                         onTap: auth.isSubmitting
                             ? null
                             : () => setState(() => _rememberMe = !_rememberMe),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 2,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 160),
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: _rememberMe
-                                      ? MetaGymTheme.brandOrange
-                                      : const Color(0x88181513),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 44),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AnimatedContainer(
+                                  duration:
+                                      MetaGymTheme.isFlutterTestEnvironment ||
+                                          MediaQuery.disableAnimationsOf(
+                                            context,
+                                          )
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 160),
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
                                     color: _rememberMe
                                         ? MetaGymTheme.brandOrange
-                                        : const Color(0xA3A79D92),
+                                        : const Color(0x88181513),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: _rememberMe
+                                          ? MetaGymTheme.brandOrange
+                                          : const Color(0xA3A79D92),
+                                    ),
+                                  ),
+                                  child: _rememberMe
+                                      ? const Icon(
+                                          Icons.check_rounded,
+                                          size: 14,
+                                          color: Colors.white,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Ghi nhớ đăng nhập',
+                                  style: TextStyle(
+                                    color: Color(0xFFF7F9FC),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                child: _rememberMe
-                                    ? const Icon(
-                                        Icons.check_rounded,
-                                        size: 14,
-                                        color: Colors.white,
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Ghi nhớ đăng nhập',
-                                style: TextStyle(
-                                  color: MetaGymTheme.textPrimary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                       TextButton(
                         onPressed: auth.isSubmitting
                             ? null
-                            : () => context.push(AppRoutes.forgotPassword),
+                            : () {
+                                auth.clearErrors();
+                                context.push(AppRoutes.forgotPassword);
+                              },
                         style: TextButton.styleFrom(
-                          foregroundColor: MetaGymTheme.brandOrange,
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          minimumSize: const Size(0, 34),
+                          foregroundColor: MetaGymTheme.reflectionBlue,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(44, 44),
+                          tapTargetSize: MaterialTapTargetSize.padded,
                         ),
                         child: const Text(
                           'Quên mật khẩu?',
@@ -211,49 +242,33 @@ class _LoginPageState extends State<LoginPage> {
                       message: auth.errorMessage!,
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   AuthPrimaryButton(
                     buttonKey: const Key('login-submit'),
                     isLoading: auth.isSubmitting,
-                    label:
-                        auth.isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập',
-                    onPressed: auth.isSubmitting
-                        ? null
-                        : () => auth.login(
-                            email: _emailController.text,
-                            password: _passwordController.text,
-                            rememberMe: _rememberMe,
-                          ),
+                    label: auth.isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập',
+                    trailingIcon: Icons.arrow_forward_rounded,
+                    onPressed: auth.isSubmitting ? null : () => _submit(auth),
                   ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 4,
+                  const SizedBox(height: 10),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Chưa có tài khoản?',
-                        style: TextStyle(
-                          color: Color(0xFFD5CCBF),
-                          fontSize: 13,
-                        ),
+                      Icon(
+                        Icons.verified_user_outlined,
+                        size: 14,
+                        color: Color(0xFFA39B93),
                       ),
-                      TextButton(
-                        onPressed: auth.isSubmitting
-                            ? null
-                            : () {
-                                auth.clearErrors();
-                                context.go(AppRoutes.register);
-                              },
-                        style: TextButton.styleFrom(
-                          foregroundColor: MetaGymTheme.brandOrange,
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                        ),
-                        child: const Text(
-                          'Đăng ký Member',
+                      SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Không gian Hội viên & Huấn luyện viên Meta Gym',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFA39B93),
+                            fontSize: 11.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),

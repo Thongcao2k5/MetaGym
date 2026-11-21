@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
 /// Level 2 Performance Glass bottom navigation bar for Meta Gym Member & Coach.
 ///
@@ -248,6 +249,16 @@ class _NavTabItem extends StatelessWidget {
     final color = selected
         ? MetaGymTheme.brandOrange
         : MetaGymTheme.darkTextSecondary;
+    final overlayColor = WidgetStateProperty.resolveWith<Color?>((states) {
+      if (states.contains(WidgetState.focused) ||
+          states.contains(WidgetState.hovered)) {
+        return MetaGymTheme.reflectionBlue.withValues(alpha: 0.18);
+      }
+      if (states.contains(WidgetState.pressed)) {
+        return MetaGymTheme.brandOrange.withValues(alpha: 0.18);
+      }
+      return Colors.transparent;
+    });
 
     return Semantics(
       button: true,
@@ -255,11 +266,12 @@ class _NavTabItem extends StatelessWidget {
       label: label,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: MetaGymTap(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16.0),
           splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.12),
           highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.06),
+          overlayColor: overlayColor,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
             child: Column(
@@ -268,7 +280,7 @@ class _NavTabItem extends StatelessWidget {
                 AnimatedScale(
                   scale: selected ? 1.06 : 1.0,
                   duration: duration,
-                  curve: Curves.easeOutBack,
+                  curve: Curves.easeOutCubic,
                   child: Icon(icon, size: 22.0, color: color),
                 ),
                 const SizedBox(height: 4.0),
@@ -319,79 +331,80 @@ class _AiCenterButton extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 68.0, minHeight: 68.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              AnimatedScale(
-                scale: selected ? 1.06 : 1.0,
-                duration: duration,
-                curve: Curves.easeOutBack,
-                child: Container(
-                  width: 52.0,
-                  height: 52.0,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: selected || warmGlass
-                        ? MetaGymTheme.brandOrange
-                        : MetaGymTheme.darkSurfaceRaised,
-                    border: Border.all(
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: MetaGymTap(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          splashColor: Colors.white.withValues(alpha: 0.26),
+          highlightColor: Colors.white.withValues(alpha: 0.16),
+          focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.2),
+          child: SizedBox(
+            width: 68,
+            height: 68,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedScale(
+                  scale: selected ? 1.04 : 1.0,
+                  duration: duration,
+                  curve: Curves.easeOutCubic,
+                  child: Container(
+                    width: 52.0,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
                       color: selected || warmGlass
                           ? MetaGymTheme.brandOrange
-                          : MetaGymTheme.cardBorder,
-                      width: 1.0,
+                          : MetaGymTheme.darkSurfaceRaised,
+                      border: Border.all(
+                        color: selected || warmGlass
+                            ? MetaGymTheme.brandOrange
+                            : MetaGymTheme.cardBorder,
+                        width: 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: MetaGymTheme.brandOrange.withValues(
+                            alpha: selected ? 0.2 : (warmGlass ? 0.12 : 0.0),
+                          ),
+                          blurRadius: selected ? 10.0 : 6.0,
+                          spreadRadius: selected ? 0.5 : 0.0,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.35 : (warmGlass ? 0.22 : 0.05),
-                        ),
-                        blurRadius: selected ? 20.0 : 14.0,
-                        spreadRadius: selected ? 2.0 : 0.5,
-                        offset: const Offset(0, 3),
+                    child: Center(
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        color: selected || warmGlass
+                            ? Colors.white
+                            : MetaGymTheme.brandOrange,
+                        size: 24.0,
                       ),
-                      BoxShadow(
-                        color: MetaGymTheme.brandOrange.withValues(
-                          alpha: selected ? 0.15 : 0.0,
-                        ),
-                        blurRadius: selected ? 32.0 : 24.0,
-                        spreadRadius: selected ? 4.0 : 1.0,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.auto_awesome_rounded,
-                      color: selected || warmGlass
-                          ? Colors.white
-                          : MetaGymTheme.brandOrange,
-                      size: 24.0,
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 4.0),
-              AnimatedDefaultTextStyle(
-                duration: duration,
-                curve: Curves.easeOutCubic,
-                style: TextStyle(
-                  fontFamily: MetaGymTheme.fontFamily,
-                  color: selected
-                      ? MetaGymTheme.brandOrange
-                      : MetaGymTheme.darkTextSecondary,
-                  fontSize: 11.0,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  letterSpacing: 0.2,
-                  height: 1.15,
+                const SizedBox(height: 2),
+                AnimatedDefaultTextStyle(
+                  duration: duration,
+                  curve: Curves.easeOutCubic,
+                  style: TextStyle(
+                    fontFamily: MetaGymTheme.fontFamily,
+                    color: selected
+                        ? MetaGymTheme.brandOrange
+                        : MetaGymTheme.darkTextSecondary,
+                    fontSize: 11.0,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    letterSpacing: 0.2,
+                    height: 1.15,
+                  ),
+                  child: Text(label),
                 ),
-                child: Text(label),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

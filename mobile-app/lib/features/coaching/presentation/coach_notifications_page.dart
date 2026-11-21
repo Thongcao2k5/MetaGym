@@ -3,16 +3,12 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
-import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
-import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:provider/provider.dart';
 
 class CoachNotificationsPage extends StatefulWidget {
-  const CoachNotificationsPage({this.coachRole = false, super.key});
-
-  final bool coachRole;
+  const CoachNotificationsPage({super.key});
 
   @override
   State<CoachNotificationsPage> createState() => _CoachNotificationsPageState();
@@ -22,11 +18,6 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   late final _api = CoachV2Api(context.read<ApiClient>());
   late Future<List<CoachRecord>> _items = _api.list('/coach-notifications');
   bool _saving = false;
-
-  bool get _isCoachRole =>
-      widget.coachRole ||
-      optionalProvider<SessionController>(context)?.user?.role ==
-          UserRole.coach;
 
   Future<void> _reload() async {
     final future = _api.list('/coach-notifications');
@@ -55,20 +46,17 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     }
   }
 
-  Future<void> _markAllRead(List<CoachRecord> items) async {
-    final unread = items.where((item) => item['readAt'] == null).toList();
-    if (_saving || unread.isEmpty) return;
+  Future<void> _markAllAsRead(List<CoachRecord> items) async {
+    final unreadItems = items
+        .where((item) => item['readAt'] == null && item['id'] != null)
+        .toList();
+    if (_saving || unreadItems.isEmpty) return;
     setState(() => _saving = true);
     try {
-      for (final item in unread) {
+      for (final item in unreadItems) {
         await _api.patch('/coach-notifications/${item['id']}/read', {});
       }
-      if (mounted) {
-        await _reload();
-        if (mounted) {
-          showCoachingSnackBar(context, 'Đã đánh dấu tất cả là đã đọc.');
-        }
-      }
+      if (mounted) await _reload();
     } on ApiException catch (error) {
       if (mounted) showCoachingSnackBar(context, error.message);
     } catch (_) {
@@ -80,32 +68,41 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     }
   }
 
-  String _titleForKind(Object? kind) {
-    if (_isCoachRole) {
-      return switch (kind) {
-        'BOOKED' => 'Học viên vừa đặt lịch dạy 90 phút',
-        'COMPLETED' => 'Buổi dạy 90 phút đã hoàn tất',
-        'CANCELLED' => 'Buổi dạy đã hủy hoặc đổi lịch',
-        'PACKAGE_ACTIVE' => 'Gói PT của học viên đã kích hoạt',
-        'PACKAGE_QUEUED' => 'Học viên có gói PT chờ nối tiếp',
-        'PACKAGE_EXTENDED' => 'Gói PT học viên được gia hạn 7 ngày',
-        'PACKAGE_LAST_SESSION' => 'Học viên còn 1 buổi PT cuối',
-        'PACKAGE_ENDED' => 'Gói PT của học viên đã kết thúc',
-        'PACKAGE_EXPIRING' => 'Gói PT học viên còn tối đa 7 ngày',
-        _ => 'Có cập nhật mới từ học viên',
-      };
-    }
+  String _titleForKind(Object? kind) => switch (kind) {
+    'BOOKED' => 'Có lịch tập mới với Coach',
+    'COMPLETED' => 'Coach đã xác nhận buổi tập',
+    'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
+    'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
+    'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
+    'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
+    'PACKAGE_LAST_SESSION' => 'Gói Coach còn 1 buổi',
+    'PACKAGE_ENDED' => 'Gói Coach đã kết thúc',
+    'PACKAGE_EXPIRING' => 'Gói Coach còn tối đa 7 ngày',
+    _ => 'Có cập nhật về Coach',
+  };
+
+  IconData _iconForKind(Object? kind, {required bool unread}) => switch (kind) {
+    'BOOKED' => Icons.event_available_rounded,
+    'COMPLETED' => Icons.task_alt_rounded,
+    'CANCELLED' => Icons.event_busy_rounded,
+    'PACKAGE_ACTIVE' => Icons.verified_rounded,
+    'PACKAGE_QUEUED' => Icons.hourglass_top_rounded,
+    'PACKAGE_EXTENDED' => Icons.update_rounded,
+    'PACKAGE_LAST_SESSION' || 'PACKAGE_EXPIRING' => Icons.schedule_rounded,
+    'PACKAGE_ENDED' => Icons.inventory_2_outlined,
+    _ =>
+      unread
+          ? Icons.notifications_active_outlined
+          : Icons.notifications_none_rounded,
+  };
+
+  Color _accentForKind(Object? kind, {required bool unread}) {
+    if (!unread) return const Color(0xFFC8C2BC);
     return switch (kind) {
-      'BOOKED' => 'Có lịch tập mới với Coach',
-      'COMPLETED' => 'Coach đã xác nhận buổi tập',
-      'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
-      'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
-      'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
-      'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
-      'PACKAGE_LAST_SESSION' => 'Gói Coach còn 1 buổi',
-      'PACKAGE_ENDED' => 'Gói Coach đã kết thúc',
-      'PACKAGE_EXPIRING' => 'Gói Coach còn tối đa 7 ngày',
-      _ => 'Có cập nhật về Coach',
+      'COMPLETED' || 'PACKAGE_ACTIVE' => MetaGymTheme.success,
+      'CANCELLED' => MetaGymTheme.dangerCoral,
+      'PACKAGE_LAST_SESSION' || 'PACKAGE_EXPIRING' => MetaGymTheme.warning,
+      _ => MetaGymTheme.brandOrange,
     };
   }
 
@@ -117,31 +114,45 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leadingWidth: canPop ? 68 : null,
+        leadingWidth: canPop ? 72 : null,
         leading: canPop
             ? Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Center(
-                  child: Tooltip(
-                    message: 'Back',
-                    child: MetaGymCircleIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      tooltip: 'Quay lại',
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: () => Navigator.of(context).maybePop(),
                   ),
                 ),
               )
             : null,
-        title: const Text(
-          'Thông báo Coach',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: MetaGymTheme.textPrimary,
-            fontSize: 19,
-            fontWeight: FontWeight.w700,
-          ),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Thông báo',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Color(0xFFF7F9FC),
+                fontSize: 18.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'Thông báo Coach',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         actions: [
           Padding(
@@ -182,11 +193,16 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                       : 'Không tải được thông báo.';
                   return RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
                       children: [
                         CoachingErrorBanner(message: message),
                         CoachingSecondaryButton(
@@ -207,31 +223,47 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                 if (items.isEmpty) {
                   return RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: MetaGymTheme.cardSurface,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                      children: const [
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
+                      children: [
                         MetaGymHeroGlassCard(
-                          padding: EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(20),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.notifications_none_rounded,
-                                color: MetaGymTheme.brandOrange,
-                                size: 24,
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: const Color(0x26FF5E36),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0x66FF5E36),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: MetaGymTheme.brandOrange,
+                                  size: 24,
+                                ),
                               ),
-                              SizedBox(width: 12),
-                              Expanded(
+                              const SizedBox(width: 14),
+                              const Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Chưa có thông báo.',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
-                                        fontSize: 15.5,
+                                        color: Color(0xFFF7F9FC),
+                                        fontSize: 16,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -239,7 +271,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                     Text(
                                       'Các cập nhật lịch tập và gói Coach sẽ xuất hiện tại đây.',
                                       style: TextStyle(
-                                        color: Color(0xFFBEC3CB),
+                                        color: Color(0xFFC8C2BC),
                                         fontSize: 12.5,
                                         height: 1.45,
                                       ),
@@ -257,11 +289,16 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
 
                 return RefreshIndicator(
                   color: MetaGymTheme.brandOrange,
-                  backgroundColor: MetaGymTheme.cardSurface,
+                  backgroundColor: const Color(0xFF282320),
                   onRefresh: _reload,
                   child: ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      12,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 28,
+                    ),
                     itemCount: items.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -269,45 +306,65 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(18),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
                                   Expanded(
-                                    child: _NotificationMetric(
-                                      label: 'Chưa đọc',
-                                      value: '$unreadCount',
-                                      accent: unreadCount > 0,
+                                    child: MetaGymMetricPanel(
+                                      child: _NotificationMetric(
+                                        label: 'Chưa đọc',
+                                        value: '$unreadCount',
+                                        accent: unreadCount > 0,
+                                      ),
                                     ),
                                   ),
-                                  Container(
-                                    width: 1,
-                                    height: 40,
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    color: const Color(0x26FFFFFF),
-                                  ),
+                                  const SizedBox(width: 10),
                                   Expanded(
-                                    child: _NotificationMetric(
-                                      label: 'Tổng thông báo',
-                                      value: '${items.length}',
+                                    child: MetaGymMetricPanel(
+                                      child: _NotificationMetric(
+                                        label: 'Tổng thông báo',
+                                        value: '${items.length}',
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                               if (unreadCount > 0) ...[
                                 const SizedBox(height: 12),
-                                CoachingCompactAccentButton(
-                                  label: _saving
-                                      ? 'Đang cập nhật…'
-                                      : 'Đánh dấu tất cả đã đọc',
-                                  icon: Icons.done_all_rounded,
-                                  expand: true,
-                                  loading: _saving,
-                                  onPressed: _saving
-                                      ? null
-                                      : () => _markAllRead(items),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _saving
+                                        ? null
+                                        : () => _markAllAsRead(items),
+                                    icon: const Icon(
+                                      Icons.done_all_rounded,
+                                      size: 18,
+                                      color: MetaGymTheme.brandOrange,
+                                    ),
+                                    label: const Text(
+                                      'Đánh dấu đã đọc hết',
+                                      style: TextStyle(
+                                        color: Color(0xFFF7F9FC),
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(
+                                        double.infinity,
+                                        48,
+                                      ),
+                                      backgroundColor: const Color(0x28FF5E36),
+                                      side: const BorderSide(
+                                        color: Color(0x75FF5E36),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ],
@@ -318,10 +375,18 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                       final item = items[index - 1];
                       final unread = item['readAt'] == null;
                       final createdAt = item['createdAt'] as String?;
+                      final kind = item['kind'];
+                      final accentColor = _accentForKind(kind, unread: unread);
 
-                      return MetaGymGlassCard(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
+                      return CoachingGraphiteCard(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(15),
+                        backgroundColor: unread
+                            ? const Color(0xD4332A24)
+                            : const Color(0xC42B2622),
+                        borderColor: unread
+                            ? const Color(0x88FF5E36)
+                            : const Color(0xA3A79D92),
                         onTap: unread && !_saving ? () => _read(item) : null,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,22 +396,18 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                               height: 44,
                               decoration: BoxDecoration(
                                 color: unread
-                                    ? const Color(0x24FF5E36)
+                                    ? accentColor.withValues(alpha: 0.18)
                                     : const Color(0x80211E1C),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(13),
                                 border: Border.all(
                                   color: unread
-                                      ? const Color(0x55FF5E36)
+                                      ? accentColor.withValues(alpha: 0.48)
                                       : const Color(0x9A8C8176),
                                 ),
                               ),
                               child: Icon(
-                                unread
-                                    ? Icons.notifications_active_outlined
-                                    : Icons.notifications_none_rounded,
-                                color: unread
-                                    ? MetaGymTheme.brandOrange
-                                    : const Color(0xFFB7B2AF),
+                                _iconForKind(kind, unread: unread),
+                                color: accentColor,
                                 size: 20,
                               ),
                             ),
@@ -361,13 +422,14 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          _titleForKind(item['kind']),
+                                          _titleForKind(kind),
                                           style: TextStyle(
                                             color: MetaGymTheme.textPrimary,
                                             fontWeight: unread
                                                 ? FontWeight.w700
                                                 : FontWeight.w600,
                                             fontSize: 14.5,
+                                            height: 1.35,
                                           ),
                                         ),
                                       ),
@@ -380,6 +442,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                           decoration: const BoxDecoration(
                                             color: MetaGymTheme.brandOrange,
                                             shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Color(0x66FF5E36),
+                                                blurRadius: 6,
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -405,7 +473,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                                         Text(
                                           formatVietnamTime(createdAt),
                                           style: const TextStyle(
-                                            color: Color(0xFFB7B2AF),
+                                            color: Color(0xFFC8C2BC),
                                             fontSize: 12,
                                             fontFeatures:
                                                 MetaGymTheme.tabularFigures,
@@ -449,7 +517,11 @@ class _NotificationMetric extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFFBEC3CB), fontSize: 12),
+          style: const TextStyle(
+            color: Color(0xFFC8C2BC),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 4),
         Text(

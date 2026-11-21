@@ -1,8 +1,8 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
@@ -93,54 +93,57 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
     }).toList();
   }
 
-  void _handleBottomNavTap(BuildContext context, int index) {
-    final router = GoRouter.maybeOf(context);
-    switch (index) {
-      case 0:
-        if (router != null) {
-          router.go('/member');
-        } else {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      case 1:
-        break;
-      case 2:
-        router?.push('/member/features/ai');
-      case 3:
-        router?.push('/member/features/messages');
-      case 4:
-        router?.push('/profile');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final specialties = _specialtyFilters;
     final filtered = _filteredCoaches;
-    final bottomPadding = MetaGymBottomNav.contentBottomPadding(context);
+    final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
-      extendBody: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leadingWidth: canPop ? 72 : null,
+        leading: canPop
+            ? Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+              )
+            : null,
+        titleSpacing: canPop ? 8 : 16,
         title: const Text(
           'Khám phá Coach',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.2,
+            color: Color(0xFFF7F9FC),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: MetaGymCircleIconButton(
+                icon: Icons.refresh_rounded,
+                tooltip: 'Tải lại',
+                onTap: _loading ? null : _load,
+              ),
+            ),
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      bottomNavigationBar: MetaGymBottomNav(
-        currentIndex: 1,
-        warmGlass: true,
-        onTap: (index) => _handleBottomNavTap(context, index),
+        foregroundColor: const Color(0xFFF7F9FC),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -156,138 +159,188 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: const Color(0xFF181B22),
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 32,
+                      ),
                       children: [
-                        const Text(
-                          'Xem chuyên môn và lịch làm việc trước khi chọn gói phù hợp.',
-                          style: TextStyle(
-                            color: Color(0xFFC5C8CF),
-                            fontSize: 13.5,
-                            height: 1.45,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
                         if (_error != null) ...[
                           CoachingErrorBanner(message: _error!),
-                          TextButton(
-                            onPressed: _load,
-                            style: TextButton.styleFrom(
-                              foregroundColor: MetaGymTheme.brandOrange,
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: _load,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: MetaGymTheme.primary,
+                                foregroundColor: MetaGymTheme.onPrimary,
+                                minimumSize: const Size(120, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text(
+                                'Thử lại',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ),
-                            child: const Text('Thử lại'),
                           ),
                         ] else if (_coaches.isEmpty)
                           const MetaGymGlassCard(
                             padding: EdgeInsets.all(18),
                             child: Text(
                               'Chưa có Coach để lựa chọn.',
-                              style: TextStyle(color: Colors.white70),
+                              style: TextStyle(
+                                color: Color(0xFFE4DAD1),
+                                fontSize: 14,
+                              ),
                             ),
                           )
                         else ...[
-                          TextField(
-                            key: const Key('coach-search-input'),
-                            controller: _searchController,
-                            onChanged: (value) =>
-                                setState(() => _searchTerm = value),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Tìm tên hoặc chuyên môn Coach',
-                              hintStyle: const TextStyle(
-                                color: MetaGymTheme.textSecondary,
-                                fontSize: 13,
-                              ),
-                              prefixIcon: const Icon(
-                                Icons.search_rounded,
-                                color: MetaGymTheme.textSecondary,
-                                size: 20,
-                              ),
-                              suffixIcon: _searchTerm.isNotEmpty
-                                  ? IconButton(
-                                      tooltip: 'Xóa tìm kiếm',
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() => _searchTerm = '');
-                                      },
-                                      icon: const Icon(
-                                        Icons.close_rounded,
-                                        color: MetaGymTheme.textSecondary,
-                                        size: 18,
-                                      ),
-                                    )
-                                  : null,
-                              filled: true,
-                              fillColor: MetaGymTheme.cardSurface,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  MetaGymTheme.radiusInput,
-                                ),
-                                borderSide: const BorderSide(
-                                  color: MetaGymTheme.darkBorderStrong,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  MetaGymTheme.radiusInput,
-                                ),
-                                borderSide: const BorderSide(
-                                  color: MetaGymTheme.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
+                          MetaGymHeroGlassCard(
+                            padding: const EdgeInsets.all(14),
+                            margin: const EdgeInsets.only(bottom: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _FilterChipButton(
-                                  label: 'Tất cả',
-                                  selected: _selectedFilter == 'ALL',
-                                  onTap: () =>
-                                      setState(() => _selectedFilter = 'ALL'),
-                                ),
-                                const SizedBox(width: 8),
-                                _FilterChipButton(
-                                  label: 'Còn suất',
-                                  selected: _selectedFilter == 'AVAILABLE',
-                                  onTap: () => setState(
-                                    () => _selectedFilter = 'AVAILABLE',
+                                const Text(
+                                  'Xem chuyên môn và lịch làm việc trước khi chọn gói phù hợp.',
+                                  style: TextStyle(
+                                    color: Color(0xFFE4DAD1),
+                                    fontSize: 13.5,
+                                    height: 1.45,
                                   ),
                                 ),
-                                for (final spec in specialties) ...[
-                                  const SizedBox(width: 8),
-                                  _FilterChipButton(
-                                    label: spec,
-                                    selected: _selectedFilter == spec,
-                                    onTap: () =>
-                                        setState(() => _selectedFilter = spec),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  key: const Key('coach-search-input'),
+                                  controller: _searchController,
+                                  onChanged: (value) =>
+                                      setState(() => _searchTerm = value),
+                                  cursorColor: MetaGymTheme.brandOrange,
+                                  style: const TextStyle(
+                                    color: Color(0xFFF7F9FC),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                ],
+                                  decoration: InputDecoration(
+                                    hintText: 'Tìm tên hoặc chuyên môn Coach',
+                                    hintStyle: const TextStyle(
+                                      color: Color(0xFFB8B0A8),
+                                      fontSize: 13.5,
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.search_rounded,
+                                      color: MetaGymTheme.brandOrange,
+                                      size: 20,
+                                    ),
+                                    suffixIcon: _searchTerm.isNotEmpty
+                                        ? IconButton(
+                                            tooltip: 'Xóa tìm kiếm',
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              setState(() => _searchTerm = '');
+                                            },
+                                            icon: const Icon(
+                                              Icons.close_rounded,
+                                              color: Color(0xFFC8C2BC),
+                                              size: 18,
+                                            ),
+                                          )
+                                        : null,
+                                    filled: true,
+                                    fillColor: const Color(0x80211E1C),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        MetaGymTheme.radiusInput,
+                                      ),
+                                      borderSide: const BorderSide(
+                                        color: Color(0x9A8C8176),
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        MetaGymTheme.radiusInput,
+                                      ),
+                                      borderSide: const BorderSide(
+                                        color: Color(0x9A8C8176),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        MetaGymTheme.radiusInput,
+                                      ),
+                                      borderSide: const BorderSide(
+                                        color: MetaGymTheme.primary,
+                                        width: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      _FilterChipButton(
+                                        label: 'Tất cả',
+                                        selected: _selectedFilter == 'ALL',
+                                        onTap: () => setState(
+                                          () => _selectedFilter = 'ALL',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _FilterChipButton(
+                                        label: 'Còn suất',
+                                        selected:
+                                            _selectedFilter == 'AVAILABLE',
+                                        onTap: () => setState(
+                                          () => _selectedFilter = 'AVAILABLE',
+                                        ),
+                                      ),
+                                      for (final spec in specialties) ...[
+                                        const SizedBox(width: 8),
+                                        _FilterChipButton(
+                                          label: spec,
+                                          selected: _selectedFilter == spec,
+                                          onTap: () => setState(
+                                            () => _selectedFilter = spec,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 14),
                           if (filtered.isEmpty)
-                            CoachingGraphiteCard(
+                            Container(
                               padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xC42B2622),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xA3A79D92),
+                                  width: 1.1,
+                                ),
+                              ),
                               child: Column(
                                 children: [
                                   const Text(
                                     'Không tìm thấy Coach',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFFF7F9FC),
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -296,7 +349,7 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                                   const Text(
                                     'Thử tên hoặc chuyên môn khác.',
                                     style: TextStyle(
-                                      color: MetaGymTheme.textSecondary,
+                                      color: Color(0xFFC8C2BC),
                                       fontSize: 13,
                                     ),
                                   ),
@@ -309,6 +362,10 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                                         _selectedFilter = 'ALL';
                                       });
                                     },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: MetaGymTheme.primary,
+                                      minimumSize: const Size(96, 44),
+                                    ),
                                     child: const Text('Xóa bộ lọc'),
                                   ),
                                 ],
@@ -318,8 +375,9 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                             for (final coach in filtered)
                               _CoachDiscoveryCard(
                                 coach: coach,
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
+                                onTap: () => MetaGymNavigation.pushOnce<void>(
+                                  context,
+                                  MetaGymPageRoute(
                                     builder: (_) => CoachDetailPage(
                                       coachId: coach.id,
                                       service: _service!,
@@ -352,30 +410,35 @@ class _FilterChipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      animationDuration: MetaGymTheme.stateDurationOf(context),
       color: selected
-          ? MetaGymTheme.primary.withValues(alpha: 0.2)
-          : MetaGymTheme.elevatedSurface,
+          ? MetaGymTheme.primary.withValues(alpha: 0.22)
+          : const Color(0x80211E1C),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(999),
         side: BorderSide(
-          color: selected
-              ? MetaGymTheme.primary
-              : MetaGymTheme.darkBorderStrong,
+          color: selected ? MetaGymTheme.primary : const Color(0x9A8C8176),
         ),
       ),
-      child: InkWell(
+      child: MetaGymTap(
+        selected: selected,
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected
-                  ? MetaGymTheme.textPrimary
-                  : const Color(0xFFCDD0D5),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 40),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected
+                      ? const Color(0xFFF7F9FC)
+                      : const Color(0xFFD6CFC8),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
@@ -393,105 +456,122 @@ class _CoachDiscoveryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final available = coach.availableSlots > 0;
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CoachingAvatar(
-                fullName: coach.fullName,
-                avatarUrl: coach.avatarUrl,
-                size: 48,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: const Color(0xC42B2622),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      coach.fullName,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                    CoachingAvatar(
+                      fullName: coach.fullName,
+                      avatarUrl: coach.avatarUrl,
+                      size: 48,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            coach.fullName,
+                            style: const TextStyle(
+                              color: Color(0xFFF7F9FC),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (coach.specialties.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              coach.specialties.join(' · '),
+                              style: const TextStyle(
+                                color: Color(0xFFC8C2BC),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (coach.specialties.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        coach.specialties.join(' · '),
-                        style: const TextStyle(
-                          color: MetaGymTheme.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFFC8C2BC),
+                    ),
                   ],
                 ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: MetaGymTheme.textSecondary,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Xem hồ sơ, lịch làm việc và gói huấn luyện.',
-            style: TextStyle(
-              color: MetaGymTheme.textSecondary,
-              fontSize: 12.5,
-              height: 1.4,
+                const SizedBox(height: 10),
+                const Text(
+                  'Xem hồ sơ, lịch làm việc và gói huấn luyện.',
+                  style: TextStyle(
+                    color: Color(0xFFE4DAD1),
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CoachingPill(
+                      label: available
+                          ? 'Còn ${coach.availableSlots} suất'
+                          : 'Hết suất',
+                      tone: available
+                          ? CoachingPillTone.green
+                          : CoachingPillTone.amber,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x80211E1C),
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusInput,
+                        ),
+                        border: Border.all(color: const Color(0x9A8C8176)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Xem hồ sơ',
+                            style: TextStyle(
+                              color: Color(0xFFF7F9FC),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: MetaGymTheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              CoachingPill(
-                label: available
-                    ? 'Còn ${coach.availableSlots} suất'
-                    : 'Hết suất',
-                tone: available
-                    ? CoachingPillTone.green
-                    : CoachingPillTone.amber,
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.elevatedSurface,
-                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  border: Border.all(color: MetaGymTheme.darkBorderStrong),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Xem hồ sơ',
-                      style: TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      color: MetaGymTheme.primary,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

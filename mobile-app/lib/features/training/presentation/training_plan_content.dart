@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 
 class TrainingPlanContent extends StatelessWidget {
@@ -16,134 +15,137 @@ class TrainingPlanContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Overview Card
-        MetaGymHeroGlassCard(
+        MetaGymGlassCard(
           padding: const EdgeInsets.all(MetaGymTheme.cardPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x26FF5A36),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0x59FF5A36)),
-                    ),
-                    child: Text(
-                      '${plan.statusLabel} · Phiên bản ${plan.version}',
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: MetaGymTheme.fontFamily,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x14A9C7E8),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0x2EA9C7E8)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.calendar_view_week_rounded,
-                          size: 14,
-                          color: MetaGymTheme.reflectionBlue,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${plan.days.length} ngày tập',
-                          style: const TextStyle(
-                            color: MetaGymTheme.darkTextSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: MetaGymTheme.fontFamily,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                plan.title,
-                style: const TextStyle(
-                  color: MetaGymTheme.darkTextPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.02,
-                  fontFamily: MetaGymTheme.fontFamily,
-                ),
-              ),
-              if (plan.goal?.isNotEmpty == true) ...[
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    const Icon(
-                      Icons.track_changes_rounded,
-                      size: 16,
-                      color: MetaGymTheme.reflectionBlue,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x26FF5A36),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0x59FF5A36)),
+                      ),
                       child: Text(
-                        'Mục tiêu: ${plan.goal}',
+                        '${plan.statusLabel} · Phiên bản ${plan.version}',
                         style: const TextStyle(
-                          color: MetaGymTheme.darkTextSecondary,
-                          fontSize: 14,
+                          color: MetaGymTheme.brandOrange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                           fontFamily: MetaGymTheme.fontFamily,
                         ),
                       ),
                     ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x80211E1C),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0x9A8C8176)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.calendar_view_week_rounded,
+                            size: 14,
+                            color: MetaGymTheme.reflectionBlue,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${plan.days.length} ngày tập',
+                            style: const TextStyle(
+                              color: Color(0xFFC8C2BC),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: MetaGymTheme.fontFamily,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ],
-              if (plan.startDate != null ||
-                  plan.endDate != null ||
-                  plan.publishedAt != null) ...[
-                const SizedBox(height: 14),
-                const Divider(color: coachingWarmDivider, height: 1),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 6,
-                  children: [
-                    if (plan.startDate != null)
-                      _MetaInfoPill(
-                        icon: Icons.play_circle_outline_rounded,
-                        text: 'Bắt đầu: ${plan.startDate}',
-                      ),
-                    if (plan.endDate != null)
-                      _MetaInfoPill(
-                        icon: Icons.event_available_rounded,
-                        text: 'Kết thúc: ${plan.endDate}',
-                      ),
-                    if (plan.publishedAt != null)
-                      _MetaInfoPill(
-                        icon: Icons.verified_outlined,
-                        text: 'Công bố: ${plan.publishedAt}',
-                      ),
-                  ],
+                Text(
+                  plan.title,
+                  style: const TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.02,
+                    fontFamily: MetaGymTheme.fontFamily,
+                  ),
                 ),
+                if (plan.goal?.isNotEmpty == true) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.track_changes_rounded,
+                        size: 16,
+                        color: MetaGymTheme.reflectionBlue,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Mục tiêu: ${plan.goal}',
+                          style: const TextStyle(
+                            color: Color(0xFFC8C2BC),
+                            fontSize: 14,
+                            fontFamily: MetaGymTheme.fontFamily,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (plan.startDate != null ||
+                    plan.endDate != null ||
+                    plan.publishedAt != null) ...[
+                  const SizedBox(height: 14),
+                  const Divider(color: Color(0x26FFF5E9), height: 1),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
+                    children: [
+                      if (plan.startDate != null)
+                        _MetaInfoPill(
+                          icon: Icons.play_circle_outline_rounded,
+                          text: 'Bắt đầu: ${plan.startDate}',
+                        ),
+                      if (plan.endDate != null)
+                        _MetaInfoPill(
+                          icon: Icons.event_available_rounded,
+                          text: 'Kết thúc: ${plan.endDate}',
+                        ),
+                      if (plan.publishedAt != null)
+                        _MetaInfoPill(
+                          icon: Icons.verified_outlined,
+                          text: 'Công bố: ${plan.publishedAt}',
+                        ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
 
@@ -181,9 +183,9 @@ class TrainingPlanContent extends StatelessWidget {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0x1FA9C7E8),
+                            color: const Color(0x80211E1C),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0x3DA9C7E8)),
+                            border: Border.all(color: const Color(0x9A8C8176)),
                           ),
                           child: Text(
                             'Buổi ${day.dayNumber}',
@@ -200,7 +202,7 @@ class TrainingPlanContent extends StatelessWidget {
                           child: Text(
                             'Ngày ${day.dayNumber}: ${day.title}',
                             style: const TextStyle(
-                              color: MetaGymTheme.darkTextPrimary,
+                              color: Color(0xFFF7F9FC),
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                               fontFamily: MetaGymTheme.fontFamily,
@@ -214,7 +216,7 @@ class TrainingPlanContent extends StatelessWidget {
                       Text(
                         'Lịch ngày ${day.scheduledDate!.substring(8, 10)}/${day.scheduledDate!.substring(5, 7)}/${day.scheduledDate!.substring(0, 4)}',
                         style: const TextStyle(
-                          color: MetaGymTheme.darkTextSecondary,
+                          color: Color(0xFFC8C2BC),
                           fontSize: 13,
                         ),
                       ),
@@ -226,7 +228,7 @@ class TrainingPlanContent extends StatelessWidget {
                         child: Text(
                           day.notes!,
                           style: const TextStyle(
-                            color: MetaGymTheme.darkTextTertiary,
+                            color: Color(0xFFB8B0A8),
                             fontSize: 13,
                             fontFamily: MetaGymTheme.fontFamily,
                           ),
@@ -240,15 +242,15 @@ class TrainingPlanContent extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: coachingWarmNestedSurface,
+                          color: const Color(0x80211E1C),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: coachingWarmInputBorder),
+                          border: Border.all(color: const Color(0x9A8C8176)),
                         ),
                         child: const Center(
                           child: Text(
                             'Chưa có bài tập.',
                             style: TextStyle(
-                              color: coachingWarmTextSecondary,
+                              color: Color(0xFFB8B0A8),
                               fontSize: 14,
                               fontFamily: MetaGymTheme.fontFamily,
                             ),
@@ -262,7 +264,7 @@ class TrainingPlanContent extends StatelessWidget {
                     const Text(
                       'Lịch ăn',
                       style: TextStyle(
-                        color: MetaGymTheme.darkTextPrimary,
+                        color: Color(0xFFF7F9FC),
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -272,7 +274,7 @@ class TrainingPlanContent extends StatelessWidget {
                       const Text(
                         'Coach chưa xếp lịch ăn cho ngày này.',
                         style: TextStyle(
-                          color: MetaGymTheme.darkTextTertiary,
+                          color: Color(0xFFB8B0A8),
                           fontSize: 13,
                         ),
                       )
@@ -296,14 +298,14 @@ class TrainingPlanContent extends StatelessWidget {
                                     Text(
                                       '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
                                       style: const TextStyle(
-                                        color: MetaGymTheme.darkTextSecondary,
+                                        color: Color(0xFFC8C2BC),
                                         fontSize: 12,
                                       ),
                                     ),
                                     Text(
                                       meal.title,
                                       style: const TextStyle(
-                                        color: MetaGymTheme.darkTextPrimary,
+                                        color: Color(0xFFF7F9FC),
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -312,7 +314,7 @@ class TrainingPlanContent extends StatelessWidget {
                                       Text(
                                         meal.notes!,
                                         style: const TextStyle(
-                                          color: MetaGymTheme.darkTextTertiary,
+                                          color: Color(0xFFB8B0A8),
                                           fontSize: 12,
                                         ),
                                       ),
@@ -343,12 +345,12 @@ class _MetaInfoPill extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: coachingWarmTextSecondary),
+        Icon(icon, size: 14, color: const Color(0xFFB8B0A8)),
         const SizedBox(width: 4),
         Text(
           text,
           style: const TextStyle(
-            color: coachingWarmTextSecondary,
+            color: Color(0xFFB8B0A8),
             fontSize: 12,
             fontFamily: MetaGymTheme.fontFamily,
           ),
@@ -370,9 +372,9 @@ class _ExerciseCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: coachingWarmNestedSurface,
+        color: const Color(0x80211E1C),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x52A79D92)),
+        border: Border.all(color: const Color(0x9A8C8176)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,9 +387,9 @@ class _ExerciseCard extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: coachingWarmGlassSurface,
+                  color: const Color(0x80211E1C),
                   shape: BoxShape.circle,
-                  border: Border.all(color: coachingWarmInputBorder),
+                  border: Border.all(color: const Color(0x9A8C8176)),
                 ),
                 child: Text(
                   '$index',
@@ -404,7 +406,7 @@ class _ExerciseCard extends StatelessWidget {
                 child: Text(
                   exercise.exerciseName,
                   style: const TextStyle(
-                    color: MetaGymTheme.darkTextPrimary,
+                    color: Color(0xFFF7F9FC),
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     fontFamily: MetaGymTheme.fontFamily,
@@ -455,7 +457,7 @@ class _ExerciseCard extends StatelessWidget {
                   child: Text(
                     'Mức tạ: ${exercise.weightGuidance}',
                     style: const TextStyle(
-                      color: MetaGymTheme.darkTextSecondary,
+                      color: Color(0xFFC8C2BC),
                       fontSize: 13,
                       fontFamily: MetaGymTheme.fontFamily,
                     ),
@@ -470,7 +472,7 @@ class _ExerciseCard extends StatelessWidget {
             Text(
               exercise.instructions!,
               style: const TextStyle(
-                color: MetaGymTheme.darkTextSecondary,
+                color: Color(0xFFC8C2BC),
                 fontSize: 13,
                 height: 1.35,
                 fontFamily: MetaGymTheme.fontFamily,
@@ -517,7 +519,7 @@ class _ExerciseCard extends StatelessWidget {
             Text(
               exercise.notes!,
               style: const TextStyle(
-                color: MetaGymTheme.darkTextTertiary,
+                color: Color(0xFFB8B0A8),
                 fontSize: 12,
                 fontFamily: MetaGymTheme.fontFamily,
               ),

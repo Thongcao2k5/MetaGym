@@ -272,7 +272,16 @@ void main() {
       );
 
       // Select tomorrow on calendar and pick 08:00 shift
-      await tester.tap(find.text('${adapter.tomorrowDay}').first);
+      if (adapter.tomorrowCrossesWeek) {
+        await tester.tap(find.byTooltip('Tuần sau'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text('${adapter.tomorrowDay}'),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('08:00 – 09:30'));
       await tester.pumpAndSettle();
@@ -280,7 +289,16 @@ void main() {
       expect(find.text('Đặt lịch'), findsOneWidget);
 
       // Select day after tomorrow on calendar and pick 18:00 shift
-      await tester.tap(find.text('${adapter.dayAfterDay}').first);
+      if (adapter.dayAfterCrossesWeek) {
+        await tester.tap(find.byTooltip('Tuần sau'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text('${adapter.dayAfterDay}'),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('18:00 – 19:30'));
       await tester.pumpAndSettle();
@@ -658,8 +676,10 @@ class _MultiBookingAdapter implements HttpClientAdapter {
         .add(const Duration(hours: 21, minutes: 30))
         .subtract(const Duration(hours: 7))
         .toIso8601String();
-    // Pick days within the same Monday..Sunday week if Sunday, or +1/+2 days normally;
-    // since week starts Monday, we ensure tomorrow/dayAfter stay visible or switch to Month mode if Sunday:
+    // Calendar defaults to Mon..Sun week view; track week boundaries for Sat/Sun runs.
+    DateTime weekMonday(DateTime d) => d.subtract(Duration(days: d.weekday - 1));
+    tomorrowCrossesWeek = weekMonday(tmrw) != weekMonday(todayDay);
+    dayAfterCrossesWeek = weekMonday(dayAfter) != weekMonday(tmrw);
     tomorrowStr = tmrw.toIso8601String().substring(0, 10);
     dayAfterStr = dayAfter.toIso8601String().substring(0, 10);
     tomorrowDay = tmrw.day;
@@ -673,6 +693,8 @@ class _MultiBookingAdapter implements HttpClientAdapter {
   late final String dayAfterStr;
   late final int tomorrowDay;
   late final int dayAfterDay;
+  late final bool tomorrowCrossesWeek;
+  late final bool dayAfterCrossesWeek;
   final List<String> createdStartsAt = [];
 
   @override

@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -89,17 +90,20 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
 
   Future<void> _confirmPublish() async {
     if (_guide?.status != 'DRAFT' || _busy || !_validate()) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: coachingWarmOverlaySurface,
+        backgroundColor: const Color(0xF0241F1B),
         surfaceTintColor: Colors.transparent,
-        shape: coachingDialogShape,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+        ),
         title: const Text(
           'Công bố hướng dẫn?',
           style: TextStyle(
-            color: coachingWarmTextPrimary,
+            color: MetaGymTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -107,7 +111,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
         content: const Text(
           'Member sẽ thấy hướng dẫn này; bản cũ chuyển vào lịch sử.',
           style: TextStyle(
-            color: coachingWarmTextSecondary,
+            color: Color(0xFFC8C2BC),
             fontSize: 14,
             height: 1.45,
           ),
@@ -116,14 +120,22 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
-              foregroundColor: coachingWarmTextSecondary,
-              minimumSize: const Size(48, 44),
+              foregroundColor: const Color(0xFFC8C2BC),
+              minimumSize: const Size(48, 48),
             ),
             child: const Text('Quay lại'),
           ),
-          CoachingCompactAccentButton(
-            label: 'Xác nhận công bố',
+          FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.primary,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              ),
+            ),
+            child: const Text('Xác nhận công bố'),
           ),
         ],
       ),
@@ -157,27 +169,30 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
       borderSide: BorderSide(
-        color: enabled ? coachingWarmInputBorder : coachingWarmDivider,
+        color: enabled ? const Color(0x9A8C8176) : const Color(0x528C8176),
       ),
     );
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
       filled: true,
-      fillColor: enabled ? coachingWarmInputFill : coachingWarmNestedSurface,
+      fillColor: enabled ? const Color(0x80211E1C) : const Color(0x52211E1C),
       labelStyle: const TextStyle(
-        color: coachingWarmTextSecondary,
+        color: Color(0xFFC8C2BC),
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
       floatingLabelStyle: const TextStyle(
-        color: MetaGymTheme.reflectionBlue,
+        color: MetaGymTheme.brandOrange,
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      hintStyle: const TextStyle(color: Color(0x99B7B2AF), fontSize: 13.5),
+      hintStyle: const TextStyle(
+        color: Color(0xFFB8B0A8),
+        fontSize: 13.5,
+      ),
       counterStyle: const TextStyle(
-        color: coachingWarmTextSecondary,
+        color: Color(0xFFB8B0A8),
         fontSize: 11,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -185,11 +200,11 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
       enabledBorder: border,
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: coachingWarmDivider),
+        borderSide: const BorderSide(color: Color(0x528C8176)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.focusBlue, width: 1.8),
+        borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.5),
       ),
     );
   }

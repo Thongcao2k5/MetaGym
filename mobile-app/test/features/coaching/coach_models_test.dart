@@ -25,4 +25,27 @@ void main() {
     expect(coach.availableSlots, 2);
     expect(request.status, 'PENDING');
   });
+
+  test('decodes custom dynamic CoachPackagePlan with optional description', () {
+    final plan = CoachPackagePlan.fromJson({
+      'code': 'PRO_40',
+      'name': 'Chuyên sâu 40 buổi',
+      'description': 'Lộ trình 120 ngày dành cho mục tiêu thi đấu/tăng cơ dài hạn',
+      'sessionCount': 40,
+      'durationDays': 120,
+      'price': 7200000,
+      'status': 'ACTIVE',
+    });
+
+    expect(plan.code, 'PRO_40');
+    expect(plan.name, 'Chuyên sâu 40 buổi');
+    expect(
+      plan.description,
+      'Lộ trình 120 ngày dành cho mục tiêu thi đấu/tăng cơ dài hạn',
+    );
+    expect(plan.sessionCount, 40);
+    expect(plan.durationDays, 120);
+    expect(plan.price, 7200000);
+    expect(plan.status, 'ACTIVE');
+  });
 }

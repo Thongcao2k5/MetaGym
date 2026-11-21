@@ -35,7 +35,6 @@ test('VNPay settles membership only from a verified server result and renews onc
   skip: !databaseUrl,
 }, async (t) => {
   const database = new pg.Pool({ connectionString: databaseUrl });
-  t.after(() => database.end());
   let queryStatus = '01';
   let signQueryResponse = false;
   const gateway = createVnpayFromEnv({
@@ -68,11 +67,24 @@ test('VNPay settles membership only from a verified server result and renews onc
   const api = `http://127.0.0.1:${server.address().port}/api/v1`;
   const [memberId, strangerId, planId] = Array.from({ length: 3 }, () => randomUUID());
   const fixtureAdmin = randomUUID();
-  await database.query(
+  const insertedAdmin = await database.query(
     `INSERT INTO users (id, email, password_hash, role, full_name)
-     VALUES ($1, $2, 'hash', 'ADMIN', 'Admin') ON CONFLICT DO NOTHING`,
+     VALUES ($1, $2, 'hash', 'ADMIN', 'Admin') ON CONFLICT DO NOTHING RETURNING id`,
     [fixtureAdmin, `${fixtureAdmin}@example.com`],
   );
+  t.after(async () => {
+    try {
+      await database.query('DELETE FROM member_memberships WHERE member_id IN ($1, $2)', [memberId, strangerId]);
+      await database.query('DELETE FROM payments WHERE member_id IN ($1, $2)', [memberId, strangerId]);
+      await database.query('DELETE FROM membership_plans WHERE id = $1', [planId]);
+      await database.query('DELETE FROM users WHERE id IN ($1, $2)', [memberId, strangerId]);
+      if (insertedAdmin.rowCount > 0) {
+        await database.query('DELETE FROM users WHERE id = $1', [fixtureAdmin]);
+      }
+    } finally {
+      await database.end();
+    }
+  });
   const { rows: [{ id: adminId }] } = await database.query("SELECT id FROM users WHERE role = 'ADMIN'");
   await database.query(
     `INSERT INTO users (id, email, password_hash, role, full_name)

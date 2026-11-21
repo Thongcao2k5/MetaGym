@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
@@ -90,11 +91,16 @@ void main() {
     await tester.tap(find.text('Coach coach-1'));
     await tester.pumpAndSettle();
     expect(find.text('Tin 0'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('Tải tin cũ'),
-      find.byType(ListView).last,
-      const Offset(0, 250),
+    final scrollable = find.descendant(
+      of: find.byType(ListView).last,
+      matching: find.byType(Scrollable),
     );
+    await tester.scrollUntilVisible(
+      find.text('Tải tin cũ'),
+      50.0,
+      scrollable: scrollable,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Tải tin cũ'));
     await tester.pumpAndSettle();
     expect(service.messagePages, [1, 2]);
@@ -487,6 +493,52 @@ void main() {
       expect(find.byType(InteractiveViewer), findsNothing);
     },
   );
+
+  testWidgets(
+    'shows inline Vietnamese banner on 403 RECIPIENT_ACCOUNT_DISABLED while preserving readable history',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final service = _Fixture(active: true, recipientDisabled: true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ConversationsPage(service: service, currentUserId: 'member-1'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Coach coach-1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tin nhắn cũ'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Xin chào Coach');
+      await tester.tap(find.text('Gửi'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('chat-recipient-disabled-banner')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Không thể gửi tin nhắn vì tài khoản người nhận đang bị khóa',
+        ),
+        findsOneWidget,
+      );
+      // Readable history must remain intact and visible.
+      expect(find.text('Tin nhắn cũ'), findsOneWidget);
+      expect(find.text('Thử gửi lại'), findsNothing);
+
+      // Composer is disabled after RECIPIENT_ACCOUNT_DISABLED.
+      final callsAfterDisable = service.sendCalls;
+      await tester.tap(find.text('Gửi'));
+      await tester.pump();
+      expect(service.sendCalls, callsAfterDisable);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _ImageFixture implements ProgressPhotoPicker {
@@ -505,6 +557,7 @@ class _Fixture implements MessagingService {
     this.active = false,
     this.fullFirstPage = false,
     this.failSendOnce = false,
+    this.recipientDisabled = false,
     this.imageHistory = false,
     this.failImageUrlOnce = false,
     this.coachName,
@@ -516,6 +569,7 @@ class _Fixture implements MessagingService {
   final bool active;
   final bool fullFirstPage;
   final bool failSendOnce;
+  final bool recipientDisabled;
   final bool imageHistory;
   final bool failImageUrlOnce;
   final String? coachName;
@@ -597,6 +651,17 @@ class _Fixture implements MessagingService {
     );
     sendCalls++;
     sentIds.add(clientMessageId);
+    if (recipientDisabled) {
+      return Future.error(
+        const ApiException(
+          kind: ApiExceptionKind.forbidden,
+          statusCode: 403,
+          code: 'RECIPIENT_ACCOUNT_DISABLED',
+          message:
+              'Không thể gửi tin nhắn vì tài khoản người nhận đang bị khóa',
+        ),
+      );
+    }
     if (persistSentMessages) {
       final msg = ChatMessage(
         id: 'sent-$sendCalls',

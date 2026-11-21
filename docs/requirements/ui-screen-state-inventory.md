@@ -54,7 +54,6 @@ Bottom navigation Member hiện có đúng 5 mục: **Trang chủ · Tập luy�
 | **Dinh dưỡng Coach** `/member/features/nutrition` | Hướng dẫn hiện hành, mục tiêu/ghi chú, lịch sử phiên bản | Chưa có Coach; Coach chưa gửi; ACTIVE; ARCHIVED; PAUSED chỉ xem | Có khung; chưa có từng bữa có cấu trúc |
 | **Tiến độ** `/member/features/progress` | Tổng quan, biểu đồ số đo theo khoảng ngày, nhật ký gần đây, nhận xét Coach, lối vào các loại dữ liệu | Chưa ghi gì; có một loại dữ liệu; nhiều dữ liệu; không đủ điểm vẽ biểu đồ; không Coach/không nhận xét | Có khung |
 | **Nhật ký tập** `/member/features/workouts` | Danh sách, chi tiết, thêm bản ghi: ngày, thời lượng, nội dung, cảm nhận; nhận xét Coach | Chưa ghi → “Bắt đầu ghi lại”; có bản ghi; thêm/sửa nếu được phép; PAUSED/EXPIRED chỉ xem | Có khung |
-| **Nhật ký ăn** `/member/features/meals` | Danh sách, thêm bữa: thời gian, món/ghi chú/ảnh nếu API hỗ trợ; nhận xét | Chưa ghi → “Ghi bữa đầu tiên”; có bản ghi; PAUSED/EXPIRED chỉ xem | Có khung |
 | **Số đo cơ thể** `/member/features/measurements` | Lịch sử, nhập cân nặng/số đo, biểu đồ/so sánh | Chưa có; một điểm; đủ điểm; giá trị không hợp lệ | Có khung |
 | **Ảnh tiến trình** `/member/features/photos` | Lưới ảnh, xem ảnh, thêm ảnh/chú thích/ngày | Chưa có; đang tải lên; ảnh lỗi; ảnh đã xóa/URL hết hạn | Có khung |
 | **Tin nhắn** tab 4 | Danh sách hội thoại, số chưa đọc/thời điểm; trang chat với văn bản, ảnh, xem ảnh, gửi lại | Chưa có Coach/hội thoại; ACTIVE; PAUSED/ENDED chỉ đọc; đang gửi; gửi lỗi; tải tin cũ | Có khung; API danh sách chưa có preview văn bản |
@@ -109,7 +108,6 @@ Admin web hiện là một SPA với form/bảng trong từng section; chưa c�
 4. **Bài viết/khám phá:** hiện 2 nội dung cố định trong app. Nếu Admin cần quản lý bài, phải bổ sung model/API/CMS; nếu chỉ demo thiết kế, ghi rõ mẫu cố định.
 5. **Tìm kiếm toàn app:** header hiện có nút tìm, cần quyết định phạm vi (Coach, thiết bị, bài viết, v.v.) trước khi thiết kế trang kết quả; không hứa tìm toàn hệ thống khi chưa có API.
 6. **Gọi thoại/video:** tài liệu nghiệp vụ dự định dùng SDK, nhưng code hiện chủ yếu quản lý trạng thái cuộc gọi. Phải kiểm tra và bổ sung tích hợp media thực trước khi thiết kế màn hình gọi như đã hoạt động.
-7. **Dinh dưỡng dạng bữa:** hướng dẫn Coach là văn bản; nhật ký ăn là dữ liệu Member nhập. Không gộp hai nguồn thành một lịch ăn hằng ngày nếu chưa định nghĩa dữ liệu.
 8. **Thông báo:** chưa thấy trang/thực thể thông báo riêng trong điều hướng hiện tại; không thêm tab thông báo vào MVP nếu không chốt nguồn sự kiện và API.
 
 ## 8. Thứ tự thiết kế để triển khai ít làm lại

@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -80,6 +81,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -110,8 +112,9 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                               CoachingGraphiteCard(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 onTap: () async {
-                                  await Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  await MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => widget.structured
                                           ? MealPlansPage(
                                               memberId: member.memberId,
@@ -220,8 +223,9 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
   }
 
   Future<void> _open(NutritionGuide? guide) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachNutritionEditorPage(
           memberId: widget.member.memberId,
           service: widget.service,
@@ -274,6 +278,7 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),

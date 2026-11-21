@@ -1,5 +1,5 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -10,7 +10,6 @@ import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
-import 'package:meta_gym_app/features/training/presentation/meal_plans_page.dart';
 
 class CoachMemberDetailPage extends StatefulWidget {
   const CoachMemberDetailPage({
@@ -81,7 +80,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
   Future<void> _requestTermination() async {
     final member = _member;
     if (_busy || member == null) return;
-    final reason = await showDialog<String>(
+    final reason = await MetaGymNavigation.showDialogOnce<String>(
       context: context,
       builder: (_) => const _TerminationRequestDialog(),
     );
@@ -120,7 +119,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
     final apiClient = optionalProvider<ApiClient>(context);
     if (_busy || apiClient == null) return;
     final api = CoachOutcomeApi(apiClient);
-    final created = await showDialog<CoachOutcomeCase>(
+    final created = await MetaGymNavigation.showDialogOnce<CoachOutcomeCase>(
       context: context,
       builder: (_) => _CreateOutcomeDialog(
         memberId: widget.memberId,
@@ -179,20 +178,16 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
       backgroundColor: MetaGymTheme.darkCanvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leadingWidth: canPop ? 68 : null,
+        leadingWidth: canPop ? 72 : null,
         leading: canPop
             ? Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Center(
-                  child: Tooltip(
-                    message: 'Back',
-                    child: MetaGymCircleIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      tooltip: 'Quay lại',
-                      onTap: _busy
-                          ? null
-                          : () => Navigator.of(context).maybePop(),
-                    ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MetaGymCircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    tooltip: 'Quay lại',
+                    onTap: _busy ? null : () => Navigator.of(context).maybePop(),
                   ),
                 ),
               )
@@ -202,7 +197,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: Color(0xFFF7F9FC),
             fontSize: 19,
             fontWeight: FontWeight.w700,
           ),
@@ -237,11 +232,16 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: coachingWarmOverlaySurface,
+                    backgroundColor: const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        12,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 28,
+                      ),
                       children: [
                         if (_error != null) ...[
                           CoachingErrorBanner(message: _error!),
@@ -255,77 +255,6 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                           _MemberHeroCard(member: member),
                           if (showHealth)
                             _HealthDeclarationCard(member: member),
-                          if (member.status == 'ACTIVE') ...[
-                            MetaGymGlassCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Thao tác nhanh với học viên',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      if (hasApiClient)
-                                        CoachingCompactAccentButton(
-                                          label: 'Thực đơn 7 ngày',
-                                          icon: Icons.restaurant_menu_rounded,
-                                          onPressed: _busy
-                                              ? null
-                                              : () => Navigator.of(context)
-                                                    .push(
-                                                      MaterialPageRoute<void>(
-                                                        builder: (_) =>
-                                                            MealPlansPage(
-                                                              memberId: member
-                                                                  .memberId,
-                                                              editable: true,
-                                                            ),
-                                                      ),
-                                                    ),
-                                        ),
-                                      if (GoRouter.maybeOf(context) !=
-                                          null) ...[
-                                        CoachingSecondaryButton(
-                                          label: 'Giáo trình',
-                                          onPressed: _busy
-                                              ? null
-                                              : () => context.push(
-                                                  '/coach/features/training',
-                                                ),
-                                        ),
-                                        CoachingSecondaryButton(
-                                          label: 'Lịch tập',
-                                          onPressed: _busy
-                                              ? null
-                                              : () => context.push(
-                                                  '/coach/features/sessions',
-                                                ),
-                                        ),
-                                        CoachingSecondaryButton(
-                                          label: 'Nhắn tin',
-                                          onPressed: _busy
-                                              ? null
-                                              : () => context.push(
-                                                  '/coach/features/messages',
-                                                ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                           MetaGymGlassCard(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
@@ -346,8 +275,8 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                   const Text(
                                     'Quản trị viên đang xem xét yêu cầu ngừng phụ trách của bạn.',
                                     style: TextStyle(
-                                      color: Color(0xFFB7B2AF),
-                                      fontSize: 13,
+                                      color: Color(0xFFC8C2BC),
+                                      fontSize: 12.5,
                                       height: 1.45,
                                     ),
                                   ),
@@ -386,10 +315,31 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  CoachingCompactAccentButton(
-                                    label: 'Gửi thành quả',
-                                    icon: Icons.add_rounded,
+                                  FilledButton.icon(
                                     onPressed: _busy ? null : _submitOutcome,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: MetaGymTheme.primary,
+                                      foregroundColor: MetaGymTheme.onPrimary,
+                                      minimumSize: const Size(48, 48),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          MetaGymTheme.radiusInput,
+                                        ),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.add_rounded,
+                                      size: 18,
+                                    ),
+                                    label: const Text('Gửi thành quả'),
                                   ),
                                 ],
                               ),
@@ -402,7 +352,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                   children: [
                                     Icon(
                                       Icons.emoji_events_outlined,
-                                      color: Color(0xFFB7B2AF),
+                                      color: Color(0xFFC8C2BC),
                                       size: 20,
                                     ),
                                     SizedBox(width: 10),
@@ -410,7 +360,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                       child: Text(
                                         'Chưa có thành quả nào được gửi cho học viên này.',
                                         style: TextStyle(
-                                          color: Color(0xFFB7B2AF),
+                                          color: Color(0xFFC8C2BC),
                                           fontSize: 13,
                                           height: 1.45,
                                         ),
@@ -442,7 +392,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                       style: TextButton.styleFrom(
                                         foregroundColor:
                                             MetaGymTheme.dangerCoral,
-                                        minimumSize: const Size(48, 44),
+                                        minimumSize: const Size(48, 48),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
                                         ),
@@ -507,7 +457,7 @@ class _MemberHeroCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFBEC3CB),
+                        color: Color(0xFFC8C2BC),
                         fontSize: 13,
                       ),
                     ),
@@ -524,11 +474,11 @@ class _MemberHeroCard extends StatelessWidget {
             ],
           ),
           if (member.fitnessGoal?.isNotEmpty == true) ...[
-            const Divider(color: Color(0x26FFFFFF), height: 24),
+            const Divider(color: Color(0x26FFF5E9), height: 24),
             Text(
               'Mục tiêu: ${member.fitnessGoal}',
               style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+                color: Color(0xFFF7F9FC),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 height: 1.45,
@@ -566,8 +516,8 @@ class _HealthDeclarationCard extends StatelessWidget {
                 child: Text(
                   'Khai báo thể trạng',
                   style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 16,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -585,12 +535,12 @@ class _HealthDeclarationCard extends StatelessWidget {
             ),
           if (member.bodyFatPercent != null)
             _HealthInfoLine(
-              text: 'Body fat: ${member.bodyFatPercent!.toStringAsFixed(1)}%',
+              text: 'Tỷ lệ mỡ: ${member.bodyFatPercent!.toStringAsFixed(1)}%',
             ),
           if (member.heightCm != null ||
               member.weightKg != null ||
               member.bodyFatPercent != null)
-            const Divider(color: Color(0x1FD4E4FF), height: 18),
+            const Divider(color: Color(0x26FFF5E9), height: 18),
           _HealthInfoLine(
             text:
                 'Bệnh nền: ${member.healthNotes?.isNotEmpty == true ? member.healthNotes : 'Không'}',
@@ -617,7 +567,7 @@ class _HealthInfoLine extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFFDCE0E7),
+          color: Color(0xFFE4DAD1),
           fontSize: 13.5,
           height: 1.45,
           fontFeatures: MetaGymTheme.tabularFigures,
@@ -630,7 +580,38 @@ class _HealthInfoLine extends StatelessWidget {
 InputDecoration _darkInputDecoration({
   required String label,
   String? errorText,
-}) => coachingInputDecoration(label: label, errorText: errorText);
+}) {
+  return InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 13),
+    counterStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 11.5),
+    filled: true,
+    fillColor: const Color(0x99211E1C),
+    errorText: errorText,
+    errorStyle: const TextStyle(color: MetaGymTheme.dangerCoral),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral, width: 1.5),
+    ),
+  );
+}
 
 class _CreateOutcomeDialog extends StatefulWidget {
   const _CreateOutcomeDialog({
@@ -702,6 +683,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
   }
 
   Future<void> _submit() async {
+    if (_saving) return;
     final goal = _goal.text.trim();
     final weeks = int.tryParse(_weeks.text.trim());
     final bw = _parseNumber(_beforeWeight.text);
@@ -763,14 +745,17 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: coachingWarmOverlaySurface,
+      backgroundColor: const Color(0xF0241F1B),
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      shape: coachingDialogShape,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+        side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+      ),
       title: const Text(
         'Gửi thành quả học viên',
         style: TextStyle(
-          color: coachingWarmTextPrimary,
+          color: Color(0xFFF7F9FC),
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
@@ -783,16 +768,18 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
             TextField(
               key: const Key('outcome-goal'),
               controller: _goal,
-              style: const TextStyle(color: MetaGymTheme.textPrimary),
+              cursorColor: MetaGymTheme.brandOrange,
+              style: const TextStyle(color: Color(0xFFF7F9FC)),
               decoration: _darkInputDecoration(label: 'Mục tiêu tập luyện'),
             ),
             const SizedBox(height: 10),
             TextField(
               key: const Key('outcome-weeks'),
               controller: _weeks,
+              cursorColor: MetaGymTheme.brandOrange,
               keyboardType: TextInputType.number,
               style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+                color: Color(0xFFF7F9FC),
                 fontFeatures: MetaGymTheme.tabularFigures,
               ),
               decoration: _darkInputDecoration(label: 'Số tuần đồng hành'),
@@ -804,11 +791,12 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: TextField(
                     key: const Key('outcome-before-weight'),
                     controller: _beforeWeight,
+                    cursorColor: MetaGymTheme.brandOrange,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: Color(0xFFF7F9FC),
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                     decoration: _darkInputDecoration(label: 'Trước (kg)'),
@@ -819,11 +807,12 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: TextField(
                     key: const Key('outcome-after-weight'),
                     controller: _afterWeight,
+                    cursorColor: MetaGymTheme.brandOrange,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: Color(0xFFF7F9FC),
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                     decoration: _darkInputDecoration(label: 'Sau (kg)'),
@@ -838,11 +827,12 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: TextField(
                     key: const Key('outcome-before-fat'),
                     controller: _beforeFat,
+                    cursorColor: MetaGymTheme.brandOrange,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: Color(0xFFF7F9FC),
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                     decoration: _darkInputDecoration(
@@ -855,11 +845,12 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: TextField(
                     key: const Key('outcome-after-fat'),
                     controller: _afterFat,
+                    cursorColor: MetaGymTheme.brandOrange,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: Color(0xFFF7F9FC),
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                     decoration: _darkInputDecoration(
@@ -876,13 +867,13 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: OutlinedButton(
                     onPressed: _saving ? null : () => _pickPhoto(true),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: coachingWarmTextPrimary,
-                      backgroundColor: coachingWarmInputFill,
-                      minimumSize: const Size(48, 46),
+                      foregroundColor: const Color(0xFFF7F9FC),
+                      backgroundColor: const Color(0x80211E1C),
+                      minimumSize: const Size(48, 48),
                       side: BorderSide(
                         color: _beforePhoto != null
                             ? MetaGymTheme.success
-                            : coachingWarmInputBorder,
+                            : const Color(0x9A8C8176),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -902,13 +893,13 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: OutlinedButton(
                     onPressed: _saving ? null : () => _pickPhoto(false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: coachingWarmTextPrimary,
-                      backgroundColor: coachingWarmInputFill,
-                      minimumSize: const Size(48, 46),
+                      foregroundColor: const Color(0xFFF7F9FC),
+                      backgroundColor: const Color(0x80211E1C),
+                      minimumSize: const Size(48, 48),
                       side: BorderSide(
                         color: _afterPhoto != null
                             ? MetaGymTheme.success
-                            : coachingWarmInputBorder,
+                            : const Color(0x9A8C8176),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -936,14 +927,22 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            foregroundColor: coachingWarmTextSecondary,
+            foregroundColor: const Color(0xFFC8C2BC),
             minimumSize: const Size(48, 48),
           ),
           child: const Text('Hủy'),
         ),
-        CoachingCompactAccentButton(
-          label: _saving ? 'Đang gửi...' : 'Gửi học viên duyệt',
+        FilledButton(
           onPressed: _saving ? null : _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.primary,
+            foregroundColor: MetaGymTheme.onPrimary,
+            minimumSize: const Size(48, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            ),
+          ),
+          child: Text(_saving ? 'Đang gửi...' : 'Gửi học viên duyệt'),
         ),
       ],
     );
@@ -970,14 +969,17 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    backgroundColor: coachingWarmOverlaySurface,
+    backgroundColor: const Color(0xF0241F1B),
     surfaceTintColor: Colors.transparent,
     insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-    shape: coachingDialogShape,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+      side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+    ),
     title: const Text(
       'Xin ngừng phụ trách?',
       style: TextStyle(
-        color: coachingWarmTextPrimary,
+        color: Color(0xFFF7F9FC),
         fontSize: 18,
         fontWeight: FontWeight.w700,
       ),
@@ -985,9 +987,10 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
     content: TextField(
       key: const Key('termination-request-reason'),
       controller: _reason,
+      cursorColor: MetaGymTheme.brandOrange,
       maxLength: 1000,
       maxLines: 3,
-      style: const TextStyle(color: coachingWarmTextPrimary),
+      style: const TextStyle(color: Color(0xFFF7F9FC)),
       decoration: _darkInputDecoration(
         label: 'Lý do',
         errorText: _invalid ? 'Vui lòng nhập lý do.' : null,
@@ -997,13 +1000,12 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
       TextButton(
         onPressed: () => Navigator.pop(context),
         style: TextButton.styleFrom(
-          foregroundColor: coachingWarmTextSecondary,
+          foregroundColor: const Color(0xFFC8C2BC),
           minimumSize: const Size(48, 48),
         ),
         child: const Text('Quay lại'),
       ),
-      CoachingCompactAccentButton(
-        label: 'Gửi yêu cầu',
+      FilledButton(
         onPressed: () {
           final reason = _reason.text.trim();
           if (reason.isEmpty) {
@@ -1012,6 +1014,15 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
           }
           Navigator.pop(context, reason);
         },
+        style: FilledButton.styleFrom(
+          backgroundColor: MetaGymTheme.primary,
+          foregroundColor: MetaGymTheme.onPrimary,
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          ),
+        ),
+        child: const Text('Gửi yêu cầu'),
       ),
     ],
   );

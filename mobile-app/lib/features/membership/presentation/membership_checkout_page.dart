@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -133,7 +135,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
   }
 
   Future<void> _cancel(MembershipController controller) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1F1C1A),
@@ -436,7 +438,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                   trailing: Semantics(
                                     button: true,
                                     label: 'Sao chép mã giao dịch',
-                                    child: InkWell(
+                                    child: MetaGymTap(
                                       onTap: () => _copyText(
                                         code,
                                         'Đã sao chép mã giao dịch.',

@@ -4,11 +4,41 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
+import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 
 void main() {
+  for (final state in ['data', 'empty', 'error']) {
+    testWidgets('exercise library at 375px: $state', (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.dark,
+          home: ExerciseLibraryPage(service: _GymFixture(exerciseState: state)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      if (state == 'data') expect(find.text('Squat'), findsOneWidget);
+      if (state == 'error') expect(find.text('Fixture error'), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
+  }
+
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+  });
+
   testWidgets('shows gym information and active equipment detail', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final service = _GymFixture();
     await tester.pumpWidget(
       MaterialApp(home: GymEquipmentPage(service: service)),
@@ -21,6 +51,8 @@ void main() {
     expect(find.text('Máy chạy bộ'), findsOneWidget);
     expect(find.text('Máy ẩn'), findsNothing);
 
+    await tester.ensureVisible(find.text('Máy chạy bộ'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Máy chạy bộ'));
     await tester.pumpAndSettle();
     expect(find.text('Khởi động trước khi chạy'), findsOneWidget);
@@ -29,6 +61,10 @@ void main() {
   });
 
   testWidgets('searches, filters and shows an empty result', (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final service = _GymFixture();
     await tester.pumpWidget(
       MaterialApp(home: GymEquipmentPage(service: service)),
@@ -58,6 +94,10 @@ void main() {
   });
 
   testWidgets('shows load error and retries', (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final service = _GymFixture(failFirst: true);
     await tester.pumpWidget(
       MaterialApp(home: GymEquipmentPage(service: service)),
@@ -73,7 +113,9 @@ void main() {
 }
 
 class _GymFixture implements CatalogService {
-  _GymFixture({this.failFirst = false});
+  _GymFixture({this.failFirst = false, this.exerciseState = 'empty'});
+
+  final String exerciseState;
 
   final bool failFirst;
   int profileLoads = 0;
@@ -121,5 +163,21 @@ class _GymFixture implements CatalogService {
   }
 
   @override
-  Future<List<CatalogItem>> getExercises({String? search}) async => const [];
+  Future<List<CatalogItem>> getExercises({String? search}) async {
+    if (exerciseState == 'error') {
+      throw const ApiException(
+        kind: ApiExceptionKind.network,
+        message: 'Fixture error',
+      );
+    }
+    return exerciseState == 'data'
+        ? const [
+            CatalogItem(
+              id: 'exercise-1',
+              name: 'Squat',
+              targetMuscles: ['Legs'],
+            ),
+          ]
+        : const [];
+  }
 }

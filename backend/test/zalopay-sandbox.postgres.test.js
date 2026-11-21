@@ -14,7 +14,6 @@ const sign = (parts) => createHmac('sha256', key).update(parts.join('|')).digest
 
 test('ZaloPay requires a provider query with the expected amount and renews once', { skip: !databaseUrl }, async (t) => {
   const database = new pg.Pool({ connectionString: databaseUrl });
-  t.after(() => database.end());
   let providerResult = { return_code: 3, is_processing: true };
   const providerOrders = new Set();
   let queries = 0;
@@ -46,10 +45,23 @@ test('ZaloPay requires a provider query with the expected amount and renews once
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const api = `http://127.0.0.1:${server.address().port}/api/v1`;
   const [admin, member, other, plan] = Array.from({ length: 4 }, () => randomUUID());
-  await database.query(
+  const insertedAdmin = await database.query(
     `INSERT INTO users (id,email,password_hash,role,full_name)
-     VALUES ($1,$2,'hash','ADMIN','Admin') ON CONFLICT DO NOTHING`, [admin, admin + '@example.com'],
+     VALUES ($1,$2,'hash','ADMIN','Admin') ON CONFLICT DO NOTHING RETURNING id`, [admin, admin + '@example.com'],
   );
+  t.after(async () => {
+    try {
+      await database.query('DELETE FROM member_memberships WHERE member_id IN ($1, $2)', [member, other]);
+      await database.query('DELETE FROM payments WHERE member_id IN ($1, $2)', [member, other]);
+      await database.query('DELETE FROM membership_plans WHERE id = $1', [plan]);
+      await database.query('DELETE FROM users WHERE id IN ($1, $2)', [member, other]);
+      if (insertedAdmin.rowCount > 0) {
+        await database.query('DELETE FROM users WHERE id = $1', [admin]);
+      }
+    } finally {
+      await database.end();
+    }
+  });
   await database.query(
     `INSERT INTO users (id,email,password_hash,role,full_name)
      VALUES ($1,$2,'hash','MEMBER','Member'), ($3,$4,'hash','MEMBER','Other')`,

@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 
@@ -416,7 +417,7 @@ class _MuscleChoiceChip extends StatelessWidget {
     final active = selected || inferred;
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(11),
         child: Container(

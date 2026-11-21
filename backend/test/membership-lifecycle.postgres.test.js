@@ -51,7 +51,7 @@ test('authenticated requests reconcile expired and scheduled memberships',
           expiredMemberId, `${expiredMemberId}@example.com`],
       );
       await database.query(
-        'INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 2)',
+        'INSERT INTO coach_profiles (user_id, member_limit) VALUES ($1, 8)',
         [coachId],
       );
       await database.query(

@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
@@ -64,9 +65,10 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
   }
 
   Future<void> _scan() async {
-    final visited = await Navigator.of(
+    final visited = await MetaGymNavigation.pushOnce<bool>(
       context,
-    ).push<bool>(MaterialPageRoute(builder: (_) => _GymQrScanner(api: _api!)));
+      MetaGymPageRoute(builder: (_) => _GymQrScanner(api: _api!)),
+    );
     if (visited == true && mounted) _load();
   }
 
@@ -180,8 +182,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         IconButton(
                                           visualDensity: VisualDensity.compact,
                                           constraints: const BoxConstraints(
-                                            minWidth: 32,
-                                            minHeight: 32,
+                                            minWidth: 44,
+                                            minHeight: 44,
                                           ),
                                           padding: EdgeInsets.zero,
                                           onPressed: () => _moveMonth(-1),
@@ -203,14 +205,16 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                               color: Color(0xFFF7F9FC),
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
+                                              fontFeatures:
+                                                  MetaGymTheme.tabularFigures,
                                             ),
                                           ),
                                         ),
                                         IconButton(
                                           visualDensity: VisualDensity.compact,
                                           constraints: const BoxConstraints(
-                                            minWidth: 32,
-                                            minHeight: 32,
+                                            minWidth: 44,
+                                            minHeight: 44,
                                           ),
                                           padding: EdgeInsets.zero,
                                           onPressed: canGoForward
@@ -610,6 +614,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
                 height: 1.05,
+                fontFeatures: MetaGymTheme.tabularFigures,
               ),
             ),
           ],

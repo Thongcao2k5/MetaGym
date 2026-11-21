@@ -58,19 +58,19 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.status, 403);
       result = await request(app, '/admin/coaches', adminToken, 'POST', {
         email: ' COACH@EXAMPLE.COM ', fullName: 'Coach One',
-        password: 'StrongPass1', memberLimit: 5,
+        password: 'StrongPass1',
       });
       assert.equal(result.status, 201);
       coachId = result.body.data.id;
       assert.equal(result.body.data.email, 'coach@example.com');
-      assert.equal(result.body.data.memberLimit, 5);
+      assert.equal(result.body.data.memberLimit, 8);
       assert.equal(JSON.stringify(result.body).includes('password'), false);
       const stored = await database.query('SELECT password_hash FROM users WHERE id = $1', [coachId]);
       assert.equal(await bcrypt.compare('StrongPass1', stored.rows[0].password_hash), true);
 
       result = await request(app, '/admin/coaches', adminToken, 'POST', {
         email: 'coach@example.com', fullName: 'Coach Two',
-        password: 'StrongPass1', memberLimit: 5,
+        password: 'StrongPass1', memberLimit: 8,
       });
       assert.equal(result.status, 409);
       result = await request(app, '/admin/users?role=COACH&search=coach%40example.com', adminToken);
@@ -123,11 +123,13 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.status, 201);
       result = await request(app, `/payments/${result.body.data.id}/mock-confirmations`, memberToken, 'POST');
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.membership.status, 'SCHEDULED');
-      assert.ok(result.body.data.membership.startDate > firstMembership.endDate);
+      const secondMembership = result.body.data.membership;
+      assert.equal(secondMembership.status, 'ACTIVE');
+      assert.equal(secondMembership.id, firstMembership.id);
+      assert.ok(secondMembership.endDate > firstMembership.endDate);
       result = await request(app, '/memberships/me', memberToken);
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.length, 2);
+      assert.equal(result.body.data.length, 1);
       assert.equal((await request(app, '/payments/me', memberToken)).body.data.length, 2);
       assert.equal((await request(app, `/payments/${firstPaymentId}`, token(coachId, 'COACH'))).status, 404);
 
@@ -136,13 +138,15 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         { memberId, planId }, { 'idempotency-key': deskKey });
       assert.equal(result.status, 201);
       assert.equal(result.body.data.payment.method, 'FRONT_DESK');
-      assert.equal(result.body.data.membership.status, 'SCHEDULED');
+      assert.equal(result.body.data.membership.status, 'ACTIVE');
+      assert.equal(result.body.data.membership.id, firstMembership.id);
+      assert.ok(result.body.data.membership.endDate > secondMembership.endDate);
       const deskPaymentId = result.body.data.payment.id;
       result = await request(app, '/admin/front-desk-payments', adminToken, 'POST',
         { memberId, planId }, { 'idempotency-key': deskKey });
       assert.equal(result.status, 200);
       assert.equal(result.body.data.payment.id, deskPaymentId);
-      assert.equal((await request(app, '/admin/memberships', adminToken)).body.data.length, 3);
+      assert.equal((await request(app, '/admin/memberships', adminToken)).body.data.length, 1);
       result = await request(app, '/admin/dashboard?from=2020-01-01&to=2030-01-01', adminToken);
       assert.equal(result.status, 200);
       assert.equal(result.body.data.members.active, 1);
@@ -227,13 +231,18 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         'SELECT count(*)::int AS count FROM conversation_participants WHERE conversation_id = $1',
         [conversation.rows[0].id],
       )).rows[0].count, 2);
-      result = await request(app, '/coach/termination-requests', token(coachId, 'COACH'),
-        'POST', { relationshipId: firstRelationshipId, reason: 'Schedule change' });
+      result = await request(app, `/relationships/${firstRelationshipId}/early-termination-requests`,
+        token(coachId, 'COACH'), 'POST', { reason: 'Schedule change' });
       assert.equal(result.status, 201);
       const terminationId = result.body.data.id;
-      result = await request(app, `/admin/termination-requests/${terminationId}`,
-        adminToken, 'PATCH', { decision: 'REJECTED', note: 'Continue coaching' });
+      result = await request(app, `/early-termination-requests/${terminationId}/respond`,
+        memberToken, 'PATCH', { decision: 'REJECT', reason: 'Want to keep training' });
       assert.equal(result.status, 200);
+      assert.equal(result.body.data.status, 'DISPUTED');
+      result = await request(app, `/admin/termination-requests/${terminationId}`,
+        adminToken, 'PATCH', { decision: 'REJECTED', reason: 'Continue coaching' });
+      assert.equal(result.status, 200);
+      assert.equal(result.body.data.status, 'ADMIN_REJECTED');
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data.status, 'ACTIVE');
       result = await request(app,
         `/relationships/${firstRelationshipId}/terminations`, memberToken,
@@ -247,12 +256,17 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         token(coachId, 'COACH'), 'PATCH', { decision: 'ACCEPTED' });
       assert.equal(result.status, 200);
       const secondRelationshipId = result.body.data.relationship.id;
-      result = await request(app, '/coach/termination-requests', token(coachId, 'COACH'),
-        'POST', { relationshipId: secondRelationshipId, reason: 'Coach leaving' });
+      result = await request(app, `/relationships/${secondRelationshipId}/early-termination-requests`,
+        token(coachId, 'COACH'), 'POST', { reason: 'Coach leaving' });
       assert.equal(result.status, 201);
-      result = await request(app, `/admin/termination-requests/${result.body.data.id}`,
-        adminToken, 'PATCH', { decision: 'APPROVED' });
+      const secondTermId = result.body.data.id;
+      result = await request(app, `/early-termination-requests/${secondTermId}/respond`,
+        memberToken, 'PATCH', { decision: 'REJECT', reason: 'Disagree with ending early' });
       assert.equal(result.status, 200);
+      result = await request(app, `/admin/termination-requests/${secondTermId}`,
+        adminToken, 'PATCH', { decision: 'APPROVED', reason: 'Approved after dispute review' });
+      assert.equal(result.status, 200);
+      assert.equal(result.body.data.status, 'ADMIN_APPROVED');
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data, null);
       result = await request(app, '/coach-requests', memberToken, 'POST', { coachId });
       assert.equal(result.status, 201);
@@ -261,7 +275,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.status, 200);
       result = await request(app, '/admin/coaches', adminToken, 'POST', {
         email: 'second-coach@example.com', fullName: 'Second Coach',
-        password: 'StrongPass1', memberLimit: 1,
+        password: 'StrongPass1',
       });
       assert.equal(result.status, 201);
       secondCoachId = result.body.data.id;
@@ -301,7 +315,26 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal((await request(app, '/admin/payments', memberToken)).status, 403);
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { price: 200000 });
-      assert.equal(result.status, 409);
+      assert.equal(result.status, 200);
+      assert.equal(result.body.data.price, 200000);
+      const updatedPlan = await database.query(
+        'SELECT price, duration_days FROM membership_plans WHERE id = $1', [planId],
+      );
+      assert.equal(Number(updatedPlan.rows[0].price), 200000);
+      assert.equal(updatedPlan.rows[0].duration_days, 30);
+      // Prior payment snapshot remains immutable at 100000 / 30 days
+      const firstPaymentSnapshot = await database.query(
+        'SELECT amount, duration_days_snapshot FROM payments WHERE id = $1', [firstPaymentId],
+      );
+      assert.equal(Number(firstPaymentSnapshot.rows[0].amount), 100000);
+      assert.equal(firstPaymentSnapshot.rows[0].duration_days_snapshot, 30);
+      result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
+        'PATCH', { durationDays: 60 });
+      assert.equal(result.status, 200);
+      const updatedDuration = await database.query(
+        'SELECT duration_days FROM membership_plans WHERE id = $1', [planId],
+      );
+      assert.equal(updatedDuration.rows[0].duration_days, 60);
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { status: 'INACTIVE' });
       assert.equal(result.status, 200);
@@ -310,15 +343,19 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/users/${coachId}`, adminToken, 'PATCH', {
         fullName: 'Coach Updated', memberLimit: 2,
       });
+      assert.equal(result.status, 422);
+      result = await request(app, `/admin/users/${coachId}`, adminToken, 'PATCH', {
+        fullName: 'Coach Updated',
+      });
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.memberLimit, 2);
+      assert.equal(result.body.data.memberLimit, 8);
       result = await request(app, `/admin/users/${memberId}`, adminToken, 'PATCH', { memberLimit: 1 });
       assert.equal(result.status, 422);
       result = await request(app, `/admin/users/${coachId}/status`, adminToken, 'PATCH', {
         status: 'DISABLED', reason: 'Policy test',
       });
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.status, 'DISABLED');
+      assert.equal(result.body.data.user.status, 'DISABLED');
       assert.equal((await request(app, '/users/me', token(coachId, 'COACH'))).status, 401);
       result = await request(app, `/admin/users/${coachId}/status`, adminToken, 'PATCH', {
         status: 'ACTIVE',
@@ -334,6 +371,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         adminToken, 'POST', {});
       assert.equal(result.status, 201);
       assert.ok(result.body.data.temporaryPassword.length >= 20);
+      assert.ok(result.body.data.reminder);
       const resetHash = await database.query('SELECT password_hash FROM users WHERE id = $1', [coachId]);
       assert.equal(await bcrypt.compare(result.body.data.temporaryPassword,
         resetHash.rows[0].password_hash), true);
@@ -342,6 +380,7 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/users/${memberId}/status`, adminToken,
         'PATCH', { status: 'DISABLED', reason: 'Security regression' });
       assert.equal(result.status, 200);
+      assert.equal(result.body.data.user.status, 'DISABLED');
       for (const path of ['/users/me', '/workout-logs', '/progress/me/summary',
         '/payments/me']) {
         assert.equal((await request(app, path, memberToken)).status, 401, path);
@@ -349,8 +388,12 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       result = await request(app, `/admin/users/${memberId}/status`, adminToken,
         'PATCH', { status: 'ACTIVE' });
       assert.equal(result.status, 200);
+      assert.equal(result.body.data.user.status, 'ACTIVE');
       assert.equal((await request(app, '/workout-logs', memberToken)).status, 401);
     } finally {
+      await database.query('DELETE FROM coach_notifications WHERE user_id IN ($1, $2, $3)',
+        [memberId, coachId ?? adminId, secondCoachId ?? adminId]);
+      await database.query('DELETE FROM coach_lock_incidents WHERE member_id = $1', [memberId]);
       await database.query('DELETE FROM progress_comments WHERE member_id = $1', [memberId]);
       await database.query(
         `DELETE FROM workout_log_exercises WHERE workout_log_id IN

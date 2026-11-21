@@ -28,6 +28,14 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  void _submit(AuthController auth) {
+    auth.register(
+      fullName: _nameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
@@ -43,40 +51,52 @@ class _RegisterPageState extends State<RegisterPage> {
                   ? null
                   : () {
                       auth.clearErrors();
-                      context.go(AppRoutes.welcome);
+                      context.go(AppRoutes.login);
                     },
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           AuthStaggeredEntrance(
             delayMs: 70,
             child: WarmSmokeGlass(
-              padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  AuthModeSegmentSwitch(
+                    isLogin: false,
+                    onSelectLogin: auth.isSubmitting
+                        ? null
+                        : () {
+                            auth.clearErrors();
+                            context.go(AppRoutes.login);
+                          },
+                    onSelectRegister: null,
+                  ),
+                  const SizedBox(height: 20),
                   const Text(
-                    'Đăng ký Member',
-                    textAlign: TextAlign.center,
+                    'Tạo tài khoản hội viên',
+                    textAlign: TextAlign.left,
                     style: TextStyle(
-                      color: MetaGymTheme.textPrimary,
-                      fontSize: 27,
+                      color: Color(0xFFF7F9FC),
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   const Text(
-                    'Tạo tài khoản hội viên để bắt đầu\nlộ trình luyện tập cá nhân.',
-                    textAlign: TextAlign.center,
+                    'Khởi tạo hồ sơ cá nhân để đặt lịch PT 1:1 và theo dõi chỉ số cơ thể.',
+                    textAlign: TextAlign.left,
                     style: TextStyle(
-                      color: Color(0xFFD5CCBF),
-                      fontSize: 13.5,
+                      color: Color(0xFFB7B2AF),
+                      fontSize: 13,
                       height: 1.45,
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 20),
                   AuthGlassField(
                     fieldKey: const Key('register-name'),
                     controller: _nameController,
@@ -84,6 +104,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     hintText: 'Nguyễn Văn A',
                     icon: Icons.person_outline_rounded,
                     textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
                     errorText: auth.fieldErrors['fullName'],
                   ),
                   const SizedBox(height: 14),
@@ -94,6 +116,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     hintText: 'name@example.com',
                     icon: Icons.alternate_email_rounded,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
                     errorText: auth.fieldErrors['email'],
                   ),
                   const SizedBox(height: 14),
@@ -104,16 +128,21 @@ class _RegisterPageState extends State<RegisterPage> {
                     hintText: 'Tạo mật khẩu bảo mật',
                     icon: Icons.lock_outline_rounded,
                     obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: auth.isSubmitting
+                        ? null
+                        : (_) => _submit(auth),
+                    autofillHints: const [AutofillHints.newPassword],
                     errorText: auth.fieldErrors['password'],
                     onChanged: (value) =>
                         setState(() => _passwordInput = value),
                     suffixIcon: IconButton(
                       key: const Key('register-toggle-password'),
-                      tooltip:
-                          _obscurePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
-                      onPressed: () => setState(
-                        () => _obscurePassword = !_obscurePassword,
-                      ),
+                      tooltip: _obscurePassword
+                          ? 'Hiện mật khẩu'
+                          : 'Ẩn mật khẩu',
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
@@ -132,52 +161,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       message: auth.errorMessage!,
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   AuthPrimaryButton(
                     buttonKey: const Key('register-submit'),
                     isLoading: auth.isSubmitting,
                     label: auth.isSubmitting ? 'Đang đăng ký…' : 'Đăng ký',
-                    onPressed: auth.isSubmitting
-                        ? null
-                        : () => auth.register(
-                            fullName: _nameController.text,
-                            email: _emailController.text,
-                            password: _passwordController.text,
-                          ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 4,
-                    children: [
-                      const Text(
-                        'Đã có tài khoản?',
-                        style: TextStyle(
-                          color: Color(0xFFD5CCBF),
-                          fontSize: 13,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: auth.isSubmitting
-                            ? null
-                            : () {
-                                auth.clearErrors();
-                                context.go(AppRoutes.login);
-                              },
-                        style: TextButton.styleFrom(
-                          foregroundColor: MetaGymTheme.brandOrange,
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                        ),
-                        child: const Text(
-                          'Đăng nhập',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
+                    trailingIcon: Icons.arrow_forward_rounded,
+                    onPressed: auth.isSubmitting ? null : () => _submit(auth),
                   ),
                 ],
               ),
@@ -215,22 +205,65 @@ class _PasswordStrengthMeter extends StatelessWidget {
       _ => Colors.white.withValues(alpha: 0.14),
     };
 
+    final (statusLabel, statusColor) = switch (score) {
+      4 => ('Đạt chuẩn', MetaGymTheme.success),
+      3 => ('Khá tốt', MetaGymTheme.warning),
+      >= 1 => ('Cần bổ sung', MetaGymTheme.brandOrange),
+      _ => ('4 điều kiện', const Color(0xFFB7B2AF)),
+    };
+
+    final barDuration =
+        MetaGymTheme.isFlutterTestEnvironment ||
+            MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 220);
+
     return Container(
       key: const Key('register-password-strength'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0x80181513),
+        color: const Color(0x80211E1C),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x66A79D92), width: 1.0),
+        border: Border.all(color: const Color(0x9A8C8176), width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Độ mạnh mật khẩu',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFFD5CCBF),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                statusLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
             children: List.generate(4, (index) {
               final active = index < score;
               return Expanded(
-                child: Container(
+                child: AnimatedContainer(
+                  duration: barDuration,
+                  curve: Curves.easeOutCubic,
                   height: 4,
                   margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
                   decoration: BoxDecoration(
@@ -246,15 +279,25 @@ class _PasswordStrengthMeter extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _RuleBadge(label: '≥ 8 ký tự', met: hasLength)),
-              Expanded(child: _RuleBadge(label: 'Chữ hoa', met: hasUpper)),
+              Expanded(
+                child: _RuleBadge(label: '≥ 8 ký tự', met: hasLength),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _RuleBadge(label: 'Chữ hoa', met: hasUpper),
+              ),
             ],
           ),
           const SizedBox(height: 6),
           Row(
             children: [
-              Expanded(child: _RuleBadge(label: 'Chữ thường', met: hasLower)),
-              Expanded(child: _RuleBadge(label: 'Chữ số', met: hasDigit)),
+              Expanded(
+                child: _RuleBadge(label: 'Chữ thường', met: hasLower),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _RuleBadge(label: 'Chữ số', met: hasDigit),
+              ),
             ],
           ),
         ],

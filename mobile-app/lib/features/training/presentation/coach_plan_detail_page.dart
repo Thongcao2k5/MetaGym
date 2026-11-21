@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -60,8 +61,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
             : plan.status != 'DRAFT')) {
       return;
     }
-    final saved = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<String>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachPlanFormPage(
           memberId: widget.memberId ?? '',
           plan: plan,
@@ -74,17 +76,20 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
 
   Future<void> _publish() async {
     if (_busy || _plan?.status != 'DRAFT') return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: coachingWarmOverlaySurface,
+        backgroundColor: const Color(0xF0241F1B),
         surfaceTintColor: Colors.transparent,
-        shape: coachingDialogShape,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+        ),
         title: const Text(
           'Công bố giáo trình?',
           style: TextStyle(
-            color: coachingWarmTextPrimary,
+            color: MetaGymTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -92,7 +97,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
         content: const Text(
           'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
           style: TextStyle(
-            color: coachingWarmTextSecondary,
+            color: Color(0xFFC8C2BC),
             fontSize: 14,
             height: 1.45,
           ),
@@ -101,14 +106,22 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
-              foregroundColor: coachingWarmTextSecondary,
-              minimumSize: const Size(48, 44),
+              foregroundColor: const Color(0xFFC8C2BC),
+              minimumSize: const Size(48, 48),
             ),
             child: const Text('Quay lại'),
           ),
-          CoachingCompactAccentButton(
-            label: 'Xác nhận công bố',
+          FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.primary,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              ),
+            ),
+            child: const Text('Xác nhận công bố'),
           ),
         ],
       ),
@@ -218,6 +231,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   Expanded(
                     child: RefreshIndicator(
                       color: MetaGymTheme.primary,
+                      backgroundColor: const Color(0xFF282320),
                       onRefresh: _load,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -244,9 +258,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   if (showBottomBar)
                     Container(
                       decoration: const BoxDecoration(
-                        color: coachingWarmOverlaySurface,
+                        color: Color(0xF0241F1B),
                         border: Border(
-                          top: BorderSide(color: coachingWarmDivider),
+                          top: BorderSide(color: Color(0xA3A79D92)),
                         ),
                       ),
                       child: SafeArea(

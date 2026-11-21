@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_card.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_history_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_schedule_picker_page.dart';
@@ -153,14 +156,11 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     if (changedCount != null && changedCount > 0 && mounted) {
       await _run(_reload);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              bookingId != null
-                  ? 'Đã đổi lịch buổi tập thành công.'
-                  : 'Đã đặt $changedCount buổi tập thành công.',
-            ),
-          ),
+        showCoachingSnackBar(
+          context,
+          bookingId != null
+              ? 'Đã đổi lịch buổi tập thành công.'
+              : 'Đã đặt $changedCount buổi tập thành công.',
         );
       }
     }
@@ -168,65 +168,72 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   Future<String?> _reason(String heading) async {
     var reason = '';
-    String? validationError;
     return showDialog<String>(
       context: context,
-      barrierColor: const Color(0xB8040609),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: coachingWarmOverlaySurface,
-          surfaceTintColor: Colors.transparent,
-          shape: coachingDialogShape,
-          title: Text(
-            heading,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          content: TextFormField(
-            maxLength: 500,
-            maxLines: 3,
-            autofocus: true,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
-              fontSize: 14,
-            ),
-            onChanged: (value) {
-              reason = value.trim();
-              if (validationError != null && reason.isNotEmpty) {
-                setDialogState(() => validationError = null);
-              }
-            },
-            decoration: coachingInputDecoration(
-              label: 'Lý do',
-              errorText: validationError,
-            ),
-          ),
-          actions: [
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(64, 44),
-                foregroundColor: MetaGymTheme.textSecondary,
-              ),
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Quay lại'),
-            ),
-            CoachingCompactAccentButton(
-              label: 'Xác nhận',
-              onPressed: () {
-                if (reason.isEmpty) {
-                  setDialogState(
-                    () => validationError = 'Vui lòng nhập lý do.',
-                  );
-                  return;
-                }
-                Navigator.pop(ctx, reason);
-              },
-            ),
-          ],
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xF0241F1B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
         ),
+        title: Text(
+          heading,
+          style: const TextStyle(
+            color: Color(0xFFF7F9FC),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: TextFormField(
+          maxLength: 500,
+          autofocus: true,
+          style: const TextStyle(color: Color(0xFFF7F9FC)),
+          onChanged: (value) => reason = value.trim(),
+          decoration: InputDecoration(
+            labelText: 'Lý do',
+            labelStyle: const TextStyle(color: Color(0xFFC8C2BC)),
+            filled: true,
+            fillColor: const Color(0x99211E1C),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              borderSide: const BorderSide(color: Color(0x9A8C8176)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              borderSide: const BorderSide(color: Color(0x9A8C8176)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+              borderSide: const BorderSide(
+                color: MetaGymTheme.brandOrange,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(64, 48),
+              foregroundColor: const Color(0xFFC8C2BC),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Quay lại'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.brandOrange,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(96, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () {
+              if (reason.isNotEmpty) Navigator.pop(ctx, reason);
+            },
+            child: const Text('Xác nhận'),
+          ),
+        ],
       ),
     );
   }
@@ -260,31 +267,42 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     return await showDialog<bool>(
           context: context,
           builder: (dialog) => AlertDialog(
-            backgroundColor: coachingWarmOverlaySurface,
-            surfaceTintColor: Colors.transparent,
-            shape: coachingDialogShape,
+            backgroundColor: const Color(0xF0241F1B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+            ),
             title: Text(
               title,
               style: const TextStyle(
-                color: coachingWarmTextPrimary,
+                color: Color(0xFFF7F9FC),
                 fontWeight: FontWeight.w700,
               ),
             ),
             content: const Text(
               'Còn dưới 12 giờ đến buổi tập. Nếu tiếp tục, gói Coach sẽ bị trừ một lượt.',
-              style: TextStyle(color: coachingWarmTextSecondary, height: 1.45),
+              style: TextStyle(color: Color(0xFFE4DAD1), height: 1.45),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(dialog, false),
-                child: const Text(
-                  'Quay lại',
-                  style: TextStyle(color: coachingWarmTextSecondary),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(64, 48),
+                  foregroundColor: const Color(0xFFC8C2BC),
                 ),
+                onPressed: () => Navigator.pop(dialog, false),
+                child: const Text('Quay lại'),
               ),
-              CoachingCompactAccentButton(
-                label: 'Tiếp tục',
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: MetaGymTheme.brandOrange,
+                  foregroundColor: MetaGymTheme.onPrimary,
+                  minimumSize: const Size(96, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
                 onPressed: () => Navigator.pop(dialog, true),
+                child: const Text('Tiếp tục'),
               ),
             ],
           ),
@@ -305,11 +323,16 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           colorScheme: const ColorScheme.dark(
             primary: MetaGymTheme.primary,
             onPrimary: MetaGymTheme.onPrimary,
-            surface: coachingWarmOverlaySurface,
-            onSurface: coachingWarmTextPrimary,
+            surface: Color(0xF0241F1B),
+            onSurface: Color(0xFFF7F9FC),
+            surfaceContainerHigh: Color(0xFF2B2622),
           ),
-          dialogTheme: const DialogThemeData(
-            backgroundColor: coachingWarmOverlaySurface,
+          dialogTheme: DialogThemeData(
+            backgroundColor: const Color(0xF0241F1B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+            ),
           ),
         ),
         child: child!,
@@ -328,15 +351,16 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
     final time = await showDialog<String>(
       context: context,
-      barrierColor: const Color(0xB8040609),
       builder: (ctx) => SimpleDialog(
-        backgroundColor: coachingWarmOverlaySurface,
-        surfaceTintColor: Colors.transparent,
-        shape: coachingDialogShape,
+        backgroundColor: const Color(0xF0241F1B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+        ),
         title: const Text(
           'Chọn giờ cần khóa',
           style: TextStyle(
-            color: coachingWarmTextPrimary,
+            color: Color(0xFFF7F9FC),
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -347,23 +371,23 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               child: Text(
                 'Ngày này không có lịch làm việc.',
-                style: TextStyle(color: coachingWarmTextSecondary),
+                style: TextStyle(color: Color(0xFFC8C2BC)),
               ),
             ),
           for (final slot in starts)
             SimpleDialogOption(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               onPressed: () => Navigator.pop(ctx, slot),
               child: Container(
-                constraints: const BoxConstraints(minHeight: 44),
+                constraints: const BoxConstraints(minHeight: 48),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: coachingWarmNestedSurface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: coachingWarmInputBorder),
+                  color: const Color(0x80211E1C),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0x9A8C8176)),
                 ),
                 child: Row(
                   children: [
@@ -377,7 +401,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       child: Text(
                         slot,
                         style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                          color: Color(0xFFF7F9FC),
                           fontWeight: FontWeight.w600,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
@@ -386,7 +410,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     const Icon(
                       Icons.chevron_right_rounded,
                       size: 18,
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFC8C2BC),
                     ),
                   ],
                 ),
@@ -398,8 +422,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 style: TextButton.styleFrom(
-                  minimumSize: const Size(64, 44),
-                  foregroundColor: MetaGymTheme.textSecondary,
+                  minimumSize: const Size(64, 48),
+                  foregroundColor: const Color(0xFFC8C2BC),
                 ),
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Đóng'),
@@ -498,7 +522,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                           )
                         : ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 36),
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              MediaQuery.paddingOf(context).bottom + 36,
+                            ),
                             children: [
                               if (_busy)
                                 const Padding(
@@ -516,10 +545,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     margin: const EdgeInsets.only(bottom: 16),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: const Color(0x33FF453A),
+                                      color: const Color(0xD4331E1E),
                                       borderRadius: BorderRadius.circular(14),
                                       border: Border.all(
-                                        color: const Color(0x66FF453A),
+                                        color: const Color(0x99F15B64),
                                       ),
                                     ),
                                     child: Row(
@@ -534,7 +563,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                           child: Text(
                                             _error!,
                                             style: const TextStyle(
-                                              color: Color(0xFFFF857D),
+                                              color: Color(0xFFFFB2B6),
                                               fontSize: 13,
                                             ),
                                           ),
@@ -553,6 +582,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   CoachingGraphiteCard(
+                                    backgroundColor: const Color(0xC42B2622),
+                                    borderColor: const Color(0xA3A79D92),
                                     padding: const EdgeInsets.all(16),
                                     margin: const EdgeInsets.only(bottom: 18),
                                     child: Column(
@@ -569,8 +600,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
-                                                  color:
-                                                      MetaGymTheme.textPrimary,
+                                                  color: Color(0xFFF7F9FC),
                                                   fontSize: 15,
                                                   fontWeight: FontWeight.w700,
                                                 ),
@@ -590,7 +620,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                           const Text(
                                             'Bạn chưa thiết lập lịch làm việc tuần. Vui lòng cấu hình tối thiểu 6 ngày làm việc.',
                                             style: TextStyle(
-                                              color: MetaGymTheme.textSecondary,
+                                              color: Color(0xFFC8C2BC),
                                               fontSize: 13,
                                               height: 1.45,
                                             ),
@@ -609,7 +639,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                       ),
                                                   decoration: BoxDecoration(
                                                     color: const Color(
-                                                      0xC42B2622,
+                                                      0x80211E1C,
                                                     ),
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -617,9 +647,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                         ),
                                                     border: Border.all(
                                                       color: const Color(
-                                                        0xA3A79D92,
+                                                        0x9A8C8176,
                                                       ),
-                                                      width: 1.1,
                                                     ),
                                                   ),
                                                   child: Text.rich(
@@ -639,8 +668,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                           text:
                                                               ' · ${(day['starts'] as List).length} ca',
                                                           style: const TextStyle(
-                                                            color: MetaGymTheme
-                                                                .textPrimary,
+                                                            color: Color(
+                                                              0xFFF7F9FC,
+                                                            ),
                                                             fontWeight:
                                                                 FontWeight.w600,
                                                             fontFeatures:
@@ -655,37 +685,68 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                             ],
                                           ),
                                         const SizedBox(height: 14),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child:
-                                                  CoachingCompactAccentButton(
-                                                    label: 'Cấu hình lịch tuần',
-                                                    icon: Icons
-                                                        .edit_calendar_rounded,
-                                                    expand: true,
-                                                    onPressed: _busy
-                                                        ? null
-                                                        : _editSchedule,
-                                                  ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            OutlinedButton.icon(
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final textScale =
+                                                MediaQuery.textScalerOf(
+                                                  context,
+                                                ).scale(1.0);
+                                            final stackButtons =
+                                                constraints.maxWidth < 290 ||
+                                                textScale > 1.1;
+                                            final editButton = FilledButton.icon(
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor:
+                                                    MetaGymTheme.primary,
+                                                foregroundColor:
+                                                    MetaGymTheme.onPrimary,
+                                                minimumSize: const Size(0, 48),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 10,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        MetaGymTheme
+                                                            .radiusInput,
+                                                      ),
+                                                ),
+                                              ),
+                                              onPressed: _busy
+                                                  ? null
+                                                  : _editSchedule,
+                                              icon: const Icon(
+                                                Icons.edit_calendar_rounded,
+                                                size: 18,
+                                              ),
+                                              label: const Text(
+                                                'Cấu hình lịch tuần',
+                                                maxLines: 2,
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            );
+                                            final blockButton = OutlinedButton.icon(
                                               style: OutlinedButton.styleFrom(
                                                 backgroundColor: const Color(
-                                                  0x332B2622,
+                                                  0x80211E1C,
                                                 ),
                                                 foregroundColor: const Color(
                                                   0xFFF7F9FC,
                                                 ),
-                                                minimumSize: const Size(0, 48),
+                                                minimumSize: const Size(48, 48),
                                                 padding:
                                                     const EdgeInsets.symmetric(
                                                       horizontal: 14,
+                                                      vertical: 10,
                                                     ),
                                                 side: const BorderSide(
-                                                  color: Color(0xA3A79D92),
-                                                  width: 1.1,
+                                                  color: Color(0x9A8C8176),
                                                 ),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
@@ -695,9 +756,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                       ),
                                                 ),
                                               ),
-                                              onPressed: _busy || _days.isEmpty
-                                                  ? null
-                                                  : _block,
+                                              onPressed:
+                                                  _busy || _days.isEmpty
+                                                      ? null
+                                                      : _block,
                                               icon: const Icon(
                                                 Icons.block_rounded,
                                                 size: 18,
@@ -706,16 +768,34 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                               ),
                                               label: const Text(
                                                 'Khóa giờ',
-                                                maxLines: 1,
+                                                maxLines: 2,
+                                                textAlign: TextAlign.center,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
-                                                  color:
-                                                      MetaGymTheme.textPrimary,
+                                                  color: Color(0xFFF7F9FC),
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            );
+                                            if (stackButtons) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  editButton,
+                                                  const SizedBox(height: 8),
+                                                  blockButton,
+                                                ],
+                                              );
+                                            }
+                                            return Row(
+                                              children: [
+                                                Expanded(child: editButton),
+                                                const SizedBox(width: 10),
+                                                blockButton,
+                                              ],
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
@@ -731,6 +811,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                   const SizedBox(height: 8),
                                   for (final block in _blocks)
                                     CoachingGraphiteCard(
+                                      backgroundColor: const Color(0xC42B2622),
+                                      borderColor: const Color(0xA3A79D92),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 15,
                                         vertical: 12,
@@ -769,8 +851,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: const TextStyle(
-                                                    color: MetaGymTheme
-                                                        .textPrimary,
+                                                    color: Color(0xFFF7F9FC),
                                                     fontWeight: FontWeight.w700,
                                                     fontSize: 14,
                                                     fontFeatures: MetaGymTheme
@@ -785,8 +866,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: const TextStyle(
-                                                    color: MetaGymTheme
-                                                        .textSecondary,
+                                                    color: Color(0xFFC8C2BC),
                                                     fontSize: 12.5,
                                                   ),
                                                 ),
@@ -796,7 +876,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                           const SizedBox(width: 8),
                                           TextButton(
                                             style: TextButton.styleFrom(
-                                              minimumSize: const Size(68, 44),
+                                              minimumSize: const Size(68, 48),
                                               foregroundColor:
                                                   MetaGymTheme.primary,
                                             ),
@@ -821,9 +901,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                 // Member: Gói Coach
                                 if (showPackages) ...[
                                   if (_loaded && _packages.isEmpty)
-                                    _buildEmptyStateCard(
-                                      'Bạn chưa có gói Coach.',
-                                    ),
+                                    _buildEmptyPackageHeroCard(context),
                                   for (final pack in _packages) ...[
                                     _buildPackageCard(pack, gymNow, now),
                                     const SizedBox(height: 12),
@@ -863,12 +941,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                               ],
 
                               if (!_isCoach) ...[
-                                CoachingGraphiteCard(
-                                  padding: const EdgeInsets.symmetric(
+                                const MetaGymGlassCard(
+                                  padding: EdgeInsets.symmetric(
                                     horizontal: 13,
                                     vertical: 11,
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
@@ -882,7 +960,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                         child: Text(
                                           'Lưu ý: Hủy hoặc đổi giờ trong vòng 12 giờ trước buổi tập sẽ bị trừ 1 lượt trong gói.',
                                           style: TextStyle(
-                                            color: MetaGymTheme.textSecondary,
+                                            color: Color(0xFFC8C2BC),
                                             fontSize: 12,
                                             height: 1.45,
                                           ),
@@ -932,18 +1010,108 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     );
   }
 
+  void _pushOrFallback(
+    BuildContext context, {
+    required String route,
+    required Widget fallbackPage,
+  }) {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.push(route);
+      return;
+    }
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => fallbackPage),
+    );
+  }
+
+  Widget _buildEmptyPackageHeroCard(BuildContext context) {
+    return MetaGymHeroGlassCard(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0x26FF5E36),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: const Color(0x52FF5E36)),
+                ),
+                child: const Icon(
+                  Icons.groups_outlined,
+                  color: MetaGymTheme.brandOrange,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bạn chưa có gói Coach.',
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Khám phá hồ sơ chuyên môn, lịch làm việc và chọn gói PT 1:1 phù hợp để bắt đầu đặt lịch tập.',
+                      style: TextStyle(
+                        color: Color(0xFFC8C2BC),
+                        fontSize: 12.5,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          CoachingPrimaryButton(
+            label: 'Khám phá Coach',
+            icon: Icons.arrow_forward_rounded,
+            onPressed: () => _pushOrFallback(
+              context,
+              route: '/member/features/coaching',
+              fallbackPage: const CoachSelectionPage(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          CoachingSecondaryButton(
+            label: 'Coach của tôi',
+            expand: true,
+            onPressed: () => _pushOrFallback(
+              context,
+              route: '/member/features/my-coach',
+              fallbackPage: const MemberCoachingPage(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyStateCard(String message) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: CoachingGraphiteCard(
+        backgroundColor: const Color(0xC42B2622),
+        borderColor: const Color(0xA3A79D92),
         padding: const EdgeInsets.all(20),
         child: Center(
           child: Text(
             message,
-            style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
             textAlign: TextAlign.center,
           ),
         ),
@@ -968,14 +1136,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Lịch Coach',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: _isCoach
-                        ? MetaGymTheme.textPrimary
-                        : const Color(0xFFF6F3F0),
+                    color: Color(0xFFF7F9FC),
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
@@ -986,13 +1152,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   _isCoach
                       ? 'Cấu hình lịch dạy & quản lý buổi hẹn'
                       : 'Đặt lịch & quản lý buổi tập 1:1',
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _isCoach
-                        ? MetaGymTheme.textSecondary
-                        : const Color(0xFFBCB5AE),
+                  style: const TextStyle(
+                    color: Color(0xFFBCB5AE),
                     fontSize: 11.5,
+                    height: 1.25,
                   ),
                 ),
               ],
@@ -1080,48 +1245,51 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
+        color: const Color(0xB8211E1C),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x9A8C8176), width: 1.1),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _SegmentTabButton(
-              label: 'Tất cả',
-              active: _currentTab == _BookingTab.all,
-              graphiteStyle: true,
-              onTap: () => setState(() => _currentTab = _BookingTab.all),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _SegmentTabButton(
+                label: 'Tất cả',
+                active: _currentTab == _BookingTab.all,
+                graphiteStyle: true,
+                onTap: () => setState(() => _currentTab = _BookingTab.all),
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _SegmentTabButton(
-              label: _isCoach ? 'Lịch tuần' : 'Gói Coach',
-              active: _currentTab == _BookingTab.packages,
-              graphiteStyle: true,
-              onTap: () => setState(() => _currentTab = _BookingTab.packages),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _SegmentTabButton(
+                label: _isCoach ? 'Lịch tuần' : 'Gói Coach',
+                active: _currentTab == _BookingTab.packages,
+                graphiteStyle: true,
+                onTap: () => setState(() => _currentTab = _BookingTab.packages),
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _SegmentTabButton(
-              label: 'Sắp tới',
-              active: _currentTab == _BookingTab.upcoming,
-              graphiteStyle: true,
-              onTap: () => setState(() => _currentTab = _BookingTab.upcoming),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _SegmentTabButton(
+                label: 'Sắp tới',
+                active: _currentTab == _BookingTab.upcoming,
+                graphiteStyle: true,
+                onTap: () => setState(() => _currentTab = _BookingTab.upcoming),
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _SegmentTabButton(
-              label: 'Lịch sử',
-              active: _currentTab == _BookingTab.history,
-              graphiteStyle: true,
-              onTap: () => setState(() => _currentTab = _BookingTab.history),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _SegmentTabButton(
+                label: 'Lịch sử',
+                active: _currentTab == _BookingTab.history,
+                graphiteStyle: true,
+                onTap: () => setState(() => _currentTab = _BookingTab.history),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1134,28 +1302,38 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icon, color: MetaGymTheme.brandOrange, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
+            child: SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 2,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: MetaGymTheme.textPrimary,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFFC8C2BC),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                      fontFeatures: MetaGymTheme.tabularFigures,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -1182,10 +1360,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 11),
           ),
           const SizedBox(height: 2),
           Text.rich(
@@ -1195,15 +1370,17 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 color: valueColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
+                fontFeatures: MetaGymTheme.tabularFigures,
               ),
               children: [
                 if (suffix != null)
                   TextSpan(
                     text: suffix,
                     style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFC8C2BC),
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
+                      fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                   ),
               ],
@@ -1268,7 +1445,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                           ? 'Đã hết số buổi tập · Hạn ${_formatDmy(endsOn)}'
                           : 'Hạn dùng đến ${_formatDmy(endsOn)}',
                       style: const TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                        color: Color(0xFFC8C2BC),
                         fontSize: 12,
                       ),
                     ),
@@ -1287,13 +1464,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         ),
         if (isActivePack) ...[
           const SizedBox(height: 12),
-          Container(
+          MetaGymMetricPanel(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0x9E0F1115),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x1AD4E4FF)),
-            ),
             child: Row(
               children: [
                 _buildStatCell(
@@ -1332,13 +1504,13 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 5,
-              backgroundColor: MetaGymTheme.elevatedSurface,
+              backgroundColor: const Color(0x80211E1C),
               valueColor: AlwaysStoppedAnimation<Color>(
                 isPaused
                     ? MetaGymTheme.warningAmber
                     : (remaining > 0
                           ? MetaGymTheme.brandOrange
-                          : MetaGymTheme.textSecondary),
+                          : const Color(0xFFC8C2BC)),
               ),
             ),
           ),
@@ -1347,9 +1519,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0x7A0F1115),
+                color: const Color(0x80211E1C),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0x12FFFFFF)),
+                border: Border.all(color: const Color(0x9A8C8176)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1386,7 +1558,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           const SizedBox(height: 8),
           Text(
             pack['status'] == 'QUEUED' ? 'Chờ kích hoạt' : 'Đã kết thúc',
-            style: const TextStyle(color: Color(0xFFC4C8CE), fontSize: 13),
+            style: const TextStyle(color: Color(0xFFE4DAD1), fontSize: 13),
           ),
         ],
         if (canBook) ...[
@@ -1407,6 +1579,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
       );
     }
     return CoachingGraphiteCard(
+      backgroundColor: const Color(0xC42B2622),
+      borderColor: const Color(0xA3A79D92),
       padding: const EdgeInsets.all(16),
       child: content,
     );
@@ -1528,8 +1702,13 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           startGym.day == todayGym.day;
 
       return CoachingGraphiteCard(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        backgroundColor: isToday
+            ? const Color(0xD4382721)
+            : const Color(0xC42B2622),
+        padding: const EdgeInsets.all(15),
+        borderColor: isToday
+            ? MetaGymTheme.brandOrange.withValues(alpha: 0.65)
+            : const Color(0xA3A79D92),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1537,11 +1716,11 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (isUpcoming)
-                  CoachingAvatar(fullName: memberName, size: 44)
+                  CoachingAvatar(fullName: memberName, size: 42)
                 else
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
                       color: const Color(0x80211E1C),
                       borderRadius: BorderRadius.circular(13),
@@ -1549,8 +1728,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     ),
                     child: const Icon(
                       Icons.fitness_center_rounded,
-                      color: Color(0xFFB7B2AF),
-                      size: 20,
+                      color: Color(0xFFC8C2BC),
+                      size: 19,
                     ),
                   ),
                 const SizedBox(width: 12),
@@ -1560,26 +1739,28 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     children: [
                       Text(
                         _slotLabel(startsAtStr),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: isToday
-                              ? MetaGymTheme.brandOrange
-                              : MetaGymTheme.textPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                              ? const Color(0xFFFF9B82)
+                              : const Color(0xFFF7F9FC),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
+                          height: 1.25,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         memberName,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFEAE6E2),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFC8C2BC),
+                          fontSize: 13,
+                          height: 1.25,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -1594,15 +1775,15 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               Text(
                 'Lý do: $reason',
                 style: const TextStyle(
-                  color: Color(0xFFB7B2AF),
-                  fontSize: 13,
+                  color: Color(0xFFE4DAD1),
+                  fontSize: 12,
                   fontStyle: FontStyle.italic,
                 ),
               ),
             ],
             if (status == 'BOOKED') ...[
               const SizedBox(height: 12),
-              const Divider(color: Color(0x26FFFFFF), height: 1),
+              const Divider(color: Color(0x26FFF5E9), height: 1),
               const SizedBox(height: 10),
               Wrap(
                 alignment: WrapAlignment.end,
@@ -1613,10 +1794,15 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(88, 48),
+                        backgroundColor: const Color(0x80211E1C),
                         foregroundColor: MetaGymTheme.dangerCoral,
-                        side: const BorderSide(color: Color(0xFF642B32)),
+                        side: BorderSide(
+                          color: MetaGymTheme.dangerCoral.withValues(
+                            alpha: 0.55,
+                          ),
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -1638,10 +1824,11 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(84, 48),
+                        backgroundColor: const Color(0x80211E1C),
                         foregroundColor: MetaGymTheme.warningAmber,
                         side: const BorderSide(color: Color(0xFF815423)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -1665,7 +1852,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                         backgroundColor: MetaGymTheme.progressGreen,
                         foregroundColor: const Color(0xFF06261D),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -1679,7 +1866,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                         'Hoàn thành',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -1701,15 +1888,20 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isUpcoming
-                    ? MetaGymTheme.brandOrange.withValues(alpha: 0.16)
-                    : MetaGymTheme.elevatedSurface,
+                    ? MetaGymTheme.brandOrange.withValues(alpha: 0.18)
+                    : const Color(0x80211E1C),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isUpcoming
+                      ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+                      : const Color(0x9A8C8176),
+                ),
               ),
               child: Icon(
                 Icons.fitness_center_rounded,
                 color: isUpcoming
                     ? MetaGymTheme.brandOrange
-                    : MetaGymTheme.textSecondary,
+                    : const Color(0xFFC8C2BC),
                 size: 20,
               ),
             ),
@@ -1721,16 +1913,17 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   Text(
                     _slotLabel(startsAtStr),
                     style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: Color(0xFFF7F9FC),
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
+                      fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     otherName ?? 'Huấn luyện viên',
                     style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                      color: Color(0xFFC8C2BC),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1747,7 +1940,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           Text(
             'Lý do: $reason',
             style: const TextStyle(
-              color: Color(0xFFC4C8CE),
+              color: Color(0xFFE4DAD1),
               fontSize: 12,
               fontStyle: FontStyle.italic,
             ),
@@ -1755,7 +1948,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         ],
         if (status == 'BOOKED') ...[
           const SizedBox(height: 12),
-          const Divider(color: Color(0x26FFFFFF), height: 1),
+          const Divider(color: Color(0x26FFF5E9), height: 1),
           const SizedBox(height: 10),
           Wrap(
             alignment: WrapAlignment.end,
@@ -1765,8 +1958,11 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               if (startsAt != null && startsAt.isAfter(now)) ...[
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(88, 44),
-                    side: const BorderSide(color: Color(0xFFFF6961)),
+                    minimumSize: const Size(88, 48),
+                    backgroundColor: const Color(0x80211E1C),
+                    side: BorderSide(
+                      color: MetaGymTheme.dangerCoral.withValues(alpha: 0.55),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1778,7 +1974,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   onPressed: _busy ? null : () => _resolve(booking, 'CANCEL'),
                   child: const Text(
                     'Hủy buổi',
-                    style: TextStyle(color: Color(0xFFFF857D), fontSize: 13),
+                    style: TextStyle(color: Color(0xFFFF9A94), fontSize: 13),
                   ),
                 ),
                 for (final pack in _packages.where(
@@ -1789,10 +1985,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 ))
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(88, 44),
-                      backgroundColor: MetaGymTheme.elevatedSurface,
+                      minimumSize: const Size(88, 48),
+                      backgroundColor: const Color(0x80211E1C),
                       foregroundColor: MetaGymTheme.brandOrange,
-                      side: const BorderSide(color: MetaGymTheme.brandOrange),
+                      side: BorderSide(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.65),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1822,7 +2020,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
       ],
     );
 
-    return CoachingGraphiteCard(padding: const EdgeInsets.all(16), child: body);
+    return CoachingGraphiteCard(
+      backgroundColor: const Color(0xC42B2622),
+      borderColor: const Color(0xA3A79D92),
+      padding: const EdgeInsets.all(16),
+      child: body,
+    );
   }
 
   Widget _buildBookingStatusChip(String status, Object? chargedAt) {
@@ -1885,32 +2088,39 @@ class _SegmentTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeBg = MetaGymTheme.primary.withValues(alpha: 0.22);
-    return InkWell(
-      borderRadius: BorderRadius.circular(11),
-      onTap: onTap,
-      child: Container(
-        height: 44,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: active ? activeBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
-          border: active
-              ? Border.all(
-                  color: MetaGymTheme.primary.withValues(alpha: 0.7),
-                  width: 1.1,
-                )
-              : null,
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: active ? Colors.white : const Color(0xFFB7B2AF),
-            fontSize: 12.5,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+    final activeBg = graphiteStyle
+        ? const Color(0xFF472C22)
+        : const Color(0xFF544037);
+    return Material(
+      color: active ? activeBg : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: graphiteStyle && active
+                  ? Border.all(color: MetaGymTheme.brandOrange, width: 1.2)
+                  : null,
+            ),
+            child: Text(
+              label,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: active ? Colors.white : const Color(0xFFC8C2BC),
+                fontSize: 12,
+                height: 1.15,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
           ),
         ),
       ),
@@ -1993,9 +2203,9 @@ class _CoachScheduleBuilderDialogState
     final isValid = activeCount >= 6 && activeCount <= 7;
 
     return Dialog(
-      backgroundColor: const Color(0xFA26211D),
+      backgroundColor: const Color(0xF0241F1B),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+        borderRadius: BorderRadius.circular(24),
         side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -2028,7 +2238,7 @@ class _CoachScheduleBuilderDialogState
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: Color(0xFFF7F9FC),
                       fontWeight: FontWeight.w700,
                       fontSize: 18,
                     ),
@@ -2037,13 +2247,13 @@ class _CoachScheduleBuilderDialogState
                 IconButton(
                   tooltip: 'Đóng',
                   constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
+                    minWidth: 48,
+                    minHeight: 48,
                   ),
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(
                     Icons.close_rounded,
-                    color: MetaGymTheme.textSecondary,
+                    color: Color(0xFFC8C2BC),
                   ),
                 ),
               ],
@@ -2053,7 +2263,7 @@ class _CoachScheduleBuilderDialogState
               'Yêu cầu tối thiểu 6 ngày/tuần, mỗi ngày 4 ca liên tiếp cách nhau 90 phút.',
               style: TextStyle(
                 color: isValid
-                    ? MetaGymTheme.textSecondary
+                    ? const Color(0xFFC8C2BC)
                     : MetaGymTheme.dangerCoral,
                 fontSize: 12,
                 height: 1.4,
@@ -2063,7 +2273,7 @@ class _CoachScheduleBuilderDialogState
             const Text(
               'Áp dụng mẫu ca nhanh cho Thứ 2 - Thứ 7:',
               style: TextStyle(
-                color: MetaGymTheme.textPrimary,
+                color: Color(0xFFF7F9FC),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -2075,16 +2285,13 @@ class _CoachScheduleBuilderDialogState
               children: [
                 for (final preset in _presets)
                   ActionChip(
-                    backgroundColor: const Color(0xC42B2622),
-                    side: const BorderSide(
-                      color: Color(0xA3A79D92),
-                      width: 1.1,
-                    ),
+                    backgroundColor: const Color(0x80211E1C),
+                    side: const BorderSide(color: Color(0x9A8C8176)),
                     materialTapTargetSize: MaterialTapTargetSize.padded,
                     label: Text(
                       preset['label'] as String,
                       style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                        color: Color(0xFFF7F9FC),
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -2118,32 +2325,31 @@ class _CoachScheduleBuilderDialogState
                     decoration: BoxDecoration(
                       color: isActive
                           ? const Color(0xC42B2622)
-                          : const Color(0x382B2622),
+                          : const Color(0x80211E1C),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isActive
-                            ? MetaGymTheme.primary.withValues(alpha: 0.6)
-                            : const Color(0xA3A79D92),
-                        width: 1.1,
+                            ? MetaGymTheme.brandOrange.withValues(alpha: 0.65)
+                            : const Color(0x9A8C8176),
                       ),
                     ),
                     child: Row(
                       children: [
                         Checkbox(
                           value: isActive,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.padded,
                           activeColor: MetaGymTheme.primary,
                           checkColor: MetaGymTheme.onPrimary,
-                          side: const BorderSide(
-                            color: MetaGymTheme.textSecondary,
-                          ),
+                          side: const BorderSide(color: Color(0xFFC8C2BC)),
                           onChanged: (val) => _toggleDay(weekday, val ?? false),
                         ),
                         Text(
                           dayName,
                           style: TextStyle(
                             color: isActive
-                                ? MetaGymTheme.textPrimary
-                                : MetaGymTheme.textSecondary,
+                                ? const Color(0xFFF7F9FC)
+                                : const Color(0xFFC8C2BC),
                             fontWeight: FontWeight.w600,
                             fontSize: 13.5,
                           ),
@@ -2163,13 +2369,11 @@ class _CoachScheduleBuilderDialogState
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: MetaGymTheme.primary.withValues(
-                                          alpha: 0.16,
-                                        ),
+                                        color: const Color(0xFF472C22),
                                         borderRadius: BorderRadius.circular(7),
                                         border: Border.all(
                                           color: MetaGymTheme.primary
-                                              .withValues(alpha: 0.3),
+                                              .withValues(alpha: 0.55),
                                         ),
                                       ),
                                       child: Text(
@@ -2190,20 +2394,18 @@ class _CoachScheduleBuilderDialogState
                           PopupMenuButton<List<String>>(
                             tooltip: 'Đổi mẫu ca',
                             constraints: const BoxConstraints(
-                              minWidth: 44,
-                              minHeight: 44,
+                              minWidth: 48,
+                              minHeight: 48,
                             ),
                             icon: const Icon(
                               Icons.more_vert_rounded,
-                              color: coachingWarmTextSecondary,
+                              color: Color(0xFFC8C2BC),
                               size: 19,
                             ),
-                            color: coachingWarmOverlaySurface,
+                            color: const Color(0xF0241F1B),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
-                              side: const BorderSide(
-                                color: coachingWarmGlassBorder,
-                              ),
+                              side: const BorderSide(color: Color(0xA3A79D92)),
                             ),
                             onSelected: (newSlots) =>
                                 _setSlotsForDay(weekday, newSlots),
@@ -2214,7 +2416,7 @@ class _CoachScheduleBuilderDialogState
                                   child: Text(
                                     p['label'] as String,
                                     style: const TextStyle(
-                                      color: coachingWarmTextPrimary,
+                                      color: Color(0xFFF7F9FC),
                                       fontSize: 12.5,
                                     ),
                                   ),
@@ -2236,15 +2438,25 @@ class _CoachScheduleBuilderDialogState
                 TextButton(
                   style: TextButton.styleFrom(
                     minimumSize: const Size(64, 48),
-                    foregroundColor: coachingWarmTextSecondary,
+                    foregroundColor: const Color(0xFFC8C2BC),
                   ),
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Đóng'),
                 ),
                 const SizedBox(width: 8),
                 Flexible(
-                  child: CoachingCompactAccentButton(
-                    label: 'Lưu lịch ($activeCount/6 ngày)',
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MetaGymTheme.primary,
+                      foregroundColor: MetaGymTheme.onPrimary,
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusInput,
+                        ),
+                      ),
+                    ),
                     onPressed: isValid
                         ? () {
                             final days = <CoachRecord>[
@@ -2255,6 +2467,12 @@ class _CoachScheduleBuilderDialogState
                             Navigator.pop(context, days);
                           }
                         : null,
+                    child: Text(
+                      'Lưu lịch ($activeCount/6 ngày)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ),
               ],

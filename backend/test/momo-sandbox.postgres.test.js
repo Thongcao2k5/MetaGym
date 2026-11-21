@@ -17,7 +17,6 @@ const sign = (fields) => createHmac('sha256', merchantSecret)
 
 test('MoMo validates payment, renews once and preserves failures in history', { skip: !databaseUrl }, async (t) => {
   const database = new pg.Pool({ connectionString: databaseUrl });
-  t.after(() => database.end());
   const providerOrders = new Map();
   let queries = 0;
   let queryCode = 1000;
@@ -52,11 +51,24 @@ test('MoMo validates payment, renews once and preserves failures in history', { 
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const api = `http://127.0.0.1:${server.address().port}/api/v1`;
   const [member, plan, fixtureAdmin] = Array.from({ length: 3 }, () => randomUUID());
-  await database.query(
+  const insertedAdmin = await database.query(
     `INSERT INTO users (id,email,password_hash,role,full_name)
-     VALUES ($1,$2,'hash','ADMIN','Admin') ON CONFLICT DO NOTHING`,
+     VALUES ($1,$2,'hash','ADMIN','Admin') ON CONFLICT DO NOTHING RETURNING id`,
     [fixtureAdmin, fixtureAdmin + '@example.com'],
   );
+  t.after(async () => {
+    try {
+      await database.query('DELETE FROM member_memberships WHERE member_id = $1', [member]);
+      await database.query('DELETE FROM payments WHERE member_id = $1', [member]);
+      await database.query('DELETE FROM membership_plans WHERE id = $1', [plan]);
+      await database.query('DELETE FROM users WHERE id = $1', [member]);
+      if (insertedAdmin.rowCount > 0) {
+        await database.query('DELETE FROM users WHERE id = $1', [fixtureAdmin]);
+      }
+    } finally {
+      await database.end();
+    }
+  });
   await database.query(
     "INSERT INTO users (id,email,password_hash,role,full_name) VALUES ($1,$2,'hash','MEMBER','Member')",
     [member, member + '@example.com'],

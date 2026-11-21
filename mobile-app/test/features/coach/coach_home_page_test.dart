@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
@@ -18,6 +19,55 @@ import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 
 void main() {
+  for (final width in [375.0, 768.0]) {
+    testWidgets(
+      'Coach keeps work tab selection on revisit at $width with reduced motion',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: MetaGymTheme.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: const CoachHomePage(
+              previewMode: true,
+              useSolidGlassFallback: true,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final origin = tester.state(find.byType(CoachHomePage));
+        Future<void> tab(String label) async {
+          await tester.tap(
+            find.descendant(
+              of: find.byType(MetaGymBottomNav),
+              matching: find.text(label),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await tab('Lịch dạy');
+        await tester.tap(find.text('Học viên (2)'));
+        await tester.pumpAndSettle();
+        await tab('Trang chủ');
+        await tab('Lịch dạy');
+        await tab('Lịch dạy');
+        expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
+        expect(
+          Navigator.of(tester.element(find.byType(CoachHomePage))).canPop(),
+          isFalse,
+        );
+        expect(tester.state(find.byType(CoachHomePage)), same(origin));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   const coachUser = AuthUser(
     id: 'coach-1',
     email: 'coach@metagym.test',
@@ -56,22 +106,20 @@ void main() {
       final avatarText = find.text('LN');
       expect(avatarText, findsWidgets);
 
-      // Live Hero Work Summary metrics
+      // Live Hero Work Summary metrics (hard cap 8)
       expect(find.text('Tổng quan công việc'), findsOneWidget);
-      expect(find.text('8/12'), findsOneWidget);
-      expect(find.text('Còn 4 suất'), findsOneWidget);
-      expect(find.text('1 yêu cầu chờ duyệt'), findsOneWidget);
+      expect(find.text('6/8'), findsOneWidget);
+      expect(find.text('Còn 2 suất'), findsOneWidget);
+      expect(find.text('Thông báo Coach'), findsWidgets);
+      expect(find.text('1 thông báo chưa đọc'), findsWidgets);
 
-      // Quick actions present
-      expect(find.text('Yêu cầu'), findsOneWidget);
+      // Quick actions present (no Coach request approval flow)
+      expect(find.text('Học viên'), findsOneWidget);
       expect(find.text('Giáo trình'), findsOneWidget);
       expect(find.text('Dinh dưỡng'), findsOneWidget);
       expect(find.text('Lịch tập'), findsOneWidget);
-
-      // Removed directory and logout button on Coach home
-      expect(find.text('Danh mục tính năng Coach'), findsNothing);
-      expect(find.text('Đăng xuất'), findsNothing);
-      expect(find.byTooltip('Phòng gym và thiết bị'), findsOneWidget);
+      expect(find.text('Yêu cầu chọn Coach'), findsNothing);
+      expect(find.textContaining('yêu cầu chờ duyệt'), findsNothing);
 
       // Scroll to Next session + Bento cards
       await tester.scrollUntilVisible(find.text('Ca dạy tiếp theo'), 200);
@@ -83,10 +131,18 @@ void main() {
       expect(find.text('Gói PT Cơ bản'), findsOneWidget);
       expect(find.text('1 gói'), findsOneWidget);
 
-      // Verify utilities card provides entry points for calls and gym equipment
-      await tester.scrollUntilVisible(find.text('Khám phá & Liên lạc'), 200);
-      expect(find.text('Cuộc gọi thoại & video'), findsOneWidget);
-      expect(find.text('Phòng gym và thiết bị'), findsOneWidget);
+      // Expand directory and verify every coachDestination + Offers + Notifications
+      await tester.scrollUntilVisible(
+        find.text('Danh mục tính năng Coach'),
+        250,
+      );
+      await tester.tap(find.text('Danh mục tính năng Coach'));
+      await tester.pumpAndSettle();
+
+      for (final destination in coachDestinations) {
+        await tester.scrollUntilVisible(find.text(destination.title).last, 150);
+        expect(find.text(destination.title), findsWidgets);
+      }
 
       // Scroll back to top and open CoachNotificationsPage from header bell
       await tester.scrollUntilVisible(
@@ -99,19 +155,17 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
 
-      // Open CoachOffersPage in Coach view from PT package Bento card
+      // Open CoachOffersPage from PT package Bento card
       await tester.scrollUntilVisible(find.text('Gói PT Cơ bản'), 200);
       await tester.ensureVisible(find.text('Gói PT Cơ bản'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Gói PT Cơ bản'));
       await tester.pumpAndSettle();
       expect(find.byType(CoachOffersPage), findsOneWidget);
-      expect(find.text('Bảng giá gói PT đang mở bán'), findsOneWidget);
-      expect(find.text('Thanh toán'), findsNothing);
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      // Switch to Lịch dạy tab (WorkHub) and verify schedule + week date filtering
+      // Switch to Lịch dạy tab (WorkHub) and verify schedule + members/requests
       await tester.tap(
         find.descendant(
           of: find.byType(MetaGymBottomNav),
@@ -128,61 +182,13 @@ void main() {
       expect(tester.getSize(find.text('Nhắn tin')).height, lessThan(26));
       expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
       expect(tester.getSize(find.text('Hoàn tất')).height, lessThan(26));
+      expect(find.text('Học viên (1)'), findsOneWidget);
 
-      // Moving to next week should NOT leak this week's booking on the same weekday
-      await tester.tap(find.byTooltip('Tuần sau'));
+      await tester.tap(find.text('Học viên (1)'));
       await tester.pumpAndSettle();
-      expect(find.text('Hoàn tất'), findsNothing);
-      await tester.tap(find.text('Về hôm nay'));
-      await tester.pumpAndSettle();
-      expect(find.text('Hoàn tất'), findsOneWidget);
-
-      expect(find.text('Học viên & Yêu cầu (1)'), findsOneWidget);
-
-      await tester.tap(find.text('Học viên & Yêu cầu (1)'));
-      await tester.pumpAndSettle();
-      expect(find.text('Hội viên member-9'), findsOneWidget);
       expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
-
-      expect(tester.takeException(), isNull);
-    },
-  );
-
-  testWidgets(
-    'renders previewMode and error retry cleanly at 375x812 with zero overflow',
-    (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: CoachHomePage(previewMode: true, useSolidGlassFallback: true),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Xin chào, Lê Hoàng Nam'), findsOneWidget);
-      expect(find.text('8/12'), findsOneWidget);
-
-      await tester.scrollUntilVisible(find.text('Nguyễn Minh Tuấn').first, 200);
-      expect(find.text('Nguyễn Minh Tuấn'), findsWidgets);
-
-      final avatarFinder = find.ancestor(
-        of: find.text('LN').first,
-        matching: find.byType(Container),
-      );
-      final decoration = tester
-          .widget<Container>(avatarFinder.first)
-          .decoration;
-      expect(
-        decoration,
-        isA<BoxDecoration>().having(
-          (box) => box.color,
-          'coach avatar background',
-          MetaGymTheme.coachAvatarBackground,
-        ),
-      );
+      expect(find.text('Chấp nhận'), findsNothing);
+      expect(find.text('Từ chối'), findsNothing);
 
       expect(tester.takeException(), isNull);
     },
@@ -288,6 +294,80 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'renders previewMode and error retry cleanly at 375x812 with zero overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: CoachHomePage(previewMode: true, useSolidGlassFallback: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Xin chào, Lê Hoàng Nam'), findsOneWidget);
+      expect(find.text('6/8'), findsOneWidget);
+      expect(find.text('8/12'), findsNothing);
+
+      await tester.scrollUntilVisible(find.text('Nguyễn Minh Tuấn').first, 200);
+      expect(find.text('Nguyễn Minh Tuấn'), findsWidgets);
+
+      final avatarFinder = find.ancestor(
+        of: find.text('LN').first,
+        matching: find.byType(Container),
+      );
+      final decoration = tester
+          .widget<Container>(avatarFinder.first)
+          .decoration;
+      expect(
+        decoration,
+        isA<BoxDecoration>().having(
+          (box) => box.color,
+          'coach avatar background',
+          MetaGymTheme.coachAvatarBackground,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'enforces hard cap of 8 even if API returns stale memberLimit 12',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final adapter = _CoachHomeAdapter(
+        memberLimit: 12,
+        usedSlots: 8,
+        availableSlots: 4,
+      );
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+      );
+      final controller = SessionController(
+        _MemoryTokenStorage('coach-token'),
+        (_) async => coachUser,
+      );
+
+      await tester.pumpWidget(
+        MetaGymApp(sessionController: controller, apiClient: api),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('8/8'), findsOneWidget);
+      expect(find.text('Đã đủ suất'), findsOneWidget);
+      expect(find.text('8/12'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _MemoryTokenStorage implements TokenStorage {
@@ -306,6 +386,15 @@ class _MemoryTokenStorage implements TokenStorage {
 }
 
 class _CoachHomeAdapter implements HttpClientAdapter {
+  _CoachHomeAdapter({
+    this.memberLimit = 8,
+    this.usedSlots = 6,
+    this.availableSlots = 2,
+  });
+
+  final int memberLimit;
+  final int usedSlots;
+  final int availableSlots;
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -341,9 +430,9 @@ class _CoachHomeAdapter implements HttpClientAdapter {
       '/coaches/coach-1' => {
         'id': 'coach-1',
         'fullName': 'Lê Hoàng Nam',
-        'memberLimit': 12,
-        'usedSlots': 8,
-        'availableSlots': 4,
+        'memberLimit': memberLimit,
+        'usedSlots': usedSlots,
+        'availableSlots': availableSlots,
         'specialties': ['Tăng cơ'],
       },
       '/coach/members' => [
