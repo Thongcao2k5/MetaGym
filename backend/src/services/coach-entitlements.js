@@ -66,29 +66,54 @@ async function settleLockedHold(client, holdId, paid, amount) {
      AND status IN ('ACTIVE', 'PAUSED') FOR UPDATE`, [hold.member_id],
   )).rows[0];
   if (current && current.coach_id !== hold.coach_id) return release('FAILED', 'RELATIONSHIP_EXISTS');
-  let proposalStart = hold.today;
-  if (current) {
-    const { rows: [existing] } = await client.query(
-      `SELECT (original_ends_on + 8)::text AS latest_start,
-         EXISTS (SELECT 1 FROM coach_entitlements WHERE relationship_id = $1
-           AND status = 'QUEUED') AS queued
-       FROM coach_entitlements WHERE relationship_id = $1 AND status = 'ACTIVE'`, [current.id],
-    );
-    if (!existing || existing.queued) return release('FAILED', 'QUEUED_UNAVAILABLE');
-    proposalStart = existing.latest_start;
-  }
+
   const seats = (await client.query('SELECT coach_occupied_seats($1) AS count', [hold.coach_id]))
     .rows[0].count;
   if (!current && seats > Math.min(8, hold.member_limit)) return release('FAILED', 'COACH_FULL');
-  const eligible = await hasCoachCapacity(client, hold.coach_id, {
-    from: proposalStart, through: hold.through, remaining: hold.session_count, memberId: hold.member_id,
-  });
+
+  let eligible = false;
+  if (current) {
+    const { rows: [existing] } = await client.query(
+      `SELECT (original_ends_on + frozen_days_total + 8)::text AS late_from,
+         (original_ends_on + frozen_days_total + 8 + $2::int - 1)::text AS late_through,
+         ($3::date + remaining_sessions)::text AS early_from,
+         ($3::date + remaining_sessions + $2::int - 1)::text AS early_through,
+         EXISTS (SELECT 1 FROM coach_entitlements WHERE relationship_id = $1
+           AND status = 'QUEUED') AS queued
+       FROM coach_entitlements WHERE relationship_id = $1 AND status = 'ACTIVE'`,
+      [current.id, hold.duration_days, hold.today],
+    );
+    if (!existing || existing.queued) return release('FAILED', 'QUEUED_UNAVAILABLE');
+    // T2 §2 D2: check both late (expiry+grace) and early (fast completion) QUEUED windows
+    eligible = await hasCoachCapacity(client, hold.coach_id, {
+      from: existing.late_from,
+      through: existing.late_through,
+      remaining: hold.session_count,
+      memberId: hold.member_id,
+    }) && await hasCoachCapacity(client, hold.coach_id, {
+      from: existing.early_from,
+      through: existing.early_through,
+      remaining: hold.session_count,
+      memberId: hold.member_id,
+    });
+  } else {
+    eligible = await hasCoachCapacity(client, hold.coach_id, {
+      from: hold.today,
+      through: hold.through,
+      remaining: hold.session_count,
+      memberId: hold.member_id,
+    });
+  }
+
   if (!eligible) return release('FAILED', 'CAPACITY_UNAVAILABLE');
   const relationshipId = current?.id ?? randomUUID();
   const entitlementId = randomUUID();
   const consumed = await client.query(
-    `UPDATE coach_payment_holds SET status = 'CONSUMED'
-     WHERE id = $1 AND expires_at > statement_timestamp() RETURNING id`, [holdId],
+    `UPDATE coach_payment_holds
+     SET status = 'CONSUMED', settled_at = statement_timestamp()
+     WHERE id = $1 AND expires_at > statement_timestamp()
+     RETURNING id`,
+    [holdId],
   );
   if (!consumed.rows.length) return release('EXPIRED', 'HOLD_EXPIRED');
   if (!current) {
@@ -98,12 +123,27 @@ async function settleLockedHold(client, holdId, paid, amount) {
     );
   }
   await client.query(
-    `INSERT INTO coach_entitlements (id, hold_id, relationship_id, member_id, coach_id,
-       status, total_sessions, remaining_sessions, duration_days, starts_on, original_ends_on, ends_on)
-     VALUES ($1, $2, $3, $4, $5, $10, $6, $6, $7, $8, $9, $9)`,
-    [entitlementId, holdId, relationshipId, hold.member_id, hold.coach_id, hold.session_count,
-      hold.duration_days, current ? null : hold.today, current ? null : hold.through,
-      current ? 'QUEUED' : 'ACTIVE'],
+    `INSERT INTO coach_entitlements (
+       id, hold_id, original_hold_id, relationship_id, member_id, coach_id,
+       plan_code, plan_name, snapshot_price,
+       status, total_sessions, remaining_sessions, duration_days,
+       starts_on, original_ends_on, ends_on
+     ) VALUES ($1, $2, $2, $3, $4, $5, $6, $7, $8, $13, $9, $9, $10, $11, $12, $12)`,
+    [
+      entitlementId,
+      holdId,
+      relationshipId,
+      hold.member_id,
+      hold.coach_id,
+      hold.plan_code,
+      hold.plan_name,
+      hold.amount,
+      hold.session_count,
+      hold.duration_days,
+      current ? null : hold.today,
+      current ? null : hold.through,
+      current ? 'QUEUED' : 'ACTIVE',
+    ],
   );
   return { status: 'CONSUMED', entitlementId };
 }

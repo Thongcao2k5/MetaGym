@@ -46,6 +46,10 @@ function publicMembership(row) {
     startDate: row.start_date, endDate: row.end_date,
     status: row.status,
     planName: row.plan_name_snapshot ?? null,
+    ...(row.member_name !== undefined ? { memberName: row.member_name } : {}),
+    ...(row.member_email !== undefined ? { memberEmail: row.member_email } : {}),
+    ...(row.activated_at !== undefined ? { activatedAt: row.activated_at } : {}),
+    ...(row.expired_at !== undefined ? { expiredAt: row.expired_at } : {}),
   };
 }
 
@@ -855,16 +859,70 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
 
   router.get('/admin/memberships', async (request, response) => {
     if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
-    try {
-      const result = await database.query(
-        `SELECT id, member_id, plan_id, source_payment_id,
-                start_date::text, end_date::text, status
-         FROM member_memberships
-         WHERE NOT EXISTS (SELECT 1 FROM payments WHERE id = source_payment_id
-                           AND renewed_membership_id IS NOT NULL)
-         ORDER BY start_date DESC, id DESC`,
+    const parsed = z.strictObject({
+      status: z.enum(['SCHEDULED', 'ACTIVE', 'EXPIRED', 'CANCELLED']).optional(),
+      memberId: uuid.optional(),
+      search: z.string().trim().max(120).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      pageSize: z.coerce.number().int().min(1).max(100).default(20),
+    }).safeParse(request.query);
+    if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Bộ lọc không hợp lệ');
+    const { status, memberId, search, page, pageSize } = parsed.data;
+    const filters = [
+      'p.renewed_membership_id IS NULL',
+    ];
+    const values = [];
+    if (status) {
+      values.push(status);
+      filters.push(`m.status = $${values.length}`);
+    }
+    if (memberId) {
+      values.push(memberId);
+      filters.push(`m.member_id = $${values.length}`);
+    }
+    if (search) {
+      const escaped = search.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      values.push(`%${escaped}%`);
+      const param = `$${values.length}`;
+      filters.push(
+        `(u.full_name ILIKE ${param} ESCAPE '\\' OR u.email::text ILIKE ${param} ESCAPE '\\' OR p.plan_name_snapshot ILIKE ${param} ESCAPE '\\')`,
       );
-      return response.json({ data: result.rows.map(publicMembership) });
+    }
+    const whereClause = `WHERE ${filters.join(' AND ')}`;
+    try {
+      const [totalRes, result] = await Promise.all([
+        database.query(
+          `SELECT count(*)::int AS count
+           FROM member_memberships m
+           JOIN users u ON u.id = m.member_id
+           JOIN payments p ON p.id = m.source_payment_id
+           ${whereClause}`,
+          values,
+        ),
+        database.query(
+          `SELECT m.id, m.member_id, u.full_name AS member_name, u.email::text AS member_email,
+                  m.plan_id, m.source_payment_id, p.plan_name_snapshot,
+                  m.start_date::text, m.end_date::text, m.status,
+                  m.activated_at, m.expired_at
+           FROM member_memberships m
+           JOIN users u ON u.id = m.member_id
+           JOIN payments p ON p.id = m.source_payment_id
+           ${whereClause}
+           ORDER BY m.start_date DESC, m.id DESC
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
+      const totalItems = totalRes.rows[0].count;
+      return response.json({
+        data: result.rows.map(publicMembership),
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages: Math.ceil(totalItems / pageSize),
+        },
+      });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được gói tập'); }
   });
 

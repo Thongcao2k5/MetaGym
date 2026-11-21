@@ -54,11 +54,12 @@ test('Admin prices three fixed Coach packages; public sees active offers only',
       assert.equal((await call(base, '/coach-packages')).body.data.length, 0);
       const path = '/admin/coach-packages/BASIC';
       assert.equal((await call(base, path, admin, 'PATCH',
-        { sessionCount: 99 })).status, 422);
+        { sessionCount: 0 })).status, 422);
       const updated = await call(base, path, admin, 'PATCH',
-        { price: 1500000, status: 'ACTIVE' });
+        { price: 1500000, status: 'ACTIVE', sessionCount: 12 });
       assert.equal(updated.status, 200);
       assert.equal(updated.body.data.price, 1500000);
+      assert.equal(updated.body.data.sessionCount, 12);
       assert.equal((await call(base, '/coach-packages')).body.data[0].code, 'BASIC');
       const audit = await database.query(
         `SELECT metadata FROM admin_audit_logs
@@ -67,7 +68,7 @@ test('Admin prices three fixed Coach packages; public sees active offers only',
       assert.equal(audit.rows[0].metadata.after.price, 1500000);
     } finally {
       await database.query(
-        `UPDATE coach_package_plans SET price = 0, status = 'INACTIVE'
+        `UPDATE coach_package_plans SET price = 0, status = 'INACTIVE', session_count = 10
          WHERE code = 'BASIC'`,
       );
       await database.query('DELETE FROM admin_audit_logs WHERE admin_id = $1',

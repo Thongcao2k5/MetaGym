@@ -305,19 +305,26 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal((await request(app, '/admin/payments', memberToken)).status, 403);
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { price: 200000 });
-      assert.equal(result.status, 409);
-      const lockedPlan = await database.query(
+      assert.equal(result.status, 200);
+      assert.equal(result.body.data.price, 200000);
+      const updatedPlan = await database.query(
         'SELECT price, duration_days FROM membership_plans WHERE id = $1', [planId],
       );
-      assert.equal(Number(lockedPlan.rows[0].price), 100000);
-      assert.equal(lockedPlan.rows[0].duration_days, 30);
+      assert.equal(Number(updatedPlan.rows[0].price), 200000);
+      assert.equal(updatedPlan.rows[0].duration_days, 30);
+      // Prior payment snapshot remains immutable at 100000 / 30 days
+      const firstPaymentSnapshot = await database.query(
+        'SELECT amount, duration_days_snapshot FROM payments WHERE id = $1', [firstPaymentId],
+      );
+      assert.equal(Number(firstPaymentSnapshot.rows[0].amount), 100000);
+      assert.equal(firstPaymentSnapshot.rows[0].duration_days_snapshot, 30);
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { durationDays: 60 });
-      assert.equal(result.status, 409);
-      const lockedDuration = await database.query(
+      assert.equal(result.status, 200);
+      const updatedDuration = await database.query(
         'SELECT duration_days FROM membership_plans WHERE id = $1', [planId],
       );
-      assert.equal(lockedDuration.rows[0].duration_days, 30);
+      assert.equal(updatedDuration.rows[0].duration_days, 60);
       result = await request(app, `/admin/membership-plans/${planId}`, adminToken,
         'PATCH', { status: 'INACTIVE' });
       assert.equal(result.status, 200);
