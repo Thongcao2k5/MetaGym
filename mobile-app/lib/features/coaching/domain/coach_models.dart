@@ -64,6 +64,7 @@ class CoachPackagePlan {
   const CoachPackagePlan({
     required this.code,
     required this.name,
+    this.description,
     required this.sessionCount,
     required this.durationDays,
     required this.price,
@@ -75,15 +76,17 @@ class CoachPackagePlan {
     return CoachPackagePlan(
       code: json['code'] as String,
       name: json['name'] as String,
-      sessionCount: json['sessionCount'] as int,
-      durationDays: json['durationDays'] as int,
+      description: json['description'] as String?,
+      sessionCount: (json['sessionCount'] as num).toInt(),
+      durationDays: (json['durationDays'] as num).toInt(),
       price: (json['price'] as num).toInt(),
-      status: json['status'] as String,
+      status: json['status'] as String? ?? 'ACTIVE',
     );
   }
 
   final String code;
   final String name;
+  final String? description;
   final int sessionCount;
   final int durationDays;
   final int price;

@@ -24,4 +24,38 @@ void main() {
     expect(relationship.statusLabel, 'Đã kết thúc');
     expect(relationship.endedAt, isNotNull);
   });
+
+  test('distinguishes COACH_LOCKED, MEMBER_LOCKED, and MEMBERSHIP_EXPIRED pause states', () {
+    final coachLocked = MemberCoachRelationship.fromJson({
+      'id': 'rel-1',
+      'coachId': 'coach-1',
+      'status': 'PAUSED',
+      'pauseReason': 'COACH_LOCKED',
+    });
+    final memberLocked = MemberCoachRelationship.fromJson({
+      'id': 'rel-2',
+      'coachId': 'coach-1',
+      'status': 'PAUSED',
+      'pauseReason': 'MEMBER_LOCKED',
+    });
+    final gymExpired = MemberCoachRelationship.fromJson({
+      'id': 'rel-3',
+      'coachId': 'coach-1',
+      'status': 'PAUSED',
+      'pauseReason': 'MEMBERSHIP_EXPIRED',
+    });
+
+    expect(coachLocked.isCoachLocked, isTrue);
+    expect(coachLocked.isMemberLocked, isFalse);
+    expect(coachLocked.isMembershipExpired, isFalse);
+    expect(coachLocked.statusLabel, 'Coach đang tạm khóa');
+
+    expect(memberLocked.isMemberLocked, isTrue);
+    expect(memberLocked.isCoachLocked, isFalse);
+    expect(memberLocked.isMembershipExpired, isFalse);
+    expect(memberLocked.statusLabel, 'Tài khoản đang tạm khóa');
+
+    expect(gymExpired.isMembershipExpired, isTrue);
+    expect(gymExpired.statusLabel, 'Tạm ngưng do Gym hết hạn');
+  });
 }

@@ -27,6 +27,8 @@ import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/workbench/flow_workbench_config.dart';
 import 'package:provider/provider.dart';
 
+const int _coachHardMemberCap = 8;
+
 const List<String> _weekdayShortLabels = <String>[
   'T2',
   'T3',
@@ -869,9 +871,9 @@ class _CoachSnapshot {
       profile: const CoachProfile(
         id: 'preview-coach',
         fullName: 'Lê Hoàng Nam',
-        memberLimit: 12,
-        usedSlots: 8,
-        availableSlots: 4,
+        memberLimit: _coachHardMemberCap,
+        usedSlots: 6,
+        availableSlots: 2,
         specialties: ['Hypertrophy', 'Giảm mỡ'],
       ),
       members: const [
@@ -1486,10 +1488,16 @@ class _CoachDashboardView extends StatelessWidget {
         .where((b) => b.isUpcomingOrActive)
         .length;
     final hasCapacityData = profile != null;
-    final isFull = hasCapacityData && profile.availableSlots <= 0;
+    final effectiveLimit = hasCapacityData
+        ? math.min(profile.memberLimit, _coachHardMemberCap)
+        : _coachHardMemberCap;
+    final effectiveAvailableSlots = hasCapacityData
+        ? math.max(0, effectiveLimit - profile.usedSlots)
+        : 0;
+    final isFull = hasCapacityData && effectiveAvailableSlots <= 0;
     final statusLabel = !hasCapacityData
         ? 'Hoạt động'
-        : (isFull ? 'Đã đủ suất' : 'Còn ${profile.availableSlots} suất');
+        : (isFull ? 'Đã đủ suất' : 'Còn $effectiveAvailableSlots suất');
     final statusTone = !hasCapacityData
         ? CoachingPillTone.green
         : (isFull ? CoachingPillTone.amber : CoachingPillTone.green);
@@ -1554,7 +1562,7 @@ class _CoachDashboardView extends StatelessWidget {
                     children: [
                       Text(
                         hasCapacityData
-                            ? '${profile.usedSlots}/${profile.memberLimit}'
+                            ? '${profile.usedSlots}/$effectiveLimit'
                             : '$activeMembers',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1870,8 +1878,11 @@ class _CoachDashboardView extends StatelessWidget {
     final offerPrice = firstOffer?['price'] as num?;
     final offerSessions = (firstOffer?['sessionCount'] as num?)?.toInt();
     final profile = snapshot.profile;
-    final usedRatio = (profile != null && profile.memberLimit > 0)
-        ? (profile.usedSlots / profile.memberLimit).clamp(0.0, 1.0)
+    final effectiveLimit = profile != null
+        ? math.min(profile.memberLimit, _coachHardMemberCap)
+        : _coachHardMemberCap;
+    final usedRatio = (profile != null && effectiveLimit > 0)
+        ? (profile.usedSlots / effectiveLimit).clamp(0.0, 1.0)
         : 0.0;
 
     return IntrinsicHeight(
@@ -2050,7 +2061,7 @@ class _CoachDashboardView extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 profile != null
-                                    ? 'Suất: ${profile.usedSlots}/${profile.memberLimit}'
+                                    ? 'Suất: ${profile.usedSlots}/$effectiveLimit'
                                     : 'HV: ${snapshot.activeMembersCount}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

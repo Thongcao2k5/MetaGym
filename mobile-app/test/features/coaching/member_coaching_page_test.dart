@@ -1,9 +1,16 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/config/api_config.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   testWidgets(
@@ -58,6 +65,67 @@ void main() {
     expect(find.text('Khám phá Coach'), findsOneWidget);
     expect(service.loads, 2);
   });
+
+  testWidgets(
+    'displays COACH_LOCKED freeze badge and frozen entitlement dates without gym renewal CTA',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: _FrozenEntitlementAdapter(),
+      );
+      final service = _MemberCoachingFixture(
+        paused: true,
+        pauseReason: 'COACH_LOCKED',
+      );
+      await tester.pumpWidget(
+        Provider<ApiClient>.value(
+          value: api,
+          child: MaterialApp(home: MemberCoachingPage(service: service)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Coach đang tạm khóa'), findsOneWidget);
+      expect(find.byKey(const Key('coaching-frozen-pill')), findsOneWidget);
+      expect(find.text('Đang đóng băng'), findsOneWidget);
+      expect(find.text('6 / 10 buổi'), findsOneWidget);
+      expect(find.text('21/11/2026'), findsOneWidget);
+      expect(find.textContaining('Gói Coach đang được đóng băng'), findsOneWidget);
+      expect(find.text('Gia hạn gói Gym'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'displays MEMBER_LOCKED pause state distinctly without freeze pill or gym renewal CTA',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final service = _MemberCoachingFixture(
+        paused: true,
+        pauseReason: 'MEMBER_LOCKED',
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: MemberCoachingPage(service: service)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tài khoản đang tạm khóa'), findsWidgets);
+      expect(
+        find.textContaining('tài khoản của bạn đang bị khóa'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('coaching-frozen-pill')), findsNothing);
+      expect(find.text('Gia hạn gói Gym'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _MemberCoachingFixture implements MemberCoachingService {
@@ -65,11 +133,13 @@ class _MemberCoachingFixture implements MemberCoachingService {
     this.empty = false,
     this.failFirst = false,
     this.paused = false,
+    this.pauseReason,
   });
 
   final bool empty;
   final bool failFirst;
   final bool paused;
+  final String? pauseReason;
   int loads = 0;
   String? endedId;
   String? endReason;
@@ -98,7 +168,7 @@ class _MemberCoachingFixture implements MemberCoachingService {
       coachId: 'coach-1',
       coachName: 'Coach Linh',
       status: paused ? 'PAUSED' : 'ACTIVE',
-      pauseReason: paused ? 'MEMBERSHIP_EXPIRED' : null,
+      pauseReason: paused ? (pauseReason ?? 'MEMBERSHIP_EXPIRED') : null,
     );
   }
 
@@ -123,4 +193,42 @@ class _MemberCoachingFixture implements MemberCoachingService {
     endReason = reason;
     ended = true;
   }
+}
+
+class _FrozenEntitlementAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final Object data = switch (options.path) {
+      '/coach-entitlements' => [
+        {
+          'id': 'ent-1',
+          'coachId': 'coach-1',
+          'planCode': 'BASIC',
+          'planName': 'Gói cơ bản',
+          'status': 'ACTIVE',
+          'remainingSessions': 6,
+          'totalSessions': 10,
+          'startsOn': '2026-11-01',
+          'endsOn': '2026-12-01',
+          'frozenAt': '2026-11-21T03:00:00.000Z',
+          'frozenDaysTotal': 0,
+        },
+      ],
+      _ => const <Object>[],
+    };
+    return ResponseBody.fromString(
+      jsonEncode({'data': data}),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

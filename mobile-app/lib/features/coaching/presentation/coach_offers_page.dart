@@ -729,12 +729,20 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                   const SizedBox(height: 10),
                                   _SummaryLine(
                                     label: 'Tên gói',
-                                    value: selectedOffer['name'] as String,
+                                    value:
+                                        (selectedOffer['name'] as String?)
+                                                ?.trim()
+                                                .isNotEmpty ==
+                                            true
+                                        ? (selectedOffer['name'] as String)
+                                              .trim()
+                                        : ((selectedOffer['code'] as String?) ??
+                                              'Gói Coach'),
                                   ),
                                   _SummaryLine(
                                     label: 'Quyền lợi',
                                     value:
-                                        '${selectedOffer['durationDays']} ngày · ${selectedOffer['sessionCount']} buổi',
+                                        '${(selectedOffer['durationDays'] as num?)?.toInt() ?? 0} ngày · ${(selectedOffer['sessionCount'] as num?)?.toInt() ?? 0} buổi',
                                   ),
                                   _SummaryLine(
                                     label: 'Giá gói',
@@ -743,6 +751,21 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
                                     ),
                                     highlight: true,
                                   ),
+                                  if ((selectedOffer['description'] as String?)
+                                          ?.trim()
+                                          .isNotEmpty ==
+                                      true) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      (selectedOffer['description'] as String)
+                                          .trim(),
+                                      style: const TextStyle(
+                                        color: Color(0xFFC8C2BC),
+                                        fontSize: 12.5,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ],
                                   const Divider(
                                     color: Color(0x40A79D92),
                                     height: 22,
@@ -807,6 +830,16 @@ class _OfferPackageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(20);
+    final code = (offer['code'] as String?)?.trim() ?? '';
+    final rawName = (offer['name'] as String?)?.trim();
+    final displayName = rawName != null && rawName.isNotEmpty
+        ? rawName
+        : (code.isNotEmpty ? code : 'Gói Coach');
+    final description = (offer['description'] as String?)?.trim();
+    final sessionCount = (offer['sessionCount'] as num?)?.toInt() ?? 0;
+    final durationDays = (offer['durationDays'] as num?)?.toInt() ?? 0;
+    final price = (offer['price'] as num?) ?? 0;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -832,7 +865,7 @@ class _OfferPackageCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        offer['name'] as String,
+                        displayName,
                         style: const TextStyle(
                           color: Color(0xFFF7F9FC),
                           fontSize: 15.5,
@@ -851,7 +884,7 @@ class _OfferPackageCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${offer['sessionCount']} buổi · ${offer['durationDays']} ngày',
+                  '$sessionCount buổi · $durationDays ngày',
                   style: const TextStyle(
                     color: Color(0xFFE4DAD1),
                     fontSize: 13,
@@ -859,9 +892,22 @@ class _OfferPackageCard extends StatelessWidget {
                     fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
+                if (description != null && description.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    description,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFC8C2BC),
+                      fontSize: 12.5,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 6),
                 Text(
-                  formatVnd((offer['price'] as num?) ?? 0),
+                  formatVnd(price),
                   style: const TextStyle(
                     color: Color(0xFFF7F9FC),
                     fontSize: 16,

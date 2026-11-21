@@ -10,7 +10,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:provider/provider.dart';
 
-enum CoachingPillTone { green, amber, coral, neutral }
+enum CoachingPillTone { green, amber, coral, info, neutral }
 
 T? optionalProvider<T>(BuildContext context) {
   try {
@@ -223,6 +223,11 @@ class CoachingPill extends StatelessWidget {
         const Color(0xFFFF987E),
         const Color(0xFF3D241D),
         const Color(0xFFA54E36),
+      ),
+      CoachingPillTone.info => (
+        const Color(0xFF9ACBF5),
+        const Color(0xFF14283B),
+        const Color(0xFF2D5D8A),
       ),
       CoachingPillTone.neutral => (
         const Color(0xFFE6E0DA),
