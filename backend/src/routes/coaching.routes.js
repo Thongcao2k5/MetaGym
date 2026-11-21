@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from './users.routes.js';
+import { executeCoachTransfer } from '../services/coach-transfer.js';
 
 const uuid = z.uuid();
 
@@ -1739,111 +1740,35 @@ export function createCoachingRouter({ database, jwtSecret }) {
   router.post('/admin/coach-transfers', async (request, response) => {
     if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
     const parsed = z.strictObject({
-      memberId: uuid, newCoachId: uuid,
+      memberId: uuid,
+      newCoachId: uuid,
       reason: z.string().trim().min(1).max(1000),
     }).safeParse(request.body);
     if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Dữ liệu chuyển Coach không hợp lệ');
-    const { memberId, newCoachId, reason } = parsed.data;
-    const client = await database.connect().catch(() => null);
-    if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
-    try {
-      await client.query('BEGIN');
-      if (!await activeAdmin(client, request.authUser)) {
-        await client.query('ROLLBACK');
-        return fail(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hiệu lực');
+
+    const rawKey = request.get('idempotency-key');
+    let idempotencyKey = null;
+    if (rawKey !== undefined) {
+      const parsedKey = uuid.safeParse(rawKey);
+      if (!parsedKey.success) {
+        return fail(response, 422, 'VALIDATION_ERROR', 'Header Idempotency-Key phải là UUID hợp lệ');
       }
-      const coach = await client.query(
-        `SELECT u.id, c.member_limit FROM users u JOIN coach_profiles c
-         ON c.user_id = u.id WHERE u.id = $1 AND u.role = 'COACH'
-         AND u.status = 'ACTIVE' FOR UPDATE OF u`, [newCoachId],
-      );
-      if (!coach.rows.length) {
-        await client.query('ROLLBACK');
-        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Coach mới');
-      }
-      const member = await client.query(
-        `SELECT id FROM users WHERE id = $1 AND role = 'MEMBER'
-         AND status = 'ACTIVE' FOR UPDATE`, [memberId],
-      );
-      if (!member.rows.length) {
-        await client.query('ROLLBACK');
-        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy Member');
-      }
-      const current = await client.query(
-        `SELECT * FROM coach_relationships WHERE member_id = $1
-         AND status IN ('ACTIVE', 'PAUSED') FOR UPDATE`, [memberId],
-      );
-      if (!current.rows.length || current.rows[0].coach_id === newCoachId) {
-        await client.query('ROLLBACK');
-        return fail(response, 409, 'TRANSFER_NOT_ALLOWED', 'Quan hệ hoặc Coach mới không hợp lệ');
-      }
-      const used = await client.query(
-        'SELECT coach_occupied_seats($1) AS count', [newCoachId],
-      );
-      if (used.rows[0].count >= Math.min(8, coach.rows[0].member_limit)) {
-        await client.query('ROLLBACK');
-        return fail(response, 409, 'COACH_FULL', 'Coach mới đã đủ Member');
-      }
-      const old = current.rows[0];
-      await client.query(
-        `UPDATE coach_relationships SET status = 'ENDED', ended_at = now(),
-         ended_by = $1, end_reason = $2 WHERE id = $3`,
-        [request.authUser.id, reason, old.id],
-      );
-      await client.query(
-        `UPDATE coach_termination_requests SET status = 'CANCELLED', decided_at = now()
-         WHERE relationship_id = $1 AND status IN ('PENDING_COUNTERPARTY', 'DISPUTED')`,
-        [old.id],
-      );
-      await client.query(
-        `UPDATE training_sessions SET status = 'CANCELLED', cancelled_at = now(),
-         cancellation_reason = 'Member được chuyển Coach'
-         WHERE relationship_id = $1 AND status = 'SCHEDULED'
-         AND scheduled_start_at > now()`, [old.id],
-      );
-      await client.query(
-        `UPDATE training_plans SET status = 'ARCHIVED', archived_at = now()
-         WHERE relationship_id = $1 AND status = 'ACTIVE'`, [old.id],
-      );
-      await client.query(
-        `UPDATE nutrition_guides SET status = 'ARCHIVED', archived_at = now()
-         WHERE relationship_id = $1 AND status = 'ACTIVE'`, [old.id],
-      );
-      const newId = randomUUID();
-      const paused = old.status === 'PAUSED';
-      await client.query(
-        `INSERT INTO coach_relationships
-         (id, member_id, coach_id, status, paused_at, pause_reason)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [newId, memberId, newCoachId, paused ? 'PAUSED' : 'ACTIVE',
-          paused ? new Date() : null, paused ? old.pause_reason : null],
-      );
-      await ensureConversation(client, memberId, newCoachId, newId);
-      await client.query(
-        `INSERT INTO coach_transfer_history
-         (id, member_id, old_relationship_id, new_relationship_id,
-          old_coach_id, new_coach_id, reason, admin_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [randomUUID(), memberId, old.id, newId, old.coach_id,
-          newCoachId, reason, request.authUser.id],
-      );
-      await client.query(
-        `INSERT INTO admin_audit_logs
-         (id, admin_id, action, entity_type, entity_id, summary, metadata)
-         VALUES ($1, $2, 'COACH_TRANSFERRED', 'COACH_RELATIONSHIP', $3,
-                 'Member transferred to new Coach', $4)`,
-        [randomUUID(), request.authUser.id, old.id,
-          JSON.stringify({ memberId, oldCoachId: old.coach_id, newCoachId, reason })],
-      );
-      await client.query('COMMIT');
-      return response.status(201).json({ data: {
-        oldRelationshipId: old.id, newRelationshipId: newId,
-        memberId, oldCoachId: old.coach_id, newCoachId,
-      } });
-    } catch {
-      await client.query('ROLLBACK').catch(() => {});
-      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không chuyển được Coach');
-    } finally { client.release(); }
+      idempotencyKey = parsedKey.data;
+    }
+
+    const result = await executeCoachTransfer(database, {
+      adminUser: request.authUser,
+      memberId: parsed.data.memberId,
+      newCoachId: parsed.data.newCoachId,
+      reason: parsed.data.reason,
+      idempotencyKey,
+      mode: 'DIRECT',
+    });
+
+    if (!result.ok) {
+      return fail(response, result.status, result.code, result.message, result.details);
+    }
+    return response.status(result.status).json({ data: result.data });
   });
 
   router.get('/admin/coach-transfers', async (request, response) => {
