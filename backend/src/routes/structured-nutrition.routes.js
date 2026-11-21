@@ -11,6 +11,21 @@ const food = z.strictObject({
   kcalPer100g: z.number().min(0).max(1000),
   active: z.boolean(),
 });
+const foodPatch = z.strictObject({
+  name: z.string().trim().min(1).max(150).optional(),
+  kcalPer100g: z.number().min(0).max(1000).optional(),
+  active: z.boolean().optional(),
+}).refine((data) => Object.keys(data).length > 0);
+const adminFoodsQuery = z.strictObject({
+  search: z.string().trim().max(150).optional(),
+  active: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+function escapeLike(value) {
+  return value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+}
 const plan = z.strictObject({
   title: z.string().trim().min(1).max(150),
   items: z.array(z.strictObject({
@@ -55,16 +70,66 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
   router.use(['/nutrition-foods', '/admin/nutrition-foods', '/meal-plans', '/coach/meal-plans'],
     createAuthentication({ database, jwtSecret }));
 
-  router.get(['/nutrition-foods', '/admin/nutrition-foods'], async (request, response) => {
-    const admin = request.path.startsWith('/admin/');
-    if (request.authUser.role !== (admin ? 'ADMIN' : 'COACH')) {
+  router.get('/nutrition-foods', async (request, response) => {
+    if (request.authUser.role !== 'COACH') {
       return fail(response, 403, 'Không có quyền xem danh mục thực phẩm');
     }
-    const { rows } = await database.query(
-      `SELECT id, name, kcal_per_100g::float8 AS "kcalPer100g", active
-       FROM nutrition_foods WHERE $1::boolean OR active ORDER BY name, id`, [admin],
-    );
-    return response.json({ data: rows });
+    try {
+      const { rows } = await database.query(
+        `SELECT id, name, kcal_per_100g::float8 AS "kcalPer100g", active
+         FROM nutrition_foods WHERE active ORDER BY name, id`,
+      );
+      return response.json({ data: rows });
+    } catch {
+      return fail(response, 500, 'Không tải được danh mục thực phẩm');
+    }
+  });
+
+  router.get('/admin/nutrition-foods', async (request, response) => {
+    if (request.authUser.role !== 'ADMIN') {
+      return fail(response, 403, 'Không có quyền xem danh mục thực phẩm');
+    }
+    const parsed = adminFoodsQuery.safeParse(request.query);
+    if (!parsed.success) {
+      return fail(response, 422, 'Bộ lọc danh mục thực phẩm không hợp lệ');
+    }
+    const { search, active, page, pageSize } = parsed.data;
+    const filters = [];
+    const values = [];
+    if (active !== undefined) {
+      values.push(active === 'true');
+      filters.push(`active = $${values.length}`);
+    }
+    if (search) {
+      values.push(`%${escapeLike(search)}%`);
+      filters.push(`name ILIKE $${values.length} ESCAPE '\\'`);
+    }
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    try {
+      const [totalResult, rowsResult] = await Promise.all([
+        database.query(`SELECT count(*)::int AS count FROM nutrition_foods ${whereClause}`, values),
+        database.query(
+          `SELECT id, name, kcal_per_100g::float8 AS "kcalPer100g", active
+           FROM nutrition_foods
+           ${whereClause}
+           ORDER BY name, id
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
+      const totalItems = totalResult.rows[0].count;
+      return response.json({
+        data: rowsResult.rows,
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages: Math.ceil(totalItems / pageSize),
+        },
+      });
+    } catch {
+      return fail(response, 500, 'Không tải được danh mục thực phẩm');
+    }
   });
 
   router.post('/admin/nutrition-foods', async (request, response) => {
@@ -118,11 +183,10 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
 
   router.patch('/admin/nutrition-foods/:id', async (request, response) => {
     if (request.authUser.role !== 'ADMIN') return fail(response, 403, 'Chỉ Admin được cập nhật thực phẩm');
-    const parsed = food.safeParse(request.body);
+    const parsed = foodPatch.safeParse(request.body);
     if (!parsed.success || !uuid.safeParse(request.params.id).success) {
       return fail(response, 422, 'Thông tin thực phẩm không hợp lệ');
     }
-    const { name, kcalPer100g, active } = parsed.data;
     const client = await database.connect().catch(() => null);
     if (!client) return fail(response, 500, 'Không kết nối được database');
     try {
@@ -140,6 +204,9 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
         await client.query('ROLLBACK');
         return fail(response, 404, 'Không tìm thấy thực phẩm');
       }
+      const name = parsed.data.name ?? before.name;
+      const kcalPer100g = parsed.data.kcalPer100g ?? before.kcalPer100g;
+      const active = parsed.data.active ?? before.active;
       const { rows: [item] } = await client.query(
         `UPDATE nutrition_foods SET name = $2, kcal_per_100g = $3, active = $4 WHERE id = $1
          RETURNING id, name, kcal_per_100g::float8 AS "kcalPer100g", active`,
