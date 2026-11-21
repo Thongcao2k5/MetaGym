@@ -157,6 +157,13 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_termination_open_relationship'
+  ) THEN
+    RAISE EXCEPTION 'Missing early termination open relationship unique index';
+  END IF;
+
+  IF NOT EXISTS (
     SELECT 1 FROM pg_trigger
      WHERE tgname = 'trg_nutrition_revision'
        AND NOT tgisinternal

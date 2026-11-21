@@ -161,6 +161,24 @@ async function runReconciliation(database, businessDate) {
          AND NOT EXISTS (SELECT 1 FROM activated a WHERE a.relationship_id = r.id AND a.status = 'ACTIVE')`,
       [businessDate],
     );
+    // D5: Auto-escalate overdue 72h early-termination requests to DISPUTED
+    await client.query(
+      `WITH escalated AS (
+         UPDATE coach_termination_requests
+         SET status = 'DISPUTED',
+             disputed_at = response_deadline_at,
+             escalation_reason = 'TIMEOUT_72H'
+         WHERE status = 'PENDING_COUNTERPARTY'
+           AND response_deadline_at <= statement_timestamp()
+         RETURNING id, requested_by_user_id, counterparty_user_id
+       )
+       INSERT INTO coach_notifications (user_id, kind, subject_id)
+       SELECT recipient.user_id, 'TERMINATION_DISPUTED', escalated.id
+       FROM escalated
+       CROSS JOIN LATERAL (
+         VALUES (escalated.requested_by_user_id), (escalated.counterparty_user_id)
+       ) AS recipient(user_id)`,
+    );
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
