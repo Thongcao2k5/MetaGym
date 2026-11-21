@@ -199,11 +199,27 @@ export function createAdminUsersRouter({ database, jwtSecret }) {
       role: z.enum(['MEMBER', 'COACH']).optional(),
       status: z.enum(['ACTIVE', 'DISABLED']).optional(),
       search: z.string().trim().max(120).optional(),
+      from: z.iso.date().optional(),
+      to: z.iso.date().optional(),
+      hasGym: z.enum(['1', 'true', '0', 'false']).optional(),
+      hasCoach: z.enum(['1', 'true', '0', 'false']).optional(),
+      hasAvailableSlots: z.enum(['1', 'true', '0', 'false']).optional(),
       page: z.coerce.number().int().min(1).default(1),
       pageSize: z.coerce.number().int().min(1).max(100).default(20),
     }).safeParse(request.query);
     if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Bộ lọc không hợp lệ');
-    const { role, status, search, page, pageSize } = parsed.data;
+    const {
+      role, status, search, from, to, hasGym, hasCoach, hasAvailableSlots, page, pageSize,
+    } = parsed.data;
+    if (from && to && from > to) {
+      return fail(
+        response,
+        422,
+        'VALIDATION_ERROR',
+        'Ngày bắt đầu không được lớn hơn ngày kết thúc',
+        { fields: { from: ['Ngày bắt đầu không được lớn hơn ngày kết thúc'] } },
+      );
+    }
     const filters = [`u.role IN ('MEMBER', 'COACH')`];
     const values = [];
     if (role) { values.push(role); filters.push(`u.role = $${values.length}`); }
@@ -214,6 +230,27 @@ export function createAdminUsersRouter({ database, jwtSecret }) {
       filters.push(
         `(u.email::text ILIKE ${p} ESCAPE '\\' OR u.full_name ILIKE ${p} ESCAPE '\\' OR COALESCE(u.phone, '') ILIKE ${p} ESCAPE '\\')`,
       );
+    }
+    if (from) {
+      values.push(from);
+      filters.push(`(u.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date >= $${values.length}::date`);
+    }
+    if (to) {
+      values.push(to);
+      filters.push(`(u.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= $${values.length}::date`);
+    }
+    if (hasGym === '1' || hasGym === 'true') {
+      filters.push(
+        `EXISTS (SELECT 1 FROM member_memberships m WHERE m.member_id = u.id AND m.status = 'ACTIVE' AND (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN m.start_date AND m.end_date)`,
+      );
+    }
+    if (hasCoach === '1' || hasCoach === 'true') {
+      filters.push(
+        `EXISTS (SELECT 1 FROM coach_relationships r WHERE r.member_id = u.id AND r.status IN ('ACTIVE', 'PAUSED'))`,
+      );
+    }
+    if (hasAvailableSlots === '1' || hasAvailableSlots === 'true') {
+      filters.push(`u.role = 'COACH' AND coach_occupied_seats(u.id) < 8`);
     }
     try {
       const total = await database.query(
