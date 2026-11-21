@@ -9,10 +9,83 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>Meta Gym Admin</title>
+    <script>
+      try {
+        var t = localStorage.getItem('meta-admin-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-bs-theme', t);
+      } catch (e) {}
+    </script>
+    <style id="boot-splash-style">
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background-color: #0F1115;
+        color: #F7F9FC;
+        font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      html[data-bs-theme="light"],
+      html[data-bs-theme="light"] body {
+        background-color: #F5F7FA;
+        color: #11151A;
+      }
+      [hidden] { display: none !important; }
+      .app-splash {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 24px;
+        text-align: center;
+      }
+      #splash-canvas {
+        width: 310px;
+        height: 204px;
+        max-width: 100%;
+        display: block;
+      }
+      .app-splash-sub {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #8E95A5;
+        opacity: 0;
+        margin: 0;
+      }
+      .app-splash-track {
+        width: 148px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(142, 149, 165, 0.2);
+        overflow: hidden;
+        opacity: 0;
+        margin-top: 6px;
+      }
+      .app-splash-bar {
+        width: 56px;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #FF5E36, #F5B041);
+        animation: metaSplashSlide 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      @keyframes metaSplashSlide {
+        0% { transform: translateX(-60px); }
+        100% { transform: translateX(156px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .app-splash-sub, .app-splash-track { opacity: 1; }
+        .app-splash-bar { animation: none; width: 100%; opacity: 0.7; }
+      }
+    </style>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Chuyển đến nội dung chính</a>
-    <div id="app"></div>
+    <div id="app">
+      <div class="app-splash" role="status" aria-live="polite" aria-label="Đang khởi động Meta Gym Admin">
+        <canvas id="splash-canvas" width="310" height="204" aria-hidden="true"></canvas>
+        <p class="app-splash-sub">Đang khởi động cổng quản trị...</p>
+        <div class="app-splash-track" aria-hidden="true"><div class="app-splash-bar"></div></div>
+      </div>
+    </div>
     <div class="meta-overlay" id="meta-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="meta-modal-title" hidden>
       <div class="meta-modal-dialog" id="meta-modal-dialog"></div>
     </div>

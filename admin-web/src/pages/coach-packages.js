@@ -12,6 +12,7 @@ import {
   renderSkeletonPage,
 } from '../components/states.js';
 import { notice } from '../components/toast.js';
+import { renderToggle } from '../components/toggle.js';
 import { updateQuery } from '../state/router.js';
 
 const CODE_REGEX = /^[A-Z0-9][A-Z0-9_-]{1,39}$/;
@@ -236,10 +237,11 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
           <option value="QUEUED" ${statusFilter === 'QUEUED' ? 'selected' : ''}>QUEUED · Chờ nối tiếp</option>
           <option value="ENDED" ${statusFilter === 'ENDED' ? 'selected' : ''}>ENDED · Đã kết thúc</option>
         </select>
-        <label class="pill-toggle ${frozenOnly ? 'active' : ''}" for="cp-frozen-only">
-          <input type="checkbox" id="cp-frozen-only" ${frozenOnly ? 'checked' : ''} style="accent-color:var(--meta-primary)" />
-          <span>Chỉ gói đang đóng băng (COACH_LOCKED)</span>
-        </label>
+        ${renderToggle({
+          id: 'cp-frozen-only',
+          checked: frozenOnly,
+          label: 'Chỉ gói đang đóng băng (COACH_LOCKED)',
+        })}
         ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="cp-clear">Xóa bộ lọc</button>' : ''}
       </form>`;
 
@@ -355,12 +357,6 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
 
     const contentHtml = `<div class="stack-20">
       ${tabsHtml}
-      ${renderBanner({
-        kind: 'info',
-        iconName: 'award',
-        title: 'Danh mục mở Full CRUD · Giữ nguyên Snapshot giao dịch',
-        text: COACH_SNAPSHOT_BANNER,
-      })}
       ${filterHtml}
       ${tableHtml}
     </div>`;

@@ -3,6 +3,7 @@ const SECTION_ALIASES = {
   'gym-profile': 'gym',
   'catalog-training': 'equipment',
   incidents: 'coach-incidents',
+  foods: 'nutrition-foods',
 };
 
 export function normalizeSection(rawSection) {

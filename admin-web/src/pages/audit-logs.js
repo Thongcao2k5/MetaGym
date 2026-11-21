@@ -65,13 +65,6 @@ export async function renderAuditLogsPage({ root, params, shell }) {
     const hasFilter = Boolean(search || action || from || to);
 
     const contentHtml = `<div class="stack-20">
-      ${renderBanner({
-        kind: 'info',
-        iconName: 'shield',
-        title: 'Nhật ký bất biến & Đã lọc dữ liệu riêng tư',
-        text: 'Mọi thao tác quản trị đều lưu thời gian Việt Nam, người thực hiện, hành động và metadata an toàn (không chứa mật khẩu, nhật ký tập, ảnh, số đo, chat hay ghi chú sức khỏe).',
-      })}
-
       <form class="filter-bar" id="audit-filter-form">
         <input type="search" id="audit-search" class="form-control filter-grow" placeholder="Tìm theo mô tả, hành động hoặc đối tượng…" value="${esc(search)}" aria-label="Tìm nhật ký" />
         <select id="audit-action" class="form-select filter-fixed" aria-label="Lọc loại hành động">

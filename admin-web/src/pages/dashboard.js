@@ -1,7 +1,8 @@
 import { api, buildQuery } from '../services/api.js';
 import { daysAgoVN, esc, formatDateVN, isoDateVN, vnd } from '../components/format.js';
 import { icon } from '../components/icons.js';
-import { renderBanner, renderEmptyState, renderErrorState, renderSkeletonPage } from '../components/states.js';
+import { renderBanner, renderDashboardSkeleton, renderEmptyState } from '../components/states.js';
+import { toast } from '../components/toast.js';
 import { updateQuery } from '../state/router.js';
 
 let activeChart = null;
@@ -22,7 +23,7 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
 
   shell({
     section: 'dashboard',
-    contentHtml: renderSkeletonPage({ cards: 3, rows: 4 }),
+    contentHtml: renderDashboardSkeleton(),
   });
 
   try {
@@ -250,11 +251,10 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
   } catch (error) {
     shell({
       section: 'dashboard',
-      contentHtml: renderErrorState({
-        title: 'Không tải được dữ liệu tổng quan',
-        message: error.message,
-      }),
+      topbarActionsHtml: `<button type="button" class="btn btn-graphite btn-sm" id="retry-load-btn">${icon('refresh', 16)} Thử lại</button>`,
+      contentHtml: renderDashboardSkeleton(),
     });
+    toast(error?.message || 'Không tải được dữ liệu tổng quan.', 'danger');
     const retry = root.querySelector('#retry-load-btn');
     if (retry) retry.onclick = () => renderDashboardPage({ root, params, shell, ChartCtor });
   }

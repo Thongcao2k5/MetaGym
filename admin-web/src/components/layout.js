@@ -1,12 +1,13 @@
 import { esc, initials } from './format.js';
 import { icon } from './icons.js';
+import { getTheme, toggleTheme } from '../services/theme.js';
 
 export const NAV_GROUPS = [
   {
     label: 'Vận hành',
     items: [
       { id: 'dashboard', href: '#/admin/dashboard', label: 'Tổng quan', icon: 'dashboard' },
-      { id: 'coach-incidents', href: '#/admin/coach-incidents', label: 'Sự cố Coach', icon: 'alert', badgeKey: 'incidents' },
+      { id: 'coach-incidents', href: '#/admin/incidents', label: 'Sự cố Coach', icon: 'alert', badgeKey: 'incidents' },
     ],
   },
   {
@@ -28,7 +29,7 @@ export const NAV_GROUPS = [
   {
     label: 'Nội dung vận hành',
     items: [
-      { id: 'nutrition-foods', href: '#/admin/nutrition-foods', label: 'Thực phẩm & kcal', icon: 'food' },
+      { id: 'nutrition-foods', href: '#/admin/foods', label: 'Thực phẩm & kcal', icon: 'food' },
       { id: 'gym', href: '#/admin/gym', label: 'Phòng gym & QR điểm danh', icon: 'building' },
       { id: 'equipment', href: '#/admin/equipment', label: 'Thiết bị & Bài tập', icon: 'dumbbell' },
     ],
@@ -104,6 +105,27 @@ export const PAGE_META = {
   },
 };
 
+const SIDEBAR_COLLAPSE_KEY = 'meta-admin-sidebar-collapsed';
+
+function isSidebarCollapsed() {
+  try {
+    return typeof window !== 'undefined' && window.localStorage?.getItem?.(SIDEBAR_COLLAPSE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setSidebarCollapsedStorage(collapsed) {
+  try {
+    if (typeof window !== 'undefined') {
+      if (collapsed) window.localStorage?.setItem?.(SIDEBAR_COLLAPSE_KEY, '1');
+      else window.localStorage?.removeItem?.(SIDEBAR_COLLAPSE_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function renderShell({
   root,
   section,
@@ -129,7 +151,7 @@ export function renderShell({
           const isCurrent = item.id === activeKey;
           const badgeVal = item.badgeKey ? Number(badges[item.badgeKey] || 0) : 0;
           const badgeCls = item.badgeKey === 'disputes' ? 'danger' : 'warn';
-          return `<a class="meta-nav-item ${isCurrent ? 'active' : ''}" href="${item.href}" ${isCurrent ? 'aria-current="page"' : ''}>
+          return `<a class="meta-nav-item ${isCurrent ? 'active' : ''}" href="${item.href}" title="${esc(item.label)}" ${isCurrent ? 'aria-current="page"' : ''}>
             ${icon(item.icon, 17)}
             <span class="nav-item-label">${esc(item.label)}</span>
             ${badgeVal > 0 ? `<span class="nav-count ${badgeCls}">${badgeVal}</span>` : ''}
@@ -139,7 +161,57 @@ export function renderShell({
     </div>
   `).join('');
 
-  root.innerHTML = `<div class="admin-shell">
+  const currentTheme = getTheme();
+  const nextThemeLabel = currentTheme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối';
+  const themeBtnHtml = `<button type="button" class="btn btn-ghost btn-icon" id="theme-toggle-btn" aria-label="${nextThemeLabel}" title="${nextThemeLabel}">
+    ${icon(currentTheme === 'dark' ? 'sun' : 'moon', 18)}
+  </button>`;
+  const accountHtml = `<div class="topbar-account">
+    ${themeBtnHtml}
+    <a class="admin-user-link topbar-user-link" href="#/admin/profile" ${section === 'profile' ? 'aria-current="page"' : ''} title="Hồ sơ quản trị viên">
+      <span class="meta-avatar">${esc(initials(user?.fullName || 'Admin'))}</span>
+      <span class="admin-user-meta">
+        <span class="admin-user-name">${esc(user?.fullName || 'Quản trị viên')}</span>
+        <span class="admin-user-role">${esc(user?.email || 'ADMIN')}</span>
+      </span>
+    </a>
+    <button type="button" class="btn btn-ghost btn-sm" id="logout" aria-label="Đăng xuất">
+      ${icon('logout', 16)} <span class="logout-label">Đăng xuất</span>
+    </button>
+  </div>`;
+
+  const existingShell = root.querySelector?.('.admin-shell');
+  const existingMain = existingShell ? root.querySelector?.('#main-content') : null;
+  const existingNav = existingShell ? root.querySelector?.('.sidebar-nav') : null;
+
+  if (existingShell && existingMain && existingNav) {
+    const prevScroll = existingNav.scrollTop || 0;
+    existingNav.innerHTML = navHtml;
+    existingNav.scrollTop = prevScroll;
+
+    const headingEl = root.querySelector?.('.page-heading');
+    if (headingEl) headingEl.textContent = resolvedTitle;
+
+    const titleWrap = headingEl?.parentElement;
+    let subEl = root.querySelector?.('.page-subtitle');
+    if (resolvedSub) {
+      if (!subEl && titleWrap && document.createElement) {
+        subEl = document.createElement('p');
+        subEl.className = 'page-subtitle';
+        titleWrap.appendChild(subEl);
+      }
+      if (subEl) subEl.textContent = resolvedSub;
+    } else if (subEl) {
+      subEl.textContent = '';
+    }
+
+    const actionsEl = root.querySelector?.('.topbar-actions');
+    if (actionsEl) actionsEl.innerHTML = `${topbarActionsHtml}${accountHtml}`;
+
+    existingMain.innerHTML = `<div id="notice" aria-live="polite"></div>${contentHtml}`;
+  } else {
+    const collapsed = isSidebarCollapsed();
+    root.innerHTML = `<div class="admin-shell${collapsed ? ' sidebar-collapsed' : ''}">
     <div class="sidebar-backdrop no-print" id="sidebar-backdrop"></div>
     <aside class="admin-sidebar no-print" id="admin-sidebar" aria-label="Điều hướng quản trị">
       <div class="sidebar-head">
@@ -150,23 +222,14 @@ export function renderShell({
             <span class="brand-sub">Admin Operate</span>
           </span>
         </a>
+        <button type="button" class="btn btn-ghost btn-icon sidebar-collapse-btn" id="sidebar-collapse-btn" aria-label="${collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}" aria-expanded="${!collapsed}" title="${collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}">
+          ${icon('menu', 18)}
+        </button>
         <button type="button" class="btn btn-ghost btn-icon sidebar-close" id="sidebar-close-btn" aria-label="Đóng menu">
-          ${icon('close', 18)}
+          ${icon('menu', 18)}
         </button>
       </div>
       <nav class="sidebar-nav" aria-label="Quản trị">${navHtml}</nav>
-      <div class="sidebar-foot">
-        <a class="admin-user-link" href="#/admin/profile" ${section === 'profile' ? 'aria-current="page"' : ''}>
-          <span class="meta-avatar">${esc(initials(user?.fullName || 'Admin'))}</span>
-          <span class="admin-user-meta">
-            <span class="admin-user-name">${esc(user?.fullName || 'Quản trị viên')}</span>
-            <span class="admin-user-role">${esc(user?.email || 'ADMIN')}</span>
-          </span>
-        </a>
-        <button type="button" class="btn btn-ghost btn-sm" id="logout" style="width:100%">
-          ${icon('logout', 16)} Đăng xuất
-        </button>
-      </div>
     </aside>
 
     <div class="admin-main">
@@ -180,7 +243,7 @@ export function renderShell({
             ${resolvedSub ? `<p class="page-subtitle">${esc(resolvedSub)}</p>` : ''}
           </div>
         </div>
-        ${topbarActionsHtml ? `<div class="topbar-actions">${topbarActionsHtml}</div>` : ''}
+        <div class="topbar-actions">${topbarActionsHtml}${accountHtml}</div>
       </header>
 
       <main class="page-content" id="main-content">
@@ -189,6 +252,7 @@ export function renderShell({
       </main>
     </div>
   </div>`;
+  }
 
   const logoutBtn = root.querySelector?.('#logout');
   if (logoutBtn && typeof onSignOut === 'function') {
@@ -212,4 +276,43 @@ export function renderShell({
   root.querySelectorAll?.('.meta-nav-item, .admin-user-link').forEach((link) => {
     link.addEventListener?.('click', () => setSidebarOpen(false));
   });
+
+  const collapseBtn = root.querySelector?.('#sidebar-collapse-btn');
+  if (collapseBtn) {
+    collapseBtn.onclick = () => {
+      const shellEl = root.querySelector?.('.admin-shell');
+      if (!shellEl) return;
+      const next = !shellEl.classList?.contains('sidebar-collapsed');
+      shellEl.classList?.toggle('sidebar-collapsed', next);
+      setSidebarCollapsedStorage(next);
+      const label = next ? 'Mở rộng menu' : 'Thu gọn menu';
+      collapseBtn.setAttribute?.('aria-label', label);
+      collapseBtn.setAttribute?.('title', label);
+      collapseBtn.setAttribute?.('aria-expanded', String(!next));
+    };
+  }
+
+  const themeBtn = root.querySelector?.('#theme-toggle-btn');
+  if (themeBtn) {
+    themeBtn.onclick = () => {
+      const next = toggleTheme();
+      const label = next === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối';
+      themeBtn.innerHTML = icon(next === 'dark' ? 'sun' : 'moon', 18);
+      themeBtn.setAttribute?.('aria-label', label);
+      themeBtn.setAttribute?.('title', label);
+    };
+  }
+
+  if (globalThis.document?.addEventListener) {
+    if (globalThis.__metaShellEscHandler) {
+      globalThis.document.removeEventListener('keydown', globalThis.__metaShellEscHandler);
+    }
+    globalThis.__metaShellEscHandler = (event) => {
+      if (event.key === 'Escape' && sidebar?.classList?.contains('open')) {
+        setSidebarOpen(false);
+        openBtn?.focus?.();
+      }
+    };
+    globalThis.document.addEventListener('keydown', globalThis.__metaShellEscHandler);
+  }
 }

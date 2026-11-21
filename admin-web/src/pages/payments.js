@@ -386,18 +386,11 @@ export async function renderPaymentsPage({ root, params, shell }) {
     });
 
     const contentHtml = `<div class="stack-20">
-      ${renderBanner({
-        kind: 'info',
-        iconName: 'receipt',
-        title: 'Thu tiền tại quầy CHỈ áp dụng cho Gói Gym (không bán gói Coach)',
-        textHtml: 'Gói Coach được hội viên chọn và thanh toán mô phỏng trực tiếp trên ứng dụng Flutter. Giao dịch tại quầy đã <code>SUCCESS</code> là bất biến; mọi điều chỉnh sai sót thực hiện qua bút toán <code>VOID_REVERSAL (D6)</code>.',
-      })}
-
       <section class="meta-card stack-16" aria-label="Ghi nhận thanh toán gói Gym tại quầy">
         <div class="card-header-row" style="margin-bottom:0">
           <div>
             <h2 class="card-title-text">Ghi nhận thanh toán gói Gym tại quầy</h2>
-            <p class="card-sub">Tìm kiếm hội viên ACTIVE trực tiếp trên máy chủ (hỗ trợ danh sách &gt;100 hội viên).</p>
+            <p class="card-sub">CHỈ áp dụng cho Gói Gym · Tìm kiếm hội viên ACTIVE trực tiếp trên máy chủ (hỗ trợ danh sách &gt;100 hội viên).</p>
           </div>
           <span class="meta-badge meta-badge-info">Chỉ gói Gym đang mở bán</span>
         </div>

@@ -15,21 +15,55 @@ function ensureRegion() {
   return region;
 }
 
-export function toast(message, kind = 'success', { duration = 4500 } = {}) {
+const activeToasts = new Map();
+
+export function toast(message, kind = 'success', { duration = 3500 } = {}) {
   const region = ensureRegion();
   if (!region || !document.createElement) return null;
-  const el = document.createElement('div');
   const tone = kind === 'warning' ? 'warn' : kind;
+  const key = `${tone}::${message}`;
+
+  const existing = activeToasts.get(key);
+  if (existing && existing.el && existing.el.parentElement) {
+    existing.count += 1;
+    if (existing.timer) clearTimeout(existing.timer);
+    if (existing.removeTimer) clearTimeout(existing.removeTimer);
+    existing.el.classList?.remove('leaving');
+    const countEl = existing.el.querySelector?.('.toast-repeat-count');
+    if (countEl) countEl.textContent = `×${existing.count}`;
+    if (duration > 0 && typeof setTimeout === 'function') {
+      existing.timer = setTimeout(() => dismissToast(key, existing.el), duration);
+    }
+    return existing.el;
+  }
+
+  const el = document.createElement('div');
   el.className = `meta-toast ${tone === 'warn' || tone === 'danger' || tone === 'info' ? tone : ''}`.trim();
   el.setAttribute('role', tone === 'danger' ? 'alert' : 'status');
-  el.innerHTML = `<span>${esc(message)}</span><button type="button" class="btn btn-ghost btn-icon" aria-label="Đóng thông báo">${icon('close', 16)}</button>`;
+  el.innerHTML = `<span class="toast-msg">${esc(message)} <span class="toast-repeat-count tabular" aria-hidden="true"></span></span><button type="button" class="btn btn-ghost btn-icon" aria-label="Đóng thông báo">${icon('close', 16)}</button>`;
+
+  const entry = { el, count: 1, timer: null, removeTimer: null };
+  activeToasts.set(key, entry);
+
   const closeBtn = el.querySelector?.('button');
-  if (closeBtn) closeBtn.onclick = () => el.remove?.();
+  if (closeBtn) closeBtn.onclick = () => dismissToast(key, el, true);
   region.appendChild(el);
   if (duration > 0 && typeof setTimeout === 'function') {
-    setTimeout(() => el.remove?.(), duration);
+    entry.timer = setTimeout(() => dismissToast(key, el), duration);
   }
   return el;
+}
+
+function dismissToast(key, el, immediate = false) {
+  const entry = activeToasts.get(key);
+  if (entry?.timer) clearTimeout(entry.timer);
+  activeToasts.delete(key);
+  if (immediate || !el?.classList) {
+    el?.remove?.();
+    return;
+  }
+  el.classList.add('leaving');
+  setTimeout(() => el.remove?.(), 180);
 }
 
 export function notice(text, kind = 'success') {

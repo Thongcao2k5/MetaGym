@@ -10,7 +10,12 @@ import {
   statusBadge,
 } from '../components/format.js';
 import { icon } from '../components/icons.js';
-import { renderDataTable } from '../components/data-table.js';
+import { renderActionButton } from '../components/action-button.js';
+import { bindDataTableSelection, renderDataTable } from '../components/data-table.js';
+import { bindDatePickers, bindDateRangePicker, renderDateInput, renderDateRangePicker, setDatePickerValue } from '../components/date-picker.js';
+import { computeDatePreset, DATE_PRESETS } from '../components/date-range.js';
+import { exportToExcel } from '../components/export.js';
+import { hasPermission, NO_PERMISSION_REASON } from '../services/permissions.js';
 import { openDrawer } from '../components/drawer.js';
 import { openConfirmModal, openModal } from '../components/modal.js';
 import { bindPagination, renderPagination } from '../components/pagination.js';
@@ -20,6 +25,7 @@ import {
   renderErrorState,
   renderFilterEmptyState,
   renderSkeletonPage,
+  renderTableSkeleton,
 } from '../components/states.js';
 import { notice, toast } from '../components/toast.js';
 import { buildHash, updateQuery } from '../state/router.js';
@@ -284,19 +290,25 @@ function buildDetailDrawerHtml(role, detail) {
       </div>`).join('')}</div>`}
   </div>`;
 
-  const privacyBanner = renderBanner({
-    kind: 'info',
-    iconName: 'shield',
-    title: 'Phạm vi vận hành (Privacy Allowlist)',
-    text: 'Không hiển thị nhật ký tập, ảnh tiến độ, số đo cá nhân, tin nhắn 1–1, ghi chú sức khỏe nhạy cảm hay hội thoại AI Coach.',
-  });
-
   return `<div class="stack-16">
     <div class="impact-box">${identityRows}</div>
     ${opsBlock}
     ${auditBlock}
-    ${privacyBanner}
   </div>`;
+}
+
+function renderStatusSwitch(row) {
+  const isActive = row.status === 'ACTIVE';
+  const canLock = hasPermission('users:lock');
+  const label = isActive ? 'Đang hoạt động' : 'Bị khóa';
+  const title = !canLock
+    ? NO_PERMISSION_REASON
+    : (isActive ? 'Đang hoạt động · Bấm để khóa tài khoản' : 'Bị khóa · Bấm để mở khóa tài khoản');
+
+  return `<button type="button" role="switch" aria-checked="${isActive}" class="meta-switch-btn toggle${isActive ? ' is-on' : ''}" data-id="${esc(row.id)}" data-status="${esc(row.status)}" aria-label="${label}" title="${esc(title)}"${!canLock ? ' disabled aria-disabled="true" data-perm-disabled="1"' : ''}>
+    <span class="meta-switch-track" aria-hidden="true"><span class="meta-switch-thumb"></span></span>
+    <span>${label}</span>
+  </button>`;
 }
 
 export async function renderAccountsPage({ root, role = 'MEMBER', params, shell }) {
@@ -304,20 +316,66 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
   const section = activeRole === 'COACH' ? 'coaches' : 'members';
 
   const page = Math.max(1, Number(params?.get('page')) || 1);
+  const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const statusFilter = params?.get('status') || '';
   const search = params?.get('search') || '';
-  const hasFilter = Boolean(search || statusFilter);
+  const hasGym = params?.get('hasGym') === '1';
+  const hasCoach = params?.get('hasCoach') === '1';
+  const hasAvailableSlots = params?.get('hasAvailableSlots') === '1';
+  const fromDate = params?.get('from') || '';
+  const toDate = params?.get('to') || '';
+  const hasFilter = Boolean(search || statusFilter || hasGym || hasCoach || hasAvailableSlots || fromDate || toDate);
+
+  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Phân loại tài khoản">
+    <a class="meta-tab-btn ${activeRole === 'COACH' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'COACH'}" href="#/admin/coaches">Huấn luyện viên (Coach)</a>
+    <a class="meta-tab-btn ${activeRole === 'MEMBER' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'MEMBER'}" href="#/admin/members">Hội viên (Member)</a>
+  </div>`;
+
+  const activeFilterCount = [hasGym, hasCoach, hasAvailableSlots, fromDate || toDate].filter(Boolean).length;
+  const mobileExtraCount = [statusFilter, hasGym, hasCoach, hasAvailableSlots, fromDate || toDate].filter(Boolean).length;
+
+  const buildFilterHtml = (canExport = false) => `<form class="filter-bar" id="acc-filter-form">
+    <input type="search" id="acc-search" class="form-control filter-grow" placeholder="Tìm theo họ tên, email hoặc số điện thoại…" value="${esc(search)}" aria-label="Tìm kiếm tài khoản" />
+    <div class="desktop-filters" style="display:contents">
+      <select id="acc-status" class="form-select filter-fixed" aria-label="Lọc trạng thái tài khoản">
+        <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+        <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang hoạt động (ACTIVE)</option>
+        <option value="DISABLED" ${statusFilter === 'DISABLED' ? 'selected' : ''}>Bị khóa (DISABLED)</option>
+      </select>
+    </div>
+    <button type="button" class="btn btn-graphite btn-sm filter-trigger-btn" id="acc-filter-btn" aria-label="Mở bộ lọc nâng cao" title="Bộ lọc">
+      ${icon('filter', 16)} <span>Bộ lọc</span>${activeFilterCount > 0 ? `<span class="mobile-filter-count tabular">${activeFilterCount}</span>` : (mobileExtraCount > 0 ? `<span class="mobile-filter-count tabular desktop-hidden">${mobileExtraCount}</span>` : '')}
+    </button>
+    ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm desktop-filters" id="acc-clear-filters">Xóa bộ lọc</button>' : ''}
+    <button type="button" class="btn btn-graphite btn-sm" id="acc-export-excel" ${canExport ? '' : 'disabled'}>
+      ${icon('download', 16)} <span id="acc-export-label">Xuất Excel</span>
+    </button>
+  </form>`;
 
   shell({
     section,
-    contentHtml: renderSkeletonPage({ cards: 0, rows: 6 }),
+    topbarActionsHtml: activeRole === 'COACH'
+      ? `<button type="button" class="btn btn-primary" id="create">${icon('plus', 16)} Tạo Coach</button>`
+      : '',
+    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
   });
 
   try {
-    const query = buildQuery({ role: activeRole, status: statusFilter, search, page, pageSize: 20 });
+    const query = buildQuery({
+      role: activeRole,
+      status: statusFilter,
+      search,
+      page,
+      pageSize,
+      ...(fromDate ? { from: fromDate } : {}),
+      ...(toDate ? { to: toDate } : {}),
+      ...(activeRole === 'MEMBER' && hasGym ? { hasGym: 1 } : {}),
+      ...(activeRole === 'MEMBER' && hasCoach ? { hasCoach: 1 } : {}),
+      ...(activeRole === 'COACH' && hasAvailableSlots ? { hasAvailableSlots: 1 } : {}),
+    });
     const result = await api(`/admin/users${query}`);
     const rows = result?.data || [];
-    const pagination = result?.pagination || { page, pageSize: 20, totalItems: rows.length, totalPages: 1 };
+    const pagination = result?.pagination || { page, pageSize, totalItems: rows.length, totalPages: 1 };
 
     const columns = activeRole === 'COACH' ? [
       {
@@ -340,18 +398,15 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       },
       {
         label: 'Trạng thái',
-        render: (row) => statusBadge(row.status),
+        render: (row) => renderStatusSwitch(row),
       },
       {
         label: 'Thao tác',
         align: 'right',
         render: (row) => `<div class="cell-actions">
-          <button type="button" class="btn btn-ghost btn-sm detail" data-id="${esc(row.id)}">Chi tiết</button>
-          <button type="button" class="btn btn-ghost btn-sm edit" data-id="${esc(row.id)}">Sửa</button>
-          <button type="button" class="btn btn-ghost btn-sm reset" data-id="${esc(row.id)}">${icon('key', 14)} MK tạm</button>
-          <button type="button" class="btn ${row.status === 'ACTIVE' ? 'btn-danger' : 'btn-success'} btn-sm toggle" data-id="${esc(row.id)}" data-status="${esc(row.status)}">
-            ${row.status === 'ACTIVE' ? `${icon('lock', 14)} Khóa` : `${icon('unlock', 14)} Mở khóa`}
-          </button>
+          ${renderActionButton({ iconName: 'eye', label: 'Chi tiết', className: 'detail', permission: 'users:read', attrs: `data-id="${esc(row.id)}"` })}
+          ${renderActionButton({ iconName: 'edit', label: 'Sửa', className: 'edit', permission: 'users:update', attrs: `data-id="${esc(row.id)}"` })}
+          ${renderActionButton({ iconName: 'key', label: 'Cấp mật khẩu tạm', className: 'reset', permission: 'users:reset_password', attrs: `data-id="${esc(row.id)}"` })}
         </div>`,
       },
     ] : [
@@ -379,17 +434,14 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       },
       {
         label: 'Trạng thái',
-        render: (row) => statusBadge(row.status),
+        render: (row) => renderStatusSwitch(row),
       },
       {
         label: 'Thao tác',
         align: 'right',
         render: (row) => `<div class="cell-actions">
-          <button type="button" class="btn btn-ghost btn-sm detail" data-id="${esc(row.id)}">Chi tiết</button>
-          <button type="button" class="btn btn-ghost btn-sm edit" data-id="${esc(row.id)}">Sửa</button>
-          <button type="button" class="btn ${row.status === 'ACTIVE' ? 'btn-danger' : 'btn-success'} btn-sm toggle" data-id="${esc(row.id)}" data-status="${esc(row.status)}">
-            ${row.status === 'ACTIVE' ? `${icon('lock', 14)} Khóa` : `${icon('unlock', 14)} Mở khóa`}
-          </button>
+          ${renderActionButton({ iconName: 'eye', label: 'Chi tiết', className: 'detail', permission: 'users:read', attrs: `data-id="${esc(row.id)}"` })}
+          ${renderActionButton({ iconName: 'edit', label: 'Sửa', className: 'edit', permission: 'users:update', attrs: `data-id="${esc(row.id)}"` })}
         </div>`,
       },
     ];
@@ -407,36 +459,18 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       });
 
     const contentHtml = `<div class="stack-20">
-      <div class="meta-tabs" role="tablist" aria-label="Phân loại tài khoản">
-        <a class="meta-tab-btn ${activeRole === 'COACH' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'COACH'}" href="#/admin/coaches">Huấn luyện viên (Coach)</a>
-        <a class="meta-tab-btn ${activeRole === 'MEMBER' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'MEMBER'}" href="#/admin/members">Hội viên (Member)</a>
-      </div>
-
-      ${renderBanner({
-        kind: 'info',
-        iconName: 'shield',
-        title: 'Ranh giới riêng tư & Trần suất cứng',
-        text: 'Danh sách chỉ hiển thị thông tin vận hành bằng họ tên (UUID kỹ thuật nằm trong Drawer chi tiết). Trần 8 hội viên / Coach là cố định không chỉnh sửa được.',
-      })}
-
-      <form class="filter-bar" id="acc-filter-form">
-        <input type="search" id="acc-search" class="form-control filter-grow" placeholder="Tìm theo họ tên, email hoặc số điện thoại…" value="${esc(search)}" aria-label="Tìm kiếm tài khoản" />
-        <select id="acc-status" class="form-select filter-fixed" aria-label="Lọc trạng thái tài khoản">
-          <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-          <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang hoạt động (ACTIVE)</option>
-          <option value="DISABLED" ${statusFilter === 'DISABLED' ? 'selected' : ''}>Bị khóa (DISABLED)</option>
-        </select>
-        ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="acc-clear-filters">Xóa bộ lọc</button>' : ''}
-      </form>
+      ${tabsHtml}
+      ${buildFilterHtml(rows.length > 0)}
 
       ${renderDataTable({
         columns,
         rows,
+        selectable: true,
         emptyHtml,
         paginationHtml: renderPagination({
           ...pagination,
           prefix: 'acc',
-          summaryNote: activeRole === 'COACH' ? 'Trần cứng 8 hội viên / Coach' : 'Tìm kiếm server-side an toàn >100 hội viên',
+          summaryNote: activeRole === 'COACH' ? 'Trần cứng 8 hội viên / Coach' : '',
         }),
         ariaLabel: activeRole === 'COACH' ? 'Danh sách Huấn luyện viên' : 'Danh sách Hội viên',
       })}
@@ -453,17 +487,35 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     const reloadWith = (patch = {}) => {
       const nextSearch = patch.search !== undefined ? patch.search : (root.querySelector('#acc-search')?.value?.trim() || '');
       const nextStatus = patch.status !== undefined ? patch.status : (root.querySelector('#acc-status')?.value || '');
+      const nextGym = patch.hasGym !== undefined ? patch.hasGym : hasGym;
+      const nextCoach = patch.hasCoach !== undefined ? patch.hasCoach : hasCoach;
+      const nextSlots = patch.hasAvailableSlots !== undefined ? patch.hasAvailableSlots : hasAvailableSlots;
+      const nextFrom = patch.from !== undefined ? patch.from : fromDate;
+      const nextTo = patch.to !== undefined ? patch.to : toDate;
       const nextPage = patch.page !== undefined ? patch.page : page;
+      const nextPageSize = patch.pageSize !== undefined ? patch.pageSize : pageSize;
 
       const nextParams = new URLSearchParams();
       if (nextSearch) nextParams.set('search', nextSearch);
       if (nextStatus) nextParams.set('status', nextStatus);
+      if (nextFrom) nextParams.set('from', nextFrom);
+      if (nextTo) nextParams.set('to', nextTo);
+      if (activeRole === 'MEMBER' && nextGym) nextParams.set('hasGym', '1');
+      if (activeRole === 'MEMBER' && nextCoach) nextParams.set('hasCoach', '1');
+      if (activeRole === 'COACH' && nextSlots) nextParams.set('hasAvailableSlots', '1');
       if (nextPage > 1) nextParams.set('page', String(nextPage));
+      if (nextPageSize !== 10) nextParams.set('pageSize', String(nextPageSize));
 
       updateQuery({
         search: nextSearch || null,
         status: nextStatus || null,
+        from: nextFrom || null,
+        to: nextTo || null,
+        hasGym: activeRole === 'MEMBER' && nextGym ? 1 : null,
+        hasCoach: activeRole === 'MEMBER' && nextCoach ? 1 : null,
+        hasAvailableSlots: activeRole === 'COACH' && nextSlots ? 1 : null,
         page: nextPage > 1 ? nextPage : null,
+        pageSize: nextPageSize !== 10 ? nextPageSize : null,
       }, { replace: true });
 
       return renderAccountsPage({ root, role: activeRole, params: nextParams, shell });
@@ -486,16 +538,196 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     if (statusSelect) {
       statusSelect.onchange = () => reloadWith({ page: 1 });
     }
-    [root.querySelector('#acc-clear-filters'), root.querySelector('#acc-filter-reset')].filter(Boolean).forEach((btn) => {
-      btn.onclick = () => reloadWith({ search: '', status: '', page: 1 });
+    ['#acc-filter-gym', '#acc-filter-coach', '#acc-filter-slots'].forEach((sel) => {
+      const el = root.querySelector(sel);
+      if (el) el.onchange = () => reloadWith({ page: 1 });
     });
+    [root.querySelector('#acc-clear-filters'), root.querySelector('#acc-filter-reset')].filter(Boolean).forEach((btn) => {
+      btn.onclick = () => reloadWith({ search: '', status: '', from: '', to: '', hasGym: false, hasCoach: false, hasAvailableSlots: false, page: 1 });
+    });
+
+    const filterBtn = root.querySelector('#acc-filter-btn');
+    if (filterBtn) {
+      filterBtn.onclick = () => {
+        const currentStatus = root.querySelector('#acc-status')?.value || statusFilter;
+        const currentFrom = fromDate;
+        const currentTo = toDate;
+        const currentGym = hasGym;
+        const currentCoach = hasCoach;
+        const currentSlots = hasAvailableSlots;
+
+        openModal({
+          title: 'Bộ lọc',
+          maxWidth: '480px',
+          bodyHtml: `<div class="meta-modal-body">
+            <div class="field">
+              <label class="field-label" for="mf-status">Trạng thái</label>
+              <select id="mf-status" class="form-select">
+                <option value="" ${!currentStatus ? 'selected' : ''}>Tất cả trạng thái</option>
+                <option value="ACTIVE" ${currentStatus === 'ACTIVE' ? 'selected' : ''}>Đang hoạt động (ACTIVE)</option>
+                <option value="DISABLED" ${currentStatus === 'DISABLED' ? 'selected' : ''}>Bị khóa (DISABLED)</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Thời gian</span>
+              <div class="desktop-filters">
+                <div class="date-preset-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:10px">
+                  ${DATE_PRESETS.map((p) => `<button type="button" class="date-preset-btn" data-preset="${p.id}">${esc(p.label)}</button>`).join('')}
+                </div>
+                <div class="grid-2">
+                  <div class="date-range-field" style="min-width:0">
+                    <label class="date-range-label" for="mf-from-trigger">Từ ngày</label>
+                    ${renderDateInput({ id: 'mf-from', value: currentFrom, ariaLabel: 'Từ ngày' })}
+                  </div>
+                  <div class="date-range-field" style="min-width:0">
+                    <label class="date-range-label" for="mf-to-trigger">Đến ngày</label>
+                    ${renderDateInput({ id: 'mf-to', value: currentTo, ariaLabel: 'Đến ngày' })}
+                  </div>
+                </div>
+              </div>
+              <div class="mobile-filters">
+                ${renderDateRangePicker({ id: 'mf-range', from: currentFrom, to: currentTo })}
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Tùy chọn nhanh</span>
+              ${activeRole === 'COACH'
+                ? `<label class="filter-check" for="mf-slots"><input type="checkbox" id="mf-slots" ${currentSlots ? 'checked' : ''} /><span>Còn suất nhận (&lt; 8)</span></label>`
+                : `<div class="filter-check-group">
+                    <label class="filter-check" for="mf-gym"><input type="checkbox" id="mf-gym" ${currentGym ? 'checked' : ''} /><span>Có gói Gym</span></label>
+                    <label class="filter-check" for="mf-coach"><input type="checkbox" id="mf-coach" ${currentCoach ? 'checked' : ''} /><span>Đang thuê Coach</span></label>
+                  </div>`}
+            </div>
+          </div>`,
+          footerHtml: `<button type="button" class="btn btn-ghost" data-close-modal>Đóng</button>
+            <button type="button" class="btn btn-graphite" id="mf-reset">Đặt lại</button>
+            <button type="button" class="btn btn-primary" id="mf-apply">Áp dụng</button>`,
+          onMount: (modal) => {
+            const dlg = modal.dialog;
+            let activeFrom = currentFrom;
+            let activeTo = currentTo;
+
+            bindDatePickers(dlg, {
+              onChange: (id, val) => {
+                if (id === 'mf-from') activeFrom = val;
+                if (id === 'mf-to') activeTo = val;
+              },
+            });
+            bindDateRangePicker(dlg, {
+              id: 'mf-range',
+              onChange: ({ from, to }) => {
+                activeFrom = from;
+                activeTo = to;
+                setDatePickerValue(dlg, 'mf-from', from);
+                setDatePickerValue(dlg, 'mf-to', to);
+              },
+            });
+
+            dlg.querySelectorAll('[data-preset]').forEach((pBtn) => {
+              pBtn.onclick = () => {
+                dlg.querySelectorAll('[data-preset]').forEach((b) => b.classList?.remove('active'));
+                pBtn.classList?.add('active');
+                const range = computeDatePreset(pBtn.dataset.preset);
+                activeFrom = range.from;
+                activeTo = range.to;
+                setDatePickerValue(dlg, 'mf-from', range.from);
+                setDatePickerValue(dlg, 'mf-to', range.to);
+              };
+            });
+
+            const resetBtn = dlg.querySelector('#mf-reset');
+            if (resetBtn) {
+              resetBtn.onclick = () => {
+                modal.close();
+                reloadWith({ search: '', status: '', from: '', to: '', hasGym: false, hasCoach: false, hasAvailableSlots: false, page: 1 });
+              };
+            }
+            const applyBtn = dlg.querySelector('#mf-apply');
+            if (applyBtn) {
+              applyBtn.onclick = () => {
+                const nextFrom = activeFrom || '';
+                const nextTo = activeTo || '';
+                if (nextFrom && nextTo && nextFrom > nextTo) {
+                  toast('Ngày bắt đầu không được lớn hơn ngày kết thúc.', 'warn');
+                  return;
+                }
+                const nextStatus = dlg.querySelector('#mf-status')?.value || '';
+                const nextGym = Boolean(dlg.querySelector('#mf-gym')?.checked);
+                const nextCoach = Boolean(dlg.querySelector('#mf-coach')?.checked);
+                const nextSlots = Boolean(dlg.querySelector('#mf-slots')?.checked);
+                modal.close();
+                reloadWith({
+                  status: nextStatus,
+                  from: nextFrom,
+                  to: nextTo,
+                  hasGym: nextGym,
+                  hasCoach: nextCoach,
+                  hasAvailableSlots: nextSlots,
+                  page: 1,
+                });
+              };
+            }
+          },
+        });
+      };
+    }
 
     bindPagination(root, {
       page: pagination.page,
       totalPages: pagination.totalPages,
       prefix: 'acc',
       onChange: (nextPage) => reloadWith({ page: nextPage }),
+      onPageSizeChange: (nextSize) => reloadWith({ pageSize: nextSize, page: 1 }),
     });
+
+    const exportLabel = root.querySelector('#acc-export-label');
+    const getSelectedIds = bindDataTableSelection(root, {
+      onSelectionChange: (ids) => {
+        if (exportLabel) {
+          exportLabel.textContent = ids.length > 0 ? `Xuất Excel (${ids.length})` : 'Xuất Excel';
+        }
+      },
+    });
+
+    const exportBtn = root.querySelector('#acc-export-excel');
+    if (exportBtn) {
+      exportBtn.onclick = () => {
+        const selectedIds = getSelectedIds();
+        const targetRows = selectedIds.length > 0
+          ? rows.filter((r) => selectedIds.includes(String(r.id)))
+          : rows;
+        if (!targetRows.length) {
+          toast('Chưa có dữ liệu để xuất Excel.', 'warn');
+          return;
+        }
+        const exportCols = activeRole === 'COACH'
+          ? [
+            { label: 'Họ và tên', value: (r) => r.fullName || '' },
+            { label: 'Email', value: (r) => r.email || '' },
+            { label: 'Số điện thoại', value: (r) => r.phone || '' },
+            { label: 'Suất học viên', value: (r) => `${Number(r.usedSlots ?? r.activeRelationshipsCount ?? 0)}/8` },
+            { label: 'Trạng thái', value: (r) => r.status || '' },
+          ]
+          : [
+            { label: 'Họ và tên', value: (r) => r.fullName || '' },
+            { label: 'Email', value: (r) => r.email || '' },
+            { label: 'Số điện thoại', value: (r) => r.phone || '' },
+            { label: 'Gói Gym', value: (r) => r.activeMembershipEndDate ? `Hiệu lực đến ${r.activeMembershipEndDate}` : (r.membershipStatus || 'EXPIRED') },
+            { label: 'Coach phụ trách', value: (r) => r.coachName || 'Chưa có' },
+            { label: 'Trạng thái', value: (r) => r.status || '' },
+          ];
+        const ok = exportToExcel({
+          filename: activeRole === 'COACH' ? 'metagym-coaches.csv' : 'metagym-members.csv',
+          columns: exportCols,
+          rows: targetRows,
+        });
+        if (ok) {
+          toast(`Đã xuất ${targetRows.length} dòng ra file Excel (.csv).`);
+        }
+      };
+    }
 
     // 1. Operational Detail Drawer (GET /admin/users/:id)
     root.querySelectorAll('.detail').forEach((btn) => {

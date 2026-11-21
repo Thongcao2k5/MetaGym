@@ -46,12 +46,86 @@ export function renderSkeletonPage({ cards = 3, rows = 5 } = {}) {
   </div>`;
 }
 
+export function renderDashboardSkeleton() {
+  const kpiSkeleton = () => `<div class="kpi-card">
+    <div class="kpi-top">
+      <div class="skel" style="height:13px;width:52%"></div>
+      <div class="skel" style="height:20px;width:20px;border-radius:6px"></div>
+    </div>
+    <div class="skel" style="height:30px;width:58%;margin:6px 0"></div>
+    <div class="skel" style="height:12px;width:74%"></div>
+  </div>`;
+
+  const barHeights = [42, 68, 54, 82, 60, 90, 48, 74, 86, 58, 70, 64];
+
+  return `<div class="stack-20" aria-busy="true" aria-label="Đang tải tổng quan vận hành">
+    <div class="filter-bar">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
+        <div class="skel" style="height:28px;width:170px;border-radius:999px"></div>
+        <div class="skel" style="height:40px;width:150px"></div>
+        <div class="skel" style="height:40px;width:150px"></div>
+        <div class="skel" style="height:36px;width:86px"></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <div class="skel" style="height:34px;width:68px;border-radius:999px"></div>
+        <div class="skel" style="height:34px;width:74px;border-radius:999px"></div>
+        <div class="skel" style="height:34px;width:84px;border-radius:999px"></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      ${Array.from({ length: 3 }).map(kpiSkeleton).join('')}
+    </div>
+
+    <div class="grid-3">
+      ${Array.from({ length: 3 }).map(kpiSkeleton).join('')}
+    </div>
+
+    <section class="meta-card">
+      <div class="skel" style="height:20px;width:260px;margin-bottom:8px"></div>
+      <div class="skel" style="height:14px;width:360px;max-width:100%;margin-bottom:18px"></div>
+      <div class="skel-chart">
+        ${barHeights.map((h) => `<span class="skel skel-chart-bar" style="height:${h}%"></span>`).join('')}
+      </div>
+    </section>
+  </div>`;
+}
+
 export function renderTableSkeleton(rows = 5) {
   return `<div class="meta-card" aria-busy="true" aria-label="Đang tải danh sách">
     <div class="stack-12">
       ${Array.from({ length: rows }).map(() => '<div class="skel" style="height:48px;width:100%"></div>').join('')}
     </div>
   </div>`;
+}
+
+function emptyIllustrationSvg(variant = 'data') {
+  const accent = variant === 'filter' ? 'var(--meta-info)' : 'var(--meta-primary)';
+  return `<svg class="empty-illustration" width="176" height="136" viewBox="0 0 176 136" fill="none" aria-hidden="true">
+    <circle cx="88" cy="68" r="52" fill="var(--meta-surface-raised)" opacity="0.85"/>
+    <circle cx="136" cy="24" r="5" fill="var(--meta-surface-raised)"/>
+    <circle cx="34" cy="108" r="4" fill="var(--meta-surface-raised)"/>
+    <rect x="26" y="22" width="76" height="68" rx="8" fill="var(--meta-surface)" stroke="var(--meta-border-strong)" stroke-width="1.2"/>
+    <path d="M26 30a8 8 0 0 1 8-8h60a8 8 0 0 1 8 8v6H26v-6z" fill="var(--meta-surface-raised)"/>
+    <circle cx="35" cy="29" r="2" fill="var(--meta-text-secondary)" opacity="0.6"/>
+    <circle cx="42" cy="29" r="2" fill="var(--meta-text-secondary)" opacity="0.6"/>
+    <circle cx="49" cy="29" r="2" fill="var(--meta-text-secondary)" opacity="0.6"/>
+    <rect x="36" y="46" width="12" height="34" rx="3" fill="var(--meta-surface-raised)"/>
+    <rect x="36" y="58" width="12" height="22" rx="3" fill="var(--meta-border-strong)"/>
+    <rect x="54" y="46" width="12" height="34" rx="3" fill="var(--meta-surface-raised)"/>
+    <rect x="54" y="66" width="12" height="14" rx="3" fill="var(--meta-border-strong)"/>
+    <rect x="72" y="46" width="12" height="34" rx="3" fill="var(--meta-surface-raised)"/>
+    <rect x="72" y="52" width="12" height="28" rx="3" fill="var(--meta-border-strong)"/>
+    <rect x="70" y="38" width="80" height="78" rx="8" fill="var(--meta-surface)" stroke="var(--meta-border-strong)" stroke-width="1.4"/>
+    <path d="M70 46a8 8 0 0 1 8-8h64a8 8 0 0 1 8 8v6H70v-6z" fill="var(--meta-surface-raised)"/>
+    <circle cx="79" cy="45" r="2" fill="var(--meta-text-secondary)" opacity="0.65"/>
+    <circle cx="86" cy="45" r="2" fill="var(--meta-text-secondary)" opacity="0.65"/>
+    <circle cx="93" cy="45" r="2" fill="var(--meta-text-secondary)" opacity="0.65"/>
+    <circle cx="110" cy="76" r="16" stroke="var(--meta-border-strong)" stroke-width="7"/>
+    <path d="M110 60a16 16 0 0 1 16 16" stroke="${accent}" stroke-width="7" stroke-linecap="round"/>
+    <rect x="86" y="100" width="48" height="4" rx="2" fill="var(--meta-border-strong)"/>
+    <rect x="94" y="107" width="32" height="3.5" rx="1.75" fill="var(--meta-surface-raised)"/>
+  </svg>`;
 }
 
 export function renderEmptyState({
@@ -66,7 +140,7 @@ export function renderEmptyState({
     ? `<button type="button" class="btn btn-primary"${ctaId ? ` id="${esc(ctaId)}"` : ''}${ctaAttr ? ` ${ctaAttr}` : ''}>${icon('plus', 16)} ${esc(ctaLabel)}</button>`
     : '';
   return `<div class="empty-state">
-    <div class="empty-icon">${icon(iconName, 26)}</div>
+    <div class="empty-illustration-wrap" data-empty-icon="${esc(iconName)}">${emptyIllustrationSvg('data')}</div>
     <h2 class="card-title-text">${esc(title)}</h2>
     <p class="card-sub" style="max-width:460px">${esc(description)}</p>
     ${button}
@@ -79,7 +153,7 @@ export function renderFilterEmptyState({
   resetId = 'reset-filters-btn',
 } = {}) {
   return `<div class="empty-state">
-    <div class="empty-icon">${icon('search', 26)}</div>
+    <div class="empty-illustration-wrap">${emptyIllustrationSvg('filter')}</div>
     <h2 class="card-title-text">${esc(title)}</h2>
     <p class="card-sub" style="max-width:460px">${esc(description)}</p>
     <button type="button" class="btn btn-primary" id="${esc(resetId)}" data-action="reset-filters">${icon('refresh', 16)} Xóa bộ lọc</button>

@@ -45,6 +45,8 @@ export function closeModal() {
     overlay.hidden = true;
   }
   if (dialog) dialog.innerHTML = '';
+  document.documentElement?.classList?.remove?.('meta-scroll-locked');
+  document.body?.classList?.remove?.('meta-scroll-locked');
   modalBusy = false;
   if (typeof activeCleanup === 'function') {
     const fn = activeCleanup;
@@ -94,6 +96,8 @@ export function openModal({
 
   overlay.hidden = false;
   overlay.classList?.add('open');
+  document.documentElement?.classList?.add?.('meta-scroll-locked');
+  document.body?.classList?.add?.('meta-scroll-locked');
 
   overlay.onclick = (event) => {
     if (event.target === overlay && !modalBusy) closeModal();

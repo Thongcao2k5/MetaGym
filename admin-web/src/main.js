@@ -15,9 +15,14 @@ import {
 } from './services/api.js';
 import { parseHash } from './state/router.js';
 import { closeDrawer } from './components/drawer.js';
+import { esc } from './components/format.js';
+import { icon } from './components/icons.js';
 import { renderShell } from './components/layout.js';
-import { closeModal } from './components/modal.js';
-import { renderErrorState } from './components/states.js';
+import { closeModal, openModal } from './components/modal.js';
+import { renderDashboardSkeleton, renderErrorState } from './components/states.js';
+import { toast } from './components/toast.js';
+import { playAppSplash } from './components/splash.js';
+import { initTheme } from './services/theme.js';
 
 import { renderLoginPage } from './pages/login.js';
 import { destroyDashboardChart, renderDashboardPage } from './pages/dashboard.js';
@@ -39,6 +44,7 @@ export function createApp({
   ChartCtor = Chart,
   QRCodeLib = QRCode,
 } = {}) {
+  initTheme();
   let routingId = 0;
 
   function signOut({ expired = false, returnHash = null } = {}) {
@@ -147,9 +153,56 @@ export function createApp({
     } catch (error) {
       if (currentId !== routingId) return;
       if (error?.status === 401) return;
-      root.innerHTML = `<div class="page-content">${renderErrorState({ title: 'Không thể khởi chạy trang quản trị', message: error?.message || 'Lỗi kết nối máy chủ.' })}</div>`;
+      const errMsg = error?.message || 'Không thể kết nối tới máy chủ hoặc hệ thống đang gặp sự cố.';
+
+      if (getToken() && parsed.section === 'dashboard') {
+        makeShell()({
+          section: 'dashboard',
+          topbarActionsHtml: `<button type="button" class="btn btn-graphite btn-sm" id="retry-load-btn">${icon('refresh', 16)} Thử lại</button>`,
+          contentHtml: renderDashboardSkeleton(),
+        });
+        const retry = root.querySelector('#retry-load-btn');
+        if (retry) retry.onclick = route;
+        toast(errMsg, 'danger');
+        return;
+      }
+
+      const errHtml = renderErrorState({
+        title: 'Lỗi kết nối hệ thống',
+        message: errMsg,
+      });
+      if (getToken()) {
+        makeShell()({
+          section: parsed.section,
+          contentHtml: errHtml,
+        });
+      } else {
+        root.innerHTML = `<div class="page-content">${errHtml}</div>`;
+      }
       const retry = root.querySelector('#retry-load-btn');
       if (retry) retry.onclick = route;
+
+      openModal({
+        title: 'Lỗi kết nối hệ thống',
+        maxWidth: '460px',
+        bodyHtml: `<div class="system-error-modal">
+          <div class="system-error-badge" aria-hidden="true">${icon('alert', 26)}</div>
+          <h3 class="system-error-heading">Không thể khởi chạy trang quản trị</h3>
+          <p class="system-error-message">${esc(errMsg)}</p>
+          <p class="system-error-hint">Kiểm tra lại kết nối máy chủ hoặc thử tải lại dữ liệu.</p>
+        </div>`,
+        footerHtml: `<button type="button" class="btn btn-ghost" data-close-modal>Đóng</button>
+          <button type="button" class="btn btn-primary" id="system-error-retry">${icon('refresh', 16)} Thử lại kết nối</button>`,
+        onMount: (modal) => {
+          const modalRetry = modal.dialog.querySelector?.('#system-error-retry');
+          if (modalRetry) {
+            modalRetry.onclick = () => {
+              modal.close();
+              route();
+            };
+          }
+        },
+      });
     }
   }
 
@@ -157,7 +210,12 @@ export function createApp({
 }
 
 if (typeof document !== 'undefined' && document.querySelector?.('#app')) {
+  if (globalThis.window?.location?.pathname === '/admin' || globalThis.window?.location?.pathname === '/admin/') {
+    globalThis.window.history?.replaceState?.(null, '', `/${globalThis.window.location.hash || '#/admin/dashboard'}`);
+  }
   const app = createApp();
-  globalThis.window?.addEventListener?.('hashchange', () => app.route());
-  app.route();
+  playAppSplash(() => {
+    globalThis.window?.addEventListener?.('hashchange', () => app.route());
+    app.route();
+  });
 }

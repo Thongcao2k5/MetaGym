@@ -41,6 +41,8 @@ export function closeDrawer() {
     overlay.hidden = true;
   }
   if (panel) panel.innerHTML = '';
+  document.documentElement?.classList?.remove?.('meta-scroll-locked');
+  document.body?.classList?.remove?.('meta-scroll-locked');
 }
 
 export function openDrawer({
@@ -70,6 +72,8 @@ export function openDrawer({
 
   overlay.hidden = false;
   overlay.classList?.add('open');
+  document.documentElement?.classList?.add?.('meta-scroll-locked');
+  document.body?.classList?.add?.('meta-scroll-locked');
   overlay.onclick = (event) => {
     if (event.target === overlay) closeDrawer();
   };
