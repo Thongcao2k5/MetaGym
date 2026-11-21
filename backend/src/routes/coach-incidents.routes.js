@@ -8,6 +8,7 @@ import {
   computeActiveSimulatedRefund,
   executeCoachTransfer,
 } from '../services/coach-transfer.js';
+import { executeSimulatedRefund } from '../services/simulated-refunds.js';
 import { createAuthentication } from './users.routes.js';
 
 const uuid = z.uuid();
@@ -36,6 +37,49 @@ const incidentTransferBodySchema = z.strictObject({
   newCoachId: uuid,
   reason: z.string().trim().min(1).max(1000),
 });
+
+const simulatedRefundBodySchema = z.strictObject({
+  reason: z.string().trim().min(1).max(500),
+});
+
+const simulatedRefundListQuerySchema = z.strictObject({
+  memberId: uuid.optional(),
+  coachId: uuid.optional(),
+  incidentId: uuid.optional(),
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+  search: z.string().trim().max(120).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+function simulatedRefundView(row) {
+  return {
+    id: row.id,
+    refundBatchId: row.refund_batch_id,
+    incidentId: row.incident_id,
+    coachEntitlementId: row.coach_entitlement_id,
+    relationshipId: row.relationship_id,
+    memberId: row.member_id,
+    memberName: row.member_name,
+    memberEmail: row.member_email,
+    coachId: row.coach_id,
+    coachName: row.coach_name,
+    coachEmail: row.coach_email,
+    entitlementKind: row.entitlement_kind,
+    planCode: row.plan_code ?? null,
+    planName: row.plan_name ?? null,
+    snapshotPrice: Number(row.snapshot_price),
+    totalSessions: Number(row.total_sessions),
+    remainingSessions: Number(row.remaining_sessions),
+    refundAmount: Number(row.refund_amount),
+    status: row.status,
+    reason: row.reason,
+    createdBy: row.created_by,
+    createdByName: row.created_by_name ?? null,
+    createdAt: row.created_at,
+  };
+}
 
 function fail(response, status, code, message, details = {}) {
   return response.status(status).json({ error: { code, message, details } });
@@ -135,7 +179,7 @@ function incidentQueueItemView(row) {
 export function createCoachIncidentsRouter({ database, jwtSecret }) {
   const router = Router();
   router.use(
-    ['/relationships/me/coach-lock-choice', '/admin/coach-incidents'],
+    ['/relationships/me/coach-lock-choice', '/admin/coach-incidents', '/admin/simulated-refunds'],
     createAuthentication({ database, jwtSecret }),
   );
 
@@ -236,7 +280,7 @@ export function createCoachIncidentsRouter({ database, jwtSecret }) {
   // =========================================================================
   // ADMIN: Coach Lock Incident Queue, Eligible Coaches, and D2 Transfer
   // =========================================================================
-  router.use('/admin/coach-incidents', (request, response, next) =>
+  router.use(['/admin/coach-incidents', '/admin/simulated-refunds'], (request, response, next) =>
     request.authUser.role === 'ADMIN'
       ? next()
       : fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị'));
@@ -561,6 +605,135 @@ export function createCoachIncidentsRouter({ database, jwtSecret }) {
       return fail(response, result.status, result.code, result.message, result.details);
     }
     return response.status(result.status).json({ data: result.data });
+  });
+
+  // =========================================================================
+  // ADMIN: D2 + D3 Simulated Refunds Execution & History
+  // =========================================================================
+  router.post('/admin/coach-incidents/:incidentId/simulated-refunds', async (request, response) => {
+    if (!uuid.safeParse(request.params.incidentId).success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Mã sự cố không hợp lệ');
+    }
+    const idempotencyKey = uuid.safeParse(request.get('idempotency-key'));
+    if (!idempotencyKey.success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Thiếu hoặc sai định dạng header Idempotency-Key (UUID)');
+    }
+    const parsed = simulatedRefundBodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Lý do hoàn tiền mô phỏng không hợp lệ (1–500 ký tự)');
+    }
+
+    const result = await executeSimulatedRefund(database, {
+      adminUser: request.authUser,
+      incidentId: request.params.incidentId,
+      reason: parsed.data.reason,
+      idempotencyKey: idempotencyKey.data,
+    });
+
+    if (!result.ok) {
+      return fail(response, result.status, result.code, result.message, result.details);
+    }
+    return response.status(result.status).json({ data: result.data });
+  });
+
+  router.get('/admin/simulated-refunds', async (request, response) => {
+    const parsed = simulatedRefundListQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Bộ lọc lịch sử hoàn tiền mô phỏng không hợp lệ');
+    }
+    const { memberId, coachId, incidentId, from, to, search, page, pageSize } = parsed.data;
+    if (from && to && from > to) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Khoảng ngày lọc không hợp lệ');
+    }
+
+    const filters = [];
+    const values = [];
+
+    if (memberId) {
+      values.push(memberId);
+      filters.push(`sr.member_id = $${values.length}`);
+    }
+    if (coachId) {
+      values.push(coachId);
+      filters.push(`sr.coach_id = $${values.length}`);
+    }
+    if (incidentId) {
+      values.push(incidentId);
+      filters.push(`sr.incident_id = $${values.length}`);
+    }
+    if (from) {
+      values.push(from);
+      filters.push(`(sr.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date >= $${values.length}::date`);
+    }
+    if (to) {
+      values.push(to);
+      filters.push(`(sr.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= $${values.length}::date`);
+    }
+    if (search) {
+      values.push(`%${escapeLike(search)}%`);
+      const p = `$${values.length}`;
+      filters.push(
+        `(m.full_name ILIKE ${p} ESCAPE '\\' OR m.email::text ILIKE ${p} ESCAPE '\\' OR c.full_name ILIKE ${p} ESCAPE '\\' OR c.email::text ILIKE ${p} ESCAPE '\\' OR sr.reason ILIKE ${p} ESCAPE '\\' OR COALESCE(e.plan_name, h.plan_name, '') ILIKE ${p} ESCAPE '\\' OR sr.id::text ILIKE ${p} ESCAPE '\\' OR sr.refund_batch_id::text ILIKE ${p} ESCAPE '\\' OR sr.incident_id::text ILIKE ${p} ESCAPE '\\')`,
+      );
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const baseJoins = `
+      FROM simulated_refunds sr
+      JOIN coach_entitlements e ON e.id = sr.coach_entitlement_id
+      LEFT JOIN coach_payment_holds h ON h.id = COALESCE(e.original_hold_id, e.hold_id)
+      JOIN users m ON m.id = sr.member_id
+      JOIN users c ON c.id = sr.coach_id
+      LEFT JOIN users cb ON cb.id = sr.created_by
+      ${whereClause}
+    `;
+
+    try {
+      const [summaryRes, rowsRes] = await Promise.all([
+        database.query(
+          `SELECT count(*)::int AS count,
+                  COALESCE(sum(sr.refund_amount), 0)::text AS total_refund_amount
+           ${baseJoins}`,
+          values,
+        ),
+        database.query(
+          `SELECT sr.id, sr.refund_batch_id, sr.incident_id, sr.coach_entitlement_id,
+                  sr.relationship_id, sr.member_id, sr.coach_id, sr.entitlement_kind,
+                  sr.snapshot_price, sr.total_sessions, sr.remaining_sessions,
+                  sr.refund_amount, sr.status, sr.reason, sr.created_by, sr.created_at,
+                  COALESCE(e.plan_code, h.plan_code) AS plan_code,
+                  COALESCE(e.plan_name, h.plan_name) AS plan_name,
+                  m.full_name AS member_name, m.email::text AS member_email,
+                  c.full_name AS coach_name, c.email::text AS coach_email,
+                  cb.full_name AS created_by_name
+           ${baseJoins}
+           ORDER BY sr.created_at DESC, (sr.entitlement_kind = 'ACTIVE') DESC, sr.id DESC
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+          [...values, pageSize, (page - 1) * pageSize],
+        ),
+      ]);
+
+      const totalItems = summaryRes.rows[0].count;
+      const totalRefundAmount = Number(summaryRes.rows[0].total_refund_amount ?? 0);
+      const items = rowsRes.rows.map(simulatedRefundView);
+
+      return response.json({
+        data: items,
+        items,
+        summary: {
+          totalRefundAmount,
+          count: totalItems,
+        },
+        pagination: {
+          page,
+          pageSize,
+          totalItems,
+          totalPages: Math.ceil(totalItems / pageSize),
+        },
+      });
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được lịch sử hoàn tiền mô phỏng');
+    }
   });
 
   return router;
