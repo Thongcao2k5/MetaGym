@@ -64,7 +64,10 @@ DECLARE
     'ck_direct_conversation_pair', 'ck_coach_package_fixed_terms',
     'ex_coach_weekly_slot_overlap', 'uq_coach_hold_request',
     'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap',
-    'uq_member_self_training_day', 'ck_coach_outcome_different_pair'
+    'uq_member_self_training_day', 'ck_coach_outcome_different_pair',
+    'uq_member_membership_owner', 'fk_payment_renewed_membership',
+    'ck_payments_vnpay_confirmation', 'ck_payments_momo_confirmation',
+    'ck_payments_zalopay_confirmation'
   ];
   missing_constraints text[];
 BEGIN
@@ -106,6 +109,42 @@ BEGIN
       AND indexname = 'uq_direct_conversation_pair'
   ) THEN
     RAISE EXCEPTION 'Missing direct conversation pair index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'ix_payments_renewed_membership'
+  ) THEN
+    RAISE EXCEPTION 'Missing payment renewed membership index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_payments_vnpay_pending_member'
+  ) THEN
+    RAISE EXCEPTION 'Missing VNPay pending payment unique index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_payments_momo_pending_member'
+  ) THEN
+    RAISE EXCEPTION 'Missing MoMo pending payment unique index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public'
+      AND indexname = 'uq_payments_zalopay_pending_member'
+  ) THEN
+    RAISE EXCEPTION 'Missing ZaloPay pending payment unique index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+     WHERE tgname = 'trg_nutrition_revision'
+       AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'Missing nutrition revision trigger';
   END IF;
 END
 $$;

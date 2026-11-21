@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -105,8 +106,9 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
         coachId: widget.coachId,
       );
       if (!mounted) return;
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
+      await MetaGymNavigation.pushOnce<void>(
+        context,
+        MetaGymPageRoute(
           builder: (_) => ConversationDetailPage(
             conversation: conversation,
             service: messaging,
@@ -573,8 +575,9 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                             CoachingPrimaryButton(
                               label: 'Xem các gói Coach',
                               icon: Icons.arrow_forward_rounded,
-                              onPressed: () => Navigator.of(context).push<void>(
-                                MaterialPageRoute(
+                              onPressed: () => MetaGymNavigation.pushOnce<void>(
+                                context,
+                                MetaGymPageRoute(
                                   builder: (_) =>
                                       CoachOffersPage(coachId: widget.coachId),
                                 ),

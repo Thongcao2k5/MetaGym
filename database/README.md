@@ -1,6 +1,6 @@
 # Meta Gym Database
 
-PostgreSQL schema cho MVP Meta Gym gồm 47 bảng nghiệp vụ và 2 bảng vận hành
+PostgreSQL schema cho MVP Meta Gym gồm 50 bảng nghiệp vụ và 2 bảng vận hành
 cho giới hạn đăng nhập/khôi phục mật khẩu. Migration được chia theo thứ tự phụ
 thuộc và có file rollback tương ứng.
 
@@ -37,6 +37,11 @@ Chạy các file `*.up.sql` theo thứ tự:
 21. `0021_member_self_training_days.up.sql`
 22. `0022_member_health_declaration.up.sql`
 23. `0023_coach_outcomes.up.sql`
+24. `0024_membership_renewals.up.sql`
+25. `0025_vnpay_sandbox.up.sql`
+26. `0026_momo_sandbox.up.sql`
+27. `0027_zalopay_sandbox.up.sql`
+28. `0028_member_nutrition_tracking.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 
@@ -129,7 +134,7 @@ Sau migration, chạy:
 psql $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 ```
 
-Kiểm tra xác nhận đủ 47 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
+Kiểm tra xác nhận đủ 50 bảng nghiệp vụ và 2 bảng vận hành giới hạn đăng
 nhập/khôi phục mật khẩu, các FK sở hữu quan trọng, constraint chỉ cho phép tối
 đa một Admin và constraint chống chồng ngày membership. Sự tồn tại của Admin
 và `gym_profile` được kiểm tra khi chạy baseline seed.

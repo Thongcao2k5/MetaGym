@@ -123,11 +123,13 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
       assert.equal(result.status, 201);
       result = await request(app, `/payments/${result.body.data.id}/mock-confirmations`, memberToken, 'POST');
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.membership.status, 'SCHEDULED');
-      assert.ok(result.body.data.membership.startDate > firstMembership.endDate);
+      const secondMembership = result.body.data.membership;
+      assert.equal(secondMembership.status, 'ACTIVE');
+      assert.equal(secondMembership.id, firstMembership.id);
+      assert.ok(secondMembership.endDate > firstMembership.endDate);
       result = await request(app, '/memberships/me', memberToken);
       assert.equal(result.status, 200);
-      assert.equal(result.body.data.length, 2);
+      assert.equal(result.body.data.length, 1);
       assert.equal((await request(app, '/payments/me', memberToken)).body.data.length, 2);
       assert.equal((await request(app, `/payments/${firstPaymentId}`, token(coachId, 'COACH'))).status, 404);
 
@@ -136,13 +138,15 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         { memberId, planId }, { 'idempotency-key': deskKey });
       assert.equal(result.status, 201);
       assert.equal(result.body.data.payment.method, 'FRONT_DESK');
-      assert.equal(result.body.data.membership.status, 'SCHEDULED');
+      assert.equal(result.body.data.membership.status, 'ACTIVE');
+      assert.equal(result.body.data.membership.id, firstMembership.id);
+      assert.ok(result.body.data.membership.endDate > secondMembership.endDate);
       const deskPaymentId = result.body.data.payment.id;
       result = await request(app, '/admin/front-desk-payments', adminToken, 'POST',
         { memberId, planId }, { 'idempotency-key': deskKey });
       assert.equal(result.status, 200);
       assert.equal(result.body.data.payment.id, deskPaymentId);
-      assert.equal((await request(app, '/admin/memberships', adminToken)).body.data.length, 3);
+      assert.equal((await request(app, '/admin/memberships', adminToken)).body.data.length, 1);
       result = await request(app, '/admin/dashboard?from=2020-01-01&to=2030-01-01', adminToken);
       assert.equal(result.status, 200);
       assert.equal(result.body.data.members.active, 1);

@@ -29,9 +29,12 @@ String formatMembershipDateTime(String value) {
   return DateFormat('dd/MM/yyyy HH:mm').format(local);
 }
 
-String formatPaymentMethodLabel(String method) => switch (method) {
+String formatPaymentMethodLabel(String? method) => switch (method) {
   'MOCK_QR' => 'VNPAY-QR (Giả lập)',
-  _ => method,
+  'VNPAY' => 'VNPay Sandbox',
+  'MOMO' => 'MoMo Sandbox',
+  'ZALOPAY' => 'ZaloPay Sandbox',
+  _ => method ?? 'Chưa xác định',
 };
 
 Color membershipStatusColor(String status) => switch (status) {
@@ -217,11 +220,7 @@ class MembershipSectionHeader extends StatelessWidget {
 
 /// Thẻ thông báo lỗi chuẩn Meta Gym.
 class MembershipErrorCard extends StatelessWidget {
-  const MembershipErrorCard({
-    required this.message,
-    this.onRetry,
-    super.key,
-  });
+  const MembershipErrorCard({required this.message, this.onRetry, super.key});
 
   final String message;
   final VoidCallback? onRetry;

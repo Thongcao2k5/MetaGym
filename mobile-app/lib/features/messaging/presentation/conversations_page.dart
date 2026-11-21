@@ -1938,8 +1938,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((
         id,
       ) {
-        if (mounted && id == widget.conversation.id)
+        if (mounted && id == widget.conversation.id) {
           unawaited(_refreshLatest());
+        }
       });
       final cached = _MessagingSessionCache.readThread(
         widget.currentUserId,

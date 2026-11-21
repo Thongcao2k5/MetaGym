@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -232,6 +233,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
   };
 
   Future<void> _save() async {
+    if (_busy) return;
     final validation = _validate();
     if (validation != null) {
       setState(() => _error = validation);
@@ -327,7 +329,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
           ),
       ],
     );
-    await showDialog<void>(
+    await MetaGymNavigation.showDialogOnce<void>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(

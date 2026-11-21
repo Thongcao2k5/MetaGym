@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -115,8 +116,9 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
   }
 
   Future<void> _add() async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => _PhotoFormPage(service: _service!, picker: _picker!),
       ),
     );
@@ -255,8 +257,9 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                         Icons.chevron_right,
                         color: Color(0xFFC8C2BC),
                       ),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
+                      onTap: () => MetaGymNavigation.pushOnce(
+                        context,
+                        MetaGymPageRoute<void>(
                           builder: (_) => _PhotoDetailPage(
                             service: _service!,
                             photo: photo,
@@ -333,6 +336,7 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final image = _image;
     final date = parseProgressTime(_date.text);
     final validation = image == null

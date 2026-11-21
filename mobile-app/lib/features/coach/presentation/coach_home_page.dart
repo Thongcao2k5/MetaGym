@@ -319,6 +319,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
   }
 
   void _selectTab(int index) {
+    if (index == _index) return;
     setState(() {
       _visitedTabs.add(index);
       _index = index;

@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -87,7 +88,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
     var meal = 'BREAKFAST';
     CoachRecord? food;
     int? grams;
-    final item = await showDialog<CoachRecord>(
+    final item = await MetaGymNavigation.showDialogOnce<CoachRecord>(
       context: context,
       builder: (dialog) => StatefulBuilder(
         builder: (context, update) => AlertDialog(

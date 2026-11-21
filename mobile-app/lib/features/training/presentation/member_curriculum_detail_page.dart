@@ -1,8 +1,9 @@
 import 'dart:ui';
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -275,7 +276,10 @@ class _MemberCurriculumDetailPageState
                 _headerButton(
                   icon: Icons.chat_bubble_outline_rounded,
                   label: 'Nhắn Coach',
-                  onPressed: () => context.push('/member/features/messages'),
+                  onPressed: () => MetaGymNavigation.pushPathOnce(
+                    context,
+                    '/member/features/messages',
+                  ),
                 ),
               ],
             ),
@@ -366,7 +370,7 @@ class _MemberCurriculumDetailPageState
                 expanded: _heroExpanded,
                 label:
                     '${_heroExpanded ? 'Thu gọn' : 'Mở rộng'} thông tin giáo trình',
-                child: InkWell(
+                child: MetaGymTap(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => setState(() => _heroExpanded = !_heroExpanded),
                   child: Column(
@@ -578,8 +582,9 @@ class _MemberCurriculumDetailPageState
                 Icons.chevron_right_rounded,
                 color: Color(0xFFC8C2BC),
               ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
+              onTap: () => MetaGymNavigation.pushOnce(
+                context,
+                MetaGymPageRoute(
                   builder: (_) => MemberCurriculumDetailPage(
                     id: old.id,
                     service: widget.service,
@@ -613,7 +618,7 @@ class _MemberCurriculumDetailPageState
             (1, 'Dinh dưỡng', count),
           ])
             Expanded(
-              child: InkWell(
+              child: MetaGymTap(
                 onTap: () => setState(() => _tab = index),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
@@ -701,8 +706,10 @@ class _MemberCurriculumDetailPageState
         ),
         const SizedBox(height: 12),
         FilledButton(
-          onPressed: () => Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const MembershipPage())),
+          onPressed: () => MetaGymNavigation.pushOnce(
+            context,
+            MetaGymPageRoute(builder: (_) => const MembershipPage()),
+          ),
           style: FilledButton.styleFrom(
             backgroundColor: MetaGymTheme.primary,
             foregroundColor: MetaGymTheme.onPrimary,
@@ -1103,10 +1110,12 @@ class _MemberCurriculumDetailPageState
     required bool selected,
     required VoidCallback? onTap,
     Color color = MetaGymTheme.primary,
-  }) => InkWell(
+  }) => MetaGymTap(
     onTap: onTap,
     borderRadius: BorderRadius.circular(14),
-    child: Container(
+    child: AnimatedContainer(
+      duration: MetaGymTheme.stateDurationOf(context),
+      curve: Curves.easeOutCubic,
       constraints: const BoxConstraints(minWidth: 48, minHeight: 46),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
       decoration: _box(

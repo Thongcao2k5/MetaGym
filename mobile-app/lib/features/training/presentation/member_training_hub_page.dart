@@ -1,7 +1,8 @@
 import 'dart:ui';
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'nutrition_tracking_page.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -157,11 +158,12 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       _relationship != null && _relationship!.status == 'ACTIVE';
 
   void _open(Widget page) {
-    Navigator.of(context)
-        .push<void>(MaterialPageRoute(builder: (_) => page))
-        .then((_) {
-          if (mounted) _load();
-        });
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(builder: (_) => page),
+    ).then((_) {
+      if (mounted) _load();
+    });
   }
 
   Future<void> _requirePackage({
@@ -169,7 +171,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     required String feature,
   }) async {
     final isExpired = !coach && _hadGym;
-    final destination = await showModalBottomSheet<bool>(
+    final destination = await MetaGymNavigation.showSheetOnce<bool>(
       context: context,
       backgroundColor: const Color(0xFF24201D),
       shape: const RoundedRectangleBorder(
@@ -762,7 +764,7 @@ class _CircleHeaderActionButton extends StatelessWidget {
         message: semanticLabel,
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             customBorder: const CircleBorder(),
             child: ConstrainedBox(
@@ -925,7 +927,7 @@ class _ServiceMetricPanel extends StatelessWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: radius,
         child: ConstrainedBox(
@@ -1084,7 +1086,7 @@ class _ServiceErrorPanel extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: MetaGymTheme.primary,
               foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(120, 44),
+              minimumSize: const Size(120, 48),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1134,7 +1136,7 @@ class _TrainingContentCard extends StatelessWidget {
         side: BorderSide(color: borderColor, width: 1.1),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: radius,
         child: Stack(

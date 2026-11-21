@@ -13,7 +13,7 @@ Repository: <https://github.com/Thongcao2k5/MetaGym>
 | [`mobile-app/`](mobile-app/README.md) | Flutter (Dart `^3.13.2`), Provider, GoRouter, Dio, `fl_chart`, `livekit_client` | Ứng dụng cho **Member** và **Coach** (tập luyện, dinh dưỡng, tiến độ, nhắn tin, gọi thoại/video, trợ lý AI, check-in QR). |
 | [`admin-web/`](admin-web/README.md) | Vite (`^8.3.0`), Bootstrap 5 (`^5.3.8`), Chart.js (`^4.5.1`), QRCode | Trang quản trị **Admin** (quản lý người dùng, gói tập, thanh toán, thiết bị, bài tập, in mã QR check-in). |
 | [`backend/`](backend/package.json) | Node.js (`>= 22`), Express 5, PostgreSQL (`pg`), Zod, JWT, Sharp, LiveKit SDK | REST API nghiệp vụ, xác thực/phân quyền RBAC, xử lý ảnh và kết nối dịch vụ ngoài. |
-| [`database/`](database/README.md) | PostgreSQL 17+ (`citext`, `btree_gist`) | Migrations (`0001`–`0024`), baseline/demo seeds và `schema_assertions.sql`. |
+| [`database/`](database/README.md) | PostgreSQL 17+ (`citext`, `btree_gist`) | Migrations (`0001`–`0028`), baseline/demo seeds và `schema_assertions.sql`. |
 | [`design-system/`](design-system/meta-gym/MASTER.md) & [`DESIGN.md`](DESIGN.md) | Futuristic Performance Glass | Hệ thống thiết kế, token màu/font (`Be Vietnam Pro`), adapter cho Flutter & Bootstrap 5. |
 | [`docs/`](docs/README.md) | Markdown & SQL | Đặc tả yêu cầu, hợp đồng API, kiến trúc và kế hoạch triển khai Cloud Free. |
 
@@ -38,7 +38,7 @@ MetaGym/
 
 ### 1. Chuẩn bị Database (PostgreSQL)
 
-Tạo một database trống (hỗ trợ PostgreSQL 17+ với extension `citext` và `btree_gist`), sau đó chạy toàn bộ migration (`0001` → `0024`) theo hướng dẫn chi tiết tại [database/README.md](database/README.md):
+Tạo một database trống (hỗ trợ PostgreSQL 17+ với extension `citext` và `btree_gist`), sau đó chạy toàn bộ migration (`0001` → `0028`) theo hướng dẫn chi tiết tại [database/README.md](database/README.md):
 
 ```powershell
 $env:DATABASE_URL = 'postgresql://postgres:password@localhost:5432/meta_gym'
@@ -60,7 +60,7 @@ npm install
 npm run dev
 ```
 
-Kiểm tra API và kết nối PostgreSQL qua `GET http://localhost:3000/api/v1/health`.
+Kiểm tra API và kết nối PostgreSQL qua `GET http://localhost:3000/api/v1/health` (tài liệu Swagger UI tại `http://localhost:3000/api-docs`, endpoint keep-alive tại `GET /ping`).
 
 ### 3. Chạy Admin Web
 
@@ -96,6 +96,9 @@ Các tích hợp ngoài trong `backend/.env` chỉ được bật khi cấu hìn
 | **Gọi thoại/video (LiveKit)** | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Lấy từ [LiveKit Cloud](https://cloud.livekit.io/). Cần 2 thiết bị đăng nhập Member & Coach đang có quan hệ hoạt động. |
 | **RTC Token Provider (tùy chọn)** | `CALL_TOKEN_SERVICE_URL`, `CALL_TOKEN_SERVICE_TOKEN` | Trả về `accessToken`, `providerCallId`, `channelId`, `expiresAt`. |
 | **Lưu trữ ảnh Cloud & Realtime** | `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_STORAGE_BUCKET` | Xem thêm [docs/deployment/supabase-free.md](docs/deployment/supabase-free.md). |
+| **Thanh toán ZaloPay Sandbox** | `ZALOPAY_APP_ID`, `ZALOPAY_KEY1`, `ZALOPAY_KEY2`, `ZALOPAY_PUBLIC_ORIGIN` | Tạo đơn QR & đối soát kết quả qua API Sandbox (`0027_zalopay_sandbox.up.sql`). |
+| **Thanh toán MoMo Sandbox** | `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`, `MOMO_PUBLIC_ORIGIN`, `MOMO_WEB_RETURN_URL` | Tạo đơn, IPN/return & đối soát MoMo Sandbox (`0026_momo_sandbox.up.sql`). |
+| **Thanh toán VNPay Sandbox** | `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_PUBLIC_ORIGIN`, `VNPAY_WEB_RETURN_URL` | IPN, return & đối soát QueryDR VNPay Sandbox (`0025_vnpay_sandbox.up.sql`). |
 
 > **Yêu cầu khi `NODE_ENV=production`:**
 > - Bắt buộc cấu hình `CORS_ALLOWED_ORIGINS` là danh sách origin **HTTPS** cách nhau bằng dấu phẩy (ví dụ `https://app.example.com,https://admin.example.com`); thiếu hoặc sai định dạng sẽ làm backend từ chối khởi động. Ở `development`/`test`, mặc định cho phép mọi origin local.

@@ -5,6 +5,55 @@ import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 
 void main() {
   group('MetaGymBottomNav', () {
+    for (final width in [375.0, 768.0]) {
+      for (final warm in [false, true]) {
+        for (final reduced in [false, true]) {
+          testWidgets(
+            'AI pressed feedback: width=$width warm=$warm reduced=$reduced',
+            (tester) async {
+              tester.view.physicalSize = Size(width, 900);
+              tester.view.devicePixelRatio = 1;
+              addTearDown(tester.view.reset);
+              var taps = 0;
+              await tester.pumpWidget(
+                MaterialApp(
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(disableAnimations: reduced),
+                    child: child!,
+                  ),
+                  home: Scaffold(
+                    bottomNavigationBar: MetaGymBottomNav(
+                      currentIndex: 0,
+                      warmGlass: warm,
+                      onTap: (_) => taps++,
+                    ),
+                  ),
+                ),
+              );
+              final ai = find.byWidgetPredicate(
+                (widget) =>
+                    widget is Semantics && widget.properties.label == 'AI',
+              );
+              final gesture = await tester.startGesture(
+                tester.getCenter(find.byIcon(Icons.auto_awesome_rounded)),
+              );
+              await tester.pump(const Duration(milliseconds: 110));
+              expect(taps, 0);
+              final scales = tester.widgetList<AnimatedScale>(
+                find.descendant(of: ai, matching: find.byType(AnimatedScale)),
+              );
+              expect(scales.any((scale) => scale.scale < 1), !reduced);
+              await gesture.up();
+              await tester.pumpAndSettle();
+              expect(taps, 1);
+              expect(tester.takeException(), isNull);
+            },
+          );
+        }
+      }
+    }
+
     testWidgets('renders all 5 items in the exact required order', (
       tester,
     ) async {
@@ -84,7 +133,7 @@ void main() {
     });
 
     testWidgets(
-      'guarantees touch target area of at least 44x44 px for every item',
+      'guarantees touch target area of at least 48x48 dp for every item',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -118,13 +167,13 @@ void main() {
           final size = tester.getSize(itemFinder);
           expect(
             size.width,
-            greaterThanOrEqualTo(44.0),
-            reason: '${element.properties.label} width must be >= 44',
+            greaterThanOrEqualTo(48.0),
+            reason: '${element.properties.label} width must be >= 48',
           );
           expect(
             size.height,
-            greaterThanOrEqualTo(44.0),
-            reason: '${element.properties.label} height must be >= 44',
+            greaterThanOrEqualTo(48.0),
+            reason: '${element.properties.label} height must be >= 48',
           );
         }
       },

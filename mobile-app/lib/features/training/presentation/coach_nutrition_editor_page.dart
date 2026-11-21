@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -89,7 +90,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
 
   Future<void> _confirmPublish() async {
     if (_guide?.status != 'DRAFT' || _busy || !_validate()) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (dialogContext) => AlertDialog(

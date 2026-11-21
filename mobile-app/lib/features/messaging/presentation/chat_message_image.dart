@@ -1,6 +1,8 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 
@@ -49,19 +51,25 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
   }
 
   void _openFullscreen(BuildContext context, Uri url) {
-    Navigator.of(context).push(
+    MetaGymNavigation.pushOnce(
+      context,
       PageRouteBuilder<void>(
         opaque: false,
         barrierDismissible: true,
         barrierColor: Colors.black87,
-        transitionDuration: const Duration(milliseconds: 220),
-        reverseTransitionDuration: const Duration(milliseconds: 180),
+        transitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : MetaGymTheme.pageTransitionDuration,
+        reverseTransitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 240),
         pageBuilder: (context, animation, secondaryAnimation) =>
             _FullscreenChatImagePage(
               imageUrl: url.toString(),
               onRetryUrl: _load,
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          if (MediaQuery.disableAnimationsOf(context)) return child;
           final curved = CurvedAnimation(
             parent: animation,
             curve: Curves.easeOutCubic,
@@ -106,7 +114,7 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
             onPressed: _load,
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFE6FE48),
-              minimumSize: const Size(0, 32),
+              minimumSize: const Size(0, 48),
               padding: const EdgeInsets.symmetric(horizontal: 10),
             ),
             child: const Text('Tải lại ảnh'),
@@ -236,13 +244,14 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
   void _handleDoubleTap() {
     final current = _transformController.value;
     if (!current.isIdentity()) {
-      _transformController.value = Matrix4.identity();
+      _transformController.value = current.clone()..setIdentity();
       return;
     }
     final position = _doubleTapDetails?.localPosition;
     if (position == null) return;
     const scale = 2.2;
-    _transformController.value = Matrix4.identity()
+    _transformController.value = current.clone()
+      ..setIdentity()
       ..translateByDouble(
         -position.dx * (scale - 1),
         -position.dy * (scale - 1),

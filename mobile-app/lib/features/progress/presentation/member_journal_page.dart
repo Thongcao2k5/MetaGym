@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +17,7 @@ import 'package:meta_gym_app/features/progress/data/member_progress_service.dart
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/domain/journal_entry.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:provider/provider.dart';
 
 enum _JournalTab { journal, progress }
@@ -464,15 +467,17 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     } on ApiException catch (error) {
       if (mounted) setState(() => _saveError = error.message);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _saveError = 'Không lưu được nhật ký hôm nay.');
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _deleteEntry(JournalEntry entry) async {
-    final accepted = await showDialog<bool>(
+    if (_saving) return;
+    final accepted = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF2B2622),
@@ -511,11 +516,18 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
       ),
     );
     if (accepted != true || !mounted) return;
+    setState(() => _saving = true);
     try {
       await _service!.delete(entry.id);
       if (mounted) await _load();
     } on ApiException catch (error) {
       if (mounted) setState(() => _saveError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saveError = 'Không thể xóa nhật ký. Hãy thử lại.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -742,7 +754,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             MetaGymCircleIconButton(
               icon: Icons.delete_outline_rounded,
               tooltip: 'Xóa nhật ký hôm nay',
-              onTap: () => _deleteEntry(todayEntry),
+              onTap: _saving ? null : () => _deleteEntry(todayEntry),
             ),
             const SizedBox(width: 8),
           ],
@@ -945,10 +957,12 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   ? _weekdayShort[index]
                   : '${date.day}';
 
-              return InkWell(
+              return MetaGymTap(
                 borderRadius: BorderRadius.circular(11),
                 onTap: () => _selectDate(date),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: MetaGymTheme.stateDurationOf(context),
+                  curve: Curves.easeOutCubic,
                   margin: const EdgeInsets.all(1.5),
                   decoration: BoxDecoration(
                     color: selected
@@ -979,7 +993,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       if (hasEntry)
                         Positioned(
                           bottom: 3,
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: MetaGymTheme.stateDurationOf(context),
+                            curve: Curves.easeOutCubic,
                             width: 4,
                             height: 4,
                             decoration: BoxDecoration(
@@ -1103,7 +1119,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final count = photoIds.length + pendingImages.length;
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
         onTap: interactive
             ? () => setState(() => _openCard = _EditCard.photos)
@@ -1264,7 +1280,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             itemCount: total < 3 ? total + 1 : total,
             itemBuilder: (context, index) {
               if (index == total) {
-                return InkWell(
+                return MetaGymTap(
                   borderRadius: BorderRadius.circular(12),
                   onTap: _saving ? null : _pickPhoto,
                   child: Container(
@@ -1317,7 +1333,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: InkWell(
+                    child: MetaGymTap(
                       onTap: _saving
                           ? null
                           : () => setState(() {
@@ -1367,7 +1383,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
         onTap: interactive
             ? () => setState(() => _openCard = _EditCard.measurements)
@@ -1609,7 +1625,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         .toList();
     return MetaGymGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
         onTap: interactive
             ? () => setState(() => _openCard = _EditCard.achievements)
@@ -2171,7 +2187,19 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     onPressed: () {
                       final router = GoRouter.maybeOf(context);
                       if (router != null) {
-                        router.push('/member/features/measurements');
+                        MetaGymNavigation.pushPathOnce(
+                          context,
+                          '/member/features/measurements',
+                        );
+                      } else if (_measurementService != null) {
+                        MetaGymNavigation.pushOnce<void>(
+                          context,
+                          MetaGymPageRoute(
+                            builder: (_) => MemberMeasurementPage(
+                              service: _measurementService,
+                            ),
+                          ),
+                        );
                       }
                     },
                     child: const Text(
@@ -2314,10 +2342,12 @@ class _SegmentButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
+  Widget build(BuildContext context) => MetaGymTap(
     borderRadius: BorderRadius.circular(11),
     onTap: onTap,
-    child: Container(
+    child: AnimatedContainer(
+      duration: MetaGymTheme.stateDurationOf(context),
+      curve: Curves.easeOutCubic,
       height: 44,
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -2368,10 +2398,12 @@ class _ViewModeChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
+  Widget build(BuildContext context) => MetaGymTap(
     borderRadius: BorderRadius.circular(8),
     onTap: onTap,
-    child: Container(
+    child: AnimatedContainer(
+      duration: MetaGymTheme.stateDurationOf(context),
+      curve: Curves.easeOutCubic,
       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),

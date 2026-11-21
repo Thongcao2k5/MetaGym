@@ -1,10 +1,11 @@
 import 'dart:ui' show ImageFilter;
 
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -77,7 +78,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   Future<void> _confirmSignOut() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xF0241F1B),
@@ -352,7 +353,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   Future<void> _pushAndReload(String route) async {
-    await context.push(route);
+    await MetaGymNavigation.pushPathOnce(context, route);
     if (mounted) {
       await _loadFrame3Data();
     }
@@ -594,7 +595,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         _CircleHeaderGlassButton(
           icon: Icons.search_rounded,
           semanticLabel: 'Tìm kiếm phòng gym và thiết bị',
-          onTap: () => context.push('/member/features/gym'),
+          onTap: () => _pushAndReload('/member/features/gym'),
         ),
       ],
     );
@@ -670,7 +671,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xB7ADA396), width: 1.1),
           ),
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             borderRadius: BorderRadius.circular(18),
             splashColor: const Color(0x20FFFFFF),
@@ -753,8 +754,9 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         await _pushAndReload('/member/features/training');
         return;
       }
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
+      await MetaGymNavigation.pushOnce(
+        context,
+        MetaGymPageRoute<void>(
           builder: (_) => MemberDayPlanPage(
             day: day,
             session: session,
@@ -771,7 +773,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       featured: true,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: MetaGymTap(
           key: const Key('member-today-plan-card'),
           onTap: openDay,
           child: Semantics(
@@ -940,7 +942,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         borderRadius: BorderRadius.circular(17),
         side: const BorderSide(color: Color(0x9A8C8176), width: 1),
       ),
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(17),
         child: ConstrainedBox(
@@ -1037,7 +1039,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            InkWell(
+            MetaGymTap(
               onTap: () => _pushAndReload('/member/features/membership'),
               borderRadius: BorderRadius.circular(6),
               child: const Row(
@@ -1241,7 +1243,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     return _buildMembershipGlassCard(
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
+        child: MetaGymTap(
           onTap: () => _pushAndReload('/member/features/membership'),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -1396,7 +1398,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           // Bento Trái: Dinh dưỡng
           Expanded(
             child: _buildLiquidGlassCard(
-              child: InkWell(
+              child: MetaGymTap(
                 onTap: () => _pushAndReload('/member/features/nutrition'),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
@@ -1506,7 +1508,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           // Bento Phải: Tiến độ tuần
           Expanded(
             child: _buildLiquidGlassCard(
-              child: InkWell(
+              child: MetaGymTap(
                 onTap: () => _pushAndReload('/member/features/workouts'),
                 borderRadius: BorderRadius.circular(20),
                 child: Padding(
@@ -1718,11 +1720,12 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 ),
               ),
             ),
-            InkWell(
+            MetaGymTap(
               key: const Key('frame3-explore-see-more'),
               onTap: () {
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute(
+                MetaGymNavigation.pushOnce<void>(
+                  context,
+                  MetaGymPageRoute(
                     builder: (_) => const MemberExploreListPage(),
                   ),
                 );
@@ -1750,12 +1753,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         const SizedBox(height: 10),
         _buildLiquidGlassCard(
           borderRadius: BorderRadius.circular(16),
-          child: InkWell(
+          child: MetaGymTap(
             onTap: () {
-              Navigator.of(context).push<void>(
-                MaterialPageRoute(
-                  builder: (_) => const MemberExploreListPage(),
-                ),
+              MetaGymNavigation.pushOnce<void>(
+                context,
+                MetaGymPageRoute(builder: (_) => const MemberExploreListPage()),
               );
             },
             borderRadius: BorderRadius.circular(16),
@@ -1889,7 +1891,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           color: MetaGymTheme.darkTextTertiary,
                           size: 20,
                         ),
-                        onTap: () => context.push(destination.path),
+                        onTap: () => MetaGymNavigation.pushPathOnce(
+                          context,
+                          destination.path,
+                        ),
                       ),
                     if (FlowWorkbenchConfig.enabled)
                       Padding(
@@ -1897,8 +1902,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         child: SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
-                            onPressed: () =>
-                                context.push(AppRoutes.memberWorkbench),
+                            onPressed: () => MetaGymNavigation.pushPathOnce(
+                              context,
+                              AppRoutes.memberWorkbench,
+                            ),
                             child: const Text('Kiểm thử các luồng hội viên'),
                           ),
                         ),
@@ -1955,7 +1962,7 @@ class _CircleHeaderGlassButton extends StatelessWidget {
         message: semanticLabel,
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: MetaGymTap(
             onTap: onTap,
             customBorder: const CircleBorder(),
             child: ConstrainedBox(

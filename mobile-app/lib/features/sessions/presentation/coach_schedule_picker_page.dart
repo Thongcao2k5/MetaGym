@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -556,10 +557,12 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                           (_weeklyWorkStarts[date.weekday]?.isNotEmpty ??
                               false));
 
-                  return InkWell(
+                  return MetaGymTap(
                     borderRadius: BorderRadius.circular(11),
                     onTap: disabled ? null : () => _selectDate(date),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: MetaGymTheme.stateDurationOf(context),
+                      curve: Curves.easeOutCubic,
                       margin: const EdgeInsets.all(1.5),
                       decoration: BoxDecoration(
                         color: selected
@@ -625,7 +628,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                           if (isPickedDay || hasWork)
                             Positioned(
                               bottom: 3,
-                              child: Container(
+                              child: AnimatedContainer(
+                                duration: MetaGymTheme.stateDurationOf(context),
+                                curve: Curves.easeOutCubic,
                                 width: 4,
                                 height: 4,
                                 decoration: BoxDecoration(
@@ -907,7 +912,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
               ),
               TextButton(
                 style: TextButton.styleFrom(
-                  minimumSize: const Size(48, 44),
+                  minimumSize: const Size(48, 48),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -932,7 +937,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             children: sorted.map((pick) {
               final ddmm =
                   '${pick.dateKey.substring(8, 10)}/${pick.dateKey.substring(5, 7)}';
-              return InkWell(
+              return MetaGymTap(
                 borderRadius: BorderRadius.circular(999),
                 onTap: _submitting
                     ? null
@@ -1124,6 +1129,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                           icon: _isReschedule
                               ? Icons.schedule_rounded
                               : Icons.add_circle_outline_rounded,
+                          loading: _submitting,
                           onPressed: _submitting ? null : _submit,
                         ),
                       ],
@@ -1186,11 +1192,11 @@ class _CalendarArrowButton extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
+        child: MetaGymTap(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: SizedBox(
-            width: 44,
+            width: 48,
             height: 48,
             child: Center(
               child: Container(
@@ -1225,28 +1231,32 @@ class _CalModeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? MetaGymTheme.brandOrange : Colors.transparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(9),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: MetaGymTap(
         onTap: onTap,
         borderRadius: BorderRadius.circular(9),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Center(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: active
-                      ? MetaGymTheme.onPrimary
-                      : const Color(0xFFC8C2BC),
-                  fontSize: 11.5,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                ),
+        child: AnimatedContainer(
+          duration: MetaGymTheme.stateDurationOf(context),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? MetaGymTheme.brandOrange : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: active
+                    ? MetaGymTheme.onPrimary
+                    : const Color(0xFFC8C2BC),
+                fontSize: 11.5,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
               ),
             ),
           ),

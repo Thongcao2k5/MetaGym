@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_action_button.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:provider/provider.dart';
 
@@ -310,15 +313,14 @@ class CoachingGraphiteCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: onTap == null
           ? content
-          : InkWell(
+          : MetaGymTap(
               onTap: onTap,
               borderRadius: radius,
               child: content,
             ),
     );
-
-    if (margin != null) return Padding(padding: margin!, child: body);
-    return body;
+    if (margin == null) return body;
+    return Padding(padding: margin!, child: body);
   }
 }
 
@@ -328,64 +330,43 @@ class CoachingPrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.loading = false,
+    this.status = MetaGymActionButtonStatus.idle,
+    this.showSuccessOnCompletion = false,
     super.key,
   });
 
   final String label;
-  final VoidCallback? onPressed;
+  final FutureOr<void> Function()? onPressed;
   final IconData? icon;
   final bool loading;
+  final MetaGymActionButtonStatus status;
+  final bool showSuccessOnCompletion;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: MetaGymTheme.primary,
-          foregroundColor: MetaGymTheme.onPrimary,
-          disabledBackgroundColor: const Color(0xFF3A2924),
-          disabledForegroundColor: Colors.white60,
-          minimumSize: const Size(double.infinity, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          ),
-          textStyle: const TextStyle(
-            fontFamily: MetaGymTheme.fontFamily,
-            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+    return MetaGymActionButton(
+      label: label,
+      icon: icon,
+      onPressed: onPressed,
+      status: loading ? MetaGymActionButtonStatus.loading : status,
+      autoLoading: false,
+      showSuccessOnCompletion: showSuccessOnCompletion,
+      style: FilledButton.styleFrom(
+        backgroundColor: MetaGymTheme.primary,
+        foregroundColor: MetaGymTheme.onPrimary,
+        disabledBackgroundColor: const Color(0xFF3A2924),
+        disabledForegroundColor: Colors.white60,
+        minimumSize: const Size(double.infinity, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
         ),
-        child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: MetaGymTheme.onPrimary,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  if (icon != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(icon, size: 19),
-                  ],
-                ],
-              ),
+        textStyle: const TextStyle(
+          fontFamily: MetaGymTheme.fontFamily,
+          fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

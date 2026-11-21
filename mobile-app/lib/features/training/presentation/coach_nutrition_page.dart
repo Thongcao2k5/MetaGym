@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -111,8 +112,9 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                               CoachingGraphiteCard(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 onTap: () async {
-                                  await Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  await MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => widget.structured
                                           ? MealPlansPage(
                                               memberId: member.memberId,
@@ -131,7 +133,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                   children: [
                                     CoachingAvatar(
                                       fullName: member.memberFullName,
-                                      size: 46,
+                                      size: 44,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -165,7 +167,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                     const SizedBox(width: 8),
                                     const Icon(
                                       Icons.chevron_right_rounded,
-                                      color: MetaGymTheme.textSecondary,
+                                      color: Color(0xFFB7B2AF),
                                     ),
                                   ],
                                 ),
@@ -221,8 +223,9 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
   }
 
   Future<void> _open(NutritionGuide? guide) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachNutritionEditorPage(
           memberId: widget.member.memberId,
           service: widget.service,
@@ -564,7 +567,7 @@ class _NutritionEmptyCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0x9A8C8176)),
             ),
-            child: Icon(icon, color: MetaGymTheme.success, size: 24),
+            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 24),
           ),
           const SizedBox(height: 12),
           Text(
@@ -581,7 +584,7 @@ class _NutritionEmptyCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
+              color: Color(0xFFB7B2AF),
               fontSize: 13,
               height: 1.45,
             ),

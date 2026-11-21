@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -79,7 +80,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
   Future<void> _requestTermination() async {
     final member = _member;
     if (_busy || member == null) return;
-    final reason = await showDialog<String>(
+    final reason = await MetaGymNavigation.showDialogOnce<String>(
       context: context,
       builder: (_) => const _TerminationRequestDialog(),
     );
@@ -118,7 +119,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
     final apiClient = optionalProvider<ApiClient>(context);
     if (_busy || apiClient == null) return;
     final api = CoachOutcomeApi(apiClient);
-    final created = await showDialog<CoachOutcomeCase>(
+    final created = await MetaGymNavigation.showDialogOnce<CoachOutcomeCase>(
       context: context,
       builder: (_) => _CreateOutcomeDialog(
         memberId: widget.memberId,
@@ -254,8 +255,9 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                           _MemberHeroCard(member: member),
                           if (showHealth)
                             _HealthDeclarationCard(member: member),
-                          CoachingGraphiteCard(
-                            margin: const EdgeInsets.only(bottom: 14),
+                          MetaGymGlassCard(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -343,7 +345,9 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                               ),
                             ),
                             if (_outcomes.isEmpty)
-                              const CoachingGraphiteCard(
+                              const MetaGymGlassCard(
+                                margin: EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.all(16),
                                 child: Row(
                                   children: [
                                     Icon(
@@ -494,8 +498,9 @@ class _HealthDeclarationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CoachingGraphiteCard(
+    return MetaGymGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -678,6 +683,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
   }
 
   Future<void> _submit() async {
+    if (_saving) return;
     final goal = _goal.text.trim();
     final weeks = int.tryParse(_weeks.text.trim());
     final bw = _parseNumber(_beforeWeight.text);

@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -100,9 +101,10 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
   }
 
   Future<void> _rename(AiConversation item) async {
+    if (_saving) return;
     final form = GlobalKey<FormState>();
     var title = item.title;
-    final newTitle = await showDialog<String>(
+    final newTitle = await MetaGymNavigation.showDialogOnce<String>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (context) => AlertDialog(
@@ -209,7 +211,8 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
   }
 
   Future<void> _delete(AiConversation item) async {
-    final confirmed = await showDialog<bool>(
+    if (_saving) return;
+    final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
       builder: (context) => AlertDialog(

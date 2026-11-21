@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -170,12 +172,13 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                               for (final payment in _payments)
                                 MetaGymGlassCard(
                                   margin: const EdgeInsets.only(bottom: 10),
-                                  child: InkWell(
+                                  child: MetaGymTap(
                                     borderRadius: BorderRadius.circular(
                                       MetaGymTheme.radiusCard,
                                     ),
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
+                                    onTap: () => MetaGymNavigation.pushOnce(
+                                      context,
+                                      MetaGymPageRoute<void>(
                                         builder: (_) => PaymentDetailPage(
                                           paymentId: payment.id,
                                           service: _service!,

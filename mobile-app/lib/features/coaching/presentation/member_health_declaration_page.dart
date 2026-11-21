@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -942,6 +943,7 @@ class _ChoiceTile extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
+        animationDuration: MetaGymTheme.stateDurationOf(context),
         color: selected
             ? MetaGymTheme.brandOrange.withValues(alpha: 0.22)
             : const Color(0x99211E1C),
@@ -955,7 +957,7 @@ class _ChoiceTile extends StatelessWidget {
           ),
         ),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
+        child: MetaGymTap(
           onTap: onTap,
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
           child: Container(

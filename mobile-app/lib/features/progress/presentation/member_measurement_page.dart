@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -116,8 +117,9 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
   }
 
   Future<void> _edit([BodyMeasurement? measurement]) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+    final saved = await MetaGymNavigation.pushOnce<bool>(
+      context,
+      MetaGymPageRoute(
         builder: (_) =>
             _MeasurementFormPage(service: _service!, measurement: measurement),
       ),
@@ -346,6 +348,7 @@ class _MeasurementFormPageState extends State<_MeasurementFormPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final date = parseProgressTime(_date.text);
     final weight = double.tryParse(_weight.text.trim());
     final fat = _optionalNumber(_fat);

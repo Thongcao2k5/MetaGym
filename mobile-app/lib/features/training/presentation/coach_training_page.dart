@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -112,8 +113,9 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                               CoachingGraphiteCard(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 onTap: () async {
-                                  await Navigator.of(context).push<void>(
-                                    MaterialPageRoute(
+                                  await MetaGymNavigation.pushOnce<void>(
+                                    context,
+                                    MetaGymPageRoute(
                                       builder: (_) => _MemberPlansPage(
                                         member: member,
                                         service: _service!,
@@ -126,7 +128,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                                   children: [
                                     CoachingAvatar(
                                       fullName: member.memberFullName,
-                                      size: 46,
+                                      size: 44,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -160,7 +162,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                                     const SizedBox(width: 8),
                                     const Icon(
                                       Icons.chevron_right_rounded,
-                                      color: MetaGymTheme.textSecondary,
+                                      color: Color(0xFFB7B2AF),
                                     ),
                                   ],
                                 ),
@@ -216,8 +218,9 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
   }
 
   Future<void> _openPlan(String id) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachPlanDetailPage(
           id: id,
           service: widget.service,
@@ -229,8 +232,9 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
   }
 
   Future<void> _create() async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
+    final id = await MetaGymNavigation.pushOnce<String>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachPlanFormPage(
           memberId: widget.member.memberId,
           service: widget.service,
@@ -422,9 +426,6 @@ class _PlanSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CoachingGraphiteCard(
       margin: const EdgeInsets.only(bottom: 12),
-      borderColor: plan.status == 'ACTIVE'
-          ? MetaGymTheme.success.withValues(alpha: 0.40)
-          : null,
       onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,7 +663,7 @@ class _EmptyStateCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0x9A8C8176)),
             ),
-            child: Icon(icon, color: MetaGymTheme.reflectionBlue, size: 24),
+            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 24),
           ),
           const SizedBox(height: 12),
           Text(
@@ -679,7 +680,7 @@ class _EmptyStateCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
+              color: Color(0xFFB7B2AF),
               fontSize: 13,
               height: 1.45,
             ),

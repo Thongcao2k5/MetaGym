@@ -1,3 +1,4 @@
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -59,8 +60,9 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
   }
 
   Future<void> _openMember(CoachMemberSummary member) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => CoachMemberDetailPage(
           memberId: member.memberId,
           service: _service!,
@@ -328,15 +330,15 @@ class _MemberRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = member.status == 'ACTIVE';
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       onTap: onTap,
       child: Row(
         children: [
           CoachingAvatar(
             fullName: member.memberFullName,
-            size: 46,
+            size: 44,
             round: true,
           ),
           const SizedBox(width: 12),
@@ -349,8 +351,8 @@ class _MemberRowCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 15,
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -390,9 +392,9 @@ class _TerminationCard extends StatelessWidget {
       _ => CoachingPillTone.neutral,
     };
 
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -437,15 +439,15 @@ class _EmptySectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CoachingGraphiteCard(
-      margin: const EdgeInsets.only(bottom: 10),
+    return MetaGymGlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: const Color(0x80211E1C),
               borderRadius: BorderRadius.circular(12),

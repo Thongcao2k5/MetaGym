@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -373,8 +375,9 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                             for (final coach in filtered)
                               _CoachDiscoveryCard(
                                 coach: coach,
-                                onTap: () => Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
+                                onTap: () => MetaGymNavigation.pushOnce<void>(
+                                  context,
+                                  MetaGymPageRoute(
                                     builder: (_) => CoachDetailPage(
                                       coachId: coach.id,
                                       service: _service!,
@@ -407,6 +410,7 @@ class _FilterChipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      animationDuration: MetaGymTheme.stateDurationOf(context),
       color: selected
           ? MetaGymTheme.primary.withValues(alpha: 0.22)
           : const Color(0x80211E1C),
@@ -416,7 +420,8 @@ class _FilterChipButton extends StatelessWidget {
           color: selected ? MetaGymTheme.primary : const Color(0x9A8C8176),
         ),
       ),
-      child: InkWell(
+      child: MetaGymTap(
+        selected: selected,
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: ConstrainedBox(

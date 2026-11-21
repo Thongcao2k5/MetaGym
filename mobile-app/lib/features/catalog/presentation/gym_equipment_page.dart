@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -538,10 +540,11 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
     padding: EdgeInsets.zero,
     child: Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: MetaGymTap(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
+        onTap: () => MetaGymNavigation.pushOnce(
+          context,
+          MetaGymPageRoute<void>(
             builder: (_) =>
                 EquipmentDetailPage(equipmentId: item.id, service: _service!),
           ),

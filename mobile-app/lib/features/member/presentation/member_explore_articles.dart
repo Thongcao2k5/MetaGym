@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
@@ -688,7 +688,10 @@ class _MemberExploreArticleDetailPageState
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () => context.push('/member/features/gym'),
+                onPressed: () => MetaGymNavigation.pushPathOnce(
+                  context,
+                  '/member/features/gym',
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor: MetaGymTheme.brandOrange,
                   foregroundColor: MetaGymTheme.onPrimary,
@@ -717,7 +720,10 @@ class _MemberExploreArticleDetailPageState
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => context.push('/member/features/coaching'),
+                onPressed: () => MetaGymNavigation.pushPathOnce(
+                  context,
+                  '/member/features/coaching',
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFF7F9FC),
                   backgroundColor: const Color(0x80211E1C),
