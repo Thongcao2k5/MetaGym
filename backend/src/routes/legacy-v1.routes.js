@@ -6,7 +6,10 @@ export function retireLegacyWrites() {
     error: { code: 'LEGACY_WORKFLOW_RETIRED', message: 'Hãy dùng luồng Meta Gym V2.', details: {} },
   });
   router.post('/coach-requests', gone);
+  router.delete('/coach-requests/:requestId', gone);
   router.patch('/coach/requests/:requestId', gone);
+  router.post('/relationships/:relationshipId/terminations', gone);
+  router.post('/coach/termination-requests', gone);
   router.post('/coach/members/:memberId/training-plans', gone);
   router.patch('/coach/training-plans/:planId', gone);
   router.post('/coach/training-plans/:planId/publications', gone);

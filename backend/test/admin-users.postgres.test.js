@@ -231,13 +231,18 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         'SELECT count(*)::int AS count FROM conversation_participants WHERE conversation_id = $1',
         [conversation.rows[0].id],
       )).rows[0].count, 2);
-      result = await request(app, '/coach/termination-requests', token(coachId, 'COACH'),
-        'POST', { relationshipId: firstRelationshipId, reason: 'Schedule change' });
+      result = await request(app, `/relationships/${firstRelationshipId}/early-termination-requests`,
+        token(coachId, 'COACH'), 'POST', { reason: 'Schedule change' });
       assert.equal(result.status, 201);
       const terminationId = result.body.data.id;
-      result = await request(app, `/admin/termination-requests/${terminationId}`,
-        adminToken, 'PATCH', { decision: 'REJECTED', note: 'Continue coaching' });
+      result = await request(app, `/early-termination-requests/${terminationId}/respond`,
+        memberToken, 'PATCH', { decision: 'REJECT', reason: 'Want to keep training' });
       assert.equal(result.status, 200);
+      assert.equal(result.body.data.status, 'DISPUTED');
+      result = await request(app, `/admin/termination-requests/${terminationId}`,
+        adminToken, 'PATCH', { decision: 'REJECTED', reason: 'Continue coaching' });
+      assert.equal(result.status, 200);
+      assert.equal(result.body.data.status, 'ADMIN_REJECTED');
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data.status, 'ACTIVE');
       result = await request(app,
         `/relationships/${firstRelationshipId}/terminations`, memberToken,
@@ -251,12 +256,17 @@ test('PostgreSQL admin API creates and manages Coach with role checks and audit'
         token(coachId, 'COACH'), 'PATCH', { decision: 'ACCEPTED' });
       assert.equal(result.status, 200);
       const secondRelationshipId = result.body.data.relationship.id;
-      result = await request(app, '/coach/termination-requests', token(coachId, 'COACH'),
-        'POST', { relationshipId: secondRelationshipId, reason: 'Coach leaving' });
+      result = await request(app, `/relationships/${secondRelationshipId}/early-termination-requests`,
+        token(coachId, 'COACH'), 'POST', { reason: 'Coach leaving' });
       assert.equal(result.status, 201);
-      result = await request(app, `/admin/termination-requests/${result.body.data.id}`,
-        adminToken, 'PATCH', { decision: 'APPROVED' });
+      const secondTermId = result.body.data.id;
+      result = await request(app, `/early-termination-requests/${secondTermId}/respond`,
+        memberToken, 'PATCH', { decision: 'REJECT', reason: 'Disagree with ending early' });
       assert.equal(result.status, 200);
+      result = await request(app, `/admin/termination-requests/${secondTermId}`,
+        adminToken, 'PATCH', { decision: 'APPROVED', reason: 'Approved after dispute review' });
+      assert.equal(result.status, 200);
+      assert.equal(result.body.data.status, 'ADMIN_APPROVED');
       assert.equal((await request(app, '/relationships/me', memberToken)).body.data, null);
       result = await request(app, '/coach-requests', memberToken, 'POST', { coachId });
       assert.equal(result.status, 201);

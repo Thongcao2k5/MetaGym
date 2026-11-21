@@ -1,15 +1,40 @@
-// Each package may take at most one slot per day. An augmenting path can
-// move an earlier assignment to make room for a package with fewer options.
+// Each package (and each member) may take at most one slot per day.
+// An augmenting path can move an earlier assignment to make room for a package
+// with fewer options while keeping per-day capacity and per-member uniqueness.
 export function canFitCoachSessions(days, commitments) {
+  for (const commitment of commitments) {
+    if (commitment.remaining > 0 && commitment.from > commitment.through) {
+      return false;
+    }
+  }
+
   const assignments = days.map(() => new Set());
+  const conflictKey = (index) => commitments[index].memberId ?? index;
+
   function assign(packageIndex, visitedDays) {
     const commitment = commitments[packageIndex];
+    const key = conflictKey(packageIndex);
     for (const [index, day] of days.entries()) {
       if (day.available <= 0 || day.date < commitment.from || day.date > commitment.through
           || commitment.bookedDates.has(day.date) || visitedDays.has(index)
           || assignments[index].has(packageIndex)) continue;
-      visitedDays.add(index);
       const assigned = assignments[index];
+      let sameMemberOther = null;
+      for (const other of assigned) {
+        if (conflictKey(other) === key) {
+          sameMemberOther = other;
+          break;
+        }
+      }
+      visitedDays.add(index);
+      if (sameMemberOther !== null) {
+        if (assign(sameMemberOther, visitedDays)) {
+          assigned.delete(sameMemberOther);
+          assigned.add(packageIndex);
+          return true;
+        }
+        continue;
+      }
       if (assigned.size < day.available) {
         assigned.add(packageIndex);
         return true;
@@ -24,12 +49,47 @@ export function canFitCoachSessions(days, commitments) {
     }
     return false;
   }
+
   return commitments.every(({ remaining }, index) => {
     for (let count = 0; count < remaining; count++) {
       if (!assign(index, new Set())) return false;
     }
     return true;
   });
+}
+
+// Coach schedule is configured iff >= 6 distinct weekdays each have
+// a contiguous block of >= 4 90-minute slots (each within 00:00..24:00).
+export function isCoachScheduleConfigured(slotRows) {
+  const byWeekday = new Map();
+  for (const row of slotRows) {
+    const weekday = Number(row.weekday);
+    const startMinute = Number(row.start_minute);
+    if (!Number.isInteger(weekday) || weekday < 1 || weekday > 7) continue;
+    if (!Number.isInteger(startMinute) || startMinute < 0 || startMinute + 90 > 1440) continue;
+    let starts = byWeekday.get(weekday);
+    if (!starts) {
+      starts = [];
+      byWeekday.set(weekday, starts);
+    }
+    starts.push(startMinute);
+  }
+  let validDays = 0;
+  for (const starts of byWeekday.values()) {
+    starts.sort((a, b) => a - b);
+    let run = 0;
+    let prev = null;
+    for (const start of starts) {
+      if (prev !== null && start === prev) continue;
+      run = prev !== null && start - prev === 90 ? run + 1 : 1;
+      prev = start;
+      if (run >= 4) {
+        validDays += 1;
+        break;
+      }
+    }
+  }
+  return validDays >= 6;
 }
 
 export async function hasCoachCapacity(client, coachId, proposalOrProposals) {
@@ -39,14 +99,21 @@ export async function hasCoachCapacity(client, coachId, proposalOrProposals) {
       ? [proposalOrProposals]
       : [];
 
+  for (const proposal of proposals) {
+    if (proposal.remaining > 0 && proposal.from > proposal.through) {
+      return false;
+    }
+  }
+
   // Load existing commitments with valid non-empty date windows (T2 §2 D2):
-  // - ACTIVE: [GREATEST(today, starts_on), ends_on]
+  // - ACTIVE: [LEAST(GREATEST(today, starts_on), ends_on), ends_on]
   // - QUEUED: [active.original_ends_on + active.frozen_days_total + 8, from + duration_days - 1]
   const { rows } = await client.query(
     `WITH bounds AS (
        SELECT (statement_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS today
      )
      SELECT e.status,
+       e.member_id AS "memberId",
        CASE
          WHEN e.status = 'ACTIVE'
            THEN LEAST(GREATEST(bounds.today, e.starts_on), e.ends_on)::text
@@ -73,17 +140,24 @@ export async function hasCoachCapacity(client, coachId, proposalOrProposals) {
     [coachId],
   );
 
-  const commitments = rows.map((row) => ({ ...row, bookedDates: new Set(row.bookedDates) }));
+  const commitments = rows.map((row) => ({
+    ...row,
+    bookedDates: new Set(row.bookedDates),
+  }));
 
   if (proposals.length) {
-    const memberIds = [...new Set(proposals.map((p) => p.memberId).filter(Boolean))];
+    const memberIdsNeedingLookup = [...new Set(
+      proposals
+        .filter((p) => !(p.bookedDates instanceof Set) && p.memberId)
+        .map((p) => p.memberId),
+    )];
     const occupiedByMember = new Map();
-    if (memberIds.length) {
+    if (memberIdsNeedingLookup.length) {
       const { rows: occupiedRows } = await client.query(
         `SELECT member_id, booking_date::text AS date FROM coach_bookings
          WHERE member_id = ANY($1::uuid[])
            AND (status IN ('BOOKED', 'COMPLETED') OR charged_at IS NOT NULL)`,
-        [memberIds],
+        [memberIdsNeedingLookup],
       );
       for (const row of occupiedRows) {
         let set = occupiedByMember.get(row.member_id);
@@ -99,6 +173,7 @@ export async function hasCoachCapacity(client, coachId, proposalOrProposals) {
         ? proposal.bookedDates
         : new Set(occupiedByMember.get(proposal.memberId) ?? []);
       commitments.push({
+        memberId: proposal.memberId,
         from: proposal.from,
         through: proposal.through,
         remaining: proposal.remaining,
@@ -107,7 +182,7 @@ export async function hasCoachCapacity(client, coachId, proposalOrProposals) {
     }
   }
 
-  // Dynamic horizon: always >= 190 days and expands to cover max commitment through date!
+  // Dynamic horizon: always >= 190 days and expands to cover max commitment through date.
   let maxThrough = null;
   for (const commitment of commitments) {
     if (commitment.through && (!maxThrough || commitment.through > maxThrough)) {

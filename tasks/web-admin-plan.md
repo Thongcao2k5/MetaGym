@@ -1,8 +1,8 @@
 # Kế hoạch thiết kế và triển khai Web Admin Meta Gym
 
 **Ngày lập:** 21/11/2026  
-**Trạng thái:** đã hoàn tất Bước 0a/0b, Giai đoạn 0 (T1–T3, Checkpoint 0), Giai đoạn 1 (T4–T6, Checkpoint 1) và Giai đoạn 2 (T7–T11, Checkpoint 2); sẵn sàng triển khai Giai đoạn 3 (T12–T15)  
-**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng migration `0001`..`0031` (55 bảng `public` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11 (audit logs + active lock + chặn chat tài khoản bị khóa, hard cap 8 + D1/D4 khóa/mở khóa Coach & Member, CRUD đầy đủ gói Gym/Coach + snapshot + sửa cửa sổ công suất `QUEUED`, giao dịch tại quầy Gym + D6 `VOID_REVERSAL`), và đồng bộ Flutter (gỡ/chặn `AdminHomePage`, trạng thái `COACH_LOCKED`/`MEMBER_LOCKED`/đóng băng, hard cap 8, gói Coach động, lỗi chat `403 RECIPIENT_ACCOUNT_DISABLED`).
+**Trạng thái:** đã hoàn tất 100% toàn bộ Backend + Database (`0001`..`0033`) + Bảo mật/Bất biến + Diễn tập phát hành từ **Bước 0a/0b** đến **T1–T19** (Giai đoạn 0: T1–T3 & Checkpoint 0; Giai đoạn 1: T4–T6 & Checkpoint 1; Giai đoạn 2: T7–T11 & Checkpoint 2; Giai đoạn 3 Backend: T12–T15 & Checkpoint 3 Backend; Giai đoạn 4 Backend & Release: T16–T19 & Checkpoint cuối Backend/DB — UI T12–T18 tạm dừng theo chỉ đạo người dùng)  
+**Repository & nhánh xác minh:** `f:/AndroidProjects/MetaGym`, nhánh `thong` (`origin/thong`, chỉ push nhánh `thong`, không merge vào `main`). Đã đồng bộ `origin/main` và giữ nguyên Swagger UI (`/api-docs`, `ddd8942`) + `/ping` keep-alive (`f4a53b0`), áp dụng và diễn tập đầy đủ migration `0001`..`0033` + rollback `0033`..`0029` + re-apply `0029`..`0033` (55 bảng `public` + 9 chỉ mục báo cáo/audit `0033` qua `schema_assertions.sql`), hoàn tất Web Admin Dark Graphite Operate Mode + API/DB cho T7–T11, đồng bộ Flutter T7–T10, và hoàn tất toàn bộ Backend/DB/Test/Release cho **T12 (`e47ad89`)**, **T13 (`7f88e93`)**, **T14 (`3673153`)**, **T15 + `0033` (`2666ab3`)**, **T16 (`465d04f`)**, **T17 (`cb0fe19`)**, **T18 (`74ba61c` — 111/111 PG17 tests PASS, 7 nhóm bất biến & ma trận quyền riêng tư)**, và **T19 (`84c7105` — diễn tập migration `0001`..`0033`, rollback `0033`..`0029` & runbook phát hành `docs/deployment/meta-gym-cloud-step-by-step.md`)**.
 
 **Tài liệu & sản phẩm đã hoàn tất (Wave 1):**
 - T1 Audit: [`docs/requirements/web-admin-t1-audit.md`](../docs/requirements/web-admin-t1-audit.md)
@@ -164,6 +164,6 @@ Trước khi code, lập bảng cho từng endpoint: dữ liệu trả về, quy
 
 ## 11. Việc cần làm ngay
 
-1. **Giai đoạn 3 (tiếp theo):** triển khai T12 (quan hệ & kết thúc sớm/tranh chấp D5 + migration `0032`), T13 (hàng chờ sự cố Coach `COACH_LOCKED` & chuyển Coach D2), T14 (hoàn tiền mô phỏng D3), T15 (Dashboard dữ liệu thật Gross/Refund/Net & việc cần xử lý) trên nhánh `feat/web-admin`.
-2. Hoàn thiện Giai đoạn 4 (T16 Thực phẩm & kcal, T17 Phòng gym, Thiết bị & Thư viện bài tập `exercises`, T18 Audit/bảo mật/khả dụng, T19 Staging & diễn tập migration) và nghiệm thu tại Checkpoint 3 & Checkpoint cuối.
+1. **Đã hoàn tất 100% lộ trình Backend + Database (`0001`..`0033`) + Bảo mật/Bất biến + Diễn tập phát hành (`T1`–`T19`):** bao gồm **T12 Backend + `0032` (`e47ad89`)**, **T13 Backend (`7f88e93`)**, **T14 Backend (`3673153`)**, **T15 Backend + `0033` (`2666ab3` — Checkpoint 3 Backend)**, **T16 Backend (`465d04f`)**, **T17 Backend (`cb0fe19`)**, **T18 Security/Privacy/7 Invariants (`74ba61c` — 111/111 PG17 tests PASS)**, và **T19 Migration Rehearsal & Deploy Runbook (`84c7105`)** trên nhánh `thong` (`origin/thong`).
+2. **Phần UI `T12`–`T18`:** đang tạm dừng theo chỉ đạo người dùng; sẵn sàng kích hoạt lại bất cứ lúc nào trên nền API/DB `T1`–`T19` đã khóa cứng và kiểm chứng 100%.
 

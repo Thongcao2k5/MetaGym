@@ -211,6 +211,12 @@ class _MembersFixture implements CoachMembersService {
   @override
   Future<void> requestTermination(String id, String reason) =>
       throw UnimplementedError();
+  @override
+  Future<CoachTerminationRequest> respondTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) => throw UnimplementedError();
 }
 
 class _SessionsFixture implements CoachSessionsService {

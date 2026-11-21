@@ -9,6 +9,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_outcome_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/coaching/presentation/early_termination_widgets.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 
 class CoachMemberDetailPage extends StatefulWidget {
@@ -115,6 +116,57 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
     }
   }
 
+  Future<void> _respondTermination(
+    CoachTerminationRequest request,
+    String decision,
+    String? reason,
+  ) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _actionError = null;
+    });
+    try {
+      await widget.service.respondTermination(
+        request.id,
+        decision: decision,
+        reason: reason,
+      );
+      if (!mounted) return;
+      if (decision == 'ACCEPT') {
+        showCoachingSnackBar(context, 'Đã chấp nhận kết thúc sớm quan hệ.');
+        await Navigator.of(context).maybePop();
+        return;
+      }
+      await _load();
+      if (!mounted) return;
+      showCoachingSnackBar(
+        context,
+        decision == 'REJECT'
+            ? 'Đã từ chối và chuyển yêu cầu sang Admin phân xử.'
+            : 'Đã rút yêu cầu ngừng phụ trách.',
+      );
+    } on ApiException catch (error) {
+      if (mounted) {
+        setState(() {
+          if (error.statusCode == 404 || error.statusCode == 403) {
+            _member = null;
+            _requests = const [];
+            _error = error.message;
+          } else {
+            _actionError = error.message;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionError = 'Không xử lý được phản hồi yêu cầu.');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _submitOutcome() async {
     final apiClient = optionalProvider<ApiClient>(context);
     if (_busy || apiClient == null) return;
@@ -162,11 +214,22 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
     final canPop = Navigator.of(context).canPop();
     final member = _member;
     final hasApiClient = optionalProvider<ApiClient>(context) != null;
-    final pending = _requests.any(
-      (request) =>
-          request.relationshipId == member?.relationshipId &&
-          request.status == 'PENDING',
-    );
+    final openTermination = member == null
+        ? null
+        : _requests
+              .where(
+                (request) =>
+                    request.relationshipId == member.relationshipId &&
+                    request.isOpen,
+              )
+              .firstOrNull;
+    final canRequestTermination =
+        member != null &&
+        openTermination == null &&
+        (member.status == 'ACTIVE' ||
+            (member.status == 'PAUSED' &&
+                (member.pauseReason == null ||
+                    member.pauseReason == 'MEMBERSHIP_EXPIRED')));
     final showHealth =
         member != null &&
         member.status == 'ACTIVE' &&
@@ -255,32 +318,25 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                           _MemberHeroCard(member: member),
                           if (showHealth)
                             _HealthDeclarationCard(member: member),
-                          MetaGymGlassCard(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (pending) ...[
-                                  const Row(
-                                    children: [
-                                      CoachingPill(
-                                        label: 'Yêu cầu đang chờ duyệt',
-                                        tone: CoachingPillTone.amber,
-                                        icon: Icons.hourglass_top_rounded,
-                                      ),
-                                    ],
+                          if (openTermination != null)
+                            EarlyTerminationCard(
+                              request: openTermination,
+                              viewerRole: 'COACH',
+                              busy: _busy,
+                              onRespond: (decision, reason) =>
+                                  _respondTermination(
+                                    openTermination,
+                                    decision,
+                                    reason,
                                   ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Quản trị viên đang xem xét yêu cầu ngừng phụ trách của bạn.',
-                                    style: TextStyle(
-                                      color: Color(0xFFC8C2BC),
-                                      fontSize: 12.5,
-                                      height: 1.45,
-                                    ),
-                                  ),
-                                ] else
+                            )
+                          else if (canRequestTermination)
+                            MetaGymGlassCard(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
                                   CoachingSecondaryButton(
                                     label: 'Xin ngừng phụ trách',
                                     expand: true,
@@ -288,13 +344,12 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                         ? null
                                         : _requestTermination,
                                   ),
-                                if (_actionError != null) ...[
-                                  const SizedBox(height: 10),
-                                  CoachingErrorBanner(message: _actionError!),
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
+                          if (_actionError != null) ...[
+                            CoachingErrorBanner(message: _actionError!),
+                          ],
                           if (hasApiClient && member.status == 'ACTIVE') ...[
                             Padding(
                               padding: const EdgeInsets.only(

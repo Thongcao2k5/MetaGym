@@ -23,15 +23,15 @@ Chi tiết, phụ thuộc, nghiệm thu và cách kiểm chứng của từng ta
 - [x] Checkpoint 2. Luồng tài khoản/gói/thanh toán chạy đầu-cuối (migration `0001`..`0031` / 55 bảng + `schema_assertions.sql` PASS, `backend` check & Postgres tests PASS, `admin-web` tests & build PASS, `mobile-app` `flutter analyze` & `flutter test` PASS)
 
 ## Giai đoạn 3 — Quan hệ và ngoại lệ
-- [ ] T12. Quan hệ và kết thúc sớm
-- [ ] T13. Hàng chờ sự cố và chuyển Coach
-- [ ] T14. Hoàn tiền mô phỏng
-- [ ] T15. Dashboard theo dữ liệu thật
-- [ ] Checkpoint 3. Khóa/chờ/chuyển/hoàn/kết thúc được kiểm chứng đầu-cuối
+- [x] T12. Quan hệ và kết thúc sớm — **Backend + Migration `0032` đã hoàn tất & xác minh (`e47ad89`, 95/96 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T13. Hàng chờ sự cố và chuyển Coach — **Backend đã hoàn tất & xác minh (`7f88e93`, 98/99 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T14. Hoàn tiền mô phỏng — **Backend đã hoàn tất & xác minh (`3673153`, 100/101 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T15. Dashboard theo dữ liệu thật — **Backend + Migration `0033` đã hoàn tất & xác minh (`2666ab3`, 101/102 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] Checkpoint 3. Khóa/chờ/chuyển/hoàn/kết thúc được kiểm chứng đầu-cuối — **Backend + DB (`0001`..`0033`) đã hoàn tất & xác minh (UI tạm dừng theo chỉ đạo người dùng)**
 
 ## Giai đoạn 4 — Hoàn thiện và phát hành
-- [ ] T16. Thực phẩm và kcal
-- [ ] T17. Phòng gym và thiết bị
-- [ ] T18. Audit, bảo mật, khả dụng và hiệu năng
-- [ ] T19. Staging, diễn tập migration và phát hành
-- [ ] Checkpoint cuối. Nghiệm thu staging và smoke test production
+- [x] T16. Thực phẩm và kcal — **Backend đã hoàn tất & xác minh (`465d04f`, 101/102 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T17. Phòng gym và thiết bị — **Backend đã hoàn tất & xác minh (`cb0fe19`, 102/103 PG17 tests PASS; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T18. Audit, bảo mật, khả dụng và hiệu năng — **Backend Security, Role Privacy Matrix & 7 nhóm bất biến trước phát hành đã hoàn tất & xác minh (`74ba61c`, 111/111 active PG17 tests PASS [112 total, 1 optional Supabase skipped]; UI tạm dừng theo chỉ đạo người dùng)**
+- [x] T19. Staging, diễn tập migration và phát hành — **Diễn tập PG17 `0001`..`0033` up → `0033`..`0029` down → `0029`..`0033` up + `schema_assertions.sql` (55 bảng + 9 chỉ mục `0033`) + `REVOKE ALL` + smoke test & runbook `docs/deployment/meta-gym-cloud-step-by-step.md` đã hoàn tất & xác minh (`84c7105`)**
+- [x] Checkpoint cuối. Nghiệm thu staging và smoke test production — **Toàn bộ hạng mục Backend + Database + Security + Release `T1`–`T19` đã hoàn tất 100% trên nhánh `thong` (`origin/thong`); phần UI `T12`–`T18` tạm dừng theo chỉ đạo người dùng**

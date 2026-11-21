@@ -12,6 +12,7 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
@@ -450,7 +451,33 @@ class _FakeCoachingService implements MemberCoachingService {
   Future<void> cancelRequest(String id) async {}
 
   @override
-  Future<void> terminateRelationship(String id, String reason) async {}
+  Future<CoachLockChoiceResult> submitCoachLockChoice({
+    required String choice,
+    String? note,
+  }) async => CoachLockChoiceResult(
+    incidentId: 'inc-1',
+    relationshipId: relationship?.id ?? 'rel-1',
+    status: 'OPEN',
+    memberChoice: choice,
+    memberChoiceNote: note,
+  );
+
+  @override
+  Future<List<CoachTerminationRequest>> getEarlyTerminationRequests() async =>
+      const [];
+
+  @override
+  Future<CoachTerminationRequest> requestEarlyTermination(
+    String relationshipId,
+    String reason,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<CoachTerminationRequest> respondEarlyTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) => throw UnimplementedError();
 }
 
 class _NoopAdapter implements HttpClientAdapter {

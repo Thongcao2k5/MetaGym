@@ -48,6 +48,8 @@ Chạy các file `*.up.sql` theo thứ tự:
 29. `0029_web_admin_hard_cap_and_packages.up.sql`
 30. `0030_coach_lock_incidents_and_freeze.up.sql`
 31. `0031_simulated_refunds_and_payment_adjustments.up.sql`
+32. `0032_early_termination_v2_disputes.up.sql`
+33. `0033_web_admin_reporting_and_audit_indexes.up.sql`
 
 Ví dụ với PowerShell và `psql`:
 

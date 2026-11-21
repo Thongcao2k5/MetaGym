@@ -12,8 +12,10 @@ import {
   vnd,
 } from '../components/format.js';
 import { icon } from '../components/icons.js';
-import { renderDataTable } from '../components/data-table.js';
+import { renderActionButton } from '../components/action-button.js';
+import { bindDataTableSelection, renderDataTable } from '../components/data-table.js';
 import { openDrawer } from '../components/drawer.js';
+import { exportToExcel } from '../components/export.js';
 import { openConfirmModal } from '../components/modal.js';
 import { bindPagination, renderPagination } from '../components/pagination.js';
 import {
@@ -22,6 +24,7 @@ import {
   renderErrorState,
   renderFilterEmptyState,
   renderSkeletonPage,
+  renderTableSkeleton,
 } from '../components/states.js';
 import { notice, toast } from '../components/toast.js';
 import { updateQuery } from '../state/router.js';
@@ -208,9 +211,43 @@ export async function renderPaymentsPage({ root, params, shell }) {
   const to = params?.get('to') || '';
   const adjusted = params?.get('adjusted') || '';
   const page = Math.max(1, Number(params?.get('page')) || 1);
+  const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const hasFilter = Boolean(statusFilter || methodFilter || search || from || to || adjusted);
 
-  shell({ section: 'payments', contentHtml: renderSkeletonPage({ cards: 0, rows: 6 }) });
+  const buildFilterHtml = (canExport = false) => `<form class="filter-bar" id="pay-filter-form">
+    <input type="search" id="pay-search" class="form-control filter-grow" placeholder="Tìm theo mã giao dịch, tên hội viên hoặc email…" value="${esc(search)}" aria-label="Tìm lịch sử giao dịch" />
+    <select id="pay-status" class="form-select filter-fixed" aria-label="Lọc trạng thái giao dịch">
+      <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+      <option value="SUCCESS" ${statusFilter === 'SUCCESS' ? 'selected' : ''}>Thành công (SUCCESS)</option>
+      <option value="PENDING" ${statusFilter === 'PENDING' ? 'selected' : ''}>Đang chờ (PENDING)</option>
+      <option value="FAILED" ${statusFilter === 'FAILED' ? 'selected' : ''}>Thất bại (FAILED)</option>
+      <option value="CANCELLED" ${statusFilter === 'CANCELLED' ? 'selected' : ''}>Đã hủy (CANCELLED)</option>
+    </select>
+    <select id="pay-method" class="form-select filter-fixed" aria-label="Lọc phương thức thanh toán">
+      <option value="" ${!methodFilter ? 'selected' : ''}>Tất cả phương thức</option>
+      <option value="FRONT_DESK" ${methodFilter === 'FRONT_DESK' ? 'selected' : ''}>Tại quầy (FRONT_DESK)</option>
+      <option value="MOCK_QR" ${methodFilter === 'MOCK_QR' ? 'selected' : ''}>App QR (MOCK_QR)</option>
+      <option value="VNPAY" ${methodFilter === 'VNPAY' ? 'selected' : ''}>VNPay</option>
+      <option value="MOMO" ${methodFilter === 'MOMO' ? 'selected' : ''}>MoMo</option>
+      <option value="ZALOPAY" ${methodFilter === 'ZALOPAY' ? 'selected' : ''}>ZaloPay</option>
+    </select>
+    <select id="pay-adjusted" class="form-select filter-fixed" aria-label="Lọc trạng thái điều chỉnh D6">
+      <option value="" ${!adjusted ? 'selected' : ''}>Mọi bút toán D6</option>
+      <option value="true" ${adjusted === 'true' ? 'selected' : ''}>Đã đảo VOID_REVERSAL</option>
+      <option value="false" ${adjusted === 'false' ? 'selected' : ''}>Chưa đảo</option>
+    </select>
+    <input type="date" id="pay-from" class="form-control tabular" style="max-width:160px" value="${esc(from)}" aria-label="Từ ngày" />
+    <input type="date" id="pay-to" class="form-control tabular" style="max-width:160px" value="${esc(to)}" aria-label="Đến ngày" />
+    ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="pay-clear">Xóa bộ lọc</button>' : ''}
+    <button type="button" class="btn btn-graphite btn-sm" id="pay-export-excel" ${canExport ? '' : 'disabled'}>
+      ${icon('download', 16)} <span id="pay-export-label">Xuất Excel</span>
+    </button>
+  </form>`;
+
+  shell({
+    section: 'payments',
+    contentHtml: `<div class="stack-20">${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
+  });
 
   const reloadWith = (patch = {}) => {
     const next = {
@@ -221,11 +258,14 @@ export async function renderPaymentsPage({ root, params, shell }) {
       to: patch.to !== undefined ? patch.to : (root.querySelector('#pay-to')?.value || ''),
       adjusted: patch.adjusted !== undefined ? patch.adjusted : (root.querySelector('#pay-adjusted')?.value || ''),
       page: patch.page !== undefined ? patch.page : page,
+      pageSize: patch.pageSize !== undefined ? patch.pageSize : pageSize,
     };
 
     const nextParams = new URLSearchParams();
     for (const [key, val] of Object.entries(next)) {
-      if (val && !(key === 'page' && Number(val) <= 1)) nextParams.set(key, String(val));
+      if (key === 'page' && Number(val) <= 1) continue;
+      if (key === 'pageSize' && Number(val) === 10) continue;
+      if (val) nextParams.set(key, String(val));
     }
 
     updateQuery({
@@ -236,6 +276,7 @@ export async function renderPaymentsPage({ root, params, shell }) {
       to: next.to || null,
       adjusted: next.adjusted || null,
       page: next.page > 1 ? next.page : null,
+      pageSize: next.pageSize !== 10 ? next.pageSize : null,
     }, { replace: true });
 
     return renderPaymentsPage({ root, params: nextParams, shell });
@@ -250,7 +291,7 @@ export async function renderPaymentsPage({ root, params, shell }) {
       to,
       adjusted,
       page,
-      pageSize: 20,
+      pageSize,
     });
 
     const [paymentsRes, plansRes, initialMembersRes] = await Promise.all([
@@ -260,7 +301,12 @@ export async function renderPaymentsPage({ root, params, shell }) {
     ]);
 
     const rows = paymentsRes?.data || [];
-    const pagination = paymentsRes?.pagination || { page, pageSize: 20, totalItems: rows.length, totalPages: 1 };
+    const pagination = paymentsRes?.pagination || {
+      page,
+      pageSize,
+      totalItems: rows.length,
+      totalPages: Math.max(1, Math.ceil(rows.length / pageSize)),
+    };
     const activePlans = (plansRes?.data || []).filter((p) => p.status === 'ACTIVE');
     let memberOptions = initialMembersRes?.data || [];
     const totalActiveMembers = Number(initialMembersRes?.pagination?.totalItems ?? memberOptions.length);
@@ -362,14 +408,41 @@ export async function renderPaymentsPage({ root, params, shell }) {
               : (row.voidBlockedReason || 'Giao dịch không đủ điều kiện đảo D6');
 
             return `<div class="cell-actions">
-              <button type="button" class="btn btn-ghost btn-sm detail-pay" data-id="${esc(row.id)}">Chi tiết</button>
-              ${showCancel ? `<button type="button" class="btn btn-danger btn-sm cancel-pay" data-id="${esc(row.id)}">Hủy</button>` : ''}
-              ${hasVoidSignal && !row.adjustment ? `<button type="button" class="btn btn-danger btn-sm void-pay" data-id="${esc(row.id)}" ${canVoid ? '' : `disabled title="${esc(blockedTitle)}" aria-label="Không thể đảo: ${esc(blockedTitle)}"`}>${icon('refund', 14)} Đảo giao dịch (D6)</button>` : ''}
+              ${renderActionButton({
+                iconName: 'eye',
+                label: 'Chi tiết',
+                className: 'detail-pay',
+                permission: 'payments:read',
+                attrs: `data-id="${esc(row.id)}"`,
+              })}
+              ${showCancel ? renderActionButton({
+                iconName: 'close',
+                label: 'Hủy',
+                variant: 'danger',
+                iconOnly: false,
+                className: 'cancel-pay',
+                permission: 'payments:update',
+                attrs: `data-id="${esc(row.id)}"`,
+              }) : ''}
+              ${hasVoidSignal && !row.adjustment ? renderActionButton({
+                iconName: 'refund',
+                iconSize: 14,
+                label: 'Đảo giao dịch (D6)',
+                variant: 'danger',
+                iconOnly: false,
+                className: 'void-pay',
+                permission: 'payments:void',
+                disabled: !canVoid,
+                disabledReason: blockedTitle,
+                attrs: `data-id="${esc(row.id)}"`,
+              }) : ''}
             </div>`;
           },
         },
       ],
       rows,
+      selectable: true,
+      rowId: (_row, idx) => String(idx),
       emptyHtml: hasFilter
         ? renderFilterEmptyState({ resetId: 'pay-filter-reset' })
         : renderEmptyState({
@@ -422,32 +495,7 @@ export async function renderPaymentsPage({ root, params, shell }) {
         </div>
       </section>
 
-      <form class="filter-bar" id="pay-filter-form">
-        <input type="search" id="pay-search" class="form-control filter-grow" placeholder="Tìm theo mã giao dịch, tên hội viên hoặc email…" value="${esc(search)}" aria-label="Tìm lịch sử giao dịch" />
-        <select id="pay-status" class="form-select filter-fixed" aria-label="Lọc trạng thái giao dịch">
-          <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-          <option value="SUCCESS" ${statusFilter === 'SUCCESS' ? 'selected' : ''}>Thành công (SUCCESS)</option>
-          <option value="PENDING" ${statusFilter === 'PENDING' ? 'selected' : ''}>Đang chờ (PENDING)</option>
-          <option value="FAILED" ${statusFilter === 'FAILED' ? 'selected' : ''}>Thất bại (FAILED)</option>
-          <option value="CANCELLED" ${statusFilter === 'CANCELLED' ? 'selected' : ''}>Đã hủy (CANCELLED)</option>
-        </select>
-        <select id="pay-method" class="form-select filter-fixed" aria-label="Lọc phương thức thanh toán">
-          <option value="" ${!methodFilter ? 'selected' : ''}>Tất cả phương thức</option>
-          <option value="FRONT_DESK" ${methodFilter === 'FRONT_DESK' ? 'selected' : ''}>Tại quầy (FRONT_DESK)</option>
-          <option value="MOCK_QR" ${methodFilter === 'MOCK_QR' ? 'selected' : ''}>App QR (MOCK_QR)</option>
-          <option value="VNPAY" ${methodFilter === 'VNPAY' ? 'selected' : ''}>VNPay</option>
-          <option value="MOMO" ${methodFilter === 'MOMO' ? 'selected' : ''}>MoMo</option>
-          <option value="ZALOPAY" ${methodFilter === 'ZALOPAY' ? 'selected' : ''}>ZaloPay</option>
-        </select>
-        <select id="pay-adjusted" class="form-select filter-fixed" aria-label="Lọc trạng thái điều chỉnh D6">
-          <option value="" ${!adjusted ? 'selected' : ''}>Mọi bút toán D6</option>
-          <option value="true" ${adjusted === 'true' ? 'selected' : ''}>Đã đảo VOID_REVERSAL</option>
-          <option value="false" ${adjusted === 'false' ? 'selected' : ''}>Chưa đảo</option>
-        </select>
-        <input type="date" id="pay-from" class="form-control tabular" style="max-width:160px" value="${esc(from)}" aria-label="Từ ngày" />
-        <input type="date" id="pay-to" class="form-control tabular" style="max-width:160px" value="${esc(to)}" aria-label="Đến ngày" />
-        ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="pay-clear">Xóa bộ lọc</button>' : ''}
-      </form>
+      ${buildFilterHtml(rows.length > 0)}
 
       ${tableHtml}
     </div>`;
@@ -488,7 +536,6 @@ export async function renderPaymentsPage({ root, params, shell }) {
             confirmVariant: 'primary',
             confirmIcon: 'check',
             onConfirm: async () => {
-              // On network/5xx retry inside this modal, frontDeskIdem.getKey(sig) returns the EXACT SAME UUID!
               const requestKey = frontDeskIdem.getKey(sig);
               const res = await api(
                 '/admin/front-desk-payments',
@@ -593,7 +640,47 @@ export async function renderPaymentsPage({ root, params, shell }) {
       totalPages: pagination.totalPages,
       prefix: 'pay',
       onChange: (nextPage) => reloadWith({ page: nextPage }),
+      onPageSizeChange: (nextSize) => reloadWith({ pageSize: nextSize, page: 1 }),
     });
+
+    const exportLabel = root.querySelector('#pay-export-label');
+    const getSelectedIndices = bindDataTableSelection(root, {
+      onSelectionChange: (ids) => {
+        if (exportLabel) {
+          exportLabel.textContent = ids.length > 0 ? `Xuất Excel (${ids.length})` : 'Xuất Excel';
+        }
+      },
+    });
+
+    const exportBtn = root.querySelector('#pay-export-excel');
+    if (exportBtn) {
+      exportBtn.onclick = () => {
+        const selected = getSelectedIndices();
+        const targetRows = selected.length > 0
+          ? selected.map((idx) => rows[Number(idx)]).filter(Boolean)
+          : rows;
+        if (!targetRows.length) {
+          toast('Chưa có giao dịch để xuất Excel.', 'warn');
+          return;
+        }
+        const ok = exportToExcel({
+          filename: 'metagym-payments.csv',
+          columns: [
+            { label: 'Mã giao dịch', value: (r) => r.transactionCode || '' },
+            { label: 'Thời gian', value: (r) => formatDateTimeVN(r.confirmedAt || r.createdAt) },
+            { label: 'Hội viên', value: (r) => r.memberName || '' },
+            { label: 'Email', value: (r) => r.memberEmail || '' },
+            { label: 'Gói Gym', value: (r) => r.planName || '' },
+            { label: 'Phương thức', value: (r) => methodLabel(r.method) },
+            { label: 'Số tiền (VND)', value: (r) => r.amount ?? 0 },
+            { label: 'Trạng thái', value: (r) => r.status || '' },
+            { label: 'Điều chỉnh D6', value: (r) => (r.adjustment ? 'VOID_REVERSAL' : '') },
+          ],
+          rows: targetRows,
+        });
+        if (ok) toast(`Đã xuất ${targetRows.length} giao dịch ra file Excel (.csv).`);
+      };
+    }
 
     // --- Wire Row Actions (Detail Drawer, Cancel PENDING, D6 VOID_REVERSAL) ---
     root.querySelectorAll('.detail-pay').forEach((btn) => {

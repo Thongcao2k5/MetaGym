@@ -32,11 +32,11 @@ void main() {
     await tester.tap(find.text('Gửi yêu cầu'));
     await tester.pumpAndSettle();
     expect(service.reason, 'Đổi lịch làm việc');
-    expect(find.text('Yêu cầu đang chờ duyệt'), findsOneWidget);
+    expect(find.text('Chờ đối tác phản hồi (72h)'), findsOneWidget);
     await tester.tap(find.byTooltip('Quay lại'));
     await tester.pumpAndSettle();
     expect(find.text('Yêu cầu ngừng phụ trách'), findsOneWidget);
-    expect(find.text('Đang chờ duyệt'), findsOneWidget);
+    expect(find.text('Chờ đối tác phản hồi (72h)'), findsOneWidget);
   });
 
   testWidgets('clears private details when member access expires', (
@@ -171,8 +171,32 @@ class _MembersFixture implements CoachMembersService {
     termination = const CoachTerminationRequest(
       id: 'termination-1',
       relationshipId: 'rel-1',
+      requestedByRole: 'COACH',
       reason: 'Đổi lịch làm việc',
-      status: 'PENDING',
+      status: 'PENDING_COUNTERPARTY',
+      responseDeadlineAt: '2026-11-24T09:00:00.000Z',
     );
+  }
+
+  @override
+  Future<CoachTerminationRequest> respondTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) async {
+    final updated = CoachTerminationRequest(
+      id: requestId,
+      relationshipId: 'rel-1',
+      requestedByRole: termination?.requestedByRole ?? 'MEMBER',
+      reason: termination?.reason ?? 'Đổi lịch',
+      status: decision == 'ACCEPT'
+          ? 'ACCEPTED'
+          : decision == 'REJECT'
+          ? 'DISPUTED'
+          : 'CANCELLED',
+      counterpartyReason: reason,
+    );
+    termination = updated;
+    return updated;
   }
 }

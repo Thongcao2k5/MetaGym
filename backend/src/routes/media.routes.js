@@ -8,6 +8,7 @@ import { createAuthentication } from './users.routes.js';
 
 const uuid = z.uuid();
 const MAX_BYTES = 5 * 1024 * 1024;
+const PUBLIC_PURPOSES = ['GYM', 'EQUIPMENT'];
 
 function fail(response, status, code, message) {
   return response.status(status).json({ error: { code, message, details: {} } });
@@ -19,6 +20,9 @@ function signature(secret, id, expires) {
 }
 
 async function allowed(database, user, media) {
+  if (user.role === 'ADMIN') {
+    return media.access_scope === 'PUBLIC' && PUBLIC_PURPOSES.includes(media.purpose);
+  }
   if (media.owner_id === user.id) return true;
   if (media.purpose === 'MESSAGE') {
     const found = await database.query(
@@ -38,8 +42,9 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
   router.post('/media/images', authenticate,
     raw({ type: ['image/png', 'image/jpeg'], limit: MAX_BYTES }),
     async (request, response) => {
-      if (!['MEMBER', 'COACH'].includes(request.authUser.role)) {
-        return fail(response, 403, 'FORBIDDEN', 'Chỉ Member và Coach được tải ảnh');
+      const role = request.authUser.role;
+      if (!['MEMBER', 'COACH', 'ADMIN'].includes(role)) {
+        return fail(response, 403, 'FORBIDDEN', 'Không có quyền tải ảnh');
       }
       if (!imageStorage || typeof imageStorage.put !== 'function' ||
         typeof imageStorage.get !== 'function') {
@@ -49,11 +54,26 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
       const mimeType = request.get('content-type')?.split(';')[0]?.toLowerCase();
       const fileName = request.get('x-file-name') ?? 'image';
       const bytes = request.body;
-      const validPurpose =
-        ['MESSAGE', 'PROGRESS_PHOTO', 'MEAL_PHOTO'].includes(purpose) ||
-        (purpose === 'COACH_OUTCOME' && request.authUser.role === 'COACH');
-      if (!validPurpose ||
-        !['image/png', 'image/jpeg'].includes(mimeType) ||
+      let accessScope = 'PRIVATE';
+      if (role === 'ADMIN') {
+        if (!PUBLIC_PURPOSES.includes(purpose)) {
+          return fail(
+            response,
+            403,
+            'FORBIDDEN',
+            'Admin chỉ được tải ảnh công khai cho phòng gym hoặc thiết bị',
+          );
+        }
+        accessScope = 'PUBLIC';
+      } else {
+        const validPurpose =
+          ['MESSAGE', 'PROGRESS_PHOTO', 'MEAL_PHOTO'].includes(purpose) ||
+          (purpose === 'COACH_OUTCOME' && role === 'COACH');
+        if (!validPurpose) {
+          return fail(response, 422, 'VALIDATION_ERROR', 'Ảnh không hợp lệ');
+        }
+      }
+      if (!['image/png', 'image/jpeg'].includes(mimeType) ||
         !Buffer.isBuffer(bytes) || !bytes.length || bytes.length > MAX_BYTES ||
         fileName.length > 255) {
         return fail(response, 422, 'VALIDATION_ERROR', 'Ảnh không hợp lệ');
@@ -83,9 +103,9 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
           `INSERT INTO media_assets
            (id, owner_id, purpose, access_scope, storage_key,
             original_name, expires_at)
-           VALUES ($1, $2, $3, 'PRIVATE', $4, $5,
+           VALUES ($1, $2, $3, $4, $5, $6,
                    now() + interval '15 minutes')`,
-          [id, request.authUser.id, purpose, key, fileName],
+          [id, request.authUser.id, purpose, accessScope, key, fileName],
         );
         await imageStorage.put(key, normalized, mimeType);
         objectStored = true;
@@ -96,8 +116,9 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
           [mimeType, size, image.width, image.height, id],
         );
         return response.status(201).json({ data: {
-          id, purpose, mimeType, sizeBytes: size,
+          id, purpose, accessScope, mimeType, sizeBytes: size,
           width: image.width, height: image.height,
+          ...(accessScope === 'PUBLIC' ? { publicUrl: `/api/v1/media/public/${id}` } : {}),
         } });
       } catch {
         if (objectStored && typeof imageStorage.remove === 'function') {
@@ -117,6 +138,35 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
       return fail(response, 413, 'PAYLOAD_TOO_LARGE', 'Ảnh vượt giới hạn 5 MB');
     }
     return next(error);
+  });
+
+  router.get('/media/public/:mediaId', async (request, response) => {
+    const { mediaId } = request.params;
+    if (!uuid.safeParse(mediaId).success) {
+      return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy ảnh');
+    }
+    if (!imageStorage || typeof imageStorage.get !== 'function') {
+      return fail(response, 503, 'SERVICE_UNAVAILABLE', 'Lưu ảnh chưa được cấu hình');
+    }
+    try {
+      const found = await database.query(
+        `SELECT storage_key, mime_type
+         FROM media_assets
+         WHERE id = $1
+           AND status = 'READY'
+           AND access_scope = 'PUBLIC'
+           AND purpose = ANY($2::text[])`,
+        [mediaId, PUBLIC_PURPOSES],
+      );
+      if (!found.rows.length) {
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy ảnh');
+      }
+      const bytes = await imageStorage.get(found.rows[0].storage_key);
+      if (!Buffer.isBuffer(bytes)) throw new Error('INVALID_STORAGE_RESPONSE');
+      response.set('Cache-Control', 'public, max-age=3600');
+      response.type(found.rows[0].mime_type);
+      return response.send(bytes);
+    } catch { return fail(response, 502, 'STORAGE_ERROR', 'Không tải được ảnh'); }
   });
 
   router.get('/media/images/:mediaId/access-url', authenticate,
