@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-unl-blush" x1="10" y1="14" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Premium Unlock (Open Shackle Padlock + Coral Crown/Spark Keyhole) -->
+  <rect x="10" y="21" width="24" height="18" rx="5.5" fill="url(#mem-unl-blush)"/>
+  <path d="M27.5 39H15.5C12.5 39 10 36.5 10 33.5V26.5C10 23.5 12.5 21 15.5 21H28.5C31.5 21 34 23.5 34 26.5V28" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M16 21V14.5C16 10.9 18.9 8 22.5 8C25.6 8 28.1 10.1 28.8 13" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="22" cy="28.5" r="2.2" fill="#FF5E36"/>
+  <line x1="22" y1="30.5" x2="22" y2="34" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Coral Sparkle Unlock Badge Bottom-Right -->
+  <path d="M36.5 29L38 33L42 34.5L38 36L36.5 40L35 36L31 34.5L35 33L36.5 29Z" fill="#FF5E36" fill-opacity="0.28" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+</svg>

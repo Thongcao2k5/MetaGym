@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-notiu-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M13 21C13 14.9 17.9 10 24 10C25.5 10 26.9 10.3 28.2 10.8M35 21V28.5L38 32.5H10L13 28.5V21" fill="url(#com-notiu-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20.5 36.5C21.3 38 22.5 39 24 39C25.5 39 26.7 38 27.5 36.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="34.5" cy="13.5" r="4.8" fill="#FF5E36"/>
+</svg>

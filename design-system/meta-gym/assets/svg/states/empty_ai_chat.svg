@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-ai-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.38"/>
+    </linearGradient>
+  </defs>
+  <!-- Empty State: AI Coach Chat ('Hỏi AI Coach về bài tập & dinh dưỡng' — ai_conversations_page.dart) -->
+  <path d="M9.5 23.5C9.5 16.6 15.8 11 23.5 11C31.2 11 37.5 16.6 37.5 23.5C37.5 30.4 31.2 35.5 23.5 35.5H20.5L13.5 40.5V34.5C10.8 32 9.5 28 9.5 23.5Z" fill="url(#st-ai-blush)"/>
+  <path d="M37.5 22.5V23.5C37.5 30.4 31.2 35.5 23.5 35.5H20.5L13.5 40.5V34.5C10.8 32 9.5 28 9.5 23.5C9.5 16.6 15.8 11 23.5 11C26 11 28.4 11.6 30.4 12.6" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Inner 4-Point AI Sparkle (#FF5E36) -->
+  <path d="M23.5 16.5L25.4 21.6L30.5 23.5L25.4 25.4L23.5 30.5L21.6 25.4L16.5 23.5L21.6 21.6L23.5 16.5Z" fill="#FF5E36" fill-opacity="0.35" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Top-Right Secondary AI Star -->
+  <path d="M37 8.5L38.2 11.8L41.5 13L38.2 14.2L37 17.5L35.8 14.2L32.5 13L35.8 11.8L37 8.5Z" fill="#FF5E36"/>
+</svg>

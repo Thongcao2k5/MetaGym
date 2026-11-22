@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-talm-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<circle cx="24" cy="25.5" r="13" fill="url(#set-talm-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M9.5 13.5L15 9M38.5 13.5L33 9" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M24 18.5V25.5L28.5 28.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

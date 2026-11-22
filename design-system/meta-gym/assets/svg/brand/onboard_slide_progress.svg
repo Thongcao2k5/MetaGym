@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="br-onb3-blush" x1="8" y1="12" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <!-- Onboarding Slide 3: Real-time Body Progress, Nutrition & Streak -->
+  <rect x="8" y="13" width="28" height="25" rx="6" fill="url(#br-onb3-blush)"/>
+  <path d="M27 38H14C10.7 38 8 35.3 8 32V19C8 15.7 10.7 13 14 13H30C33.3 13 36 15.7 36 19V24" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Rising Analytics Trend Line -->
+  <path d="M13 30L19 24.5L23.5 27.5L31 19.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M27 19.5H31V23.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Trophy / Medal Badge Bottom-Right -->
+  <circle cx="35.5" cy="34.5" r="6" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M33.2 34.5L35 36.2L38.2 33" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

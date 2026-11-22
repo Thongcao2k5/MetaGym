@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-sec-blush" x1="12" y1="9" x2="36" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECC71" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#2ECC71" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Setting: Bảo mật & Tài khoản (Security Shield + Keyhole Lock) -->
+  <path d="M24 9L36 13.8V23.2C36 31.1 30.9 37.9 24 40C17.1 37.9 12 31.1 12 23.2V13.8L24 9Z" fill="url(#set-sec-blush)"/>
+  <path d="M35.8 25.5C34.9 32.3 30.2 38.1 24 40C17.1 37.9 12 31.1 12 23.2V13.8L24 9L36 13.8V20" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Inner Keyhole (#2ECC71) -->
+  <circle cx="24" cy="22" r="3.2" fill="#2ECC71" fill-opacity="0.3" stroke="#2ECC71" stroke-width="2.3"/>
+  <path d="M24 25.2V30.5" stroke="#2ECC71" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="36" cy="22.8" r="1.8" fill="#2ECC71"/>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="br-onb1-blush" x1="8" y1="8" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+    <linearGradient id="br-onb1-pose" x1="16" y1="10" x2="32" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF7D57" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.62"/>
+    </linearGradient>
+  </defs>
+  <!-- Onboarding Slide 1: Smart Workout & Muscle Anatomy (Pose #18 Front Double Biceps + Target Halo) -->
+  <circle cx="24" cy="24" r="16" fill="url(#br-onb1-blush)"/>
+  <path d="M38.5 18C36.2 12.1 30.6 8 24 8C15.2 8 8 15.2 8 24C8 30.8 12.2 36.6 18.2 38.9" stroke="#E8EDF5" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M17.7 8C18.2 8.1 18.8 8.9 18.7 9.3 18.6 9.6 17.2 9.4 16.9 10 16.6 10.5 16.5 12.1 17 12.5 17.6 12.9 19.3 12.2 20.2 12.3 21.2 12.4 22.1 13.6 22.5 13.1 22.9 12.6 22.5 10 22.8 9.1 23 8.3 23.6 8 24.1 8 24.7 8 25.6 8.2 25.9 9.1 26.2 10 24.9 12.5 25.8 13.1 26.7 13.7 30.2 13 31.2 12.6 32.2 12.1 31.7 10.7 31.5 10.2 31.2 9.7 29.9 9.8 29.7 9.5 29.5 9.2 29.9 8.4 30.3 8.4 30.8 8.3 31.8 8.5 32.3 9 32.8 9.6 33.3 10.7 33.5 11.6 33.7 12.5 34.2 13.8 33.5 14.5 32.7 15.3 30.2 15.1 29 16 27.9 16.9 26.6 17.9 26.5 19.8 26.4 21.8 28.1 24.3 28.6 27.5 29.1 30.7 29.2 37.2 29.4 39.3 29.7 41.3 30.3 40 29.9 40 29.6 40 27.9 40.5 27.4 39.1 26.9 37.7 27.5 33.8 26.9 31.6 26.3 29.4 24.8 25.9 23.9 25.8 23 25.8 22 28.8 21.4 31.1 20.8 33.4 21.1 38.4 20.4 39.8 19.8 41.1 17.6 39.4 17.4 39 17.2 38.7 18.9 39.6 19.2 37.6 19.5 35.5 18.9 29.6 19.2 26.8 19.6 24.1 21.3 22.9 21.3 21 21.2 19.2 20.2 17 19 15.7 17.9 14.5 15.1 14.8 14.5 13.7 14 12.5 15.4 9.7 16 8.7 16.5 7.8 17.3 7.9 17.7 8Z" fill="url(#br-onb1-pose)" stroke="#E8EDF5" stroke-width="1.4" stroke-linejoin="round"/>
+  <!-- Coral Power Badge -->
+  <circle cx="36.5" cy="34.5" r="5.5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.1"/>
+  <path d="M36.8 31.5L34.5 34.8H37.2L36.2 37.8L38.8 34.2H36.2L36.8 31.5Z" fill="#FF5E36"/>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-default-blush" x1="12" y1="12" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.26"/>
+    </linearGradient>
+  </defs>
+  <!-- Soft gradient fill inside dumbbell plates -->
+  <rect x="9" y="14" width="8" height="20" rx="4" fill="url(#cat-default-blush)"/>
+  <rect x="31" y="14" width="8" height="20" rx="4" fill="url(#cat-default-blush)"/>
+  <!-- Main Contour (Open-path style with rounded caps) -->
+  <rect x="9" y="14" width="8" height="20" rx="4" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9 19H7C5.3 19 4 20.3 4 22V26C4 27.7 5.3 29 7 29H9" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M17 24H31" stroke="#E8EDF5" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- Right Plate with open top-right gap for coral spark badge -->
+  <path d="M31 20V30C31 32.2 32.8 34 35 34C37.2 34 39 32.2 39 30V23" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M39 21H41C42.7 21 44 22.3 44 24V26C44 27.7 42.7 29 41 29H39" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Coral Accent Spark Badge (Top-Right) -->
+  <path d="M37 9V17M33 13H41" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

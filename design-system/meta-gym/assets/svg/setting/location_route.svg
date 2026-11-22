@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-lrt-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<circle cx="14" cy="14" r="4.5" fill="#FF5E36" fill-opacity="0.26" stroke="#FF5E36" stroke-width="2.2"/>
+  <circle cx="34" cy="34" r="4.5" fill="url(#set-lrt-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M18.5 14H28.5C31.8 14 34.5 16.7 34.5 20C34.5 23.3 31.8 26 28.5 26H19.5C16.2 26 13.5 28.7 13.5 32C13.5 33.5 14.8 34 17 34H29.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4 3"/>
+</svg>

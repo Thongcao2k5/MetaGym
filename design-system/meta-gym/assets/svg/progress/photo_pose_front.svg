@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
+  <defs>
+    <linearGradient id="prg-pose-front-blush" x1="35" y1="20" x2="145" y2="314" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.14"/>
+      <stop offset="0.5" stop-color="#FF5E36" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.22"/>
+    </linearGradient>
+  </defs>
+  <!-- Progress Photo Pose Guide: FRONT ('Mặt trước' — Pose #18 Front Double Biceps Gymmer) -->
+  
+  <!-- Camera Viewfinder Corner Brackets -->
+  <path d="M14 34V18C14 15.8 15.8 14 18 14H34M146 14H162C164.2 14 166 15.8 166 18V34M166 296V312C166 314.2 164.2 316 162 316H146M34 316H18C15.8 316 14 314.2 14 312V296" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Anatomical Alignment Reference Grid -->
+  <line x1="90" y1="16" x2="90" y2="314" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <line x1="24" y1="78" x2="156" y2="78" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <line x1="30" y1="142" x2="150" y2="142" stroke="#FF5E36" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="30" y1="234" x2="150" y2="234" stroke="#A9C7E8" stroke-opacity="0.25" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M43 46C46 45 46 46 48 47 49 49 52 53 50 55 48 57 38 57 36 61 34 65 33 77 37 80 41 83 55 77 62 78 69 79 76 88 79 84 82 80 79 60 81 54 83 48 88 47 91 46 94 45 97 46 99 47 101 49 104 48 104 54 105 60 101 80 103 84 106 89 112 80 119 79 126 78 140 83 145 80 149 77 149 66 147 62 145 58 134 59 133 57 132 54 135 49 138 48 141 48 149 49 153 53 157 58 160 66 162 73 163 80 165 90 162 95 158 100 146 103 141 105 135 107 133 101 128 107 123 112 112 126 109 135 107 145 110 151 113 161 116 171 123 184 125 194 127 203 124 212 125 219 126 225 130 226 131 234 131 242 128 260 128 268 128 276 130 279 131 283 132 286 136 287 135 288 134 289 127 289 123 288 120 287 116 285 116 282 115 278 118 277 118 267 117 258 117 239 112 225 107 210 96 182 89 181 82 180 75 203 70 221 66 238 66 276 63 287 60 298 58 288 54 287 50 286 40 284 40 281 40 278 52 277 54 270 56 263 51 246 51 236 51 227 55 224 55 216 56 208 51 200 54 188 56 177 67 154 69 144 72 135 71 137 68 130 65 124 57 109 52 104 48 100 44 105 39 102 33 99 21 93 18 89 15 84 18 79 20 73 22 67 25 56 29 51 33 47 39 46 43 46Z" fill="url(#prg-pose-front-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Bicep Peak & Chest Alignment Guide Arcs -->
+  <path d="M36 62C42 54 52 54 58 62M122 62C128 54 138 54 144 62" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+  <path d="M72 94C78 100 85 100 89 95M108 94C102 100 95 100 91 95" stroke="#A9C7E8" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Center Torso Reticle -->
+  <circle cx="90" cy="118" r="7" stroke="#FF5E36" stroke-width="2"/>
+  <circle cx="90" cy="118" r="2.2" fill="#FF5E36"/>
+</svg>

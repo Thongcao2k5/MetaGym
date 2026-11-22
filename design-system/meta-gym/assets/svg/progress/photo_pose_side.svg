@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
+  <defs>
+    <linearGradient id="prg-pose-side-blush" x1="40" y1="20" x2="140" y2="314" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.14"/>
+      <stop offset="0.5" stop-color="#FF5E36" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.22"/>
+    </linearGradient>
+  </defs>
+  <!-- Progress Photo Pose Guide: SIDE ('Mặt bên' — Pose #12 Side Chest & Triceps Gymmer) -->
+  
+  <!-- Camera Viewfinder Corner Brackets -->
+  <path d="M14 34V18C14 15.8 15.8 14 18 14H34M146 14H162C164.2 14 166 15.8 166 18V34M166 296V312C166 314.2 164.2 316 162 316H146M34 316H18C15.8 316 14 314.2 14 312V296" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Anatomical Alignment Reference Grid -->
+  <line x1="90" y1="16" x2="90" y2="314" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <line x1="24" y1="78" x2="156" y2="78" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <line x1="30" y1="142" x2="150" y2="142" stroke="#FF5E36" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="30" y1="234" x2="150" y2="234" stroke="#A9C7E8" stroke-opacity="0.25" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M65 45C72 45 85 45 91 48 96 50 97 55 98 58 99 62 98 66 97 67 95 69 94 69 92 67 90 65 88 55 85 53 81 52 69 57 69 60 69 62 81 66 85 70 90 74 93 81 95 82 98 84 99 84 102 81 106 78 111 68 115 65 119 63 123 65 126 65 129 66 130 67 132 69 134 72 138 76 138 81 137 86 131 95 128 99 125 103 122 104 119 104 116 104 112 100 111 100 109 99 107 99 109 102 112 105 121 111 124 119 127 127 123 146 127 150 131 154 145 147 148 144 151 140 143 129 144 127 145 124 151 127 153 129 155 130 155 133 156 136 156 139 159 142 155 147 152 152 140 160 134 164 128 168 125 171 121 170 116 168 112 160 109 155 106 150 105 140 103 138 100 136 96 140 93 143 91 146 89 150 88 154 86 158 85 160 86 168 87 175 93 188 94 197 95 205 94 207 93 219 92 231 89 257 89 266 89 276 90 272 93 274 96 277 104 280 107 281 109 283 112 284 107 285 103 286 84 291 78 285 73 278 78 250 73 245 69 241 57 255 52 260 47 264 46 268 45 270 44 273 43 274 45 277 47 280 58 286 57 288 56 290 43 290 38 288 33 287 28 280 26 277 24 274 17 279 25 269 32 260 69 239 72 222 75 205 48 180 44 169 40 157 45 159 47 154 49 149 54 151 57 140 60 128 64 99 63 85 61 71 49 62 47 56 45 50 47 53 50 51 53 49 58 46 65 45Z" fill="url(#prg-pose-side-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Side Shoulder & Chest Expansion Guide Lines -->
+  <path d="M58 52C66 44 78 44 86 52" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+  <path d="M62 142H118" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+  <!-- Side Torso Target Reticle -->
+  <circle cx="88" cy="115" r="7" stroke="#FF5E36" stroke-width="2"/>
+  <circle cx="88" cy="115" r="2.2" fill="#FF5E36"/>
+</svg>

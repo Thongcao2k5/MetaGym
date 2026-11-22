@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-soon-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M16 10H32M16 38H32M18 10V15.5C18 18.8 20.7 22 24 24C27.3 22 30 18.8 30 15.5V10M18 38V32.5C18 29.2 20.7 26 24 24C27.3 26 30 29.2 30 32.5V38" fill="url(#st-soon-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M36.5 11L37.8 14.5L41.5 15.8L37.8 17.1L36.5 20.5L35.2 17.1L31.5 15.8L35.2 14.5L36.5 11Z" fill="#FF5E36" stroke="#FF5E36" stroke-width="1.4" stroke-linejoin="round"/>
+</svg>

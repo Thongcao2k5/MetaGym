@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-workout-blush" x1="9" y1="14" x2="39" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Empty State: Workout / Self-Training ('Chưa có buổi tập nào' — member_training_page.dart) -->
+  <rect x="10" y="14.5" width="7.5" height="19" rx="3.75" fill="url(#st-workout-blush)" stroke="#E8EDF5" stroke-width="2.5"/>
+  <rect x="30.5" y="14.5" width="7.5" height="19" rx="3.75" fill="url(#st-workout-blush)"/>
+  <path d="M30.5 18.25C30.5 16.2 32.2 14.5 34.25 14.5C36.3 14.5 38 16.2 38 18.25V25" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M10 19.5H7.5C5.8 19.5 4.5 20.8 4.5 22.5V25.5C4.5 27.2 5.8 28.5 7.5 28.5H10" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="17.5" y1="24" x2="30.5" y2="24" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="4 3.5"/>
+  <!-- Bottom-Right Add Workout Badge (#FF5E36) -->
+  <circle cx="35" cy="34" r="6" fill="#FF5E36" fill-opacity="0.24" stroke="#FF5E36" stroke-width="2.3"/>
+  <path d="M35 31.5V36.5M32.5 34H37.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

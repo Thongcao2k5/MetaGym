@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
+  <defs>
+    <linearGradient id="prg-pose-back-blush" x1="35" y1="20" x2="145" y2="314" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.14"/>
+      <stop offset="0.5" stop-color="#FF5E36" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.22"/>
+    </linearGradient>
+  </defs>
+  <!-- Progress Photo Pose Guide: BACK ('Mặt sau' — Pose #8 Back Lat Spread Gymmer) -->
+  
+  <!-- Camera Viewfinder Corner Brackets -->
+  <path d="M14 34V18C14 15.8 15.8 14 18 14H34M146 14H162C164.2 14 166 15.8 166 18V34M166 296V312C166 314.2 164.2 316 162 316H146M34 316H18C15.8 316 14 314.2 14 312V296" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Anatomical Alignment Reference Grid -->
+  <line x1="90" y1="16" x2="90" y2="314" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <line x1="24" y1="78" x2="156" y2="78" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <line x1="30" y1="142" x2="150" y2="142" stroke="#FF5E36" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="30" y1="234" x2="150" y2="234" stroke="#A9C7E8" stroke-opacity="0.25" stroke-width="1.3" stroke-dasharray="4 5"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M85 31C88 29 95 31 99 32 102 33 102 34 103 38 105 41 106 49 106 54 106 59 98 64 103 68 108 72 126 74 136 80 145 87 156 102 160 109 164 117 161 118 160 125 158 132 155 147 151 151 147 155 137 152 137 149 136 146 144 137 145 133 147 128 148 124 146 120 144 116 138 106 133 107 128 109 119 124 116 130 113 136 113 134 115 144 117 155 125 182 126 194 127 206 122 208 121 218 120 227 123 240 122 250 122 261 118 275 117 281 117 288 118 286 120 288 122 291 129 294 129 296 130 298 127 301 122 302 118 303 106 304 103 301 101 299 107 293 106 285 106 278 101 264 101 254 100 245 104 238 103 229 103 221 98 209 96 204 94 200 93 200 90 203 88 207 84 217 83 226 83 234 88 245 88 253 89 262 85 269 85 277 86 285 91 296 89 300 88 304 83 304 78 303 73 302 62 298 61 296 60 293 70 290 72 287 75 285 76 295 74 281 72 266 61 222 60 200 59 177 67 158 68 147 69 135 69 135 67 128 64 122 57 111 53 109 49 106 47 109 43 113 39 118 32 130 31 134 30 139 38 138 39 141 41 143 42 147 40 149 38 151 30 155 27 154 24 154 23 151 22 145 21 140 19 126 20 120 21 113 20 114 25 107 30 100 40 86 49 80 58 73 75 73 79 69 83 65 75 59 74 55 74 50 74 46 75 43 77 39 81 33 85 31Z" fill="url(#prg-pose-back-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Posterior V-Taper Lat Spread & Spine Guide Lines -->
+  <path d="M90 56V160" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+  <path d="M64 84L90 124L116 84" stroke="#A9C7E8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Upper Back Target Reticle -->
+  <circle cx="90" cy="102" r="7" stroke="#FF5E36" stroke-width="2"/>
+  <circle cx="90" cy="102" r="2.2" fill="#FF5E36"/>
+</svg>

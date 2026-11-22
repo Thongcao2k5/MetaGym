@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-star-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M24 8.5L28.4 17.8L38.6 19.2L31.2 26.4L33 36.5L24 31.7L15 36.5L16.8 26.4L9.4 19.2L19.6 17.8L24 8.5Z" fill="url(#com-star-blush)" stroke="#FF5E36" stroke-width="2.3" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-visits-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Empty State: Gym Visits History ('Chưa có lịch sử điểm danh' — gym_visits_page.dart) -->
+  <!-- Gym Turnstile / Portal Arch -->
+  <path d="M13 38.5V16.5C13 12.9 15.9 10 19.5 10H28.5C32.1 10 35 12.9 35 16.5V38.5H13Z" fill="url(#st-visits-blush)"/>
+  <path d="M26 38.5H10M13 38.5V16.5C13 12.9 15.9 10 19.5 10H28.5C32.1 10 35 12.9 35 16.5V25" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- QR Scanner Plate on Door -->
+  <rect x="19.5" y="17.5" width="9" height="9" rx="2.2" stroke="#FF5E36" stroke-width="2.2"/>
+  <circle cx="24" cy="22" r="1.6" fill="#FF5E36"/>
+  <!-- Bottom-Right Clock History Badge (#A9C7E8) -->
+  <circle cx="34" cy="33.5" r="6" fill="#A9C7E8" fill-opacity="0.22" stroke="#A9C7E8" stroke-width="2.3"/>
+  <path d="M34 31V33.5L35.8 34.8" stroke="#A9C7E8" stroke-width="2.1" stroke-linecap="round"/>
+</svg>

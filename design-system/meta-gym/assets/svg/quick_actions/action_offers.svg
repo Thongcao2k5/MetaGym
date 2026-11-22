@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="qa-offers-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.38"/>
+    </linearGradient>
+  </defs>
+  <!-- Quick Action (Coach): Đề nghị / Gói PT & Bảng giá (Price Tag + 1:1 Star Spark) -->
+  <path d="M11 16C11 13.2 13.2 11 16 11H24.2C25.8 11 27.3 11.6 28.4 12.8L36.7 21.1C38.8 23.2 38.8 26.7 36.7 28.8L28.8 36.7C26.7 38.8 23.2 38.8 21.1 36.7L12.8 28.4C11.6 27.3 11 25.8 11 24.2V16Z" fill="url(#qa-offers-blush)"/>
+  <path d="M33.5 32L28.8 36.7C26.7 38.8 23.2 38.8 21.1 36.7L12.8 28.4C11.6 27.3 11 25.8 11 24.2V16C11 13.2 13.2 11 16 11H24.2C25.8 11 27.3 11.6 28.4 12.8L36.7 21.1C38.6 23 38.8 26 37.3 28.1" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Tag Grommet Ring & Inner Package Lines (#FF5E36) -->
+  <circle cx="17.8" cy="17.8" r="2.6" fill="#FF5E36" fill-opacity="0.3" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M22.5 25.5L26.5 21.5M25.5 29.5L30.5 24.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- Top-Right Offer Spark (#FF5E36) -->
+  <path d="M36.5 9.5V15.5M33.5 12.5H39.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

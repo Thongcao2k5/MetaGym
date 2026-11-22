@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="qa-cplans-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Quick Action (Coach): Giáo án & Thực đơn (Training Plan Document + Nutrition Leaf Badge) -->
+  <rect x="11" y="10" width="24" height="28.5" rx="6" fill="url(#qa-cplans-blush)"/>
+  <path d="M23.5 38.5H17C13.7 38.5 11 35.8 11 32.5V16C11 12.7 13.7 10 17 10H29C32.3 10 35 12.7 35 16V23.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Plan Checklist Rows -->
+  <circle cx="16.5" cy="18.5" r="1.7" fill="#FF5E36"/>
+  <line x1="21" y1="18.5" x2="29.5" y2="18.5" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="16.5" cy="24.5" r="1.7" fill="#FF5E36"/>
+  <line x1="21" y1="24.5" x2="27.5" y2="24.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="16.5" cy="30.5" r="1.7" fill="#2ECC71"/>
+  <line x1="21" y1="30.5" x2="24.5" y2="30.5" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round"/>
+  <!-- Bottom-Right Organic Nutrition Leaf Badge (#2ECC71) -->
+  <path d="M28.5 38.5C28 32 32 27 40 26.5C40.5 34.5 35.5 39 28.5 38.5Z" fill="#2ECC71" fill-opacity="0.26" stroke="#2ECC71" stroke-width="2.3" stroke-linejoin="round"/>
+  <path d="M28 39L35.5 31.5" stroke="#2ECC71" stroke-width="2.1" stroke-linecap="round"/>
+</svg>

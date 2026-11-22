@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="prg-default-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Default Progress Icon (Growth Trend Chart + Milestone Nodes) -->
+  <rect x="9.5" y="10.5" width="29" height="27" rx="7" fill="url(#prg-default-blush)"/>
+  <path d="M27.5 37.5H16.5C12.6 37.5 9.5 34.4 9.5 30.5V17.5C9.5 13.6 12.6 10.5 16.5 10.5H31.5C35.4 10.5 38.5 13.6 38.5 17.5V22" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Rising Progress Trend Line (#FF5E36) -->
+  <path d="M15.5 29L21.5 23L26 26.5L34.5 17.5" stroke="#FF5E36" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M29.5 17.5H34.5V22.5" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="15.5" cy="29" r="2" fill="#E8EDF5"/>
+  <circle cx="21.5" cy="23" r="2" fill="#E8EDF5"/>
+  <circle cx="26" cy="26.5" r="2" fill="#FF5E36"/>
+  <!-- Bottom-Right Milestone Check Badge (#2ECC71) -->
+  <circle cx="34.5" cy="33.5" r="6" fill="#2ECC71" fill-opacity="0.22" stroke="#2ECC71" stroke-width="2.3"/>
+  <path d="M32 33.5L33.8 35.3L37.2 31.8" stroke="#2ECC71" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

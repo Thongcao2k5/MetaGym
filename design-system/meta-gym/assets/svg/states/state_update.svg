@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-upd-blush" x1="10" y1="8" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- State Update Available (Upward Launch Rocket / Cloud Sync + Coral Spark) -->
+  <circle cx="23.5" cy="24.5" r="13.5" fill="url(#st-upd-blush)"/>
+  <path d="M36 19.2C34 14 29.2 10.5 23.5 10.5C15.8 10.5 9.5 16.8 9.5 24.5C9.5 31.1 14 36.6 20.2 38.1" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M23.5 31V17.5M18 22.8L23.5 17.2L29 22.8" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="35.5" cy="34.5" r="5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.1"/>
+  <circle cx="35.5" cy="34.5" r="1.8" fill="#FF5E36"/>
+</svg>

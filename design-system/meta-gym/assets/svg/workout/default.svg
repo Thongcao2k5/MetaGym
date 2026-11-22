@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="wk-def-blush" x1="8" y1="8" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <circle cx="23" cy="23" r="15" fill="url(#wk-def-blush)"/>
+  <path d="M36.8 18C34.8 12.2 29.4 8 23 8C14.7 8 8 14.7 8 23C8 29.4 12.2 34.8 18 36.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20.5 17.5L30 23L20.5 28.5V17.5Z" fill="#FF5E36" fill-opacity="0.26" stroke="#FF5E36" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M35.5 31L33 35.5H37L34.5 40" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
