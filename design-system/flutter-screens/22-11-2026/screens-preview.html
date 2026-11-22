@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meta Gym — Flutter Full-Data Screen Preview Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./tokens.css" />
+</head>
+<body>
+
+  <!-- STUDIO CONTROL BAR -->
+  <header class="studio-bar">
+    <div class="studio-inner">
+      <div class="studio-brand">
+        <a href="../../index.html" class="ctrl-btn" style="text-decoration:none;display:inline-flex;align-items:center;">← Hub</a>
+        <div class="mg-logo" style="width:34px;height:34px;font-size:12px;border-radius:10px;">MG</div>
+        <div>
+          <h1>Flutter Screen Preview — Bám sát code thực tế (Full Data)</h1>
+          <span>Token tại <code>tokens.css</code> • Màn hình chia module tại <code>screens/auth|member|coach/</code></span>
+        </div>
+      </div>
+
+      <div class="studio-controls">
+        <button class="ctrl-btn active" id="btn-375">375px</button>
+        <button class="ctrl-btn" id="btn-393">393px</button>
+        <span class="ctrl-divider"></span>
+        <button class="ctrl-btn" id="btn-theme" style="display:inline-flex;align-items:center;gap:6px;">
+          <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_theme_appearance.svg" alt="Giao diện" />
+          <span id="theme-label">Chế độ Sáng</span>
+        </button>
+        <button class="ctrl-btn" id="btn-solid">Tắt Blur / Ảnh nền</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ROLE TABS -->
+  <div class="role-tabs-wrap">
+    <div class="role-tabs" role="tablist">
+      <button class="role-tab" role="tab" data-tab="auth">Khởi động &amp; Auth <span class="tab-count" id="cnt-auth">0</span></button>
+      <button class="role-tab active" role="tab" data-tab="member">Hội viên (Member) <span class="tab-count" id="cnt-member">0</span></button>
+      <button class="role-tab" role="tab" data-tab="coach">Huấn luyện viên (Coach) <span class="tab-count" id="cnt-coach">0</span></button>
+    </div>
+  </div>
+
+  <!-- SUB-CATEGORY FILTER BAR (Dynamic per active Role Tab) -->
+  <div class="sub-filters-wrap" id="sub-filters"></div>
+
+  <!-- SCREEN PANELS -->
+  <main class="gallery">
+    <div class="tab-panel" data-panel="auth"></div>
+    <div class="tab-panel active" data-panel="member"></div>
+    <div class="tab-panel" data-panel="coach"></div>
+  </main>
+
+  <!-- Modular Screen Registries (Works directly over file:// without CORS) -->
+  <script src="./screens/auth.screens.js"></script>
+  <script src="./screens/member/core.js"></script>
+  <script src="./screens/member/training-nutrition.js"></script>
+  <script src="./screens/member/coaching-booking.js"></script>
+  <script src="./screens/member/membership-payment.js"></script>
+  <script src="./screens/member/progress-catalog.js"></script>
+  <script src="./screens/coach/core.js"></script>
+  <script src="./screens/coach/detail.js"></script>
+
+  <script>
+    const registry = window.METAGYM_SCREENS || {};
+    let activeRole = 'member';
+    let activeGroup = 'all';
+
+    // Render all panels once
+    ['auth', 'member', 'coach'].forEach(role => {
+      const list = registry[role] || [];
+      const countEl = document.getElementById('cnt-' + role);
+      if (countEl) countEl.textContent = list.length;
+      const panel = document.querySelector('.tab-panel[data-panel="' + role + '"]');
+      if (!panel) return;
+      panel.innerHTML = list.map(s => `
+        <section class="screen-slot" data-id="${s.id}" data-role="${role}" data-group="${s.group || 'other'}">
+          <div class="slot-meta">
+            <div>
+              <div class="slot-title">${s.title}</div>
+              <div class="slot-file" title="${s.flutterFile}">${s.shortFile}</div>
+            </div>
+            <span class="slot-tag ${s.tagClass || ''}">${s.tag}</span>
+          </div>
+          ${s.html}
+        </section>
+      `).join('');
+    });
+
+    const subFiltersEl = document.getElementById('sub-filters');
+
+    function renderSubFilters(role) {
+      const list = registry[role] || [];
+      const seen = new Map();
+      list.forEach(s => {
+        const key = s.group || 'other';
+        if (!seen.has(key)) seen.set(key, { label: s.groupLabel || key, count: 0 });
+        seen.get(key).count++;
+      });
+
+      if (seen.size <= 1) {
+        subFiltersEl.innerHTML = '';
+        subFiltersEl.style.display = 'none';
+        return;
+      }
+
+      subFiltersEl.style.display = 'flex';
+      let html = `<button class="sub-chip ${activeGroup === 'all' ? 'active' : ''}" data-group="all">Tất cả (${list.length})</button>`;
+      seen.forEach((info, key) => {
+        html += `<button class="sub-chip ${activeGroup === key ? 'active' : ''}" data-group="${key}">${info.label} (${info.count})</button>`;
+      });
+      subFiltersEl.innerHTML = html;
+
+      subFiltersEl.querySelectorAll('.sub-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeGroup = btn.dataset.group;
+          subFiltersEl.querySelectorAll('.sub-chip').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          applyGroupFilter(role);
+        });
+      });
+    }
+
+    function applyGroupFilter(role) {
+      const panel = document.querySelector('.tab-panel[data-panel="' + role + '"]');
+      if (!panel) return;
+      panel.querySelectorAll('.screen-slot').forEach(slot => {
+        slot.classList.toggle('hidden', activeGroup !== 'all' && slot.dataset.group !== activeGroup);
+      });
+    }
+
+    // Role Tabs
+    const tabs = document.querySelectorAll('.role-tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        activeRole = tab.dataset.tab;
+        activeGroup = 'all';
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelector('.tab-panel[data-panel="' + activeRole + '"]').classList.add('active');
+        renderSubFilters(activeRole);
+        applyGroupFilter(activeRole);
+      });
+    });
+
+    // Init sub-filters for default Member tab
+    renderSubFilters(activeRole);
+
+    // Device Width
+    const btn375 = document.getElementById('btn-375');
+    const btn393 = document.getElementById('btn-393');
+    btn375.addEventListener('click', () => {
+      document.documentElement.style.setProperty('--device-width', '375px');
+      btn375.classList.add('active'); btn393.classList.remove('active');
+    });
+    btn393.addEventListener('click', () => {
+      document.documentElement.style.setProperty('--device-width', '393px');
+      btn393.classList.add('active'); btn375.classList.remove('active');
+    });
+
+    // Solid Fallback
+    const btnSolid = document.getElementById('btn-solid');
+    btnSolid.addEventListener('click', () => {
+      document.body.classList.toggle('solid-fallback');
+      btnSolid.classList.toggle('active');
+    });
+
+    // Light / Dark Mode
+    const btnTheme = document.getElementById('btn-theme');
+    const themeLabel = document.getElementById('theme-label');
+    btnTheme.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-mode');
+      btnTheme.classList.toggle('active', isLight);
+      themeLabel.textContent = isLight ? 'Chế độ Tối' : 'Chế độ Sáng';
+    });
+  </script>
+</body>
+</html>

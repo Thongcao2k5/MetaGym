@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meta Gym — Thư viện Icon SVG &amp; Preview Sheets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0F1115;
+      --surface: #181B22;
+      --surface-raised: #1F232C;
+      --border: #262A34;
+      --primary: #FF5E36;
+      --text: #F7F9FC;
+      --muted: #8E95A5;
+      --success: #2ECC71;
+      --reflection: #A9C7E8;
+      --icon-well: #1F242D;
+    }
+    body.light-mode {
+      --bg: #F5F7FA;
+      --surface: #FFFFFF;
+      --surface-raised: #EDF1F5;
+      --border: #CBD4DF;
+      --text: #11151A;
+      --muted: #4D5968;
+      --icon-well: #222834;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 64px;
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(15, 17, 21, 0.90);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+    }
+    body.light-mode .topbar { background: rgba(255, 255, 255, 0.92); }
+    .topbar-inner {
+      max-width: 1360px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .left { display: flex; align-items: center; gap: 12px; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 999px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); text-decoration: none;
+      font-size: 12.5px; font-weight: 600;
+    }
+    .back-link:hover { border-color: var(--primary); color: var(--primary); }
+    h1 { font-size: 17px; font-weight: 800; }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 8px 14px; font-family: inherit; font-size: 12.5px;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+    .search {
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 8px 14px; font-family: inherit; font-size: 13px;
+      min-width: 240px; outline: none;
+    }
+    .search:focus { border-color: var(--reflection); }
+
+    .container { max-width: 1360px; margin: 20px auto 0; padding: 0 20px; }
+
+    .cats { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
+    .cat-chip {
+      background: var(--surface); color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 12px; font-family: inherit; font-size: 12px;
+      font-weight: 600; cursor: pointer;
+    }
+    .cat-chip.active {
+      background: rgba(255, 94, 54, 0.16); color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+      gap: 12px;
+    }
+    .icon-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 10px 12px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; cursor: pointer; text-align: center;
+      transition: border-color 150ms ease, transform 150ms ease;
+    }
+    .icon-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+    .icon-well {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: var(--icon-well);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon-well img { width: 34px; height: 34px; object-fit: contain; }
+    .icon-name {
+      font-size: 11px; font-weight: 600; color: var(--text);
+      word-break: break-word; line-height: 1.3;
+    }
+    .icon-cat { font-size: 10px; color: var(--muted); }
+
+    .sheets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .sheet-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .sheet-card img { width: 100%; display: block; background: #0F1115; }
+    .sheet-cap {
+      padding: 12px 14px; font-size: 13px; font-weight: 700;
+      text-transform: capitalize;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .sheet-cap span { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: none; }
+
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--primary); color: #FFF;
+      padding: 10px 18px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      opacity: 0; pointer-events: none; transition: opacity 180ms ease;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="left">
+        <a class="back-link" href="./index.html">← Hub</a>
+        <h1>Thư viện Icon &amp; Preview Sheets</h1>
+      </div>
+      <div class="controls">
+        <button class="btn active" id="tab-svgs">Icon SVG (<span id="svg-total">0</span>)</button>
+        <button class="btn" id="tab-sheets">Preview Sheets (<span id="sheet-total">0</span>)</button>
+        <button class="btn" id="btn-theme">Chế độ Sáng</button>
+        <input class="search" id="search" type="search" placeholder="Tìm tên icon (vd: nav_home, muscle, meal)..." />
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="view-svgs">
+      <div class="cats" id="cats"></div>
+      <div class="icon-grid" id="icon-grid"></div>
+    </div>
+    <div id="view-sheets" class="hidden">
+      <div class="sheets-grid" id="sheets-grid"></div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast">Đã copy đường dẫn icon!</div>
+
+  <script src="./icons-manifest.js"></script>
+  <script>
+    const data = window.METAGYM_ASSETS || { svgs: [], sheets: [] };
+    const svgs = data.svgs || [];
+    const sheets = data.sheets || [];
+    document.getElementById('svg-total').textContent = svgs.length;
+    document.getElementById('sheet-total').textContent = sheets.length;
+
+    let activeCat = 'all';
+    const searchEl = document.getElementById('search');
+    const gridEl = document.getElementById('icon-grid');
+    const catsEl = document.getElementById('cats');
+    const toastEl = document.getElementById('toast');
+    let toastTimer;
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+    }
+
+    // Build category chips
+    const catCounts = new Map();
+    svgs.forEach(i => catCounts.set(i.cat, (catCounts.get(i.cat) || 0) + 1));
+    let catHtml = `<button class="cat-chip active" data-cat="all">Tất cả (${svgs.length})</button>`;
+    catCounts.forEach((cnt, cat) => {
+      catHtml += `<button class="cat-chip" data-cat="${cat}">${cat} (${cnt})</button>`;
+    });
+    catsEl.innerHTML = catHtml;
+    catsEl.querySelectorAll('.cat-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCat = btn.dataset.cat;
+        catsEl.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderIcons();
+      });
+    });
+
+    function renderIcons() {
+      const q = searchEl.value.trim().toLowerCase();
+      const filtered = svgs.filter(i =>
+        (activeCat === 'all' || i.cat === activeCat) &&
+        (!q || i.name.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q))
+      );
+      gridEl.innerHTML = filtered.map(i => `
+        <div class="icon-card" data-path="${i.path}" title="Bấm để copy: ${i.path}">
+          <div class="icon-well"><img loading="lazy" src="./${i.path}" alt="${i.name}" /></div>
+          <div class="icon-name">${i.name}</div>
+          <div class="icon-cat">${i.cat}</div>
+        </div>
+      `).join('');
+
+      gridEl.querySelectorAll('.icon-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const p = card.dataset.path;
+          if (navigator.clipboard) navigator.clipboard.writeText(p).catch(() => {});
+          showToast('Đã copy: ' + p);
+        });
+      });
+    }
+
+    // Render WebP sheets
+    document.getElementById('sheets-grid').innerHTML = sheets.map(s => `
+      <a class="sheet-card" href="./${s.path}" target="_blank" rel="noopener">
+        <img loading="lazy" src="./${s.path}" alt="${s.name}" />
+        <div class="sheet-cap">${s.name}<span>${s.file}</span></div>
+      </a>
+    `).join('');
+
+    // View tabs
+    const tabSvgs = document.getElementById('tab-svgs');
+    const tabSheets = document.getElementById('tab-sheets');
+    const viewSvgs = document.getElementById('view-svgs');
+    const viewSheets = document.getElementById('view-sheets');
+
+    tabSvgs.addEventListener('click', () => {
+      tabSvgs.classList.add('active'); tabSheets.classList.remove('active');
+      viewSvgs.classList.remove('hidden'); viewSheets.classList.add('hidden');
+    });
+    tabSheets.addEventListener('click', () => {
+      tabSheets.classList.add('active'); tabSvgs.classList.remove('active');
+      viewSheets.classList.remove('hidden'); viewSvgs.classList.add('hidden');
+    });
+
+    // Light/Dark toggle
+    const btnTheme = document.getElementById('btn-theme');
+    btnTheme.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-mode');
+      btnTheme.textContent = isLight ? 'Chế độ Tối' : 'Chế độ Sáng';
+    });
+
+    searchEl.addEventListener('input', renderIcons);
+    renderIcons();
+  </script>
+</body>
+</html>

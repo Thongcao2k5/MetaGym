@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meta Gym — Design System &amp; Flutter Review Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0F1115;
+      --surface: #181B22;
+      --surface-raised: #1F232C;
+      --border: #262A34;
+      --primary: #FF5E36;
+      --primary-hover: #E84E27;
+      --text: #F7F9FC;
+      --muted: #8E95A5;
+      --success: #2ECC71;
+      --reflection: #A9C7E8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(169, 199, 232, 0.14), transparent 36%),
+        radial-gradient(circle at 12% 90%, rgba(255, 94, 54, 0.11), transparent 36%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 36px 20px 64px;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+
+    /* Hero */
+    .hero {
+      background: rgba(24, 27, 34, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 228, 255, 0.18);
+      border-radius: 24px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 28px; right: 28px; height: 1px;
+      background: rgba(235, 246, 255, 0.32);
+    }
+    .brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .mg-logo {
+      width: 48px; height: 48px; border-radius: 15px;
+      background: linear-gradient(135deg, #FF6A42, #FF4520);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 6px 18px rgba(255, 94, 54, 0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: #FFF;
+    }
+    .eyebrow {
+      font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--primary);
+    }
+    h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; }
+    .desc { color: var(--muted); font-size: 14.5px; max-width: 720px; }
+
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+    .chip {
+      font-size: 12px; font-weight: 600; padding: 5px 12px;
+      border-radius: 999px; background: var(--surface);
+      border: 1px solid var(--border); color: var(--text);
+    }
+    .chip.green { color: var(--success); border-color: rgba(46, 204, 113, 0.35); background: rgba(46, 204, 113, 0.12); }
+
+    /* Cards Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 180ms ease, border-color 180ms ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 94, 54, 0.55);
+    }
+    .card-ico {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .card-ico img { width: 28px; height: 28px; object-fit: contain; }
+    .card h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .card p { font-size: 13.5px; color: var(--muted); flex: 1; margin-bottom: 18px; }
+    .card-cta {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 44px; border-radius: 14px; font-size: 13.5px; font-weight: 700;
+      padding: 0 16px;
+    }
+    .cta-primary { background: var(--primary); color: #FFF; }
+    .cta-secondary { background: var(--surface-raised); color: var(--text); border: 1px solid var(--border); }
+
+    footer {
+      margin-top: 36px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="brand-row">
+        <div class="mg-logo">MG</div>
+        <div>
+          <div class="eyebrow">META GYM • FUTURISTIC PERFORMANCE GLASS</div>
+          <h1>Design System &amp; Flutter Review Hub</h1>
+        </div>
+      </div>
+      <p class="desc">
+        Không gian tổng hợp bản xem trước màn hình Flutter (Full Data), bộ icon SVG thiết kế riêng và báo cáo kiểm duyệt UI/UX để cả team review trực tiếp trên trình duyệt trước khi chốt chuyển sang code Flutter.
+      </p>
+      <div class="chips">
+        <span class="chip green">● Cập nhật 22/11/2026</span>
+        <span class="chip">17 Màn hình Mockup (3 Tab)</span>
+        <span class="chip">377 Icon SVG</span>
+        <span class="chip">16 Bảng Preview WebP</span>
+        <span class="chip">Dark / Light Mode</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <a class="card" href="./flutter-screens/22-11-2026/screens-preview.html">
+        <div class="card-ico">
+          <img src="./meta-gym/assets/svg/navigation/nav_home_filled.svg" alt="Screen Studio" />
+        </div>
+        <h2>Flutter Screen Review Studio</h2>
+        <p>
+          Xem 17 màn hình ứng dụng Flutter với dữ liệu tiếng Việt đầy đủ, tách 3 tab (Khởi động &amp; Auth, Hội viên, Coach), hỗ trợ đổi 375px/393px, Chế độ Sáng/Tối và Tắt Blur.
+        </p>
+        <span class="card-cta cta-primary">Mở Screen Review Studio →</span>
+      </a>
+
+      <a class="card" href="./icons-gallery.html">
+        <div class="card-ico">
+          <img src="./meta-gym/assets/svg/quick_actions/action_curriculum.svg" alt="Icon Library" />
+        </div>
+        <h2>Thư viện Icon &amp; Preview Sheets</h2>
+        <p>
+          Duyệt toàn bộ 377 icon vector SVG theo 14 danh mục (Navigation, Quick Actions, Workout, Nutrition, Muscles...) và 16 bảng tổng hợp WebP. Bấm vào icon để copy đường dẫn nhanh.
+        </p>
+        <span class="card-cta cta-secondary">Mở Thư viện Icon →</span>
+      </a>
+
+      <a class="card" href="./flutter-screens/22-11-2026/review-board.html">
+        <div class="card-ico">
+          <img src="./meta-gym/assets/svg/progress/stats_report.svg" alt="Audit Board" />
+        </div>
+        <h2>Bảng Audit &amp; Lộ trình Fix UI</h2>
+        <p>
+          Báo cáo kiểm duyệt thực tế toàn bộ 53 file màn hình Flutter theo DESIGN.md (quy tắc 80/20, token màu, RepaintBoundary, SafeArea) kèm bộ lọc mức độ ưu tiên P0/P1/P2.
+        </p>
+        <span class="card-cta cta-secondary">Mở Bảng Audit →</span>
+      </a>
+    </main>
+
+    <footer>
+      Meta Gym Design System • Nhánh <code>design</code> • Sẵn sàng deploy Static Site trên Render
+    </footer>
+  </div>
+</body>
+</html>
