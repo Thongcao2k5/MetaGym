@@ -10,6 +10,65 @@ const dashboardQuerySchema = z.strictObject({
   to: z.iso.date().optional(),
 });
 
+const dashboardCompareQuerySchema = z.strictObject({
+  from: z.iso.date(),
+  to: z.iso.date(),
+  compareFrom: z.iso.date().optional(),
+  compareTo: z.iso.date().optional(),
+});
+
+function shiftIsoDate(isoDate, deltaDays) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const utc = Date.UTC(year, month - 1, day + deltaDays);
+  return new Date(utc).toISOString().slice(0, 10);
+}
+
+function subtractMonthsIso(isoDate, months) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const targetMonthIndex = month - 1 - months;
+  const targetYear = year + Math.floor(targetMonthIndex / 12);
+  const normalizedMonth = ((targetMonthIndex % 12) + 12) % 12;
+  const maxDayInMonth = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+  const clampedDay = Math.min(day, maxDayInMonth);
+  return new Date(Date.UTC(targetYear, normalizedMonth, clampedDay)).toISOString().slice(0, 10);
+}
+
+function diffIsoDaysInclusive(from, to) {
+  const start = Date.parse(`${from}T00:00:00Z`);
+  const end = Date.parse(`${to}T00:00:00Z`);
+  return Math.round((end - start) / 86400000) + 1;
+}
+
+function computeMetricComparison(currentVal, previousVal) {
+  const current = Number(currentVal ?? 0);
+  const previous = Number(previousVal ?? 0);
+  const delta = current - previous;
+  let percentChange = 0;
+  let isBaselineZero = false;
+
+  if (previous === 0) {
+    if (current > 0) {
+      percentChange = 100;
+      isBaselineZero = true;
+    } else if (current < 0) {
+      percentChange = -100;
+      isBaselineZero = true;
+    }
+  } else {
+    percentChange = Number((((current - previous) / Math.abs(previous)) * 100).toFixed(1));
+  }
+
+  const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+  return {
+    current,
+    previous,
+    delta,
+    percentChange,
+    direction,
+    isBaselineZero,
+  };
+}
+
 const vnDateFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: VIETNAM_TIMEZONE,
   year: 'numeric',
@@ -137,6 +196,354 @@ function accumulateRevenueByDay({
   };
 }
 
+async function fetchDashboardSnapshot(database, from, to) {
+  const chartTo = formatVietnamDate(new Date());
+  const chartFrom = subtractMonthsIso(chartTo, 6);
+
+  const [
+    usersResult,
+    membershipsResult,
+    checkinsResult,
+    relationshipsResult,
+    incidentsResult,
+    disputedTerminationsResult,
+    gymPaymentsResult,
+    voidReversalsResult,
+    coachPaymentsResult,
+    simulatedRefundsResult,
+    newMembersResult,
+    chartGymPaymentsResult,
+    chartVoidReversalsResult,
+    chartCoachPaymentsResult,
+    chartSimulatedRefundsResult,
+  ] = await Promise.all([
+    database.query(
+      `SELECT role, status, count(*)::int AS count
+       FROM users
+       WHERE role IN ('MEMBER', 'COACH')
+       GROUP BY role, status`,
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM member_memberships
+       WHERE status = 'ACTIVE'
+         AND start_date <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+         AND end_date >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM gym_visits
+       WHERE visit_day = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
+    ),
+    database.query(
+      `SELECT status, pause_reason, count(*)::int AS count
+       FROM coach_relationships
+       WHERE status IN ('ACTIVE', 'PAUSED')
+       GROUP BY status, pause_reason`,
+    ),
+    database.query(
+      `SELECT member_choice, count(*)::int AS count
+       FROM coach_lock_incidents
+       WHERE status = 'OPEN'
+       GROUP BY member_choice`,
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM coach_termination_requests
+       WHERE status = 'DISPUTED'`,
+    ),
+    database.query(
+      `SELECT (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+              coalesce(sum(amount), 0)::text AS amount,
+              count(*)::int AS count
+       FROM payments
+       WHERE status = 'SUCCESS'
+         AND (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+       GROUP BY day
+       ORDER BY day`,
+      [from, to],
+    ),
+    database.query(
+      `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+              coalesce(sum(reversed_amount), 0)::text AS amount,
+              count(*)::int AS count
+       FROM payment_adjustments
+       WHERE adjustment_type = 'VOID_REVERSAL'
+         AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+       GROUP BY day
+       ORDER BY day`,
+      [from, to],
+    ),
+    database.query(
+      `SELECT (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+              coalesce(sum(amount), 0)::text AS amount,
+              count(*)::int AS count
+       FROM coach_payment_holds
+       WHERE status = 'CONSUMED'
+         AND (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+           BETWEEN $1::date AND $2::date
+       GROUP BY day
+       ORDER BY day`,
+      [from, to],
+    ),
+    database.query(
+      `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+              coalesce(sum(refund_amount), 0)::text AS amount,
+              count(*)::int AS count
+       FROM simulated_refunds
+       WHERE status = 'COMPLETED'
+         AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+       GROUP BY day
+       ORDER BY day`,
+      [from, to],
+    ),
+        database.query(
+          `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+                  count(*)::int AS count
+           FROM users
+           WHERE role = 'MEMBER'
+             AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+           GROUP BY day
+           ORDER BY day`,
+          [from, to],
+        ),
+        database.query(
+          `SELECT (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+                  coalesce(sum(amount), 0)::text AS amount,
+                  count(*)::int AS count
+           FROM payments
+           WHERE status = 'SUCCESS'
+             AND (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+           GROUP BY day
+           ORDER BY day`,
+          [chartFrom, chartTo],
+        ),
+        database.query(
+          `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+                  coalesce(sum(reversed_amount), 0)::text AS amount,
+                  count(*)::int AS count
+           FROM payment_adjustments
+           WHERE adjustment_type = 'VOID_REVERSAL'
+             AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+           GROUP BY day
+           ORDER BY day`,
+          [chartFrom, chartTo],
+        ),
+        database.query(
+          `SELECT (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+                  coalesce(sum(amount), 0)::text AS amount,
+                  count(*)::int AS count
+           FROM coach_payment_holds
+           WHERE status = 'CONSUMED'
+             AND (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+               BETWEEN $1::date AND $2::date
+           GROUP BY day
+           ORDER BY day`,
+          [chartFrom, chartTo],
+        ),
+        database.query(
+          `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
+                  coalesce(sum(refund_amount), 0)::text AS amount,
+                  count(*)::int AS count
+           FROM simulated_refunds
+           WHERE status = 'COMPLETED'
+             AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
+           GROUP BY day
+           ORDER BY day`,
+          [chartFrom, chartTo],
+        ),
+      ]);
+
+  const userCounts = Object.fromEntries(
+    usersResult.rows.map((row) => [`${row.role}_${row.status}`, row.count]),
+  );
+
+  let activeCoachRelationships = 0;
+  let pausedMembershipExpired = 0;
+  let pausedCoachLocked = 0;
+  let pausedMemberLocked = 0;
+  let pausedTotal = 0;
+  for (const row of relationshipsResult.rows) {
+    if (row.status === 'ACTIVE') {
+      activeCoachRelationships += row.count;
+    } else if (row.status === 'PAUSED') {
+      pausedTotal += row.count;
+      if (row.pause_reason === 'MEMBERSHIP_EXPIRED') pausedMembershipExpired += row.count;
+      else if (row.pause_reason === 'COACH_LOCKED') pausedCoachLocked += row.count;
+      else if (row.pause_reason === 'MEMBER_LOCKED') pausedMemberLocked += row.count;
+    }
+  }
+
+  const incidentCounts = Object.fromEntries(
+    incidentsResult.rows.map((row) => [row.member_choice, row.count]),
+  );
+
+  const revenue = accumulateRevenueByDay({
+    gymRows: gymPaymentsResult.rows,
+    voidRows: voidReversalsResult.rows,
+    coachRows: coachPaymentsResult.rows,
+    refundRows: simulatedRefundsResult.rows,
+  });
+
+  const revenueChartData = accumulateRevenueByDay({
+    gymRows: chartGymPaymentsResult.rows,
+    voidRows: chartVoidReversalsResult.rows,
+    coachRows: chartCoachPaymentsResult.rows,
+    refundRows: chartSimulatedRefundsResult.rows,
+  });
+
+  return {
+    from,
+    to,
+    timezone: VIETNAM_TIMEZONE,
+    members: {
+      active: userCounts.MEMBER_ACTIVE ?? 0,
+      disabled: userCounts.MEMBER_DISABLED ?? 0,
+    },
+    coaches: {
+      active: userCounts.COACH_ACTIVE ?? 0,
+      disabled: userCounts.COACH_DISABLED ?? 0,
+    },
+    activeMemberships: membershipsResult.rows[0].count,
+    todayCheckins: checkinsResult.rows[0].count,
+    activeCoachRelationships,
+    pausedCoachRelationships: {
+      total: pausedTotal,
+      membershipExpired: pausedMembershipExpired,
+      coachLocked: pausedCoachLocked,
+      memberLocked: pausedMemberLocked,
+    },
+    actionQueue: {
+      coachLockedWaitingCount: incidentCounts.WAIT ?? 0,
+      coachLockedRefundRequestedCount: incidentCounts.REFUND ?? 0,
+      disputedTerminationCount: disputedTerminationsResult.rows[0].count,
+    },
+    revenue,
+    revenueChart: {
+      from: chartFrom,
+      to: chartTo,
+      byDay: revenueChartData.byDay,
+    },
+    newMembersByDay: newMembersResult.rows,
+  };
+}
+
+async function fetchPeriodCompareMetrics(database, from, to) {
+  const [
+    usersAsOfResult,
+    membershipsAsOfResult,
+    relationshipsAsOfResult,
+    incidentsAsOfResult,
+    disputesAsOfResult,
+    gymPaymentsResult,
+    voidReversalsResult,
+    coachPaymentsResult,
+    simulatedRefundsResult,
+  ] = await Promise.all([
+    database.query(
+      `SELECT role, count(*)::int AS count
+       FROM users
+       WHERE role IN ('MEMBER', 'COACH')
+         AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= $1::date
+         AND (
+           status = 'ACTIVE'
+           OR (disabled_at IS NOT NULL AND (disabled_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date > $1::date)
+         )
+       GROUP BY role`,
+      [to],
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM member_memberships
+       WHERE status <> 'CANCELLED'
+         AND start_date <= $1::date
+         AND end_date >= $1::date`,
+      [to],
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM coach_relationships
+       WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= $1::date
+         AND (
+           status = 'ACTIVE'
+           OR (ended_at IS NOT NULL AND (ended_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date > $1::date)
+         )`,
+      [to],
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM coach_lock_incidents
+       WHERE member_choice = 'WAIT'
+         AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= $1::date
+         AND (
+           status = 'OPEN'
+           OR (resolved_at IS NOT NULL AND (resolved_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date > $1::date)
+         )`,
+      [to],
+    ),
+    database.query(
+      `SELECT count(*)::int AS count
+       FROM coach_termination_requests
+       WHERE disputed_at IS NOT NULL
+         AND (disputed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date <= $1::date
+         AND (
+           status = 'DISPUTED'
+           OR (decided_at IS NOT NULL AND (decided_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date > $1::date)
+         )`,
+      [to],
+    ),
+    database.query(
+      `SELECT coalesce(sum(amount), 0)::text AS amount
+       FROM payments
+       WHERE status = 'SUCCESS'
+         AND (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date`,
+      [from, to],
+    ),
+    database.query(
+      `SELECT coalesce(sum(reversed_amount), 0)::text AS amount
+       FROM payment_adjustments
+       WHERE adjustment_type = 'VOID_REVERSAL'
+         AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date`,
+      [from, to],
+    ),
+    database.query(
+      `SELECT coalesce(sum(amount), 0)::text AS amount
+       FROM coach_payment_holds
+       WHERE status = 'CONSUMED'
+         AND (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
+           BETWEEN $1::date AND $2::date`,
+      [from, to],
+    ),
+    database.query(
+      `SELECT coalesce(sum(refund_amount), 0)::text AS amount
+       FROM simulated_refunds
+       WHERE status = 'COMPLETED'
+         AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date`,
+      [from, to],
+    ),
+  ]);
+
+  const roleCounts = Object.fromEntries(usersAsOfResult.rows.map((row) => [row.role, row.count]));
+  const gymGross = BigInt(gymPaymentsResult.rows[0].amount);
+  const voidReversals = BigInt(voidReversalsResult.rows[0].amount);
+  const coachGross = BigInt(coachPaymentsResult.rows[0].amount);
+  const simulatedRefunds = BigInt(simulatedRefundsResult.rows[0].amount);
+  const grossRevenue = Number(gymGross - voidReversals + coachGross);
+  const netRevenue = Number(gymGross - voidReversals + coachGross - simulatedRefunds);
+
+  return {
+    grossRevenue,
+    totalSimulatedRefunds: Number(simulatedRefunds),
+    netRevenue,
+    membersActive: roleCounts.MEMBER ?? 0,
+    coachesActive: roleCounts.COACH ?? 0,
+    activeMemberships: membershipsAsOfResult.rows[0].count,
+    activeCoachRelationships: relationshipsAsOfResult.rows[0].count,
+    coachLockedWaiting: incidentsAsOfResult.rows[0].count,
+    disputedTerminations: disputesAsOfResult.rows[0].count,
+  };
+}
+
 export function createDashboardRouter({ database, jwtSecret }) {
   const router = Router();
   router.use(createAuthentication({ database, jwtSecret }));
@@ -163,176 +570,96 @@ export function createDashboardRouter({ database, jwtSecret }) {
     try {
       // Ensure overdue 72h D5 termination requests are escalated to DISPUTED before counting
       await escalateOverdueTerminations(database);
+      const data = await fetchDashboardSnapshot(database, from, to);
+      return response.json({ data });
+    } catch {
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được dashboard');
+    }
+  });
 
-      const [
-        usersResult,
-        membershipsResult,
-        checkinsResult,
-        relationshipsResult,
-        incidentsResult,
-        disputedTerminationsResult,
-        gymPaymentsResult,
-        voidReversalsResult,
-        coachPaymentsResult,
-        simulatedRefundsResult,
-        newMembersResult,
-      ] = await Promise.all([
-        database.query(
-          `SELECT role, status, count(*)::int AS count
-           FROM users
-           WHERE role IN ('MEMBER', 'COACH')
-           GROUP BY role, status`,
-        ),
-        database.query(
-          `SELECT count(*)::int AS count
-           FROM member_memberships
-           WHERE status = 'ACTIVE'
-             AND start_date <= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
-             AND end_date >= (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
-        ),
-        database.query(
-          `SELECT count(*)::int AS count
-           FROM gym_visits
-           WHERE visit_day = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
-        ),
-        database.query(
-          `SELECT status, pause_reason, count(*)::int AS count
-           FROM coach_relationships
-           WHERE status IN ('ACTIVE', 'PAUSED')
-           GROUP BY status, pause_reason`,
-        ),
-        database.query(
-          `SELECT member_choice, count(*)::int AS count
-           FROM coach_lock_incidents
-           WHERE status = 'OPEN'
-           GROUP BY member_choice`,
-        ),
-        database.query(
-          `SELECT count(*)::int AS count
-           FROM coach_termination_requests
-           WHERE status = 'DISPUTED'`,
-        ),
-        database.query(
-          `SELECT (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
-                  coalesce(sum(amount), 0)::text AS amount,
-                  count(*)::int AS count
-           FROM payments
-           WHERE status = 'SUCCESS'
-             AND (confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
-           GROUP BY day
-           ORDER BY day`,
-          [from, to],
-        ),
-        database.query(
-          `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
-                  coalesce(sum(reversed_amount), 0)::text AS amount,
-                  count(*)::int AS count
-           FROM payment_adjustments
-           WHERE adjustment_type = 'VOID_REVERSAL'
-             AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
-           GROUP BY day
-           ORDER BY day`,
-          [from, to],
-        ),
-        database.query(
-          `SELECT (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
-                  coalesce(sum(amount), 0)::text AS amount,
-                  count(*)::int AS count
-           FROM coach_payment_holds
-           WHERE status = 'CONSUMED'
-             AND (coalesce(settled_at, created_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
-               BETWEEN $1::date AND $2::date
-           GROUP BY day
-           ORDER BY day`,
-          [from, to],
-        ),
-        database.query(
-          `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
-                  coalesce(sum(refund_amount), 0)::text AS amount,
-                  count(*)::int AS count
-           FROM simulated_refunds
-           WHERE status = 'COMPLETED'
-             AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
-           GROUP BY day
-           ORDER BY day`,
-          [from, to],
-        ),
-        database.query(
-          `SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS day,
-                  count(*)::int AS count
-           FROM users
-           WHERE role = 'MEMBER'
-             AND (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date
-           GROUP BY day
-           ORDER BY day`,
-          [from, to],
-        ),
+  router.get('/admin/dashboard/compare', async (request, response) => {
+    if (request.authUser.role !== 'ADMIN') {
+      return fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị');
+    }
+
+    const parsed = dashboardCompareQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Khoảng ngày so sánh không hợp lệ');
+    }
+
+    const { from, to } = parsed.data;
+    if (from > to) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Khoảng ngày hiện tại không hợp lệ');
+    }
+
+    const hasCompareFrom = Boolean(parsed.data.compareFrom);
+    const hasCompareTo = Boolean(parsed.data.compareTo);
+    if (hasCompareFrom !== hasCompareTo) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc kỳ so sánh');
+    }
+
+    let compareFrom = parsed.data.compareFrom;
+    let compareTo = parsed.data.compareTo;
+    if (!compareFrom || !compareTo) {
+      const spanDays = diffIsoDaysInclusive(from, to);
+      compareTo = shiftIsoDate(from, -1);
+      compareFrom = shiftIsoDate(compareTo, -(spanDays - 1));
+    }
+
+    if (compareFrom > compareTo) {
+      return fail(response, 422, 'VALIDATION_ERROR', 'Khoảng ngày kỳ so sánh không hợp lệ');
+    }
+
+    try {
+      await escalateOverdueTerminations(database);
+      const [dashboard, currentMetrics, previousMetrics] = await Promise.all([
+        fetchDashboardSnapshot(database, from, to),
+        fetchPeriodCompareMetrics(database, from, to),
+        fetchPeriodCompareMetrics(database, compareFrom, compareTo),
       ]);
 
-      const userCounts = Object.fromEntries(
-        usersResult.rows.map((row) => [`${row.role}_${row.status}`, row.count]),
-      );
-
-      let activeCoachRelationships = 0;
-      let pausedMembershipExpired = 0;
-      let pausedCoachLocked = 0;
-      let pausedMemberLocked = 0;
-      let pausedTotal = 0;
-      for (const row of relationshipsResult.rows) {
-        if (row.status === 'ACTIVE') {
-          activeCoachRelationships += row.count;
-        } else if (row.status === 'PAUSED') {
-          pausedTotal += row.count;
-          if (row.pause_reason === 'MEMBERSHIP_EXPIRED') pausedMembershipExpired += row.count;
-          else if (row.pause_reason === 'COACH_LOCKED') pausedCoachLocked += row.count;
-          else if (row.pause_reason === 'MEMBER_LOCKED') pausedMemberLocked += row.count;
-        }
-      }
-
-      const incidentCounts = Object.fromEntries(
-        incidentsResult.rows.map((row) => [row.member_choice, row.count]),
-      );
-
-      const revenue = accumulateRevenueByDay({
-        gymRows: gymPaymentsResult.rows,
-        voidRows: voidReversalsResult.rows,
-        coachRows: coachPaymentsResult.rows,
-        refundRows: simulatedRefundsResult.rows,
-      });
+      const comparison = {
+        grossRevenue: computeMetricComparison(currentMetrics.grossRevenue, previousMetrics.grossRevenue),
+        totalSimulatedRefunds: computeMetricComparison(
+          currentMetrics.totalSimulatedRefunds,
+          previousMetrics.totalSimulatedRefunds,
+        ),
+        netRevenue: computeMetricComparison(currentMetrics.netRevenue, previousMetrics.netRevenue),
+        membersActive: computeMetricComparison(currentMetrics.membersActive, previousMetrics.membersActive),
+        coachesActive: computeMetricComparison(currentMetrics.coachesActive, previousMetrics.coachesActive),
+        activeMemberships: computeMetricComparison(currentMetrics.activeMemberships, previousMetrics.activeMemberships),
+        activeCoachRelationships: computeMetricComparison(
+          currentMetrics.activeCoachRelationships,
+          previousMetrics.activeCoachRelationships,
+        ),
+        coachLockedWaiting: computeMetricComparison(
+          currentMetrics.coachLockedWaiting,
+          previousMetrics.coachLockedWaiting,
+        ),
+        disputedTerminations: computeMetricComparison(
+          currentMetrics.disputedTerminations,
+          previousMetrics.disputedTerminations,
+        ),
+      };
 
       return response.json({
         data: {
-          from,
-          to,
-          timezone: VIETNAM_TIMEZONE,
-          members: {
-            active: userCounts.MEMBER_ACTIVE ?? 0,
-            disabled: userCounts.MEMBER_DISABLED ?? 0,
+          current: {
+            from,
+            to,
+            metrics: currentMetrics,
+            dashboard,
           },
-          coaches: {
-            active: userCounts.COACH_ACTIVE ?? 0,
-            disabled: userCounts.COACH_DISABLED ?? 0,
+          previous: {
+            from: compareFrom,
+            to: compareTo,
+            metrics: previousMetrics,
           },
-          activeMemberships: membershipsResult.rows[0].count,
-          todayCheckins: checkinsResult.rows[0].count,
-          activeCoachRelationships,
-          pausedCoachRelationships: {
-            total: pausedTotal,
-            membershipExpired: pausedMembershipExpired,
-            coachLocked: pausedCoachLocked,
-            memberLocked: pausedMemberLocked,
-          },
-          actionQueue: {
-            coachLockedWaitingCount: incidentCounts.WAIT ?? 0,
-            coachLockedRefundRequestedCount: incidentCounts.REFUND ?? 0,
-            disputedTerminationCount: disputedTerminationsResult.rows[0].count,
-          },
-          revenue,
-          newMembersByDay: newMembersResult.rows,
+          comparison,
         },
       });
     } catch {
-      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được dashboard');
+      return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được dữ liệu so sánh dashboard');
     }
   });
 

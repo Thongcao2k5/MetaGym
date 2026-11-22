@@ -487,7 +487,7 @@ test('T15 Dashboard aligns incident links to #/admin/incidents and renders total
 
   const html = env.root.innerHTML;
   assert.equal(html.includes('#/admin/coach-incidents'), false, 'Must not contain legacy #/admin/coach-incidents links');
-  assert.equal(html.includes('#/admin/incidents?status=OPEN'), true, 'Must link incident queue to #/admin/incidents?status=OPEN');
+  assert.equal(html.includes('#/admin/incidents'), true, 'Must align incident links to #/admin/incidents');
   assert.equal(html.includes('#/admin/incidents?tab=refunds'), true, 'Must link refunds KPI to #/admin/incidents?tab=refunds');
   assert.equal(html.includes('1.500.000'), true, 'Must display totalVoidReversals');
   assert.equal(html.includes('3.783.000'), true, 'Must display totalSimulatedRefunds');

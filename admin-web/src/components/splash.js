@@ -326,53 +326,164 @@ function paintCometDiveAndOrbit(ctx, cx, cy, stemX, stemY, stemW, stemH, progres
   }
 }
 
-function drawTrimmedMStroke(ctx, leftX, midX, rightX, topY, botY, frac, alpha, stemW) {
-  if (frac <= 0.001) return;
+let mMaskCanvas = null;
+
+function paintMaskedM(ctx, charX, cy, mLeft, mRight, mAscent, mDescent, leftX, midX, rightX, topY, botY, frac, stemW) {
+  if (frac >= 0.99) {
+    ctx.fillStyle = '#FF5E36';
+    ctx.fillText('M', charX, cy);
+    return;
+  }
+
+  const pad = 12;
+  const boxW = Math.ceil(mLeft + mRight + pad * 2);
+  const boxH = Math.ceil(mAscent + mDescent + pad * 2);
+  const originX = charX - mLeft - pad;
+  const originY = cy - mAscent - pad;
+
+  if (!mMaskCanvas && typeof document !== 'undefined') {
+    mMaskCanvas = document.createElement('canvas');
+  }
+  if (!mMaskCanvas) {
+    ctx.fillStyle = '#FF5E36';
+    ctx.fillText('M', charX, cy);
+    return;
+  }
+
+  if (mMaskCanvas.width !== boxW || mMaskCanvas.height !== boxH) {
+    mMaskCanvas.width = boxW;
+    mMaskCanvas.height = boxH;
+  }
+
+  const mCtx = mMaskCanvas.getContext('2d');
+  if (!mCtx) return;
+
+  mCtx.save();
+  mCtx.clearRect(0, 0, boxW, boxH);
+
+  // 1. Build the reveal mask (left stem + traced stroke) using source-over
+  mCtx.globalCompositeOperation = 'source-over';
+  mCtx.fillStyle = '#000';
+  drawRoundedRect(mCtx, leftX - originX, (topY + botY) / 2 - originY, 15, botY - topY + 10, 7.5);
+  mCtx.fill();
+
   const segments = [
-    { x1: leftX, y1: topY + 1.5, x2: midX, y2: botY - 3 },
-    { x1: midX, y1: botY - 3, x2: rightX, y2: topY + 1.5 },
-    { x1: rightX, y1: topY + 1.5, x2: rightX, y2: botY },
+    { x1: leftX - originX, y1: topY - originY, x2: midX - originX, y2: botY - 4 - originY },
+    { x1: midX - originX, y1: botY - 4 - originY, x2: rightX - originX, y2: topY - originY },
+    { x1: rightX - originX, y1: topY - originY, x2: rightX - originX, y2: botY - originY },
   ];
   const lens = segments.map((s) => Math.hypot(s.x2 - s.x1, s.y2 - s.y1));
   const total = lens.reduce((a, b) => a + b, 0);
   const target = total * clamp(frac);
 
-  ctx.save();
-  ctx.strokeStyle = `rgba(255, 94, 54, ${alpha})`;
-  ctx.lineWidth = stemW;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(segments[0].x1, segments[0].y1);
-
-  let acc = 0;
-  let tipX = segments[0].x1;
-  let tipY = segments[0].y1;
+  let tipX = leftX;
+  let tipY = topY;
   let tipAngle = 0;
 
-  for (let i = 0; i < segments.length; i += 1) {
-    const seg = segments[i];
-    const len = lens[i];
-    if (acc >= target) break;
-    const remain = target - acc;
-    const t = clamp(remain / len);
-    const nx = lerp(seg.x1, seg.x2, t);
-    const ny = lerp(seg.y1, seg.y2, t);
-    ctx.lineTo(nx, ny);
-    tipX = nx;
-    tipY = ny;
-    tipAngle = Math.atan2(seg.y2 - seg.y1, seg.x2 - seg.x1);
-    acc += len;
+  if (target > 0.01) {
+    mCtx.strokeStyle = '#000';
+    mCtx.lineWidth = 15;
+    mCtx.lineCap = 'round';
+    mCtx.lineJoin = 'round';
+    mCtx.beginPath();
+    mCtx.moveTo(segments[0].x1, segments[0].y1);
+
+    let acc = 0;
+    for (let i = 0; i < segments.length; i += 1) {
+      const seg = segments[i];
+      const len = lens[i];
+      if (acc >= target) break;
+      const remain = target - acc;
+      const t = clamp(remain / len);
+      const nx = lerp(seg.x1, seg.x2, t);
+      const ny = lerp(seg.y1, seg.y2, t);
+      mCtx.lineTo(nx, ny);
+      tipX = nx + originX;
+      tipY = ny + originY;
+      tipAngle = Math.atan2(seg.y2 - seg.y1, seg.x2 - seg.x1);
+      acc += len;
+    }
+    mCtx.stroke();
   }
-  ctx.stroke();
-  ctx.restore();
+
+  // 2. Paint the real 'M' glyph clipped inside the combined mask
+  mCtx.globalCompositeOperation = 'source-in';
+  mCtx.font = ctx.font;
+  mCtx.textBaseline = 'middle';
+  mCtx.fillStyle = '#FF5E36';
+  mCtx.fillText('M', charX - originX, cy - originY);
+  mCtx.restore();
+
+  ctx.drawImage(mMaskCanvas, originX, originY);
 
   if (frac < 0.98 && frac > 0.02) {
     paintDirectionalCometDroplet(ctx, tipX, tipY, tipAngle, 14, 4.4);
   }
 }
 
-function renderMorphFrame(ctx, w, h, progress, pulse, isLight) {
+let sheenCanvas = null;
+
+function paintWordDiagonalSheen(ctx, w, h, wordStartX, totalWordWidth, cy, sheenT) {
+  if (sheenT <= 0 || sheenT >= 1 || typeof document === 'undefined') return;
+
+  if (!sheenCanvas) {
+    sheenCanvas = document.createElement('canvas');
+  }
+  const boxH = 80;
+  const boxW = Math.ceil(totalWordWidth + 40);
+  const originX = wordStartX - 20;
+  const originY = cy - boxH / 2;
+
+  if (sheenCanvas.width !== boxW || sheenCanvas.height !== boxH) {
+    sheenCanvas.width = boxW;
+    sheenCanvas.height = boxH;
+  }
+  const sCtx = sheenCanvas.getContext('2d');
+  if (!sCtx) return;
+
+  sCtx.save();
+  sCtx.clearRect(0, 0, boxW, boxH);
+  sCtx.globalCompositeOperation = 'source-over';
+  sCtx.font = ctx.font;
+  sCtx.textBaseline = 'middle';
+  sCtx.fillStyle = '#FFFFFF';
+
+  // Paint the full MetaGym wordmark as an alpha mask for the sheen
+  let x = 20;
+  for (let i = 0; i < WORD_CHARS.length; i += 1) {
+    const ch = WORD_CHARS[i];
+    sCtx.fillText(ch, x, boxH / 2);
+    x += sCtx.measureText(ch).width + (i < WORD_CHARS.length - 1 ? 1.2 : 0);
+  }
+
+  // Sweep a slanted bright light beam from left to right across the letters
+  sCtx.globalCompositeOperation = 'source-in';
+  const bandHalf = 34;
+  const travelStart = -bandHalf - 18;
+  const travelEnd = boxW + bandHalf + 18;
+  const beamX = lerp(travelStart, travelEnd, easeInOutCubic(sheenT));
+  const slant = 22;
+
+  const grad = sCtx.createLinearGradient(
+    beamX - bandHalf,
+    0,
+    beamX + bandHalf + slant,
+    boxH,
+  );
+  grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.25)');
+  grad.addColorStop(0.5, 'rgba(255, 248, 232, 0.92)');
+  grad.addColorStop(0.65, 'rgba(255, 255, 255, 0.25)');
+  grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  sCtx.fillStyle = grad;
+  sCtx.fillRect(0, 0, boxW, boxH);
+  sCtx.restore();
+
+  ctx.drawImage(sheenCanvas, originX, originY);
+}
+
+function renderMorphFrame(ctx, w, h, progress, pulse, isLight, sheenT = 0) {
   ctx.clearRect(0, 0, w, h);
   const cx = w / 2;
   const cy = h / 2 + 4;
@@ -399,12 +510,19 @@ function renderMorphFrame(ctx, w, h, progress, pulse, isLight) {
     cursorX += cw + 1.2;
   }
 
-  const mLeftStemX = charXs[0] + 4.5;
-  const mRightStemX = charXs[0] + charWidths[0] - 4.5;
-  const mMidX = charXs[0] + charWidths[0] / 2;
-  const mTopY = cy - 17.5;
-  const mBotY = cy + 17.5;
+  const mMetrics = ctx.measureText('M');
   const stemW = 7.4;
+  const mAscent = Number.isFinite(mMetrics.actualBoundingBoxAscent) ? mMetrics.actualBoundingBoxAscent : 17.5;
+  const mDescent = Number.isFinite(mMetrics.actualBoundingBoxDescent) ? mMetrics.actualBoundingBoxDescent : 17.5;
+  const mLeft = Number.isFinite(mMetrics.actualBoundingBoxLeft) ? mMetrics.actualBoundingBoxLeft : 0;
+  const mRight = Number.isFinite(mMetrics.actualBoundingBoxRight) ? mMetrics.actualBoundingBoxRight : charWidths[0];
+
+  const mLeftStemX = charXs[0] - mLeft + stemW * 0.52;
+  const mRightStemX = charXs[0] + mRight - stemW * 0.52;
+  const mMidX = (mLeftStemX + mRightStemX) / 2;
+  const mTopY = cy - mAscent + stemW * 0.45;
+  const mBotY = cy + mDescent - stemW * 0.45;
+  const mStemCenterY = (mTopY + mBotY) / 2;
 
   if (progress < 0.16) {
     paintFallingAndReboundingDroplet(ctx, cx, cy, progress);
@@ -419,25 +537,27 @@ function renderMorphFrame(ctx, w, h, progress, pulse, isLight) {
   }
 
   if (progress >= 0.45 && progress < 0.635) {
-    paintCometDiveAndOrbit(ctx, cx, cy, mLeftStemX, cy, stemW, mBotY - mTopY, progress);
+    paintCometDiveAndOrbit(ctx, cx, cy, mLeftStemX, mStemCenterY, stemW, mBotY - mTopY, progress);
   }
 
   if (progress >= 0.62) {
     const mDrawProg = segment(progress, 0.62, 0.74, easeInOutCubic);
-    const mCrossfade = segment(progress, 0.7, 0.78, easeOutCubic);
-
-    if (mCrossfade < 0.99) {
-      const strokeAlpha = 1 - mCrossfade * 0.85;
-      ctx.fillStyle = `rgba(255, 94, 54, ${strokeAlpha})`;
-      drawRoundedRect(ctx, mLeftStemX, cy, stemW, mBotY - mTopY, stemW / 2);
-      ctx.fill();
-      drawTrimmedMStroke(ctx, mLeftStemX, mMidX, mRightStemX, mTopY, mBotY, mDrawProg, strokeAlpha, stemW);
-    }
-
-    if (mCrossfade > 0.01) {
-      ctx.fillStyle = `rgba(255, 94, 54, ${mCrossfade})`;
-      ctx.fillText('M', charXs[0], cy);
-    }
+    paintMaskedM(
+      ctx,
+      charXs[0],
+      cy,
+      mLeft,
+      mRight,
+      mAscent,
+      mDescent,
+      mLeftStemX,
+      mMidX,
+      mRightStemX,
+      mTopY,
+      mBotY,
+      mDrawProg,
+      stemW,
+    );
 
     const timings = [
       [0.7, 0.78],
@@ -497,6 +617,10 @@ function renderMorphFrame(ctx, w, h, progress, pulse, isLight) {
       ctx.stroke();
       ctx.restore();
     }
+
+    if (sheenT > 0 && sheenT < 1) {
+      paintWordDiagonalSheen(ctx, w, h, wordStartX, totalWordWidth, cy, sheenT);
+    }
   }
 }
 
@@ -504,7 +628,9 @@ export function playAppSplash(onDone) {
   const splashEl = document.querySelector('#app .app-splash');
   const canvas = splashEl?.querySelector('#splash-canvas');
   const subEl = splashEl?.querySelector('.app-splash-sub');
-  const trackEl = splashEl?.querySelector('.app-splash-track');
+  const progressEl = splashEl?.querySelector('.app-splash-progress');
+  const barEl = splashEl?.querySelector('#splash-bar');
+  const pctEl = splashEl?.querySelector('#splash-pct');
   const reducedMotion = globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
   if (!splashEl || !canvas || reducedMotion) {
@@ -527,29 +653,38 @@ export function playAppSplash(onDone) {
   ctx.scale((displayWidth / width) * dpr, (displayHeight / height) * dpr);
 
   const isLight = document.documentElement.getAttribute('data-bs-theme') === 'light';
-  const durationMs = 3600;
-  const holdMs = 550;
+  const logoMs = 3500;
+  const loadMs = 1150;
+  const totalMs = logoMs + loadMs;
   const startTime = performance.now();
 
   const frame = (now) => {
     const elapsed = now - startTime;
-    const progress = clamp(elapsed / durationMs);
+    const progress = clamp(elapsed / logoMs);
+    const sheenT = clamp((elapsed - logoMs * 0.89) / (logoMs * 0.11));
     const pulse = 0.5 - 0.5 * Math.cos(((elapsed % 2000) / 2000) * Math.PI * 2);
 
-    renderMorphFrame(ctx, width, height, progress, pulse, isLight);
+    renderMorphFrame(ctx, width, height, progress, pulse, isLight, sheenT);
 
-    const subOpacity = segment(progress, 0.74, 0.96, easeOutCubic);
-    const barOpacity = segment(progress, 0.8, 1, easeOutCubic);
+    const subOpacity = segment(progress, 0.68, 0.9, easeOutCubic);
     if (subEl) {
       subEl.style.opacity = String(subOpacity);
       subEl.style.transform = `translateY(${(1 - subOpacity) * 10}px)`;
     }
-    if (trackEl) {
-      trackEl.style.opacity = String(barOpacity);
-      trackEl.style.transform = `translateY(${(1 - barOpacity) * 8}px)`;
-    }
 
-    if (elapsed < durationMs + holdMs) {
+    // Start 0% -> 100% loading bar (slow -> fast -> slow) after the logo completes
+    const loadT = elapsed <= logoMs ? 0 : clamp((elapsed - logoMs) / loadMs);
+    const loadFade = elapsed <= logoMs ? 0 : clamp((elapsed - logoMs) / 140);
+    if (progressEl) {
+      progressEl.style.opacity = String(loadFade);
+      progressEl.style.transform = `translateY(${(1 - loadFade) * 6}px)`;
+    }
+    const easedLoad = 0.7 * easeInOutCubic(loadT) + 0.3 * easeInOutSine(loadT);
+    const loadPct = Math.min(100, Math.round(easedLoad * 100));
+    if (barEl) barEl.style.width = `${loadPct}%`;
+    if (pctEl) pctEl.textContent = `${loadPct}%`;
+
+    if (elapsed < totalMs) {
       requestAnimationFrame(frame);
     } else {
       onDone();

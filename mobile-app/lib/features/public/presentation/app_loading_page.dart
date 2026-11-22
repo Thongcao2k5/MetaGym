@@ -51,6 +51,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     with TickerProviderStateMixin {
   late final AnimationController _morphController;
   late final AnimationController _pulseController;
+  late final AnimationController _loadController;
   bool _didStartSequence = false;
 
   @override
@@ -64,11 +65,17 @@ class _AppLoadingPageState extends State<AppLoadingPage>
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     );
+    _loadController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1150),
+    );
 
     if (widget.debugProgressOverride != null) {
       _morphController.value = widget.debugProgressOverride!.clamp(0.0, 1.0);
+      _loadController.value = widget.debugProgressOverride! >= 1.0 ? 1.0 : 0.0;
     } else if (MetaGymTheme.isFlutterTestEnvironment) {
       _morphController.value = 1.0;
+      _loadController.value = 1.0;
     }
   }
 
@@ -92,6 +99,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
 
     if (MediaQuery.disableAnimationsOf(context)) {
       _morphController.value = 1.0;
+      _loadController.value = 1.0;
       await Future<void>.delayed(const Duration(milliseconds: 400));
       session?.completeSplashGate();
       return;
@@ -104,8 +112,8 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     await _morphController.forward(from: 0.0).orCancel.catchError((_) {});
     if (!mounted) return;
 
-    // Giữ trọn vẹn logo MetaGym hoàn chỉnh thêm 850ms trước khi chuyển mượt sang màn Đăng nhập
-    await Future<void>.delayed(const Duration(milliseconds: 850));
+    // Khởi chạy thanh loading 0% -> 100% sau khi animation logo hoàn tất
+    await _loadController.forward(from: 0.0).orCancel.catchError((_) {});
     if (!mounted) return;
     session?.completeSplashGate();
   }
@@ -114,6 +122,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
   void dispose() {
     _morphController.dispose();
     _pulseController.dispose();
+    _loadController.dispose();
     super.dispose();
   }
 
@@ -157,6 +166,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                         child: disableAnimations
                             ? _buildContent(
                                 morphProgress: 1.0,
+                                loadProgress: 1.0,
                                 pulse: 0.0,
                                 animatePulse: false,
                               )
@@ -164,6 +174,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                                 animation: Listenable.merge([
                                   _morphController,
                                   _pulseController,
+                                  _loadController,
                                 ]),
                                 builder: (context, _) {
                                   final t =
@@ -172,8 +183,12 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                                         1.0,
                                       ) ??
                                       _morphController.value;
+                                  final loadT = widget.debugProgressOverride != null
+                                      ? (t >= 1.0 ? 1.0 : 0.0)
+                                      : _loadController.value;
                                   return _buildContent(
                                     morphProgress: t,
+                                    loadProgress: loadT,
                                     pulse: _pulseController.value,
                                     animatePulse:
                                         widget.debugProgressOverride == null &&
@@ -195,6 +210,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
 
   Widget _buildContent({
     required double morphProgress,
+    required double loadProgress,
     required double pulse,
     required bool animatePulse,
   }) {
@@ -207,7 +223,11 @@ class _AppLoadingPageState extends State<AppLoadingPage>
       0.96,
       Curves.easeOutCubic,
     );
-    final barFade = _interval(morphProgress, 0.80, 1.0, Curves.easeOutCubic);
+    final barFade = _interval(loadProgress, 0.0, 0.16, Curves.easeOutCubic);
+    final clampedLoad = loadProgress.clamp(0.0, 1.0);
+    final barValue =
+        (0.7 * Curves.easeInOutCubic.transform(clampedLoad)) +
+        (0.3 * Curves.easeInOutSine.transform(clampedLoad));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -246,7 +266,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
           offsetY: 10,
           child: RepaintBoundary(
             child: _WarmGlassProgressBar(
-              progress: animatePulse ? breath : 0.65,
+              progress: barValue,
             ),
           ),
         ),
@@ -285,27 +305,47 @@ class _WarmGlassProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 196,
-      height: 5,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0x66A79D92), width: 1),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment(-1.0 + (2.0 * progress), 0),
-        widthFactor: 0.44,
-        child: const DecoratedBox(
+    final pct = (progress * 100).round().clamp(0, 100);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 172,
+          height: 5,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(999)),
-            gradient: LinearGradient(
-              colors: [Color(0xFFF5B041), MetaGymTheme.brandOrange],
+            color: const Color(0x80211E1C),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0x66A79D92), width: 1),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress.clamp(0.0, 1.0),
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(999)),
+                gradient: LinearGradient(
+                  colors: [MetaGymTheme.brandOrange, Color(0xFFF5B041)],
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 38,
+          child: Text(
+            '$pct%',
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: MetaGymTheme.brandOrange,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -450,31 +490,51 @@ class _MetaGymMorphPainter extends CustomPainter {
     // -------------------------------------------------------------------------
     if (progress >= 0.62) {
       final mDrawProg = _segment(progress, 0.62, 0.74, Curves.easeInOutCubic);
-      final mFontCrossfade = _segment(
-        progress,
-        0.70,
-        0.78,
-        Curves.easeOutCubic,
+      final mTp = charPainters[0];
+      final mPos = charOffsets[0];
+      mTp.text = TextSpan(
+        text: 'M',
+        style: TextStyle(
+          fontFamily: MetaGymTheme.fontFamily,
+          fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+          fontSize: 45,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
+          height: 1.0,
+          color: MetaGymTheme.brandOrange,
+        ),
       );
+      mTp.layout();
 
-      // While stroke M is drawing or crossfading into typographic 'M'
-      if (mFontCrossfade < 0.99) {
-        final strokeAlpha = 1.0 - mFontCrossfade * 0.85;
-        // Left vertical orange bar
+      if (mDrawProg >= 0.99) {
+        mTp.paint(canvas, mPos);
+      } else {
+        final maskBounds = Rect.fromLTWH(
+          mPos.dx - 12.0,
+          mPos.dy - 12.0,
+          mTp.width + 24.0,
+          mTp.height + 24.0,
+        );
+        canvas.saveLayer(maskBounds, Paint());
+        mTp.paint(canvas, mPos);
+
+        // Reveal the real typographic 'M' along the traced stroke using dstIn
+        canvas.saveLayer(
+          maskBounds,
+          Paint()..blendMode = BlendMode.dstIn,
+        );
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(
               center: Offset(mLeftStemX, center.dy),
-              width: stemW,
-              height: mBotY - mTopY,
+              width: 15.0,
+              height: mBotY - mTopY + 12.0,
             ),
-            const Radius.circular(stemW / 2),
+            const Radius.circular(7.5),
           ),
-          Paint()
-            ..color = MetaGymTheme.brandOrange.withValues(alpha: strokeAlpha),
+          Paint()..color = Colors.black,
         );
 
-        // Smooth stroke drawing of the rest of 'M' led by a directional droplet tip
         final mStrokePath = Path()
           ..moveTo(mLeftStemX, mTopY + 1.5)
           ..lineTo(mMidX, mBotY - 3.0)
@@ -485,32 +545,29 @@ class _MetaGymMorphPainter extends CustomPainter {
           canvas: canvas,
           path: mStrokePath,
           endFrac: mDrawProg,
-          strokeColor: MetaGymTheme.brandOrange.withValues(alpha: strokeAlpha),
-          strokeWidth: stemW,
-          drawGlowingTip: mDrawProg < 0.98,
+          strokeColor: Colors.black,
+          strokeWidth: 15.0,
+          drawGlowingTip: false,
         );
-      }
-
-      // Render crisp typographic 'M' crossfading in smoothly
-      if (mFontCrossfade > 0.01) {
-        canvas.save();
-        final mTp = charPainters[0];
-        final mPos = charOffsets[0];
-        mTp.text = TextSpan(
-          text: 'M',
-          style: TextStyle(
-            fontFamily: MetaGymTheme.fontFamily,
-            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-            fontSize: 45,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
-            height: 1.0,
-            color: MetaGymTheme.brandOrange.withValues(alpha: mFontCrossfade),
-          ),
-        );
-        mTp.layout();
-        mTp.paint(canvas, mPos);
         canvas.restore();
+        canvas.restore();
+
+        if (mDrawProg > 0.02 && mDrawProg < 0.98) {
+          final metrics = mStrokePath.computeMetrics().toList();
+          if (metrics.isNotEmpty) {
+            final metric = metrics.first;
+            final tangent = metric.getTangentForOffset(metric.length * mDrawProg);
+            if (tangent != null) {
+              _paintDirectionalCometDroplet(
+                canvas: canvas,
+                position: tangent.position,
+                angle: math.atan2(-tangent.vector.dy, tangent.vector.dx),
+                length: 14.0,
+                radius: 4.4,
+              );
+            }
+          }
+        }
       }
 
       // Lần lượt hiện các chữ cái: e -> t -> a -> G (Cam) -> y -> m
@@ -604,6 +661,67 @@ class _MetaGymMorphPainter extends CustomPainter {
             ..strokeWidth = 2.6
             ..strokeCap = StrokeCap.round,
         );
+      }
+
+      // Hiệu ứng sáng đường chéo lướt từ trái sang phải trên toàn bộ logo
+      final sheenT = _segment(
+        progress,
+        0.89,
+        1.0,
+        Curves.easeInOutCubic,
+      );
+      if (sheenT > 0.0 && sheenT < 1.0) {
+        final sheenBounds = Rect.fromLTWH(
+          wordStartX - 24.0,
+          center.dy - 40.0,
+          totalWordWidth + 48.0,
+          80.0,
+        );
+        canvas.saveLayer(sheenBounds, Paint());
+        for (var i = 0; i < _wordChars.length; i++) {
+          charPainters[i]
+            ..text = TextSpan(
+              text: _wordChars[i],
+              style: TextStyle(
+                fontFamily: MetaGymTheme.fontFamily,
+                fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                fontSize: 45,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+                height: 1.0,
+                color: Colors.white,
+              ),
+            )
+            ..layout()
+            ..paint(canvas, charOffsets[i]);
+        }
+        canvas.saveLayer(
+          sheenBounds,
+          Paint()..blendMode = BlendMode.srcIn,
+        );
+        final beamX = ui.lerpDouble(
+          sheenBounds.left - 40.0,
+          sheenBounds.right + 40.0,
+          sheenT,
+        )!;
+        canvas.drawRect(
+          sheenBounds,
+          Paint()
+            ..shader = ui.Gradient.linear(
+              Offset(beamX - 34.0, sheenBounds.top),
+              Offset(beamX + 56.0, sheenBounds.bottom),
+              const [
+                Color(0x00FFFFFF),
+                Color(0x40FFFFFF),
+                Color(0xEBFFF8E8),
+                Color(0x40FFFFFF),
+                Color(0x00FFFFFF),
+              ],
+              const [0.0, 0.35, 0.5, 0.65, 1.0],
+            ),
+        );
+        canvas.restore();
+        canvas.restore();
       }
     }
   }
