@@ -315,39 +315,50 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
   const activeRole = role === 'COACH' ? 'COACH' : 'MEMBER';
   const section = activeRole === 'COACH' ? 'coaches' : 'members';
 
-  const page = Math.max(1, Number(params?.get('page')) || 1);
-  const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
-  const statusFilter = params?.get('status') || '';
-  const search = params?.get('search') || '';
-  const hasGym = params?.get('hasGym') === '1';
-  const hasCoach = params?.get('hasCoach') === '1';
-  const hasAvailableSlots = params?.get('hasAvailableSlots') === '1';
-  const fromDate = params?.get('from') || '';
-  const toDate = params?.get('to') || '';
-  const hasFilter = Boolean(search || statusFilter || hasGym || hasCoach || hasAvailableSlots || fromDate || toDate);
+  const state = {
+    page: Math.max(1, Number(params?.get('page')) || 1),
+    pageSize: Math.max(1, Number(params?.get('pageSize')) || 10),
+    statusFilter: params?.get('status') || '',
+    search: params?.get('search') || '',
+    hasGym: params?.get('hasGym') === '1',
+    hasCoach: params?.get('hasCoach') === '1',
+    hasAvailableSlots: params?.get('hasAvailableSlots') === '1',
+    fromDate: params?.get('from') || '',
+    toDate: params?.get('to') || '',
+  };
+
+  const computeHasFilter = () => Boolean(
+    state.search
+    || state.statusFilter
+    || state.hasGym
+    || state.hasCoach
+    || state.hasAvailableSlots
+    || state.fromDate
+    || state.toDate,
+  );
 
   const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Phân loại tài khoản">
     <a class="meta-tab-btn ${activeRole === 'COACH' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'COACH'}" href="#/admin/coaches">Huấn luyện viên (Coach)</a>
     <a class="meta-tab-btn ${activeRole === 'MEMBER' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'MEMBER'}" href="#/admin/members">Hội viên (Member)</a>
   </div>`;
 
-  const activeFilterCount = [hasGym, hasCoach, hasAvailableSlots, fromDate || toDate].filter(Boolean).length;
-  const mobileExtraCount = [statusFilter, hasGym, hasCoach, hasAvailableSlots, fromDate || toDate].filter(Boolean).length;
+  const activeFilterCount = [state.hasGym, state.hasCoach, state.hasAvailableSlots, state.fromDate || state.toDate].filter(Boolean).length;
+  const mobileExtraCount = [state.statusFilter, state.hasGym, state.hasCoach, state.hasAvailableSlots, state.fromDate || state.toDate].filter(Boolean).length;
 
-  const buildFilterHtml = (canExport = false) => `<form class="filter-bar" id="acc-filter-form">
-    <input type="search" id="acc-search" class="form-control filter-grow" placeholder="Tìm theo họ tên, email hoặc số điện thoại…" value="${esc(search)}" aria-label="Tìm kiếm tài khoản" />
+  const filterHtml = `<form class="filter-bar" id="acc-filter-form">
+    <input type="search" id="acc-search" class="form-control filter-grow" placeholder="Tìm theo họ tên, email hoặc số điện thoại…" value="${esc(state.search)}" aria-label="Tìm kiếm tài khoản" />
     <div class="desktop-filters" style="display:contents">
       <select id="acc-status" class="form-select filter-fixed" aria-label="Lọc trạng thái tài khoản">
-        <option value="" ${!statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
-        <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang hoạt động (ACTIVE)</option>
-        <option value="DISABLED" ${statusFilter === 'DISABLED' ? 'selected' : ''}>Bị khóa (DISABLED)</option>
+        <option value="" ${!state.statusFilter ? 'selected' : ''}>Tất cả trạng thái</option>
+        <option value="ACTIVE" ${state.statusFilter === 'ACTIVE' ? 'selected' : ''}>Đang hoạt động (ACTIVE)</option>
+        <option value="DISABLED" ${state.statusFilter === 'DISABLED' ? 'selected' : ''}>Bị khóa (DISABLED)</option>
       </select>
     </div>
     <button type="button" class="btn btn-graphite btn-sm filter-trigger-btn" id="acc-filter-btn" aria-label="Mở bộ lọc nâng cao" title="Bộ lọc">
-      ${icon('filter', 16)} <span>Bộ lọc</span>${activeFilterCount > 0 ? `<span class="mobile-filter-count tabular">${activeFilterCount}</span>` : (mobileExtraCount > 0 ? `<span class="mobile-filter-count tabular desktop-hidden">${mobileExtraCount}</span>` : '')}
+      ${icon('filter', 16)} <span>Bộ lọc</span><span class="mobile-filter-count tabular" id="acc-filter-badge"${activeFilterCount > 0 || mobileExtraCount > 0 ? '' : ' hidden'}>${activeFilterCount > 0 ? activeFilterCount : mobileExtraCount}</span>
     </button>
-    ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm desktop-filters" id="acc-clear-filters">Xóa bộ lọc</button>' : ''}
-    <button type="button" class="btn btn-graphite btn-sm" id="acc-export-excel" ${canExport ? '' : 'disabled'}>
+    <button type="button" class="btn btn-ghost btn-sm desktop-filters" id="acc-clear-filters"${computeHasFilter() ? '' : ' hidden'}>Xóa bộ lọc</button>
+    <button type="button" class="btn btn-graphite btn-sm" id="acc-export-excel" disabled>
       ${icon('download', 16)} <span id="acc-export-label">Xuất Excel</span>
     </button>
   </form>`;
@@ -357,27 +368,31 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     topbarActionsHtml: activeRole === 'COACH'
       ? `<button type="button" class="btn btn-primary" id="create">${icon('plus', 16)} Tạo Coach</button>`
       : '',
-    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
+    contentHtml: `<div class="stack-20">${tabsHtml}${filterHtml}<div id="acc-table-region">${renderTableSkeleton(6)}</div></div>`,
   });
 
-  try {
-    const query = buildQuery({
-      role: activeRole,
-      status: statusFilter,
-      search,
-      page,
-      pageSize,
-      ...(fromDate ? { from: fromDate } : {}),
-      ...(toDate ? { to: toDate } : {}),
-      ...(activeRole === 'MEMBER' && hasGym ? { hasGym: 1 } : {}),
-      ...(activeRole === 'MEMBER' && hasCoach ? { hasCoach: 1 } : {}),
-      ...(activeRole === 'COACH' && hasAvailableSlots ? { hasAvailableSlots: 1 } : {}),
-    });
-    const result = await api(`/admin/users${query}`);
-    const rows = result?.data || [];
-    const pagination = result?.pagination || { page, pageSize, totalItems: rows.length, totalPages: 1 };
+  let currentRows = [];
+  let requestSeq = 0;
+  let activeController = null;
 
-    const columns = activeRole === 'COACH' ? [
+  const getSelectedIdsRef = { fn: () => [] };
+
+  const syncFilterControls = () => {
+    const clearBtn = root.querySelector('#acc-clear-filters');
+    if (clearBtn) clearBtn.hidden = !computeHasFilter();
+    const statusEl = root.querySelector('#acc-status');
+    if (statusEl && statusEl.value !== state.statusFilter) statusEl.value = state.statusFilter;
+    const badgeEl = root.querySelector('#acc-filter-badge');
+    if (badgeEl) {
+      const desktopCount = [state.hasGym, state.hasCoach, state.hasAvailableSlots, state.fromDate || state.toDate].filter(Boolean).length;
+      const allCount = [state.statusFilter, state.hasGym, state.hasCoach, state.hasAvailableSlots, state.fromDate || state.toDate].filter(Boolean).length;
+      const count = desktopCount || allCount;
+      badgeEl.hidden = count === 0;
+      badgeEl.textContent = count > 0 ? String(count) : '';
+    }
+  };
+
+  const columns = activeRole === 'COACH' ? [
       {
         label: 'Huấn luyện viên',
         render: (row) => `<div class="person-cell">
@@ -446,23 +461,20 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       },
     ];
 
-    const emptyHtml = hasFilter
-      ? renderFilterEmptyState({ resetId: 'acc-filter-reset' })
-      : renderEmptyState({
-        iconName: 'users',
-        title: activeRole === 'COACH' ? 'Chưa có Huấn luyện viên nào' : 'Chưa có Hội viên nào',
-        description: activeRole === 'COACH'
-          ? 'Tạo tài khoản Coach mới với giới hạn trần cứng 8 hội viên / Coach.'
-          : 'Hội viên đăng ký mới trên ứng dụng sẽ hiển thị tại đây.',
-        ctaLabel: activeRole === 'COACH' ? 'Tạo Coach' : '',
-        ctaId: 'create-empty',
-      });
+    const buildTableHtml = (rows, pagination) => {
+      const emptyHtml = computeHasFilter()
+        ? renderFilterEmptyState({ resetId: 'acc-filter-reset' })
+        : renderEmptyState({
+          iconName: 'users',
+          title: activeRole === 'COACH' ? 'Chưa có Huấn luyện viên nào' : 'Chưa có Hội viên nào',
+          description: activeRole === 'COACH'
+            ? 'Tạo tài khoản Coach mới với giới hạn trần cứng 8 hội viên / Coach.'
+            : 'Hội viên đăng ký mới trên ứng dụng sẽ hiển thị tại đây.',
+          ctaLabel: activeRole === 'COACH' ? 'Tạo Coach' : '',
+          ctaId: 'create-empty',
+        });
 
-    const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
-      ${buildFilterHtml(rows.length > 0)}
-
-      ${renderDataTable({
+      return renderDataTable({
         columns,
         rows,
         selectable: true,
@@ -473,38 +485,40 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
           summaryNote: activeRole === 'COACH' ? 'Trần cứng 8 hội viên / Coach' : '',
         }),
         ariaLabel: activeRole === 'COACH' ? 'Danh sách Huấn luyện viên' : 'Danh sách Hội viên',
-      })}
-    </div>`;
+      });
+    };
 
-    shell({
-      section,
-      contentHtml,
-      topbarActionsHtml: activeRole === 'COACH'
-        ? `<button type="button" class="btn btn-primary" id="create">${icon('plus', 16)} Tạo Coach</button>`
-        : '',
-    });
+    const reloadWith = async (patch = {}) => {
+      const nextSearch = patch.search !== undefined
+        ? patch.search
+        : (root.querySelector('#acc-search')?.value?.trim() || '');
+      const nextStatus = patch.status !== undefined
+        ? patch.status
+        : (root.querySelector('#acc-status')?.value ?? state.statusFilter);
+      const nextGym = patch.hasGym !== undefined ? patch.hasGym : state.hasGym;
+      const nextCoach = patch.hasCoach !== undefined ? patch.hasCoach : state.hasCoach;
+      const nextSlots = patch.hasAvailableSlots !== undefined ? patch.hasAvailableSlots : state.hasAvailableSlots;
+      const nextFrom = patch.from !== undefined ? patch.from : state.fromDate;
+      const nextTo = patch.to !== undefined ? patch.to : state.toDate;
+      const nextPage = patch.page !== undefined ? patch.page : state.page;
+      const nextPageSize = patch.pageSize !== undefined ? patch.pageSize : state.pageSize;
 
-    const reloadWith = (patch = {}) => {
-      const nextSearch = patch.search !== undefined ? patch.search : (root.querySelector('#acc-search')?.value?.trim() || '');
-      const nextStatus = patch.status !== undefined ? patch.status : (root.querySelector('#acc-status')?.value || '');
-      const nextGym = patch.hasGym !== undefined ? patch.hasGym : hasGym;
-      const nextCoach = patch.hasCoach !== undefined ? patch.hasCoach : hasCoach;
-      const nextSlots = patch.hasAvailableSlots !== undefined ? patch.hasAvailableSlots : hasAvailableSlots;
-      const nextFrom = patch.from !== undefined ? patch.from : fromDate;
-      const nextTo = patch.to !== undefined ? patch.to : toDate;
-      const nextPage = patch.page !== undefined ? patch.page : page;
-      const nextPageSize = patch.pageSize !== undefined ? patch.pageSize : pageSize;
+      state.search = nextSearch;
+      state.statusFilter = nextStatus;
+      state.hasGym = nextGym;
+      state.hasCoach = nextCoach;
+      state.hasAvailableSlots = nextSlots;
+      state.fromDate = nextFrom;
+      state.toDate = nextTo;
+      state.page = nextPage;
+      state.pageSize = nextPageSize;
 
-      const nextParams = new URLSearchParams();
-      if (nextSearch) nextParams.set('search', nextSearch);
-      if (nextStatus) nextParams.set('status', nextStatus);
-      if (nextFrom) nextParams.set('from', nextFrom);
-      if (nextTo) nextParams.set('to', nextTo);
-      if (activeRole === 'MEMBER' && nextGym) nextParams.set('hasGym', '1');
-      if (activeRole === 'MEMBER' && nextCoach) nextParams.set('hasCoach', '1');
-      if (activeRole === 'COACH' && nextSlots) nextParams.set('hasAvailableSlots', '1');
-      if (nextPage > 1) nextParams.set('page', String(nextPage));
-      if (nextPageSize !== 10) nextParams.set('pageSize', String(nextPageSize));
+      if (patch.search !== undefined) {
+        const searchEl = root.querySelector('#acc-search');
+        if (searchEl && searchEl.value !== nextSearch) searchEl.value = nextSearch;
+      }
+
+      syncFilterControls();
 
       updateQuery({
         search: nextSearch || null,
@@ -518,10 +532,15 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
         pageSize: nextPageSize !== 10 ? nextPageSize : null,
       }, { replace: true });
 
-      return renderAccountsPage({ root, role: activeRole, params: nextParams, shell });
+      return loadTable();
     };
 
-    const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
+    const debouncedSearch = debounce(() => {
+      const nextSearch = root.querySelector('#acc-search')?.value?.trim() || '';
+      if (nextSearch === state.search) return;
+      reloadWith({ search: nextSearch, page: 1 });
+    }, 350);
+
     const searchInput = root.querySelector('#acc-search');
     if (searchInput) {
       searchInput.oninput = () => debouncedSearch();
@@ -542,19 +561,20 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       const el = root.querySelector(sel);
       if (el) el.onchange = () => reloadWith({ page: 1 });
     });
-    [root.querySelector('#acc-clear-filters'), root.querySelector('#acc-filter-reset')].filter(Boolean).forEach((btn) => {
-      btn.onclick = () => reloadWith({ search: '', status: '', from: '', to: '', hasGym: false, hasCoach: false, hasAvailableSlots: false, page: 1 });
-    });
+    const clearBtn = root.querySelector('#acc-clear-filters');
+    if (clearBtn) {
+      clearBtn.onclick = () => reloadWith({ search: '', status: '', from: '', to: '', hasGym: false, hasCoach: false, hasAvailableSlots: false, page: 1 });
+    }
 
     const filterBtn = root.querySelector('#acc-filter-btn');
     if (filterBtn) {
       filterBtn.onclick = () => {
-        const currentStatus = root.querySelector('#acc-status')?.value || statusFilter;
-        const currentFrom = fromDate;
-        const currentTo = toDate;
-        const currentGym = hasGym;
-        const currentCoach = hasCoach;
-        const currentSlots = hasAvailableSlots;
+        const currentStatus = root.querySelector('#acc-status')?.value ?? state.statusFilter;
+        const currentFrom = state.fromDate;
+        const currentTo = state.toDate;
+        const currentGym = state.hasGym;
+        const currentCoach = state.hasCoach;
+        const currentSlots = state.hasAvailableSlots;
 
         openModal({
           title: 'Bộ lọc',
@@ -674,30 +694,14 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       };
     }
 
-    bindPagination(root, {
-      page: pagination.page,
-      totalPages: pagination.totalPages,
-      prefix: 'acc',
-      onChange: (nextPage) => reloadWith({ page: nextPage }),
-      onPageSizeChange: (nextSize) => reloadWith({ pageSize: nextSize, page: 1 }),
-    });
-
     const exportLabel = root.querySelector('#acc-export-label');
-    const getSelectedIds = bindDataTableSelection(root, {
-      onSelectionChange: (ids) => {
-        if (exportLabel) {
-          exportLabel.textContent = ids.length > 0 ? `Xuất Excel (${ids.length})` : 'Xuất Excel';
-        }
-      },
-    });
-
     const exportBtn = root.querySelector('#acc-export-excel');
     if (exportBtn) {
       exportBtn.onclick = () => {
-        const selectedIds = getSelectedIds();
+        const selectedIds = getSelectedIdsRef.fn();
         const targetRows = selectedIds.length > 0
-          ? rows.filter((r) => selectedIds.includes(String(r.id)))
-          : rows;
+          ? currentRows.filter((r) => selectedIds.includes(String(r.id)))
+          : currentRows;
         if (!targetRows.length) {
           toast('Chưa có dữ liệu để xuất Excel.', 'warn');
           return;
@@ -728,6 +732,32 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
         }
       };
     }
+
+    const bindTableEvents = (rows, pagination) => {
+      bindPagination(root, {
+        page: pagination.page,
+        totalPages: pagination.totalPages,
+        prefix: 'acc',
+        onChange: (nextPage) => reloadWith({ page: nextPage }),
+        onPageSizeChange: (nextSize) => reloadWith({ pageSize: nextSize, page: 1 }),
+      });
+
+      if (exportLabel) exportLabel.textContent = 'Xuất Excel';
+      getSelectedIdsRef.fn = bindDataTableSelection(root, {
+        onSelectionChange: (ids) => {
+          if (exportLabel) {
+            exportLabel.textContent = ids.length > 0 ? `Xuất Excel (${ids.length})` : 'Xuất Excel';
+          }
+        },
+      });
+
+      const emptyResetBtn = root.querySelector('#acc-filter-reset');
+      if (emptyResetBtn) {
+        emptyResetBtn.onclick = () => reloadWith({ search: '', status: '', from: '', to: '', hasGym: false, hasCoach: false, hasAvailableSlots: false, page: 1 });
+      }
+
+      const createEmptyBtn = root.querySelector('#create-empty');
+      if (createEmptyBtn) createEmptyBtn.onclick = openCreateCoachModal;
 
     // 1. Operational Detail Drawer (GET /admin/users/:id)
     root.querySelectorAll('.detail').forEach((btn) => {
@@ -860,7 +890,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
                 phone: phoneRaw || null,
               });
               ctrl.close();
-              await reloadWith({ page });
+              await reloadWith({ page: state.page });
               notice('Đã lưu thông tin tài khoản.');
             } catch (error) {
               ctrl.setBusy(false);
@@ -871,7 +901,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       });
     };
 
-    const createBtn = root.querySelector('#create') || root.querySelector('#create-empty');
+    const createBtn = root.querySelector('#create');
     if (createBtn) createBtn.onclick = openCreateCoachModal;
 
     root.querySelectorAll('.edit').forEach((btn) => {
@@ -974,7 +1004,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
                 reason,
               });
               const summary = formatEffectsSummary(activeRole, true, res?.data?.effects);
-              await reloadWith({ page });
+              await reloadWith({ page: state.page });
               notice(summary, 'warn');
             },
           });
@@ -1040,20 +1070,64 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
               status: 'ACTIVE',
             });
             const summary = formatEffectsSummary(activeRole, false, res?.data?.effects);
-            await reloadWith({ page });
+            await reloadWith({ page: state.page });
             notice(summary, 'success');
           },
         });
       };
     });
-  } catch (error) {
-    shell({
-      section,
-      contentHtml: renderErrorState({ title: 'Không tải được danh sách tài khoản', message: error.message }),
-    });
-    const retry = root.querySelector('#retry-load-btn');
-    if (retry) retry.onclick = () => renderAccountsPage({ root, role: activeRole, params, shell });
-  }
+    };
+
+    const loadTable = async () => {
+      const seq = ++requestSeq;
+      if (activeController) activeController.abort();
+      activeController = typeof globalThis.AbortController === 'function' ? new globalThis.AbortController() : null;
+
+      const tableRegion = root.querySelector('#acc-table-region');
+      if (tableRegion?.style) tableRegion.style.opacity = '0.6';
+
+      try {
+        const query = buildQuery({
+          role: activeRole,
+          status: state.statusFilter,
+          search: state.search,
+          page: state.page,
+          pageSize: state.pageSize,
+          ...(state.fromDate ? { from: state.fromDate } : {}),
+          ...(state.toDate ? { to: state.toDate } : {}),
+          ...(activeRole === 'MEMBER' && state.hasGym ? { hasGym: 1 } : {}),
+          ...(activeRole === 'MEMBER' && state.hasCoach ? { hasCoach: 1 } : {}),
+          ...(activeRole === 'COACH' && state.hasAvailableSlots ? { hasAvailableSlots: 1 } : {}),
+        });
+        const result = await api(`/admin/users${query}`, 'GET', undefined, { signal: activeController?.signal });
+        if (seq !== requestSeq) return;
+
+        const rows = result?.data || [];
+        const pagination = result?.pagination || {
+          page: state.page,
+          pageSize: state.pageSize,
+          totalItems: rows.length,
+          totalPages: 1,
+        };
+        currentRows = rows;
+        if (exportBtn) exportBtn.disabled = rows.length === 0;
+        if (tableRegion) {
+          tableRegion.innerHTML = buildTableHtml(rows, pagination);
+          if (tableRegion.style) tableRegion.style.opacity = '';
+        }
+        bindTableEvents(rows, pagination);
+      } catch (error) {
+        if (error?.code === 'ABORTED' || seq !== requestSeq) return;
+        if (tableRegion?.style) tableRegion.style.opacity = '';
+        if (tableRegion) {
+          tableRegion.innerHTML = renderErrorState({ title: 'Không tải được danh sách tài khoản', message: error.message });
+          const retry = tableRegion.querySelector('#retry-load-btn');
+          if (retry) retry.onclick = () => loadTable();
+        }
+      }
+    };
+
+    await loadTable();
 }
 
 export { buildHash };

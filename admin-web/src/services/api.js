@@ -121,9 +121,17 @@ export async function api(path, method = 'GET', body, idempotencyKeyOrOptions) {
     response = await globalThis.fetch(`${apiBase}${path}`, {
       method,
       headers,
+      ...(options.signal ? { signal: options.signal } : {}),
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-  } catch {
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw new ApiError('Yêu cầu đã bị hủy.', {
+        status: 0,
+        code: 'ABORTED',
+        details: {},
+      });
+    }
     throw new ApiError('Không thể kết nối máy chủ. Kiểm tra mạng và bấm Thử lại.', {
       status: 0,
       code: 'NETWORK_ERROR',
