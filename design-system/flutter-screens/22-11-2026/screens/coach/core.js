@@ -81,8 +81,8 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
 
         <div class="bottom-nav-wrap">
           <nav class="bottom-nav">
-            <div class="nav-item"><img class="nav-svg" src="../../meta-gym/assets/svg/navigation/nav_home_outline.svg" alt="Trang chủ" /></div>
-            <div class="nav-item active"><img class="nav-svg" src="../../meta-gym/assets/svg/navigation/nav_coach_schedule_filled.svg" alt="Lịch dạy" /></div>
+            <div class="nav-item active"><img class="nav-svg" src="../../meta-gym/assets/svg/navigation/nav_home_filled.svg" alt="Trang chủ" /></div>
+            <div class="nav-item"><img class="nav-svg" src="../../meta-gym/assets/svg/navigation/nav_coach_schedule_outline.svg" alt="Lịch dạy" /></div>
             <div class="nav-ai-wrap"><div class="nav-ai-btn"><img class="nav-ai-svg" src="../../meta-gym/assets/svg/navigation/nav_ai_on_primary.svg" alt="AI" /></div></div>
             <div class="nav-item"><img class="nav-svg" src="../../meta-gym/assets/svg/navigation/nav_messages_outline.svg" alt="Tin nhắn" /></div>
             <div class="nav-item"><img class="nav-svg" src="../../meta-gym/assets/svg/navigation/nav_profile_outline.svg" alt="Hồ sơ" /></div>

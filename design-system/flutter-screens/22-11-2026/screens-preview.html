@@ -19,11 +19,14 @@
         <div class="mg-logo" style="width:34px;height:34px;font-size:12px;border-radius:10px;">MG</div>
         <div>
           <h1>Flutter Screen Preview — Bám sát code thực tế (Full Data)</h1>
-          <span>Token tại <code>tokens.css</code> • Màn hình chia module tại <code>screens/auth|member|coach/</code></span>
+          <span>Bấm trực tiếp vào nút / thẻ / thanh điều hướng trên màn hình để chạy luồng UX cho Dev</span>
         </div>
       </div>
 
       <div class="studio-controls">
+        <button class="ctrl-btn" id="btn-proto" title="Xem 1 máy tương tác như Figma Prototype">▶ Chế độ Luồng UX</button>
+        <button class="ctrl-btn" id="btn-hotspots" title="Hiện viền nét đứt các vùng bấm được">Hiện điểm bấm</button>
+        <span class="ctrl-divider"></span>
         <button class="ctrl-btn active" id="btn-375">375px</button>
         <button class="ctrl-btn" id="btn-393">393px</button>
         <span class="ctrl-divider"></span>
@@ -36,6 +39,16 @@
     </div>
   </header>
 
+  <!-- PROTOTYPE BREADCRUMB BAR (Only visible in UX Flow Prototype Mode) -->
+  <div class="proto-bar" id="proto-bar">
+    <div class="proto-trail" id="proto-trail"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="ctrl-btn" id="proto-start-auth">Từ Splash</button>
+      <button class="ctrl-btn" id="proto-start-member">Trang chủ HV</button>
+      <button class="ctrl-btn" id="proto-start-coach">Trang chủ Coach</button>
+    </div>
+  </div>
+
   <!-- ROLE TABS -->
   <div class="role-tabs-wrap">
     <div class="role-tabs" role="tablist">
@@ -45,7 +58,7 @@
     </div>
   </div>
 
-  <!-- SUB-CATEGORY FILTER BAR (Dynamic per active Role Tab) -->
+  <!-- SUB-CATEGORY FILTER BAR -->
   <div class="sub-filters-wrap" id="sub-filters"></div>
 
   <!-- SCREEN PANELS -->
@@ -55,28 +68,35 @@
     <div class="tab-panel" data-panel="coach"></div>
   </main>
 
-  <!-- Modular Screen Registries (Works directly over file:// without CORS) -->
+  <div class="flow-toast" id="flow-toast"></div>
+
+  <!-- Modular Screen Registries -->
   <script src="./screens/auth.screens.js"></script>
-  <script src="./screens/member/core.js"></script>
-  <script src="./screens/member/training-nutrition.js"></script>
-  <script src="./screens/member/coaching-booking.js"></script>
-  <script src="./screens/member/membership-payment.js"></script>
-  <script src="./screens/member/progress-catalog.js"></script>
+  <script src="./screens/member/tab1-home.js"></script>
+  <script src="./screens/member/tab2-training.js"></script>
+  <script src="./screens/member/tab3-ai.js"></script>
+  <script src="./screens/member/tab4-messages.js"></script>
+  <script src="./screens/member/tab5-profile.js"></script>
+  <script src="./screens/member/tab5-profile-sub.js"></script>
   <script src="./screens/coach/core.js"></script>
   <script src="./screens/coach/detail.js"></script>
 
   <script>
     const registry = window.METAGYM_SCREENS || {};
+    const screenMeta = new Map(); // id -> { role, group, title, shortFile }
     let activeRole = 'member';
     let activeGroup = 'all';
+    let protoMode = false;
+    let flowHistory = ['member-home'];
 
-    // Render all panels once
+    // 1. Render all panels
     ['auth', 'member', 'coach'].forEach(role => {
       const list = registry[role] || [];
       const countEl = document.getElementById('cnt-' + role);
       if (countEl) countEl.textContent = list.length;
       const panel = document.querySelector('.tab-panel[data-panel="' + role + '"]');
       if (!panel) return;
+      list.forEach(s => screenMeta.set(s.id, { role, group: s.group || 'other', title: s.title, shortFile: s.shortFile }));
       panel.innerHTML = list.map(s => `
         <section class="screen-slot" data-id="${s.id}" data-role="${role}" data-group="${s.group || 'other'}">
           <div class="slot-meta">
@@ -91,8 +111,470 @@
       `).join('');
     });
 
-    const subFiltersEl = document.getElementById('sub-filters');
+    // 2. Declarative UX Flow Wiring (Auto-binds interactive links across all 35 screens)
+    const fallbackParent = {
+      'auth-register': 'auth-login',
+      'member-membership': 'member-home',
+      'member-membership-empty': 'member-home',
+      'member-coach-booking': 'member-home',
+      'member-payments': 'member-membership',
+      'member-article-detail': 'member-home',
+      'member-nutrition': 'member-training-hub',
+      'member-journal': 'member-training-hub',
+      'member-gym-visits': 'member-training-hub',
+      'member-curriculum': 'member-training-hub',
+      'member-gym-equipment': 'member-training-hub',
+      'member-equipment-detail': 'member-gym-equipment',
+      'member-personal-info': 'member-profile',
+      'member-training-profile': 'member-profile',
+      'member-health-declaration': 'member-profile',
+      'member-measurement': 'member-profile',
+      'member-coaching': 'member-profile',
+      'member-coaching-empty': 'member-profile',
+      'member-coach-selection': 'member-coaching',
+      'member-coach-detail': 'member-coach-selection',
+      'member-coach-offers': 'member-coach-detail',
+      'member-notifications': 'member-home',
+      'member-security': 'member-profile',
+      'member-privacy': 'member-profile',
+      'member-app-settings': 'member-profile',
+      'member-support': 'member-profile',
+      'coach-members': 'coach-home',
+      'coach-training': 'coach-home',
+      'coach-nutrition': 'coach-home'
+    };
 
+    function bindTextLink(slot, selector, textContains, targetId) {
+      slot.querySelectorAll(selector).forEach(el => {
+        if (el.textContent && el.textContent.includes(textContains)) {
+          el.setAttribute('data-go', targetId);
+        }
+      });
+    }
+
+    function wireAllFlows() {
+      document.querySelectorAll('.screen-slot').forEach(slot => {
+        const id = slot.dataset.id;
+        const role = slot.dataset.role;
+
+        // Back buttons
+        slot.querySelectorAll('.circle-btn').forEach(btn => {
+          if (btn.querySelector('img[src*="common_back.svg"]')) btn.setAttribute('data-back', '1');
+          if (btn.querySelector('img[src*="setting_notifications_bell.svg"]')) btn.setAttribute('data-go', 'member-notifications');
+          if (btn.querySelector('img[src*="workout_history.svg"]')) btn.setAttribute('data-go', 'member-gym-visits');
+          if (btn.querySelector('img[src*="equip_dumbbell.svg"]')) btn.setAttribute('data-go', 'member-gym-equipment');
+        });
+
+        // Bottom Nav bars
+        slot.querySelectorAll('.bottom-nav').forEach(nav => {
+          const isCoach = role === 'coach';
+          nav.querySelectorAll('.nav-item, .nav-ai-wrap').forEach(item => {
+            const img = item.querySelector('img');
+            const alt = img ? img.getAttribute('alt') : '';
+            if (alt === 'Trang chủ') item.setAttribute('data-go', isCoach ? 'coach-home' : 'member-home');
+            else if (alt === 'Tập luyện') item.setAttribute('data-go', 'member-training-hub');
+            else if (alt === 'Lịch dạy') item.setAttribute('data-go', 'coach-sessions');
+            else if (alt === 'AI') item.setAttribute('data-go', 'member-ai-messages');
+            else if (alt === 'Tin nhắn') item.setAttribute('data-go', 'member-conversations');
+            else if (alt === 'Hồ sơ') item.setAttribute('data-go', 'member-profile');
+          });
+        });
+
+        // Date/Time picker triggers (Đồng bộ Meta Calendar từ admin-web/date-picker.js)
+        if (id === 'member-personal-info') {
+          slot.querySelectorAll('.input-box').forEach(box => {
+            if (box.textContent.includes('14/05/1999')) box.setAttribute('data-pick-date', '1999-05-14');
+          });
+        } else if (id === 'member-nutrition') {
+          slot.querySelectorAll('.row-between').forEach(r => {
+            if (r.textContent.includes('22/11/2026')) r.setAttribute('data-pick-date', '2026-11-22');
+          });
+        } else if (id === 'member-gym-visits') {
+          slot.querySelectorAll('.row').forEach(r => {
+            if (r.textContent.includes('11/2026')) r.setAttribute('data-pick-date', '2026-11-22');
+          });
+        } else if (id === 'member-coach-booking') {
+          bindTextLink(slot, '.btn-primary', 'Đặt buổi tập mới', '');
+          slot.querySelectorAll('.btn-primary').forEach(b => {
+            if (b.textContent.includes('Đặt buổi tập mới')) {
+              b.removeAttribute('data-go');
+              b.setAttribute('data-pick-date', '2026-11-22');
+              b.setAttribute('data-pick-time', '18:00');
+            }
+          });
+        }
+
+        // Screen-specific real UX flows
+        if (id === 'auth-splash') {
+          slot.querySelector('.phone-body')?.setAttribute('data-go', 'auth-login');
+        } else if (id === 'auth-login') {
+          bindTextLink(slot, '.seg-tab', 'Đăng ký', 'auth-register');
+          bindTextLink(slot, '.btn-primary', 'Đăng nhập', 'member-home');
+        } else if (id === 'auth-register') {
+          bindTextLink(slot, '.seg-tab', 'Đăng nhập', 'auth-login');
+          bindTextLink(slot, '.btn-primary', 'Đăng ký', 'member-home');
+        } else if (id === 'member-home') {
+          bindTextLink(slot, '.quick-tile', 'Lịch tập', 'member-coach-booking');
+          bindTextLink(slot, '.quick-tile', 'Giáo trình', 'member-curriculum');
+          bindTextLink(slot, '.quick-tile', 'Dinh dưỡng', 'member-nutrition');
+          bindTextLink(slot, '.quick-tile', 'Coach', 'member-coaching');
+          bindTextLink(slot, '.metric-box', 'Gói tập', 'member-membership');
+          bindTextLink(slot, '.metric-box', 'Coach cá nhân', 'member-coaching');
+          bindTextLink(slot, '.card-liquid.featured', 'Hôm nay', 'member-curriculum');
+          bindTextLink(slot, '.card-liquid', 'Thực đơn tăng cơ', 'member-nutrition');
+          bindTextLink(slot, '.card-liquid', 'Chuỗi: 5 ngày', 'member-journal');
+        } else if (id === 'member-membership') {
+          bindTextLink(slot, '.sec-link', 'Giao dịch', 'member-payments');
+        } else if (id === 'member-training-hub') {
+          bindTextLink(slot, '.metric-box', 'Gói tập', 'member-membership');
+          bindTextLink(slot, '.metric-box', 'Gói Coach', 'member-coaching');
+          bindTextLink(slot, '.card-liquid', 'Giáo trình của Coach', 'member-curriculum');
+          bindTextLink(slot, '.card-liquid', 'Theo dõi dinh dưỡng', 'member-nutrition');
+          bindTextLink(slot, '.card-liquid', 'Nhật ký tập luyện', 'member-journal');
+          bindTextLink(slot, '.card-liquid', 'Lịch sử tập luyện', 'member-gym-visits');
+          bindTextLink(slot, '.card-liquid', 'Phòng gym & thiết bị', 'member-gym-equipment');
+        } else if (id === 'member-curriculum') {
+          bindTextLink(slot, '.btn-mini-orange', 'Nhắn Coach', 'member-conversations');
+        } else if (id === 'member-gym-equipment') {
+          bindTextLink(slot, '.card-liquid', 'Cable Crossover', 'member-equipment-detail');
+        } else if (id === 'member-profile') {
+          slot.querySelector('.card-warm-glass')?.setAttribute('data-go', 'member-personal-info');
+        } else if (id === 'member-coaching') {
+          bindTextLink(slot, '.btn-primary', 'Xem lịch với Coach', 'member-coach-booking');
+          bindTextLink(slot, '.row-between', 'Giáo trình', 'member-curriculum');
+          bindTextLink(slot, '.row-between', 'Nhắn Coach', 'member-conversations');
+          bindTextLink(slot, '.row-between', 'Gói Coach', 'member-coach-offers');
+        } else if (id === 'member-coach-selection') {
+          bindTextLink(slot, '.card-liquid', 'Lê Hoàng Nam', 'member-coach-detail');
+          bindTextLink(slot, '.card-liquid', 'Trần Minh Đức', 'member-coach-detail');
+        } else if (id === 'member-coach-detail') {
+          bindTextLink(slot, '.btn-primary', 'Xem các gói Coach', 'member-coach-offers');
+        } else if (id === 'member-coach-offers') {
+          bindTextLink(slot, '.sec-link', 'Xem / sửa', 'member-health-declaration');
+          bindTextLink(slot, '.btn-primary', 'Chọn gói', 'member-payments');
+        } else if (id === 'coach-home') {
+          bindTextLink(slot, '.quick-tile', 'Học viên', 'coach-members');
+          bindTextLink(slot, '.quick-tile', 'Giáo trình', 'coach-training');
+          bindTextLink(slot, '.quick-tile', 'Dinh dưỡng', 'coach-nutrition');
+          bindTextLink(slot, '.quick-tile', 'Lịch tập', 'coach-sessions');
+          bindTextLink(slot, '.row-between', 'Hội viên của tôi', 'coach-members');
+        }
+      });
+    }
+    wireAllFlows();
+
+    // 3. Navigation & Prototype Engine
+    const toastEl = document.getElementById('flow-toast');
+    let toastTimer;
+    function showFlowToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+    }
+
+    function renderProtoTrail() {
+      const trail = document.getElementById('proto-trail');
+      const slice = flowHistory.slice(-5);
+      trail.innerHTML = slice.map((sid, idx) => {
+        const meta = screenMeta.get(sid);
+        const isLast = idx === slice.length - 1;
+        return `<span class="proto-crumb ${isLast ? 'current' : ''}" data-crumb="${sid}">${meta ? meta.title : sid}</span>` + (isLast ? '' : '<span>→</span>');
+      }).join('');
+      trail.querySelectorAll('.proto-crumb').forEach(el => {
+        el.addEventListener('click', () => navigateToScreen(el.dataset.crumb, true));
+      });
+    }
+
+    // Paired Happy/Unhappy screens shown side-by-side in UX Flow Prototype Mode
+    const protoPairs = {
+      'member-membership': ['member-membership', 'member-membership-empty'],
+      'member-membership-empty': ['member-membership', 'member-membership-empty'],
+      'member-coaching': ['member-coaching', 'member-coaching-empty'],
+      'member-coaching-empty': ['member-coaching', 'member-coaching-empty']
+    };
+
+    function navigateToScreen(targetId, fromHistory = false) {
+      const meta = screenMeta.get(targetId);
+      if (!meta) return;
+
+      if (!fromHistory && flowHistory[flowHistory.length - 1] !== targetId) {
+        flowHistory.push(targetId);
+      }
+
+      if (protoMode) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('proto-active'));
+        document.querySelectorAll('.screen-slot').forEach(s => s.classList.remove('proto-current'));
+        const idsToShow = protoPairs[targetId] || [targetId];
+        idsToShow.forEach(sid => {
+          const sm = screenMeta.get(sid);
+          if (!sm) return;
+          document.querySelector('.tab-panel[data-panel="' + sm.role + '"]')?.classList.add('proto-active');
+          document.querySelector('.screen-slot[data-id="' + sid + '"]')?.classList.add('proto-current');
+        });
+        renderProtoTrail();
+      } else {
+        // Gallery mode: switch role tab, show all in that tab, scroll & pulse destination phone
+        if (activeRole !== meta.role) {
+          activeRole = meta.role;
+          activeGroup = 'all';
+          document.querySelectorAll('.role-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === activeRole));
+          document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === activeRole));
+          renderSubFilters(activeRole);
+          applyGroupFilter(activeRole);
+        } else if (activeGroup !== 'all' && activeGroup !== meta.group) {
+          activeGroup = 'all';
+          renderSubFilters(activeRole);
+          applyGroupFilter(activeRole);
+        }
+        const slot = document.querySelector('.screen-slot[data-id="' + targetId + '"]');
+        if (slot) {
+          slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const phone = slot.querySelector('.phone');
+          if (phone) {
+            phone.classList.remove('flow-highlight');
+            void phone.offsetWidth;
+            phone.classList.add('flow-highlight');
+          }
+        }
+      }
+      showFlowToast('→ ' + meta.title + ' (' + meta.shortFile + ')');
+    }
+
+    // Global click delegation for data-go, data-back, and QR Check-in modal
+    function regenerateDynamicQr(modal) {
+      if (!modal) return;
+      const host = modal.querySelector('[data-qr-svg-host]');
+      const tokenEl = modal.querySelector('[data-qr-token]');
+      const metaEl = modal.querySelector('[data-qr-meta]');
+      const hex = Math.floor(0x1000 + Math.random() * 0xEFFF).toString(16).toUpperCase();
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      if (tokenEl) tokenEl.textContent = `MG-261122-${hex}`;
+      if (metaEl) metaEl.textContent = `Tạo lúc ${hh}:${mm}:${ss} · Hết hạn 23:59 hôm nay (đổi mới mỗi lần tạo)`;
+      if (host) {
+        let cells = '';
+        for (let r = 0; r < 11; r++) {
+          for (let c = 0; c < 11; c++) {
+            const inTL = r < 4 && c < 4;
+            const inTR = r < 4 && c > 6;
+            const inBL = r > 6 && c < 4;
+            const inCenter = r >= 4 && r <= 6 && c >= 4 && c <= 6;
+            if (inTL || inTR || inBL || inCenter) continue;
+            if (Math.random() > 0.44) {
+              const x = 6 + c * 10;
+              const y = 6 + r * 10;
+              const fill = (r === 9 && c === 9) ? '#FF5E36' : '#11151A';
+              cells += `<rect x="${x}" y="${y}" width="8" height="8" rx="1.6" fill="${fill}"/>`;
+            }
+          }
+        }
+        host.innerHTML = `<svg viewBox="0 0 120 120" width="168" height="168" xmlns="http://www.w3.org/2000/svg">
+          <rect width="120" height="120" fill="#FFFFFF"/>
+          <rect x="6" y="6" width="30" height="30" rx="4" fill="#11151A"/><rect x="11" y="11" width="20" height="20" rx="2" fill="#FFFFFF"/><rect x="16" y="16" width="10" height="10" rx="1.5" fill="#FF5E36"/>
+          <rect x="84" y="6" width="30" height="30" rx="4" fill="#11151A"/><rect x="89" y="11" width="20" height="20" rx="2" fill="#FFFFFF"/><rect x="94" y="16" width="10" height="10" rx="1.5" fill="#11151A"/>
+          <rect x="6" y="84" width="30" height="30" rx="4" fill="#11151A"/><rect x="11" y="89" width="20" height="20" rx="2" fill="#FFFFFF"/><rect x="16" y="94" width="10" height="10" rx="1.5" fill="#11151A"/>
+          ${cells}
+          <rect x="44" y="44" width="32" height="32" rx="8" fill="#11151A"/>
+          <text x="60" y="65" text-anchor="middle" fill="#FF5E36" font-family="Be Vietnam Pro, sans-serif" font-size="14" font-weight="800">MG</text>
+        </svg>`;
+      }
+    }
+
+    let suppressClickUntil = 0;
+    document.addEventListener('click', (e) => {
+      if (Date.now() < suppressClickUntil) return;
+      const openQr = e.target.closest('[data-open-qr]');
+      if (openQr) {
+        const modal = openQr.closest('.phone')?.querySelector('[data-qr-modal]');
+        regenerateDynamicQr(modal);
+        modal?.classList.add('open');
+        return;
+      }
+      const regenQr = e.target.closest('[data-regen-qr]');
+      if (regenQr) {
+        e.stopPropagation();
+        regenerateDynamicQr(regenQr.closest('[data-qr-modal]'));
+        showFlowToast('Đã tạo mã QR Check-in mới duy nhất trong ngày');
+        return;
+      }
+      const closeQr = e.target.closest('[data-close-qr]');
+      if (closeQr) {
+        closeQr.closest('[data-qr-modal]')?.classList.remove('open');
+        return;
+      }
+      if (e.target.matches('[data-qr-modal]')) {
+        e.target.classList.remove('open');
+        return;
+      }
+
+      // Logout Confirmation Modal
+      const openLogout = e.target.closest('[data-open-logout]');
+      if (openLogout) {
+        e.stopPropagation();
+        openLogout.closest('.phone')?.querySelector('[data-logout-modal]')?.classList.add('open');
+        return;
+      }
+      const closeLogout = e.target.closest('[data-close-logout]');
+      if (closeLogout) {
+        e.stopPropagation();
+        closeLogout.closest('[data-logout-modal]')?.classList.remove('open');
+        return;
+      }
+      if (e.target.matches('[data-logout-modal]')) {
+        e.target.classList.remove('open');
+        return;
+      }
+      const confirmLogout = e.target.closest('[data-confirm-logout]');
+      if (confirmLogout) {
+        e.stopPropagation();
+        confirmLogout.closest('[data-logout-modal]')?.classList.remove('open');
+        navigateToScreen('auth-login');
+        showFlowToast('Đã đăng xuất tài khoản');
+        return;
+      }
+
+      // Avatar Picker Modal (5.1 Hồ sơ & 5.2 Thông tin cá nhân)
+      const openAvatar = e.target.closest('[data-open-avatar]');
+      if (openAvatar) {
+        e.stopPropagation();
+        openAvatarPickerModal(openAvatar.closest('.phone'));
+        return;
+      }
+
+      // Kinetic Body Metric Pickers (Chiều cao: Thước laser đứng | Cân nặng: Mặt cân vòng cung)
+      const bodyPickerBtn = e.target.closest('[data-open-body-picker]');
+      if (bodyPickerBtn) {
+        e.stopPropagation();
+        openBodyMetricPicker(bodyPickerBtn.closest('.phone'), bodyPickerBtn.dataset.openBodyPicker, bodyPickerBtn);
+        return;
+      }
+
+      // Biometric Auth Modal (5.11 Bảo mật & 2. Đăng nhập)
+      const bioBtn = e.target.closest('[data-open-biometric]');
+      if (bioBtn) {
+        e.stopPropagation();
+        openBiometricModal(bioBtn.closest('.phone'), bioBtn.dataset.openBiometric || 'setup');
+        return;
+      }
+      const bioToggle = e.target.closest('[data-biometric-toggle]');
+      if (bioToggle) {
+        e.stopPropagation();
+        const phone = bioToggle.closest('.phone');
+        if (bioToggle.classList.contains('on')) {
+          bioToggle.classList.remove('on');
+          const st = phone?.querySelector('[data-bio-status]');
+          if (st) { st.className = 'pill pill-muted'; st.textContent = '● Chưa bật'; }
+          showFlowToast('Đã tắt đăng nhập Sinh trắc học');
+        } else {
+          openBiometricModal(phone, 'setup');
+        }
+        return;
+      }
+
+      const backEl = e.target.closest('[data-back]');
+      if (backEl) {
+        e.stopPropagation();
+        const currentId = backEl.closest('.screen-slot')?.dataset.id;
+        if (protoMode && flowHistory.length > 1) {
+          flowHistory.pop();
+          navigateToScreen(flowHistory[flowHistory.length - 1], true);
+        } else if (currentId && fallbackParent[currentId]) {
+          navigateToScreen(fallbackParent[currentId]);
+        }
+        return;
+      }
+
+      const pickEl = e.target.closest('[data-pick-date]');
+      if (pickEl) {
+        e.stopPropagation();
+        openMetaCalendar(pickEl);
+        return;
+      }
+
+      // App Settings Dark/Light Switch (5.13 Cài đặt ứng dụng)
+      const themeSw = e.target.closest('[data-app-theme-switch]');
+      if (themeSw) {
+        e.stopPropagation();
+        const opt = e.target.closest('[data-theme-opt]');
+        const nextIsLight = opt ? opt.dataset.themeOpt === 'light' : !document.body.classList.contains('light-mode');
+        applyStudioTheme(nextIsLight);
+        showFlowToast(nextIsLight ? 'Đã chuyển sang Chế độ Sáng' : 'Đã chuyển sang Chế độ Tối');
+        return;
+      }
+
+      // Accordion expand / collapse (5.1 Hồ sơ)
+      const accToggle = e.target.closest('[data-accordion-toggle]');
+      if (accToggle) {
+        e.stopPropagation();
+        accToggle.closest('.accordion-card')?.classList.toggle('is-open');
+        return;
+      }
+
+      const goEl = e.target.closest('[data-go]');
+      if (goEl) {
+        e.stopPropagation();
+        navigateToScreen(goEl.getAttribute('data-go'));
+        return;
+      }
+
+      // Interactive micro-controls: choice chips (Giới tính, Trình độ, Filter...), toggles, day pills, segmented tabs
+      const pill = e.target.closest('.filter-pill');
+      if (pill && pill.parentElement) {
+        pill.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        return;
+      }
+      const toggle = e.target.closest('.toggle-pill');
+      if (toggle) {
+        toggle.classList.toggle('on');
+        return;
+      }
+      const dayPill = e.target.closest('.day-pill');
+      if (dayPill && dayPill.parentElement) {
+        dayPill.parentElement.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+        dayPill.classList.add('active');
+        return;
+      }
+      const segTab = e.target.closest('.seg-tab');
+      if (segTab && segTab.parentElement) {
+        segTab.parentElement.querySelectorAll('.seg-tab').forEach(t => t.classList.remove('active'));
+        segTab.classList.add('active');
+        const stateKey = segTab.getAttribute('data-state-btn');
+        if (stateKey) {
+          const body = segTab.closest('.phone-body');
+          body?.querySelectorAll('[data-state-pane]').forEach(p => {
+            p.style.display = p.getAttribute('data-state-pane') === stateKey ? '' : 'none';
+          });
+        }
+        return;
+      }
+
+      // Fan-Deck Carousel (Hình quạt 4 Thẻ Hội viên: bấm thẻ hai bên hoặc bấm chấm tròn)
+      const fanCard = e.target.closest('[data-fan-idx]');
+      if (fanCard) {
+        const deck = fanCard.closest('[data-fan-deck]');
+        const idx = Number(fanCard.getAttribute('data-fan-idx'));
+        if (deck) {
+          if (Number(deck.getAttribute('data-active')) === idx) {
+            navigateToScreen('member-membership');
+          } else {
+            setFanDeckActive(deck, idx);
+          }
+        }
+        return;
+      }
+      const fanDot = e.target.closest('[data-fan-dot]');
+      if (fanDot) {
+        const deck = fanDot.closest('[data-fan-deck]');
+        if (deck) setFanDeckActive(deck, Number(fanDot.getAttribute('data-fan-dot')));
+      }
+    });
+
+    // 4. Sub-filters & Role Tabs
+    const subFiltersEl = document.getElementById('sub-filters');
     function renderSubFilters(role) {
       const list = registry[role] || [];
       const seen = new Map();
@@ -101,20 +583,17 @@
         if (!seen.has(key)) seen.set(key, { label: s.groupLabel || key, count: 0 });
         seen.get(key).count++;
       });
-
       if (seen.size <= 1) {
         subFiltersEl.innerHTML = '';
         subFiltersEl.style.display = 'none';
         return;
       }
-
       subFiltersEl.style.display = 'flex';
       let html = `<button class="sub-chip ${activeGroup === 'all' ? 'active' : ''}" data-group="all">Tất cả (${list.length})</button>`;
       seen.forEach((info, key) => {
         html += `<button class="sub-chip ${activeGroup === key ? 'active' : ''}" data-group="${key}">${info.label} (${info.count})</button>`;
       });
       subFiltersEl.innerHTML = html;
-
       subFiltersEl.querySelectorAll('.sub-chip').forEach(btn => {
         btn.addEventListener('click', () => {
           activeGroup = btn.dataset.group;
@@ -133,26 +612,44 @@
       });
     }
 
-    // Role Tabs
-    const tabs = document.querySelectorAll('.role-tab');
-    const panels = document.querySelectorAll('.tab-panel');
-    tabs.forEach(tab => {
+    document.querySelectorAll('.role-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         activeRole = tab.dataset.tab;
         activeGroup = 'all';
-        tabs.forEach(t => t.classList.remove('active'));
-        panels.forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.querySelector('.tab-panel[data-panel="' + activeRole + '"]').classList.add('active');
         renderSubFilters(activeRole);
         applyGroupFilter(activeRole);
       });
     });
-
-    // Init sub-filters for default Member tab
     renderSubFilters(activeRole);
 
-    // Device Width
+    // 5. Studio Toolbar Controls
+    const btnProto = document.getElementById('btn-proto');
+    btnProto.addEventListener('click', () => {
+      protoMode = !protoMode;
+      document.body.classList.toggle('proto-mode', protoMode);
+      btnProto.classList.toggle('active', protoMode);
+      btnProto.textContent = protoMode ? '⊞ Thoát Luồng UX' : '▶ Chế độ Luồng UX';
+      if (protoMode) {
+        const startId = activeRole === 'auth' ? 'auth-splash' : (activeRole === 'coach' ? 'coach-home' : 'member-home');
+        flowHistory = [startId];
+        navigateToScreen(startId, true);
+      }
+    });
+
+    document.getElementById('proto-start-auth').addEventListener('click', () => { flowHistory = ['auth-splash']; navigateToScreen('auth-splash', true); });
+    document.getElementById('proto-start-member').addEventListener('click', () => { flowHistory = ['member-home']; navigateToScreen('member-home', true); });
+    document.getElementById('proto-start-coach').addEventListener('click', () => { flowHistory = ['coach-home']; navigateToScreen('coach-home', true); });
+
+    const btnHotspots = document.getElementById('btn-hotspots');
+    btnHotspots.addEventListener('click', () => {
+      const on = document.body.classList.toggle('show-hotspots');
+      btnHotspots.classList.toggle('active', on);
+    });
+
     const btn375 = document.getElementById('btn-375');
     const btn393 = document.getElementById('btn-393');
     btn375.addEventListener('click', () => {
@@ -164,21 +661,740 @@
       btn393.classList.add('active'); btn375.classList.remove('active');
     });
 
-    // Solid Fallback
     const btnSolid = document.getElementById('btn-solid');
     btnSolid.addEventListener('click', () => {
       document.body.classList.toggle('solid-fallback');
       btnSolid.classList.toggle('active');
     });
 
-    // Light / Dark Mode
     const btnTheme = document.getElementById('btn-theme');
     const themeLabel = document.getElementById('theme-label');
-    btnTheme.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('light-mode');
+    function applyStudioTheme(isLight) {
+      document.body.classList.toggle('light-mode', isLight);
       btnTheme.classList.toggle('active', isLight);
       themeLabel.textContent = isLight ? 'Chế độ Tối' : 'Chế độ Sáng';
+      document.querySelectorAll('[data-theme-mode-desc]').forEach(el => {
+        el.textContent = isLight ? 'Sáng · Crisp Daylight Glass' : 'Tối · Futuristic Performance Glass';
+      });
+      document.querySelectorAll('[data-app-theme-switch]').forEach(sw => {
+        const darkEl = sw.querySelector('[data-theme-opt="dark"]');
+        const lightEl = sw.querySelector('[data-theme-opt="light"]');
+        if (darkEl && lightEl) {
+          darkEl.style.background = isLight ? 'transparent' : 'var(--primary)';
+          darkEl.style.color = isLight ? 'var(--text-secondary)' : '#FFF';
+          darkEl.style.fontWeight = isLight ? '600' : '700';
+          lightEl.style.background = isLight ? 'var(--primary)' : 'transparent';
+          lightEl.style.color = isLight ? '#FFF' : 'var(--text-secondary)';
+          lightEl.style.fontWeight = isLight ? '700' : '600';
+        }
+      });
+    }
+    btnTheme.addEventListener('click', () => {
+      applyStudioTheme(!document.body.classList.contains('light-mode'));
     });
+
+    // 5b. Fan-Deck Carousel Controller (Hình quạt 4 thẻ Đồng · Bạc · Vàng · Kim Cương)
+    function setFanDeckActive(deck, activeIdx) {
+      const cards = Array.from(deck.querySelectorAll('[data-fan-idx]'));
+      const total = cards.length;
+      const norm = ((activeIdx % total) + total) % total;
+      deck.setAttribute('data-active', String(norm));
+      cards.forEach((card, i) => {
+        let diff = (i - norm + total) % total;
+        if (diff === total - 1) diff = -1;
+        else if (diff > 1) diff = 2;
+        card.setAttribute('data-pos', String(diff));
+      });
+      const current = cards[norm];
+      if (current) {
+        const b = deck.querySelector('[data-fan-badge]');
+        const t = deck.querySelector('[data-fan-title]');
+        const p = deck.querySelector('[data-fan-price]');
+        const s = deck.querySelector('[data-fan-sub]');
+        if (b) b.textContent = current.dataset.badge || '';
+        if (t) t.textContent = current.dataset.title || '';
+        if (p) p.textContent = current.dataset.price || '';
+        if (s) s.textContent = current.dataset.sub || '';
+      }
+      deck.querySelectorAll('[data-fan-dot]').forEach(dot => {
+        dot.classList.toggle('active', Number(dot.dataset.fanDot) === norm);
+      });
+    }
+
+    // Swipe horizontal on Fan Stage
+    let fanSwipeDeck = null, fanSwipeX = 0;
+    document.addEventListener('mousedown', (e) => {
+      const st = e.target.closest('.fan-stage');
+      if (st) { fanSwipeDeck = st.closest('[data-fan-deck]'); fanSwipeX = e.clientX; }
+    });
+    document.addEventListener('mouseup', (e) => {
+      if (!fanSwipeDeck) return;
+      const dx = e.clientX - fanSwipeX;
+      if (Math.abs(dx) > 36) {
+        const cur = Number(fanSwipeDeck.getAttribute('data-active') || 0);
+        setFanDeckActive(fanSwipeDeck, dx < 0 ? cur + 1 : cur - 1);
+        suppressClickUntil = Date.now() + 180;
+      }
+      fanSwipeDeck = null;
+    });
+
+    // 6. Meta Date/Time Picker Dialog (Đồng bộ thiết kế admin-web/src/components/date-picker.js)
+    const CAL_WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    const TIME_SLOTS = ['07:00', '08:30', '10:00', '15:00', '16:30', '18:00', '19:30', '20:30'];
+
+    function openMetaCalendar(triggerEl) {
+      const phone = triggerEl.closest('.phone');
+      if (!phone) return;
+      phone.querySelector('.meta-cal-overlay')?.remove();
+
+      const iso = triggerEl.getAttribute('data-pick-date') || '2026-11-22';
+      const withTime = triggerEl.hasAttribute('data-pick-time');
+      let selectedTime = triggerEl.getAttribute('data-pick-time') || '18:00';
+      const parts = iso.split('-').map(Number);
+      let viewYear = parts[0] || 2026;
+      let viewMonth = parts[1] || 11;
+      let selectedIso = iso;
+      let pickerMode = 'day'; // 'day' | 'year' | 'month'
+      const todayIso = '2026-11-22';
+
+      const overlay = document.createElement('div');
+      overlay.className = 'meta-cal-overlay';
+
+      function fmtVN(s) {
+        const [y, m, d] = s.split('-');
+        return `${d}/${m}/${y}`;
+      }
+
+      function render() {
+        let bodyHtml = '';
+        if (pickerMode === 'year') {
+          let yrs = '';
+          for (let y = 2026; y >= 1950; y--) {
+            yrs += `<button type="button" class="meta-cal-year-btn ${y === viewYear ? 'is-selected' : ''}" data-pick-year="${y}">${y}</button>`;
+          }
+          bodyHtml = `<div class="txt-xs" style="margin-bottom:8px;text-align:center;">Chọn nhanh năm</div><div class="meta-cal-year-grid">${yrs}</div>`;
+        } else if (pickerMode === 'month') {
+          let mths = '';
+          for (let m = 1; m <= 12; m++) {
+            mths += `<button type="button" class="meta-cal-year-btn ${m === viewMonth ? 'is-selected' : ''}" data-pick-month="${m}">Thg ${m}</button>`;
+          }
+          bodyHtml = `<div class="txt-xs" style="margin-bottom:8px;text-align:center;">Chọn tháng năm ${viewYear}</div><div class="meta-cal-year-grid" style="grid-template-columns:repeat(3,1fr);">${mths}</div>`;
+        } else {
+          const firstDay = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
+          const offset = (firstDay + 6) % 7;
+          const daysInMonth = new Date(Date.UTC(viewYear, viewMonth, 0)).getUTCDate();
+          let cells = '';
+          for (let i = 0; i < offset; i++) cells += '<span></span>';
+          for (let d = 1; d <= daysInMonth; d++) {
+            const cIso = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const cls = ['meta-cal-day', cIso === todayIso ? 'is-today' : '', cIso === selectedIso ? 'is-selected' : ''].filter(Boolean).join(' ');
+            cells += `<button type="button" class="${cls}" data-iso="${cIso}">${d}</button>`;
+          }
+          bodyHtml = `
+            <div class="meta-cal-weekdays">${CAL_WEEKDAYS.map(w => `<span>${w}</span>`).join('')}</div>
+            <div class="meta-cal-grid">${cells}</div>
+          `;
+        }
+
+        const timeBlock = (withTime && pickerMode === 'day') ? `
+          <div class="meta-cal-times">
+            <div class="txt-xs" style="font-weight:700;">Chọn khung giờ (90 phút)</div>
+            <div class="meta-cal-time-grid">
+              ${TIME_SLOTS.map(t => `<button type="button" class="meta-cal-time ${t === selectedTime ? 'is-selected' : ''}" data-time="${t}">${t}</button>`).join('')}
+            </div>
+          </div>` : '';
+
+        overlay.innerHTML = `
+          <div class="meta-cal-dialog">
+            <div class="meta-cal-head">
+              <button type="button" class="meta-cal-nav" data-nav="-1">‹</button>
+              <button type="button" class="meta-cal-title" data-toggle-year title="Bấm để chọn nhanh Năm / Tháng">
+                <span>Tháng ${String(viewMonth).padStart(2, '0')}/${viewYear}</span>
+                <span style="font-size:11px;color:var(--primary);">${pickerMode === 'day' ? '▾' : '▴'}</span>
+              </button>
+              <button type="button" class="meta-cal-nav" data-nav="1">›</button>
+            </div>
+            ${bodyHtml}
+            ${timeBlock}
+            <div class="meta-cal-foot">
+              <button type="button" class="btn-secondary" data-cal-close>Đóng</button>
+              <button type="button" class="btn-primary" style="height:38px;font-size:13px;" data-cal-apply>Áp dụng</button>
+            </div>
+          </div>
+        `;
+
+        overlay.querySelector('[data-toggle-year]').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          pickerMode = pickerMode === 'day' ? 'year' : 'day';
+          render();
+          if (pickerMode === 'year') {
+            overlay.querySelector('.meta-cal-year-btn.is-selected')?.scrollIntoView({ block: 'center' });
+          }
+        });
+        overlay.querySelectorAll('[data-pick-year]').forEach(b => b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          viewYear = Number(b.dataset.pickYear);
+          pickerMode = 'month';
+          render();
+        }));
+        overlay.querySelectorAll('[data-pick-month]').forEach(b => b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          viewMonth = Number(b.dataset.pickMonth);
+          pickerMode = 'day';
+          render();
+        }));
+        overlay.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const delta = Number(b.dataset.nav);
+          if (pickerMode === 'year') { viewYear += delta * 12; }
+          else if (pickerMode === 'month') { viewYear += delta; }
+          else {
+            viewMonth += delta;
+            if (viewMonth < 1) { viewMonth = 12; viewYear--; }
+            if (viewMonth > 12) { viewMonth = 1; viewYear++; }
+          }
+          render();
+        }));
+        overlay.querySelectorAll('[data-iso]').forEach(b => b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          selectedIso = b.dataset.iso;
+          render();
+        }));
+        overlay.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          selectedTime = b.dataset.time;
+          render();
+        }));
+        overlay.querySelector('[data-cal-close]').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          overlay.remove();
+        });
+        overlay.querySelector('[data-cal-apply]').addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          triggerEl.setAttribute('data-pick-date', selectedIso);
+          if (withTime) triggerEl.setAttribute('data-pick-time', selectedTime);
+          const labelSpan = triggerEl.querySelector('.tnum');
+          if (labelSpan) labelSpan.textContent = withTime ? `${fmtVN(selectedIso)} · ${selectedTime}` : fmtVN(selectedIso);
+          showFlowToast('Đã chọn: ' + fmtVN(selectedIso) + (withTime ? ' · ' + selectedTime : ''));
+          overlay.remove();
+        });
+      }
+
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay) overlay.remove();
+      });
+      render();
+      phone.appendChild(overlay);
+    }
+
+    // 6b. Interactive Avatar Picker Modal (5.1 Hồ sơ & 5.2 Thông tin cá nhân)
+    function openAvatarPickerModal(phone) {
+      if (!phone) return;
+      phone.querySelector('.avatar-picker-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open avatar-picker-overlay';
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:4px;">
+            <strong style="font-size:16.5px;color:#F7F9FC;">Cập nhật ảnh đại diện</strong>
+            <span class="pill pill-success" style="font-size:10px;">Đã cấp quyền ảnh</span>
+          </div>
+          <div style="font-size:12px;color:#9BA3B4;margin-bottom:14px;">Chọn nguồn tải ảnh mới cho hồ sơ hội viên của bạn</div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            <button type="button" data-avatar-act="camera" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+              <span style="width:36px;height:36px;border-radius:10px;background:rgba(255,94,54,0.16);border:1px solid rgba(255,94,54,0.38);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_camera.svg" alt="Camera" style="background:transparent;padding:0;" />
+              </span>
+              <span style="flex:1;">
+                <div style="font-size:13.5px;font-weight:700;">Chụp ảnh mới</div>
+                <div style="font-size:11px;color:#8E95A5;">Mở camera trước hoặc sau</div>
+              </span>
+              <span style="color:#8E95A5;font-size:15px;">›</span>
+            </button>
+
+            <button type="button" data-avatar-act="gallery" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+              <span style="width:36px;height:36px;border-radius:10px;background:rgba(112,174,232,0.16);border:1px solid rgba(112,174,232,0.38);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/media_gallery.svg" alt="Thư viện" style="background:transparent;padding:0;" />
+              </span>
+              <span style="flex:1;">
+                <div style="font-size:13.5px;font-weight:700;">Chọn từ thư viện ảnh</div>
+                <div style="font-size:11px;color:#8E95A5;">Hỗ trợ JPG, PNG · Tối đa 5MB</div>
+              </span>
+              <span style="color:#8E95A5;font-size:15px;">›</span>
+            </button>
+
+            <button type="button" data-avatar-act="remove" style="width:100%;min-height:46px;padding:10px 12px;border-radius:14px;background:rgba(241,91,100,0.08);border:1px solid rgba(241,91,100,0.28);color:#F15B64;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:13px;font-weight:700;">
+              <span>Xoá ảnh đại diện hiện tại</span>
+            </button>
+          </div>
+
+          <button type="button" class="btn-secondary" style="width:100%;height:44px;" data-avatar-close>Huỷ</button>
+        </div>
+      `;
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay || ev.target.closest('[data-avatar-close]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          return;
+        }
+        const actBtn = ev.target.closest('[data-avatar-act]');
+        if (actBtn) {
+          ev.stopPropagation();
+          const act = actBtn.dataset.avatarAct;
+          if (act === 'camera') showFlowToast('Đã mở Camera để chụp ảnh đại diện mới');
+          else if (act === 'gallery') showFlowToast('Đã mở Thư viện ảnh để chọn Avatar');
+          else if (act === 'remove') showFlowToast('Đã gỡ ảnh đại diện (dùng chữ viết tắt MQ)');
+          overlay.remove();
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6c. Kinetic Body Metric Pickers (Inline Height Ruler + Vertical Laser Stadiometer + Mechanical Arc Weight Dial)
+    function calcBmiInfo(heightCm, weightKg) {
+      const h = heightCm / 100;
+      const bmi = +(weightKg / (h * h)).toFixed(1);
+      let label = 'Bình thường', cls = 'pill-success', pct = 42;
+      if (bmi < 18.5) { label = 'Thiếu cân'; cls = 'pill-muted'; pct = Math.max(4, (bmi / 18.5) * 24); }
+      else if (bmi < 25) { label = 'Bình thường'; cls = 'pill-success'; pct = 24 + ((bmi - 18.5) / 6.5) * 36; }
+      else if (bmi < 30) { label = 'Thừa cân'; cls = 'pill-orange'; pct = 60 + ((bmi - 25) / 5) * 22; }
+      else { label = 'Béo phì'; cls = 'pill-orange'; pct = Math.min(96, 82 + ((bmi - 30) / 10) * 18); }
+      return { bmi, label, cls, pct };
+    }
+    function cmToFtIn(cm) {
+      const totalIn = Math.round(cm / 2.54);
+      return `${Math.floor(totalIn / 12)}'${totalIn % 12}"`;
+    }
+    function syncPhoneBodyMetrics(phone, heightCm, weightKg) {
+      if (!phone) return;
+      if (heightCm != null) {
+        phone.dataset.bodyHeight = String(heightCm);
+        phone.querySelectorAll('[data-height-readout]').forEach(el => { el.textContent = `${heightCm} cm`; el.dataset.value = String(heightCm); });
+        phone.querySelectorAll('[data-open-body-picker="height"]').forEach(el => { el.dataset.value = String(heightCm); });
+        phone.querySelectorAll('[data-summary-height]').forEach(el => el.textContent = `${heightCm} cm`);
+        phone.querySelectorAll('[data-field-height]').forEach(el => el.textContent = String(heightCm));
+        phone.querySelectorAll('[data-height-ft]').forEach(el => el.textContent = `${cmToFtIn(heightCm)} · Chuẩn thể hình`);
+        const inlineRuler = phone.querySelector('[data-inline-ruler="height"]');
+        if (inlineRuler && inlineRuler._setVal) inlineRuler._setVal(heightCm);
+      }
+      if (weightKg != null) {
+        const wStr = Number(weightKg).toFixed(1);
+        phone.dataset.bodyWeight = wStr;
+        phone.querySelectorAll('[data-open-body-picker="weight"]').forEach(el => { el.dataset.value = wStr; });
+        phone.querySelectorAll('[data-summary-weight]').forEach(el => el.textContent = `${wStr} kg`);
+        phone.querySelectorAll('[data-field-weight]').forEach(el => el.textContent = wStr);
+      }
+      const h = Number(phone.dataset.bodyHeight || 174);
+      const w = Number(phone.dataset.bodyWeight || 72.4);
+      const info = calcBmiInfo(h, w);
+      phone.querySelectorAll('[data-bmi-pill]').forEach(el => {
+        el.className = `pill ${info.cls} tnum`;
+        el.textContent = `● BMI ${info.bmi.toFixed(1)} · ${info.label}`;
+      });
+    }
+
+    // Initialize inline horizontal precision rulers on 5.3
+    document.querySelectorAll('[data-inline-ruler="height"]').forEach(wrap => {
+      const min = Number(wrap.dataset.min || 120);
+      const max = Number(wrap.dataset.max || 220);
+      let val = Number(wrap.dataset.val || 174);
+      const stepPx = 8;
+      const track = wrap.querySelector('.inline-ruler-track');
+      let ticksHtml = '';
+      for (let v = min; v <= max; v++) {
+        const isMajor = v % 10 === 0;
+        const isMid = !isMajor && v % 5 === 0;
+        ticksHtml += `<div class="inline-ruler-tick ${isMajor ? 'major' : isMid ? 'mid' : ''}">${isMajor ? `<span class="lbl">${v}</span>` : ''}<span class="bar"></span></div>`;
+      }
+      track.innerHTML = ticksHtml;
+      function applyVal(next, fromUser) {
+        val = Math.max(min, Math.min(max, Math.round(next)));
+        const offset = (val - min) * stepPx + stepPx / 2;
+        track.style.transform = `translateX(${-offset}px)`;
+        if (fromUser) syncPhoneBodyMetrics(wrap.closest('.phone'), val, null);
+      }
+      wrap._setVal = (v) => applyVal(v, false);
+      applyVal(val, false);
+
+      let dragging = false, sx = 0, startV = val;
+      wrap.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        dragging = true; sx = e.clientX; startV = val;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        applyVal(startV - (e.clientX - sx) / stepPx, true);
+      });
+      window.addEventListener('mouseup', () => { dragging = false; });
+      wrap.addEventListener('wheel', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        applyVal(val + (e.deltaY > 0 ? 1 : -1), true);
+      }, { passive: false });
+    });
+
+    function openBodyMetricPicker(phone, type, triggerEl) {
+      if (!phone) return;
+      phone.querySelector('.body-metric-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open body-metric-overlay';
+
+      const curH = Number(phone.dataset.bodyHeight || triggerEl?.dataset.value || 174);
+      const curW = Number(phone.dataset.bodyWeight || (type === 'weight' ? triggerEl?.dataset.value : null) || 72.4);
+
+      if (type === 'height') {
+        let val = Math.max(120, Math.min(220, Math.round(Number(triggerEl?.dataset.value || curH))));
+        const min = 120, max = 220, pxPerCm = 7;
+        overlay.innerHTML = `
+          <div class="body-picker-sheet">
+            <div class="row-between">
+              <div>
+                <div style="font-size:16px;font-weight:800;">Thước đo chiều cao</div>
+                <div style="font-size:11.5px;color:#8E95A5;">Kéo thước lên/xuống hoặc lăn chuột</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="tnum" style="font-size:24px;font-weight:800;color:#FF5E36;line-height:1;" data-h-val>${val} cm</div>
+                <div class="tnum" style="font-size:11px;color:#8E95A5;margin-top:2px;" data-h-sub>${cmToFtIn(val)}</div>
+              </div>
+            </div>
+
+            <div class="stadiometer-stage">
+              <div class="stadiometer-body">
+                <div class="stadiometer-laser" data-laser></div>
+                <svg data-silhouette viewBox="0 0 80 180" style="width:74px;height:170px;transform-origin:bottom center;transition:transform 90ms ease-out;">
+                  <defs>
+                    <linearGradient id="mgBodyGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#FF5E36" stop-opacity="0.95"/>
+                      <stop offset="100%" stop-color="#70AEE8" stop-opacity="0.55"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="40" cy="22" r="13" fill="url(#mgBodyGrad)"/>
+                  <path d="M22 44 C22 37 58 37 58 44 L64 94 C64 98 58 99 56 95 L52 62 L51 112 L56 170 C56 174 47 175 46 170 L41 124 L39 124 L34 170 C33 175 24 174 24 170 L29 112 L28 62 L24 95 C22 99 16 98 16 94 Z" fill="url(#mgBodyGrad)"/>
+                </svg>
+                <div style="position:absolute;bottom:4px;left:18px;right:18px;height:3px;border-radius:999px;background:rgba(169,199,232,0.35);"></div>
+              </div>
+              <div class="stadiometer-ruler" data-v-ruler>
+                <div class="stadiometer-needle"></div>
+                <div class="stadiometer-ruler-track" data-v-track></div>
+              </div>
+            </div>
+
+            <div class="row-between" style="margin-bottom:12px;">
+              <button type="button" class="step-chip-btn" data-h-step="-1">− 1 cm</button>
+              <span class="pill pill-success tnum" data-h-bmi>BMI 23.9 · Bình thường</span>
+              <button type="button" class="step-chip-btn" data-h-step="1">+ 1 cm</button>
+            </div>
+            <div class="grid-2" style="gap:10px;">
+              <button type="button" class="btn-secondary" style="height:44px;" data-bm-close>Huỷ</button>
+              <button type="button" class="btn-primary" style="height:44px;" data-bm-save>Xác nhận</button>
+            </div>
+          </div>
+        `;
+        const track = overlay.querySelector('[data-v-track]');
+        let rows = '';
+        for (let cm = max; cm >= min; cm--) {
+          const major = cm % 10 === 0, mid = !major && cm % 5 === 0;
+          rows += `<div style="height:${pxPerCm}px;display:flex;align-items:center;gap:6px;padding-left:6px;">
+            <span style="display:inline-block;height:${major ? 2 : 1}px;width:${major ? 26 : mid ? 16 : 9}px;background:${major ? '#F7F9FC' : 'rgba(232,237,245,0.35)'};border-radius:2px;"></span>
+            ${major ? `<span class="tnum" style="font-size:10px;color:#9BA3B4;font-weight:700;">${cm}</span>` : ''}
+          </div>`;
+        }
+        track.innerHTML = rows;
+
+        function updateHeightUI() {
+          const idxFromTop = max - val;
+          track.style.transform = `translateY(${-(idxFromTop * pxPerCm + pxPerCm / 2)}px)`;
+          const ratio = (val - min) / (max - min);
+          const scale = 0.56 + ratio * 0.44;
+          overlay.querySelector('[data-silhouette]').style.transform = `scale(${scale.toFixed(3)})`;
+          overlay.querySelector('[data-laser]').style.bottom = `${Math.round(12 + scale * 164)}px`;
+          overlay.querySelector('[data-h-val]').textContent = `${val} cm`;
+          overlay.querySelector('[data-h-sub]').textContent = cmToFtIn(val);
+          const info = calcBmiInfo(val, curW);
+          const bmiEl = overlay.querySelector('[data-h-bmi]');
+          bmiEl.className = `pill ${info.cls} tnum`;
+          bmiEl.textContent = `BMI ${info.bmi.toFixed(1)} · ${info.label}`;
+        }
+        updateHeightUI();
+
+        const rulerEl = overlay.querySelector('[data-v-ruler]');
+        let dragging = false, sy = 0, sv = val;
+        rulerEl.addEventListener('mousedown', (e) => { e.stopPropagation(); dragging = true; sy = e.clientY; sv = val; });
+        const onMove = (e) => {
+          if (!dragging) return;
+          val = Math.max(min, Math.min(max, Math.round(sv + (e.clientY - sy) / pxPerCm)));
+          updateHeightUI();
+        };
+        const onUp = () => { dragging = false; };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        rulerEl.addEventListener('wheel', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          val = Math.max(min, Math.min(max, val + (e.deltaY < 0 ? 1 : -1)));
+          updateHeightUI();
+        }, { passive: false });
+
+        function cleanup() { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); overlay.remove(); }
+        overlay.addEventListener('click', (ev) => {
+          const st = ev.target.closest('[data-h-step]');
+          if (st) { ev.stopPropagation(); val = Math.max(min, Math.min(max, val + Number(st.dataset.hStep))); updateHeightUI(); return; }
+          if (ev.target === overlay || ev.target.closest('[data-bm-close]')) { ev.stopPropagation(); cleanup(); return; }
+          if (ev.target.closest('[data-bm-save]')) {
+            ev.stopPropagation();
+            syncPhoneBodyMetrics(phone, val, null);
+            showFlowToast(`Đã cập nhật chiều cao: ${val} cm`);
+            cleanup();
+          }
+        });
+      } else {
+        // Weight Mechanical Arc Dial (35.0 - 150.0 kg)
+        let val = Math.max(35, Math.min(150, +(Number(triggerEl?.dataset.value || curW).toFixed(1))));
+        const min = 35, max = 150;
+        overlay.innerHTML = `
+          <div class="body-picker-sheet">
+            <div class="row-between">
+              <div>
+                <div style="font-size:16px;font-weight:800;">Mặt cân cơ học Meta Gym</div>
+                <div style="font-size:11.5px;color:#8E95A5;">Xoay trái/phải mặt cân hoặc lăn chuột</div>
+              </div>
+              <span class="pill pill-orange tnum">± 0.1 kg</span>
+            </div>
+
+            <div class="weight-dial-stage" data-w-dial>
+              <svg viewBox="0 0 320 204" style="width:100%;height:100%;display:block;">
+                <circle cx="160" cy="245" r="196" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+                <circle cx="160" cy="245" r="144" fill="rgba(24,27,34,0.85)" stroke="rgba(169,199,232,0.16)" stroke-width="1"/>
+                <g data-dial-ticks></g>
+                <polygon points="160,34 154,20 166,20" fill="#FF5E36"/>
+                <line x1="160" y1="32" x2="160" y2="76" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;left:0;right:0;bottom:18px;text-align:center;pointer-events:none;">
+                <div class="tnum" style="font-size:34px;font-weight:800;letter-spacing:-0.02em;line-height:1;" data-w-val>${val.toFixed(1)} <span style="font-size:15px;color:#8E95A5;font-weight:600;">kg</span></div>
+                <div class="tnum" style="font-size:11.5px;color:#9BA3B4;margin-top:4px;" data-w-lbs>${(val * 2.20462).toFixed(1)} lbs</div>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px 12px;margin-bottom:12px;">
+              <div class="row-between" style="font-size:11.5px;">
+                <span style="color:#9BA3B4;">Chỉ số BMI (Cao ${curH} cm)</span>
+                <strong class="tnum" data-w-bmi-lbl style="color:#2ECC71;">23.9 · Bình thường</strong>
+              </div>
+              <div class="bmi-bar-track"><div class="bmi-bar-dot" data-bmi-dot style="left:45%;"></div></div>
+              <div class="row-between" style="font-size:9.5px;color:#8E95A5;">
+                <span>Thiếu cân</span><span>Bình thường</span><span>Thừa cân</span><span>Béo phì</span>
+              </div>
+            </div>
+
+            <div class="row-between" style="margin-bottom:12px;">
+              <button type="button" class="step-chip-btn" data-w-step="-0.5">− 0.5 kg</button>
+              <button type="button" class="step-chip-btn" data-w-step="-0.1">− 0.1</button>
+              <button type="button" class="step-chip-btn" data-w-step="0.1">+ 0.1</button>
+              <button type="button" class="step-chip-btn" data-w-step="0.5">+ 0.5 kg</button>
+            </div>
+            <div class="grid-2" style="gap:10px;">
+              <button type="button" class="btn-secondary" style="height:44px;" data-bm-close>Huỷ</button>
+              <button type="button" class="btn-primary" style="height:44px;" data-bm-save>Xác nhận</button>
+            </div>
+          </div>
+        `;
+
+        const ticksG = overlay.querySelector('[data-dial-ticks]');
+        function updateWeightUI() {
+          const cx = 160, cy = 245, rOuter = 192;
+          const degPerKg = 5.2; // crisp arc spacing
+          let html = '';
+          const startTick = Math.max(min * 10, Math.floor((val - 10) * 10));
+          const endTick = Math.min(max * 10, Math.ceil((val + 10) * 10));
+          for (let t = startTick; t <= endTick; t++) {
+            const kg = t / 10;
+            const angleDeg = (kg - val) * degPerKg;
+            if (Math.abs(angleDeg) > 46) continue;
+            const rad = (angleDeg - 90) * Math.PI / 180;
+            const isMajor = t % 10 === 0;
+            const isHalf = !isMajor && t % 5 === 0;
+            const len = isMajor ? 24 : isHalf ? 15 : 8;
+            const x1 = cx + Math.cos(rad) * rOuter;
+            const y1 = cy + Math.sin(rad) * rOuter;
+            const x2 = cx + Math.cos(rad) * (rOuter - len);
+            const y2 = cy + Math.sin(rad) * (rOuter - len);
+            const stroke = isMajor ? '#F7F9FC' : isHalf ? 'rgba(232,237,245,0.65)' : 'rgba(232,237,245,0.28)';
+            html += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${isMajor ? 2 : 1.2}" stroke-linecap="round"/>`;
+            if (isMajor && t % 50 === 0 || (isMajor && Math.abs(kg - val) < 4)) {
+              if (t % 20 === 0) {
+                const lx = cx + Math.cos(rad) * (rOuter - 36);
+                const ly = cy + Math.sin(rad) * (rOuter - 36);
+                html += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#9BA3B4" font-size="11" font-weight="700" font-family="Be Vietnam Pro, sans-serif">${kg.toFixed(0)}</text>`;
+              }
+            }
+          }
+          ticksG.innerHTML = html;
+          overlay.querySelector('[data-w-val]').innerHTML = `${val.toFixed(1)} <span style="font-size:15px;color:#8E95A5;font-weight:600;">kg</span>`;
+          overlay.querySelector('[data-w-lbs]').textContent = `${(val * 2.20462).toFixed(1)} lbs`;
+          const info = calcBmiInfo(curH, val);
+          overlay.querySelector('[data-w-bmi-lbl]').textContent = `${info.bmi.toFixed(1)} · ${info.label}`;
+          overlay.querySelector('[data-w-bmi-lbl]').style.color = info.bmi < 18.5 ? '#56A8F5' : info.bmi < 25 ? '#2ECC71' : info.bmi < 30 ? '#F5A623' : '#F15B64';
+          overlay.querySelector('[data-bmi-dot]').style.left = `${info.pct.toFixed(1)}%`;
+        }
+        updateWeightUI();
+
+        const dialEl = overlay.querySelector('[data-w-dial]');
+        let dragging = false, sx = 0, sv = val;
+        dialEl.addEventListener('mousedown', (e) => { e.stopPropagation(); dragging = true; sx = e.clientX; sv = val; });
+        const onMove = (e) => {
+          if (!dragging) return;
+          val = Math.max(min, Math.min(max, +(sv - (e.clientX - sx) / 14).toFixed(1)));
+          updateWeightUI();
+        };
+        const onUp = () => { dragging = false; };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        dialEl.addEventListener('wheel', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          val = Math.max(min, Math.min(max, +(val + (e.deltaY > 0 ? 0.2 : -0.2)).toFixed(1)));
+          updateWeightUI();
+        }, { passive: false });
+
+        function cleanup() { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); overlay.remove(); }
+        overlay.addEventListener('click', (ev) => {
+          const st = ev.target.closest('[data-w-step]');
+          if (st) { ev.stopPropagation(); val = Math.max(min, Math.min(max, +(val + Number(st.dataset.wStep)).toFixed(1))); updateWeightUI(); return; }
+          if (ev.target === overlay || ev.target.closest('[data-bm-close]')) { ev.stopPropagation(); cleanup(); return; }
+          if (ev.target.closest('[data-bm-save]')) {
+            ev.stopPropagation();
+            syncPhoneBodyMetrics(phone, null, val);
+            showFlowToast(`Đã cập nhật cân nặng: ${val.toFixed(1)} kg`);
+            cleanup();
+          }
+        });
+      }
+
+      phone.appendChild(overlay);
+    }
+
+    // 6d. Interactive Biometric Auth Modal (Face ID / Vân tay)
+    function openBiometricModal(phone, mode) {
+      if (!phone) return;
+      phone.querySelector('.biometric-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open biometric-overlay';
+      let method = 'face'; // 'face' | 'finger'
+      const isLogin = mode === 'login';
+
+      function renderBio() {
+        const iconSrc = method === 'face'
+          ? '../../meta-gym/assets/svg/setting/auth_face_id.svg'
+          : '../../meta-gym/assets/svg/setting/auth_fingerprint.svg';
+        const methodLbl = method === 'face' ? 'Face ID' : 'Vân tay';
+        overlay.innerHTML = `
+          <div class="qr-sheet" style="text-align:center;">
+            <div class="seg-tabs" style="margin-bottom:14px;">
+              <div class="seg-tab ${method === 'face' ? 'active' : ''}" data-bio-method="face" style="cursor:pointer;">Face ID</div>
+              <div class="seg-tab ${method === 'finger' ? 'active' : ''}" data-bio-method="finger" style="cursor:pointer;">Vân tay</div>
+            </div>
+
+            <div data-bio-ring style="width:78px;height:78px;border-radius:50%;margin:4px auto 14px;background:rgba(255,94,54,0.14);border:2px solid rgba(255,94,54,0.65);box-shadow:0 0 28px rgba(255,94,54,0.28);display:flex;align-items:center;justify-content:center;transition:all 220ms ease;">
+              <img class="ico-lg" src="${iconSrc}" alt="${methodLbl}" style="width:40px;height:40px;background:transparent;padding:0;" />
+            </div>
+
+            <div style="font-size:17px;font-weight:800;color:#F7F9FC;" data-bio-title>
+              ${isLogin ? `Đăng nhập bằng ${methodLbl}` : `Kích hoạt ${methodLbl}`}
+            </div>
+            <div style="font-size:12px;color:#9BA3B4;margin:6px 0 14px;line-height:1.5;" data-bio-desc>
+              ${isLogin
+                ? `Xác thực ${methodLbl} để mở nhanh tài khoản minhquan@metagym.vn mà không cần mật khẩu.`
+                : `Liên kết ${methodLbl} của thiết bị này để đăng nhập nhanh sau mỗi phiên sử dụng Meta Gym.`}
+            </div>
+
+            <div class="grid-2" style="gap:10px;">
+              <button type="button" class="btn-secondary" style="height:44px;" data-bio-close>Để sau</button>
+              <button type="button" class="btn-primary" style="height:44px;" data-bio-verify>Xác thực ngay</button>
+            </div>
+          </div>
+        `;
+      }
+      renderBio();
+
+      overlay.addEventListener('click', (ev) => {
+        const mBtn = ev.target.closest('[data-bio-method]');
+        if (mBtn) {
+          ev.stopPropagation();
+          method = mBtn.dataset.bioMethod;
+          renderBio();
+          return;
+        }
+        if (ev.target === overlay || ev.target.closest('[data-bio-close]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          return;
+        }
+        if (ev.target.closest('[data-bio-verify]')) {
+          ev.stopPropagation();
+          const ring = overlay.querySelector('[data-bio-ring]');
+          const title = overlay.querySelector('[data-bio-title]');
+          const methodLbl = method === 'face' ? 'Face ID' : 'Vân tay';
+          if (ring) {
+            ring.style.background = 'rgba(46,204,113,0.18)';
+            ring.style.borderColor = '#2ECC71';
+            ring.style.boxShadow = '0 0 32px rgba(46,204,113,0.45)';
+          }
+          if (title) title.textContent = `✓ Đã xác thực ${methodLbl}`;
+          setTimeout(() => {
+            overlay.remove();
+            if (isLogin) {
+              navigateToScreen('member-home');
+              showFlowToast(`Đăng nhập thành công bằng ${methodLbl}`);
+            } else {
+              const tgl = phone.querySelector('[data-biometric-toggle]');
+              const st = phone.querySelector('[data-bio-status]');
+              if (tgl) tgl.classList.add('on');
+              if (st) { st.className = 'pill pill-success'; st.textContent = `● Đang bật (${methodLbl})`; }
+              showFlowToast(`Đã bật đăng nhập bằng ${methodLbl}`);
+            }
+          }, 420);
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 7. Natural Touch-like Drag-to-Scroll (Vertical .phone-body & Horizontal .filter-row)
+    let dragEl = null, dragAxis = 'y', startPos = 0, startScroll = 0, didDrag = false;
+    document.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.inline-ruler-wrap, .stadiometer-ruler, .weight-dial-stage')) return;
+      const hRow = e.target.closest('.filter-row, .tier-carousel');
+      if (hRow && hRow.scrollWidth > hRow.clientWidth) {
+        dragEl = hRow; dragAxis = 'x'; startPos = e.clientX; startScroll = hRow.scrollLeft; didDrag = false;
+        hRow.classList.add('is-dragging');
+        return;
+      }
+      const pBody = e.target.closest('.phone-body');
+      if (pBody && pBody.scrollHeight > pBody.clientHeight) {
+        dragEl = pBody; dragAxis = 'y'; startPos = e.clientY; startScroll = pBody.scrollTop; didDrag = false;
+        pBody.classList.add('is-dragging');
+      }
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!dragEl) return;
+      const delta = (dragAxis === 'x' ? e.clientX : e.clientY) - startPos;
+      if (Math.abs(delta) > 6) didDrag = true;
+      if (didDrag) {
+        if (dragAxis === 'x') dragEl.scrollLeft = startScroll - delta;
+        else dragEl.scrollTop = startScroll - delta;
+      }
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragEl) return;
+      dragEl.classList.remove('is-dragging');
+      if (didDrag) suppressClickUntil = Date.now() + 180;
+      dragEl = null;
+    });
+    document.addEventListener('wheel', (e) => {
+      const hRow = e.target.closest('.filter-row, .tier-carousel');
+      if (hRow && hRow.scrollWidth > hRow.clientWidth && Math.abs(e.deltaY) > 0) {
+        e.preventDefault();
+        hRow.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>

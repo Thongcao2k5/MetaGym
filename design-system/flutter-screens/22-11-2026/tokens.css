@@ -126,18 +126,18 @@ body.light-mode .quick-ico {
   border: 1px solid rgba(17, 21, 26, 0.10);
 }
 body.light-mode .ico-dock {
-  width: 38px;
-  height: 38px;
-  padding: 6px;
+  width: 42px;
+  height: 42px;
+  padding: 4px;
   border-radius: 12px;
   background: #222834;
   box-shadow: 0 2px 6px rgba(17, 21, 26, 0.12);
 }
 body.light-mode .ico-lg {
-  width: 36px;
-  height: 36px;
-  padding: 6px;
-  border-radius: 11px;
+  width: 42px;
+  height: 42px;
+  padding: 4px;
+  border-radius: 12px;
   background: #222834;
 }
 body.light-mode .ico-sm,
@@ -481,12 +481,28 @@ body {
   position: relative;
   z-index: 2;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 8px 16px 110px;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(169, 199, 232, 0.28) transparent;
 }
-.phone-body::-webkit-scrollbar { display: none; }
+.phone-body::-webkit-scrollbar { width: 4px; }
+.phone-body::-webkit-scrollbar-track { background: transparent; }
+.phone-body::-webkit-scrollbar-thumb {
+  background: rgba(169, 199, 232, 0.25);
+  border-radius: 999px;
+}
+.phone-body:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 94, 54, 0.52);
+}
 .phone-body.no-nav { padding-bottom: 28px; }
+.phone-body.is-dragging, .filter-row.is-dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
 
 /* ==========================================================================
    Shared Meta Gym Flutter Components
@@ -513,6 +529,65 @@ body {
   font-weight: 800;
   color: #FFF;
   flex-shrink: 0;
+}
+
+/* QR Check-in Header Button (1.1 Trang chủ Hội viên) */
+.qr-checkin-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 94, 54, 0.22), rgba(41, 36, 31, 0.88));
+  border: 1.2px solid rgba(255, 94, 54, 0.62);
+  box-shadow: 0 4px 12px rgba(255, 94, 54, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+.qr-checkin-btn:hover { transform: scale(1.04); border-color: var(--primary); }
+.qr-checkin-btn img { width: 28px; height: 28px; object-fit: contain; display: block; }
+body.light-mode .qr-checkin-btn {
+  background: #222834;
+  border-color: var(--primary);
+}
+
+/* Level 3 Overlay Glass — QR Check-in Modal inside Phone */
+.qr-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgba(4, 6, 9, 0.76);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.qr-overlay.open { display: flex; }
+.qr-sheet {
+  width: 100%;
+  background: rgba(15, 17, 21, 0.94);
+  border: 1px solid rgba(235, 246, 255, 0.28);
+  border-radius: 24px;
+  padding: 20px 18px;
+  text-align: center;
+  color: #F7F9FC;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+}
+.qr-box-white {
+  background: #FFFFFF;
+  border-radius: 18px;
+  padding: 14px;
+  width: 196px;
+  height: 196px;
+  margin: 14px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .mg-header-text { flex: 1; min-width: 0; }
 .mg-eyebrow {
@@ -605,15 +680,16 @@ body {
   background: rgba(255, 94, 54, 0.16);
 }
 .quick-ico {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   background: rgba(255, 94, 54, 0.16);
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 15px;
+  flex-shrink: 0;
 }
 .quick-lbl {
   font-size: 11px;
@@ -837,17 +913,402 @@ body {
   object-fit: contain;
 }
 
-/* Meta Gym Custom SVG Icon Sizes */
-.ico-xs { width: 14px; height: 14px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
-.ico-sm { width: 17px; height: 17px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
-.ico-md { width: 21px; height: 21px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
-.ico-lg { width: 26px; height: 26px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
-.ico-dock { width: 26px; height: 26px; display: block; object-fit: contain; }
+/* Meta Gym Custom SVG Icon Sizes (bù khoảng đệm bên trong viewBox 48x48) */
+.ico-xs { width: 18px; height: 18px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
+.ico-sm { width: 22px; height: 22px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
+.ico-md { width: 26px; height: 26px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
+.ico-lg { width: 34px; height: 34px; display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
+.ico-dock { width: 34px; height: 34px; display: block; object-fit: contain; }
+
+/* Auth Legal Notice & Version Footer */
+.auth-legal {
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  text-align: center;
+}
+.auth-policy-link {
+  color: var(--reflection);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+body.light-mode .auth-policy-link {
+  color: var(--primary-hover);
+}
+.auth-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.auth-version-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.88;
+}
+
+/* Monthly Check-in Calendar Grid (gym_visits_page.dart) */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.cal-head {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding-bottom: 4px;
+}
+.cal-cell {
+  height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+.cal-cell.visited {
+  background: rgba(255, 94, 54, 0.22);
+  border: 1px solid rgba(255, 94, 54, 0.55);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.cal-cell.today {
+  background: var(--primary);
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(255, 94, 54, 0.4);
+}
+.cal-cell.future {
+  opacity: 0.35;
+}
+body.light-mode .cal-cell {
+  background: #EDF1F5;
+}
+body.light-mode .cal-cell.visited {
+  background: rgba(255, 94, 54, 0.14);
+  color: var(--primary-hover);
+}
+
+/* Toggle Switch Pill (Settings & Privacy) */
+.toggle-pill {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.toggle-pill.on {
+  background: var(--primary);
+  justify-content: flex-end;
+}
+.toggle-knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+body.light-mode .toggle-pill:not(.on) {
+  background: #CBD4DF;
+}
+
+/* ==========================================================================
+   Interactive UX Flow Hotspots, Focus Pulse & Single-Phone Prototype Mode
+   ========================================================================== */
+[data-go], [data-back], .filter-pill, .toggle-pill, .day-pill, .seg-tab {
+  cursor: pointer;
+  transition: transform 120ms ease, outline-color 140ms ease, background 150ms ease, border-color 150ms ease;
+}
+[data-go]:active, [data-back]:active {
+  transform: scale(0.98);
+}
+body.show-hotspots [data-go],
+body.show-hotspots [data-back] {
+  outline: 1.5px dashed rgba(255, 94, 54, 0.72);
+  outline-offset: 2px;
+}
+
+@keyframes phoneFocusPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 94, 54, 0.85), 0 24px 64px rgba(0,0,0,0.65); }
+  70%  { box-shadow: 0 0 0 14px rgba(255, 94, 54, 0), 0 24px 64px rgba(0,0,0,0.65); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 94, 54, 0), 0 24px 64px rgba(0,0,0,0.65); }
+}
+.phone.flow-highlight {
+  animation: phoneFocusPulse 900ms ease-out;
+  border-color: var(--primary) !important;
+}
+
+/* Prototype Mode (Single Phone + Flow Breadcrumb Bar) */
+.proto-bar {
+  display: none;
+  max-width: 780px;
+  margin: 14px auto 0;
+  padding: 10px 16px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  border-radius: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+body.proto-mode .proto-bar { display: flex; }
+body.proto-mode .role-tabs-wrap,
+body.proto-mode .sub-filters-wrap { display: none !important; }
+body.proto-mode .tab-panel { display: none !important; }
+body.proto-mode .tab-panel.proto-active {
+  display: flex !important;
+  justify-content: center;
+}
+body.proto-mode .screen-slot { display: none !important; }
+body.proto-mode .screen-slot.proto-current { display: flex !important; }
+
+.proto-trail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.proto-crumb {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-solid);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+.proto-crumb.current {
+  background: rgba(255, 94, 54, 0.16);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.flow-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 120;
+  background: rgba(15, 17, 21, 0.94);
+  border: 1px solid rgba(255, 94, 54, 0.55);
+  color: #F7F9FC;
+  padding: 9px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+.flow-toast.show { opacity: 1; }
+
+/* ==========================================================================
+   Meta Calendar / Date-Time Picker (Đồng bộ thiết kế admin-web/date-picker.js)
+   ========================================================================== */
+[data-pick-date] {
+  cursor: pointer;
+}
+.meta-cal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  background: rgba(4, 6, 9, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.meta-cal-dialog {
+  width: 100%;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  border-radius: 22px;
+  padding: 16px;
+  color: var(--text-primary);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+.meta-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.meta-cal-title {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-solid);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.meta-cal-title:hover { border-color: var(--primary); color: var(--primary); }
+.meta-cal-year-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+.meta-cal-year-btn {
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border-solid);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.meta-cal-year-btn:hover { border-color: var(--primary); }
+.meta-cal-year-btn.is-selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.meta-cal-nav {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border-solid);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.meta-cal-weekdays,
+.meta-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.meta-cal-weekdays {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.meta-cal-day {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.meta-cal-day:hover { background: var(--surface-raised); }
+.meta-cal-day.is-today {
+  border-color: var(--primary);
+  background: rgba(255, 94, 54, 0.14);
+  color: var(--primary);
+  font-weight: 700;
+}
+.meta-cal-day.is-selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.meta-cal-times {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-solid);
+}
+.meta-cal-time-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+.meta-cal-time {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-solid);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.meta-cal-time.is-selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+.meta-cal-foot {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
 .nav-ai-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: -16px;
+  position: relative;
+}
+.nav-ai-wrap.active .nav-ai-btn {
+  box-shadow: 0 0 0 4px rgba(255, 94, 54, 0.28), 0 8px 22px rgba(255, 94, 54, 0.55);
+  border-color: #FFFFFF;
+}
+.nav-ai-wrap.active::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 8px rgba(255, 94, 54, 0.55);
 }
 .nav-ai-btn {
   width: 54px;
@@ -881,6 +1342,206 @@ body {
   border: 1px solid var(--border-solid);
   color: var(--text-primary);
   border-bottom-left-radius: 4px;
+}
+.chat-row-ai {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.chat-row-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+.chat-ai-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: #222834;
+  border: 1px solid rgba(255, 94, 54, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.chat-ai-avatar img { width: 20px; height: 20px; background: transparent !important; padding: 0 !important; }
+.chat-bubble-ai {
+  max-width: 82%;
+  padding: 11px 13px;
+  border-radius: 18px 18px 18px 4px;
+  background: var(--surface-solid);
+  border: 1px solid rgba(255, 94, 54, 0.34);
+  font-size: 12.5px;
+  line-height: 1.48;
+  color: var(--text-primary);
+}
+.chat-bubble-user {
+  max-width: 80%;
+  padding: 10px 13px;
+  border-radius: 18px 18px 4px 18px;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-size: 12.5px;
+  line-height: 1.45;
+  box-shadow: 0 4px 14px rgba(255, 94, 54, 0.24);
+}
+.chat-time {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   1.1 Member Home — Khám phá 4 Icon + Carousel 4 Gói Hội viên (Vuốt ngang)
+   ========================================================================== */
+.explore-4grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.explore-tile {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  border-radius: 16px;
+  padding: 11px 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  cursor: pointer;
+}
+.explore-tile:hover { border-color: var(--primary); }
+.explore-lbl {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   Fan-Deck Carousel (Hình quạt) + Thông tin gói bên dưới (1.1 Trang chủ)
+   ========================================================================== */
+.fan-deck-wrap {
+  margin-bottom: 16px;
+}
+.fan-stage {
+  position: relative;
+  height: 312px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 -16px;
+  padding: 10px 0;
+  cursor: grab;
+  user-select: none;
+}
+.fan-card {
+  position: absolute;
+  width: 192px;
+  aspect-ratio: 2 / 3;
+  border-radius: 20px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.54);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms ease;
+  cursor: pointer;
+  background: transparent;
+}
+.fan-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.fan-card[data-pos="0"] {
+  transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+  z-index: 4;
+  opacity: 1;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.65);
+}
+.fan-card[data-pos="-1"] {
+  transform: translateX(-132px) translateY(16px) scale(0.84) rotate(-10deg);
+  z-index: 2;
+  opacity: 0.84;
+}
+.fan-card[data-pos="1"] {
+  transform: translateX(132px) translateY(16px) scale(0.84) rotate(10deg);
+  z-index: 2;
+  opacity: 0.84;
+}
+.fan-card[data-pos="2"] {
+  transform: translateX(0) translateY(18px) scale(0.72) rotate(0deg);
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+.fan-info {
+  text-align: center;
+  padding: 6px 8px 2px;
+}
+.fan-badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 3px;
+}
+.fan-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.fan-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.fan-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+.fan-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+.fan-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fan-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(142, 149, 165, 0.35);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: width 200ms ease, background 200ms ease;
+}
+.fan-dot.active {
+  width: 20px;
+  background: var(--primary);
+}
+body.light-mode .fan-card {
+  box-shadow: 0 12px 26px rgba(17, 21, 26, 0.18);
 }
 
 /* Slot Chips */
@@ -1020,6 +1681,37 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.accordion-chev {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 200ms ease;
+}
+.accordion-card.is-open .accordion-chev {
+  transform: rotate(90deg);
+  color: var(--primary);
+}
+.accordion-body {
+  display: none;
+  margin-top: 2px;
+}
+.accordion-card.is-open .accordion-body {
+  display: block;
+}
+.accordion-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 2px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.accordion-row:active {
+  background: rgba(255, 255, 255, 0.05);
 }
 .count-pill {
   font-size: 11px;
@@ -1055,11 +1747,19 @@ body {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 2px;
-  margin-bottom: 12px;
-  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+  cursor: grab;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(169, 199, 232, 0.24) transparent;
 }
-.filter-row::-webkit-scrollbar { display: none; }
+.filter-row::-webkit-scrollbar { height: 3px; }
+.filter-row::-webkit-scrollbar-thumb {
+  background: rgba(169, 199, 232, 0.28);
+  border-radius: 999px;
+}
 .filter-pill {
   padding: 7px 14px;
   border-radius: 20px;
@@ -1075,4 +1775,219 @@ body {
   border-color: var(--primary);
   color: #F7F9FC;
   font-weight: 700;
+}
+
+/* Horizontal Swipeable Upgrade Package Carousel (1.2a Membership) */
+.tier-carousel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 2px 8px;
+  margin: 0 -2px 10px;
+  cursor: grab;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(169, 199, 232, 0.24) transparent;
+}
+.tier-carousel.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+.tier-carousel::-webkit-scrollbar { height: 3px; }
+.tier-carousel::-webkit-scrollbar-thumb {
+  background: rgba(169, 199, 232, 0.28);
+  border-radius: 999px;
+}
+.tier-pkg-card {
+  flex: 0 0 256px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0 !important;
+}
+.tier-pkg-card .tier-pkg-cta {
+  margin-top: auto;
+}
+
+/* ==========================================================================
+   Meta Gym Signature Kinetic Body Metric Pickers (Height Stadiometer & Weight Arc Dial)
+   ========================================================================== */
+.inline-ruler-wrap {
+  position: relative;
+  height: 58px;
+  border-radius: 14px;
+  background: rgba(15, 17, 21, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  cursor: ew-resize;
+  user-select: none;
+  margin: 8px 0 6px;
+}
+.inline-ruler-track {
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  display: flex;
+  align-items: flex-end;
+  will-change: transform;
+}
+.inline-ruler-tick {
+  width: 8px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 6px;
+}
+.inline-ruler-tick .bar {
+  width: 1.5px;
+  height: 12px;
+  background: rgba(232, 237, 245, 0.28);
+  border-radius: 2px;
+}
+.inline-ruler-tick.mid .bar {
+  height: 18px;
+  background: rgba(232, 237, 245, 0.52);
+}
+.inline-ruler-tick.major .bar {
+  width: 2px;
+  height: 24px;
+  background: rgba(232, 237, 245, 0.85);
+}
+.inline-ruler-tick .lbl {
+  font-size: 9px;
+  color: #8E95A5;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.inline-ruler-needle {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--primary);
+  box-shadow: 0 0 10px rgba(255, 94, 54, 0.8);
+  pointer-events: none;
+  z-index: 2;
+}
+.inline-ruler-needle::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--primary);
+}
+.body-picker-sheet {
+  width: 100%;
+  max-width: 344px;
+  background: rgba(20, 23, 30, 0.96);
+  border: 1px solid rgba(169, 199, 232, 0.24);
+  border-radius: 26px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.72);
+  color: #F7F9FC;
+}
+.stadiometer-stage {
+  display: grid;
+  grid-template-columns: 1fr 112px;
+  gap: 12px;
+  height: 236px;
+  margin: 12px 0;
+  background: rgba(15, 17, 21, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  padding: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.stadiometer-body {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  overflow: hidden;
+}
+.stadiometer-laser {
+  position: absolute;
+  left: 0; right: -12px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 94, 54, 0.2), #FF5E36 30%, #FF5E36);
+  box-shadow: 0 0 12px rgba(255, 94, 54, 0.9);
+  pointer-events: none;
+  z-index: 3;
+  transition: bottom 90ms ease-out;
+}
+.stadiometer-ruler {
+  position: relative;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+  cursor: ns-resize;
+  user-select: none;
+}
+.stadiometer-ruler-track {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  will-change: transform;
+}
+.stadiometer-needle {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 2px;
+  background: #FF5E36;
+  box-shadow: 0 0 10px rgba(255, 94, 54, 0.85);
+  pointer-events: none;
+  z-index: 4;
+}
+.weight-dial-stage {
+  position: relative;
+  height: 204px;
+  margin: 12px 0 10px;
+  background: radial-gradient(circle at 50% 105%, rgba(255, 94, 54, 0.14), rgba(15, 17, 21, 0.72) 68%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: ew-resize;
+  user-select: none;
+}
+.bmi-bar-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #56A8F5 0%, #56A8F5 24%, #2ECC71 24%, #2ECC71 60%, #F5A623 60%, #F5A623 82%, #F15B64 82%, #F15B64 100%);
+  margin: 8px 0 4px;
+}
+.bmi-bar-dot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFF;
+  border: 2.5px solid #FF5E36;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  transition: left 100ms ease-out;
+}
+.step-chip-btn {
+  height: 36px;
+  min-width: 58px;
+  padding: 0 12px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #F7F9FC;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.step-chip-btn:active {
+  transform: scale(0.96);
+  border-color: var(--primary);
 }

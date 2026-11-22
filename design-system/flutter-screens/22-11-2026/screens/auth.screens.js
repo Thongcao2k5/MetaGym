@@ -17,26 +17,36 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
         <div class="phone-scrim"></div>
         <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
 
-        <div class="phone-body no-nav" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
-          <!-- Ambient warm performance aura + Wordmark MetaGym (M, G màu cam) -->
-          <div style="position:relative;width:280px;height:180px;display:flex;align-items:center;justify-content:center;">
-            <div style="position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle, rgba(255,94,54,0.22) 0%, rgba(245,176,65,0.08) 54%, transparent 74%);pointer-events:none;"></div>
-            <div style="position:relative;font-size:44px;font-weight:800;letter-spacing:-0.03em;line-height:1;">
-              <span style="color:var(--primary);">M</span><span style="color:var(--text-primary);">eta</span><span style="color:var(--primary);">G</span><span style="color:var(--text-primary);">ym</span>
+        <div class="phone-body no-nav" style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;">
+          <div style="height:24px;"></div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <!-- Ambient warm performance aura + Wordmark MetaGym (M, G màu cam) -->
+            <div style="position:relative;width:280px;height:180px;display:flex;align-items:center;justify-content:center;">
+              <div style="position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle, rgba(255,94,54,0.22) 0%, rgba(245,176,65,0.08) 54%, transparent 74%);pointer-events:none;"></div>
+              <div style="position:relative;font-size:44px;font-weight:800;letter-spacing:-0.03em;line-height:1;">
+                <span style="color:var(--primary);">M</span><span style="color:var(--text-primary);">eta</span><span style="color:var(--primary);">G</span><span style="color:var(--text-primary);">ym</span>
+              </div>
+            </div>
+
+            <!-- Subtitle -->
+            <div style="color:var(--text-warm-muted);font-size:13.5px;font-weight:500;margin-top:4px;">
+              Đang khởi động không gian tập luyện...
+            </div>
+
+            <!-- _WarmGlassProgressBar (172px x 5px + % tabular-nums) -->
+            <div class="row" style="justify-content:center;gap:10px;margin-top:18px;">
+              <div style="width:172px;height:5px;border-radius:999px;background:rgba(33,30,28,0.55);border:1px solid rgba(167,157,146,0.4);overflow:hidden;">
+                <div style="width:78%;height:100%;border-radius:999px;background:linear-gradient(90deg, var(--primary), #F5B041);"></div>
+              </div>
+              <span class="tnum" style="width:36px;text-align:right;font-size:12.5px;font-weight:700;color:var(--primary);">78%</span>
             </div>
           </div>
 
-          <!-- Subtitle -->
-          <div style="color:var(--text-warm-muted);font-size:13.5px;font-weight:500;margin-top:4px;">
-            Đang khởi động không gian tập luyện...
-          </div>
-
-          <!-- _WarmGlassProgressBar (172px x 5px + % tabular-nums) -->
-          <div class="row" style="justify-content:center;gap:10px;margin-top:18px;">
-            <div style="width:172px;height:5px;border-radius:999px;background:rgba(33,30,28,0.55);border:1px solid rgba(167,157,146,0.4);overflow:hidden;">
-              <div style="width:78%;height:100%;border-radius:999px;background:linear-gradient(90deg, var(--primary), #F5B041);"></div>
-            </div>
-            <span class="tnum" style="width:36px;text-align:right;font-size:12.5px;font-weight:700;color:var(--primary);">78%</span>
+          <!-- Version Footer -->
+          <div class="auth-version-footer" style="margin-top:0;">
+            <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_version.svg" alt="Phiên bản" />
+            <span>Meta Gym v1.0.0 · Build 2026.11</span>
           </div>
         </div>
       </div>
@@ -96,11 +106,27 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
               <span style="font-size:12.5px;font-weight:600;color:var(--reflection);">Quên mật khẩu?</span>
             </div>
 
-            <button class="btn-primary">Đăng nhập →</button>
+            <div class="row" style="gap:10px;">
+              <button class="btn-primary" style="flex:1;">Đăng nhập →</button>
+              <button type="button" class="btn-secondary" data-open-biometric="login" title="Đăng nhập bằng Face ID / Vân tay" style="width:48px;height:48px;padding:0;flex-shrink:0;border-radius:14px;border-color:rgba(255,94,54,0.45);background:rgba(255,94,54,0.12);">
+                <img class="ico-md" src="../../meta-gym/assets/svg/setting/auth_face_id.svg" alt="Face ID" style="background:transparent;padding:0;" />
+              </button>
+            </div>
 
-            <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text-secondary);">
+            <!-- Điều khoản & Chính sách bảo mật -->
+            <div class="auth-legal">
+              Bằng việc đăng nhập, bạn đồng ý với <span class="auth-policy-link">Điều khoản sử dụng</span> và <span class="auth-policy-link">Chính sách bảo mật</span> của Meta Gym.
+            </div>
+
+            <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-secondary);">
               <span class="row" style="justify-content:center;gap:6px;"><img class="ico-xs" src="../../meta-gym/assets/svg/setting/auth_verified.svg" alt="Xác thực" /><span>Không gian Hội viên &amp; Huấn luyện viên Meta Gym</span></span>
             </div>
+          </div>
+
+          <!-- Version Footer -->
+          <div class="auth-version-footer">
+            <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_version.svg" alt="Phiên bản" />
+            <span>Meta Gym v1.0.0 · Build 2026.11</span>
           </div>
         </div>
       </div>
@@ -177,7 +203,19 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
               </div>
             </div>
 
+            <!-- Đồng ý Điều khoản & Chính sách bảo mật -->
+            <div class="auth-consent">
+              <span style="width:18px;height:18px;border-radius:5px;background:var(--primary);color:#FFF;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px;">✓</span>
+              <span>Tôi đồng ý với <span class="auth-policy-link">Điều khoản dịch vụ</span> và <span class="auth-policy-link">Chính sách bảo mật</span> dữ liệu sức khỏe của Meta Gym.</span>
+            </div>
+
             <button class="btn-primary">Đăng ký →</button>
+          </div>
+
+          <!-- Version Footer -->
+          <div class="auth-version-footer" style="margin-top:10px;padding-top:4px;">
+            <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_version.svg" alt="Phiên bản" />
+            <span>Meta Gym v1.0.0 · Build 2026.11</span>
           </div>
         </div>
       </div>
