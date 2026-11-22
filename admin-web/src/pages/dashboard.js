@@ -77,6 +77,55 @@ function formatCompactVnd(value) {
   return `${sign}${abs} ₫`;
 }
 
+function shiftIsoDate(isoDate, deltaDays) {
+  const [year, month, day] = String(isoDate).split('-').map(Number);
+  const utc = Date.UTC(year, month - 1, day + deltaDays);
+  return new Date(utc).toISOString().slice(0, 10);
+}
+
+function diffIsoDaysInclusive(from, to) {
+  const start = Date.parse(`${from}T00:00:00Z`);
+  const end = Date.parse(`${to}T00:00:00Z`);
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return 1;
+  return Math.round((end - start) / 86400000) + 1;
+}
+
+function computePreviousPeriod(from, to, overrideSpanDays = null) {
+  const spanDays = overrideSpanDays || diffIsoDaysInclusive(from, to);
+  const compareTo = shiftIsoDate(from, -1);
+  const compareFrom = shiftIsoDate(compareTo, -(spanDays - 1));
+  return { compareFrom, compareTo, spanDays };
+}
+
+function renderTrendLine(metricComparison, { invertTrend = false, formatPrev } = {}) {
+  if (!metricComparison) return '';
+  const delta = Number(metricComparison.delta ?? 0);
+  const pct = Math.abs(Number(metricComparison.percentChange ?? 0));
+  const pctText = pct.toFixed(1).replace(/\.0$/, '');
+  const prevFormatted = formatPrev
+    ? formatPrev(metricComparison.previous ?? 0)
+    : String(metricComparison.previous ?? 0);
+
+  let cls = 'is-flat';
+  let trendIcon = '';
+  let label = 'Không đổi 0%';
+
+  if (delta > 0) {
+    cls = invertTrend ? 'is-negative' : 'is-positive';
+    trendIcon = icon('trendUp', 13);
+    label = `Tăng ${pctText}%`;
+  } else if (delta < 0) {
+    cls = invertTrend ? 'is-positive' : 'is-negative';
+    trendIcon = icon('trendDown', 13);
+    label = `Giảm ${pctText}%`;
+  }
+
+  return `<div class="kpi-trend ${cls}">
+    <span class="kpi-trend-pill">${trendIcon}${esc(label)}</span>
+    <span class="kpi-trend-note">so với kỳ trước (${esc(prevFormatted)})</span>
+  </div>`;
+}
+
 export function destroyDashboardChart() {
   if (activeChart?.destroy) {
     activeChart.destroy();
@@ -90,6 +139,9 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
   const today = isoDateVN();
   const from = params.get('from') || daysAgoVN(29);
   const to = params.get('to') || today;
+  const compareFromParam = params.get('compareFrom') || '';
+  const compareToParam = params.get('compareTo') || '';
+  const isComparing = Boolean(compareFromParam && compareToParam);
 
   shell({
     section: 'dashboard',
@@ -97,8 +149,29 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
   });
 
   try {
-    const query = buildQuery({ from, to });
-    const { data } = await api(`/admin/dashboard${query}`);
+    let data;
+    let comparison = null;
+    let activeCompareFrom = compareFromParam;
+    let activeCompareTo = compareToParam;
+
+    if (isComparing) {
+      const compareQuery = buildQuery({
+        from,
+        to,
+        compareFrom: compareFromParam,
+        compareTo: compareToParam,
+      });
+      const response = await api(`/admin/dashboard/compare${compareQuery}`);
+      const payload = response?.data || {};
+      data = payload?.current?.dashboard || payload?.dashboard || {};
+      comparison = payload?.comparison || null;
+      activeCompareFrom = payload?.previous?.from || compareFromParam;
+      activeCompareTo = payload?.previous?.to || compareToParam;
+    } else {
+      const query = buildQuery({ from, to });
+      const response = await api(`/admin/dashboard${query}`);
+      data = response?.data || {};
+    }
 
     const membersActive = Number(data?.members?.active ?? 0);
     const membersDisabled = Number(data?.members?.disabled ?? 0);
@@ -118,7 +191,12 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     const voidReversalCount = Number(rev.voidReversalCount ?? 0);
     const simulatedRefundCount = Number(rev.simulatedRefundCount ?? 0);
     const netRevenue = Number(rev.netRevenue ?? (grossRevenue - totalRefunds));
-    const byDay = Array.isArray(rev.byDay) ? rev.byDay : [];
+    const revChart = data?.revenueChart || {};
+    const chartByDay = Array.isArray(revChart.byDay)
+      ? revChart.byDay
+      : (Array.isArray(rev.byDay) ? rev.byDay : []);
+    const chartFrom = revChart.from || shiftIsoDate(today, -180);
+    const chartTo = revChart.to || today;
 
     const kpis = [
       {
@@ -126,52 +204,45 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
         value: String(membersActive),
         meta: `${membersActive + membersDisabled} tổng · ${membersDisabled} đang khóa`,
         iconName: 'users',
+        variant: 'is-info',
         href: '#/admin/members?status=ACTIVE',
+        trend: comparison?.membersActive,
+        invertTrend: false,
       },
       {
         label: 'Huấn luyện viên hoạt động',
         value: String(coachesActive),
         meta: `${coachesDisabled} đang bị khóa`,
         iconName: 'award',
+        variant: 'is-gold',
         href: '#/admin/coaches?status=ACTIVE',
+        trend: comparison?.coachesActive,
+        invertTrend: false,
       },
       {
         label: 'Gói Gym đang sử dụng',
         value: String(activeMemberships),
         meta: 'Hội viên có quyền vào phòng tập',
         iconName: 'card',
+        variant: 'is-coral',
         href: '#/admin/plans?tab=entitlements&status=ACTIVE',
-      },
-      {
-        label: 'Đang tập cùng Coach',
-        value: String(activeCoachRels),
-        meta: `${Number(data?.pausedCoachRelationships?.total ?? 0)} cặp đang tạm ngưng`,
-        iconName: 'dumbbell',
-        href: '#/admin/coach-packages?tab=entitlements&status=ACTIVE',
-      },
-      {
-        label: 'Chờ xử lý sự cố Coach',
-        value: String(coachLockedWaiting),
-        meta: 'Gói Coach tạm dừng do Coach bị khóa',
-        iconName: 'alert',
-        href: '#/admin/incidents?status=OPEN',
-        tone: coachLockedWaiting > 0 ? 'var(--meta-warning)' : null,
-      },
-      {
-        label: 'Tranh chấp cần phân xử',
-        value: String(disputedCount),
-        meta: 'Yêu cầu kết thúc sớm quá 72 giờ',
-        iconName: 'link',
-        href: '#/admin/relationships?tab=terminations&status=DISPUTED',
-        tone: disputedCount > 0 ? 'var(--meta-danger)' : null,
+        trend: comparison?.activeMemberships,
+        invertTrend: false,
       },
     ];
 
-    const paymentsLink = `#/admin/payments?from=${encodeURIComponent(data.from || from)}&to=${encodeURIComponent(data.to || to)}`;
-    const monthStart = `${today.slice(0, 8)}01`;
-
     const currentFrom = data.from || from;
     const currentTo = data.to || to;
+    const paymentsLink = `#/admin/payments?from=${encodeURIComponent(currentFrom)}&to=${encodeURIComponent(currentTo)}`;
+    const monthStart = `${today.slice(0, 8)}01`;
+    const autoPrev = computePreviousPeriod(currentFrom, currentTo);
+
+    const chartHasRefunds = chartByDay.some((row) => Number(row.simulatedRefunds ?? 0) > 0);
+    const chartLegendHtml = chartByDay.length > 0 ? `<div class="chart-legend" aria-label="Chú thích biểu đồ">
+      <span class="chart-legend-item"><span class="chart-legend-dot" style="background:#2ECC71"></span>Doanh thu thực nhận</span>
+      <span class="chart-legend-item"><span class="chart-legend-dot" style="background:#FF5E36"></span>Tổng thu</span>
+      ${chartHasRefunds ? '<span class="chart-legend-item"><span class="chart-legend-dot" style="background:#F15B64"></span>Tiền đã hoàn</span>' : ''}
+    </div>` : '';
 
     const contentHtml = `<div class="stack-20">
       <form class="filter-bar" id="dashboard-period-form">
@@ -184,38 +255,51 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
         <div class="mobile-filters" style="flex:1;width:100%">
           ${renderDateRangePicker({ id: 'dash-range', from: currentFrom, to: currentTo })}
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <button type="button" class="pill-toggle ${currentTo === today && currentFrom === daysAgoVN(6) ? 'active' : ''}" data-quick-range="7">7 ngày</button>
           <button type="button" class="pill-toggle ${currentTo === today && currentFrom === daysAgoVN(29) ? 'active' : ''}" data-quick-range="30">30 ngày</button>
+          <button type="button" class="pill-toggle ${currentTo === today && currentFrom === daysAgoVN(59) ? 'active' : ''}" data-quick-range="60">60 ngày</button>
+          <button type="button" class="pill-toggle ${currentTo === today && currentFrom === daysAgoVN(89) ? 'active' : ''}" data-quick-range="90">90 ngày</button>
           <button type="button" class="pill-toggle ${currentTo === today && currentFrom === monthStart ? 'active' : ''}" data-quick-range="month">Tháng này</button>
+          <button type="button" class="pill-toggle dash-compare-toggle ${isComparing ? 'active' : ''}" id="dash-compare-btn" aria-pressed="${isComparing ? 'true' : 'false'}" title="So sánh với kỳ trước (${formatDateVN(autoPrev.compareFrom)} – ${formatDateVN(autoPrev.compareTo)})">
+            ${icon('swap', 14)} ${isComparing ? `Kỳ trước (${formatShortDay(activeCompareFrom)}–${formatShortDay(activeCompareTo)})` : 'So sánh kỳ trước'}
+          </button>
         </div>
       </form>
 
       <div class="grid-3">
-        <a class="kpi-card" href="${paymentsLink}">
+        <a class="kpi-card is-coral" href="${paymentsLink}">
+          <span class="kpi-watermark" aria-hidden="true">${icon('receipt', 88)}</span>
           <div class="kpi-top"><span class="kpi-label">Tổng thu</span><span class="kpi-icon">${icon('receipt', 17)}</span></div>
           <div class="kpi-val tabular">${vnd(grossRevenue)}</div>
+          ${renderTrendLine(comparison?.grossRevenue, { invertTrend: false, formatPrev: vnd })}
           <div class="kpi-meta"><span>${totalVoidReversals > 0 ? `Đã trừ giao dịch hủy: ${vnd(totalVoidReversals)}${voidReversalCount ? ` (${voidReversalCount} GD)` : ''}` : 'Tổng tiền gói Gym & Coach'}</span><span class="kpi-link-hint">Xem giao dịch →</span></div>
         </a>
-        <a class="kpi-card" href="#/admin/incidents?tab=refunds">
-          <div class="kpi-top"><span class="kpi-label">Tiền đã hoàn</span><span class="kpi-icon" style="color:var(--meta-danger)">${icon('refund', 17)}</span></div>
+        <a class="kpi-card is-danger" href="#/admin/incidents?tab=refunds">
+          <span class="kpi-watermark" aria-hidden="true">${icon('refund', 88)}</span>
+          <div class="kpi-top"><span class="kpi-label">Tiền đã hoàn</span><span class="kpi-icon">${icon('refund', 17)}</span></div>
           <div class="kpi-val tabular" style="color:var(--meta-danger-text)">${vnd(totalRefunds > 0 ? -totalRefunds : 0)}</div>
+          ${renderTrendLine(comparison?.totalSimulatedRefunds, { invertTrend: true, formatPrev: vnd })}
           <div class="kpi-meta"><span>${simulatedRefundCount > 0 ? `${simulatedRefundCount} lượt hoàn do sự cố Coach` : 'Các khoản hoàn tiền sự cố Coach'}</span><span class="kpi-link-hint">Xem chi tiết →</span></div>
         </a>
-        <a class="kpi-card" href="${paymentsLink}">
-          <div class="kpi-top"><span class="kpi-label">Doanh thu thực nhận</span><span class="kpi-icon" style="color:var(--meta-success)">${icon('check', 17)}</span></div>
+        <a class="kpi-card is-success" href="${paymentsLink}">
+          <span class="kpi-watermark" aria-hidden="true">${icon('check', 88)}</span>
+          <div class="kpi-top"><span class="kpi-label">Doanh thu thực nhận</span><span class="kpi-icon">${icon('check', 17)}</span></div>
           <div class="kpi-val tabular" style="color:var(--meta-success)">${vnd(netRevenue)}</div>
+          ${renderTrendLine(comparison?.netRevenue, { invertTrend: false, formatPrev: vnd })}
           <div class="kpi-meta"><span>Tổng thu sau khi trừ hoàn tiền & hủy</span><span class="kpi-link-hint">Đối soát →</span></div>
         </a>
       </div>
 
       <div class="grid-3">
-        ${kpis.map((item) => `<a class="kpi-card" href="${item.href}">
+        ${kpis.map((item) => `<a class="kpi-card ${item.variant || ''}" href="${item.href}">
+          <span class="kpi-watermark" aria-hidden="true">${icon(item.iconName, 88)}</span>
           <div class="kpi-top">
             <span class="kpi-label">${esc(item.label)}</span>
-            <span class="kpi-icon"${item.tone ? ` style="color:${item.tone}"` : ''}>${icon(item.iconName, 17)}</span>
+            <span class="kpi-icon">${icon(item.iconName, 17)}</span>
           </div>
           <div class="kpi-val tabular"${item.tone ? ` style="color:${item.tone}"` : ''}>${esc(item.value)}</div>
+          ${renderTrendLine(item.trend, { invertTrend: item.invertTrend })}
           <div class="kpi-meta"><span>${esc(item.meta)}</span><span class="kpi-link-hint">Mở danh sách →</span></div>
         </a>`).join('')}
       </div>
@@ -223,10 +307,10 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
       <section class="meta-card" aria-label="Biểu đồ doanh thu">
         <div class="card-header-row">
           <div>
-            <h2 class="card-title-text">Doanh thu theo thời gian (${formatDateVN(data.from || from)} – ${formatDateVN(data.to || to)})</h2>
-            <p class="card-sub">Tổng thu, tiền đã hoàn và doanh thu thực nhận.</p>
+            <h2 class="card-title-text">Doanh thu theo thời gian (6 tháng gần nhất: ${formatDateVN(chartFrom)} – ${formatDateVN(chartTo)})</h2>
+            <p class="card-sub">Tổng thu, tiền đã hoàn và doanh thu thực nhận trong vòng 6 tháng gần nhất (không phụ thuộc bộ lọc kỳ phía trên).</p>
           </div>
-          ${byDay.length > 0 ? `<div class="chart-controls">
+          ${chartByDay.length > 0 ? `<div class="chart-controls">
             <div class="chart-segmented" role="group" aria-label="Nhóm thời gian">
               <button type="button" class="chart-seg-btn ${chartGranularity === 'month' ? 'active' : ''}" data-chart-gran="month">Tháng</button>
               <button type="button" class="chart-seg-btn ${chartGranularity === 'week' ? 'active' : ''}" data-chart-gran="week">Tuần</button>
@@ -238,13 +322,14 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
             </div>
           </div>` : ''}
         </div>
-        ${byDay.length === 0
+        ${chartLegendHtml}
+        ${chartByDay.length === 0
           ? renderEmptyState({
             iconName: 'receipt',
-            title: 'Chưa phát sinh doanh thu trong kỳ đã chọn',
-            description: 'Chọn khoảng thời gian rộng hơn hoặc ghi nhận giao dịch gói Gym tại quầy.',
+            title: 'Chưa phát sinh doanh thu trong 6 tháng gần nhất',
+            description: 'Ghi nhận giao dịch gói Gym hoặc gói Coach tại quầy để hiển thị biểu đồ.',
           })
-          : '<div class="chart-wrap"><canvas id="revenue-chart"></canvas></div>'}
+          : '<div class="chart-scroll" id="revenue-chart-scroll"><div class="chart-wrap" id="revenue-chart-wrap"><canvas id="revenue-chart"></canvas></div></div>'}
       </section>
     </div>`;
 
@@ -254,10 +339,28 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
       badges: { incidents: coachLockedWaiting, disputes: disputedCount },
     });
 
+    const navigateDashboard = (nextQuery) => {
+      updateQuery(nextQuery, { replace: false });
+      const searchParams = new URLSearchParams();
+      Object.entries(nextQuery).forEach(([k, v]) => {
+        if (v) searchParams.set(k, v);
+      });
+      renderDashboardPage({ root, params: searchParams, shell, ChartCtor });
+    };
+
     const applyPeriod = (nextFrom, nextTo) => {
       if (nextFrom && nextTo && nextFrom <= nextTo) {
-        updateQuery({ from: nextFrom, to: nextTo }, { replace: false });
-        renderDashboardPage({ root, params: new URLSearchParams({ from: nextFrom, to: nextTo }), shell, ChartCtor });
+        if (isComparing) {
+          const nextPrev = computePreviousPeriod(nextFrom, nextTo);
+          navigateDashboard({
+            from: nextFrom,
+            to: nextTo,
+            compareFrom: nextPrev.compareFrom,
+            compareTo: nextPrev.compareTo,
+          });
+        } else {
+          navigateDashboard({ from: nextFrom, to: nextTo, compareFrom: null, compareTo: null });
+        }
       }
     };
 
@@ -296,18 +399,48 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     root.querySelectorAll('[data-quick-range]').forEach((btn) => {
       btn.onclick = () => {
         const range = btn.dataset.quickRange;
-        const nextFrom = range === '7' ? daysAgoVN(6) : range === 'month' ? monthStart : daysAgoVN(29);
-        updateQuery({ from: nextFrom, to: today }, { replace: false });
-        renderDashboardPage({ root, params: new URLSearchParams({ from: nextFrom, to: today }), shell, ChartCtor });
+        const nextFrom = range === '7'
+          ? daysAgoVN(6)
+          : range === '60'
+            ? daysAgoVN(59)
+            : range === '90'
+              ? daysAgoVN(89)
+              : range === 'month'
+                ? monthStart
+                : daysAgoVN(29);
+        applyPeriod(nextFrom, today);
       };
     });
 
+    const compareBtn = root.querySelector('#dash-compare-btn');
+    if (compareBtn) {
+      compareBtn.onclick = () => {
+        if (isComparing) {
+          navigateDashboard({ from: currentFrom, to: currentTo, compareFrom: null, compareTo: null });
+        } else {
+          navigateDashboard({
+            from: currentFrom,
+            to: currentTo,
+            compareFrom: autoPrev.compareFrom,
+            compareTo: autoPrev.compareTo,
+          });
+        }
+      };
+    }
+
     const drawChart = () => {
       const canvas = root.querySelector('#revenue-chart');
-      if (!canvas || byDay.length === 0 || !ChartCtor) return;
+      if (!canvas || chartByDay.length === 0 || !ChartCtor) return;
       destroyDashboardChart();
 
-      const series = groupRevenueSeries(byDay, chartGranularity);
+      const series = groupRevenueSeries(chartByDay, chartGranularity);
+      const pxPerPoint = chartGranularity === 'month' ? 96 : chartGranularity === 'week' ? 84 : 56;
+      const chartScroll = root.querySelector('#revenue-chart-scroll');
+      const chartWrap = root.querySelector('#revenue-chart-wrap');
+      if (chartWrap?.style) {
+        const minTrackWidth = Math.max(series.length * pxPerPoint, 0);
+        chartWrap.style.width = minTrackWidth > 0 ? `${minTrackWidth}px` : '100%';
+      }
       const isLight = globalThis.document?.documentElement?.getAttribute?.('data-bs-theme') === 'light';
       const surfaceColor = isLight ? '#FFFFFF' : '#181B22';
       const tickColor = isLight ? '#4D5968' : '#8E95A5';
@@ -335,12 +468,7 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
                 pointHoverRadius: isLine ? 6 : 0,
                 pointBorderWidth: 2.2,
                 pointBackgroundColor: surfaceColor,
-                pointBorderColor: (ctx) => (Number(ctx.raw ?? 0) < 0 ? '#F15B64' : '#2ECC71'),
-                segment: isLine ? {
-                  borderColor: (ctx) => (
-                    ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? '#F15B64' : '#2ECC71'
-                  ),
-                } : undefined,
+                pointBorderColor: '#2ECC71',
               },
               {
                 label: 'Tổng thu',
@@ -382,14 +510,7 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
             hover: { mode: 'index', intersect: false, animationDuration: 0 },
             plugins: {
               legend: {
-                position: 'bottom',
-                labels: {
-                  color: tickColor,
-                  usePointStyle: true,
-                  boxWidth: 8,
-                  padding: 16,
-                  font: { family: 'Be Vietnam Pro', size: 12, weight: '600' },
-                },
+                display: false,
               },
               tooltip: {
                 animation: false,
@@ -405,7 +526,12 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
             },
             scales: {
               x: {
-                ticks: { color: tickColor, font: { family: 'Be Vietnam Pro', size: 11.5 } },
+                ticks: {
+                  color: tickColor,
+                  font: { family: 'Be Vietnam Pro', size: 11.5 },
+                  autoSkip: false,
+                  maxRotation: 0,
+                },
                 grid: { display: false },
                 border: { display: false },
               },
@@ -428,6 +554,10 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
           activeChart.tooltip?.setActiveElements?.([], { x: 0, y: 0 });
           activeChart.update?.('none');
         };
+
+        if (chartScroll && typeof chartScroll.scrollWidth === 'number') {
+          chartScroll.scrollLeft = chartScroll.scrollWidth;
+        }
       } catch {
         // Ignore headless canvas context errors in unit test harnesses
       }
