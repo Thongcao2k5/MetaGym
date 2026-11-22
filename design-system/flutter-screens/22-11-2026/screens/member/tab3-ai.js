@@ -17,7 +17,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         <div class="phone-scrim"></div>
         <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
 
-        <div class="phone-body" style="display:flex;flex-direction:column;padding-bottom:102px;">
+        <div class="phone-body" style="padding-bottom:192px;">
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
@@ -34,7 +34,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           </div>
 
           <!-- Tin nhắn xen kẽ: AI bên trái, User bên phải -->
-          <div style="flex:1;">
+          <div>
             <!-- User (Phải) -->
             <div class="chat-row-user">
               <div class="chat-bubble-user">
@@ -75,17 +75,18 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Gợi ý nhanh -->
-          <div class="filter-row" style="margin-bottom:8px;">
+        <!-- Thanh nhập câu hỏi + gợi ý nhanh cố định phía trên Bottom Nav -->
+        <div style="position:absolute;left:0;right:0;bottom:84px;z-index:9;padding:8px 14px 10px;background:linear-gradient(180deg,rgba(15,17,21,0) 0%,rgba(15,17,21,0.92) 24%,rgba(15,17,21,0.98) 100%);">
+          <div class="filter-row" style="margin-bottom:7px;padding-bottom:0;">
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Gợi ý bữa phụ 25g đạm</span>
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Chỉnh form Bench Press</span>
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Lịch phục hồi vai</span>
           </div>
-
-          <div class="row" style="margin-top:2px;">
+          <div class="row" style="gap:8px;">
             <div class="input-box" style="flex:1;height:44px;color:var(--text-secondary);font-size:13px;">Nhập câu hỏi cho Trợ lý AI...</div>
-            <div style="width:44px;height:44px;border-radius:14px;background:var(--primary);color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:800;">↑</div>
+            <div style="width:44px;height:44px;border-radius:14px;background:var(--primary);color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">↑</div>
           </div>
         </div>
       

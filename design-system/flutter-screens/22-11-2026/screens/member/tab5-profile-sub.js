@@ -197,6 +197,20 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
+          <!-- Ưu đãi Hạng Vàng tự động giảm phí Coach -->
+          <div class="card-solid" style="padding:10px 13px;border-color:rgba(218,176,102,0.5);margin-bottom:10px;">
+            <div class="row-between">
+              <div class="row" style="gap:7px;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Hạng Vàng" />
+                <div>
+                  <div class="txt-xs txt-bold" style="color:#E8C27A;">Đặc quyền Thẻ Vàng đang áp dụng</div>
+                  <div class="txt-xs">Giảm trực tiếp 5% mọi gói Coach 1:1 + Tích Meta Points</div>
+                </div>
+              </div>
+              <span class="pill pill-orange tnum">-5%</span>
+            </div>
+          </div>
+
           <!-- Gói nổi bật -->
           <div class="card-warm-glass" style="border-color:rgba(255,94,54,0.65);">
             <div class="row-between" style="margin-bottom:6px;">
@@ -206,9 +220,9 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               </div>
               <span class="pill pill-orange">Phổ biến</span>
             </div>
-            <div class="tnum" style="font-size:22px;font-weight:800;margin:4px 0;">8.900.000đ <span class="txt-xs">/ 90 ngày</span></div>
+            <div class="tnum" style="font-size:22px;font-weight:800;margin:4px 0;">8.455.000đ <span class="txt-xs" style="text-decoration:line-through;opacity:0.65;">8.900.000đ</span></div>
             <div class="txt-xs" style="margin-bottom:12px;">24 buổi tập 1:1 (90 phút) · Giáo trình riêng + Thực đơn tuần + Hỗ trợ chat 24/7</div>
-            <button class="btn-primary">Chọn gói &amp; Thanh toán</button>
+            <button class="btn-primary" data-go="member-checkout">Chọn gói &amp; Thanh toán</button>
           </div>
 
           <!-- Gói tiêu chuẩn -->
@@ -220,10 +234,10 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               </div>
               <span class="txt-xs tnum">45 ngày</span>
             </div>
-            <div class="tnum" style="font-size:19px;font-weight:800;margin:4px 0 8px;">4.800.000đ</div>
+            <div class="tnum" style="font-size:19px;font-weight:800;margin:4px 0 8px;">4.560.000đ <span class="txt-xs" style="text-decoration:line-through;opacity:0.65;">4.800.000đ</span></div>
             <div class="row-between">
               <span class="txt-xs">12 buổi 1:1 · Giáo trình cá nhân</span>
-              <span class="btn-secondary" style="height:32px;font-size:12px;">Chọn gói</span>
+              <span class="btn-secondary" data-go="member-checkout" style="height:32px;font-size:12px;cursor:pointer;">Chọn gói</span>
             </div>
           </div>
         </div>
@@ -582,7 +596,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         </div>
 
         <div class="bottom-cta-dock">
-          <button class="btn-primary">
+          <button type="button" class="btn-primary" data-open-support-modal>
             <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_support_headset.svg" alt="Hỗ trợ" style="background:transparent;padding:0;" />
             <span>Liên hệ hỗ trợ ngay</span>
           </button>

@@ -106,16 +106,23 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
               <span style="font-size:12.5px;font-weight:600;color:var(--reflection);">Quên mật khẩu?</span>
             </div>
 
-            <div class="row" style="gap:10px;">
-              <button class="btn-primary" style="flex:1;">Đăng nhập →</button>
-              <button type="button" class="btn-secondary" data-open-biometric="login" title="Đăng nhập bằng Face ID / Vân tay" style="width:48px;height:48px;padding:0;flex-shrink:0;border-radius:14px;border-color:rgba(255,94,54,0.45);background:rgba(255,94,54,0.12);">
-                <img class="ico-md" src="../../meta-gym/assets/svg/setting/auth_face_id.svg" alt="Face ID" style="background:transparent;padding:0;" />
+            <button class="btn-primary">Đăng nhập →</button>
+
+            <!-- Đăng nhập nhanh Sinh trắc học (Hỗ trợ cả máy Face ID & máy Vân tay) -->
+            <div class="grid-2" style="gap:8px;margin-top:8px;">
+              <button type="button" class="btn-secondary" data-open-biometric="login-face" style="height:44px;gap:7px;border-radius:13px;font-size:12.5px;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_face_id.svg" alt="Face ID" style="background:transparent;padding:0;" />
+                <span>Face ID</span>
+              </button>
+              <button type="button" class="btn-secondary" data-open-biometric="login-finger" style="height:44px;gap:7px;border-radius:13px;font-size:12.5px;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_fingerprint.svg" alt="Vân tay" style="background:transparent;padding:0;" />
+                <span>Vân tay</span>
               </button>
             </div>
 
             <!-- Điều khoản & Chính sách bảo mật -->
             <div class="auth-legal">
-              Bằng việc đăng nhập, bạn đồng ý với <span class="auth-policy-link">Điều khoản sử dụng</span> và <span class="auth-policy-link">Chính sách bảo mật</span> của Meta Gym.
+              Bằng việc đăng nhập, bạn đồng ý với <span class="auth-policy-link" data-go="auth-terms" style="cursor:pointer;">Điều khoản sử dụng</span> và <span class="auth-policy-link" data-go="auth-privacy-policy" style="cursor:pointer;">Chính sách bảo mật</span> của Meta Gym.
             </div>
 
             <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-secondary);">
@@ -206,7 +213,7 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
             <!-- Đồng ý Điều khoản & Chính sách bảo mật -->
             <div class="auth-consent">
               <span style="width:18px;height:18px;border-radius:5px;background:var(--primary);color:#FFF;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px;">✓</span>
-              <span>Tôi đồng ý với <span class="auth-policy-link">Điều khoản dịch vụ</span> và <span class="auth-policy-link">Chính sách bảo mật</span> dữ liệu sức khỏe của Meta Gym.</span>
+              <span>Tôi đồng ý với <span class="auth-policy-link" data-go="auth-terms" style="cursor:pointer;">Điều khoản sử dụng</span> và <span class="auth-policy-link" data-go="auth-privacy-policy" style="cursor:pointer;">Chính sách bảo mật</span> dữ liệu sức khỏe của Meta Gym.</span>
             </div>
 
             <button class="btn-primary">Đăng ký →</button>
@@ -217,6 +224,151 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
             <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_version.svg" alt="Phiên bản" />
             <span>Meta Gym v1.0.0 · Build 2026.11</span>
           </div>
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'auth-terms',
+    group: 'auth',
+    groupLabel: 'Khởi động & Xác thực',
+    title: '4. Điều khoản sử dụng',
+    shortFile: 'terms_of_service_page.dart',
+    flutterFile: 'mobile-app/lib/features/legal/presentation/terms_of_service_page.dart',
+    tag: 'Pháp lý',
+    tagClass: '',
+    status: 'Đang review',
+    html: `
+<div class="phone">
+        <div class="phone-bg-photo"></div>
+        <div class="phone-scrim"></div>
+        <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
+
+        <div class="phone-body" style="padding-bottom:88px;">
+          <div class="mg-header">
+            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
+            <div class="mg-header-text">
+              <div class="mg-eyebrow">PHÁP LÝ &amp; QUY ĐỊNH</div>
+              <div class="mg-title">Điều khoản sử dụng</div>
+            </div>
+          </div>
+
+          <div class="card-warm-glass" style="padding:13px 14px;">
+            <div class="row-between" style="margin-bottom:4px;">
+              <div class="row" style="gap:7px;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_about_policy.svg" alt="Điều khoản" />
+                <strong class="txt-sm">Meta Gym Member Agreement</strong>
+              </div>
+              <span class="pill pill-orange tnum">v1.0</span>
+            </div>
+            <div class="txt-xs tnum">Hiệu lực từ 01/11/2026 · Áp dụng cho Hội viên &amp; Coach</div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">1. Tài khoản &amp; Thẻ Hội viên NFC</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              Mỗi hội viên sử dụng một tài khoản định danh duy nhất. Thẻ hội viên kim loại NFC và mã QR Check-in trong ngày chỉ phục vụ cá nhân đăng ký và không được chuyển nhượng hoặc chia sẻ cho người khác.
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">2. Gói tập, Coach 1:1 &amp; Chính sách hủy lịch</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              • Gói tập kích hoạt ngay sau khi thanh toán thành công qua MoMo, VNPay hoặc chuyển khoản.<br/>
+              • Buổi tập 1:1 với Coach cần thông báo hủy hoặc đổi lịch trước tối thiểu <strong>12 giờ</strong> để bảo lưu số buổi.<br/>
+              • Yêu cầu bảo lưu gói tập từ 15 ngày trở lên cần xác nhận tại quầy lễ tân hoặc hỗ trợ trực tuyến.
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">3. An toàn tập luyện &amp; Khai báo sức khỏe</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              Hội viên cam kết khai báo trung thực các chỉ số cơ thể, tiền sử chấn thương và bệnh nền trong mục Khai báo thể trạng (PAR-Q) để Huấn luyện viên xây dựng giáo án an toàn, phù hợp nhất.
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">4. Quyền sở hữu &amp; Liên hệ pháp lý</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              Toàn bộ giáo trình, bài viết dinh dưỡng và thương hiệu thuộc quyền sở hữu của Meta Gym Studio. Mọi câu hỏi xin gửi về <strong style="color:var(--primary);">legal@metagym.vn</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-dock">
+          <button class="btn-primary" data-back="1">Tôi đã hiểu &amp; Đồng ý</button>
+        </div>
+      </div>
+    `
+  },
+  {
+    id: 'auth-privacy-policy',
+    group: 'auth',
+    groupLabel: 'Khởi động & Xác thực',
+    title: '5. Chính sách bảo mật',
+    shortFile: 'privacy_policy_page.dart',
+    flutterFile: 'mobile-app/lib/features/legal/presentation/privacy_policy_page.dart',
+    tag: 'Bảo mật',
+    tagClass: '',
+    status: 'Đang review',
+    html: `
+<div class="phone">
+        <div class="phone-bg-photo"></div>
+        <div class="phone-scrim"></div>
+        <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
+
+        <div class="phone-body" style="padding-bottom:88px;">
+          <div class="mg-header">
+            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
+            <div class="mg-header-text">
+              <div class="mg-eyebrow">BẢO VỆ DỮ LIỆU CÁ NHÂN</div>
+              <div class="mg-title">Chính sách bảo mật</div>
+            </div>
+          </div>
+
+          <div class="card-warm-glass" style="padding:13px 14px;">
+            <div class="row" style="gap:10px;">
+              <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/setting/setting_security_shield.svg" alt="Bảo mật" /></div>
+              <div style="flex:1;min-width:0;">
+                <div class="txt-sm txt-bold">Mã hóa chuẩn AES-256</div>
+                <div class="txt-xs tnum">Cập nhật 01/11/2026 · Tuân thủ Nghị định 13/2023</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">1. Dữ liệu chúng tôi thu thập</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              • <strong>Định danh:</strong> Họ tên, Email, Số điện thoại, Ngày sinh.<br/>
+              • <strong>Sức khỏe &amp; Tập luyện:</strong> Chiều cao, Cân nặng, BMI, InBody, nhật ký tập, lịch sử điểm danh QR/NFC.<br/>
+              • <strong>Giao dịch:</strong> Mã hóa đơn gói tập (không lưu số thẻ ngân hàng).
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">2. Chia sẻ dữ liệu với Coach</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              Chỉ số cơ thể và nhật ký dinh dưỡng chỉ được chia sẻ với Huấn luyện viên đang trực tiếp phụ trách bạn. Bạn có thể bật hoặc tắt quyền này bất kỳ lúc nào tại <strong>Hồ sơ → Quyền riêng tư</strong>.
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">3. Bảo mật Sinh trắc học (Face ID / Vân tay)</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              Dữ liệu khuôn mặt và vân tay chỉ được xử lý cục bộ trong vùng bảo mật phần cứng (Secure Enclave / Keystore) trên điện thoại của bạn. Meta Gym không bao giờ thu thập hay lưu trữ lên máy chủ.
+            </div>
+          </div>
+
+          <div class="card-solid" style="padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:5px;">4. Quyền kiểm soát &amp; Xóa dữ liệu</div>
+            <div class="txt-xs" style="line-height:1.6;">
+              Bạn có quyền xem, tải xuống bản sao dữ liệu hoặc yêu cầu xóa vĩnh viễn tài khoản trong vòng 7 ngày làm việc qua <strong style="color:var(--primary);">privacy@metagym.vn</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-dock">
+          <button class="btn-primary" data-back="1">Tôi đã hiểu &amp; Đồng ý</button>
         </div>
       </div>
     `

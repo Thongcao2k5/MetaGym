@@ -167,11 +167,11 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="grid-2">
               <div class="metric-box" style="text-align:center;">
                 <div class="txt-xs">Tổng năng lượng</div>
-                <div class="tnum txt-green" style="font-size:21px;font-weight:800;margin-top:2px;">1.840 kcal</div>
+                <div class="tnum txt-green" style="font-size:21px;font-weight:800;margin-top:2px;" data-nutri-kcal="1840">1.840 kcal</div>
               </div>
               <div class="metric-box" style="text-align:center;">
                 <div class="txt-xs">Số món đã ghi</div>
-                <div class="tnum" style="font-size:21px;font-weight:800;margin-top:2px;">4 món</div>
+                <div class="tnum" style="font-size:21px;font-weight:800;margin-top:2px;" data-nutri-count="4">4 món</div>
               </div>
             </div>
           </div>
@@ -191,6 +191,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           </div>
 
           <div class="sec-head"><h3 style="font-size:16px;">Nhật ký bữa ăn</h3></div>
+          <div data-nutri-extra-meals></div>
 
           <!-- _mealSection: Bữa sáng -->
           <div class="card-liquid" style="padding:14px;">
@@ -202,7 +203,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                   <div class="txt-xs tnum">1 món</div>
                 </div>
               </div>
-              <div class="btn-secondary" style="width:34px;height:34px;padding:0;"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_edit.svg" alt="Sửa" /></div>
+              <div class="btn-secondary" data-open-log-meal="Bữa sáng" data-meal-food="4" data-meal-grams="120" style="width:34px;height:34px;padding:0;cursor:pointer;" title="Chỉnh sửa Bữa sáng"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_edit.svg" alt="Sửa" /></div>
             </div>
             <div class="divider"></div>
             <div class="row" style="gap:10px;">
@@ -225,7 +226,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                   <div class="txt-xs tnum">2 món</div>
                 </div>
               </div>
-              <div class="btn-secondary" style="width:34px;height:34px;padding:0;"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_edit.svg" alt="Sửa" /></div>
+              <div class="btn-secondary" data-open-log-meal="Bữa trưa" data-meal-food="0" data-meal-grams="200" style="width:34px;height:34px;padding:0;cursor:pointer;" title="Chỉnh sửa Bữa trưa"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_edit.svg" alt="Sửa" /></div>
             </div>
             <div class="divider"></div>
             <div class="row" style="gap:10px;margin-bottom:8px;">
@@ -248,7 +249,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
         <!-- bottomNavigationBar: + Ghi lại bữa ăn -->
         <div class="bottom-cta-dock">
-          <button class="btn-primary">＋ Ghi lại bữa ăn</button>
+          <button type="button" class="btn-primary" data-open-log-meal>＋ Ghi lại bữa ăn</button>
         </div>
       </div>
     `
@@ -279,53 +280,137 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <!-- 2 Segmented Tabs: Nhật ký | Tiến độ -->
           <div class="seg-tabs">
-            <div class="seg-tab active">Nhật ký</div>
-            <div class="seg-tab">Tiến độ</div>
+            <div class="seg-tab active" data-state-btn="journal" style="cursor:pointer;">Nhật ký</div>
+            <div class="seg-tab" data-state-btn="progress" style="cursor:pointer;">Tiến độ</div>
           </div>
 
-          <div class="card-liquid" style="padding:12px;">
-            <div class="row-between" style="margin-bottom:8px;">
-              <strong class="txt-sm">Tuần này</strong>
-              <span class="txt-xs" style="color:var(--reflection);">Xem tháng</span>
+          <!-- Panel 1: Nhật ký -->
+          <div data-state-pane="journal">
+            <div class="card-liquid" style="padding:12px;">
+              <div class="row-between" style="margin-bottom:8px;">
+                <strong class="txt-sm">Tuần này</strong>
+                <span class="txt-xs" data-pick-date="2026-11-22" style="color:var(--primary);font-weight:600;cursor:pointer;">Xem tháng ›</span>
+              </div>
+              <div class="day-strip tnum" style="margin-bottom:0;">
+                <div class="day-pill done">T2<strong>18</strong></div>
+                <div class="day-pill done">T3<strong>19</strong></div>
+                <div class="day-pill">T4<strong>20</strong></div>
+                <div class="day-pill done">T5<strong>21</strong></div>
+                <div class="day-pill active">T6<strong>22</strong></div>
+                <div class="day-pill">T7<strong>23</strong></div>
+                <div class="day-pill">CN<strong>24</strong></div>
+              </div>
             </div>
-            <div class="day-strip tnum" style="margin-bottom:0;">
-              <div class="day-pill done">T2<strong>18</strong></div>
-              <div class="day-pill done">T3<strong>19</strong></div>
-              <div class="day-pill">T4<strong>20</strong></div>
-              <div class="day-pill done">T5<strong>21</strong></div>
-              <div class="day-pill active">T6<strong>22</strong></div>
-              <div class="day-pill">T7<strong>23</strong></div>
-              <div class="day-pill">CN<strong>24</strong></div>
+
+            <div class="card-liquid">
+              <div class="row-between" style="margin-bottom:8px;">
+                <strong class="txt-sm">Thứ 6, 22 tháng 11</strong>
+                <span class="pill pill-success">Hôm nay</span>
+              </div>
+              <div class="grid-2" style="margin-bottom:8px;">
+                <div class="metric-box" style="cursor:pointer;" data-open-body-picker="weight" data-value="72.4"><div class="txt-xs">Cân nặng (kg)</div><div class="tnum txt-bold" style="font-size:16px;" data-field-weight>72.4</div></div>
+                <div class="metric-box"><div class="txt-xs">Mỡ cơ thể (%)</div><div class="tnum txt-bold" style="font-size:16px;">16.8</div></div>
+              </div>
+              <div class="grid-3">
+                <div class="metric-box" style="text-align:center;padding:6px;cursor:pointer;border:1px solid rgba(255,94,54,0.28);" data-open-tape="chest"><div class="txt-xs">Ngực</div><div class="tnum txt-bold txt-sm" data-vong-chest>98 cm</div></div>
+                <div class="metric-box" style="text-align:center;padding:6px;cursor:pointer;border:1px solid rgba(46,204,113,0.28);" data-open-tape="waist"><div class="txt-xs">Eo</div><div class="tnum txt-bold txt-sm" data-vong-waist>78 cm</div></div>
+                <div class="metric-box" style="text-align:center;padding:6px;cursor:pointer;border:1px solid rgba(112,174,232,0.28);" data-open-tape="hip"><div class="txt-xs">Hông</div><div class="tnum txt-bold txt-sm" data-vong-hip>94 cm</div></div>
+              </div>
+            </div>
+
+            <div class="card-liquid">
+              <div class="row-between" style="margin-bottom:8px;">
+                <strong class="txt-sm">Thành tích buổi tập</strong>
+                <span class="sec-link" data-open-add-pr style="cursor:pointer;">+ Thêm</span>
+              </div>
+              <div data-pr-list>
+                <div class="row-between txt-sm" style="padding:6px 0;">
+                  <span>Barbell Bench Press</span>
+                  <strong class="tnum txt-orange">85 kg × 6</strong>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="txt-xs">Ghi chú: Cảm giác cơ ngực trên tốt, tăng +2.5kg so với tuần trước.</div>
             </div>
           </div>
 
-          <div class="card-liquid">
-            <div class="row-between" style="margin-bottom:8px;">
-              <strong class="txt-sm">Thứ 6, 22 tháng 11</strong>
-              <span class="pill pill-success">Hôm nay</span>
+          <!-- Panel 2: Tiến độ (Biểu đồ 30 ngày + Kỷ lục PR) -->
+          <div data-state-pane="progress" style="display:none;">
+            <div class="card-warm-glass" style="padding:13px 14px;">
+              <div class="row-between" style="margin-bottom:8px;">
+                <strong class="txt-sm">Tổng quan 30 ngày qua</strong>
+                <span class="pill pill-success tnum">↑ Tiến bộ tốt</span>
+              </div>
+              <div class="grid-3">
+                <div class="metric-box" style="text-align:center;padding:8px 4px;">
+                  <div class="txt-xs">Cân nặng</div>
+                  <div class="tnum txt-bold" style="font-size:15px;margin-top:2px;">72.4 kg</div>
+                  <div class="txt-xs txt-green tnum">-1.8 kg</div>
+                </div>
+                <div class="metric-box" style="text-align:center;padding:8px 4px;">
+                  <div class="txt-xs">Mỡ cơ thể</div>
+                  <div class="tnum txt-bold" style="font-size:15px;margin-top:2px;">16.8%</div>
+                  <div class="txt-xs txt-green tnum">-1.4%</div>
+                </div>
+                <div class="metric-box" style="text-align:center;padding:8px 4px;">
+                  <div class="txt-xs">Số buổi</div>
+                  <div class="tnum txt-bold txt-orange" style="font-size:15px;margin-top:2px;">16 buổi</div>
+                  <div class="txt-xs tnum">Tháng 11</div>
+                </div>
+              </div>
             </div>
-            <div class="grid-2" style="margin-bottom:8px;">
-              <div class="metric-box"><div class="txt-xs">Cân nặng (kg)</div><div class="tnum txt-bold" style="font-size:16px;">72.4</div></div>
-              <div class="metric-box"><div class="txt-xs">Mỡ cơ thể (%)</div><div class="tnum txt-bold" style="font-size:16px;">16.8</div></div>
-            </div>
-            <div class="grid-3">
-              <div class="metric-box" style="text-align:center;padding:6px;"><div class="txt-xs">Ngực</div><div class="tnum txt-bold txt-sm">98 cm</div></div>
-              <div class="metric-box" style="text-align:center;padding:6px;"><div class="txt-xs">Eo</div><div class="tnum txt-bold txt-sm">78 cm</div></div>
-              <div class="metric-box" style="text-align:center;padding:6px;"><div class="txt-xs">Hông</div><div class="tnum txt-bold txt-sm">94 cm</div></div>
-            </div>
-          </div>
 
-          <div class="card-liquid">
-            <div class="row-between" style="margin-bottom:8px;">
-              <strong class="txt-sm">Thành tích buổi tập</strong>
-              <span class="sec-link">+ Thêm</span>
+            <!-- Biểu đồ xu hướng Cân nặng SVG -->
+            <div class="card-solid" style="padding:13px 14px;margin-bottom:10px;">
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="row" style="gap:6px;">
+                  <img class="ico-sm" src="../../meta-gym/assets/svg/progress/stats_chart_line.svg" alt="Biểu đồ" />
+                  <strong class="txt-sm">Xu hướng cân nặng (kg)</strong>
+                </div>
+                <span class="txt-xs tnum txt-green">74.2 → 72.4</span>
+              </div>
+              <svg viewBox="0 0 280 96" style="width:100%;height:92px;display:block;">
+                <defs>
+                  <linearGradient id="mgProgFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#FF5E36" stop-opacity="0.34"/>
+                    <stop offset="100%" stop-color="#FF5E36" stop-opacity="0.02"/>
+                  </linearGradient>
+                </defs>
+                <line x1="12" y1="20" x2="268" y2="20" stroke="rgba(255,255,255,0.07)" stroke-dasharray="3 3"/>
+                <line x1="12" y1="48" x2="268" y2="48" stroke="rgba(255,255,255,0.07)" stroke-dasharray="3 3"/>
+                <line x1="12" y1="74" x2="268" y2="74" stroke="rgba(255,255,255,0.07)" stroke-dasharray="3 3"/>
+                <path d="M18 22 L80 34 L142 46 L204 54 L262 66 L262 82 L18 82 Z" fill="url(#mgProgFill)"/>
+                <polyline points="18,22 80,34 142,46 204,54 262,66" fill="none" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="18" cy="22" r="3.5" fill="#FF5E36"/><circle cx="80" cy="34" r="3.5" fill="#FF5E36"/><circle cx="142" cy="46" r="3.5" fill="#FF5E36"/><circle cx="204" cy="54" r="3.5" fill="#FF5E36"/><circle cx="262" cy="66" r="4.5" fill="#2ECC71" stroke="#FFF" stroke-width="1.5"/>
+                <text x="18" y="93" text-anchor="middle" fill="#8E95A5" font-size="9.5" font-family="Be Vietnam Pro,sans-serif">T1</text>
+                <text x="80" y="93" text-anchor="middle" fill="#8E95A5" font-size="9.5" font-family="Be Vietnam Pro,sans-serif">T2</text>
+                <text x="142" y="93" text-anchor="middle" fill="#8E95A5" font-size="9.5" font-family="Be Vietnam Pro,sans-serif">T3</text>
+                <text x="204" y="93" text-anchor="middle" fill="#8E95A5" font-size="9.5" font-family="Be Vietnam Pro,sans-serif">T4</text>
+                <text x="262" y="93" text-anchor="middle" fill="#2ECC71" font-size="9.5" font-weight="700" font-family="Be Vietnam Pro,sans-serif">Nay</text>
+              </svg>
             </div>
-            <div class="row-between txt-sm" style="padding:6px 0;">
-              <span>Barbell Bench Press</span>
-              <strong class="tnum txt-orange">85 kg × 6</strong>
+
+            <!-- Kỷ lục cá nhân (PR) -->
+            <div class="card-solid" style="padding:13px 14px;">
+              <div class="row-between" style="margin-bottom:8px;">
+                <strong class="txt-sm">Kỷ lục sức mạnh (PR)</strong>
+                <span class="pill pill-orange tnum">3 bài chính</span>
+              </div>
+              <div class="row-between txt-sm" style="padding:6px 0;">
+                <span>Barbell Bench Press</span>
+                <span class="tnum"><strong>85 kg × 6</strong> <span class="txt-xs txt-green">(+5 kg)</span></span>
+              </div>
+              <div class="divider" style="margin:2px 0;"></div>
+              <div class="row-between txt-sm" style="padding:6px 0;">
+                <span>Back Squat</span>
+                <span class="tnum"><strong>110 kg × 5</strong> <span class="txt-xs txt-green">(+10 kg)</span></span>
+              </div>
+              <div class="divider" style="margin:2px 0;"></div>
+              <div class="row-between txt-sm" style="padding:6px 0;">
+                <span>Romanian Deadlift</span>
+                <span class="tnum"><strong>100 kg × 8</strong> <span class="txt-xs txt-green">(+7.5 kg)</span></span>
+              </div>
             </div>
-            <div class="divider"></div>
-            <div class="txt-xs">Ghi chú: Cảm giác cơ ngực trên tốt, tăng +2.5kg so với tuần trước.</div>
           </div>
         </div>
 
@@ -359,6 +444,22 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="mg-title">Lịch sử đến gym</div>
             </div>
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_refresh.svg" alt="Tải lại" /></div>
+          </div>
+
+          <!-- Trạng thái chưa điểm danh hôm nay + Nút điểm danh nhanh -->
+          <div class="card-solid" style="padding:12px 14px;border-color:rgba(255,94,54,0.48);background:linear-gradient(135deg,rgba(255,94,54,0.14),rgba(24,27,34,0.92));">
+            <div class="row-between" style="gap:10px;">
+              <div class="row" style="gap:10px;min-width:0;flex:1;">
+                <div class="quick-ico" style="background:rgba(255,94,54,0.18);border:1px solid rgba(255,94,54,0.42);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/states/qr_scan_frame.svg" alt="Điểm danh" style="background:transparent;padding:0;" />
+                </div>
+                <div style="min-width:0;">
+                  <div style="font-size:13.5px;font-weight:700;">Hôm nay chưa điểm danh</div>
+                  <div class="txt-xs">Mở mã QR hoặc quẹt thẻ NFC tại cổng</div>
+                </div>
+              </div>
+              <button type="button" class="btn-mini-orange" data-open-qr style="height:36px;padding:0 12px;border-radius:11px;cursor:pointer;flex-shrink:0;">Điểm danh</button>
+            </div>
           </div>
 
           <!-- MetaGymHeroGlassCard: Lịch đến gym -->
@@ -441,10 +542,42 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         </div>
 
         <div class="bottom-cta-dock">
-          <button class="btn-primary">
+          <button type="button" class="btn-primary" data-open-qr>
             <img class="ico-sm" src="../../meta-gym/assets/svg/states/qr_scan_frame.svg" alt="QR" style="background:transparent;padding:0;" />
-            <span>Quét mã QR điểm danh</span>
+            <span>Điểm danh ngay (Mã QR)</span>
           </button>
+        </div>
+
+        <!-- Level 3 Overlay Glass: Mã QR Check-in động trong ngày -->
+        <div class="qr-overlay" data-qr-modal>
+          <div class="qr-sheet">
+            <div class="row-between" style="margin-bottom:8px;">
+              <span class="pill pill-success tnum">● Hôm nay · 22/11/2026</span>
+              <span class="tnum" style="font-size:11.5px;color:#8E95A5;">ID MG-2048</span>
+            </div>
+            <div style="font-size:17px;font-weight:800;">QR Check-in Phòng Tập</div>
+            <div style="font-size:12px;color:#8E95A5;margin-top:2px;">Mã riêng của Nguyễn Minh Quân · Chỉ dùng trong ngày</div>
+
+            <div class="qr-box-white" data-qr-svg-host></div>
+
+            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:8px 10px;margin-bottom:12px;">
+              <div class="row-between" style="font-size:11.5px;">
+                <span style="color:#8E95A5;">Mã phiên duy nhất</span>
+                <strong class="tnum" style="color:#FF5E36;letter-spacing:0.04em;" data-qr-token>MG-261122-8F4A</strong>
+              </div>
+              <div class="tnum" style="font-size:10.5px;color:#C8C2BC;margin-top:3px;text-align:left;" data-qr-meta>
+                Hết hạn 23:59 hôm nay · Đổi mã mới mỗi lần mở hoặc tạo lại
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <button type="button" class="btn-secondary" style="height:44px;gap:6px;" data-regen-qr>
+                <img class="ico-xs" src="../../meta-gym/assets/svg/setting/common_refresh.svg" alt="Tạo mã mới" style="background:transparent;padding:0;" />
+                <span>Tạo mã mới</span>
+              </button>
+              <button type="button" class="btn-primary" style="height:44px;" data-close-qr>Đóng</button>
+            </div>
+          </div>
         </div>
       </div>
     `
@@ -489,55 +622,130 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           </div>
 
           <div class="seg-tabs">
-            <div class="seg-tab active">Tập luyện</div>
-            <div class="seg-tab">Thực đơn</div>
+            <div class="seg-tab active" data-state-btn="workout" style="cursor:pointer;">Tập luyện</div>
+            <div class="seg-tab" data-state-btn="meal" style="cursor:pointer;">Thực đơn</div>
           </div>
 
-          <!-- Chọn ngày tập -->
-          <div class="filter-row tnum">
-            <div class="filter-pill">Ngày 1 · 4 bài</div>
-            <div class="filter-pill active">Ngày 2 · 5 bài</div>
-            <div class="filter-pill">Ngày 3 · 4 bài</div>
-            <div class="filter-pill">Ngày 4 · 5 bài</div>
-          </div>
+          <!-- Panel 1: Tập luyện -->
+          <div data-state-pane="workout">
+            <!-- Chọn ngày tập -->
+            <div class="filter-row tnum">
+              <div class="filter-pill">Ngày 1 · 4 bài</div>
+              <div class="filter-pill active">Ngày 2 · 5 bài</div>
+              <div class="filter-pill">Ngày 3 · 4 bài</div>
+              <div class="filter-pill">Ngày 4 · 5 bài</div>
+            </div>
 
-          <div class="sec-head" style="margin-top:4px;"><h3>Ngày 2 · Upper Body &amp; Core</h3><span class="txt-xs tnum">60 phút</span></div>
-          <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
-            <div class="row-between">
-              <div class="row" style="gap:10px;">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_weight.svg" alt="Bài tập" /></div>
-                <div>
-                  <div class="txt-sm txt-bold">Incline Dumbbell Press</div>
-                  <div class="txt-xs tnum">4 hiệp × 10 reps · 24 kg · Nghỉ 90s</div>
+            <div class="sec-head" style="margin-top:4px;"><h3>Ngày 2 · Upper Body &amp; Core</h3><span class="txt-xs tnum">60 phút</span></div>
+            <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_weight.svg" alt="Bài tập" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Incline Dumbbell Press</div>
+                    <div class="txt-xs tnum">4 hiệp × 10 reps · 24 kg · Nghỉ 90s</div>
+                  </div>
                 </div>
+                <span class="pill pill-success">Xong</span>
               </div>
-              <span class="pill pill-success">Xong</span>
+            </div>
+
+            <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_set_reps.svg" alt="Bài tập" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Barbell Bench Press</div>
+                    <div class="txt-xs tnum">4 hiệp × 8 reps · 80 kg · Nghỉ 120s</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Tiếp theo</span>
+              </div>
+            </div>
+
+            <div class="card-solid" style="padding:12px 14px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Bài tập" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Cable Crossover Fly</div>
+                    <div class="txt-xs tnum">3 hiệp × 12 reps · 15 kg · Nghỉ 60s</div>
+                  </div>
+                </div>
+                <span class="pill pill-muted">Chờ</span>
+              </div>
             </div>
           </div>
 
-          <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
-            <div class="row-between">
-              <div class="row" style="gap:10px;">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_set_reps.svg" alt="Bài tập" /></div>
-                <div>
-                  <div class="txt-sm txt-bold">Barbell Bench Press</div>
-                  <div class="txt-xs tnum">4 hiệp × 8 reps · 80 kg · Nghỉ 120s</div>
+          <!-- Panel 2: Thực đơn của Coach -->
+          <div data-state-pane="meal" style="display:none;">
+            <div class="card-solid" style="padding:12px 14px;margin-bottom:10px;">
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="row" style="gap:6px;">
+                  <img class="ico-sm" src="../../meta-gym/assets/svg/nutrition/nutrition_coach_plan.svg" alt="Thực đơn" />
+                  <strong class="txt-sm">Mục tiêu Macro hôm nay</strong>
                 </div>
+                <span class="pill pill-orange tnum">2.450 kcal</span>
               </div>
-              <span class="pill pill-orange">Tiếp theo</span>
+              <div class="grid-3">
+                <div class="metric-box" style="text-align:center;padding:7px 4px;"><div class="tnum txt-bold txt-green">160g</div><div class="txt-xs">Đạm</div></div>
+                <div class="metric-box" style="text-align:center;padding:7px 4px;"><div class="tnum txt-bold">260g</div><div class="txt-xs">Tinh bột</div></div>
+                <div class="metric-box" style="text-align:center;padding:7px 4px;"><div class="tnum txt-bold">65g</div><div class="txt-xs">Chất béo</div></div>
+              </div>
             </div>
-          </div>
 
-          <div class="card-solid" style="padding:12px 14px;">
-            <div class="row-between">
-              <div class="row" style="gap:10px;">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Bài tập" /></div>
-                <div>
-                  <div class="txt-sm txt-bold">Cable Crossover Fly</div>
-                  <div class="txt-xs tnum">3 hiệp × 12 reps · 15 kg · Nghỉ 60s</div>
+            <div class="sec-head" style="margin-top:4px;"><h3>Thực đơn 4 bữa trong ngày</h3><span class="txt-xs" style="color:var(--primary);cursor:pointer;" data-go="member-nutrition">Ghi bữa ăn ›</span></div>
+
+            <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(245,176,65,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/nutrition/meal_breakfast.svg" alt="Bữa sáng" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Bữa sáng · 07:30</div>
+                    <div class="txt-xs tnum">Yến mạch 80g + 3 trứng gà + 1 chuối</div>
+                  </div>
                 </div>
+                <span class="pill pill-success tnum">540 kcal</span>
               </div>
-              <span class="pill pill-muted">Chờ</span>
+            </div>
+
+            <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(46,204,113,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/nutrition/meal_lunch.svg" alt="Bữa trưa" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Bữa trưa · 12:00</div>
+                    <div class="txt-xs tnum">Ức gà 200g + Cơm gạo lứt 180g + Bông cải</div>
+                  </div>
+                </div>
+                <span class="pill pill-success tnum">720 kcal</span>
+              </div>
+            </div>
+
+            <div class="card-solid" style="padding:12px 14px;margin-bottom:9px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(255,94,54,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Sau tập" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Sau tập · 19:30</div>
+                    <div class="txt-xs tnum">1 muỗng Whey Isolate + 1 táo xanh</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange tnum">220 kcal</span>
+              </div>
+            </div>
+
+            <div class="card-solid" style="padding:12px 14px;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(112,174,232,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/nutrition/meal_dinner.svg" alt="Bữa tối" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Bữa tối · 20:30</div>
+                    <div class="txt-xs tnum">Cá hồi áp chảo 180g + Khoai lang 150g + Salad</div>
+                  </div>
+                </div>
+                <span class="pill pill-muted tnum">680 kcal</span>
+              </div>
             </div>
           </div>
         </div>

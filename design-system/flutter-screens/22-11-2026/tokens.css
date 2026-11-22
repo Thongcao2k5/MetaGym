@@ -486,17 +486,18 @@ body {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 8px 16px 110px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(169, 199, 232, 0.28) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.phone-body::-webkit-scrollbar { width: 4px; }
-.phone-body::-webkit-scrollbar-track { background: transparent; }
-.phone-body::-webkit-scrollbar-thumb {
-  background: rgba(169, 199, 232, 0.25);
-  border-radius: 999px;
+.phone-body::-webkit-scrollbar,
+.phone *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
-.phone-body:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 94, 54, 0.52);
+.phone * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .phone-body.no-nav { padding-bottom: 28px; }
 .phone-body.is-dragging, .filter-row.is-dragging {
@@ -1181,8 +1182,8 @@ body.proto-mode .screen-slot.proto-current { display: flex !important; }
   gap: 6px;
   max-height: 210px;
   overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: thin;
+  padding-right: 0;
+  scrollbar-width: none;
 }
 .meta-cal-year-btn {
   height: 36px;
@@ -1752,14 +1753,10 @@ body.light-mode .fan-card {
   padding-bottom: 4px;
   margin-bottom: 10px;
   cursor: grab;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(169, 199, 232, 0.24) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.filter-row::-webkit-scrollbar { height: 3px; }
-.filter-row::-webkit-scrollbar-thumb {
-  background: rgba(169, 199, 232, 0.28);
-  border-radius: 999px;
-}
+.filter-row::-webkit-scrollbar { display: none; height: 0; }
 .filter-pill {
   padding: 7px 14px;
   border-radius: 20px;
@@ -1788,19 +1785,15 @@ body.light-mode .fan-card {
   padding: 2px 2px 8px;
   margin: 0 -2px 10px;
   cursor: grab;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(169, 199, 232, 0.24) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .tier-carousel.is-dragging {
   cursor: grabbing;
   scroll-snap-type: none;
   user-select: none;
 }
-.tier-carousel::-webkit-scrollbar { height: 3px; }
-.tier-carousel::-webkit-scrollbar-thumb {
-  background: rgba(169, 199, 232, 0.28);
-  border-radius: 999px;
-}
+.tier-carousel::-webkit-scrollbar { display: none; height: 0; }
 .tier-pkg-card {
   flex: 0 0 256px;
   scroll-snap-align: start;
@@ -1990,4 +1983,33 @@ body.light-mode .fan-card {
 .step-chip-btn:active {
   transform: scale(0.96);
   border-color: var(--primary);
+}
+
+/* Save Success Celebration Modal Animation */
+@keyframes mgSuccessPop {
+  0% { transform: scale(0.65); opacity: 0; }
+  65% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes mgCheckDraw {
+  0% { stroke-dashoffset: 48; }
+  100% { stroke-dashoffset: 0; }
+}
+.save-success-ring {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  background: radial-gradient(circle, rgba(46, 204, 113, 0.24) 0%, rgba(46, 204, 113, 0.08) 70%);
+  border: 2px solid #2ECC71;
+  box-shadow: 0 0 0 8px rgba(46, 204, 113, 0.10), 0 12px 28px rgba(46, 204, 113, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: mgSuccessPop 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.save-success-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 0;
+  animation: mgCheckDraw 420ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }

@@ -259,24 +259,33 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <!-- Card 2: Chiều cao (Thước đo kéo trượt trực tiếp + Mở thước laser 3D) -->
-          <div class="card-liquid" style="padding:15px;" data-inline-height-card>
-            <div class="row-between" style="margin-bottom:4px;">
+          <!-- Card 2: Chiều cao & Cân nặng (Chạm mở Thước Laser Đứng / Cân Đĩa Tạ Vòng Cung) -->
+          <div class="card-liquid" style="padding:14px 15px;">
+            <div class="row-between" style="margin-bottom:10px;">
               <div class="row" style="gap:7px;">
-                <img class="ico-sm" src="../../meta-gym/assets/svg/progress/body_measure_tape.svg" alt="Chiều cao" />
-                <strong style="font-size:13.5px;">Chiều cao</strong>
+                <img class="ico-sm" src="../../meta-gym/assets/svg/progress/body_measure_tape.svg" alt="Chỉ số" />
+                <strong style="font-size:13.5px;">Chiều cao &amp; Cân nặng</strong>
               </div>
-              <div class="row" style="gap:8px;">
-                <span class="tnum txt-orange" style="font-size:19px;font-weight:800;cursor:pointer;" data-height-readout data-open-body-picker="height" data-value="174">174 cm</span>
-                <span class="pill pill-orange" style="cursor:pointer;font-size:10px;padding:3px 8px;" data-open-body-picker="height" data-value="174">Thước laser ↗</span>
+              <span class="pill pill-success tnum" data-bmi-pill>● BMI 23.9 · Bình thường</span>
+            </div>
+            <div class="grid-2" style="gap:10px;">
+              <div class="metric-box" style="padding:11px 12px;cursor:pointer;border:1px solid rgba(255,94,54,0.28);" data-open-body-picker="height" data-value="174">
+                <div class="row-between" style="margin-bottom:4px;">
+                  <span class="txt-xs">Chiều cao</span>
+                  <span style="font-size:10px;color:var(--primary);font-weight:700;">Laser ↗</span>
+                </div>
+                <div class="tnum txt-orange" style="font-size:20px;font-weight:800;line-height:1.1;" data-height-readout>174 cm</div>
+                <div class="txt-xs tnum" style="margin-top:3px;" data-height-ft>5'9"</div>
+              </div>
+              <div class="metric-box" style="padding:11px 12px;cursor:pointer;border:1px solid rgba(112,174,232,0.32);" data-open-body-picker="weight" data-value="72.4">
+                <div class="row-between" style="margin-bottom:4px;">
+                  <span class="txt-xs">Cân nặng</span>
+                  <span style="font-size:10px;color:#70AEE8;font-weight:700;">Cân tạ ↗</span>
+                </div>
+                <div class="tnum" style="font-size:20px;font-weight:800;line-height:1.1;color:#F7F9FC;" data-summary-weight>72.4 kg</div>
+                <div class="txt-xs tnum" style="margin-top:3px;" data-weight-lbs>159.6 lbs</div>
               </div>
             </div>
-            <div class="txt-xs" style="margin-bottom:4px;">Kéo thước trái/phải hoặc mở thước đo đứng</div>
-            <div class="inline-ruler-wrap" data-inline-ruler="height" data-min="120" data-max="220" data-val="174">
-              <div class="inline-ruler-needle"></div>
-              <div class="inline-ruler-track"></div>
-            </div>
-            <div class="row-between txt-xs tnum"><span>120 cm</span><span data-height-ft>5'9" · Chuẩn thể hình</span><span>220 cm</span></div>
           </div>
 
           <!-- Card 3: Trình độ & Mức độ vận động -->
@@ -433,7 +442,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="mg-eyebrow">TIẾN ĐỘ &amp; SỐ ĐO</div>
               <div class="mg-title">Nhật ký &amp; Số đo</div>
             </div>
-            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_add.svg" alt="Thêm" /></div>
+            <div class="circle-btn" data-open-add-measurement style="cursor:pointer;" title="Thêm chỉ số mới"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_add.svg?v=2" alt="Thêm" /></div>
           </div>
 
           <div class="card-warm-glass">
@@ -442,28 +451,29 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 <img class="ico-sm" src="../../meta-gym/assets/svg/progress/body_weight_scale.svg" alt="Số đo" />
                 <strong style="font-size:15px;">Chỉ số mới nhất</strong>
               </div>
-              <span class="pill pill-success tnum">22/11/2026</span>
+              <span class="pill pill-success tnum" data-measure-date>22/11/2026</span>
             </div>
             <div class="grid-3">
-              <div class="metric-box" style="text-align:center;padding:8px 4px;">
+              <div class="metric-box" style="text-align:center;padding:8px 4px;cursor:pointer;" data-open-body-picker="weight" data-value="72.4">
                 <div class="txt-xs">Cân nặng</div>
-                <div class="tnum txt-bold" style="font-size:16px;margin-top:2px;">72.4 kg</div>
+                <div class="tnum txt-bold" style="font-size:16px;margin-top:2px;" data-summary-weight>72.4 kg</div>
                 <div class="txt-xs txt-green tnum">-1.2 kg</div>
               </div>
               <div class="metric-box" style="text-align:center;padding:8px 4px;">
                 <div class="txt-xs">Mỡ cơ thể</div>
-                <div class="tnum txt-bold" style="font-size:16px;margin-top:2px;">16.8%</div>
+                <div class="tnum txt-bold" style="font-size:16px;margin-top:2px;" data-measure-fat>16.8%</div>
                 <div class="txt-xs txt-green tnum">-0.9%</div>
               </div>
               <div class="metric-box" style="text-align:center;padding:8px 4px;">
                 <div class="txt-xs">BMI</div>
-                <div class="tnum txt-bold" style="font-size:16px;margin-top:2px;">23.9</div>
+                <div class="tnum txt-bold" style="font-size:16px;margin-top:2px;" data-measure-bmi>23.9</div>
                 <div class="txt-xs txt-green">Chuẩn</div>
               </div>
             </div>
           </div>
 
-          <div class="sec-head"><h3>Lịch sử số đo vòng</h3><span class="txt-xs tnum">3 bản ghi</span></div>
+          <div class="sec-head"><h3>Lịch sử số đo vòng</h3><span class="txt-xs tnum" data-measure-count>2 bản ghi</span></div>
+          <div data-measure-list>
           <div class="card-liquid" style="padding:13px 14px;margin-bottom:9px;">
             <div class="row-between" style="margin-bottom:8px;">
               <strong class="txt-sm tnum">22/11/2026</strong>
@@ -487,10 +497,11 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="txt-xs">Hông <strong style="color:var(--text-primary);display:block;">95 cm</strong></div>
             </div>
           </div>
+          </div>
         </div>
 
         <div class="bottom-cta-dock">
-          <button class="btn-primary">+ Ghi nhận số đo mới</button>
+          <button type="button" class="btn-primary" data-open-add-measurement>+ Ghi nhận số đo mới</button>
         </div>
       </div>
     `

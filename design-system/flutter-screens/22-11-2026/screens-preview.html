@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meta Gym — Flutter Full-Data Screen Preview Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="./tokens.css" />
 </head>
+
 <body>
 
   <!-- STUDIO CONTROL BAR -->
   <header class="studio-bar">
     <div class="studio-inner">
       <div class="studio-brand">
-        <a href="../../index.html" class="ctrl-btn" style="text-decoration:none;display:inline-flex;align-items:center;">← Hub</a>
+        <a href="../../index.html" class="ctrl-btn"
+          style="text-decoration:none;display:inline-flex;align-items:center;">← Hub</a>
         <div class="mg-logo" style="width:34px;height:34px;font-size:12px;border-radius:10px;">MG</div>
         <div>
           <h1>Flutter Screen Preview — Bám sát code thực tế (Full Data)</h1>
@@ -24,7 +28,8 @@
       </div>
 
       <div class="studio-controls">
-        <button class="ctrl-btn" id="btn-proto" title="Xem 1 máy tương tác như Figma Prototype">▶ Chế độ Luồng UX</button>
+        <button class="ctrl-btn" id="btn-proto" title="Xem 1 máy tương tác như Figma Prototype">▶ Chế độ Luồng
+          UX</button>
         <button class="ctrl-btn" id="btn-hotspots" title="Hiện viền nét đứt các vùng bấm được">Hiện điểm bấm</button>
         <span class="ctrl-divider"></span>
         <button class="ctrl-btn active" id="btn-375">375px</button>
@@ -52,9 +57,12 @@
   <!-- ROLE TABS -->
   <div class="role-tabs-wrap">
     <div class="role-tabs" role="tablist">
-      <button class="role-tab" role="tab" data-tab="auth">Khởi động &amp; Auth <span class="tab-count" id="cnt-auth">0</span></button>
-      <button class="role-tab active" role="tab" data-tab="member">Hội viên (Member) <span class="tab-count" id="cnt-member">0</span></button>
-      <button class="role-tab" role="tab" data-tab="coach">Huấn luyện viên (Coach) <span class="tab-count" id="cnt-coach">0</span></button>
+      <button class="role-tab" role="tab" data-tab="auth">Khởi động &amp; Auth <span class="tab-count"
+          id="cnt-auth">0</span></button>
+      <button class="role-tab active" role="tab" data-tab="member">Hội viên (Member) <span class="tab-count"
+          id="cnt-member">0</span></button>
+      <button class="role-tab" role="tab" data-tab="coach">Huấn luyện viên (Coach) <span class="tab-count"
+          id="cnt-coach">0</span></button>
     </div>
   </div>
 
@@ -71,15 +79,16 @@
   <div class="flow-toast" id="flow-toast"></div>
 
   <!-- Modular Screen Registries -->
-  <script src="./screens/auth.screens.js"></script>
-  <script src="./screens/member/tab1-home.js"></script>
-  <script src="./screens/member/tab2-training.js"></script>
-  <script src="./screens/member/tab3-ai.js"></script>
-  <script src="./screens/member/tab4-messages.js"></script>
-  <script src="./screens/member/tab5-profile.js"></script>
-  <script src="./screens/member/tab5-profile-sub.js"></script>
-  <script src="./screens/coach/core.js"></script>
-  <script src="./screens/coach/detail.js"></script>
+  <script src="./screens/auth.screens.js?v=20261122c"></script>
+  <script src="./screens/member/tab1-home.js?v=20261122i"></script>
+  <script src="./screens/member/tab2-training.js?v=20261122d"></script>
+  <script src="./screens/member/tab2-training.js?v=20261122e"></script>
+  <script src="./screens/member/tab3-ai.js?v=20261122c"></script>
+  <script src="./screens/member/tab4-messages.js?v=20261122c"></script>
+  <script src="./screens/member/tab5-profile.js?v=20261122c"></script>
+  <script src="./screens/member/tab5-profile-sub.js?v=20261122h"></script>
+  <script src="./screens/coach/core.js?v=20261122c"></script>
+  <script src="./screens/coach/detail.js?v=20261122c"></script>
 
   <script>
     const registry = window.METAGYM_SCREENS || {};
@@ -114,8 +123,11 @@
     // 2. Declarative UX Flow Wiring (Auto-binds interactive links across all 35 screens)
     const fallbackParent = {
       'auth-register': 'auth-login',
+      'auth-terms': 'auth-login',
+      'auth-privacy-policy': 'auth-login',
       'member-membership': 'member-home',
       'member-membership-empty': 'member-home',
+      'member-checkout': 'member-membership-empty',
       'member-coach-booking': 'member-home',
       'member-payments': 'member-membership',
       'member-article-detail': 'member-home',
@@ -125,6 +137,7 @@
       'member-curriculum': 'member-training-hub',
       'member-gym-equipment': 'member-training-hub',
       'member-equipment-detail': 'member-gym-equipment',
+      'member-chat-detail': 'member-conversations',
       'member-personal-info': 'member-profile',
       'member-training-profile': 'member-profile',
       'member-health-declaration': 'member-profile',
@@ -234,7 +247,10 @@
           bindTextLink(slot, '.card-liquid', 'Lịch sử tập luyện', 'member-gym-visits');
           bindTextLink(slot, '.card-liquid', 'Phòng gym & thiết bị', 'member-gym-equipment');
         } else if (id === 'member-curriculum') {
-          bindTextLink(slot, '.btn-mini-orange', 'Nhắn Coach', 'member-conversations');
+          bindTextLink(slot, '.btn-mini-orange', 'Nhắn Coach', 'member-chat-detail');
+        } else if (id === 'member-conversations') {
+          bindTextLink(slot, '.card-liquid', 'Lê Hoàng Nam', 'member-chat-detail');
+          bindTextLink(slot, '.card-liquid', 'Hỗ trợ Meta Gym', 'member-chat-detail');
         } else if (id === 'member-gym-equipment') {
           bindTextLink(slot, '.card-liquid', 'Cable Crossover', 'member-equipment-detail');
         } else if (id === 'member-profile') {
@@ -444,6 +460,135 @@
         return;
       }
 
+      // Redeem Meta Points Modal (1.2a Gói tập)
+      const redeemBtn = e.target.closest('[data-open-redeem-points]');
+      if (redeemBtn) {
+        e.stopPropagation();
+        openRedeemPointsModal(redeemBtn.closest('.phone'));
+        return;
+      }
+
+      // Support Contact Modal (5.14 Phòng tập & Hỗ trợ)
+      const supBtn = e.target.closest('[data-open-support-modal]');
+      if (supBtn) {
+        e.stopPropagation();
+        openSupportContactModal(supBtn.closest('.phone'));
+        return;
+      }
+
+      // Checkout: Select Payment Method (MoMo / ZaloPay / VNPay / CK)
+      const payMethodEl = e.target.closest('[data-pay-method]');
+      if (payMethodEl) {
+        e.stopPropagation();
+        const phone = payMethodEl.closest('.phone');
+        const method = payMethodEl.dataset.payMethod;
+        phone.dataset.payMethod = method;
+        phone.querySelectorAll('[data-pay-method]').forEach(card => {
+          const on = card === payMethodEl;
+          card.style.borderColor = on ? 'var(--primary)' : '';
+          card.style.background = on ? 'rgba(255,94,54,0.08)' : '';
+          const radio = card.querySelector('[data-pay-radio]');
+          if (radio) {
+            radio.style.border = on ? '5px solid var(--primary)' : '2px solid rgba(255,255,255,0.28)';
+            radio.style.background = on ? '#FFF' : 'transparent';
+          }
+          const ckBox = card.querySelector('[data-ck-box]');
+          if (ckBox) ckBox.style.display = on ? 'block' : 'none';
+        });
+        const totalTxt = phone.querySelector('[data-ck-total]')?.textContent || '4.290.000đ';
+        const payBtn = phone.querySelector('[data-open-checkout-pay]');
+        if (payBtn) payBtn.textContent = `Thanh toán ${totalTxt} · ${method}`;
+        return;
+      }
+
+      // Checkout: Apply custom or quick Voucher code (METAGYM200 / VIP500 / any custom code)
+      function applyCheckoutVoucher(phone, rawCode) {
+        if (!phone) return;
+        const code = String(rawCode || '').trim().toUpperCase();
+        const basePrice = 4490000;
+        let discount = 0;
+        if (code === 'VIP500') discount = 500000;
+        else if (code === 'METAGYM200') discount = 200000;
+        else if (code.length >= 3) discount = 150000;
+
+        const finalPrice = Math.max(0, basePrice - discount);
+        const fmt = (n) => n.toLocaleString('vi-VN') + 'đ';
+        const inputEl = phone.querySelector('[data-voucher-input]');
+        if (inputEl) inputEl.value = code;
+        const badgeEl = phone.querySelector('[data-voucher-badge]');
+        if (badgeEl) {
+          badgeEl.className = discount > 0 ? 'pill pill-success tnum' : 'pill pill-muted';
+          badgeEl.textContent = discount > 0 ? `${code} · -${Math.round(discount / 1000)}k` : 'Chưa áp mã';
+        }
+        const discEl = phone.querySelector('[data-ck-discount]');
+        if (discEl) discEl.textContent = discount > 0 ? `-${fmt(discount)}` : '0đ';
+        const totEl = phone.querySelector('[data-ck-total]');
+        if (totEl) totEl.textContent = fmt(finalPrice);
+        const method = phone.dataset.payMethod || 'MoMo';
+        const payBtn = phone.querySelector('[data-open-checkout-pay]');
+        if (payBtn) payBtn.textContent = `Thanh toán ${fmt(finalPrice)} · ${method}`;
+        showFlowToast(discount > 0 ? `Đã áp dụng mã ${code} (−${fmt(discount)})` : 'Đã gỡ mã giảm giá');
+      }
+
+      const applyVBtn = e.target.closest('[data-apply-voucher-input]');
+      if (applyVBtn) {
+        e.stopPropagation();
+        const phone = applyVBtn.closest('.phone');
+        applyCheckoutVoucher(phone, phone?.querySelector('[data-voucher-input]')?.value);
+        return;
+      }
+      const quickVBtn = e.target.closest('[data-quick-voucher]');
+      if (quickVBtn) {
+        e.stopPropagation();
+        applyCheckoutVoucher(quickVBtn.closest('.phone'), quickVBtn.dataset.quickVoucher);
+        return;
+      }
+
+      // Checkout: Confirm Pay -> Card Activation Celebration Modal -> 1.2a
+      const payNowBtn = e.target.closest('[data-open-checkout-pay]');
+      if (payNowBtn) {
+        e.stopPropagation();
+        const phone = payNowBtn.closest('.phone');
+        openCheckoutSuccessModal(phone);
+        return;
+      }
+
+      // Add Workout PR Modal (2.3 Nhật ký tập luyện: + Thêm Thành tích buổi tập)
+      const addPrBtn = e.target.closest('[data-open-add-pr]');
+      if (addPrBtn) {
+        e.stopPropagation();
+        openAddPrModal(addPrBtn.closest('.phone'));
+        return;
+      }
+
+      // 3-Ring Body Tape Scanner (2.3 Nhật ký tập luyện: Ngực · Eo · Hông)
+      const tapeBtn = e.target.closest('[data-open-tape]');
+      if (tapeBtn) {
+        e.stopPropagation();
+        openTapeMeasureModal(tapeBtn.closest('.phone'), tapeBtn.dataset.openTape || 'chest');
+        return;
+      }
+
+      // Smart Macro Meal Logger Modal (2.2 Theo dõi dinh dưỡng — Ghi mới & Chỉnh sửa bữa ăn)
+      const logMealBtn = e.target.closest('[data-open-log-meal]');
+      if (logMealBtn) {
+        e.stopPropagation();
+        openLogMealModal(logMealBtn.closest('.phone'), {
+          slot: logMealBtn.dataset.openLogMeal || '',
+          foodIdx: logMealBtn.dataset.mealFood != null ? Number(logMealBtn.dataset.mealFood) : null,
+          grams: logMealBtn.dataset.mealGrams != null ? Number(logMealBtn.dataset.mealGrams) : null
+        });
+        return;
+      }
+
+      // Add Measurement Modal (5.5 Nhật ký tập luyện & Số đo)
+      const addMeasBtn = e.target.closest('[data-open-add-measurement]');
+      if (addMeasBtn) {
+        e.stopPropagation();
+        openAddMeasurementModal(addMeasBtn.closest('.phone'));
+        return;
+      }
+
       // Kinetic Body Metric Pickers (Chiều cao: Thước laser đứng | Cân nặng: Mặt cân vòng cung)
       const bodyPickerBtn = e.target.closest('[data-open-body-picker]');
       if (bodyPickerBtn) {
@@ -520,6 +665,19 @@
         return;
       }
 
+      // Universal Save Success Modal for bottom dock Save/Update buttons
+      const saveDockBtn = e.target.closest('.bottom-cta-dock .btn-primary');
+      if (saveDockBtn && !saveDockBtn.hasAttribute('data-open-qr') && !saveDockBtn.hasAttribute('data-open-add-measurement') && !saveDockBtn.hasAttribute('data-open-log-meal') && !saveDockBtn.hasAttribute('data-back')) {
+        const txt = (saveDockBtn.textContent || '').trim();
+        if (txt.includes('Lưu') || txt.includes('Cập nhật')) {
+          e.stopPropagation();
+          const phone = saveDockBtn.closest('.phone');
+          const screenTitle = phone?.querySelector('.mg-title')?.textContent?.trim() || 'Hồ sơ Meta Gym';
+          openSaveSuccessModal(phone, screenTitle, txt);
+          return;
+        }
+      }
+
       // Interactive micro-controls: choice chips (Giới tính, Trình độ, Filter...), toggles, day pills, segmented tabs
       const pill = e.target.closest('.filter-pill');
       if (pill && pill.parentElement) {
@@ -546,7 +704,7 @@
         if (stateKey) {
           const body = segTab.closest('.phone-body');
           body?.querySelectorAll('[data-state-pane]').forEach(p => {
-            p.style.display = p.getAttribute('data-state-pane') === stateKey ? '' : 'none';
+            p.style.display = (stateKey === 'all' || p.getAttribute('data-state-pane') === stateKey) ? '' : 'none';
           });
         }
         return;
@@ -984,6 +1142,7 @@
         phone.querySelectorAll('[data-open-body-picker="weight"]').forEach(el => { el.dataset.value = wStr; });
         phone.querySelectorAll('[data-summary-weight]').forEach(el => el.textContent = `${wStr} kg`);
         phone.querySelectorAll('[data-field-weight]').forEach(el => el.textContent = wStr);
+        phone.querySelectorAll('[data-weight-lbs]').forEach(el => el.textContent = `${(Number(weightKg) * 2.20462).toFixed(1)} lbs`);
       }
       const h = Number(phone.dataset.bodyHeight || 174);
       const w = Number(phone.dataset.bodyWeight || 72.4);
@@ -991,6 +1150,9 @@
       phone.querySelectorAll('[data-bmi-pill]').forEach(el => {
         el.className = `pill ${info.cls} tnum`;
         el.textContent = `● BMI ${info.bmi.toFixed(1)} · ${info.label}`;
+      });
+      phone.querySelectorAll('[data-measure-bmi]').forEach(el => {
+        el.textContent = info.bmi.toFixed(1);
       });
     }
 
@@ -1039,7 +1201,7 @@
       const overlay = document.createElement('div');
       overlay.className = 'qr-overlay open body-metric-overlay';
 
-      const curH = Number(phone.dataset.bodyHeight || triggerEl?.dataset.value || 174);
+      const curH = Number(phone.dataset.bodyHeight || (type === 'height' ? triggerEl?.dataset.value : null) || 174);
       const curW = Number(phone.dataset.bodyWeight || (type === 'weight' ? triggerEl?.dataset.value : null) || 72.4);
 
       if (type === 'height') {
@@ -1147,34 +1309,43 @@
           }
         });
       } else {
-        // Weight Mechanical Arc Dial (35.0 - 150.0 kg)
+        // Weight Olympic Barbell Plates + Mechanical Arc Scale Dial (35.0 - 150.0 kg)
         let val = Math.max(35, Math.min(150, +(Number(triggerEl?.dataset.value || curW).toFixed(1))));
         const min = 35, max = 150;
         overlay.innerHTML = `
           <div class="body-picker-sheet">
-            <div class="row-between">
+            <div class="row-between" style="margin-bottom:8px;">
               <div>
-                <div style="font-size:16px;font-weight:800;">Mặt cân cơ học Meta Gym</div>
-                <div style="font-size:11.5px;color:#8E95A5;">Xoay trái/phải mặt cân hoặc lăn chuột</div>
+                <div style="font-size:16px;font-weight:800;">Cân đĩa tạ Meta Gym</div>
+                <div style="font-size:11.5px;color:#8E95A5;">Xoay mặt cân hoặc kéo ngang để đổi mức tạ</div>
               </div>
               <span class="pill pill-orange tnum">± 0.1 kg</span>
             </div>
 
-            <div class="weight-dial-stage" data-w-dial>
-              <svg viewBox="0 0 320 204" style="width:100%;height:100%;display:block;">
-                <circle cx="160" cy="245" r="196" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
-                <circle cx="160" cy="245" r="144" fill="rgba(24,27,34,0.85)" stroke="rgba(169,199,232,0.16)" stroke-width="1"/>
-                <g data-dial-ticks></g>
-                <polygon points="160,34 154,20 166,20" fill="#FF5E36"/>
-                <line x1="160" y1="32" x2="160" y2="76" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
-              </svg>
-              <div style="position:absolute;left:0;right:0;bottom:18px;text-align:center;pointer-events:none;">
-                <div class="tnum" style="font-size:34px;font-weight:800;letter-spacing:-0.02em;line-height:1;" data-w-val>${val.toFixed(1)} <span style="font-size:15px;color:#8E95A5;font-weight:600;">kg</span></div>
-                <div class="tnum" style="font-size:11.5px;color:#9BA3B4;margin-top:4px;" data-w-lbs>${(val * 2.20462).toFixed(1)} lbs</div>
+            <!-- Live Olympic Barbell + Stacked Plates Visualizer -->
+            <div style="background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:8px 10px 6px;margin-bottom:8px;">
+              <svg data-barbell-svg viewBox="0 0 300 68" style="width:100%;height:62px;display:block;"></svg>
+              <div class="row-between" style="font-size:10px;color:#8E95A5;margin-top:2px;">
+                <span>Đòn tạ 20kg + Đĩa đối xứng</span>
+                <span class="tnum" style="color:#E8EDF5;font-weight:700;" data-plate-summary>25 · 1.25 kg / bên</span>
               </div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px 12px;margin-bottom:12px;">
+            <div class="weight-dial-stage" data-w-dial style="height:172px;margin:0 0 10px;">
+              <svg viewBox="0 0 320 172" style="width:100%;height:100%;display:block;">
+                <circle cx="160" cy="222" r="186" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+                <circle cx="160" cy="222" r="136" fill="rgba(24,27,34,0.88)" stroke="rgba(169,199,232,0.16)" stroke-width="1"/>
+                <g data-dial-ticks></g>
+                <polygon points="160,26 154,12 166,12" fill="#FF5E36"/>
+                <line x1="160" y1="24" x2="160" y2="66" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;pointer-events:none;">
+                <div class="tnum" style="font-size:32px;font-weight:800;letter-spacing:-0.02em;line-height:1;" data-w-val>${val.toFixed(1)} <span style="font-size:15px;color:#8E95A5;font-weight:600;">kg</span></div>
+                <div class="tnum" style="font-size:11px;color:#9BA3B4;margin-top:3px;" data-w-lbs>${(val * 2.20462).toFixed(1)} lbs</div>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:8px 12px;margin-bottom:10px;">
               <div class="row-between" style="font-size:11.5px;">
                 <span style="color:#9BA3B4;">Chỉ số BMI (Cao ${curH} cm)</span>
                 <strong class="tnum" data-w-bmi-lbl style="color:#2ECC71;">23.9 · Bình thường</strong>
@@ -1185,11 +1356,11 @@
               </div>
             </div>
 
-            <div class="row-between" style="margin-bottom:12px;">
-              <button type="button" class="step-chip-btn" data-w-step="-0.5">− 0.5 kg</button>
+            <div class="row-between" style="margin-bottom:10px;">
+              <button type="button" class="step-chip-btn" data-w-step="-1">− 1 kg</button>
               <button type="button" class="step-chip-btn" data-w-step="-0.1">− 0.1</button>
               <button type="button" class="step-chip-btn" data-w-step="0.1">+ 0.1</button>
-              <button type="button" class="step-chip-btn" data-w-step="0.5">+ 0.5 kg</button>
+              <button type="button" class="step-chip-btn" data-w-step="1">+ 1 kg</button>
             </div>
             <div class="grid-2" style="gap:10px;">
               <button type="button" class="btn-secondary" style="height:44px;" data-bm-close>Huỷ</button>
@@ -1199,9 +1370,46 @@
         `;
 
         const ticksG = overlay.querySelector('[data-dial-ticks]');
+        const barbellSvg = overlay.querySelector('[data-barbell-svg]');
+        const plateSpec = [
+          { w: 25, h: 56, thick: 11, fill: '#FF5E36', stroke: '#FF9276' },
+          { w: 20, h: 52, thick: 10, fill: '#56A8F5', stroke: '#9ED0FF' },
+          { w: 10, h: 44, thick: 8, fill: '#C4CCDA', stroke: '#FFFFFF' },
+          { w: 5, h: 36, thick: 7, fill: '#DAB066', stroke: '#F5DCA6' },
+          { w: 2.5, h: 28, thick: 6, fill: '#3B4252', stroke: '#8E95A5' },
+          { w: 1.25, h: 22, thick: 5, fill: '#2B303C', stroke: '#6E778A' }
+        ];
+        function renderBarbell(totalKg) {
+          let remSide = Math.max(0, (totalKg - 20) / 2);
+          const chosen = [];
+          for (const p of plateSpec) {
+            while (remSide >= p.w - 0.01 && chosen.length < 6) {
+              chosen.push(p);
+              remSide -= p.w;
+            }
+          }
+          let svg = `
+            <rect x="20" y="31" width="260" height="6" rx="3" fill="#6F7787"/>
+            <rect x="92" y="29" width="116" height="10" rx="2" fill="#8C95A6"/>
+            <rect x="86" y="24" width="7" height="20" rx="2" fill="#E8EDF5"/>
+            <rect x="207" y="24" width="7" height="20" rx="2" fill="#E8EDF5"/>
+          `;
+          let lx = 84, rx = 216;
+          chosen.forEach(p => {
+            lx -= (p.thick + 2);
+            const y = (68 - p.h) / 2;
+            svg += `<rect x="${lx}" y="${y}" width="${p.thick}" height="${p.h}" rx="3" fill="${p.fill}" stroke="${p.stroke}" stroke-width="1"/>`;
+            svg += `<rect x="${rx}" y="${y}" width="${p.thick}" height="${p.h}" rx="3" fill="${p.fill}" stroke="${p.stroke}" stroke-width="1"/>`;
+            rx += (p.thick + 2);
+          });
+          barbellSvg.innerHTML = svg;
+          const lbl = chosen.length ? chosen.map(p => p.w).join(' + ') + ' kg / bên' : 'Chỉ đòn tạ 20 kg';
+          overlay.querySelector('[data-plate-summary]').textContent = lbl;
+        }
         function updateWeightUI() {
-          const cx = 160, cy = 245, rOuter = 192;
-          const degPerKg = 5.2; // crisp arc spacing
+          renderBarbell(val);
+          const cx = 160, cy = 222, rOuter = 182;
+          const degPerKg = 5.2;
           let html = '';
           const startTick = Math.max(min * 10, Math.floor((val - 10) * 10));
           const endTick = Math.min(max * 10, Math.ceil((val + 10) * 10));
@@ -1212,19 +1420,17 @@
             const rad = (angleDeg - 90) * Math.PI / 180;
             const isMajor = t % 10 === 0;
             const isHalf = !isMajor && t % 5 === 0;
-            const len = isMajor ? 24 : isHalf ? 15 : 8;
+            const len = isMajor ? 22 : isHalf ? 14 : 7;
             const x1 = cx + Math.cos(rad) * rOuter;
             const y1 = cy + Math.sin(rad) * rOuter;
             const x2 = cx + Math.cos(rad) * (rOuter - len);
             const y2 = cy + Math.sin(rad) * (rOuter - len);
             const stroke = isMajor ? '#F7F9FC' : isHalf ? 'rgba(232,237,245,0.65)' : 'rgba(232,237,245,0.28)';
             html += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${isMajor ? 2 : 1.2}" stroke-linecap="round"/>`;
-            if (isMajor && t % 50 === 0 || (isMajor && Math.abs(kg - val) < 4)) {
-              if (t % 20 === 0) {
-                const lx = cx + Math.cos(rad) * (rOuter - 36);
-                const ly = cy + Math.sin(rad) * (rOuter - 36);
-                html += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#9BA3B4" font-size="11" font-weight="700" font-family="Be Vietnam Pro, sans-serif">${kg.toFixed(0)}</text>`;
-              }
+            if (isMajor && t % 20 === 0) {
+              const lx = cx + Math.cos(rad) * (rOuter - 34);
+              const ly = cy + Math.sin(rad) * (rOuter - 34);
+              html += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#9BA3B4" font-size="11" font-weight="700" font-family="Be Vietnam Pro, sans-serif">${kg.toFixed(0)}</text>`;
             }
           }
           ticksG.innerHTML = html;
@@ -1277,8 +1483,8 @@
       phone.querySelector('.biometric-overlay')?.remove();
       const overlay = document.createElement('div');
       overlay.className = 'qr-overlay open biometric-overlay';
-      let method = 'face'; // 'face' | 'finger'
-      const isLogin = mode === 'login';
+      let method = mode === 'login-finger' ? 'finger' : 'face'; // 'face' | 'finger'
+      const isLogin = String(mode).startsWith('login');
 
       function renderBio() {
         const iconSrc = method === 'face'
@@ -1301,8 +1507,8 @@
             </div>
             <div style="font-size:12px;color:#9BA3B4;margin:6px 0 14px;line-height:1.5;" data-bio-desc>
               ${isLogin
-                ? `Xác thực ${methodLbl} để mở nhanh tài khoản minhquan@metagym.vn mà không cần mật khẩu.`
-                : `Liên kết ${methodLbl} của thiết bị này để đăng nhập nhanh sau mỗi phiên sử dụng Meta Gym.`}
+            ? `Xác thực ${methodLbl} để mở nhanh tài khoản minhquan@metagym.vn mà không cần mật khẩu.`
+            : `Liên kết ${methodLbl} của thiết bị này để đăng nhập nhanh sau mỗi phiên sử dụng Meta Gym.`}
             </div>
 
             <div class="grid-2" style="gap:10px;">
@@ -1356,6 +1562,963 @@
       phone.appendChild(overlay);
     }
 
+    // 6e. Interactive Kinetic Add Measurement Modal (5.5 Nhật ký & Số đo — Đĩa tạ Olympic + Thước 3 vòng Torso)
+    function openAddMeasurementModal(phone) {
+      if (!phone) return;
+      phone.querySelector('.add-measure-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open add-measure-overlay';
+
+      let tab = 'weight'; // 'weight' | 'tape'
+      let weightVal = +(Number(phone.dataset.bodyWeight || 72.4).toFixed(1));
+      let fatVal = 16.5;
+      const curH = Number(phone.dataset.bodyHeight || 174);
+      const vong = {
+        chest: Number(phone.dataset.vongChest || 98),
+        waist: Number(phone.dataset.vongWaist || 78),
+        hip: Number(phone.dataset.vongHip || 94)
+      };
+      const vongMeta = {
+        chest: { label: 'Vòng ngực', color: '#FF5E36', min: 70, max: 135 },
+        waist: { label: 'Vòng eo', color: '#2ECC71', min: 55, max: 120 },
+        hip: { label: 'Vòng hông', color: '#70AEE8', min: 75, max: 135 }
+      };
+      let activePart = 'chest';
+      const plateSpec = [
+        { w: 25, h: 52, thick: 10, fill: '#FF5E36', stroke: '#FF9276' },
+        { w: 20, h: 48, thick: 9, fill: '#56A8F5', stroke: '#9ED0FF' },
+        { w: 10, h: 40, thick: 7, fill: '#C4CCDA', stroke: '#FFFFFF' },
+        { w: 5, h: 34, thick: 6, fill: '#DAB066', stroke: '#F5DCA6' },
+        { w: 2.5, h: 26, thick: 5, fill: '#3B4252', stroke: '#8E95A5' },
+        { w: 1.25, h: 20, thick: 4, fill: '#2B303C', stroke: '#6E778A' }
+      ];
+
+      overlay.innerHTML = `
+        <div class="body-picker-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:8px;">
+            <div>
+              <div style="font-size:16px;font-weight:800;">Ghi nhận chỉ số mới</div>
+              <div style="font-size:11px;color:#8E95A5;">Đĩa tạ Olympic &amp; Thước 3 vòng sống</div>
+            </div>
+            <span class="pill pill-orange tnum" data-pick-date="2026-11-22" style="cursor:pointer;"><span class="tnum">22/11/2026</span></span>
+          </div>
+
+          <div class="seg-tabs" style="margin-bottom:10px;">
+            <div class="seg-tab active" data-mtab="weight" style="cursor:pointer;">Cân nặng &amp; Mỡ</div>
+            <div class="seg-tab" data-mtab="tape" style="cursor:pointer;">3 Vòng (Ngực·Eo·Hông)</div>
+          </div>
+
+          <!-- PANE 1: Cân nặng (Đĩa tạ Olympic) + Mỡ cơ thể -->
+          <div data-mpane="weight">
+            <div style="background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:8px 10px 6px;margin-bottom:8px;">
+              <div class="row-between" style="margin-bottom:2px;">
+                <span style="font-size:11px;color:#9BA3B4;">Cân nặng cơ thể</span>
+                <strong class="tnum txt-orange" style="font-size:20px;" data-mw-readout>${weightVal.toFixed(1)} kg</strong>
+              </div>
+              <svg data-m-barbell viewBox="0 0 300 62" style="width:100%;height:56px;display:block;"></svg>
+              <div class="row-between" style="margin-top:4px;gap:6px;">
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:44px;padding:0 8px;font-size:11px;" data-mw-step="-0.5">−0.5</button>
+                <input type="range" min="35" max="150" step="0.1" value="${weightVal}" data-mw-range style="flex:1;accent-color:#FF5E36;cursor:pointer;" />
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:44px;padding:0 8px;font-size:11px;" data-mw-step="0.5">+0.5</button>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:9px 12px;margin-bottom:10px;">
+              <div class="row-between" style="margin-bottom:5px;">
+                <span style="font-size:11.5px;color:#9BA3B4;">Tỷ lệ mỡ cơ thể</span>
+                <div class="row" style="gap:6px;">
+                  <span class="pill pill-success" style="font-size:10px;padding:2px 7px;" data-mfat-zone>Chuẩn Gym</span>
+                  <strong class="tnum" style="font-size:16px;color:#2ECC71;" data-mfat-readout>${fatVal.toFixed(1)}%</strong>
+                </div>
+              </div>
+              <input type="range" min="6" max="40" step="0.1" value="${fatVal}" data-mfat-range style="width:100%;accent-color:#2ECC71;cursor:pointer;" />
+              <div class="row-between tnum" style="font-size:10.5px;color:#8E95A5;margin-top:4px;">
+                <span data-mbmi-txt>BMI 23.9 · Bình thường</span>
+                <span data-mplate-txt>Đòn 20kg + Đĩa đối xứng</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: 3 Vòng cơ thể (Torso 3D Rings) -->
+          <div data-mpane="tape" style="display:none;">
+            <div class="grid-3" style="gap:6px;margin-bottom:8px;" data-mtape-tabs>
+              <button type="button" data-mpart="chest" style="padding:6px 4px;border-radius:10px;border:1px solid #FF5E36;background:rgba(255,94,54,0.16);color:#FFF;cursor:pointer;text-align:center;">
+                <div style="font-size:10px;color:#9BA3B4;">Ngực</div>
+                <div class="tnum" style="font-size:13.5px;font-weight:800;" data-mt-chest>${vong.chest} cm</div>
+              </button>
+              <button type="button" data-mpart="waist" style="padding:6px 4px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#FFF;cursor:pointer;text-align:center;">
+                <div style="font-size:10px;color:#9BA3B4;">Eo</div>
+                <div class="tnum" style="font-size:13.5px;font-weight:800;" data-mt-waist>${vong.waist} cm</div>
+              </button>
+              <button type="button" data-mpart="hip" style="padding:6px 4px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#FFF;cursor:pointer;text-align:center;">
+                <div style="font-size:10px;color:#9BA3B4;">Hông</div>
+                <div class="tnum" style="font-size:13.5px;font-weight:800;" data-mt-hip>${vong.hip} cm</div>
+              </button>
+            </div>
+            <div style="height:142px;background:radial-gradient(circle at 50% 50%,rgba(169,199,232,0.12),rgba(15,17,21,0.72) 72%);border:1px solid rgba(255,255,255,0.09);border-radius:14px;margin-bottom:8px;overflow:hidden;">
+              <svg data-m-torso viewBox="0 0 300 160" style="width:100%;height:100%;display:block;"></svg>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:8px 12px;margin-bottom:10px;">
+              <div class="row-between" style="margin-bottom:4px;">
+                <span style="font-size:11.5px;font-weight:700;" data-mpart-lbl>Vòng ngực</span>
+                <strong class="tnum" style="font-size:15px;" data-mpart-val>${vong.chest} cm</strong>
+              </div>
+              <input type="range" min="70" max="135" step="1" value="${vong.chest}" data-mpart-range style="width:100%;accent-color:#FF5E36;cursor:pointer;" />
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:10px;">
+            <button type="button" class="btn-secondary" style="height:44px;" data-meas-close>Huỷ</button>
+            <button type="button" class="btn-primary" style="height:44px;" data-meas-save>Lưu chỉ số</button>
+          </div>
+        </div>
+      `;
+
+      function updateWeightPane() {
+        let rem = Math.max(0, (weightVal - 20) / 2);
+        const chosen = [];
+        for (const p of plateSpec) {
+          while (rem >= p.w - 0.01 && chosen.length < 6) { chosen.push(p); rem -= p.w; }
+        }
+        let svg = `<rect x="20" y="28" width="260" height="6" rx="3" fill="#6F7787"/><rect x="92" y="26" width="116" height="10" rx="2" fill="#8C95A6"/><rect x="86" y="21" width="7" height="20" rx="2" fill="#E8EDF5"/><rect x="207" y="21" width="7" height="20" rx="2" fill="#E8EDF5"/>`;
+        let lx = 84, rx = 216;
+        chosen.forEach(p => {
+          lx -= (p.thick + 2);
+          const y = (62 - p.h) / 2;
+          svg += `<rect x="${lx}" y="${y}" width="${p.thick}" height="${p.h}" rx="3" fill="${p.fill}" stroke="${p.stroke}" stroke-width="1"/>`;
+          svg += `<rect x="${rx}" y="${y}" width="${p.thick}" height="${p.h}" rx="3" fill="${p.fill}" stroke="${p.stroke}" stroke-width="1"/>`;
+          rx += (p.thick + 2);
+        });
+        overlay.querySelector('[data-m-barbell]').innerHTML = svg;
+        overlay.querySelector('[data-mw-readout]').textContent = `${weightVal.toFixed(1)} kg`;
+        overlay.querySelector('[data-mw-range]').value = String(weightVal);
+        overlay.querySelector('[data-mfat-readout]').textContent = `${fatVal.toFixed(1)}%`;
+        const zEl = overlay.querySelector('[data-mfat-zone]');
+        if (fatVal < 12) { zEl.textContent = 'Vận động viên'; zEl.className = 'pill pill-orange'; }
+        else if (fatVal <= 20) { zEl.textContent = 'Chuẩn Gym'; zEl.className = 'pill pill-success'; }
+        else { zEl.textContent = 'Cần siết mỡ'; zEl.className = 'pill pill-muted'; }
+        const bmi = calcBmiInfo(curH, weightVal);
+        overlay.querySelector('[data-mbmi-txt]').textContent = `BMI ${bmi.bmi.toFixed(1)} · ${bmi.label}`;
+        overlay.querySelector('[data-mplate-txt]').textContent = chosen.length ? chosen.map(p => p.w).join('+') + 'kg/bên' : 'Đòn 20kg';
+      }
+
+      function updateTapePane() {
+        const cfg = vongMeta[activePart];
+        const cw = 34 + ((vong.chest - 70) / 65) * 26;
+        const ww = 22 + ((vong.waist - 55) / 65) * 24;
+        const hw = 32 + ((vong.hip - 75) / 60) * 24;
+        const cx = 150;
+        const pathD = `M ${cx - cw - 7} 14 C ${cx - cw - 10} 28, ${cx - cw} 40, ${cx - cw} 50 C ${cx - cw} 66, ${cx - ww} 76, ${cx - ww} 86 C ${cx - ww} 98, ${cx - hw} 108, ${cx - hw} 122 L ${cx - hw + 5} 150 L ${cx + hw - 5} 150 L ${cx + hw} 122 C ${cx + hw} 108, ${cx + ww} 98, ${cx + ww} 86 C ${cx + ww} 76, ${cx + cw} 66, ${cx + cw} 50 C ${cx + cw} 40, ${cx + cw + 10} 28, ${cx + cw + 7} 14 Z`;
+        const rings = [
+          { key: 'chest', y: 48, rx: cw + 5, label: `${vong.chest} cm`, side: 'right' },
+          { key: 'waist', y: 86, rx: ww + 5, label: `${vong.waist} cm`, side: 'left' },
+          { key: 'hip', y: 122, rx: hw + 5, label: `${vong.hip} cm`, side: 'right' }
+        ];
+        let rSvg = '';
+        rings.forEach(r => {
+          const on = r.key === activePart, col = vongMeta[r.key].color;
+          const lx = r.side === 'right' ? cx + r.rx + 16 : cx - r.rx - 16;
+          const tx = r.side === 'right' ? lx + 4 : lx - 4;
+          rSvg += `<g data-mpart="${r.key}" style="cursor:pointer;"><ellipse cx="${cx}" cy="${r.y}" rx="${r.rx.toFixed(1)}" ry="${on ? 8 : 5.5}" fill="${on ? col + '24' : 'none'}" stroke="${col}" stroke-width="${on ? 2.4 : 1.3}" stroke-dasharray="${on ? '' : '4 3'}"/><line x1="${(r.side === 'right' ? cx + r.rx : cx - r.rx).toFixed(1)}" y1="${r.y}" x2="${lx.toFixed(1)}" y2="${r.y}" stroke="${col}" stroke-width="${on ? 1.6 : 1}"/><text x="${tx.toFixed(1)}" y="${r.y + 4}" text-anchor="${r.side === 'right' ? 'start' : 'end'}" fill="${on ? '#FFF' : '#9BA3B4'}" font-size="${on ? 12 : 10}" font-weight="${on ? 800 : 600}" font-family="Be Vietnam Pro,sans-serif">${r.label}</text></g>`;
+        });
+        overlay.querySelector('[data-m-torso]').innerHTML = `<path d="${pathD}" fill="rgba(169,199,232,0.18)" stroke="rgba(232,237,245,0.45)" stroke-width="1.4"/>${rSvg}`;
+        overlay.querySelector('[data-mt-chest]').textContent = `${vong.chest} cm`;
+        overlay.querySelector('[data-mt-waist]').textContent = `${vong.waist} cm`;
+        overlay.querySelector('[data-mt-hip]').textContent = `${vong.hip} cm`;
+        overlay.querySelectorAll('[data-mtape-tabs] [data-mpart]').forEach(b => {
+          const on = b.dataset.mpart === activePart, col = vongMeta[b.dataset.mpart].color;
+          b.style.borderColor = on ? col : 'rgba(255,255,255,0.12)';
+          b.style.background = on ? col + '26' : 'rgba(255,255,255,0.05)';
+        });
+        const lEl = overlay.querySelector('[data-mpart-lbl]'); lEl.textContent = cfg.label; lEl.style.color = cfg.color;
+        const vEl = overlay.querySelector('[data-mpart-val]'); vEl.textContent = `${vong[activePart]} cm`; vEl.style.color = cfg.color;
+        const rng = overlay.querySelector('[data-mpart-range]'); rng.min = String(cfg.min); rng.max = String(cfg.max); rng.value = String(vong[activePart]); rng.style.accentColor = cfg.color;
+      }
+
+      updateWeightPane();
+      updateTapePane();
+
+      overlay.querySelector('[data-mw-range]').addEventListener('input', (e) => { weightVal = +(Number(e.target.value).toFixed(1)); updateWeightPane(); });
+      overlay.querySelector('[data-mfat-range]').addEventListener('input', (e) => { fatVal = +(Number(e.target.value).toFixed(1)); updateWeightPane(); });
+      overlay.querySelector('[data-mpart-range]').addEventListener('input', (e) => { vong[activePart] = Number(e.target.value); updateTapePane(); });
+
+      overlay.addEventListener('click', (ev) => {
+        const mt = ev.target.closest('[data-mtab]');
+        if (mt) {
+          ev.stopPropagation();
+          tab = mt.dataset.mtab;
+          overlay.querySelectorAll('[data-mtab]').forEach(b => b.classList.toggle('active', b.dataset.mtab === tab));
+          overlay.querySelectorAll('[data-mpane]').forEach(p => p.style.display = p.dataset.mpane === tab ? '' : 'none');
+          return;
+        }
+        const ws = ev.target.closest('[data-mw-step]');
+        if (ws) { ev.stopPropagation(); weightVal = Math.max(35, Math.min(150, +(weightVal + Number(ws.dataset.mwStep)).toFixed(1))); updateWeightPane(); return; }
+        const mp = ev.target.closest('[data-mpart]');
+        if (mp && vongMeta[mp.dataset.mpart]) { ev.stopPropagation(); activePart = mp.dataset.mpart; updateTapePane(); return; }
+        if (ev.target === overlay || ev.target.closest('[data-meas-close]')) { ev.stopPropagation(); overlay.remove(); return; }
+        if (ev.target.closest('[data-meas-save]')) {
+          ev.stopPropagation();
+          const dateTxt = overlay.querySelector('[data-pick-date] .tnum')?.textContent || '22/11/2026';
+          syncPhoneBodyMetrics(phone, null, weightVal);
+          phone.dataset.vongChest = String(vong.chest);
+          phone.dataset.vongWaist = String(vong.waist);
+          phone.dataset.vongHip = String(vong.hip);
+          const fatEl = phone.querySelector('[data-measure-fat]'); if (fatEl) fatEl.textContent = `${fatVal.toFixed(1)}%`;
+          const bmiEl = phone.querySelector('[data-measure-bmi]'); if (bmiEl) bmiEl.textContent = calcBmiInfo(curH, weightVal).bmi.toFixed(1);
+          const dEl = phone.querySelector('[data-measure-date]'); if (dEl) dEl.textContent = dateTxt;
+          const list = phone.querySelector('[data-measure-list]');
+          if (list) {
+            const card = document.createElement('div');
+            card.className = 'card-liquid';
+            card.style.cssText = 'padding:13px 14px;margin-bottom:9px;border-color:rgba(255,94,54,0.5);';
+            card.innerHTML = `
+              <div class="row-between" style="margin-bottom:8px;">
+                <strong class="txt-sm tnum">${dateTxt} · Mới</strong>
+                <span class="pill pill-orange tnum">${weightVal.toFixed(1)} kg · ${fatVal.toFixed(1)}%</span>
+              </div>
+              <div class="grid-3 tnum" style="text-align:center;">
+                <div class="txt-xs">Ngực <strong style="color:var(--text-primary);display:block;">${vong.chest} cm</strong></div>
+                <div class="txt-xs">Eo <strong style="color:var(--text-primary);display:block;">${vong.waist} cm</strong></div>
+                <div class="txt-xs">Hông <strong style="color:var(--text-primary);display:block;">${vong.hip} cm</strong></div>
+              </div>`;
+            list.prepend(card);
+            const cnt = phone.querySelector('[data-measure-count]');
+            if (cnt) cnt.textContent = `${list.children.length} bản ghi`;
+          }
+          overlay.remove();
+          openSaveSuccessModal(phone, `Chỉ số cơ thể (${weightVal.toFixed(1)} kg · ${vong.chest}/${vong.waist}/${vong.hip} cm)`, 'Lưu chỉ số');
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6f. Smart Macro Plate Meal Logger Modal (2.2 Theo dõi dinh dưỡng)
+    function openLogMealModal(phone, opts = {}) {
+      if (!phone) return;
+      phone.querySelector('.log-meal-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open log-meal-overlay';
+
+      const foods = [
+        { name: 'Ức gà áp chảo', baseG: 200, kcal100: 165, p100: 31, c100: 0, f100: 3.6 },
+        { name: 'Whey Isolate', baseG: 30, kcal100: 380, p100: 84, c100: 4, f100: 2.0 },
+        { name: 'Cơm gạo lứt', baseG: 180, kcal100: 112, p100: 2.6, c100: 23, f100: 0.9 },
+        { name: 'Cá hồi áp chảo', baseG: 160, kcal100: 208, p100: 20, c100: 0, f100: 13.4 },
+        { name: 'Yến mạch + Chuối', baseG: 120, kcal100: 185, p100: 6.2, c100: 34, f100: 3.1 },
+        { name: 'Trứng gà luộc', baseG: 120, kcal100: 155, p100: 13, c100: 1.1, f100: 11.0 }
+      ];
+      const isEdit = Boolean(opts.slot);
+      let mealSlot = opts.slot || 'Sau tập';
+      let foodIdx = opts.foodIdx != null && foods[opts.foodIdx] ? opts.foodIdx : 0;
+      let grams = opts.grams || foods[foodIdx].baseG;
+
+      overlay.innerHTML = `
+        <div class="body-picker-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:8px;">
+            <div>
+              <div style="font-size:16px;font-weight:800;">${isEdit ? `Chỉnh sửa ${mealSlot}` : 'Ghi lại bữa ăn'}</div>
+              <div style="font-size:11.5px;color:#8E95A5;">Chọn món &amp; kéo khẩu phần — Macro tự tính</div>
+            </div>
+            <span class="pill pill-success tnum">Smart Macro</span>
+          </div>
+
+          <!-- 4 Khung bữa -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;" data-meal-slots>
+            ${['Bữa sáng', 'Bữa trưa', 'Sau tập', 'Bữa tối'].map(s => `
+              <button type="button" data-slot="${s}" style="height:32px;border-radius:10px;border:1px solid ${s === mealSlot ? 'var(--primary)' : 'rgba(255,255,255,0.12)'};background:${s === mealSlot ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)'};color:${s === mealSlot ? '#FFF' : '#9BA3B4'};font-size:11px;font-weight:700;cursor:pointer;">${s}</button>
+            `).join('')}
+          </div>
+
+          <!-- Live SVG Macro Donut Ring + Breakdown -->
+          <div style="display:flex;align-items:center;gap:14px;background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:10px 12px;margin-bottom:10px;">
+            <div style="position:relative;width:86px;height:86px;flex-shrink:0;">
+              <svg viewBox="0 0 100 100" style="width:86px;height:86px;transform:rotate(-90deg);">
+                <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+                <circle data-arc-p cx="50" cy="50" r="38" fill="none" stroke="#2ECC71" stroke-width="10" stroke-linecap="round"/>
+                <circle data-arc-c cx="50" cy="50" r="38" fill="none" stroke="#FF5E36" stroke-width="10" stroke-linecap="round"/>
+                <circle data-arc-f cx="50" cy="50" r="38" fill="none" stroke="#F5B041" stroke-width="10" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div class="tnum" style="font-size:17px;font-weight:800;line-height:1;" data-m-kcal>330</div>
+                <div style="font-size:9.5px;color:#8E95A5;">kcal</div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:800;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" data-m-name>Ức gà áp chảo</div>
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;">
+                <div class="row-between"><span style="color:#2ECC71;">● Đạm (Protein)</span><strong class="tnum" data-m-p>62.0 g</strong></div>
+                <div class="row-between"><span style="color:#FF5E36;">● Tinh bột (Carb)</span><strong class="tnum" data-m-c>0.0 g</strong></div>
+                <div class="row-between"><span style="color:#F5B041;">● Chất béo (Fat)</span><strong class="tnum" data-m-f>7.2 g</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chọn nhanh món gym -->
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;" data-food-chips>
+            ${foods.map((f, i) => `
+              <button type="button" data-food-idx="${i}" style="padding:5px 9px;border-radius:999px;border:1px solid ${i === foodIdx ? 'var(--primary)' : 'rgba(255,255,255,0.12)'};background:${i === foodIdx ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)'};color:${i === foodIdx ? '#FFF' : '#C8C2BC'};font-size:11px;font-weight:600;cursor:pointer;">${f.name}</button>
+            `).join('')}
+          </div>
+
+          <!-- Khẩu phần Gram tương tác -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px 12px;margin-bottom:12px;">
+            <div class="row-between" style="margin-bottom:6px;">
+              <span style="font-size:11.5px;color:#9BA3B4;">Khẩu phần</span>
+              <div class="row" style="gap:8px;">
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:36px;padding:0 8px;" data-g-step="-20">−20</button>
+                <strong class="tnum txt-orange" style="font-size:15px;min-width:48px;text-align:center;" data-m-grams>${grams} g</strong>
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:36px;padding:0 8px;" data-g-step="20">+20</button>
+              </div>
+            </div>
+            <input type="range" min="20" max="400" step="10" value="${grams}" data-g-range style="width:100%;accent-color:#FF5E36;cursor:pointer;" />
+          </div>
+
+          <div class="grid-2" style="gap:10px;">
+            <button type="button" class="btn-secondary" style="height:44px;" data-meal-close>Huỷ</button>
+            <button type="button" class="btn-primary" style="height:44px;" data-meal-save>＋ Lưu bữa ăn</button>
+          </div>
+        </div>
+      `;
+
+      function updateMacroUI() {
+        const f = foods[foodIdx];
+        const ratio = grams / 100;
+        const kcal = Math.round(f.kcal100 * ratio);
+        const p = +(f.p100 * ratio).toFixed(1);
+        const c = +(f.c100 * ratio).toFixed(1);
+        const fat = +(f.f100 * ratio).toFixed(1);
+
+        overlay.querySelector('[data-m-name]').textContent = f.name;
+        overlay.querySelector('[data-m-kcal]').textContent = String(kcal);
+        overlay.querySelector('[data-m-p]').textContent = `${p} g`;
+        overlay.querySelector('[data-m-c]').textContent = `${c} g`;
+        overlay.querySelector('[data-m-f]').textContent = `${fat} g`;
+        overlay.querySelector('[data-m-grams]').textContent = `${grams} g`;
+        overlay.querySelector('[data-g-range]').value = String(grams);
+
+        const circ = 2 * Math.PI * 38;
+        const tot = Math.max(1, p * 4 + c * 4 + fat * 9);
+        const pLen = (p * 4 / tot) * circ;
+        const cLen = (c * 4 / tot) * circ;
+        const fLen = (fat * 9 / tot) * circ;
+
+        const arcP = overlay.querySelector('[data-arc-p]');
+        const arcC = overlay.querySelector('[data-arc-c]');
+        const arcF = overlay.querySelector('[data-arc-f]');
+        arcP.setAttribute('stroke-dasharray', `${pLen.toFixed(1)} ${circ.toFixed(1)}`);
+        arcP.setAttribute('stroke-dashoffset', '0');
+        arcC.setAttribute('stroke-dasharray', `${cLen.toFixed(1)} ${circ.toFixed(1)}`);
+        arcC.setAttribute('stroke-dashoffset', `${(-pLen).toFixed(1)}`);
+        arcF.setAttribute('stroke-dasharray', `${fLen.toFixed(1)} ${circ.toFixed(1)}`);
+        arcF.setAttribute('stroke-dashoffset', `${(-(pLen + cLen)).toFixed(1)}`);
+      }
+      updateMacroUI();
+
+      overlay.querySelector('[data-g-range]').addEventListener('input', (ev) => {
+        grams = Number(ev.target.value);
+        updateMacroUI();
+      });
+
+      overlay.addEventListener('click', (ev) => {
+        const slotBtn = ev.target.closest('[data-slot]');
+        if (slotBtn) {
+          ev.stopPropagation();
+          mealSlot = slotBtn.dataset.slot;
+          overlay.querySelectorAll('[data-slot]').forEach(b => {
+            const on = b.dataset.slot === mealSlot;
+            b.style.borderColor = on ? 'var(--primary)' : 'rgba(255,255,255,0.12)';
+            b.style.background = on ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)';
+            b.style.color = on ? '#FFF' : '#9BA3B4';
+          });
+          return;
+        }
+        const fBtn = ev.target.closest('[data-food-idx]');
+        if (fBtn) {
+          ev.stopPropagation();
+          foodIdx = Number(fBtn.dataset.foodIdx);
+          grams = foods[foodIdx].baseG;
+          overlay.querySelectorAll('[data-food-idx]').forEach(b => {
+            const on = Number(b.dataset.foodIdx) === foodIdx;
+            b.style.borderColor = on ? 'var(--primary)' : 'rgba(255,255,255,0.12)';
+            b.style.background = on ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)';
+            b.style.color = on ? '#FFF' : '#C8C2BC';
+          });
+          updateMacroUI();
+          return;
+        }
+        const gStep = ev.target.closest('[data-g-step]');
+        if (gStep) {
+          ev.stopPropagation();
+          grams = Math.max(20, Math.min(400, grams + Number(gStep.dataset.gStep)));
+          updateMacroUI();
+          return;
+        }
+        if (ev.target === overlay || ev.target.closest('[data-meal-close]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          return;
+        }
+        if (ev.target.closest('[data-meal-save]')) {
+          ev.stopPropagation();
+          const f = foods[foodIdx];
+          const kcal = Math.round(f.kcal100 * grams / 100);
+          const p = (f.p100 * grams / 100).toFixed(0);
+          const kcalEl = phone.querySelector('[data-nutri-kcal]');
+          if (kcalEl) {
+            const nextKcal = Number(kcalEl.dataset.nutriKcal || 1840) + kcal;
+            kcalEl.dataset.nutriKcal = String(nextKcal);
+            kcalEl.textContent = `${nextKcal.toLocaleString('vi-VN')} kcal`;
+          }
+          const cntEl = phone.querySelector('[data-nutri-count]');
+          if (cntEl) {
+            const nextCnt = Number(cntEl.dataset.nutriCount || 4) + 1;
+            cntEl.dataset.nutriCount = String(nextCnt);
+            cntEl.textContent = `${nextCnt} món`;
+          }
+          const host = phone.querySelector('[data-nutri-extra-meals]');
+          if (host) {
+            const card = document.createElement('div');
+            card.className = 'card-liquid';
+            card.style.cssText = 'padding:12px 14px;border-color:rgba(46,204,113,0.45);';
+            card.innerHTML = `
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="width:32px;height:32px;background:rgba(46,204,113,0.16);"><img class="ico-sm" src="../../meta-gym/assets/svg/nutrition/nutrition_dish_logged.svg" alt="Đã ghi" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold tnum">${f.name} · ${grams} g</div>
+                    <div class="txt-xs tnum">${mealSlot} · Đạm ${p}g · Vừa ghi nhận</div>
+                  </div>
+                </div>
+                <span class="pill pill-success tnum">+${kcal} kcal</span>
+              </div>`;
+            host.prepend(card);
+          }
+          showFlowToast(`Đã ghi ${f.name} (${grams}g · +${kcal} kcal) vào ${mealSlot}`);
+          overlay.remove();
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6g. 3-Ring Body Contour Tape Scanner (2.3 Nhật ký: Ngực · Eo · Hông)
+    function openTapeMeasureModal(phone, startPart) {
+      if (!phone) return;
+      phone.querySelector('.tape-measure-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open tape-measure-overlay';
+
+      const vals = {
+        chest: Number(phone.dataset.vongChest || 98),
+        waist: Number(phone.dataset.vongWaist || 78),
+        hip: Number(phone.dataset.vongHip || 94)
+      };
+      const meta = {
+        chest: { label: 'Vòng ngực', color: '#FF5E36', min: 70, max: 135 },
+        waist: { label: 'Vòng eo', color: '#2ECC71', min: 55, max: 120 },
+        hip: { label: 'Vòng hông', color: '#70AEE8', min: 75, max: 135 }
+      };
+      let part = meta[startPart] ? startPart : 'chest';
+
+      overlay.innerHTML = `
+        <div class="body-picker-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:8px;gap:8px;">
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:15.5px;font-weight:800;white-space:nowrap;">Đo 3 vòng cơ thể</div>
+              <div style="font-size:11px;color:#8E95A5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Chọn vòng trên hình hoặc kéo thước</div>
+            </div>
+            <span class="pill pill-success tnum" data-vtaper-pill style="flex-shrink:0;white-space:nowrap;min-width:94px;text-align:center;">V-Taper 1.26</span>
+          </div>
+
+          <!-- 3-Part Switcher -->
+          <div class="grid-3" style="gap:6px;margin-bottom:10px;" data-tape-tabs>
+            <button type="button" data-part="chest" style="padding:7px 4px;border-radius:11px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F7F9FC;cursor:pointer;text-align:center;">
+              <div style="font-size:10px;color:#9BA3B4;">Ngực</div>
+              <div class="tnum" style="font-size:14px;font-weight:800;" data-tab-chest>${vals.chest} cm</div>
+            </button>
+            <button type="button" data-part="waist" style="padding:7px 4px;border-radius:11px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F7F9FC;cursor:pointer;text-align:center;">
+              <div style="font-size:10px;color:#9BA3B4;">Eo</div>
+              <div class="tnum" style="font-size:14px;font-weight:800;" data-tab-waist>${vals.waist} cm</div>
+            </button>
+            <button type="button" data-part="hip" style="padding:7px 4px;border-radius:11px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F7F9FC;cursor:pointer;text-align:center;">
+              <div style="font-size:10px;color:#9BA3B4;">Hông</div>
+              <div class="tnum" style="font-size:14px;font-weight:800;" data-tab-hip>${vals.hip} cm</div>
+            </button>
+          </div>
+
+          <!-- Dynamic Body Contour SVG + 3 Glowing Measurement Rings -->
+          <div style="position:relative;height:178px;background:radial-gradient(circle at 50% 50%, rgba(169,199,232,0.12), rgba(15,17,21,0.72) 72%);border:1px solid rgba(255,255,255,0.09);border-radius:16px;margin-bottom:10px;overflow:hidden;">
+            <svg data-torso-svg viewBox="0 0 300 178" style="width:100%;height:100%;display:block;"></svg>
+          </div>
+
+          <!-- Interactive Wrapping Tape Slider -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px 12px;margin-bottom:10px;">
+            <div class="row-between" style="margin-bottom:6px;">
+              <span style="font-size:12px;font-weight:700;" data-active-label>Vòng ngực</span>
+              <div class="row" style="gap:8px;">
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:34px;padding:0 8px;" data-t-step="-1">−1</button>
+                <strong class="tnum" style="font-size:17px;min-width:54px;text-align:center;" data-active-cm>98 cm</strong>
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:34px;padding:0 8px;" data-t-step="1">+1</button>
+              </div>
+            </div>
+            <input type="range" min="70" max="135" step="1" value="${vals.chest}" data-t-range style="width:100%;accent-color:#FF5E36;cursor:pointer;" />
+            <div class="row-between" style="font-size:10px;color:#8E95A5;margin-top:4px;gap:8px;flex-wrap:nowrap;">
+              <span class="tnum" data-whr-txt style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">WHR: 0.83 · Chuẩn thể hình</span>
+              <span class="tnum" data-range-bounds style="white-space:nowrap;flex-shrink:0;">70 – 135 cm</span>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:10px;">
+            <button type="button" class="btn-secondary" style="height:44px;" data-tape-close>Huỷ</button>
+            <button type="button" class="btn-primary" style="height:44px;" data-tape-save>Lưu 3 vòng</button>
+          </div>
+        </div>
+      `;
+
+      function renderTorso() {
+        const cfg = meta[part];
+        const cw = 36 + ((vals.chest - 70) / 65) * 28; // half-width chest
+        const ww = 24 + ((vals.waist - 55) / 65) * 26; // half-width waist
+        const hw = 34 + ((vals.hip - 75) / 60) * 26; // half-width hip
+        const cx = 150;
+
+        const pathD = `
+          M ${cx - cw - 8} 18
+          C ${cx - cw - 12} 34, ${cx - cw} 48, ${cx - cw} 58
+          C ${cx - cw} 76, ${cx - ww} 86, ${cx - ww} 98
+          C ${cx - ww} 112, ${cx - hw} 122, ${cx - hw} 138
+          L ${cx - hw + 6} 168
+          L ${cx + hw - 6} 168
+          L ${cx + hw} 138
+          C ${cx + hw} 122, ${cx + ww} 112, ${cx + ww} 98
+          C ${cx + ww} 86, ${cx + cw} 76, ${cx + cw} 58
+          C ${cx + cw} 48, ${cx + cw + 12} 34, ${cx + cw + 8} 18
+          Z
+        `;
+        const rings = [
+          { key: 'chest', y: 56, rx: cw + 5, label: `${vals.chest} cm`, side: 'right' },
+          { key: 'waist', y: 98, rx: ww + 5, label: `${vals.waist} cm`, side: 'left' },
+          { key: 'hip', y: 138, rx: hw + 5, label: `${vals.hip} cm`, side: 'right' }
+        ];
+        let ringsSvg = '';
+        rings.forEach(r => {
+          const isAct = r.key === part;
+          const col = meta[r.key].color;
+          const lx = r.side === 'right' ? cx + r.rx + 18 : cx - r.rx - 18;
+          const tx = r.side === 'right' ? lx + 4 : lx - 4;
+          const anchor = r.side === 'right' ? 'start' : 'end';
+          ringsSvg += `
+            <g data-part="${r.key}" style="cursor:pointer;">
+              <ellipse cx="${cx}" cy="${r.y}" rx="${r.rx.toFixed(1)}" ry="${isAct ? 9 : 6.5}" fill="${isAct ? col + '22' : 'none'}" stroke="${col}" stroke-width="${isAct ? 2.6 : 1.4}" stroke-dasharray="${isAct ? '' : '4 3'}" opacity="${isAct ? 1 : 0.65}"/>
+              <line x1="${(r.side === 'right' ? cx + r.rx : cx - r.rx).toFixed(1)}" y1="${r.y}" x2="${lx.toFixed(1)}" y2="${r.y}" stroke="${col}" stroke-width="${isAct ? 1.8 : 1}" opacity="${isAct ? 1 : 0.6}"/>
+              <circle cx="${lx.toFixed(1)}" cy="${r.y}" r="${isAct ? 3.2 : 2}" fill="${col}"/>
+              <text x="${tx.toFixed(1)}" y="${r.y + 4}" text-anchor="${anchor}" fill="${isAct ? '#FFFFFF' : '#9BA3B4'}" font-size="${isAct ? 12.5 : 10.5}" font-weight="${isAct ? 800 : 600}" font-family="Be Vietnam Pro, sans-serif">${r.label}</text>
+            </g>
+          `;
+        });
+        overlay.querySelector('[data-torso-svg]').innerHTML = `
+          <defs>
+            <linearGradient id="mgTorsoGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#A9C7E8" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#FF5E36" stop-opacity="0.14"/>
+            </linearGradient>
+          </defs>
+          <path d="${pathD}" fill="url(#mgTorsoGrad)" stroke="rgba(232,237,245,0.45)" stroke-width="1.5"/>
+          ${ringsSvg}
+        `;
+
+        // Sync controls & ratios
+        overlay.querySelector('[data-tab-chest]').textContent = `${vals.chest} cm`;
+        overlay.querySelector('[data-tab-waist]').textContent = `${vals.waist} cm`;
+        overlay.querySelector('[data-tab-hip]').textContent = `${vals.hip} cm`;
+        overlay.querySelectorAll('[data-tape-tabs] [data-part]').forEach(b => {
+          const on = b.dataset.part === part;
+          const col = meta[b.dataset.part].color;
+          b.style.borderColor = on ? col : 'rgba(255,255,255,0.12)';
+          b.style.background = on ? col + '26' : 'rgba(255,255,255,0.05)';
+        });
+
+        const lbl = overlay.querySelector('[data-active-label]');
+        lbl.textContent = cfg.label;
+        lbl.style.color = cfg.color;
+        const cmEl = overlay.querySelector('[data-active-cm]');
+        cmEl.textContent = `${vals[part]} cm`;
+        cmEl.style.color = cfg.color;
+
+        const rng = overlay.querySelector('[data-t-range]');
+        rng.min = String(cfg.min); rng.max = String(cfg.max); rng.value = String(vals[part]);
+        rng.style.accentColor = cfg.color;
+        overlay.querySelector('[data-range-bounds]').textContent = `${cfg.min} – ${cfg.max} cm`;
+
+        const vtaper = (vals.chest / Math.max(1, vals.waist)).toFixed(2);
+        const whr = (vals.waist / Math.max(1, vals.hip)).toFixed(2);
+        overlay.querySelector('[data-vtaper-pill]').textContent = `V-Taper ${vtaper}`;
+        overlay.querySelector('[data-whr-txt]').textContent = `WHR: ${whr} · ${Number(whr) <= 0.88 ? 'Chuẩn thể hình' : 'Nên siết eo'}`;
+      }
+      renderTorso();
+
+      overlay.querySelector('[data-t-range]').addEventListener('input', (ev) => {
+        vals[part] = Number(ev.target.value);
+        renderTorso();
+      });
+      overlay.addEventListener('click', (ev) => {
+        const pBtn = ev.target.closest('[data-part]');
+        if (pBtn && meta[pBtn.dataset.part]) {
+          ev.stopPropagation();
+          part = pBtn.dataset.part;
+          renderTorso();
+          return;
+        }
+        const st = ev.target.closest('[data-t-step]');
+        if (st) {
+          ev.stopPropagation();
+          const cfg = meta[part];
+          vals[part] = Math.max(cfg.min, Math.min(cfg.max, vals[part] + Number(st.dataset.tStep)));
+          renderTorso();
+          return;
+        }
+        if (ev.target === overlay || ev.target.closest('[data-tape-close]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          return;
+        }
+        if (ev.target.closest('[data-tape-save]')) {
+          ev.stopPropagation();
+          phone.dataset.vongChest = String(vals.chest);
+          phone.dataset.vongWaist = String(vals.waist);
+          phone.dataset.vongHip = String(vals.hip);
+          phone.querySelectorAll('[data-vong-chest]').forEach(el => el.textContent = `${vals.chest} cm`);
+          phone.querySelectorAll('[data-vong-waist]').forEach(el => el.textContent = `${vals.waist} cm`);
+          phone.querySelectorAll('[data-vong-hip]').forEach(el => el.textContent = `${vals.hip} cm`);
+          showFlowToast(`Đã cập nhật 3 vòng: ${vals.chest} / ${vals.waist} / ${vals.hip} cm`);
+          overlay.remove();
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6h. Meta Gym Save Success Modal (Lưu thành công)
+    function openSaveSuccessModal(phone, screenTitle, actionLabel) {
+      if (!phone) return;
+      phone.querySelector('.save-success-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open save-success-overlay';
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:center;padding:22px 18px 18px;">
+          <div class="save-success-ring">
+            <svg viewBox="0 0 40 40" width="38" height="38" fill="none">
+              <path class="save-success-check" d="M10 21.5L17 28.5L31 13.5" stroke="#2ECC71" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="pill pill-success" style="margin-bottom:8px;">● Đồng bộ thành công</span>
+          <div style="font-size:18px;font-weight:800;color:#F7F9FC;margin-top:4px;">Đã lưu thay đổi!</div>
+          <div style="font-size:12.5px;color:#9BA3B4;margin:6px 0 14px;line-height:1.5;">
+            Dữ liệu <strong style="color:#E8EDF5;">${screenTitle}</strong> đã được cập nhật an toàn lên hệ thống Meta Gym.
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
+            <div class="row-between" style="font-size:11.5px;">
+              <span style="color:#8E95A5;">Trạng thái</span>
+              <strong style="color:#2ECC71;">Đã đồng bộ với Coach</strong>
+            </div>
+            <div class="row-between tnum" style="font-size:11px;color:#8E95A5;margin-top:4px;">
+              <span>Thời gian lưu</span>
+              <span style="color:#E8EDF5;">22/11/2026 · ${hh}:${mm}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-primary" style="width:100%;height:44px;" data-save-ok>Hoàn tất</button>
+        </div>
+      `;
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay || ev.target.closest('[data-save-ok]')) {
+          ev.stopPropagation();
+          overlay.remove();
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6i. Add Workout PR Modal (2.3 Nhật ký tập luyện: Thành tích buổi tập)
+    function openAddPrModal(phone) {
+      if (!phone) return;
+      phone.querySelector('.add-pr-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open add-pr-overlay';
+
+      const exercises = ['Barbell Bench Press', 'Back Squat', 'Romanian Deadlift', 'Incline Dumbbell', 'Overhead Press', 'Weighted Pull-Up'];
+      let exName = exercises[0];
+      let kg = 87.5;
+      let reps = 6;
+
+      overlay.innerHTML = `
+        <div class="body-picker-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:8px;gap:8px;">
+            <div>
+              <div style="font-size:15.5px;font-weight:800;white-space:nowrap;">Thêm thành tích buổi tập</div>
+              <div style="font-size:11px;color:#8E95A5;">Ghi nhận mức tạ &amp; ước tính 1RM</div>
+            </div>
+            <span class="pill pill-orange tnum" data-pr-1rm style="flex-shrink:0;white-space:nowrap;">1RM ~105 kg</span>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;" data-pr-ex-list>
+            ${exercises.map((name, i) => `
+              <button type="button" data-pr-ex="${name}" style="padding:5px 9px;border-radius:999px;border:1px solid ${i === 0 ? 'var(--primary)' : 'rgba(255,255,255,0.12)'};background:${i === 0 ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)'};color:${i === 0 ? '#FFF' : '#C8C2BC'};font-size:11px;font-weight:600;cursor:pointer;">${name}</button>
+            `).join('')}
+          </div>
+
+          <div style="background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:10px 12px;margin-bottom:10px;">
+            <div class="row-between" style="margin-bottom:6px;">
+              <span style="font-size:11.5px;color:#9BA3B4;">Mức tạ (kg)</span>
+              <div class="row" style="gap:8px;">
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:44px;padding:0 8px;font-size:11px;" data-pr-kg="-2.5">−2.5</button>
+                <strong class="tnum txt-orange" style="font-size:18px;min-width:64px;text-align:center;" data-pr-kg-val>${kg} kg</strong>
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:44px;padding:0 8px;font-size:11px;" data-pr-kg="2.5">+2.5</button>
+              </div>
+            </div>
+            <input type="range" min="10" max="200" step="2.5" value="${kg}" data-pr-kg-range style="width:100%;accent-color:#FF5E36;cursor:pointer;margin-bottom:8px;" />
+
+            <div class="row-between">
+              <span style="font-size:11.5px;color:#9BA3B4;">Số lần lặp (Reps)</span>
+              <div class="row" style="gap:8px;">
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:36px;padding:0 8px;" data-pr-rep="-1">−1</button>
+                <strong class="tnum" style="font-size:16px;min-width:56px;text-align:center;" data-pr-rep-val>${reps} reps</strong>
+                <button type="button" class="step-chip-btn" style="height:28px;min-width:36px;padding:0 8px;" data-pr-rep="1">+1</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:10px;">
+            <button type="button" class="btn-secondary" style="height:44px;" data-pr-close>Huỷ</button>
+            <button type="button" class="btn-primary" style="height:44px;" data-pr-save>＋ Lưu thành tích</button>
+          </div>
+        </div>
+      `;
+
+      function updatePrUI() {
+        const oneRm = Math.round(kg * (1 + reps / 30));
+        overlay.querySelector('[data-pr-kg-val]').textContent = `${kg} kg`;
+        overlay.querySelector('[data-pr-kg-range]').value = String(kg);
+        overlay.querySelector('[data-pr-rep-val]').textContent = `${reps} reps`;
+        overlay.querySelector('[data-pr-1rm]').textContent = `1RM ~${oneRm} kg`;
+      }
+      updatePrUI();
+
+      overlay.querySelector('[data-pr-kg-range]').addEventListener('input', (ev) => {
+        kg = Number(ev.target.value);
+        updatePrUI();
+      });
+
+      overlay.addEventListener('click', (ev) => {
+        const exBtn = ev.target.closest('[data-pr-ex]');
+        if (exBtn) {
+          ev.stopPropagation();
+          exName = exBtn.dataset.prEx;
+          overlay.querySelectorAll('[data-pr-ex]').forEach(b => {
+            const on = b.dataset.prEx === exName;
+            b.style.borderColor = on ? 'var(--primary)' : 'rgba(255,255,255,0.12)';
+            b.style.background = on ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)';
+            b.style.color = on ? '#FFF' : '#C8C2BC';
+          });
+          return;
+        }
+        const kgStep = ev.target.closest('[data-pr-kg]');
+        if (kgStep) { ev.stopPropagation(); kg = Math.max(10, Math.min(200, +(kg + Number(kgStep.dataset.prKg)).toFixed(1))); updatePrUI(); return; }
+        const repStep = ev.target.closest('[data-pr-rep]');
+        if (repStep) { ev.stopPropagation(); reps = Math.max(1, Math.min(25, reps + Number(repStep.dataset.prRep))); updatePrUI(); return; }
+        if (ev.target === overlay || ev.target.closest('[data-pr-close]')) { ev.stopPropagation(); overlay.remove(); return; }
+        if (ev.target.closest('[data-pr-save]')) {
+          ev.stopPropagation();
+          const list = phone.querySelector('[data-pr-list]');
+          if (list) {
+            const row = document.createElement('div');
+            row.className = 'row-between txt-sm';
+            row.style.cssText = 'padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.07);';
+            row.innerHTML = `<span>${exName}</span><strong class="tnum txt-orange">${kg} kg × ${reps}</strong>`;
+            list.prepend(row);
+          }
+          overlay.remove();
+          openSaveSuccessModal(phone, `Thành tích ${exName} (${kg} kg × ${reps})`, 'Lưu thành tích');
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6j. Checkout Payment & NFC Card Activation Celebration Modal (1.2c -> 1.2a)
+    function openCheckoutSuccessModal(phone) {
+      if (!phone) return;
+      phone.querySelector('.checkout-success-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open checkout-success-overlay';
+      const method = phone.dataset.payMethod || 'MoMo';
+      const total = phone.querySelector('[data-ck-total]')?.textContent || '4.290.000đ';
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:center;padding:20px 16px 16px;">
+          <span class="pill pill-success" style="margin-bottom:10px;">✓ Thanh toán thành công</span>
+          <div style="font-size:17.5px;font-weight:800;color:#F7F9FC;">Đã kích hoạt Thẻ Vàng NFC!</div>
+          <div style="font-size:12px;color:#9BA3B4;margin:4px 0 12px;">Gói Pro 6 Tháng đã sẵn sàng sử dụng ngay hôm nay</div>
+
+          <div style="border-radius:16px;overflow:hidden;box-shadow:0 14px 32px rgba(0,0,0,0.6),0 0 0 1.5px rgba(218,176,102,0.5);margin-bottom:12px;">
+            <img src="../../meta-gym/assets/images/membership/card_gold_horizontal.jpg?v=2" alt="Thẻ Vàng Meta Gym" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" />
+          </div>
+
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:12px;text-align:left;font-size:11.5px;">
+            <div class="row-between" style="margin-bottom:4px;"><span style="color:#8E95A5;">Cổng thanh toán</span><strong style="color:#F7F9FC;">${method}</strong></div>
+            <div class="row-between tnum" style="margin-bottom:4px;"><span style="color:#8E95A5;">Số tiền đã thanh toán</span><strong style="color:#2ECC71;">${total}</strong></div>
+            <div class="row-between tnum"><span style="color:#8E95A5;">Mã giao dịch</span><span style="color:#E8EDF5;">MG-PAY-261122</span></div>
+          </div>
+
+          <div style="font-size:11px;color:#9BA3B4;margin-bottom:12px;">Bạn có thể quẹt QR Check-in ngay lập tức và nhận thẻ cứng NFC tại quầy lễ tân.</div>
+
+          <button type="button" class="btn-primary" style="width:100%;height:44px;" data-ck-done>Xem thẻ hội viên của tôi →</button>
+        </div>
+      `;
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay || ev.target.closest('[data-ck-done]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          navigateToScreen('member-membership');
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6k. Support Contact Channels Modal (5.14 Phòng tập & Hỗ trợ)
+    function openSupportContactModal(phone) {
+      if (!phone) return;
+      phone.querySelector('.support-contact-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open support-contact-overlay';
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:4px;">
+            <strong style="font-size:16.5px;color:#F7F9FC;">Liên hệ Hỗ trợ Meta Gym</strong>
+            <span class="pill pill-success" style="font-size:10px;">● Trực tuyến</span>
+          </div>
+          <div style="font-size:12px;color:#9BA3B4;margin-bottom:14px;">Chọn kênh hỗ trợ nhanh nhất cho bạn</div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            <button type="button" data-sup-act="chat" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,94,54,0.12);border:1px solid rgba(255,94,54,0.42);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+              <span style="width:36px;height:36px;border-radius:10px;background:rgba(255,94,54,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/community/comm_chat.svg" alt="Chat" style="background:transparent;padding:0;" />
+              </span>
+              <span style="flex:1;">
+                <div style="font-size:13.5px;font-weight:700;">Chat trực tuyến với CSKH</div>
+                <div style="font-size:11px;color:#9BA3B4;">Phản hồi nhanh trong ~2 phút</div>
+              </span>
+              <span style="color:#FF5E36;font-size:16px;">›</span>
+            </button>
+
+            <button type="button" data-sup-act="call" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+              <span style="width:36px;height:36px;border-radius:10px;background:rgba(46,204,113,0.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/call_audio_badge.svg" alt="Gọi" style="background:transparent;padding:0;" />
+              </span>
+              <span style="flex:1;">
+                <div style="font-size:13.5px;font-weight:700;" class="tnum">Gọi Hotline 1900 6868</div>
+                <div style="font-size:11px;color:#8E95A5;">05:30 – 22:00 · Tất cả các ngày</div>
+              </span>
+              <span style="color:#8E95A5;font-size:16px;">›</span>
+            </button>
+
+            <button type="button" data-sup-act="email" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+              <span style="width:36px;height:36px;border-radius:10px;background:rgba(112,174,232,0.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <img class="ico-sm" src="../../meta-gym/assets/svg/community/comm_email.svg" alt="Email" style="background:transparent;padding:0;" />
+              </span>
+              <span style="flex:1;">
+                <div style="font-size:13.5px;font-weight:700;">Gửi Email CSKH</div>
+                <div style="font-size:11px;color:#8E95A5;">cskh@metagym.vn</div>
+              </span>
+              <span style="color:#8E95A5;font-size:16px;">›</span>
+            </button>
+          </div>
+
+          <button type="button" class="btn-secondary" style="width:100%;height:44px;" data-sup-close>Đóng</button>
+        </div>
+      `;
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay || ev.target.closest('[data-sup-close]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          return;
+        }
+        const act = ev.target.closest('[data-sup-act]')?.dataset.supAct;
+        if (act) {
+          ev.stopPropagation();
+          overlay.remove();
+          if (act === 'chat') {
+            navigateToScreen('member-chat-detail');
+            showFlowToast('Đã mở phòng chat Hỗ trợ Meta Gym');
+          } else if (act === 'call') {
+            showFlowToast('Đang kết nối tổng đài Meta Gym 1900 6868...');
+          } else if (act === 'email') {
+            showFlowToast('Đã mở soạn email tới cskh@metagym.vn');
+          }
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6l. Redeem Meta Points Modal (1.2a Gói tập: Đổi điểm lấy ưu đãi)
+    function openRedeemPointsModal(phone) {
+      if (!phone) return;
+      phone.querySelector('.redeem-points-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open redeem-points-overlay';
+      const ptsEl = phone.querySelector('[data-meta-points]');
+      const curPts = Number(ptsEl?.dataset.metaPoints || 1240);
+      const rewards = [
+        { title: 'Voucher giảm 100.000đ', desc: 'Áp dụng gia hạn thẻ hoặc Gói Coach', cost: 300 },
+        { title: '1 lần đo InBody VIP + Phân tích', desc: 'Tặng kèm báo cáo chi tiết cho Coach', cost: 400 },
+        { title: '1 buổi PT 1:1 trải nghiệm', desc: '90 phút cùng HLV tùy chọn', cost: 900 }
+      ];
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:left;">
+          <div class="row-between" style="margin-bottom:4px;">
+            <strong style="font-size:16px;color:#F7F9FC;">Đổi điểm Meta Points</strong>
+            <span class="pill pill-orange tnum">${curPts.toLocaleString('vi-VN')} điểm</span>
+          </div>
+          <div style="font-size:12px;color:#9BA3B4;margin-bottom:12px;">Tích điểm từ điểm danh QR, gia hạn thẻ &amp; mua gói Coach</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            ${rewards.map(r => `
+              <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="min-width:0;flex:1;">
+                  <div style="font-size:13px;font-weight:700;color:#F7F9FC;">${r.title}</div>
+                  <div style="font-size:11px;color:#8E95A5;margin-top:2px;">${r.desc}</div>
+                </div>
+                <button type="button" class="btn-mini-orange tnum" data-redeem-cost="${r.cost}" data-redeem-title="${r.title}" style="height:32px;padding:0 10px;border-radius:10px;cursor:pointer;flex-shrink:0;opacity:${curPts >= r.cost ? '1' : '0.45'};">−${r.cost}</button>
+              </div>
+            `).join('')}
+          </div>
+          <button type="button" class="btn-secondary" style="width:100%;height:44px;" data-redeem-close>Đóng</button>
+        </div>
+      `;
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay || ev.target.closest('[data-redeem-close]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          return;
+        }
+        const btn = ev.target.closest('[data-redeem-cost]');
+        if (btn) {
+          ev.stopPropagation();
+          const cost = Number(btn.dataset.redeemCost);
+          const title = btn.dataset.redeemTitle;
+          if (curPts < cost) {
+            showFlowToast('Chưa đủ Meta Points để đổi ưu đãi này');
+            return;
+          }
+          const nextPts = curPts - cost;
+          if (ptsEl) {
+            ptsEl.dataset.metaPoints = String(nextPts);
+            ptsEl.textContent = `${nextPts.toLocaleString('vi-VN')} điểm`;
+          }
+          overlay.remove();
+          openSaveSuccessModal(phone, `Đổi ưu đãi: ${title} (−${cost} điểm)`, 'Đổi điểm');
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
     // 7. Natural Touch-like Drag-to-Scroll (Vertical .phone-body & Horizontal .filter-row)
     let dragEl = null, dragAxis = 'y', startPos = 0, startScroll = 0, didDrag = false;
     document.addEventListener('mousedown', (e) => {
@@ -1397,4 +2560,5 @@
     }, { passive: false });
   </script>
 </body>
+
 </html>
