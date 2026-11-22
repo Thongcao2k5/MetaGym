@@ -1,11 +1,81 @@
 import { api, buildQuery } from '../services/api.js';
 import { daysAgoVN, esc, formatDateVN, isoDateVN, vnd } from '../components/format.js';
+import {
+  bindDatePickers,
+  bindDateRangePicker,
+  renderDateInput,
+  renderDateRangePicker,
+  setDatePickerValue,
+} from '../components/date-picker.js';
 import { icon } from '../components/icons.js';
-import { renderBanner, renderDashboardSkeleton, renderEmptyState } from '../components/states.js';
+import { renderDashboardSkeleton, renderEmptyState } from '../components/states.js';
 import { toast } from '../components/toast.js';
 import { updateQuery } from '../state/router.js';
 
 let activeChart = null;
+let chartGranularity = 'day'; // day | week | month
+let chartType = 'line'; // line | bar
+
+function formatShortDay(isoDay) {
+  const s = String(isoDay || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+  }
+  return formatDateVN(s);
+}
+
+function getBucketKey(isoDay, granularity) {
+  if (granularity === 'month') return String(isoDay || '').slice(0, 7);
+  if (granularity === 'week') {
+    const d = new Date(`${isoDay}T00:00:00Z`);
+    if (Number.isNaN(d.getTime())) return isoDay;
+    const dayOfWeek = (d.getUTCDay() + 6) % 7; // Monday = 0
+    d.setUTCDate(d.getUTCDate() - dayOfWeek);
+    return d.toISOString().slice(0, 10);
+  }
+  return isoDay;
+}
+
+function formatBucketLabel(key, granularity) {
+  if (granularity === 'month' && /^\d{4}-\d{2}$/.test(key)) {
+    return `${key.slice(5, 7)}/${key.slice(0, 4)}`;
+  }
+  if (granularity === 'week') {
+    return `Tuần ${formatShortDay(key)}`;
+  }
+  return formatShortDay(key);
+}
+
+function groupRevenueSeries(byDay, granularity) {
+  if (granularity === 'day') {
+    return byDay.map((row) => ({
+      label: formatShortDay(row.day),
+      gross: Number(row.grossRevenue ?? row.amount ?? 0),
+      net: Number(row.netRevenue ?? row.amount ?? 0),
+      refund: Number(row.simulatedRefunds ?? 0),
+    }));
+  }
+  const map = new Map();
+  for (const row of byDay) {
+    const key = getBucketKey(row.day, granularity);
+    const cur = map.get(key) || { label: formatBucketLabel(key, granularity), gross: 0, net: 0, refund: 0 };
+    cur.gross += Number(row.grossRevenue ?? row.amount ?? 0);
+    cur.net += Number(row.netRevenue ?? row.amount ?? 0);
+    cur.refund += Number(row.simulatedRefunds ?? 0);
+    map.set(key, cur);
+  }
+  return Array.from(map.values());
+}
+
+function formatCompactVnd(value) {
+  const num = Number(value || 0);
+  const abs = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '')} Tỷ`;
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1).replace(/\.0$/, '')} Tr`;
+  if (abs >= 1_000) return `${sign}${Math.round(abs / 1_000)}K`;
+  return `${sign}${abs} ₫`;
+}
 
 export function destroyDashboardChart() {
   if (activeChart?.destroy) {
@@ -38,7 +108,6 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     const activeCoachRels = Number(data?.activeCoachRelationships ?? 0);
 
     const coachLockedWaiting = Number(data?.actionQueue?.coachLockedWaitingCount ?? data?.pausedCoachRelationships?.coachLocked ?? 0);
-    const coachLockedRefundReq = Number(data?.actionQueue?.coachLockedRefundRequestedCount ?? 0);
     const disputedCount = Number(data?.actionQueue?.disputedTerminationCount ?? data?.pendingTerminationRequests ?? 0);
 
     // Support both T3 V2 revenue envelope and baseline revenue.amount safely
@@ -51,60 +120,47 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     const netRevenue = Number(rev.netRevenue ?? (grossRevenue - totalRefunds));
     const byDay = Array.isArray(rev.byDay) ? rev.byDay : [];
 
-    const urgentTotal = coachLockedWaiting + disputedCount;
-    const urgentBanner = urgentTotal > 0 ? renderBanner({
-      kind: 'warn',
-      iconName: 'alert',
-      title: `Việc cần Admin xử lý ngay (${urgentTotal} hồ sơ)`,
-      textHtml: `<strong>${coachLockedWaiting} hội viên</strong> đang đóng băng gói Coach do <code>COACH_LOCKED</code>${coachLockedRefundReq ? ` (${coachLockedRefundReq} yêu cầu hoàn mô phỏng)` : ''} và <strong>${disputedCount} tranh chấp</strong> kết thúc sớm (<code>DISPUTED</code>).`,
-      actionsHtml: `
-        ${coachLockedWaiting > 0 ? `<a class="btn btn-primary btn-sm" href="#/admin/incidents?status=OPEN">Xử lý sự cố Coach (${coachLockedWaiting})</a>` : ''}
-        ${disputedCount > 0 ? `<a class="btn btn-danger btn-sm" href="#/admin/relationships?tab=terminations&status=DISPUTED">Phân xử tranh chấp (${disputedCount})</a>` : ''}
-      `,
-      ariaLabel: 'Việc cần xử lý khẩn',
-    }) : '';
-
     const kpis = [
       {
-        label: 'Member hoạt động',
+        label: 'Hội viên hoạt động',
         value: String(membersActive),
-        meta: `${membersActive + membersDisabled} tổng · ${membersDisabled} bị khóa`,
+        meta: `${membersActive + membersDisabled} tổng · ${membersDisabled} đang khóa`,
         iconName: 'users',
         href: '#/admin/members?status=ACTIVE',
       },
       {
-        label: 'Coach hoạt động',
+        label: 'Huấn luyện viên hoạt động',
         value: String(coachesActive),
-        meta: `${coachesDisabled} Coach đang bị khóa`,
+        meta: `${coachesDisabled} đang bị khóa`,
         iconName: 'award',
         href: '#/admin/coaches?status=ACTIVE',
       },
       {
-        label: 'Gói Gym đang hiệu lực',
+        label: 'Gói Gym đang sử dụng',
         value: String(activeMemberships),
-        meta: 'Hội viên có quyền tập hôm nay',
+        meta: 'Hội viên có quyền vào phòng tập',
         iconName: 'card',
         href: '#/admin/plans?tab=entitlements&status=ACTIVE',
       },
       {
-        label: 'Quan hệ Coach đang hoạt động',
+        label: 'Đang tập cùng Coach',
         value: String(activeCoachRels),
-        meta: `${Number(data?.pausedCoachRelationships?.total ?? 0)} quan hệ đang tạm ngưng`,
+        meta: `${Number(data?.pausedCoachRelationships?.total ?? 0)} cặp đang tạm ngưng`,
         iconName: 'dumbbell',
         href: '#/admin/coach-packages?tab=entitlements&status=ACTIVE',
       },
       {
-        label: 'Member chờ (COACH_LOCKED)',
+        label: 'Chờ xử lý sự cố Coach',
         value: String(coachLockedWaiting),
-        meta: 'Gói Coach đóng băng · Gym vẫn chạy',
+        meta: 'Gói Coach tạm dừng do Coach bị khóa',
         iconName: 'alert',
         href: '#/admin/incidents?status=OPEN',
         tone: coachLockedWaiting > 0 ? 'var(--meta-warning)' : null,
       },
       {
-        label: 'Yêu cầu kết thúc / Tranh chấp',
+        label: 'Tranh chấp cần phân xử',
         value: String(disputedCount),
-        meta: 'Tranh chấp quá 72h cần phân xử (D5)',
+        meta: 'Yêu cầu kết thúc sớm quá 72 giờ',
         iconName: 'link',
         href: '#/admin/relationships?tab=terminations&status=DISPUTED',
         tone: disputedCount > 0 ? 'var(--meta-danger)' : null,
@@ -114,38 +170,42 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
     const paymentsLink = `#/admin/payments?from=${encodeURIComponent(data.from || from)}&to=${encodeURIComponent(data.to || to)}`;
     const monthStart = `${today.slice(0, 8)}01`;
 
+    const currentFrom = data.from || from;
+    const currentTo = data.to || to;
+
     const contentHtml = `<div class="stack-20">
       <form class="filter-bar" id="dashboard-period-form">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
-          <input type="date" id="dash-from" name="from" class="form-control tabular" style="max-width:170px" aria-label="Từ ngày" value="${esc(data.from || from)}" required />
+        <div class="desktop-filters" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
+          ${renderDateInput({ id: 'dash-from', name: 'from', value: currentFrom, ariaLabel: 'Từ ngày' })}
           <span style="color:var(--meta-text-secondary)">đến</span>
-          <input type="date" id="dash-to" name="to" class="form-control tabular" style="max-width:170px" aria-label="Đến ngày" value="${esc(data.to || to)}" required />
+          ${renderDateInput({ id: 'dash-to', name: 'to', value: currentTo, ariaLabel: 'Đến ngày' })}
           <button type="submit" class="btn btn-graphite btn-sm">Áp dụng</button>
         </div>
+        <div class="mobile-filters" style="flex:1;width:100%">
+          ${renderDateRangePicker({ id: 'dash-range', from: currentFrom, to: currentTo })}
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button type="button" class="pill-toggle" data-quick-range="7">7 ngày</button>
-          <button type="button" class="pill-toggle" data-quick-range="30">30 ngày</button>
-          <button type="button" class="pill-toggle" data-quick-range="month">Tháng này</button>
+          <button type="button" class="pill-toggle ${currentTo === today && currentFrom === daysAgoVN(6) ? 'active' : ''}" data-quick-range="7">7 ngày</button>
+          <button type="button" class="pill-toggle ${currentTo === today && currentFrom === daysAgoVN(29) ? 'active' : ''}" data-quick-range="30">30 ngày</button>
+          <button type="button" class="pill-toggle ${currentTo === today && currentFrom === monthStart ? 'active' : ''}" data-quick-range="month">Tháng này</button>
         </div>
       </form>
 
-      ${urgentBanner}
-
       <div class="grid-3">
         <a class="kpi-card" href="${paymentsLink}">
-          <div class="kpi-top"><span class="kpi-label">Doanh thu gộp (Gross)</span><span class="kpi-icon">${icon('receipt', 17)}</span></div>
+          <div class="kpi-top"><span class="kpi-label">Tổng thu</span><span class="kpi-icon">${icon('receipt', 17)}</span></div>
           <div class="kpi-val tabular">${vnd(grossRevenue)}</div>
-          <div class="kpi-meta"><span>${totalVoidReversals > 0 ? `Đã trừ đảo D6: ${vnd(totalVoidReversals)}${voidReversalCount ? ` (${voidReversalCount} GD)` : ''}` : 'Đã trừ đảo D6: 0 ₫ · Gym & Coach'}</span><span class="kpi-link-hint">Xem giao dịch →</span></div>
+          <div class="kpi-meta"><span>${totalVoidReversals > 0 ? `Đã trừ giao dịch hủy: ${vnd(totalVoidReversals)}${voidReversalCount ? ` (${voidReversalCount} GD)` : ''}` : 'Tổng tiền gói Gym & Coach'}</span><span class="kpi-link-hint">Xem giao dịch →</span></div>
         </a>
         <a class="kpi-card" href="#/admin/incidents?tab=refunds">
-          <div class="kpi-top"><span class="kpi-label">Hoàn tiền mô phỏng (D3)</span><span class="kpi-icon" style="color:var(--meta-danger)">${icon('refund', 17)}</span></div>
+          <div class="kpi-top"><span class="kpi-label">Tiền đã hoàn</span><span class="kpi-icon" style="color:var(--meta-danger)">${icon('refund', 17)}</span></div>
           <div class="kpi-val tabular" style="color:var(--meta-danger-text)">${vnd(totalRefunds > 0 ? -totalRefunds : 0)}</div>
-          <div class="kpi-meta"><span>${simulatedRefundCount > 0 ? `${simulatedRefundCount} bút toán hoàn sự cố Coach` : 'Chỉ bút toán mô phỏng sự cố Coach'}</span><span class="kpi-link-hint">Xem chi tiết →</span></div>
+          <div class="kpi-meta"><span>${simulatedRefundCount > 0 ? `${simulatedRefundCount} lượt hoàn do sự cố Coach` : 'Các khoản hoàn tiền sự cố Coach'}</span><span class="kpi-link-hint">Xem chi tiết →</span></div>
         </a>
         <a class="kpi-card" href="${paymentsLink}">
-          <div class="kpi-top"><span class="kpi-label">Doanh thu ròng (Net)</span><span class="kpi-icon" style="color:var(--meta-success)">${icon('check', 17)}</span></div>
+          <div class="kpi-top"><span class="kpi-label">Doanh thu thực nhận</span><span class="kpi-icon" style="color:var(--meta-success)">${icon('check', 17)}</span></div>
           <div class="kpi-val tabular" style="color:var(--meta-success)">${vnd(netRevenue)}</div>
-          <div class="kpi-meta"><span>Gross trừ đảo D6 & hoàn mô phỏng D3</span><span class="kpi-link-hint">Đối soát →</span></div>
+          <div class="kpi-meta"><span>Tổng thu sau khi trừ hoàn tiền & hủy</span><span class="kpi-link-hint">Đối soát →</span></div>
         </a>
       </div>
 
@@ -160,12 +220,23 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
         </a>`).join('')}
       </div>
 
-      <section class="meta-card" aria-label="Biểu đồ doanh thu theo ngày">
+      <section class="meta-card" aria-label="Biểu đồ doanh thu">
         <div class="card-header-row">
           <div>
-            <h2 class="card-title-text">Doanh thu theo ngày (${formatDateVN(data.from || from)} – ${formatDateVN(data.to || to)})</h2>
-            <p class="card-sub">Theo dõi doanh thu gộp, hoàn tiền mô phỏng và doanh thu ròng theo ngày Việt Nam.</p>
+            <h2 class="card-title-text">Doanh thu theo thời gian (${formatDateVN(data.from || from)} – ${formatDateVN(data.to || to)})</h2>
+            <p class="card-sub">Tổng thu, tiền đã hoàn và doanh thu thực nhận.</p>
           </div>
+          ${byDay.length > 0 ? `<div class="chart-controls">
+            <div class="chart-segmented" role="group" aria-label="Nhóm thời gian">
+              <button type="button" class="chart-seg-btn ${chartGranularity === 'month' ? 'active' : ''}" data-chart-gran="month">Tháng</button>
+              <button type="button" class="chart-seg-btn ${chartGranularity === 'week' ? 'active' : ''}" data-chart-gran="week">Tuần</button>
+              <button type="button" class="chart-seg-btn ${chartGranularity === 'day' ? 'active' : ''}" data-chart-gran="day">Ngày</button>
+            </div>
+            <div class="chart-segmented" role="group" aria-label="Kiểu biểu đồ">
+              <button type="button" class="chart-seg-btn chart-seg-icon ${chartType === 'bar' ? 'active' : ''}" data-chart-type="bar" aria-label="Biểu đồ cột" title="Biểu đồ cột">${icon('chartBar', 16)}</button>
+              <button type="button" class="chart-seg-btn chart-seg-icon ${chartType === 'line' ? 'active' : ''}" data-chart-type="line" aria-label="Biểu đồ đường" title="Biểu đồ đường">${icon('chartLine', 16)}</button>
+            </div>
+          </div>` : ''}
         </div>
         ${byDay.length === 0
           ? renderEmptyState({
@@ -183,16 +254,42 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
       badges: { incidents: coachLockedWaiting, disputes: disputedCount },
     });
 
+    const applyPeriod = (nextFrom, nextTo) => {
+      if (nextFrom && nextTo && nextFrom <= nextTo) {
+        updateQuery({ from: nextFrom, to: nextTo }, { replace: false });
+        renderDashboardPage({ root, params: new URLSearchParams({ from: nextFrom, to: nextTo }), shell, ChartCtor });
+      }
+    };
+
+    bindDatePickers(root, {
+      onChange: ({ id, value }) => {
+        if (id === 'dash-from' || id === 'dash-to') {
+          const nextFrom = id === 'dash-from' ? value : root.querySelector('#dash-from')?.value;
+          const nextTo = id === 'dash-to' ? value : root.querySelector('#dash-to')?.value;
+          if (nextFrom && nextTo && nextFrom > nextTo) {
+            if (id === 'dash-from') setDatePickerValue(root, 'dash-to', nextFrom);
+            else setDatePickerValue(root, 'dash-from', nextTo);
+          }
+        }
+      },
+    });
+
+    bindDateRangePicker(root, {
+      id: 'dash-range',
+      onChange: ({ from: nextFrom, to: nextTo }) => {
+        setDatePickerValue(root, 'dash-from', nextFrom);
+        setDatePickerValue(root, 'dash-to', nextTo);
+        applyPeriod(nextFrom, nextTo);
+      },
+    });
+
     const periodForm = root.querySelector('#dashboard-period-form');
     if (periodForm) {
       periodForm.onsubmit = (event) => {
         event.preventDefault();
         const nextFrom = root.querySelector('#dash-from')?.value;
         const nextTo = root.querySelector('#dash-to')?.value;
-        if (nextFrom && nextTo && nextFrom <= nextTo) {
-          updateQuery({ from: nextFrom, to: nextTo }, { replace: false });
-          renderDashboardPage({ root, params: new URLSearchParams({ from: nextFrom, to: nextTo }), shell, ChartCtor });
-        }
+        applyPeriod(nextFrom, nextTo);
       };
     }
 
@@ -205,50 +302,158 @@ export async function renderDashboardPage({ root, params, shell, ChartCtor }) {
       };
     });
 
-    const canvas = root.querySelector('#revenue-chart');
-    if (canvas && byDay.length > 0 && ChartCtor) {
+    const drawChart = () => {
+      const canvas = root.querySelector('#revenue-chart');
+      if (!canvas || byDay.length === 0 || !ChartCtor) return;
+      destroyDashboardChart();
+
+      const series = groupRevenueSeries(byDay, chartGranularity);
+      const isLight = globalThis.document?.documentElement?.getAttribute?.('data-bs-theme') === 'light';
+      const surfaceColor = isLight ? '#FFFFFF' : '#181B22';
+      const tickColor = isLight ? '#4D5968' : '#8E95A5';
+      const gridColor = isLight ? 'rgba(17, 21, 26, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+      const isLine = chartType === 'line';
+      const hasRefunds = series.some((row) => row.refund > 0);
+      const netData = series.map((row) => row.net);
+
       try {
         activeChart = new ChartCtor(canvas, {
-          type: 'bar',
+          type: chartType,
           data: {
-            labels: byDay.map((row) => formatDateVN(row.day)),
+            labels: series.map((row) => row.label),
             datasets: [
               {
-                label: 'Doanh thu gộp (VND)',
-                data: byDay.map((row) => Number(row.grossRevenue ?? row.amount ?? 0)),
-                backgroundColor: '#FF5E36',
-                borderRadius: 6,
+                label: 'Doanh thu thực nhận',
+                data: netData,
+                borderColor: '#2ECC71',
+                backgroundColor: isLine ? 'rgba(46, 204, 113, 0.08)' : '#2ECC71',
+                borderWidth: isLine ? 2.4 : 0,
+                borderRadius: isLine ? 0 : 6,
+                maxBarThickness: 28,
+                tension: 0.12,
+                pointRadius: isLine ? 4 : 0,
+                pointHoverRadius: isLine ? 6 : 0,
+                pointBorderWidth: 2.2,
+                pointBackgroundColor: surfaceColor,
+                pointBorderColor: (ctx) => (Number(ctx.raw ?? 0) < 0 ? '#F15B64' : '#2ECC71'),
+                segment: isLine ? {
+                  borderColor: (ctx) => (
+                    ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? '#F15B64' : '#2ECC71'
+                  ),
+                } : undefined,
               },
               {
-                label: 'Doanh thu ròng (VND)',
-                data: byDay.map((row) => Number(row.netRevenue ?? row.amount ?? 0)),
-                backgroundColor: '#2ECC71',
-                borderRadius: 6,
+                label: 'Tổng thu',
+                data: series.map((row) => row.gross),
+                borderColor: '#FF5E36',
+                backgroundColor: isLine ? 'transparent' : '#FF5E36',
+                borderWidth: isLine ? 2 : 0,
+                borderRadius: isLine ? 0 : 6,
+                maxBarThickness: 28,
+                tension: 0.12,
+                pointRadius: isLine ? 3.5 : 0,
+                pointHoverRadius: isLine ? 5.5 : 0,
+                pointBorderWidth: 2,
+                pointBackgroundColor: surfaceColor,
+                pointBorderColor: '#FF5E36',
               },
-              ...(byDay.some((row) => Number(row.simulatedRefunds ?? 0) > 0) ? [{
-                label: 'Hoàn mô phỏng (VND)',
-                data: byDay.map((row) => Number(row.simulatedRefunds ?? 0)),
-                backgroundColor: '#F15B64',
-                borderRadius: 6,
+              ...(hasRefunds ? [{
+                label: 'Tiền đã hoàn',
+                data: series.map((row) => row.refund),
+                borderColor: '#F15B64',
+                backgroundColor: isLine ? 'transparent' : '#F15B64',
+                borderWidth: isLine ? 2 : 0,
+                borderRadius: isLine ? 0 : 6,
+                maxBarThickness: 28,
+                tension: 0.12,
+                pointRadius: isLine ? 3.5 : 0,
+                pointHoverRadius: isLine ? 5.5 : 0,
+                pointBorderWidth: 2,
+                pointBackgroundColor: surfaceColor,
+                pointBorderColor: '#F15B64',
               }] : []),
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 180 },
+            interaction: { mode: 'index', intersect: false },
+            hover: { mode: 'index', intersect: false, animationDuration: 0 },
             plugins: {
-              legend: { labels: { color: '#8E95A5', font: { family: 'Be Vietnam Pro', size: 12 } } },
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: tickColor,
+                  usePointStyle: true,
+                  boxWidth: 8,
+                  padding: 16,
+                  font: { family: 'Be Vietnam Pro', size: 12, weight: '600' },
+                },
+              },
+              tooltip: {
+                animation: false,
+                backgroundColor: isLight ? '#11151A' : '#1F232C',
+                titleFont: { family: 'Be Vietnam Pro', size: 12, weight: '700' },
+                bodyFont: { family: 'Be Vietnam Pro', size: 12 },
+                padding: 10,
+                cornerRadius: 10,
+                callbacks: {
+                  label: (ctx) => `${ctx.dataset.label}: ${vnd(ctx.parsed.y)}`,
+                },
+              },
             },
             scales: {
-              x: { ticks: { color: '#8E95A5' }, grid: { color: 'rgba(38, 42, 52, 0.6)' } },
-              y: { ticks: { color: '#8E95A5' }, grid: { color: 'rgba(38, 42, 52, 0.6)' } },
+              x: {
+                ticks: { color: tickColor, font: { family: 'Be Vietnam Pro', size: 11.5 } },
+                grid: { display: false },
+                border: { display: false },
+              },
+              y: {
+                ticks: {
+                  color: tickColor,
+                  font: { family: 'Be Vietnam Pro', size: 11.5 },
+                  callback: (val) => formatCompactVnd(val),
+                },
+                grid: { color: gridColor, tickLength: 0 },
+                border: { display: false, dash: [4, 4] },
+              },
             },
           },
         });
+
+        canvas.onmouseleave = () => {
+          if (!activeChart) return;
+          activeChart.setActiveElements?.([]);
+          activeChart.tooltip?.setActiveElements?.([], { x: 0, y: 0 });
+          activeChart.update?.('none');
+        };
       } catch {
         // Ignore headless canvas context errors in unit test harnesses
       }
-    }
+    };
+
+    drawChart();
+
+    root.querySelectorAll('[data-chart-gran]').forEach((btn) => {
+      btn.onclick = () => {
+        chartGranularity = btn.dataset.chartGran || 'day';
+        root.querySelectorAll('[data-chart-gran]').forEach((b) => {
+          b.classList.toggle('active', b === btn);
+        });
+        drawChart();
+      };
+    });
+
+    root.querySelectorAll('[data-chart-type]').forEach((btn) => {
+      btn.onclick = () => {
+        chartType = btn.dataset.chartType || 'line';
+        root.querySelectorAll('[data-chart-type]').forEach((b) => {
+          b.classList.toggle('active', b === btn);
+        });
+        drawChart();
+      };
+    });
   } catch (error) {
     shell({
       section: 'dashboard',

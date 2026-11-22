@@ -169,10 +169,10 @@ test('T8 Dashboard & Shell contain ZERO legacy PENDING Coach Request KPI and dee
   const html = env.root.innerHTML;
   assert.equal(html.includes('Yêu cầu chọn Coach'), false);
   assert.equal(html.includes('pendingCoachRequests'), false);
-  assert.equal(html.includes('Doanh thu gộp (Gross)'), true);
-  assert.equal(html.includes('Hoàn tiền mô phỏng (D3)'), true);
-  assert.equal(html.includes('Doanh thu ròng (Net)'), true);
-  assert.equal(html.includes('COACH_LOCKED'), true);
+  assert.equal(html.includes('Tổng thu'), true);
+  assert.equal(html.includes('Tiền đã hoàn'), true);
+  assert.equal(html.includes('Doanh thu thực nhận'), true);
+  assert.equal(html.includes('Chờ xử lý sự cố Coach'), true);
 });
 
 test('T8 Custom modal preserves entered reason on API error and Escape closes modal/drawer', async () => {
