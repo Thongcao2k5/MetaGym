@@ -4,6 +4,9 @@ const SECTION_ALIASES = {
   'catalog-training': 'equipment',
   incidents: 'coach-incidents',
   foods: 'nutrition-foods',
+  notifications: 'notification',
+  design: 'design-system',
+  'ui-kit': 'design-system',
 };
 
 export function normalizeSection(rawSection) {
