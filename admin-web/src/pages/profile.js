@@ -1,5 +1,5 @@
 import { api } from '../services/api.js';
-import { esc, initials, statusBadge } from '../components/format.js';
+import { esc, emailInitial, statusBadge } from '../components/format.js';
 import { icon } from '../components/icons.js';
 import { renderBanner, renderErrorState, renderSkeletonPage } from '../components/states.js';
 import { toast } from '../components/toast.js';
@@ -13,7 +13,7 @@ export async function renderProfilePage({ root, shell, onSignOut }) {
     const contentHtml = `<div class="grid-split">
       <section class="meta-card stack-16">
         <div style="display:flex;align-items:center;gap:14px">
-          <span class="meta-avatar" style="width:52px;height:52px;font-size:18px">${esc(initials(data.fullName))}</span>
+          <span class="meta-avatar" style="width:52px;height:52px;font-size:18px">${esc(emailInitial(data.email, 'A'))}</span>
           <div>
             <h2 class="card-title-text">${esc(data.fullName)}</h2>
             <p class="card-sub">${esc(data.email)}</p>
@@ -22,7 +22,6 @@ export async function renderProfilePage({ root, shell, onSignOut }) {
         <div class="impact-box">
           <div class="impact-row"><span class="impact-key">Vai trò</span><span class="impact-val"><span class="meta-badge meta-badge-coral">ADMIN</span></span></div>
           <div class="impact-row"><span class="impact-key">Trạng thái</span><span class="impact-val">${statusBadge(data.status || 'ACTIVE')}</span></div>
-          <div class="impact-row"><span class="impact-key">Múi giờ vận hành</span><span class="impact-val tabular">Asia/Ho_Chi_Minh (GMT+7)</span></div>
         </div>
       </section>
 

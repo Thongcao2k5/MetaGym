@@ -89,31 +89,116 @@ class CoachTerminationRequest {
     required this.relationshipId,
     required this.reason,
     required this.status,
+    this.relationshipStatus,
+    this.memberId,
+    this.memberName,
+    this.coachId,
+    this.coachName,
+    this.requestedByUserId,
+    this.requestedByRole,
+    this.requestedByName,
+    this.counterpartyUserId,
+    this.counterpartyName,
+    this.counterpartyDecision,
+    this.counterpartyReason,
+    this.counterpartyDecidedAt,
+    this.responseDeadlineAt,
+    this.disputedAt,
+    this.escalationReason,
     this.adminNote,
+    this.decidedAt,
+    this.createdAt,
   });
 
   factory CoachTerminationRequest.fromJson(Object? value) {
     final json = Map<String, dynamic>.from(value as Map);
     return CoachTerminationRequest(
       id: json['id'] as String,
-      relationshipId: json['relationship_id'] as String,
+      relationshipId:
+          (json['relationshipId'] ?? json['relationship_id']) as String,
+      relationshipStatus: json['relationshipStatus'] as String?,
+      memberId: json['memberId'] as String?,
+      memberName: json['memberName'] as String?,
+      coachId: json['coachId'] as String?,
+      coachName: json['coachName'] as String?,
+      requestedByUserId: json['requestedByUserId'] as String?,
+      requestedByRole: json['requestedByRole'] as String?,
+      requestedByName: json['requestedByName'] as String?,
+      counterpartyUserId: json['counterpartyUserId'] as String?,
+      counterpartyName: json['counterpartyName'] as String?,
       reason: json['reason'] as String,
       status: json['status'] as String,
-      adminNote: json['admin_note'] as String?,
+      counterpartyDecision: json['counterpartyDecision'] as String?,
+      counterpartyReason: json['counterpartyReason'] as String?,
+      counterpartyDecidedAt: json['counterpartyDecidedAt'] as String?,
+      responseDeadlineAt: json['responseDeadlineAt'] as String?,
+      disputedAt: json['disputedAt'] as String?,
+      escalationReason: json['escalationReason'] as String?,
+      adminNote: (json['adminNote'] ?? json['admin_note']) as String?,
+      decidedAt: json['decidedAt'] as String?,
+      createdAt: json['createdAt'] as String?,
     );
   }
 
   final String id;
   final String relationshipId;
+  final String? relationshipStatus;
+  final String? memberId;
+  final String? memberName;
+  final String? coachId;
+  final String? coachName;
+  final String? requestedByUserId;
+  final String? requestedByRole;
+  final String? requestedByName;
+  final String? counterpartyUserId;
+  final String? counterpartyName;
   final String reason;
   final String status;
+  final String? counterpartyDecision;
+  final String? counterpartyReason;
+  final String? counterpartyDecidedAt;
+  final String? responseDeadlineAt;
+  final String? disputedAt;
+  final String? escalationReason;
   final String? adminNote;
+  final String? decidedAt;
+  final String? createdAt;
+
+  bool get isPendingCounterparty =>
+      status == 'PENDING_COUNTERPARTY' || status == 'PENDING';
+  bool get isDisputed => status == 'DISPUTED';
+  bool get isOpen => isPendingCounterparty || isDisputed;
+
+  bool canRespondAsRole(String viewerRole) =>
+      isPendingCounterparty &&
+      requestedByRole != null &&
+      requestedByRole != viewerRole;
+
+  bool canWithdrawAsRole(String viewerRole) =>
+      isPendingCounterparty && requestedByRole == viewerRole;
+
+  String get requesterRoleLabel => switch (requestedByRole) {
+    'MEMBER' => 'Hội viên',
+    'COACH' => 'Coach',
+    _ => 'Đối tác',
+  };
+
+  String? get escalationLabel => switch (escalationReason) {
+    'COUNTERPARTY_REJECTED' => 'Đối tác đã từ chối yêu cầu',
+    'TIMEOUT_72H' => 'Quá hạn 72 giờ không phản hồi',
+    _ => null,
+  };
 
   String get statusLabel => switch (status) {
+    'PENDING_COUNTERPARTY' => 'Chờ đối tác phản hồi (72h)',
+    'DISPUTED' => 'Đang tranh chấp · Chờ Admin',
+    'ACCEPTED' => 'Đã đồng ý kết thúc',
+    'ADMIN_APPROVED' => 'Admin duyệt kết thúc',
+    'ADMIN_REJECTED' => 'Admin từ chối kết thúc',
+    'CANCELLED' => 'Đã hủy yêu cầu',
     'PENDING' => 'Đang chờ duyệt',
     'APPROVED' => 'Đã duyệt',
     'REJECTED' => 'Đã từ chối',
-    'CANCELLED' => 'Đã hủy',
     _ => status,
   };
 }

@@ -1,5 +1,6 @@
-import { esc, initials } from './format.js';
+import { esc, emailInitial } from './format.js';
 import { icon } from './icons.js';
+import { bindNotificationBell } from './notifications.js';
 import { getTheme, toggleTheme } from '../services/theme.js';
 
 export const NAV_GROUPS = [
@@ -13,39 +14,40 @@ export const NAV_GROUPS = [
   {
     label: 'Khách hàng & Quan hệ',
     items: [
-      { id: 'members', href: '#/admin/members', label: 'Hội viên (Member)', icon: 'users' },
-      { id: 'coaches', href: '#/admin/coaches', label: 'Huấn luyện viên (Coach)', icon: 'award' },
-      { id: 'relationships', href: '#/admin/relationships', label: 'Quan hệ & Kết thúc sớm', icon: 'link', badgeKey: 'disputes' },
+      { id: 'members', href: '#/admin/members', label: 'Hội viên', icon: 'users' },
+      { id: 'coaches', href: '#/admin/coaches', label: 'Huấn luyện viên', icon: 'award' },
+      { id: 'relationships', href: '#/admin/relationships', label: 'Quan hệ & Kết thúc', icon: 'link', badgeKey: 'disputes' },
     ],
   },
   {
     label: 'Gói dịch vụ & Tiền',
     items: [
-      { id: 'plans', href: '#/admin/plans', label: 'Gói Gym & Quyền sử dụng', icon: 'card' },
-      { id: 'coach-packages', href: '#/admin/coach-packages', label: 'Gói Coach & Quyền lợi', icon: 'dumbbell' },
-      { id: 'payments', href: '#/admin/payments', label: 'Giao dịch quầy & Lịch sử', icon: 'receipt' },
+      { id: 'plans', href: '#/admin/plans', label: 'Gói Gym', icon: 'card' },
+      { id: 'coach-packages', href: '#/admin/coach-packages', label: 'Gói Coach', icon: 'dumbbell' },
+      { id: 'payments', href: '#/admin/payments', label: 'Giao dịch', icon: 'receipt' },
     ],
   },
   {
     label: 'Nội dung vận hành',
     items: [
-      { id: 'nutrition-foods', href: '#/admin/foods', label: 'Thực phẩm & kcal', icon: 'food' },
-      { id: 'gym', href: '#/admin/gym', label: 'Phòng gym & QR điểm danh', icon: 'building' },
+      { id: 'nutrition-foods', href: '#/admin/foods', label: 'Thực phẩm', icon: 'food' },
+      { id: 'gym', href: '#/admin/gym', label: 'Phòng gym & QR', icon: 'building' },
       { id: 'equipment', href: '#/admin/equipment', label: 'Thiết bị & Bài tập', icon: 'dumbbell' },
     ],
   },
   {
     label: 'Kiểm soát',
     items: [
-      { id: 'audit-logs', href: '#/admin/audit-logs', label: 'Nhật ký hệ thống', icon: 'audit' },
+      { id: 'audit-logs', href: '#/admin/audit-logs', label: 'Nhật ký', icon: 'audit' },
+      { id: 'design-system', href: '#/admin/design', label: 'Thiết kế', icon: 'layers' },
     ],
   },
 ];
 
 export const PAGE_META = {
   dashboard: {
-    title: 'Tổng quan vận hành',
-    subtitle: 'Doanh thu gộp/hoàn/ròng, ngoại lệ COACH_LOCKED và tranh chấp kết thúc sớm (GMT+7).',
+    title: 'Tổng quan',
+    subtitle: '',
   },
   'coach-incidents': {
     title: 'Sự cố Coach (COACH_LOCKED)',
@@ -102,6 +104,14 @@ export const PAGE_META = {
   profile: {
     title: 'Hồ sơ Quản trị viên',
     subtitle: 'Thông tin tài khoản Admin hiện hành và đổi mật khẩu (tự động thu hồi phiên cũ).',
+  },
+  notification: {
+    title: 'Thông báo vận hành',
+    subtitle: 'Theo dõi sự cố Coach và tranh chấp 72h cần Admin xử lý.',
+  },
+  'design-system': {
+    title: 'Thư viện Thiết kế',
+    subtitle: 'Tổng hợp các component dùng chung trên Desktop và Mobile để dev xem và tái sử dụng.',
   },
 };
 
@@ -166,14 +176,18 @@ export function renderShell({
   const themeBtnHtml = `<button type="button" class="btn btn-ghost btn-icon" id="theme-toggle-btn" aria-label="${nextThemeLabel}" title="${nextThemeLabel}">
     ${icon(currentTheme === 'dark' ? 'sun' : 'moon', 18)}
   </button>`;
+  const notifHtml = `<div class="notif-wrap" id="admin-notif-wrap">
+    <button type="button" class="btn btn-ghost btn-icon notif-bell-btn" id="admin-bell-btn" aria-label="Thông báo" aria-haspopup="dialog" aria-expanded="false" title="Thông báo">
+      ${icon('bell', 18)}
+      <span class="notif-badge" id="admin-bell-badge" hidden>0</span>
+    </button>
+    <div class="notif-popover" id="admin-notif-popover" role="dialog" aria-label="Thông báo vận hành" hidden></div>
+  </div>`;
   const accountHtml = `<div class="topbar-account">
     ${themeBtnHtml}
-    <a class="admin-user-link topbar-user-link" href="#/admin/profile" ${section === 'profile' ? 'aria-current="page"' : ''} title="Hồ sơ quản trị viên">
-      <span class="meta-avatar">${esc(initials(user?.fullName || 'Admin'))}</span>
-      <span class="admin-user-meta">
-        <span class="admin-user-name">${esc(user?.fullName || 'Quản trị viên')}</span>
-        <span class="admin-user-role">${esc(user?.email || 'ADMIN')}</span>
-      </span>
+    ${notifHtml}
+    <a class="admin-user-link topbar-user-link" href="#/admin/profile" ${section === 'profile' ? 'aria-current="page"' : ''} aria-label="Hồ sơ quản trị viên" title="Hồ sơ quản trị viên">
+      <span class="meta-avatar">${esc(emailInitial(user?.email, 'A'))}</span>
     </a>
     <button type="button" class="btn btn-ghost btn-sm" id="logout" aria-label="Đăng xuất">
       ${icon('logout', 16)} <span class="logout-label">Đăng xuất</span>
@@ -302,6 +316,8 @@ export function renderShell({
       themeBtn.setAttribute?.('title', label);
     };
   }
+
+  bindNotificationBell(root);
 
   if (globalThis.document?.addEventListener) {
     if (globalThis.__metaShellEscHandler) {

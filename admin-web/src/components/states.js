@@ -91,10 +91,47 @@ export function renderDashboardSkeleton() {
   </div>`;
 }
 
-export function renderTableSkeleton(rows = 5) {
+export function renderTableSkeleton(rowsOrOptions = 5) {
+  const opts = typeof rowsOrOptions === 'object' && rowsOrOptions !== null
+    ? rowsOrOptions
+    : { rows: Number(rowsOrOptions) || 5 };
+  const rows = opts.rows ?? 5;
+  const columns = opts.columns ?? 5;
+  const selectable = Boolean(opts.selectable);
+  const hasActions = opts.hasActions !== false;
+
+  const middleCount = Math.max(0, columns - (hasActions ? 2 : 1));
+  const middleWidths = ['96px', '84px', '72px', '110px'];
+
+  const rowHtml = () => {
+    const checkBlock = selectable
+      ? '<div class="skel skel-check"></div>'
+      : '';
+    const primaryBlock = `<div class="skel-col-primary">
+      <div class="skel skel-avatar"></div>
+      <div class="skel-lines">
+        <div class="skel" style="height:13px;width:128px;max-width:100%"></div>
+        <div class="skel" style="height:11px;width:88px;max-width:80%"></div>
+      </div>
+    </div>`;
+    const middleBlocks = Array.from({ length: middleCount })
+      .map((_, i) => `<div class="skel-col-secondary"><div class="skel" style="height:14px;width:${middleWidths[i % middleWidths.length]}"></div></div>`)
+      .join('');
+    const actionBlock = hasActions
+      ? `<div class="skel-col-actions">
+          <div class="skel skel-btn"></div>
+          <div class="skel skel-btn"></div>
+        </div>`
+      : '';
+    const mobileToggle = middleCount > 0
+      ? '<div class="skel-mobile-expand"><div class="skel" style="height:32px;width:100%"></div></div>'
+      : '';
+    return `<div class="skel-table-row">${checkBlock}${primaryBlock}${middleBlocks}${actionBlock}${mobileToggle}</div>`;
+  };
+
   return `<div class="meta-card" aria-busy="true" aria-label="Đang tải danh sách">
-    <div class="stack-12">
-      ${Array.from({ length: rows }).map(() => '<div class="skel" style="height:48px;width:100%"></div>').join('')}
+    <div class="skel-table-list">
+      ${Array.from({ length: rows }).map(rowHtml).join('')}
     </div>
   </div>`;
 }

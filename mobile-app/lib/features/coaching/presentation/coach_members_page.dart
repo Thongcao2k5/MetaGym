@@ -7,6 +7,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/coaching/presentation/early_termination_widgets.dart';
 import 'package:provider/provider.dart';
 
 class CoachMembersPage extends StatefulWidget {
@@ -23,7 +24,9 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
   List<CoachMemberSummary> _members = const [];
   List<CoachTerminationRequest> _requests = const [];
   String? _error;
+  String? _actionError;
   bool _loading = true;
+  bool _busy = false;
 
   @override
   void didChangeDependencies() {
@@ -39,6 +42,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _actionError = null;
       _members = const [];
       _requests = const [];
     });
@@ -59,6 +63,42 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
     }
   }
 
+  Future<void> _respondTermination(
+    CoachTerminationRequest request,
+    String decision,
+    String? reason,
+  ) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _actionError = null;
+    });
+    try {
+      await _service!.respondTermination(
+        request.id,
+        decision: decision,
+        reason: reason,
+      );
+      if (!mounted) return;
+      await _load();
+      if (!mounted) return;
+      final message = switch (decision) {
+        'ACCEPT' => 'Đã chấp nhận kết thúc sớm quan hệ.',
+        'REJECT' => 'Đã từ chối và chuyển yêu cầu sang Admin phân xử.',
+        _ => 'Đã rút yêu cầu ngừng phụ trách.',
+      };
+      showCoachingSnackBar(context, message);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _actionError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionError = 'Không xử lý được phản hồi yêu cầu.');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _openMember(CoachMemberSummary member) async {
     await MetaGymNavigation.pushOnce<void>(
       context,
@@ -75,9 +115,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
-    final pendingTerminations = _requests
-        .where((item) => item.status == 'PENDING')
-        .length;
+    final pendingTerminations = _requests.where((item) => item.isOpen).length;
 
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
@@ -156,6 +194,8 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                             onPressed: _load,
                           ),
                         ] else ...[
+                          if (_actionError != null)
+                            CoachingErrorBanner(message: _actionError!),
                           _MembersOverviewHero(
                             memberCount: _members.length,
                             pendingTerminationCount: pendingTerminations,
@@ -187,7 +227,18 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                               title: 'Chưa có yêu cầu nào.',
                             ),
                           for (final request in _requests)
-                            _TerminationCard(request: request),
+                            EarlyTerminationCard(
+                              request: request,
+                              viewerRole: 'COACH',
+                              title: request.memberName,
+                              busy: _busy,
+                              onRespond: (decision, reason) =>
+                                  _respondTermination(
+                                    request,
+                                    decision,
+                                    reason,
+                                  ),
+                            ),
                         ],
                       ],
                     ),
@@ -372,54 +423,6 @@ class _MemberRowCard extends StatelessWidget {
             color: Color(0xFFC8C2BC),
             size: 20,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TerminationCard extends StatelessWidget {
-  const _TerminationCard({required this.request});
-
-  final CoachTerminationRequest request;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = switch (request.status) {
-      'PENDING' => CoachingPillTone.amber,
-      'APPROVED' => CoachingPillTone.green,
-      'REJECTED' => CoachingPillTone.coral,
-      _ => CoachingPillTone.neutral,
-    };
-
-    return MetaGymGlassCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CoachingPill(label: request.statusLabel, tone: tone),
-          const SizedBox(height: 8),
-          Text(
-            request.reason,
-            style: const TextStyle(
-              color: Color(0xFFF7F9FC),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              height: 1.45,
-            ),
-          ),
-          if (request.adminNote?.isNotEmpty == true) ...[
-            const SizedBox(height: 6),
-            Text(
-              'Ghi chú quản trị: ${request.adminNote}',
-              style: const TextStyle(
-                color: Color(0xFFC8C2BC),
-                fontSize: 12.5,
-                height: 1.4,
-              ),
-            ),
-          ],
         ],
       ),
     );

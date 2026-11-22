@@ -40,50 +40,62 @@
         text-align: center;
       }
       #splash-canvas {
-        width: 310px;
-        height: 204px;
+        width: min(480px, 90vw);
+        height: auto;
+        aspect-ratio: 310 / 204;
         max-width: 100%;
         display: block;
       }
       .app-splash-sub {
-        font-size: 13.5px;
+        font-size: 15px;
         font-weight: 500;
         color: #8E95A5;
         opacity: 0;
         margin: 0;
       }
+      .app-splash-progress {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        opacity: 0;
+      }
       .app-splash-track {
-        width: 148px;
-        height: 4px;
+        width: 210px;
+        height: 5px;
         border-radius: 999px;
         background: rgba(142, 149, 165, 0.2);
         overflow: hidden;
-        opacity: 0;
-        margin-top: 6px;
       }
       .app-splash-bar {
-        width: 56px;
+        width: 0%;
         height: 100%;
         border-radius: 999px;
         background: linear-gradient(90deg, #FF5E36, #F5B041);
-        animation: metaSplashSlide 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       }
-      @keyframes metaSplashSlide {
-        0% { transform: translateX(-60px); }
-        100% { transform: translateX(156px); }
+      .app-splash-pct {
+        min-width: 38px;
+        text-align: right;
+        font-size: 12.5px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: #FF5E36;
       }
       @media (prefers-reduced-motion: reduce) {
-        .app-splash-sub, .app-splash-track { opacity: 1; }
-        .app-splash-bar { animation: none; width: 100%; opacity: 0.7; }
+        .app-splash-sub, .app-splash-progress { opacity: 1; }
+        .app-splash-bar { width: 100%; }
       }
     </style>
   </head>
   <body>
     <div id="app">
       <div class="app-splash" role="status" aria-live="polite" aria-label="Đang khởi động Meta Gym Admin">
-        <canvas id="splash-canvas" width="310" height="204" aria-hidden="true"></canvas>
+        <canvas id="splash-canvas" width="480" height="316" aria-hidden="true"></canvas>
         <p class="app-splash-sub">Đang khởi động cổng quản trị...</p>
-        <div class="app-splash-track" aria-hidden="true"><div class="app-splash-bar"></div></div>
+        <div class="app-splash-progress" aria-hidden="true">
+          <div class="app-splash-track"><div class="app-splash-bar" id="splash-bar"></div></div>
+          <span class="app-splash-pct" id="splash-pct">0%</span>
+        </div>
       </div>
     </div>
     <div class="meta-overlay" id="meta-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="meta-modal-title" hidden>

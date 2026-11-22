@@ -1,5 +1,6 @@
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 
 abstract interface class MemberCoachingService {
@@ -8,7 +9,20 @@ abstract interface class MemberCoachingService {
   Future<MemberCoachRelationship?> getCurrentRelationship();
   Future<List<MemberCoachRelationship>> getRelationshipHistory();
   Future<void> cancelRequest(String id);
-  Future<void> terminateRelationship(String id, String reason);
+  Future<CoachLockChoiceResult> submitCoachLockChoice({
+    required String choice,
+    String? note,
+  });
+  Future<List<CoachTerminationRequest>> getEarlyTerminationRequests();
+  Future<CoachTerminationRequest> requestEarlyTermination(
+    String relationshipId,
+    String reason,
+  );
+  Future<CoachTerminationRequest> respondEarlyTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  });
 }
 
 class MemberCoachingApi implements MemberCoachingService {
@@ -55,11 +69,55 @@ class MemberCoachingApi implements MemberCoachingService {
   }
 
   @override
-  Future<void> terminateRelationship(String id, String reason) async {
-    await client.post<MemberCoachRelationship>(
-      '/relationships/${Uri.encodeComponent(id)}/terminations',
-      body: {'reason': reason},
-      decode: MemberCoachRelationship.fromJson,
-    );
+  Future<CoachLockChoiceResult> submitCoachLockChoice({
+    required String choice,
+    String? note,
+  }) async {
+    final trimmedNote = note?.trim();
+    return (await client.post<CoachLockChoiceResult>(
+      '/relationships/me/coach-lock-choice',
+      body: {
+        'choice': choice,
+        if (trimmedNote != null && trimmedNote.isNotEmpty) 'note': trimmedNote,
+      },
+      decode: CoachLockChoiceResult.fromJson,
+    )).data;
+  }
+
+  @override
+  Future<List<CoachTerminationRequest>> getEarlyTerminationRequests() async =>
+      (await client.get<List<CoachTerminationRequest>>(
+        '/early-termination-requests/me',
+        decode: (value) =>
+            (value as List).map(CoachTerminationRequest.fromJson).toList(),
+      )).data;
+
+  @override
+  Future<CoachTerminationRequest> requestEarlyTermination(
+    String relationshipId,
+    String reason,
+  ) async =>
+      (await client.post<CoachTerminationRequest>(
+        '/relationships/${Uri.encodeComponent(relationshipId)}/early-termination-requests',
+        body: {'reason': reason.trim()},
+        decode: CoachTerminationRequest.fromJson,
+      )).data;
+
+  @override
+  Future<CoachTerminationRequest> respondEarlyTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) async {
+    final trimmedReason = reason?.trim();
+    return (await client.patch<CoachTerminationRequest>(
+      '/early-termination-requests/${Uri.encodeComponent(requestId)}/respond',
+      body: {
+        'decision': decision,
+        if (trimmedReason != null && trimmedReason.isNotEmpty)
+          'reason': trimmedReason,
+      },
+      decode: CoachTerminationRequest.fromJson,
+    )).data;
   }
 }

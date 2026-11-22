@@ -391,5 +391,5 @@ test('Admin dashboard không hiển thị thẻ Yêu cầu chọn Coach', async 
   });
 
   assert.equal(env.root.innerHTML.includes('Yêu cầu chọn Coach'), false);
-  assert.equal(env.root.innerHTML.includes('Yêu cầu kết thúc'), true);
+  assert.equal(env.root.innerHTML.includes('Gói Gym đang sử dụng'), true);
 });

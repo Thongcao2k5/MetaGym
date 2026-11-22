@@ -1,5 +1,3 @@
-import { handleMockApi } from './mock-members.js';
-
 const TOKEN_KEY = 'metagym_admin_token';
 const RETURN_URL_KEY = 'metagym_admin_return_url';
 const SESSION_EXPIRED_KEY = 'metagym_admin_session_expired';
@@ -105,14 +103,6 @@ export function buildQuery(params = {}) {
   return qs ? `?${qs}` : '';
 }
 
-function isDevBrowserRuntime() {
-  try {
-    return Boolean(import.meta.env?.DEV) && typeof window !== 'undefined';
-  } catch {
-    return false;
-  }
-}
-
 export async function api(path, method = 'GET', body, idempotencyKeyOrOptions) {
   const options = typeof idempotencyKeyOrOptions === 'string'
     ? { idempotencyKey: idempotencyKeyOrOptions }
@@ -131,12 +121,16 @@ export async function api(path, method = 'GET', body, idempotencyKeyOrOptions) {
     response = await globalThis.fetch(`${apiBase}${path}`, {
       method,
       headers,
+      ...(options.signal ? { signal: options.signal } : {}),
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-  } catch {
-    if (isDevBrowserRuntime()) {
-      const mockPayload = handleMockApi(path, method, body);
-      if (mockPayload) return mockPayload;
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw new ApiError('Yêu cầu đã bị hủy.', {
+        status: 0,
+        code: 'ABORTED',
+        details: {},
+      });
     }
     throw new ApiError('Không thể kết nối máy chủ. Kiểm tra mạng và bấm Thử lại.', {
       status: 0,
@@ -147,10 +141,6 @@ export async function api(path, method = 'GET', body, idempotencyKeyOrOptions) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (isDevBrowserRuntime() && response.status >= 500) {
-      const mockPayload = handleMockApi(path, method, body);
-      if (mockPayload) return mockPayload;
-    }
     const code = payload?.error?.code || `HTTP_${response.status}`;
     const message = payload?.error?.message || `Yêu cầu thất bại (HTTP ${response.status})`;
     const details = payload?.error?.details || {};

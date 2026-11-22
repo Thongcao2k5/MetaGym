@@ -69,6 +69,11 @@ export function initials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+export function emailInitial(email, fallback = 'A') {
+  const trimmed = String(email || '').trim();
+  return trimmed ? trimmed[0].toUpperCase() : fallback;
+}
+
 const BADGE_MAP = {
   ACTIVE: ['meta-badge-success', 'Đang hoạt động'],
   SUCCESS: ['meta-badge-success', 'Thành công'],

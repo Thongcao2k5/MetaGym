@@ -89,3 +89,39 @@ class MemberCoachRelationship {
     _ => status,
   };
 }
+
+class CoachLockChoiceResult {
+  const CoachLockChoiceResult({
+    required this.incidentId,
+    required this.relationshipId,
+    required this.status,
+    required this.memberChoice,
+    this.memberChoiceAt,
+    this.memberChoiceNote,
+  });
+
+  factory CoachLockChoiceResult.fromJson(Object? value) {
+    final json = Map<String, dynamic>.from(value as Map);
+    return CoachLockChoiceResult(
+      incidentId: (json['incidentId'] ?? json['id']) as String,
+      relationshipId: json['relationshipId'] as String,
+      status: json['status'] as String,
+      memberChoice: json['memberChoice'] as String,
+      memberChoiceAt: json['memberChoiceAt'] as String?,
+      memberChoiceNote: json['memberChoiceNote'] as String?,
+    );
+  }
+
+  final String incidentId;
+  final String relationshipId;
+  final String status;
+  final String memberChoice;
+  final String? memberChoiceAt;
+  final String? memberChoiceNote;
+
+  String get choiceLabel => switch (memberChoice) {
+    'WAIT' => 'Chờ Coach mở khóa',
+    'REFUND' => 'Yêu cầu hoàn mô phỏng / chuyển Coach',
+    _ => memberChoice,
+  };
+}

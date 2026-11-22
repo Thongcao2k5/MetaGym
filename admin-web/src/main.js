@@ -18,6 +18,7 @@ import { closeDrawer } from './components/drawer.js';
 import { esc } from './components/format.js';
 import { icon } from './components/icons.js';
 import { renderShell } from './components/layout.js';
+import { stopNotificationPolling } from './components/notifications.js';
 import { closeModal, openModal } from './components/modal.js';
 import { renderDashboardSkeleton, renderErrorState } from './components/states.js';
 import { toast } from './components/toast.js';
@@ -38,6 +39,8 @@ import { renderGymPage } from './pages/gym.js';
 import { renderEquipmentPage } from './pages/equipment.js';
 import { renderAuditLogsPage } from './pages/audit-logs.js';
 import { renderProfilePage } from './pages/profile.js';
+import { renderNotificationPage } from './pages/notification.js';
+import { renderDesignSystemPage } from './pages/design-system.js';
 
 export function createApp({
   root = document.querySelector('#app'),
@@ -48,6 +51,7 @@ export function createApp({
   let routingId = 0;
 
   function signOut({ expired = false, returnHash = null } = {}) {
+    stopNotificationPolling();
     destroyDashboardChart();
     closeModal();
     closeDrawer();
@@ -60,6 +64,7 @@ export function createApp({
 
   configureApi({
     onUnauthorized: (returnHash) => {
+      stopNotificationPolling();
       destroyDashboardChart();
       closeModal();
       closeDrawer();
@@ -140,6 +145,8 @@ export function createApp({
         equipment: () => renderEquipmentPage(ctx),
         'audit-logs': () => renderAuditLogsPage(ctx),
         profile: () => renderProfilePage(ctx),
+        notification: () => renderNotificationPage(ctx),
+        'design-system': () => renderDesignSystemPage(ctx),
       };
 
       const handler = pages[parsed.section];
@@ -214,6 +221,13 @@ if (typeof document !== 'undefined' && document.querySelector?.('#app')) {
     globalThis.window.history?.replaceState?.(null, '', `/${globalThis.window.location.hash || '#/admin/dashboard'}`);
   }
   const app = createApp();
+  if (getToken() && !getCurrentUser()) {
+    api('/users/me')
+      .then((res) => {
+        if (res?.data?.role === 'ADMIN') setCurrentUser(res.data);
+      })
+      .catch(() => {});
+  }
   playAppSplash(() => {
     globalThis.window?.addEventListener?.('hashchange', () => app.route());
     app.route();

@@ -8,12 +8,15 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/coaching/data/coach_outcome_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
+import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/coaching/presentation/early_termination_widgets.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_outcome_consent_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/termination_reason_dialog.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
@@ -37,12 +40,24 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
   List<CoachRecord> _entitlements = const [];
   List<CoachRecord> _holds = const [];
   List<CoachOutcomeCase> _outcomes = const [];
+  List<CoachTerminationRequest> _terminationRequests = const [];
   Map<String, String> _coachNames = const {};
   MemberCoachRelationship? _current;
+  CoachLockChoiceResult? _coachLockChoice;
+  final TextEditingController _coachLockNoteController =
+      TextEditingController();
   String? _error;
   String? _actionError;
   bool _loading = true;
   bool _openingChat = false;
+  bool _submittingLockChoice = false;
+  bool _submittingTermination = false;
+
+  @override
+  void dispose() {
+    _coachLockNoteController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -62,6 +77,12 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
     try {
       final current = await _service!.getCurrentRelationship();
       final history = await _service!.getRelationshipHistory();
+      List<CoachTerminationRequest> terminationRequests;
+      try {
+        terminationRequests = await _service!.getEarlyTerminationRequests();
+      } catch (_) {
+        terminationRequests = const [];
+      }
       Map<String, String> coachNames;
       try {
         coachNames = await _service!.getCoachNames();
@@ -90,10 +111,14 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
       setState(() {
         _current = current;
         _history = history;
+        _terminationRequests = terminationRequests;
         _coachNames = coachNames;
         _entitlements = entitlements;
         _holds = holds;
         _outcomes = outcomes;
+        if (current == null || !current.isCoachLocked) {
+          _coachLockChoice = null;
+        }
       });
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -101,6 +126,118 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
       if (mounted) setState(() => _error = 'Không tải được quan hệ Coach.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _submitCoachLockChoice(String choice) async {
+    if (_submittingLockChoice) return;
+    setState(() {
+      _submittingLockChoice = true;
+      _actionError = null;
+    });
+    try {
+      final result = await _service!.submitCoachLockChoice(
+        choice: choice,
+        note: _coachLockNoteController.text,
+      );
+      if (!mounted) return;
+      setState(() => _coachLockChoice = result);
+      showCoachingSnackBar(
+        context,
+        'Đã ghi nhận lựa chọn: ${result.choiceLabel}',
+      );
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _actionError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _actionError = 'Không gửi được lựa chọn xử lý sự cố Coach.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submittingLockChoice = false);
+    }
+  }
+
+  Future<void> _requestEarlyTermination(String relationshipId) async {
+    if (_submittingTermination) return;
+    final reason = await MetaGymNavigation.showDialogOnce<String>(
+      context: context,
+      builder: (_) => const TerminationReasonDialog(confirmLabel: 'Gửi yêu cầu'),
+    );
+    if (reason == null || !mounted) return;
+    setState(() {
+      _submittingTermination = true;
+      _actionError = null;
+    });
+    try {
+      final created = await _service!.requestEarlyTermination(
+        relationshipId,
+        reason,
+      );
+      if (!mounted) return;
+      setState(() {
+        _terminationRequests = [
+          created,
+          ..._terminationRequests.where((item) => item.id != created.id),
+        ];
+      });
+      showCoachingSnackBar(
+        context,
+        'Đã gửi yêu cầu kết thúc sớm (thời hạn phản hồi 72 giờ).',
+      );
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _actionError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionError = 'Không gửi được yêu cầu kết thúc sớm.');
+      }
+    } finally {
+      if (mounted) setState(() => _submittingTermination = false);
+    }
+  }
+
+  Future<void> _respondEarlyTermination(
+    CoachTerminationRequest request,
+    String decision,
+    String? reason,
+  ) async {
+    if (_submittingTermination) return;
+    setState(() {
+      _submittingTermination = true;
+      _actionError = null;
+    });
+    try {
+      final updated = await _service!.respondEarlyTermination(
+        request.id,
+        decision: decision,
+        reason: reason,
+      );
+      if (!mounted) return;
+      setState(() {
+        _terminationRequests = [
+          updated,
+          ..._terminationRequests.where((item) => item.id != updated.id),
+        ];
+      });
+      if (decision == 'ACCEPT') {
+        await _load();
+      }
+      if (!mounted) return;
+      final message = switch (decision) {
+        'ACCEPT' => 'Đã chấp nhận kết thúc sớm quan hệ Coach.',
+        'REJECT' => 'Đã từ chối và chuyển yêu cầu sang Admin phân xử.',
+        _ => 'Đã rút yêu cầu kết thúc sớm.',
+      };
+      showCoachingSnackBar(context, message);
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _actionError = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _actionError = 'Không xử lý được phản hồi yêu cầu.');
+      }
+    } finally {
+      if (mounted) setState(() => _submittingTermination = false);
     }
   }
 
@@ -162,6 +299,15 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
         .where((e) => e['status'] == 'QUEUED')
         .firstOrNull;
     final pendingHold = _holds.where((h) => h['status'] == 'HELD').firstOrNull;
+    final openTermination = current == null
+        ? null
+        : _terminationRequests
+              .where((item) => item.relationshipId == current.id && item.isOpen)
+              .firstOrNull;
+    final canRequestTermination =
+        current != null &&
+        openTermination == null &&
+        (current.status == 'ACTIVE' || current.isMembershipExpired);
     final previousRelationships = _history
         .where((item) => item.id != current?.id)
         .toList();
@@ -284,6 +430,25 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                 }
                               },
                             ),
+                            if (current.isCoachLocked)
+                              _CoachLockChoiceCard(
+                                choiceResult: _coachLockChoice,
+                                noteController: _coachLockNoteController,
+                                submitting: _submittingLockChoice,
+                                onSelectChoice: _submitCoachLockChoice,
+                              ),
+                            if (openTermination != null)
+                              EarlyTerminationCard(
+                                request: openTermination,
+                                viewerRole: 'MEMBER',
+                                busy: _submittingTermination,
+                                onRespond: (decision, reason) =>
+                                    _respondEarlyTermination(
+                                      openTermination,
+                                      decision,
+                                      reason,
+                                    ),
+                              ),
                             if (queuedPackage != null)
                               MetaGymGlassCard(
                                 margin: const EdgeInsets.only(bottom: 12),
@@ -541,6 +706,17 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                   ? '${_outcomes.where((item) => item.status == 'PENDING_MEMBER').length} thành quả đang chờ bạn duyệt công khai'
                                   : '${_outcomes.length} thành quả từ Coach · quản lý ẩn danh / thu hồi',
                               onTap: _openOutcomeConsent,
+                            ),
+                          ],
+                          if (canRequestTermination) ...[
+                            const SizedBox(height: 10),
+                            CoachingSecondaryButton(
+                              key: const Key('member-early-termination-btn'),
+                              label: 'Yêu cầu kết thúc sớm',
+                              expand: true,
+                              onPressed: _submittingTermination
+                                  ? null
+                                  : () => _requestEarlyTermination(current.id),
                             ),
                           ],
                           if (previousRelationships.isNotEmpty) ...[
@@ -954,6 +1130,182 @@ class _ActionRow extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CoachLockChoiceCard extends StatelessWidget {
+  const _CoachLockChoiceCard({
+    required this.choiceResult,
+    required this.noteController,
+    required this.submitting,
+    required this.onSelectChoice,
+  });
+
+  final CoachLockChoiceResult? choiceResult;
+  final TextEditingController noteController;
+  final bool submitting;
+  final ValueChanged<String> onSelectChoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = choiceResult?.memberChoice;
+
+    return CoachingGraphiteCard(
+      key: const Key('coach-lock-choice-card'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      borderColor: MetaGymTheme.warning.withValues(alpha: 0.50),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: MetaGymTheme.warning.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: MetaGymTheme.warning.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.support_agent_rounded,
+                  color: MetaGymTheme.warning,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Chọn phương án xử lý khóa Coach',
+                  style: TextStyle(
+                    color: MetaGymTheme.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Thời hạn gói Coach hiện đang tạm đóng băng (gói Gym vẫn chạy bình thường). Bạn có thể chờ Coach mở khóa hoặc yêu cầu Admin hoàn mô phỏng / chuyển Coach khác.',
+            style: TextStyle(
+              color: Color(0xFFE4DAD1),
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          if (choiceResult != null) ...[
+            const SizedBox(height: 10),
+            CoachingPill(
+              key: const Key('coach-lock-choice-status-pill'),
+              label: 'Đã chọn: ${choiceResult!.choiceLabel}',
+              tone: selected == 'REFUND'
+                  ? CoachingPillTone.coral
+                  : CoachingPillTone.info,
+              icon: Icons.check_circle_outline_rounded,
+            ),
+            if (choiceResult!.memberChoiceNote?.isNotEmpty == true) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Ghi chú đã gửi: ${choiceResult!.memberChoiceNote}',
+                style: const TextStyle(
+                  color: MetaGymTheme.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ],
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('coach-lock-choice-note'),
+            controller: noteController,
+            enabled: !submitting,
+            cursorColor: MetaGymTheme.brandOrange,
+            maxLength: 500,
+            maxLines: 2,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontSize: 13.5,
+            ),
+            decoration: InputDecoration(
+              labelText: 'Ghi chú cho Admin (không bắt buộc)',
+              labelStyle: const TextStyle(color: MetaGymTheme.textSecondary),
+              filled: true,
+              fillColor: MetaGymTheme.darkCanvas,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                borderSide: const BorderSide(color: MetaGymTheme.primary),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              key: const Key('coach-lock-wait-btn'),
+              onPressed: submitting ? null : () => onSelectChoice('WAIT'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: MetaGymTheme.textPrimary,
+                backgroundColor: selected == 'WAIT'
+                    ? MetaGymTheme.infoSteelBlue.withValues(alpha: 0.18)
+                    : MetaGymTheme.darkCanvas,
+                side: BorderSide(
+                  color: selected == 'WAIT'
+                      ? MetaGymTheme.infoSteelBlue
+                      : MetaGymTheme.cardBorder,
+                  width: selected == 'WAIT' ? 1.4 : 1,
+                ),
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: const Text('Chờ Coach mở khóa (WAIT)'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              key: const Key('coach-lock-refund-btn'),
+              onPressed: submitting ? null : () => onSelectChoice('REFUND'),
+              style: FilledButton.styleFrom(
+                backgroundColor: MetaGymTheme.primary,
+                foregroundColor: MetaGymTheme.onPrimary,
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: const Text(
+                'Yêu cầu hoàn mô phỏng / chuyển Coach (REFUND)',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

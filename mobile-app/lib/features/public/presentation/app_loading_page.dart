@@ -51,6 +51,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     with TickerProviderStateMixin {
   late final AnimationController _morphController;
   late final AnimationController _pulseController;
+  late final AnimationController _loadController;
   bool _didStartSequence = false;
 
   @override
@@ -64,11 +65,17 @@ class _AppLoadingPageState extends State<AppLoadingPage>
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     );
+    _loadController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1150),
+    );
 
     if (widget.debugProgressOverride != null) {
       _morphController.value = widget.debugProgressOverride!.clamp(0.0, 1.0);
+      _loadController.value = widget.debugProgressOverride! >= 1.0 ? 1.0 : 0.0;
     } else if (MetaGymTheme.isFlutterTestEnvironment) {
       _morphController.value = 1.0;
+      _loadController.value = 1.0;
     }
   }
 
@@ -92,6 +99,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
 
     if (MediaQuery.disableAnimationsOf(context)) {
       _morphController.value = 1.0;
+      _loadController.value = 1.0;
       await Future<void>.delayed(const Duration(milliseconds: 400));
       session?.completeSplashGate();
       return;
@@ -104,8 +112,8 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     await _morphController.forward(from: 0.0).orCancel.catchError((_) {});
     if (!mounted) return;
 
-    // Giữ trọn vẹn logo MetaGym hoàn chỉnh thêm 850ms trước khi chuyển mượt sang màn Đăng nhập
-    await Future<void>.delayed(const Duration(milliseconds: 850));
+    // Khởi chạy thanh loading 0% -> 100% sau khi animation logo hoàn tất
+    await _loadController.forward(from: 0.0).orCancel.catchError((_) {});
     if (!mounted) return;
     session?.completeSplashGate();
   }
@@ -114,6 +122,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
   void dispose() {
     _morphController.dispose();
     _pulseController.dispose();
+    _loadController.dispose();
     super.dispose();
   }
 
@@ -157,6 +166,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                         child: disableAnimations
                             ? _buildContent(
                                 morphProgress: 1.0,
+                                loadProgress: 1.0,
                                 pulse: 0.0,
                                 animatePulse: false,
                               )
@@ -164,6 +174,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                                 animation: Listenable.merge([
                                   _morphController,
                                   _pulseController,
+                                  _loadController,
                                 ]),
                                 builder: (context, _) {
                                   final t =
@@ -172,8 +183,12 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                                         1.0,
                                       ) ??
                                       _morphController.value;
+                                  final loadT = widget.debugProgressOverride != null
+                                      ? (t >= 1.0 ? 1.0 : 0.0)
+                                      : _loadController.value;
                                   return _buildContent(
                                     morphProgress: t,
+                                    loadProgress: loadT,
                                     pulse: _pulseController.value,
                                     animatePulse:
                                         widget.debugProgressOverride == null &&
@@ -195,6 +210,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
 
   Widget _buildContent({
     required double morphProgress,
+    required double loadProgress,
     required double pulse,
     required bool animatePulse,
   }) {
@@ -207,7 +223,11 @@ class _AppLoadingPageState extends State<AppLoadingPage>
       0.96,
       Curves.easeOutCubic,
     );
-    final barFade = _interval(morphProgress, 0.80, 1.0, Curves.easeOutCubic);
+    final barFade = _interval(loadProgress, 0.0, 0.16, Curves.easeOutCubic);
+    final clampedLoad = loadProgress.clamp(0.0, 1.0);
+    final barValue =
+        (0.7 * Curves.easeInOutCubic.transform(clampedLoad)) +
+        (0.3 * Curves.easeInOutSine.transform(clampedLoad));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -246,7 +266,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
           offsetY: 10,
           child: RepaintBoundary(
             child: _WarmGlassProgressBar(
-              progress: animatePulse ? breath : 0.65,
+              progress: barValue,
             ),
           ),
         ),
@@ -285,27 +305,47 @@ class _WarmGlassProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 196,
-      height: 5,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0x66A79D92), width: 1),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment(-1.0 + (2.0 * progress), 0),
-        widthFactor: 0.44,
-        child: const DecoratedBox(
+    final pct = (progress * 100).round().clamp(0, 100);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 172,
+          height: 5,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(999)),
-            gradient: LinearGradient(
-              colors: [Color(0xFFF5B041), MetaGymTheme.brandOrange],
+            color: const Color(0x80211E1C),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0x66A79D92), width: 1),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress.clamp(0.0, 1.0),
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(999)),
+                gradient: LinearGradient(
+                  colors: [MetaGymTheme.brandOrange, Color(0xFFF5B041)],
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 38,
+          child: Text(
+            '$pct%',
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: MetaGymTheme.brandOrange,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -450,31 +490,51 @@ class _MetaGymMorphPainter extends CustomPainter {
     // -------------------------------------------------------------------------
     if (progress >= 0.62) {
       final mDrawProg = _segment(progress, 0.62, 0.74, Curves.easeInOutCubic);
-      final mFontCrossfade = _segment(
-        progress,
-        0.70,
-        0.78,
-        Curves.easeOutCubic,
+      final mTp = charPainters[0];
+      final mPos = charOffsets[0];
+      mTp.text = TextSpan(
+        text: 'M',
+        style: TextStyle(
+          fontFamily: MetaGymTheme.fontFamily,
+          fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+          fontSize: 45,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
+          height: 1.0,
+          color: MetaGymTheme.brandOrange,
+        ),
       );
+      mTp.layout();
 
-      // While stroke M is drawing or crossfading into typographic 'M'
-      if (mFontCrossfade < 0.99) {
-        final strokeAlpha = 1.0 - mFontCrossfade * 0.85;
-        // Left vertical orange bar
+      if (mDrawProg >= 0.99) {
+        mTp.paint(canvas, mPos);
+      } else {
+        final maskBounds = Rect.fromLTWH(
+          mPos.dx - 12.0,
+          mPos.dy - 12.0,
+          mTp.width + 24.0,
+          mTp.height + 24.0,
+        );
+        canvas.saveLayer(maskBounds, Paint());
+        mTp.paint(canvas, mPos);
+
+        // Reveal the real typographic 'M' along the traced stroke using dstIn
+        canvas.saveLayer(
+          maskBounds,
+          Paint()..blendMode = BlendMode.dstIn,
+        );
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(
               center: Offset(mLeftStemX, center.dy),
-              width: stemW,
-              height: mBotY - mTopY,
+              width: 15.0,
+              height: mBotY - mTopY + 12.0,
             ),
-            const Radius.circular(stemW / 2),
+            const Radius.circular(7.5),
           ),
-          Paint()
-            ..color = MetaGymTheme.brandOrange.withValues(alpha: strokeAlpha),
+          Paint()..color = Colors.black,
         );
 
-        // Smooth stroke drawing of the rest of 'M' led by a directional droplet tip
         final mStrokePath = Path()
           ..moveTo(mLeftStemX, mTopY + 1.5)
           ..lineTo(mMidX, mBotY - 3.0)
@@ -485,32 +545,29 @@ class _MetaGymMorphPainter extends CustomPainter {
           canvas: canvas,
           path: mStrokePath,
           endFrac: mDrawProg,
-          strokeColor: MetaGymTheme.brandOrange.withValues(alpha: strokeAlpha),
-          strokeWidth: stemW,
-          drawGlowingTip: mDrawProg < 0.98,
+          strokeColor: Colors.black,
+          strokeWidth: 15.0,
+          drawGlowingTip: false,
         );
-      }
-
-      // Render crisp typographic 'M' crossfading in smoothly
-      if (mFontCrossfade > 0.01) {
-        canvas.save();
-        final mTp = charPainters[0];
-        final mPos = charOffsets[0];
-        mTp.text = TextSpan(
-          text: 'M',
-          style: TextStyle(
-            fontFamily: MetaGymTheme.fontFamily,
-            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-            fontSize: 45,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
-            height: 1.0,
-            color: MetaGymTheme.brandOrange.withValues(alpha: mFontCrossfade),
-          ),
-        );
-        mTp.layout();
-        mTp.paint(canvas, mPos);
         canvas.restore();
+        canvas.restore();
+
+        if (mDrawProg > 0.02 && mDrawProg < 0.98) {
+          final metrics = mStrokePath.computeMetrics().toList();
+          if (metrics.isNotEmpty) {
+            final metric = metrics.first;
+            final tangent = metric.getTangentForOffset(metric.length * mDrawProg);
+            if (tangent != null) {
+              _paintDirectionalCometDroplet(
+                canvas: canvas,
+                position: tangent.position,
+                angle: math.atan2(-tangent.vector.dy, tangent.vector.dx),
+                length: 14.0,
+                radius: 4.4,
+              );
+            }
+          }
+        }
       }
 
       // Lần lượt hiện các chữ cái: e -> t -> a -> G (Cam) -> y -> m
@@ -605,6 +662,67 @@ class _MetaGymMorphPainter extends CustomPainter {
             ..strokeCap = StrokeCap.round,
         );
       }
+
+      // Hiệu ứng sáng đường chéo lướt từ trái sang phải trên toàn bộ logo
+      final sheenT = _segment(
+        progress,
+        0.89,
+        1.0,
+        Curves.easeInOutCubic,
+      );
+      if (sheenT > 0.0 && sheenT < 1.0) {
+        final sheenBounds = Rect.fromLTWH(
+          wordStartX - 24.0,
+          center.dy - 40.0,
+          totalWordWidth + 48.0,
+          80.0,
+        );
+        canvas.saveLayer(sheenBounds, Paint());
+        for (var i = 0; i < _wordChars.length; i++) {
+          charPainters[i]
+            ..text = TextSpan(
+              text: _wordChars[i],
+              style: TextStyle(
+                fontFamily: MetaGymTheme.fontFamily,
+                fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                fontSize: 45,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+                height: 1.0,
+                color: Colors.white,
+              ),
+            )
+            ..layout()
+            ..paint(canvas, charOffsets[i]);
+        }
+        canvas.saveLayer(
+          sheenBounds,
+          Paint()..blendMode = BlendMode.srcIn,
+        );
+        final beamX = ui.lerpDouble(
+          sheenBounds.left - 40.0,
+          sheenBounds.right + 40.0,
+          sheenT,
+        )!;
+        canvas.drawRect(
+          sheenBounds,
+          Paint()
+            ..shader = ui.Gradient.linear(
+              Offset(beamX - 34.0, sheenBounds.top),
+              Offset(beamX + 56.0, sheenBounds.bottom),
+              const [
+                Color(0x00FFFFFF),
+                Color(0x40FFFFFF),
+                Color(0xEBFFF8E8),
+                Color(0x40FFFFFF),
+                Color(0x00FFFFFF),
+              ],
+              const [0.0, 0.35, 0.5, 0.65, 1.0],
+            ),
+        );
+        canvas.restore();
+        canvas.restore();
+      }
     }
   }
 
@@ -677,12 +795,12 @@ class _MetaGymMorphPainter extends CustomPainter {
 
     final topColor = Color.lerp(
       const Color(0xFFFFFDF7),
-      const Color(0xFFFFC44D),
+      MetaGymTheme.brandOrange,
       warmColorMix,
     )!;
     final botColor = Color.lerp(
       const Color(0xFFFFE5B4),
-      MetaGymTheme.brandOrange,
+      const Color(0xFFE84E27),
       warmColorMix,
     )!;
 
@@ -780,51 +898,49 @@ class _MetaGymMorphPainter extends CustomPainter {
         const Offset(0, -56),
         const Offset(0, 44),
         const [
-          Color(0xFFFFC145),
-          Color(0xFFF59E0B),
           MetaGymTheme.brandOrange,
+          MetaGymTheme.brandOrange,
+          Color(0xFFE84E27),
         ],
-        const [0.0, 0.55, 1.0],
+        const [0.0, 0.68, 1.0],
       );
 
-    // 1. Thân V-Taper (Inverted Teardrop Shield):
-    // Khi m = 0: Giọt nước ngược bầu ở trên (topW = 16.5), thon ở dưới (botY = 22)
-    // Khi m = 1: Thân V-Taper vai rộng (topW = 28), đáy vát tròn uy lực (botY = 39)
-    final topY = ui.lerpDouble(-18.0, -21.0, m)!;
-    final botY = ui.lerpDouble(22.0, 39.0, m)!;
-    final topW = ui.lerpDouble(16.5, 28.0 + flexWave * 1.2, m)!;
-    final midW = ui.lerpDouble(13.5, 22.5 + flexWave * 0.8, m)!;
+    // 1. Thân V-Taper (Inverted Teardrop Shield) vạm vỡ hơn:
+    final topY = ui.lerpDouble(-18.0, -22.0, m)!;
+    final botY = ui.lerpDouble(22.0, 40.0, m)!;
+    final topW = ui.lerpDouble(16.5, 33.0 + flexWave * 1.6, m)!;
+    final midW = ui.lerpDouble(13.5, 25.0 + flexWave * 1.0, m)!;
 
     final torsoPath = Path()
       ..moveTo(0, topY)
       ..cubicTo(
-        topW * 0.55,
+        topW * 0.58,
         topY,
         topW,
-        topY + 2.5,
+        topY + 3.5,
         topW * 0.96,
-        topY + 13.0,
+        topY + 15.0,
       )
       ..cubicTo(
         midW,
-        10.0,
-        8.5,
+        11.0,
+        10.5,
         botY - 6.0,
         0,
         botY,
       )
       ..cubicTo(
-        -8.5,
+        -10.5,
         botY - 6.0,
         -midW,
-        10.0,
+        11.0,
         -topW * 0.96,
-        topY + 13.0,
+        topY + 15.0,
       )
       ..cubicTo(
         -topW,
-        topY + 2.5,
-        -topW * 0.55,
+        topY + 3.5,
+        -topW * 0.58,
         topY,
         0,
         topY,
@@ -833,108 +949,127 @@ class _MetaGymMorphPainter extends CustomPainter {
 
     canvas.drawPath(torsoPath, fillPaint);
 
-    // 2. Đầu tròn tách từ đỉnh thân lên trên cổ (có khoảng hở rõ ràng như frame 1.28s -> 2.12s)
+    // 2. Đầu tròn tách từ đỉnh thân lên trên cổ
     if (m > 0.05) {
       final headT = _segment(m, 0.05, 0.88, Curves.easeOutCubic);
-      final headY = ui.lerpDouble(-10.0, -37.5 - overshoot * 14.0, headT)!;
-      final headRadius = ui.lerpDouble(8.0, 12.2, headT)!;
+      final headY = ui.lerpDouble(-10.0, -38.5 - overshoot * 14.0, headT)!;
+      final headRadius = ui.lerpDouble(8.0, 12.5, headT)!;
       canvas.drawCircle(Offset(0, headY), headRadius, fillPaint);
     }
 
-    // 3. Hai cánh tay mọc từ hông (1.04s), vươn ngang (1.16s) rồi gập lên gồng cơ (1.28s -> 2.12s)
-    // Khi thu gọn (collapsePhase > 0): Cẳng tay gập xuống vai trước (2.36s) rồi rút gọn vào thân (2.48s)
+    // 3. Hai cánh tay vạm vỡ & 2 nắm đấm (Double Front Biceps)
     if (m > 0.04) {
       final spreadT = _segment(m, 0.04, 0.55, Curves.easeOutCubic);
       final curlT = _segment(m, 0.36, 1.0, Curves.easeOutBack);
+      final curlClamped = _clamp(curlT, 0.0, 1.15);
 
       for (final dir in const [-1.0, 1.0]) {
         canvas.save();
         canvas.scale(dir, 1.0);
 
-        // Điểm gốc nối liền vào vai/thân trên
-        final shoulderTopY = ui.lerpDouble(0.0, -19.5, spreadT)!;
-        final shoulderBotY = ui.lerpDouble(12.0, -3.5, spreadT)!;
-        final shoulderX = ui.lerpDouble(11.0, 21.0, spreadT)!;
+        final shoulderTopY = ui.lerpDouble(0.0, -20.5, spreadT)!;
+        final shoulderBotY = ui.lerpDouble(12.0, -1.5, spreadT)!;
+        final shoulderX = ui.lerpDouble(11.0, 23.5, spreadT)!;
 
-        // Khuỷu tay (elbow): lúc mới nhú (1.04s) chúc xuống (+11), sau đó nâng ngang vai (-8..-14)
-        final elbowX = ui.lerpDouble(15.0, 49.0 + flexWave * 1.5, spreadT)!;
+        final elbowX = ui.lerpDouble(15.0, 55.0 + flexWave * 1.8, spreadT)!;
         final elbowY = ui.lerpDouble(
           12.0,
-          ui.lerpDouble(5.0, -10.0 - flexWave * 1.2, curlT)!,
+          ui.lerpDouble(6.0, -8.0 - flexWave * 1.2, curlT)!,
           spreadT,
         )!;
 
-        // Cổ tay & nắm đấm (fist):
-        // - Khi curlT = 0 (1.04s - 1.16s): vươn ra ngoài/dưới
-        // - Khi curlT = 1 (1.28s - 2.12s): cuộn cao lên (-39) và hướng nhẹ vào đầu (x = 41)
-        final fistX = ui.lerpDouble(
-          ui.lerpDouble(17.0, 52.0, spreadT)!,
-          41.5 - flexWave * 1.2,
-          _clamp(curlT, 0.0, 1.15),
+        final wristX = ui.lerpDouble(
+          ui.lerpDouble(17.0, 56.0, spreadT)!,
+          44.0 - flexWave * 1.2,
+          curlClamped,
         )!;
-        final fistY = ui.lerpDouble(
+        final wristY = ui.lerpDouble(
           ui.lerpDouble(14.0, 2.0, spreadT)!,
-          -39.0 - overshoot * 18.0 - flexWave * 1.8,
-          _clamp(curlT, 0.0, 1.15),
+          -34.0 - overshoot * 18.0 - flexWave * 1.8,
+          curlClamped,
         )!;
 
-        // Đỉnh cơ chuột (bicep peak) phồng lên khi gập tay
-        final bicepPeakX = ui.lerpDouble(18.0, 33.5, spreadT)!;
+        final bicepPeakX = ui.lerpDouble(18.0, 37.5, spreadT)!;
         final bicepPeakY = ui.lerpDouble(
           4.0,
-          -22.5 - flexWave * 2.0,
+          -26.0 - flexWave * 2.4,
           _clamp(curlT, 0.0, 1.1),
         )!;
 
-        final fistRadius = ui.lerpDouble(3.5, 6.8, _clamp(spreadT))!;
-
         final armPath = Path()
           ..moveTo(shoulderX, shoulderTopY)
-          // Đường cong trên của vai + đỉnh cơ Bicep chạy tới mặt trong cổ tay
           ..cubicTo(
             bicepPeakX - 5.0,
             bicepPeakY,
-            bicepPeakX + 3.0,
-            bicepPeakY + 1.5,
-            elbowX - 11.5,
-            elbowY - 8.5,
+            bicepPeakX + 4.0,
+            bicepPeakY + 2.0,
+            elbowX - 13.0,
+            elbowY - 9.5,
           )
-          // Mặt trong cẳng tay vươn lên nắm đấm cuộn vào trong
           ..cubicTo(
-            elbowX - 11.0,
-            ui.lerpDouble(elbowY - 4.0, fistY + 12.0, _clamp(curlT))!,
-            fistX - fistRadius * 1.1,
-            fistY + 4.0,
-            fistX - fistRadius * 0.7,
-            fistY,
+            elbowX - 12.5,
+            ui.lerpDouble(elbowY - 3.0, wristY + 13.0, _clamp(curlT))!,
+            wristX - 6.5,
+            wristY + 4.0,
+            wristX - 4.5,
+            wristY,
           )
-          // Vòm tròn nắm đấm (fist)
-          ..arcToPoint(
-            Offset(fistX + fistRadius * 0.9, fistY + 2.0),
-            radius: Radius.circular(fistRadius),
-            clockwise: true,
-          )
-          // Mặt ngoài cẳng tay chạy xuống khuỷu tay ngoài
+          ..lineTo(wristX + 4.5, wristY + 1.0)
           ..cubicTo(
-            elbowX + 4.5,
-            ui.lerpDouble(elbowY, fistY + 16.0, _clamp(curlT))!,
-            elbowX + 4.0,
-            elbowY - 4.0,
-            elbowX,
-            elbowY + 3.5,
+            elbowX + 6.5,
+            ui.lerpDouble(elbowY + 2.0, wristY + 18.0, _clamp(curlT))!,
+            elbowX + 6.0,
+            elbowY - 3.0,
+            elbowX + 1.5,
+            elbowY + 5.0,
           )
-          // Mặt dưới bắp tay (tricep) nối mượt về nách/thân V-Taper
           ..cubicTo(
             elbowX - 6.0,
-            elbowY + 9.0,
-            shoulderX + 10.0,
-            shoulderBotY + 2.0,
+            elbowY + 11.0,
+            shoulderX + 12.0,
+            shoulderBotY + 3.0,
             shoulderX - 2.0,
             shoulderBotY,
           )
           ..close();
 
         canvas.drawPath(armPath, fillPaint);
+
+        // Nắm đấm (clenched fist) ở cổ tay
+        final fistScale = _clamp(spreadT * 1.15, 0.25, 1.0);
+        final fistAngle = ui.lerpDouble(0.15, -0.28, curlClamped)!;
+        canvas.save();
+        canvas.translate(wristX, wristY - 3.5 * fistScale);
+        canvas.rotate(fistAngle);
+        canvas.scale(fistScale, fistScale);
+
+        final fistPath = Path()
+          ..moveTo(-7.5, 4.5)
+          ..cubicTo(-9.0, 1.5, -9.0, -4.5, -6.5, -6.5)
+          ..quadraticBezierTo(-4.0, -8.5, -1.5, -7.0)
+          ..quadraticBezierTo(1.0, -8.5, 3.5, -7.0)
+          ..quadraticBezierTo(6.5, -8.2, 8.0, -5.2)
+          ..cubicTo(9.5, -2.5, 9.0, 3.0, 6.5, 5.2)
+          ..cubicTo(4.0, 7.0, -3.5, 7.0, -7.5, 4.5)
+          ..close();
+
+        canvas.drawPath(fistPath, fillPaint);
+
+        if (spreadT > 0.35) {
+          final creasePaint = Paint()
+            ..style = PaintingStyle.stroke
+            ..color = const Color(0x7A0F1115)
+            ..strokeWidth = 1.5
+            ..strokeCap = StrokeCap.round;
+          final creasePath = Path()
+            ..moveTo(-4.5, -1.5)
+            ..quadraticBezierTo(0.0, -0.5, 4.5, -1.5)
+            ..moveTo(-5.5, 2.2)
+            ..quadraticBezierTo(-1.5, 3.8, 1.5, 1.2);
+          canvas.drawPath(creasePath, creasePaint);
+        }
+
+        canvas.restore();
         canvas.restore();
       }
     }
