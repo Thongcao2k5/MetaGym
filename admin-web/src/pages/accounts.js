@@ -367,7 +367,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     section,
     topbarActionsHtml: activeRole === 'COACH'
       ? `<button type="button" class="btn btn-primary" id="create">${icon('plus', 16)} Tạo Coach</button>`
-      : '',
+      : `<button type="button" class="btn btn-primary" id="create-member">${icon('plus', 16)} Tạo hội viên</button>`,
     contentHtml: `<div class="stack-20">${tabsHtml}${filterHtml}<div id="acc-table-region">${renderTableSkeleton(6)}</div></div>`,
   });
 
@@ -901,8 +901,75 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       });
     };
 
+    const openCreateMemberModal = () => {
+      openModal({
+        title: 'Tạo tài khoản Hội viên mới',
+        subtitle: 'Giao diện mẫu — sẵn sàng để kết nối API tạo hội viên',
+        bodyHtml: `<form id="create-member-form" novalidate>
+          <div class="meta-modal-body">
+            ${renderBanner({
+              kind: 'info',
+              iconName: 'info',
+              title: 'Chế độ giao diện (UI)',
+              text: 'Biểu mẫu đã dựng sẵn các trường thông tin cơ bản để gắn API tạo hội viên.',
+            })}
+            <div class="field">
+              <label class="field-label" for="cm-fullName">Họ và tên</label>
+              <input id="cm-fullName" class="form-control" name="fullName" required minlength="2" maxlength="120" placeholder="Ví dụ: Nguyễn Minh Anh" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="cm-email">Email đăng nhập</label>
+              <input id="cm-email" class="form-control" name="email" type="email" required placeholder="member@metagym.vn" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="cm-phone">Số điện thoại</label>
+              <input id="cm-phone" class="form-control tabular" name="phone" type="tel" maxlength="20" placeholder="Ví dụ: 0901234567" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="cm-password">Mật khẩu ban đầu</label>
+              <input id="cm-password" class="form-control" name="password" type="password" required minlength="8" placeholder="Tối thiểu 8 ký tự (hoa, thường, số)" />
+              <span class="field-hint">Yêu cầu: tối thiểu 8 ký tự, chứa ít nhất 1 chữ hoa (A–Z), 1 chữ thường (a–z) và 1 chữ số (0–9).</span>
+            </div>
+          </div>
+          <div class="meta-modal-footer">
+            <button type="button" class="btn btn-ghost" data-close-modal>Hủy</button>
+            <button type="submit" class="btn btn-primary" data-modal-submit>${icon('plus', 16)} Tạo hội viên</button>
+          </div>
+        </form>`,
+        onMount(ctrl) {
+          const form = ctrl.dialog.querySelector('#create-member-form');
+          form.onsubmit = (event) => {
+            event.preventDefault();
+            ctrl.showError('');
+            const fullName = (form.querySelector('[name="fullName"]')?.value || '').trim();
+            const email = (form.querySelector('[name="email"]')?.value || '').trim();
+            const password = form.querySelector('[name="password"]')?.value || '';
+
+            if (fullName.length < 2) {
+              ctrl.showError('Họ và tên phải có ít nhất 2 ký tự.');
+              return;
+            }
+            if (!email || !email.includes('@')) {
+              ctrl.showError('Email đăng nhập không hợp lệ.');
+              return;
+            }
+            if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+              ctrl.showError('Mật khẩu cần ít nhất 8 ký tự gồm chữ hoa, chữ thường và chữ số.');
+              return;
+            }
+
+            ctrl.close();
+            toast(`UI mẫu: Đã kiểm tra thông tin hội viên ${fullName} (chưa kết nối API).`, 'info');
+          };
+        },
+      });
+    };
+
     const createBtn = root.querySelector('#create');
     if (createBtn) createBtn.onclick = openCreateCoachModal;
+
+    const createMemberBtn = root.querySelector('#create-member');
+    if (createMemberBtn) createMemberBtn.onclick = openCreateMemberModal;
 
     root.querySelectorAll('.edit').forEach((btn) => {
       btn.onclick = () => openEditModal(rows.find((r) => r.id === btn.dataset.id));
