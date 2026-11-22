@@ -79,7 +79,7 @@
   <div class="flow-toast" id="flow-toast"></div>
 
   <!-- Modular Screen Registries -->
-  <script src="./screens/auth.screens.js?v=20261122c"></script>
+  <script src="./screens/auth.screens.js?v=20261122j"></script>
   <script src="./screens/member/tab1-home.js?v=20261122i"></script>
   <script src="./screens/member/tab2-training.js?v=20261122d"></script>
   <script src="./screens/member/tab2-training.js?v=20261122e"></script>
@@ -125,6 +125,7 @@
       'auth-register': 'auth-login',
       'auth-terms': 'auth-login',
       'auth-privacy-policy': 'auth-login',
+      'auth-system-modals': 'auth-login',
       'member-membership': 'member-home',
       'member-membership-empty': 'member-home',
       'member-checkout': 'member-membership-empty',
@@ -457,6 +458,14 @@
       if (openAvatar) {
         e.stopPropagation();
         openAvatarPickerModal(openAvatar.closest('.phone'));
+        return;
+      }
+
+      // System State & Alert Modals (6. Modal Trạng thái Hệ thống)
+      const sysModalBtn = e.target.closest('[data-open-sys-modal]');
+      if (sysModalBtn) {
+        e.stopPropagation();
+        openSystemStateModal(sysModalBtn.closest('.phone'), sysModalBtn.dataset.openSysModal);
         return;
       }
 
@@ -2514,6 +2523,106 @@
           }
           overlay.remove();
           openSaveSuccessModal(phone, `Đổi ưu đãi: ${title} (−${cost} điểm)`, 'Đổi điểm');
+        }
+      });
+      phone.appendChild(overlay);
+    }
+
+    // 6m. System State & Alert Modals (Maintenance · Coming Soon · Error · Update · Offline · Session)
+    function openSystemStateModal(phone, kind) {
+      if (!phone) return;
+      phone.querySelector('.sys-state-overlay')?.remove();
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay open sys-state-overlay';
+
+      const specs = {
+        maintenance: {
+          icon: '../../meta-gym/assets/svg/states/state_maintenance.svg',
+          ringBg: 'rgba(245,176,65,0.16)', ringBorder: 'rgba(245,176,65,0.55)',
+          pill: '● Bảo trì định kỳ', pillCls: 'pill-orange',
+          title: 'Hệ thống đang cập nhật',
+          desc: 'Meta Gym đang nâng cấp máy chủ để tăng tốc độ đồng bộ dữ liệu tập luyện và điểm danh NFC.',
+          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:#8E95A5;">Thời gian dự kiến</span><strong style="color:#F5B041;">23:00 – 01:00 hôm nay</strong></div>`,
+          secLbl: 'Đóng', priLbl: 'Thử lại sau', priToast: 'Hệ thống vẫn đang nâng cấp, vui lòng thử lại sau ít phút'
+        },
+        'coming-soon': {
+          icon: '../../meta-gym/assets/svg/states/state_coming_soon.svg',
+          ringBg: 'rgba(112,174,232,0.16)', ringBorder: 'rgba(112,174,232,0.55)',
+          pill: '✦ Sắp ra mắt', pillCls: 'pill-muted',
+          title: 'Tính năng đang phát triển',
+          desc: 'Đồng bộ Apple Watch / Garmin & Bảng xếp hạng Thử thách Cộng đồng sẽ sớm có mặt ở phiên bản tiếp theo.',
+          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:#8E95A5;">Dự kiến phát hành</span><strong style="color:#70AEE8;">Phiên bản v1.2.0</strong></div>`,
+          secLbl: 'Để sau', priLbl: 'Nhắc tôi khi có', priToast: 'Đã đăng ký nhận thông báo khi tính năng ra mắt!'
+        },
+        error: {
+          icon: '../../meta-gym/assets/svg/states/state_error.svg',
+          ringBg: 'rgba(241,91,100,0.16)', ringBorder: 'rgba(241,91,100,0.55)',
+          pill: '● Mã lỗi ERR-503', pillCls: 'pill-orange',
+          title: 'Đã xảy ra lỗi hệ thống',
+          desc: 'Không thể tải dữ liệu lúc này do máy chủ đang quá tải. Dữ liệu tập luyện của bạn vẫn an toàn.',
+          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:#8E95A5;">Mã đối chiếu</span><strong style="color:#F15B64;">#REQ-261122-9F</strong></div>`,
+          secLbl: 'Báo hỗ trợ', priLbl: 'Thử lại ngay', secAction: 'support', priToast: 'Đang kết nối lại máy chủ Meta Gym...'
+        },
+        update: {
+          icon: '../../meta-gym/assets/svg/states/state_update.svg',
+          ringBg: 'rgba(46,204,113,0.16)', ringBorder: 'rgba(46,204,113,0.55)',
+          pill: '● Bản mới v1.1.0', pillCls: 'pill-success',
+          title: 'Có bản cập nhật mới!',
+          desc: 'Cập nhật Meta Gym v1.1.0 để trải nghiệm Cân đĩa tạ Olympic, thanh toán 4 cổng và hiệu năng mượt hơn 30%.',
+          infoHtml: `<div style="font-size:11px;color:#C8C2BC;text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
+          secLbl: 'Để sau', priLbl: 'Cập nhật ngay', priToast: 'Đang mở App Store / Google Play để cập nhật v1.1.0...'
+        },
+        offline: {
+          icon: '../../meta-gym/assets/svg/states/state_no_network.svg',
+          ringBg: 'rgba(169,199,232,0.14)', ringBorder: 'rgba(169,199,232,0.45)',
+          pill: '● Ngoại tuyến', pillCls: 'pill-muted',
+          title: 'Mất kết nối mạng',
+          desc: 'Vui lòng kiểm tra lại kết nối Wi-Fi hoặc dữ liệu di động 4G/5G để tiếp tục đồng bộ với Meta Gym.',
+          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:#8E95A5;">Trạng thái mạng</span><strong style="color:#F15B64;">Không có Internet</strong></div>`,
+          secLbl: 'Đóng', priLbl: 'Kiểm tra lại', priToast: 'Đã khôi phục kết nối mạng thành công!'
+        },
+        session: {
+          icon: '../../meta-gym/assets/svg/states/state_warning.svg',
+          ringBg: 'rgba(245,176,65,0.16)', ringBorder: 'rgba(245,176,65,0.55)',
+          pill: '● Bảo mật phiên', pillCls: 'pill-orange',
+          title: 'Phiên đăng nhập hết hạn',
+          desc: 'Vì lý do bảo mật tài khoản, phiên đăng nhập của bạn đã hết hiệu lực. Vui lòng đăng nhập lại bằng Mật khẩu hoặc Face ID.',
+          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:#8E95A5;">Tài khoản</span><strong style="color:#F7F9FC;">minhquan@metagym.vn</strong></div>`,
+          secLbl: 'Đóng', priLbl: 'Đăng nhập lại →', priAction: 'login'
+        }
+      };
+
+      const s = specs[kind] || specs.maintenance;
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:center;padding:22px 18px 18px;">
+          <div style="width:72px;height:72px;border-radius:50%;margin:0 auto 12px;background:${s.ringBg};border:1.8px solid ${s.ringBorder};display:flex;align-items:center;justify-content:center;">
+            <img class="ico-lg" src="${s.icon}" alt="${s.title}" style="width:40px;height:40px;background:transparent;padding:0;" />
+          </div>
+          <span class="pill ${s.pillCls}" style="margin-bottom:8px;">${s.pill}</span>
+          <div style="font-size:17.5px;font-weight:800;color:#F7F9FC;margin-top:4px;">${s.title}</div>
+          <div style="font-size:12.5px;color:#9BA3B4;margin:6px 0 12px;line-height:1.5;">${s.desc}</div>
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
+            ${s.infoHtml}
+          </div>
+          <div class="grid-2" style="gap:10px;">
+            <button type="button" class="btn-secondary" style="height:44px;" data-sys-sec>${s.secLbl}</button>
+            <button type="button" class="btn-primary" style="height:44px;" data-sys-pri>${s.priLbl}</button>
+          </div>
+        </div>
+      `;
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay) { overlay.remove(); return; }
+        if (ev.target.closest('[data-sys-sec]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          if (s.secAction === 'support') openSupportContactModal(phone);
+          return;
+        }
+        if (ev.target.closest('[data-sys-pri]')) {
+          ev.stopPropagation();
+          overlay.remove();
+          if (s.priAction === 'login') navigateToScreen('auth-login');
+          else if (s.priToast) showFlowToast(s.priToast);
         }
       });
       phone.appendChild(overlay);

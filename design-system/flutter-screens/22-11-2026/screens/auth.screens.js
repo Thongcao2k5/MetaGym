@@ -372,5 +372,118 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
         </div>
       </div>
     `
+  },
+  {
+    id: 'auth-system-modals',
+    group: 'auth',
+    groupLabel: 'Khởi động & Xác thực',
+    title: '6. Modal Trạng thái Hệ thống',
+    shortFile: 'system_state_modals.dart',
+    flutterFile: 'mobile-app/lib/shared/widgets/system_state_modals.dart',
+    tag: '6 Modal Hệ thống',
+    tagClass: '',
+    status: 'Đang review',
+    html: `
+<div class="phone">
+        <div class="phone-bg-photo"></div>
+        <div class="phone-scrim"></div>
+        <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
+
+        <div class="phone-body no-nav">
+          <div class="mg-header">
+            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
+            <div class="mg-header-text">
+              <div class="mg-eyebrow">SYSTEM STATES &amp; ALERTS</div>
+              <div class="mg-title">Modal Hệ thống</div>
+            </div>
+          </div>
+
+          <div class="card-warm-glass" style="padding:11px 13px;margin-bottom:12px;">
+            <div class="txt-sm txt-bold">Bộ 6 Modal chuẩn Meta Gym</div>
+            <div class="txt-xs" style="margin-top:2px;">Bấm trực tiếp vào từng mục bên dưới để xem trước hiệu ứng Level 3 Overlay Glass</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="card-solid" data-open-sys-modal="maintenance" style="padding:12px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(245,176,65,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_maintenance.svg" alt="Bảo trì" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Hệ thống đang bảo trì</div>
+                    <div class="txt-xs">Thông báo khung giờ nâng cấp máy chủ</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+
+            <div class="card-solid" data-open-sys-modal="coming-soon" style="padding:12px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(112,174,232,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_coming_soon.svg" alt="Sắp ra mắt" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Tính năng sắp ra mắt</div>
+                    <div class="txt-xs">Coming soon · Đăng ký nhận thông báo</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+
+            <div class="card-solid" data-open-sys-modal="error" style="padding:12px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(241,91,100,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_error.svg" alt="Lỗi" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Lỗi hệ thống (500 / 503)</div>
+                    <div class="txt-xs">Mã lỗi + Nút Thử lại &amp; Báo hỗ trợ</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+
+            <div class="card-solid" data-open-sys-modal="update" style="padding:12px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(46,204,113,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_update.svg" alt="Cập nhật" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Có bản cập nhật mới</div>
+                    <div class="txt-xs tnum">Meta Gym v1.1.0 · Ghi chú phiên bản</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+
+            <div class="card-solid" data-open-sys-modal="offline" style="padding:12px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(169,199,232,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_no_network.svg" alt="Mất mạng" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Mất kết nối mạng</div>
+                    <div class="txt-xs">Không có Wi-Fi / 4G · Kiểm tra lại</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+
+            <div class="card-solid" data-open-sys-modal="session" style="padding:12px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <div class="quick-ico" style="background:rgba(245,176,65,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_warning.svg" alt="Hết phiên" /></div>
+                  <div>
+                    <div class="txt-sm txt-bold">Phiên đăng nhập hết hạn</div>
+                    <div class="txt-xs">Bảo mật tài khoản · Đăng nhập lại</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
   }
 ]);
