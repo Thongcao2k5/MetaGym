@@ -6,6 +6,25 @@ import { esc } from './format.js';
  *
  * columns: [{ key, label, align?: 'left'|'right', render?: (row) => html }]
  */
+function ensureExpandDelegation() {
+  if (typeof globalThis.document?.addEventListener !== 'function') return;
+  if (globalThis.__metaTableExpandBound) return;
+  globalThis.__metaTableExpandBound = true;
+  globalThis.document.addEventListener('click', (event) => {
+    const btn = event.target?.closest?.('[data-row-expand]');
+    if (!btn) return;
+    const tr = btn.closest?.('tr');
+    if (!tr) return;
+    const expanded = tr.classList.toggle('is-expanded');
+    btn.setAttribute?.('aria-expanded', String(expanded));
+    const count = btn.getAttribute?.('data-secondary-count') || '';
+    const labelEl = btn.querySelector?.('span');
+    if (labelEl) {
+      labelEl.textContent = expanded ? 'Thu gọn' : `Xem thêm (${count})`;
+    }
+  });
+}
+
 export function renderDataTable({
   columns = [],
   rows = [],
@@ -17,7 +36,10 @@ export function renderDataTable({
   rowId = (row, idx) => row?.id ?? String(idx),
 } = {}) {
   if (!rows.length) return emptyHtml;
+  ensureExpandDelegation();
 
+  const hasSecondary = columns.length >= 3;
+  const secondaryCount = Math.max(0, columns.length - 2);
   const selectHead = selectable
     ? '<th class="col-check"><input type="checkbox" class="table-check" data-select-all aria-label="Chọn tất cả" title="Chọn tất cả" /></th>'
     : '';
@@ -29,12 +51,20 @@ export function renderDataTable({
     const selectCell = selectable
       ? `<td class="col-check" data-label="Chọn"><input type="checkbox" class="table-check" data-select-row="${esc(id)}" aria-label="Chọn dòng" /></td>`
       : '';
-    const cells = columns.map((col) => {
+    const cells = columns.map((col, colIdx) => {
       const html = typeof col.render === 'function' ? col.render(row, idx) : esc(row[col.key] ?? '—');
-      const alignCls = col.align === 'right' ? ' class="text-right"' : '';
-      return `<td data-label="${esc(col.label)}"${alignCls}>${html}</td>`;
+      const classes = [];
+      if (col.align === 'right') classes.push('text-right');
+      if (colIdx === 0) classes.push('col-primary');
+      else if (colIdx === columns.length - 1) classes.push('col-last');
+      else classes.push('col-secondary');
+      const clsAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
+      return `<td data-label="${esc(col.label)}"${clsAttr}>${html}</td>`;
     }).join('');
-    return `<tr${attrs ? ` ${attrs}` : ''}>${selectCell}${cells}</tr>`;
+    const toggleCell = hasSecondary
+      ? `<td class="mobile-row-toggle-cell"><button type="button" class="mobile-row-toggle-btn" data-row-expand data-secondary-count="${secondaryCount}" aria-expanded="false"><span>Xem thêm (${secondaryCount})</span></button></td>`
+      : '';
+    return `<tr${attrs ? ` ${attrs}` : ''}>${selectCell}${cells}${toggleCell}</tr>`;
   }).join('');
 
   return `<div class="table-card">

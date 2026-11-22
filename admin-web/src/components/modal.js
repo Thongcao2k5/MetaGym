@@ -145,6 +145,48 @@ export function openModal({
   return controller;
 }
 
+export function openAlertModal({
+  kind = 'info',
+  title = 'Thông báo',
+  heading = '',
+  message = '',
+  hint = '',
+  confirmLabel = 'Đã hiểu',
+  cancelLabel = '',
+  onConfirm = null,
+  maxWidth = '440px',
+} = {}) {
+  const tone = kind === 'warning' ? 'warn'
+    : kind === 'success' || kind === 'warn' || kind === 'danger' ? kind : 'info';
+  const iconName = tone === 'success' ? 'check'
+    : tone === 'warn' || tone === 'danger' ? 'alert' : 'info';
+  const confirmCls = tone === 'danger' ? 'btn-danger-solid' : 'btn-primary';
+
+  return openModal({
+    title,
+    maxWidth,
+    bodyHtml: `<div class="modal-tone-wrap">
+      <div class="modal-tone-badge is-${tone}" aria-hidden="true">${icon(iconName, 26)}</div>
+      ${heading ? `<h3 class="modal-tone-heading">${esc(heading)}</h3>` : ''}
+      ${message ? `<p class="modal-tone-msg">${esc(message)}</p>` : ''}
+      ${hint ? `<p class="modal-tone-hint">${esc(hint)}</p>` : ''}
+    </div>`,
+    footerHtml: `
+      ${cancelLabel ? `<button type="button" class="btn btn-ghost" data-close-modal>${esc(cancelLabel)}</button>` : ''}
+      <button type="button" class="btn ${confirmCls}" id="alert-modal-confirm">${esc(confirmLabel)}</button>
+    `,
+    onMount: (modal) => {
+      const btn = modal.dialog.querySelector?.('#alert-modal-confirm');
+      if (btn) {
+        btn.onclick = () => {
+          modal.close();
+          if (typeof onConfirm === 'function') onConfirm();
+        };
+      }
+    },
+  });
+}
+
 /**
  * Accessible custom confirmation modal replacing native browser dialogs.
  * Supports optional mandatory reason field with live char counter (1..maxLength).

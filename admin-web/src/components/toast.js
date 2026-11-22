@@ -38,9 +38,12 @@ export function toast(message, kind = 'success', { duration = 3500 } = {}) {
   }
 
   const el = document.createElement('div');
-  el.className = `meta-toast ${tone === 'warn' || tone === 'danger' || tone === 'info' ? tone : ''}`.trim();
+  const toneCls = tone === 'warn' || tone === 'danger' || tone === 'info' ? tone : 'success';
+  const toneIcon = toneCls === 'danger' || toneCls === 'warn' ? 'alert'
+    : toneCls === 'info' ? 'info' : 'check';
+  el.className = `meta-toast ${toneCls}`.trim();
   el.setAttribute('role', tone === 'danger' ? 'alert' : 'status');
-  el.innerHTML = `<span class="toast-msg">${esc(message)} <span class="toast-repeat-count tabular" aria-hidden="true"></span></span><button type="button" class="btn btn-ghost btn-icon" aria-label="Đóng thông báo">${icon('close', 16)}</button>`;
+  el.innerHTML = `<span class="toast-icon" aria-hidden="true">${icon(toneIcon, 18)}</span><span class="toast-msg">${esc(message)} <span class="toast-repeat-count tabular" aria-hidden="true"></span></span><button type="button" class="btn btn-ghost btn-icon toast-close-btn" aria-label="Đóng thông báo">${icon('close', 16)}</button>`;
 
   const entry = { el, count: 1, timer: null, removeTimer: null };
   activeToasts.set(key, entry);
