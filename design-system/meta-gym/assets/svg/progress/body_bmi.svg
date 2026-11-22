@@ -1,20 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="prog-bmi-blush" x1="8" y1="10" x2="36" y2="38" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
-      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
-    </linearGradient>
-    <linearGradient id="prog-bmi-pose" x1="12" y1="11" x2="28" y2="37" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F7F9FC" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.38"/>
+    <linearGradient id="prg-bmi-blush" x1="8" y1="10" x2="40" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <!-- Body BMI Index (Athletic Proportion Silhouette Pose #15 + Height Ruler & Gauge Dial) -->
-  <rect x="8" y="10" width="24" height="28" rx="6" fill="url(#prog-bmi-blush)"/>
-  <path d="M9 10V38M9 15H12.5M9 21H14M9 27H12.5M9 33H14" stroke="#E8EDF5" stroke-width="2" stroke-linecap="round"/>
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M21.8 10C22.1 9.9 22.5 10 22.8 10.1 23.1 10.3 23.3 10.6 23.5 11 23.6 11.4 23.7 11.8 23.6 12.3 23.5 12.9 22.6 13.5 22.8 14.2 23.1 14.8 24.4 14.4 25.1 16.3 25.8 18.2 26.9 24 27 25.6 27.2 27.3 26.1 26.5 25.9 26.3 25.7 26 26.5 25.2 26.1 24 25.7 22.9 23.9 18.5 23.6 19.2 23.4 20 24.5 26.9 24.4 28.5 24.2 30.1 23 28.2 22.5 28.8 22.1 29.5 21.8 31.7 21.6 32.6 21.4 33.5 20.9 33.7 21.1 34.4 21.4 35.2 23.1 36.7 23 37.1 22.8 37.5 20.7 36.7 20.3 36.8 19.9 37 20.6 37.8 20.3 38 20 38.2 18.9 39 18.5 38 18.2 36.9 18.2 33.1 18.3 31.5 18.4 30 19 29.4 18.9 28.8 18.9 28.3 18.1 29.3 18 28.3 18 27.2 18.9 23.7 18.7 22.4 18.5 21.2 17 21.1 16.6 20.5 16.1 19.9 15.8 19.6 16 18.7 16.2 17.8 16.9 16.1 17.7 15.2 18.5 14.4 20.4 14.2 20.9 13.5 21.4 12.8 20.6 11.6 20.8 11.1 20.9 10.5 21.4 10.2 21.8 10Z" fill="url(#prog-bmi-pose)" stroke="#E8EDF5" stroke-width="1.4" stroke-linejoin="round"/>
-  <!-- Coral BMI Gauge Meter Badge Bottom-Right -->
-  <path d="M29 36.5C29 32.6 32.1 29.5 36 29.5C39.9 29.5 43 32.6 43 36.5" fill="#FF5E36" fill-opacity="0.20" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M36 36.5L39.2 32.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
-  <circle cx="36" cy="36.5" r="1.8" fill="#FF5E36"/>
+  <!-- Left Vertical Height Ruler (#E8EDF5) -->
+  <rect x="8" y="9" width="7" height="30" rx="2.5" fill="url(#prg-bmi-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M12 15H15M11 21H15M12 27H15M11 33H15" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+  <!-- Right BMI Balance Scale / Arc Gauge -->
+  <path d="M20.5 29.5C20.5 23.7 25.2 19 31 19C36.8 19 41.5 23.7 41.5 29.5H20.5Z" fill="url(#prg-bmi-blush)"/>
+  <path d="M20.5 29.5C20.5 23.7 25.2 19 31 19C36.8 19 41.5 23.7 41.5 29.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20.5 35.5H41.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- BMI Needle + Pivot (#FF5E36) -->
+  <path d="M32.4 27.6L36.2 23.8" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="31" cy="29.5" r="2.3" fill="#FF5E36" fill-opacity="0.28" stroke="#FF5E36" stroke-width="2"/>
+  <!-- Top-Right Target Dot -->
+  <path d="M31 11V14M29.5 12.5H32.5" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
 </svg>

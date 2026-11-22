@@ -1,16 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="st-nut-blush" x1="10" y1="12" x2="38" y2="38" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2ECC71" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#2ECC71" stop-opacity="0.34"/>
+    <linearGradient id="st-enut-blush" x1="8" y1="8" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECC71" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#2ECC71" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <!-- Empty State: Nutrition / Meals ('Chưa có bữa ăn / hướng dẫn dinh dưỡng' — nutrition_tracking_page.dart) -->
-  <circle cx="23" cy="24.5" r="12.5" fill="url(#st-nut-blush)"/>
-  <path d="M25.5 36.7C24.7 36.9 23.9 37 23 37C16.1 37 10.5 31.4 10.5 24.5C10.5 17.6 16.1 12 23 12C29.9 12 35.5 17.6 35.5 24.5C35.5 25.3 35.4 26.2 35.2 27" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Dashed Empty Plate Ring (#2ECC71) -->
-  <circle cx="23" cy="24.5" r="7" stroke="#2ECC71" stroke-width="2.1" stroke-dasharray="4 3.5"/>
-  <!-- Bottom-Right Add Meal Leaf Badge (#2ECC71) -->
-  <circle cx="34.5" cy="34" r="6" fill="#2ECC71" fill-opacity="0.24" stroke="#2ECC71" stroke-width="2.3"/>
-  <path d="M34.5 31.5V36.5M32 34H37" stroke="#2ECC71" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Plate Blush Fill -->
+  <circle cx="22.5" cy="23.5" r="14" fill="url(#st-enut-blush)"/>
+  <!-- Open-Path Outer Plate Rim (#E8EDF5, stops cleanly 3px before green + badge) -->
+  <path d="M27.4 36.6C25.9 37.2 24.2 37.5 22.5 37.5C14.77 37.5 8.5 31.23 8.5 23.5C8.5 15.77 14.77 9.5 22.5 9.5C30.23 9.5 36.5 15.77 36.5 23.5C36.5 24.7 36.35 25.8 36.06 26.9" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Empty Inner Dashed Plate Ring (#2ECC71) -->
+  <circle cx="22.5" cy="23.5" r="8" stroke="#2ECC71" stroke-width="2.1" stroke-dasharray="3.5 3.5" stroke-linecap="round"/>
+  <!-- Bottom-Right Add Meal Badge (#2ECC71) -->
+  <circle cx="35.5" cy="35.5" r="5.5" fill="#2ECC71" fill-opacity="0.22" stroke="#2ECC71" stroke-width="2.2"/>
+  <path d="M33.2 35.5H37.8M35.5 33.2V37.8" stroke="#2ECC71" stroke-width="2.1" stroke-linecap="round"/>
 </svg>

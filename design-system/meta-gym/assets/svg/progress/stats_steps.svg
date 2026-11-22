@@ -1,14 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="prog-step-blush" x1="8" y1="14" x2="38" y2="36" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    <linearGradient id="prg-steps-blush" x1="8" y1="14" x2="40" y2="35" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <!-- Stats Daily Steps (Running Shoe Profile + Coral Motion Pace Waves) -->
-  <path d="M9.5 28.5L13.5 15.5C14 14 15.6 13.3 17 14L23.5 17.5L28.5 22.5L36.5 24.5C39 25.2 40.5 27.6 40 30.2L39.5 33H11C9.1 33 7.8 31.2 8.5 29.4L9.5 28.5Z" fill="url(#prog-step-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
-  <path d="M10 33H39.5" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M21.5 19.5L24.5 17M24.8 22L27.8 19.5" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
-  <!-- Motion Step Track Dots Below -->
-  <path d="M13 38H21M26 38H36" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+  <!-- Running Shoe Upper Blush Fill -->
+  <path d="M9.5 32.5V21.5C9.5 18.8 11.8 16.8 14.2 17.8C16.2 18.6 17.8 20.2 19.8 20.2C21.8 20.2 23.2 18.8 24.2 17.5L29.5 23.2C31.2 25 33.5 26 36 26.4C38.6 26.8 40.5 28.6 40.5 31V32.5H9.5Z" fill="url(#prg-steps-blush)"/>
+  <!-- Shoe Upper Contour (#E8EDF5) -->
+  <path d="M9.5 32.5V20.8C9.5 18.4 11.7 16.8 14 17.7C16 18.5 17.8 20 19.8 20C21.6 20 22.9 18.8 23.9 17.4L29.2 23C31 24.9 33.4 26 36 26.4C38.6 26.8 40.5 28.6 40.5 31V32.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Laces Accent (#FF5E36) -->
+  <path d="M25.5 20.5L27.8 19M28.2 23.2L30.5 21.7" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+  <!-- Athletic Cushioned Midsole (#FF5E36) -->
+  <path d="M8.5 32.5H40.5C40.5 34.4 39 36 37 36H12C10 36 8.5 34.4 8.5 32.5Z" fill="#FF5E36" fill-opacity="0.20" stroke="#FF5E36" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Subtle Ground Pace Trail -->
+  <path d="M12 40H22M26 40H33" stroke="#E8EDF5" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round"/>
 </svg>

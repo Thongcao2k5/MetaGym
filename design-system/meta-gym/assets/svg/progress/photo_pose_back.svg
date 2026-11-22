@@ -1,25 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
   <defs>
-    <linearGradient id="prg-pose-back-blush" x1="35" y1="20" x2="145" y2="314" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.14"/>
-      <stop offset="0.5" stop-color="#FF5E36" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.22"/>
+    <linearGradient id="prg-pback-blush" x1="90" y1="36" x2="90" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.24"/>
     </linearGradient>
   </defs>
-  <!-- Progress Photo Pose Guide: BACK ('Mặt sau' — Pose #8 Back Lat Spread Gymmer) -->
-  
-  <!-- Camera Viewfinder Corner Brackets -->
-  <path d="M14 34V18C14 15.8 15.8 14 18 14H34M146 14H162C164.2 14 166 15.8 166 18V34M166 296V312C166 314.2 164.2 316 162 316H146M34 316H18C15.8 316 14 314.2 14 312V296" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Anatomical Alignment Reference Grid -->
-  <line x1="90" y1="16" x2="90" y2="314" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
-  <line x1="24" y1="78" x2="156" y2="78" stroke="#A9C7E8" stroke-opacity="0.28" stroke-width="1.3" stroke-dasharray="4 5"/>
-  <line x1="30" y1="142" x2="150" y2="142" stroke="#FF5E36" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="5 4"/>
-  <line x1="30" y1="234" x2="150" y2="234" stroke="#A9C7E8" stroke-opacity="0.25" stroke-width="1.3" stroke-dasharray="4 5"/>
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M85 31C88 29 95 31 99 32 102 33 102 34 103 38 105 41 106 49 106 54 106 59 98 64 103 68 108 72 126 74 136 80 145 87 156 102 160 109 164 117 161 118 160 125 158 132 155 147 151 151 147 155 137 152 137 149 136 146 144 137 145 133 147 128 148 124 146 120 144 116 138 106 133 107 128 109 119 124 116 130 113 136 113 134 115 144 117 155 125 182 126 194 127 206 122 208 121 218 120 227 123 240 122 250 122 261 118 275 117 281 117 288 118 286 120 288 122 291 129 294 129 296 130 298 127 301 122 302 118 303 106 304 103 301 101 299 107 293 106 285 106 278 101 264 101 254 100 245 104 238 103 229 103 221 98 209 96 204 94 200 93 200 90 203 88 207 84 217 83 226 83 234 88 245 88 253 89 262 85 269 85 277 86 285 91 296 89 300 88 304 83 304 78 303 73 302 62 298 61 296 60 293 70 290 72 287 75 285 76 295 74 281 72 266 61 222 60 200 59 177 67 158 68 147 69 135 69 135 67 128 64 122 57 111 53 109 49 106 47 109 43 113 39 118 32 130 31 134 30 139 38 138 39 141 41 143 42 147 40 149 38 151 30 155 27 154 24 154 23 151 22 145 21 140 19 126 20 120 21 113 20 114 25 107 30 100 40 86 49 80 58 73 75 73 79 69 83 65 75 59 74 55 74 50 74 46 75 43 77 39 81 33 85 31Z" fill="url(#prg-pose-back-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
-  <!-- Posterior V-Taper Lat Spread & Spine Guide Lines -->
-  <path d="M90 56V160" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
-  <path d="M64 84L90 124L116 84" stroke="#A9C7E8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Upper Back Target Reticle -->
-  <circle cx="90" cy="102" r="7" stroke="#FF5E36" stroke-width="2"/>
-  <circle cx="90" cy="102" r="2.2" fill="#FF5E36"/>
+  <!-- Camera Viewfinder Corner Brackets (#FF5E36) -->
+  <path d="M22 44V26C22 23.8 23.8 22 26 22H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 22H154C156.2 22 158 23.8 158 26V44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 286V304C22 306.2 23.8 308 26 308H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 308H154C156.2 308 158 306.2 158 304V286" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <!-- Alignment Crosshair Guide -->
+  <line x1="90" y1="54" x2="90" y2="288" stroke="#FF5E36" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <line x1="34" y1="158" x2="146" y2="158" stroke="#8E95A5" stroke-opacity="0.28" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <!-- Smooth Symmetrical Back Silhouette (Athletic V-Taper Standing) -->
+  <path d="M90 42C99 42 105 49 105 59C105 66 102 71 98 74V81C112 83 128 89 135 103L146 140C148 147 146 156 141 162L133 171C130 174 126 172 126 168L130 144L122 117L117 156C116 167 119 178 120 192L117 242L114 282C114 288 119 292 121 295C122 297 119 299 114 299H103C100 299 98 297 98 293L99 242L94 196H86L81 242L82 293C82 297 80 299 77 299H66C61 299 58 297 59 295C61 292 66 288 66 282L63 242L60 192C61 178 64 167 63 156L58 117L50 144L54 168C54 172 50 174 47 171L39 162C34 156 32 147 34 140L45 103C52 89 68 83 82 81V74C78 71 75 66 75 59C75 49 81 42 90 42Z" fill="url(#prg-pback-blush)" stroke="#E8EDF5" stroke-width="2.4" stroke-linejoin="round"/>
+  <!-- Upper-Back Scapula & Spine Alignment Accent (#FF5E36) -->
+  <path d="M72 104L90 128L108 104" stroke="#FF5E36" stroke-opacity="0.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90" cy="116" r="5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2"/>
 </svg>

@@ -1,18 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="prg-fat-blush" x1="11" y1="9" x2="37" y2="39" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F39C12" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#F39C12" stop-opacity="0.36"/>
+    <linearGradient id="prg-bfat-blush" x1="12" y1="8" x2="34" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F39C12" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#F39C12" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <!-- Body Measurement: Body Fat Percentage (bodyFatPercent %) -->
-  <path d="M23 8.5C23 8.5 34.5 19.8 34.5 28.5C34.5 34.9 29.4 40 23 40C16.6 40 11.5 34.9 11.5 28.5C11.5 19.8 23 8.5 23 8.5Z" fill="url(#prg-fat-blush)"/>
-  <path d="M26 39.6C25 39.9 24 40 23 40C16.6 40 11.5 34.9 11.5 28.5C11.5 19.8 23 8.5 23 8.5C23 8.5 33.4 18.7 34.4 27" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Inner Percentage (%) Symbol (#F39C12) -->
-  <line x1="19.5" y1="32" x2="26.5" y2="23" stroke="#F39C12" stroke-width="2.3" stroke-linecap="round"/>
-  <circle cx="19.5" cy="24.5" r="2" fill="#F39C12"/>
-  <circle cx="26.5" cy="30.5" r="2" fill="#F39C12"/>
-  <!-- Bottom-Right Caliper / Bio-Impedance Ring Badge -->
-  <circle cx="34.5" cy="33.5" r="5.5" fill="#F39C12" fill-opacity="0.22" stroke="#F39C12" stroke-width="2.3"/>
-  <circle cx="34.5" cy="33.5" r="1.8" fill="#E8EDF5"/>
+  <!-- Droplet Blush Fill -->
+  <path d="M22.5 8.5C22.5 8.5 11.5 20.6 11.5 28C11.5 34.1 16.4 39 22.5 39C28.6 39 33.5 34.1 33.5 28C33.5 20.6 22.5 8.5 22.5 8.5Z" fill="url(#prg-bfat-blush)"/>
+  <!-- Open-Path Droplet Contour (#E8EDF5, cleanly stops 3px before bottom-right badge) -->
+  <path d="M27.4 37.9C25.9 38.6 24.3 39 22.5 39C16.4 39 11.5 34.1 11.5 28C11.5 20.6 22.5 8.5 22.5 8.5C22.5 8.5 32.8 19.8 33.4 27.1" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Centered % Symbol (#F39C12) -->
+  <path d="M18.8 31.8L25.6 23.2" stroke="#F39C12" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="19" cy="24.4" r="1.5" fill="#F39C12"/>
+  <circle cx="25.2" cy="30.6" r="1.5" fill="#F39C12"/>
+  <!-- Bottom-Right Measure Ring Badge (#F39C12) -->
+  <circle cx="35.5" cy="35" r="5" fill="#F39C12" fill-opacity="0.22" stroke="#F39C12" stroke-width="2.2"/>
+  <circle cx="35.5" cy="35" r="1.5" fill="#F39C12"/>
 </svg>

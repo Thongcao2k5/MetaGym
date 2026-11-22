@@ -1,17 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="nav-train-blush" x1="10" y1="14" x2="38" y2="34" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.38"/>
+    <linearGradient id="nav-trn-f-blush" x1="10" y1="14" x2="38" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <!-- Tab 2 (Member): Training (Filled / Selected — Soft-Line Duotone: #E8EDF5 Dumbbell + #FF5E36 Grip & Spark) -->
-  <rect x="10" y="14" width="7.5" height="20" rx="3.75" fill="url(#nav-train-blush)" stroke="#E8EDF5" stroke-width="2.6"/>
-  <rect x="30.5" y="14" width="7.5" height="20" rx="3.75" fill="url(#nav-train-blush)"/>
-  <path d="M30.5 19.5V30.25C30.5 32.3 32.2 34 34.25 34C36.3 34 38 32.3 38 30.25V22" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M10 19H7.5C5.8 19 4.5 20.3 4.5 22V26C4.5 27.7 5.8 29 7.5 29H10" fill="url(#nav-train-blush)" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M38 20H40.5C42.2 20 43.5 21.3 43.5 23V26C43.5 27.7 42.2 29 40.5 29H38" fill="url(#nav-train-blush)" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="17.5" y1="24" x2="30.5" y2="24" stroke="#FF5E36" stroke-width="2.8" stroke-linecap="round"/>
-  <!-- Top-Right Active Spark -->
-  <path d="M36.5 9V16M33 12.5H40" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Symmetrical Dumbbell Plates (Blush Fill + Crisp #E8EDF5 Contours) -->
+  <rect x="11.5" y="15.5" width="5.5" height="19" rx="2.75" fill="url(#nav-trn-f-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <rect x="31" y="15.5" width="5.5" height="19" rx="2.75" fill="url(#nav-trn-f-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <!-- Outer End Caps (#FF5E36) -->
+  <path d="M9.5 20H8.5C7.4 20 6.5 20.9 6.5 22V28C6.5 29.1 7.4 30 8.5 30H9.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M38.5 20H39.5C40.6 20 41.5 20.9 41.5 22V28C41.5 29.1 40.6 30 39.5 30H38.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Center Active Grip Bar (#FF5E36) -->
+  <line x1="17" y1="25" x2="31" y2="25" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- Top-Right Active Spark (clean 3px above right plate) -->
+  <path d="M37 8.5V12.5M35 10.5H39" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
 </svg>

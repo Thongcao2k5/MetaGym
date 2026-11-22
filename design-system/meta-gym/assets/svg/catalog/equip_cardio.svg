@@ -1,20 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="cat-equip-cardio-blush" x1="10" y1="14" x2="36" y2="38" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+    <linearGradient id="cat-car-blush" x1="8" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
       <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
     </linearGradient>
   </defs>
-  <!-- Soft blush inside treadmill console & deck -->
-  <path d="M27 10H39C40.7 10 42 11.3 41.6 13L39.8 20H26L27 10Z" fill="url(#cat-equip-cardio-blush)"/>
-  <rect x="6" y="33" width="22" height="7" rx="3.5" fill="url(#cat-equip-cardio-blush)"/>
-  <!-- Main Treadmill Frame (Open contour at bottom-right for pulse badge) -->
-  <path d="M34 33L38 17" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M26 16L27.5 11.2C27.9 9.9 29.1 9 30.5 9H38.5C40.4 9 41.8 10.7 41.3 12.5L39.8 18H29" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M25 33H9.5C7.6 33 6 34.6 6 36.5C6 38.4 7.6 40 9.5 40H24" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
-  <circle cx="10.5" cy="36.5" r="1.3" fill="#E8EDF5"/>
-  <!-- Coral Accent: Speed lines & Heartbeat Pulse Badge (Bottom-Right) -->
-  <path d="M8 23H14M10 27H17" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
-  <circle cx="34.5" cy="34.5" r="7.5" fill="#FF5E36" fill-opacity="0.16" stroke="#FF5E36" stroke-width="2.2"/>
-  <path d="M30.5 34.5H32.5L33.8 31.5L35.5 37.5L36.8 34.5H38.5" stroke="#FF5E36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Heart Blush Fill -->
+  <path d="M24 39C24 39 9 29.6 9 19C9 13.8 13 10 17.8 10C20.7 10 23 11.5 24 13.6C25 11.5 27.3 10 30.2 10C35 10 39 13.8 39 19C39 29.6 24 39 24 39Z" fill="url(#cat-car-blush)"/>
+  <!-- Open-Path Heart Contour (#E8EDF5, cleanly broken for ECG pulse line entry/exit) -->
+  <path d="M9.6 21.8C9.2 20.9 9 19.9 9 18.8C9 13.8 13 10 17.8 10C20.7 10 23 11.5 24 13.6C25 11.5 27.3 10 30.2 10C35 10 39 13.8 39 18.8C39 19.9 38.8 20.9 38.4 21.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12.2 27.5C15.8 32.8 21.4 37.2 24 39C26.6 37.2 32.2 32.8 35.8 27.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Live ECG Pulse Waveform Across Heart (#FF5E36) -->
+  <path d="M7.5 24.5H15.5L18.5 18.5L22.5 29.5L26 21.5L28.5 24.5H40.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
