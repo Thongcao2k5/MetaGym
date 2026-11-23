@@ -19,17 +19,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Mua'));
+    await tester.tap(find.byKey(const Key('empty-membership-cta')));
     await tester.pumpAndSettle();
-    expect(find.text('Bắt đầu dự kiến'), findsOneWidget);
-    await tester.tap(find.text('Thanh toán bằng ZaloPay'));
+    expect(find.text('Thanh toán gói tập'), findsOneWidget);
+    expect(find.text('VNPay QR / Thẻ nội địa'), findsOneWidget);
+    expect(find.text('Mã ưu đãi'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('checkout-pay-submit')));
     await tester.pumpAndSettle();
     expect(find.text('META-GYM-MOCK:MG-1'), findsOneWidget);
 
     await tester.tap(find.text('Mô phỏng thanh toán thành công'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Thanh toán thành công'), findsOneWidget);
-    expect(find.text('20/11/2026'), findsOneWidget);
+    expect(find.textContaining('20/11/2026'), findsWidgets);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -68,7 +70,7 @@ void main() {
     expect(find.text('Đã hủy'), findsOneWidget);
     await tester.tap(find.text('Về Gói tập'));
     await tester.pumpAndSettle();
-    expect(find.text('Mua'), findsOneWidget);
+    expect(find.byKey(const Key('empty-membership-cta')), findsOneWidget);
   });
 
   testWidgets('shows a QR for a pending ZaloPay order', (tester) async {
@@ -118,36 +120,37 @@ void main() {
         currentMemberships: const [
           Membership(
             id: 'mem-active',
-            startDate: '2026-11-01',
-            endDate: '2026-11-30',
+            startDate: '2026-10-22',
+            endDate: '2027-01-03',
             status: 'ACTIVE',
-            planName: 'Gói tháng',
+            planName: 'Hạng Vàng — Pro 6 Tháng',
           ),
         ],
         availablePlans: const [
           MembershipPlan(
-            id: 'plan-day',
-            name: 'Gói ngày',
-            price: 60000,
-            durationDays: 1,
-            status: 'ACTIVE',
-            description: 'Tập trải nghiệm cả ngày tại phòng gym.',
-          ),
-          MembershipPlan(
-            id: 'plan-month',
-            name: 'Gói tháng',
-            price: 500000,
-            durationDays: 30,
-            status: 'ACTIVE',
-            description: 'Lựa chọn cân đối cho lịch tập đều đặn.',
-          ),
-          MembershipPlan(
-            id: 'plan-year',
-            name: 'Gói năm',
-            price: 5000000,
+            id: 'plan-diamond',
+            name: 'Kim Cương VIP',
+            price: 8490000,
             durationDays: 365,
             status: 'ACTIVE',
-            description: 'Cam kết dài hạn với mức giá tối ưu nhất.',
+            description:
+                'Thẻ Kim Cương NFC · InBody không giới hạn · 6 buổi PT 1:1',
+          ),
+          MembershipPlan(
+            id: 'plan-gold',
+            name: 'Hạng Vàng — Pro 6 Tháng',
+            price: 4490000,
+            durationDays: 180,
+            status: 'ACTIVE',
+            description: 'Thẻ Vàng NFC · InBody hàng tháng · 2 buổi PT 1:1',
+          ),
+          MembershipPlan(
+            id: 'plan-silver',
+            name: 'Hạng Bạc — Plus',
+            price: 2490000,
+            durationDays: 90,
+            status: 'ACTIVE',
+            description: 'Thẻ Bạc NFC · Tập full khung giờ · 1 lần InBody',
           ),
         ],
       );
@@ -160,32 +163,119 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Gói của tôi'), findsOneWidget);
-      expect(find.text('Gói đang bán'), findsOneWidget);
+      expect(find.text('Thẻ hội viên của tôi'), findsOneWidget);
+      expect(find.text('Hiệu lực'), findsOneWidget);
+      expect(find.text('Gia hạn thẻ'), findsOneWidget);
+      expect(find.text('Đổi điểm ưu đãi'), findsOneWidget);
+
       await tester.scrollUntilVisible(
-        find.text('LINH HOẠT'),
+        find.text('Meta Points'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('LINH HOẠT'), findsOneWidget);
+      expect(find.text('Meta Points'), findsOneWidget);
+      expect(find.text('1.240 điểm'), findsOneWidget);
+
       await tester.scrollUntilVisible(
-        find.text('PHỔ BIẾN NHẤT'),
+        find.text('Ưu đãi Hạng Vàng đang áp dụng'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('PHỔ BIẾN NHẤT'), findsOneWidget);
+      expect(find.text('Ưu đãi Hạng Vàng đang áp dụng'), findsOneWidget);
+      expect(find.text('3 đặc quyền'), findsOneWidget);
+
       await tester.scrollUntilVisible(
-        find.text('TIẾT KIỆM NHẤT'),
+        find.text('Nâng cấp hạng thẻ'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('TIẾT KIỆM NHẤT'), findsOneWidget);
+      expect(find.text('Nâng cấp hạng thẻ'), findsOneWidget);
+      expect(find.text('Kim Cương VIP'), findsOneWidget);
+
       await tester.scrollUntilVisible(
         find.text('Lịch sử gói'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Lịch sử gói'), findsOneWidget);
+
+      // Mở modal đổi điểm Meta Points và đổi voucher 300 điểm
+      await tester.scrollUntilVisible(
+        find.text('Đổi quà ›'),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Đổi quà ›'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đổi điểm Meta Points'), findsOneWidget);
+      await tester.tap(find.text('Đổi ngay').first);
+      await tester.pumpAndSettle();
+      expect(find.text('940 điểm'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '1.2b empty membership state renders 4-tier wallet deck and updates perks/CTA on tab tap without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fixture = _MembershipFixture(
+        currentMemberships: const [],
+        availablePlans: const [
+          MembershipPlan(
+            id: 'p-bronze',
+            name: 'Hạng Đồng — Starter 1 Tháng',
+            price: 890000,
+            durationDays: 30,
+            status: 'ACTIVE',
+          ),
+          MembershipPlan(
+            id: 'p-silver',
+            name: 'Hạng Bạc — Plus 3 Tháng',
+            price: 2490000,
+            durationDays: 90,
+            status: 'ACTIVE',
+          ),
+          MembershipPlan(
+            id: 'p-gold',
+            name: 'Hạng Vàng — Pro 6 Tháng',
+            price: 4490000,
+            durationDays: 180,
+            status: 'ACTIVE',
+          ),
+          MembershipPlan(
+            id: 'p-diamond',
+            name: 'Kim Cương VIP — 12 Tháng',
+            price: 8490000,
+            durationDays: 365,
+            status: 'ACTIVE',
+          ),
+        ],
+      );
+      final controller = MembershipController(fixture);
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: controller,
+          child: const MaterialApp(home: MembershipPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chọn gói tập'), findsOneWidget);
+      expect(find.text('Chưa có gói'), findsOneWidget);
+      expect(find.text('Hạng Vàng — Pro 6 Tháng'), findsOneWidget);
+      expect(find.text('Phổ biến nhất'), findsOneWidget);
+      expect(find.text('-5%'), findsOneWidget);
+
+      await tester.tap(find.text('Kim Cương'));
+      await tester.pumpAndSettle();
+      expect(find.text('Kim Cương VIP — 12 Tháng'), findsOneWidget);
+      expect(find.text('VIP Cao cấp'), findsOneWidget);
+      expect(find.text('-10%'), findsOneWidget);
+      expect(find.text('×2.0 điểm'), findsOneWidget);
     },
   );
 }

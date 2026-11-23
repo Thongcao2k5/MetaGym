@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-ewrk-blush" x1="8" y1="12" x2="36" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Left Dumbbell Plate -->
+  <rect x="10.5" y="13.5" width="6" height="19" rx="3" fill="url(#st-ewrk-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M10.5 18.5H8.5C7.4 18.5 6.5 19.4 6.5 20.5V25.5C6.5 26.6 7.4 27.5 8.5 27.5H10.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Right Dumbbell Plate (open bottom, stops cleanly 3px above + badge) -->
+  <path d="M30 26.5V16.5C30 14.84 31.34 13.5 33 13.5C34.66 13.5 36 14.84 36 16.5V26.5" fill="url(#st-ewrk-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Center Dashed Empty Bar (#FF5E36) -->
+  <line x1="16.5" y1="23" x2="30" y2="23" stroke="#FF5E36" stroke-width="2.4" stroke-dasharray="3.5 3" stroke-linecap="round"/>
+  <!-- Bottom-Right Add Workout Badge (#FF5E36) -->
+  <circle cx="35.5" cy="35.5" r="5.5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M33.2 35.5H37.8M35.5 33.2V37.8" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+</svg>

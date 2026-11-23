@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nav-prof-blush" x1="12" y1="10" x2="36" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Tab 5: Profile (Filled / Selected — Soft-Line Duotone: #E8EDF5 Body + #FF5E36 Active Badge) -->
+  <circle cx="22.5" cy="15.5" r="7" fill="url(#nav-prof-blush)" stroke="#E8EDF5" stroke-width="2.6"/>
+  <path d="M10 36C10 29.9 15.6 25.5 22.5 25.5C29.4 25.5 35 29.9 35 36C35 37.7 33.7 39 32 39H13C11.3 39 10 37.7 10 36Z" fill="url(#nav-prof-blush)"/>
+  <path d="M26.5 39H13C11.1 39 9.7 37.3 10.1 35.4C11.3 29.7 16.4 25.5 22.5 25.5C26.5 25.5 30 27.2 32.3 30" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- Bottom-Right Active Badge -->
+  <circle cx="35" cy="35" r="6" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.4"/>
+  <path d="M32.5 35L34.3 36.8L37.8 33.3" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

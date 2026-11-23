@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-info-blush" x1="11" y1="10" x2="37" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Setting: Nội quy, Điều khoản & Phiên bản ứng dụng (Document + Info 'i' Badge) -->
+  <rect x="11" y="10" width="24" height="28.5" rx="6" fill="url(#set-info-blush)"/>
+  <path d="M24 38.5H17C13.7 38.5 11 35.8 11 32.5V16C11 12.7 13.7 10 17 10H29C32.3 10 35 12.7 35 16V23.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Policy Text Lines -->
+  <path d="M16.5 18H28.5M16.5 23.5H26M16.5 29H22" stroke="#A9C7E8" stroke-width="2.3" stroke-linecap="round"/>
+  <!-- Bottom-Right Info ('i') Badge (#A9C7E8) -->
+  <circle cx="34" cy="33.5" r="6.2" fill="#A9C7E8" fill-opacity="0.24" stroke="#A9C7E8" stroke-width="2.3"/>
+  <line x1="34" y1="33" x2="34" y2="36.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="34" cy="30.5" r="1.2" fill="#E8EDF5"/>
+</svg>

@@ -2,16 +2,18 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
 /// Level 2 Performance Glass bottom navigation bar for Meta Gym Member & Coach.
 ///
-/// Order of items: Trang chủ · Tập luyện · AI · Tin nhắn · Hồ sơ.
-/// Follows DESIGN.md §3.2 & §5.3:
-/// - Background: `rgba(18, 23, 30, 0.78)` (`MetaGymTheme.performanceGlass`)
-/// - Backdrop blur: `12px` clipped inside `24px` radius (`RepaintBoundary` isolated)
-/// - Border: `1px` `rgba(212, 228, 255, 0.18)` + cool top-edge specular highlight
-/// - Active tab: `#FF5A36` (`MetaGymTheme.brandOrange`), inactive: `#B8C2D0`
+/// Order of items: Trang chủ · Tập luyện (hoặc Lịch dạy) · AI · Tin nhắn · Hồ sơ.
+/// Uses custom SVG icons from [MetaGymIcons] (`assets/svg/navigation/`) and
+/// follows DESIGN.md §2 & §8:
+/// - Background: `rgba(24, 27, 34, 0.78)` (`MetaGymTheme.performanceGlass`)
+/// - Backdrop blur: `12px` clipped inside capsule (`RepaintBoundary` isolated)
+/// - Active tab: `#FF5E36` (`MetaGymTheme.brandOrange`), inactive: `#8E95A5`
 class MetaGymBottomNav extends StatelessWidget {
   const MetaGymBottomNav({
     super.key,
@@ -21,6 +23,8 @@ class MetaGymBottomNav extends StatelessWidget {
     this.warmGlass = false,
     this.secondTabLabel = 'Tập luyện',
     this.secondTabIcon = Icons.fitness_center_outlined,
+    this.secondTabSvgOutline,
+    this.secondTabSvgFilled,
   }) : assert(currentIndex >= 0 && currentIndex < 5);
 
   final int currentIndex;
@@ -31,6 +35,8 @@ class MetaGymBottomNav extends StatelessWidget {
   final bool warmGlass;
   final String secondTabLabel;
   final IconData secondTabIcon;
+  final String? secondTabSvgOutline;
+  final String? secondTabSvgFilled;
 
   static const double _barHeight = 68.0;
   static const double _aiProtrusion = 14.0;
@@ -48,9 +54,27 @@ class MetaGymBottomNav extends StatelessWidget {
     return Alignment(x, -1.0);
   }
 
+  String _resolvedSecondSvgOutline() {
+    if (secondTabSvgOutline != null) return secondTabSvgOutline!;
+    if (secondTabLabel.toLowerCase().contains('lịch')) {
+      return MetaGymIcons.navCoachScheduleOutline;
+    }
+    return MetaGymIcons.navTrainingOutline;
+  }
+
+  String _resolvedSecondSvgFilled() {
+    if (secondTabSvgFilled != null) return secondTabSvgFilled!;
+    if (secondTabLabel.toLowerCase().contains('lịch')) {
+      return MetaGymIcons.navCoachScheduleFilled;
+    }
+    return MetaGymIcons.navTrainingFilled;
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
     final disableAnimations = mediaQuery.disableAnimations;
     final safeBottom = mediaQuery.padding.bottom;
     final duration = disableAnimations
@@ -62,24 +86,35 @@ class MetaGymBottomNav extends StatelessWidget {
 
     const capsuleRadius = BorderRadius.all(Radius.circular(34.0));
 
+    final Color pillBg;
+    if (isLight) {
+      pillBg = useGlassSurface ? palette.glassCoolBg : palette.surfaceSolid;
+    } else if (warmGlass) {
+      pillBg = useGlassSurface
+          ? MetaGymWarmGlassTokens.navGlassFill
+          : MetaGymWarmGlassTokens.navSolidFill;
+    } else {
+      pillBg = useGlassSurface
+          ? MetaGymTheme.performanceGlass
+          : MetaGymTheme.darkSurface;
+    }
+
     final pillDecoration = BoxDecoration(
-      color: warmGlass
-          ? (useGlassSurface
-                ? const Color(0xBF302923)
-                : const Color(0xFF292420))
-          : (useGlassSurface
-                ? const Color(0xDE181B22)
-                : MetaGymTheme.darkSurface),
+      color: pillBg,
       borderRadius: capsuleRadius,
       border: Border.all(
-        color: warmGlass ? const Color(0xA3A79D92) : MetaGymTheme.cardBorder,
+        color: isLight
+            ? palette.glassCoolBorder
+            : warmGlass
+            ? MetaGymWarmGlassTokens.cardBorder
+            : MetaGymTheme.performanceGlassBorder,
         width: 1.0,
       ),
-      boxShadow: const [
+      boxShadow: [
         BoxShadow(
-          color: Color(0x33000000), // rgba(0, 0, 0, 0.20)
+          color: isLight ? const Color(0x1F0F172A) : const Color(0x33000000),
           blurRadius: 24,
-          offset: Offset(0, -4),
+          offset: const Offset(0, -4),
         ),
       ],
     );
@@ -89,7 +124,7 @@ class MetaGymBottomNav extends StatelessWidget {
       decoration: pillDecoration,
       child: Stack(
         children: [
-          // Cool specular top-edge highlight (DESIGN.md §3.2)
+          // Cool specular top-edge highlight (DESIGN.md §2)
           Positioned(
             top: 0,
             left: 28,
@@ -98,9 +133,11 @@ class MetaGymBottomNav extends StatelessWidget {
               child: SizedBox(
                 height: 1,
                 child: ColoredBox(
-                  color: warmGlass
-                      ? const Color(0x70FFF5E9)
-                      : const Color(0x33FFFFFF),
+                  color: isLight
+                      ? palette.glassHighlight
+                      : warmGlass
+                      ? MetaGymWarmGlassTokens.heroHighlight
+                      : MetaGymTheme.performanceGlassTopHighlight,
                 ),
               ),
             ),
@@ -142,7 +179,9 @@ class MetaGymBottomNav extends StatelessWidget {
               Expanded(
                 child: _NavTabItem(
                   label: 'Trang chủ',
-                  icon: Icons.home_outlined,
+                  svgOutline: MetaGymIcons.navHomeOutline,
+                  svgFilled: MetaGymIcons.navHomeFilled,
+                  fallbackIcon: Icons.home_outlined,
                   selected: currentIndex == 0,
                   duration: duration,
                   onTap: () => onTap(0),
@@ -151,7 +190,9 @@ class MetaGymBottomNav extends StatelessWidget {
               Expanded(
                 child: _NavTabItem(
                   label: secondTabLabel,
-                  icon: secondTabIcon,
+                  svgOutline: _resolvedSecondSvgOutline(),
+                  svgFilled: _resolvedSecondSvgFilled(),
+                  fallbackIcon: secondTabIcon,
                   selected: currentIndex == 1,
                   duration: duration,
                   onTap: () => onTap(1),
@@ -161,7 +202,9 @@ class MetaGymBottomNav extends StatelessWidget {
               Expanded(
                 child: _NavTabItem(
                   label: 'Tin nhắn',
-                  icon: Icons.chat_bubble_outline_rounded,
+                  svgOutline: MetaGymIcons.navMessagesOutline,
+                  svgFilled: MetaGymIcons.navMessagesFilled,
+                  fallbackIcon: Icons.chat_bubble_outline_rounded,
                   selected: currentIndex == 3,
                   duration: duration,
                   onTap: () => onTap(3),
@@ -170,7 +213,9 @@ class MetaGymBottomNav extends StatelessWidget {
               Expanded(
                 child: _NavTabItem(
                   label: 'Hồ sơ',
-                  icon: Icons.person_outline_rounded,
+                  svgOutline: MetaGymIcons.navProfileOutline,
+                  svgFilled: MetaGymIcons.navProfileFilled,
+                  fallbackIcon: Icons.person_outline_rounded,
                   selected: currentIndex == 4,
                   duration: duration,
                   onTap: () => onTap(4),
@@ -202,8 +247,8 @@ class MetaGymBottomNav extends StatelessWidget {
                 child: enableBlur
                     ? BackdropFilter(
                         filter: ImageFilter.blur(
-                          sigmaX: MetaGymTheme.performanceGlassBlur,
-                          sigmaY: MetaGymTheme.performanceGlassBlur,
+                          sigmaX: MetaGymTheme.bottomNavGlassBlur,
+                          sigmaY: MetaGymTheme.bottomNavGlassBlur,
                         ),
                         child: pillContent,
                       )
@@ -232,23 +277,26 @@ class MetaGymBottomNav extends StatelessWidget {
 class _NavTabItem extends StatelessWidget {
   const _NavTabItem({
     required this.label,
-    required this.icon,
+    required this.svgOutline,
+    required this.svgFilled,
+    required this.fallbackIcon,
     required this.selected,
     required this.duration,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String svgOutline;
+  final String svgFilled;
+  final IconData fallbackIcon;
   final bool selected;
   final Duration duration;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected
-        ? MetaGymTheme.brandOrange
-        : MetaGymTheme.darkTextSecondary;
+    final palette = MetaGymTheme.paletteOf(context);
+    final color = selected ? palette.primaryText : palette.textSecondary;
     final overlayColor = WidgetStateProperty.resolveWith<Color?>((states) {
       if (states.contains(WidgetState.focused) ||
           states.contains(WidgetState.hovered)) {
@@ -281,9 +329,13 @@ class _NavTabItem extends StatelessWidget {
                   scale: selected ? 1.06 : 1.0,
                   duration: duration,
                   curve: Curves.easeOutCubic,
-                  child: Icon(icon, size: 22.0, color: color),
+                  child: MetaGymSvgIcon(
+                    selected ? svgFilled : svgOutline,
+                    size: 24.0,
+                    fallbackIcon: fallbackIcon,
+                  ),
                 ),
-                const SizedBox(height: 4.0),
+                const SizedBox(height: 3.0),
                 AnimatedDefaultTextStyle(
                   duration: duration,
                   curve: Curves.easeOutCubic,
@@ -327,6 +379,9 @@ class _AiCenterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isPrimarySurface = selected || warmGlass;
+
     return Semantics(
       button: true,
       selected: selected,
@@ -356,19 +411,19 @@ class _AiCenterButton extends StatelessWidget {
                     height: 52.0,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: selected || warmGlass
+                      color: isPrimarySurface
                           ? MetaGymTheme.brandOrange
-                          : MetaGymTheme.darkSurfaceRaised,
+                          : palette.surfaceRaised,
                       border: Border.all(
-                        color: selected || warmGlass
+                        color: isPrimarySurface
                             ? MetaGymTheme.brandOrange
-                            : MetaGymTheme.cardBorder,
+                            : palette.borderSolid,
                         width: 1.0,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: MetaGymTheme.brandOrange.withValues(
-                            alpha: selected ? 0.2 : (warmGlass ? 0.12 : 0.0),
+                            alpha: selected ? 0.24 : (warmGlass ? 0.12 : 0.0),
                           ),
                           blurRadius: selected ? 10.0 : 6.0,
                           spreadRadius: selected ? 0.5 : 0.0,
@@ -377,12 +432,12 @@ class _AiCenterButton extends StatelessWidget {
                       ],
                     ),
                     child: Center(
-                      child: Icon(
-                        Icons.auto_awesome_rounded,
-                        color: selected || warmGlass
-                            ? Colors.white
-                            : MetaGymTheme.brandOrange,
-                        size: 24.0,
+                      child: MetaGymSvgIcon(
+                        isPrimarySurface
+                            ? MetaGymIcons.navAiOnPrimary
+                            : MetaGymIcons.navAiEmblem,
+                        size: 26.0,
+                        fallbackIcon: Icons.auto_awesome_rounded,
                       ),
                     ),
                   ),
@@ -394,8 +449,8 @@ class _AiCenterButton extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: MetaGymTheme.fontFamily,
                     color: selected
-                        ? MetaGymTheme.brandOrange
-                        : MetaGymTheme.darkTextSecondary,
+                        ? palette.primaryText
+                        : palette.textSecondary,
                     fontSize: 11.0,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     letterSpacing: 0.2,

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-meas-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F39C12" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Empty State: Body Measurements ('Bạn chưa có số đo nào' — member_measurement_page.dart:212) -->
+  <rect x="10" y="10.5" width="27" height="27" rx="8" fill="url(#st-meas-blush)"/>
+  <path d="M25.5 37.5H18C13.6 37.5 10 33.9 10 29.5V18.5C10 14.1 13.6 10.5 18 10.5H29C33.4 10.5 37 14.1 37 18.5V24" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Scale Display Window with Dashed Zero -->
+  <path d="M16.5 23C16.5 19.1 19.6 16 23.5 16C27.4 16 30.5 19.1 30.5 23H16.5Z" stroke="#F39C12" stroke-width="2.2" stroke-linejoin="round"/>
+  <line x1="20" y1="29.5" x2="27" y2="29.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="3 3"/>
+  <!-- Bottom-Right Add Measurement Badge (#FF5E36) -->
+  <circle cx="34.5" cy="34" r="6" fill="#FF5E36" fill-opacity="0.24" stroke="#FF5E36" stroke-width="2.3"/>
+  <path d="M34.5 31.5V36.5M32 34H37" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

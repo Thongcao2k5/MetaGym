@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="coa-health-injury-blush" x1="12" y1="12" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <!-- Tilted Recovery Capsule / Bandage with Motion Lines (Directly inspired by reference image 4 'Đặt thuốc nhanh 24/7') -->
+  <rect x="26" y="9" width="14" height="30" rx="7" transform="rotate(32 26 9)" fill="url(#coa-health-injury-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <!-- Divider & Coral Recovery Half -->
+  <path d="M18.8 21.8L30.7 29.2" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="22.5" cy="30.5" r="1.4" fill="#FF5E36"/>
+  <circle cx="26.5" cy="21" r="1.4" fill="#E8EDF5"/>
+  <!-- Coral Accent: Speed / Care Pulse Lines on Left -->
+  <line x1="7" y1="21" x2="13" y2="21" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="5" y1="26" x2="12" y2="26" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="8" y1="31" x2="13" y2="31" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

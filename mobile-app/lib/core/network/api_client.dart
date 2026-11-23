@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
 
 typedef ApiDecoder<T> = T Function(Object? data);
 typedef ApiLogger = void Function(String message);
@@ -22,8 +23,9 @@ class ApiClient {
     ApiLogger? logger,
     ApiAccessTokenProvider? accessTokenProvider,
     ApiSessionExpiredCallback? onSessionExpired,
+    bool enableLocalDemoMode = true,
   }) : this._(
-         _createDio(config),
+         _createDio(config, enableLocalDemoMode: enableLocalDemoMode),
          logger,
          accessTokenProvider,
          onSessionExpired,
@@ -210,8 +212,8 @@ class ApiClient {
   }
 }
 
-Dio _createDio(ApiConfig config) {
-  return Dio(
+Dio _createDio(ApiConfig config, {bool enableLocalDemoMode = false}) {
+  final dio = Dio(
     BaseOptions(
       baseUrl: config.baseUrl.toString(),
       connectTimeout: const Duration(seconds: 10),
@@ -221,6 +223,10 @@ Dio _createDio(ApiConfig config) {
       headers: {Headers.acceptHeader: Headers.jsonContentType},
     ),
   );
+  if (enableLocalDemoMode) {
+    dio.interceptors.add(LocalDemoInterceptor());
+  }
+  return dio;
 }
 
 ApiResult<T> _decodeResult<T>(Object? body, ApiDecoder<T> decode) {

@@ -1,18 +1,24 @@
 import 'dart:ui' show PointerDeviceKind;
 
-import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_checkout_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/widgets/membership_empty_deck_view.dart';
+import 'package:meta_gym_app/features/membership/presentation/widgets/membership_tier_widgets.dart';
+import 'package:meta_gym_app/features/membership/presentation/widgets/meta_points_redeem_sheet.dart';
 import 'package:provider/provider.dart';
 
-/// Màn hình Gói tập hội viên đồng bộ bảng màu Warm Smoked Glass
-/// (`DESIGN.md` / `MASTER.md`) cùng Trang chủ Hội viên & Hồ sơ.
+/// Màn hình 1.2a Gói tập (Đang hiệu lực) & 1.2b (Chưa đăng ký), đồng bộ
+/// phong cách Warm Smoked Glass + Thẻ Hội viên Kim loại NFC 16:10.
 class MembershipPage extends StatefulWidget {
   const MembershipPage({
     super.key,
@@ -28,6 +34,8 @@ class MembershipPage extends StatefulWidget {
 }
 
 class _MembershipPageState extends State<MembershipPage> {
+  int _metaPoints = 1240;
+
   @override
   void initState() {
     super.initState();
@@ -67,10 +75,83 @@ class _MembershipPageState extends State<MembershipPage> {
     MetaGymPageRoute<void>(builder: (_) => const PaymentHistoryPage()),
   );
 
+  Future<void> _openRedeemPoints() async {
+    final reward = await showMetaPointsRedeemSheet(
+      context,
+      currentPoints: _metaPoints,
+    );
+    if (!mounted || reward == null) return;
+    setState(() {
+      _metaPoints = (_metaPoints - reward.costPoints).clamp(0, 999999);
+    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF1F232C),
+          content: Text(
+            'Đã đổi "${reward.title}" (-${reward.costPoints} điểm) · Mã: ${reward.voucherPrefix}26',
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+  }
+
+  MembershipPlan? _findRenewalPlan(
+    Membership active,
+    List<MembershipPlan> plans,
+  ) {
+    if (plans.isEmpty) return null;
+    final activeLower = (active.planName ?? '').toLowerCase();
+    for (final plan in plans) {
+      if (plan.name.toLowerCase() == activeLower) return plan;
+    }
+    final activeTier = resolveMembershipTierInfo(planName: active.planName).kind;
+    for (final plan in plans) {
+      final planTier = resolveMembershipTierInfo(
+        planName: plan.name,
+        durationDays: plan.durationDays,
+      ).kind;
+      if (planTier == activeTier) return plan;
+    }
+    return plans.first;
+  }
+
+  String _resolveMemberName(BuildContext context) {
+    try {
+      return context.select<SessionController, String>(
+        (session) => session.user?.fullName ?? '',
+      );
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<MembershipController>();
+    final memberName = _resolveMemberName(context);
     final now = DateTime.now();
+
+    final primaryMembership = controller.memberships
+        .where((m) => m.status == 'ACTIVE')
+        .firstOrNull ??
+        controller.memberships.firstOrNull;
+    final secondaryMemberships = controller.memberships
+        .where((m) => m.id != primaryMembership?.id)
+        .toList();
+    final primaryTier = primaryMembership != null
+        ? resolveMembershipTierInfo(planName: primaryMembership.planName)
+        : null;
+
+    final isEmptySelectionMode =
+        primaryMembership == null &&
+        controller.pendingPayment == null &&
+        controller.plans.isNotEmpty;
 
     return Scaffold(
       backgroundColor: MetaGymTheme.scaffoldBackground,
@@ -81,9 +162,19 @@ class _MembershipPageState extends State<MembershipPage> {
           SafeArea(
             child: Column(
               children: [
-                const MembershipTopBar(
-                  eyebrow: 'HỘI VIÊN & ƯU ĐÃI',
-                  title: 'Gói tập',
+                MembershipTopBar(
+                  eyebrow: isEmptySelectionMode
+                      ? 'THẺ HỘI VIÊN NFC · 4 HẠNG'
+                      : 'HỘI VIÊN & ƯU ĐÃI',
+                  title: isEmptySelectionMode ? 'Chọn gói tập' : 'Gói tập',
+                  actions: isEmptySelectionMode
+                      ? const [
+                          MembershipStatusPill(
+                            label: 'Chưa có gói',
+                            color: Color(0xFFA8B1C2),
+                          ),
+                        ]
+                      : const [],
                 ),
                 Expanded(
                   child: controller.isLoading && controller.plans.isEmpty
@@ -92,16 +183,30 @@ class _MembershipPageState extends State<MembershipPage> {
                             color: MetaGymTheme.brandOrange,
                           ),
                         )
+                      : isEmptySelectionMode
+                      ? MembershipEmptyDeckView(
+                          plans: controller.plans,
+                          busy: controller.isLoading,
+                          onSelectPlan: _reviewPurchase,
+                          onRefresh: () => controller.load(),
+                          topBanners: [
+                            if (controller.errorMessage case final error?)
+                              MembershipErrorCard(
+                                message: error,
+                                onRetry: controller.isLoading
+                                    ? null
+                                    : controller.load,
+                              ),
+                          ],
+                        )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
                           backgroundColor: const Color(0xFF2B2622),
                           onRefresh: () => controller.load(),
                           child: ListView(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 36),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 36),
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
-                              if (controller.purchaseResult case final result?)
-                                _PurchaseSuccessBanner(membership: result),
                               if (controller.errorMessage case final error?)
                                 MembershipErrorCard(
                                   message: error,
@@ -118,35 +223,72 @@ class _MembershipPageState extends State<MembershipPage> {
                                   ),
                                 ),
 
-                              // 1. THẺ HỘI VIÊN CỦA BẠN (NỔI BẬT TRÊN CÙNG)
-                              const MembershipSectionHeader(
-                                icon: Icons.workspace_premium_rounded,
-                                iconColor: MetaGymTheme.progressGreen,
-                                title: 'Gói của tôi',
+                              // 1. THẺ HỘI VIÊN CỦA TÔI
+                              MembershipSectionHeader(
+                                svgAsset: MetaGymIcons.membershipActiveSeal,
+                                title: 'Thẻ hội viên của tôi',
+                                trailing: primaryMembership != null
+                                    ? MembershipStatusPill(
+                                        label: primaryMembership.status ==
+                                                'ACTIVE'
+                                            ? 'Hiệu lực'
+                                            : primaryMembership.label,
+                                        color: membershipStatusColor(
+                                          primaryMembership.status,
+                                        ),
+                                      )
+                                    : null,
                               ),
-                              if (controller.memberships.isEmpty)
+                              if (primaryMembership == null)
                                 const _EmptyMembershipHeroCard()
-                              else
-                                for (final item in controller.memberships)
-                                  _ActiveMembershipHeroCard(
-                                    membership: item,
-                                    now: now,
-                                  ),
+                              else ...[
+                                ActiveMembershipNfcSection(
+                                  membership: primaryMembership,
+                                  memberName: memberName,
+                                  now: now,
+                                  busy: controller.isLoading,
+                                  onRenew: controller.plans.isEmpty
+                                      ? null
+                                      : () {
+                                          final target = _findRenewalPlan(
+                                            primaryMembership,
+                                            controller.plans,
+                                          );
+                                          if (target != null) {
+                                            _reviewPurchase(target);
+                                          }
+                                        },
+                                  onRedeemPoints: _openRedeemPoints,
+                                ),
+                                for (final extra in secondaryMemberships)
+                                  _ScheduledMembershipBanner(membership: extra),
 
-                              // 2. DANH SÁCH GÓI ĐANG BÁN (PHÂN HẠNG CHI TIẾT)
+                                // 2. VÍ ĐIỂM META POINTS & TIẾN ĐỘ NÂNG HẠNG
+                                MetaPointsWalletCard(
+                                  points: _metaPoints,
+                                  tier: primaryTier!,
+                                  onRedeemTap: _openRedeemPoints,
+                                ),
+
+                                // 3. ƯU ĐÃI HẠNG THẺ ĐANG ÁP DỤNG
+                                ActiveTierPerksCard(tier: primaryTier),
+                              ],
+
+                              // 4. NÂNG CẤP HẠNG THẺ (CAROUSEL VUỐT NGANG)
                               if (controller.pendingPayment == null) ...[
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 4),
                                 MembershipSectionHeader(
-                                  icon: Icons.bolt_rounded,
-                                  iconColor: MetaGymTheme.brandOrange,
-                                  title: 'Gói đang bán',
+                                  svgAsset: MetaGymIcons.premiumCrown,
+                                  title: 'Nâng cấp hạng thẻ',
                                   trailing: controller.plans.isNotEmpty
                                       ? Text(
-                                          '${controller.plans.length} lựa chọn',
+                                          'Vuốt ngang · ${controller.plans.length} hạng',
                                           style: const TextStyle(
                                             color: MetaGymTheme.textSecondary,
-                                            fontSize: 12,
+                                            fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
+                                            fontFeatures:
+                                                MetaGymTheme.tabularFigures,
                                           ),
                                         )
                                       : null,
@@ -154,72 +296,69 @@ class _MembershipPageState extends State<MembershipPage> {
                                 if (controller.plans.isEmpty &&
                                     controller.errorMessage == null)
                                   const MetaGymGlassCard(
+                                    solid: false,
                                     padding: EdgeInsets.all(18),
                                     child: Text(
                                       'Chưa có gói tập đang bán.',
                                       style: TextStyle(
-                                        color: Color(0xFFD5CCBF),
-                                        fontSize: 14,
+                                        color: MetaGymTheme.textSecondary,
                                       ),
                                     ),
                                   )
-                                else if (controller.plans.isNotEmpty)
+                                else
                                   _MembershipPlanCarousel(
                                     plans: controller.plans,
+                                    activeMembership: primaryMembership,
                                     busy: controller.isLoading,
                                     onBuy: _reviewPurchase,
                                   ),
                               ],
 
-                              // 3. LỊCH SỬ GÓI & GIAO DỊCH
-                              const SizedBox(height: 10),
+                              // 5. LỊCH SỬ GÓI & GIAO DỊCH
+                              const SizedBox(height: 6),
                               MembershipSectionHeader(
-                                icon: Icons.history_rounded,
-                                iconColor: MetaGymTheme.reflectionBlue,
+                                svgAsset: MetaGymIcons.workoutHistory,
                                 title: 'Lịch sử gói',
-                                trailing: TextButton.icon(
-                                  onPressed: _openHistory,
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: MetaGymTheme.brandOrange,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
+                                trailing: InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: _openHistory,
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6,
                                       vertical: 6,
                                     ),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.receipt_long_rounded,
-                                    size: 16,
-                                  ),
-                                  label: const Text(
-                                    'Giao dịch',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        MetaGymSvgIcon(
+                                          MetaGymIcons.paymentReceiptInvoice,
+                                          size: 14,
+                                        ),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          'Giao dịch',
+                                          style: TextStyle(
+                                            color: MetaGymTheme.brandOrange,
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
-                              if (controller.history.isEmpty)
+                              if (controller.history.isEmpty &&
+                                  controller.errorMessage == null)
                                 const MetaGymGlassCard(
+                                  solid: false,
                                   padding: EdgeInsets.all(16),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.history_rounded,
-                                        color: Color(0xFFB7B2AF),
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          'Chưa có lịch sử gói tập.',
-                                          style: TextStyle(
-                                            color: Color(0xFFEAE6E2),
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    'Chưa có lịch sử gói tập nào.',
+                                    style: TextStyle(
+                                      color: MetaGymTheme.textSecondary,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 )
                               else
@@ -230,49 +369,6 @@ class _MembershipPageState extends State<MembershipPage> {
                         ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PurchaseSuccessBanner extends StatelessWidget {
-  const _PurchaseSuccessBanner({required this.membership});
-
-  final Membership membership;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0x242ECC71),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x662ECC71)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.check_circle_rounded,
-            color: MetaGymTheme.progressGreen,
-            size: 22,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Thanh toán thành công. ${membership.label} '
-              '(${formatMembershipDate(membership.startDate)} → '
-              '${formatMembershipDate(membership.endDate)}).',
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-              ),
             ),
           ),
         ],
@@ -294,90 +390,114 @@ class _PendingCheckoutBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MetaGymHeroGlassCard(
-      margin: const EdgeInsets.only(bottom: 18),
-      padding: const EdgeInsets.all(18),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0x2CF39C12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x75F39C12)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(9),
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0x28F39C12),
+                  color: const Color(0x33F39C12),
                   borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: const Color(0x60F39C12)),
                 ),
                 child: const Icon(
-                  Icons.qr_code_2_rounded,
+                  Icons.hourglass_top_rounded,
                   color: MetaGymTheme.warningAmber,
-                  size: 22,
+                  size: 19,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Giao dịch chờ thanh toán',
-                      style: TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${formatPaymentMethodLabel(payment.method)} · Chờ xác nhận',
-                      style: const TextStyle(
-                        color: MetaGymTheme.warningAmber,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Giao dịch chờ thanh toán',
+                  style: TextStyle(
+                    color: MetaGymTheme.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14.5,
+                  ),
                 ),
+              ),
+              const MembershipStatusPill(
+                label: 'Đang chờ',
+                color: MetaGymTheme.warningAmber,
               ),
             ],
           ),
-          if (payment.planName != null || payment.amount != null) ...[
-            const SizedBox(height: 12),
-            MetaGymMetricPanel(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      payment.planName ?? 'Gói tập hội viên',
-                      style: const TextStyle(
-                        color: Color(0xFFEAE6E2),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (payment.amount case final amount?)
-                    Text(
-                      formatMembershipMoney(amount),
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                ],
-              ),
+          const SizedBox(height: 8),
+          Text(
+            'Bạn đang có giao dịch ${payment.planName ?? 'gói tập'} '
+            'chưa hoàn tất qua ${formatPaymentMethodLabel(payment.method)}.',
+            style: const TextStyle(
+              color: Color(0xFFFDE3B2),
+              fontSize: 12.5,
+              height: 1.4,
             ),
-          ],
-          const SizedBox(height: 14),
+          ),
+          const SizedBox(height: 12),
           MembershipPrimaryButton(
             label: 'Tiếp tục thanh toán',
             icon: Icons.arrow_forward_rounded,
+            compact: true,
             onPressed: busy ? null : onContinue,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScheduledMembershipBanner extends StatelessWidget {
+  const _ScheduledMembershipBanner({required this.membership});
+
+  final Membership membership;
+
+  @override
+  Widget build(BuildContext context) {
+    return MetaGymGlassCard(
+      solid: false,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  membership.planName ?? membership.label,
+                  style: const TextStyle(
+                    color: MetaGymTheme.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${formatMembershipDate(membership.startDate)} → '
+                  '${formatMembershipDate(membership.endDate)}',
+                  style: const TextStyle(
+                    color: MetaGymTheme.textSecondary,
+                    fontSize: 12,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          MembershipStatusPill(
+            label: membership.label,
+            color: membershipStatusColor(membership.status),
           ),
         ],
       ),
@@ -390,239 +510,55 @@ class _EmptyMembershipHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MetaGymHeroGlassCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0x24FF5E36),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x52FF5E36)),
-            ),
-            child: const Icon(
-              Icons.card_membership_rounded,
-              color: MetaGymTheme.brandOrange,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bạn chưa có gói đang hoạt động.',
-                  style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Chọn gói tập phù hợp bên dưới để kích hoạt quyền check-in QR tại phòng gym và kết nối Coach.',
-                  style: TextStyle(
-                    color: Color(0xFFD5CCBF),
-                    fontSize: 13,
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActiveMembershipHeroCard extends StatelessWidget {
-  const _ActiveMembershipHeroCard({
-    required this.membership,
-    required this.now,
-  });
-
-  final Membership membership;
-  final DateTime now;
-
-  double? _progressRatio(int remaining) {
-    final start = DateTime.tryParse('${membership.startDate}T00:00:00Z');
-    final end = DateTime.tryParse('${membership.endDate}T00:00:00Z');
-    if (start == null || end == null) return null;
-    final totalDays = end.difference(start).inDays + 1;
-    if (totalDays <= 0) return null;
-    final used = (totalDays - remaining).clamp(0, totalDays);
-    return (used / totalDays).clamp(0.0, 1.0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = membershipStatusColor(membership.status);
-    final remaining = membership.remainingDays(now);
-    final progress = remaining != null ? _progressRatio(remaining) : null;
-
-    return MetaGymHeroGlassCard(
+    return MetaGymGlassCard(
+      solid: false,
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: color.withValues(alpha: 0.42)),
+                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.42),
+                  ),
                 ),
-                child: Icon(
-                  membership.status == 'ACTIVE'
-                      ? Icons.verified_rounded
-                      : Icons.event_available_rounded,
-                  color: color,
+                alignment: Alignment.center,
+                child: const MetaGymSvgIcon(
+                  MetaGymIcons.membershipActiveSeal,
                   size: 22,
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      membership.planName ?? 'Gói hội viên',
-                      style: const TextStyle(
+                      'Chưa có gói tập hiệu lực',
+                      style: TextStyle(
                         color: MetaGymTheme.textPrimary,
                         fontWeight: FontWeight.w800,
-                        fontSize: 17,
+                        fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
-                      membership.status == 'ACTIVE'
-                          ? 'Thẻ hội viên đang kích hoạt'
-                          : 'Gói kế tiếp sẽ tự kích hoạt',
-                      style: const TextStyle(
-                        color: Color(0xFFD5CCBF),
-                        fontSize: 12,
+                      'Kích hoạt thẻ để mở khóa check-in QR/NFC và thuê Coach',
+                      style: TextStyle(
+                        color: MetaGymTheme.textSecondary,
+                        fontSize: 12.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              MembershipStatusPill(label: membership.label, color: color),
-            ],
-          ),
-          if (remaining != null) ...[
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  '$remaining',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w800,
-                    height: 1.0,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Còn $remaining ngày',
-                  style: const TextStyle(
-                    color: MetaGymTheme.progressGreen,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            if (progress != null) ...[
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.04, 1.0),
-                  minHeight: 6,
-                  backgroundColor: const Color(0x33FFFFFF),
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                ),
-              ),
-            ],
-          ],
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: MetaGymMetricPanel(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Bắt đầu',
-                        style: TextStyle(
-                          color: MetaGymTheme.textSecondary,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        formatMembershipDate(membership.startDate),
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: MetaGymMetricPanel(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Hết hạn',
-                        style: TextStyle(
-                          color: MetaGymTheme.textSecondary,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        formatMembershipDate(membership.endDate),
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ],
@@ -631,58 +567,113 @@ class _ActiveMembershipHeroCard extends StatelessWidget {
   }
 }
 
-class _PlanTierMeta {
-  const _PlanTierMeta({
+class _PlanCardMeta {
+  const _PlanCardMeta({
     required this.badgeLabel,
     required this.badgeColor,
-    required this.isFeatured,
+    required this.borderColor,
+    required this.ctaLabel,
+    required this.isPrimaryCta,
+    required this.periodSuffix,
   });
 
   final String badgeLabel;
   final Color badgeColor;
-  final bool isFeatured;
+  final Color borderColor;
+  final String ctaLabel;
+  final bool isPrimaryCta;
+  final String periodSuffix;
 }
 
-_PlanTierMeta _resolvePlanTier(
-  MembershipPlan plan,
-  List<MembershipPlan> plans,
-) {
-  if (plans.length == 1) {
-    return const _PlanTierMeta(
-      badgeLabel: 'KHUYÊN DÙNG',
-      badgeColor: MetaGymTheme.brandOrange,
-      isFeatured: true,
-    );
-  }
-  if (plan.durationDays >= 300) {
-    return const _PlanTierMeta(
-      badgeLabel: 'TIẾT KIỆM NHẤT',
+_PlanCardMeta _resolvePlanCardMeta({
+  required MembershipPlan plan,
+  required List<MembershipPlan> plans,
+  required Membership? activeMembership,
+}) {
+  final tier = resolveMembershipTierInfo(
+    planName: plan.name,
+    durationDays: plan.durationDays,
+  );
+  final activeName = (activeMembership?.planName ?? '').toLowerCase();
+  final activeTier = activeMembership != null
+      ? resolveMembershipTierInfo(planName: activeMembership.planName).kind
+      : null;
+  final isCurrent =
+      activeMembership != null &&
+      (plan.name.toLowerCase() == activeName || activeTier == tier.kind);
+
+  final periodSuffix = switch (plan.durationDays) {
+    >= 300 => '/ năm',
+    >= 150 => '/ 6 tháng',
+    >= 60 => '/ 3 tháng',
+    >= 28 => '/ tháng',
+    _ => '/ ${plan.durationDays} ngày',
+  };
+
+  if (isCurrent) {
+    return _PlanCardMeta(
+      badgeLabel: 'Đang dùng',
       badgeColor: MetaGymTheme.progressGreen,
-      isFeatured: false,
+      borderColor: tier.borderColor,
+      ctaLabel: 'Gia hạn thêm',
+      isPrimaryCta: false,
+      periodSuffix: periodSuffix,
     );
   }
-  if (plan.durationDays >= 28 && plan.durationDays <= 45) {
-    return const _PlanTierMeta(
-      badgeLabel: 'PHỔ BIẾN NHẤT',
+
+  if (tier.kind == MembershipTierKind.diamond || plans.length == 1) {
+    return _PlanCardMeta(
+      badgeLabel: 'Đề xuất',
+      badgeColor: MetaGymTheme.reflectionBlue,
+      borderColor: tier.borderColor,
+      ctaLabel: activeMembership != null ? 'Nâng cấp gói này' : 'Chọn gói này',
+      isPrimaryCta: true,
+      periodSuffix: periodSuffix,
+    );
+  }
+
+  if (tier.kind == MembershipTierKind.gold) {
+    return _PlanCardMeta(
+      badgeLabel: 'Phổ biến',
       badgeColor: MetaGymTheme.brandOrange,
-      isFeatured: true,
+      borderColor: tier.borderColor,
+      ctaLabel: 'Chọn gói này',
+      isPrimaryCta: activeMembership == null,
+      periodSuffix: periodSuffix,
     );
   }
-  return const _PlanTierMeta(
-    badgeLabel: 'LINH HOẠT',
-    badgeColor: MetaGymTheme.reflectionBlue,
-    isFeatured: false,
+
+  if (tier.kind == MembershipTierKind.silver) {
+    return _PlanCardMeta(
+      badgeLabel: '3 Tháng',
+      badgeColor: const Color(0xFFA8B1C2),
+      borderColor: tier.borderColor,
+      ctaLabel: 'Chọn gói này',
+      isPrimaryCta: false,
+      periodSuffix: periodSuffix,
+    );
+  }
+
+  return _PlanCardMeta(
+    badgeLabel: plan.durationDays >= 28 ? '1 Tháng' : '${plan.durationDays} ngày',
+    badgeColor: const Color(0xFFA8B1C2),
+    borderColor: tier.borderColor,
+    ctaLabel: 'Chọn gói này',
+    isPrimaryCta: false,
+    periodSuffix: periodSuffix,
   );
 }
 
 class _MembershipPlanCarousel extends StatefulWidget {
   const _MembershipPlanCarousel({
     required this.plans,
+    required this.activeMembership,
     required this.busy,
     required this.onBuy,
   });
 
   final List<MembershipPlan> plans;
+  final Membership? activeMembership;
   final bool busy;
   final ValueChanged<MembershipPlan> onBuy;
 
@@ -700,31 +691,38 @@ class _MembershipPlanCarouselState extends State<_MembershipPlanCarousel> {
     super.dispose();
   }
 
-  Widget _card(MembershipPlan plan) => _MembershipPlanCard(
-    plan: plan,
-    tier: _resolvePlanTier(plan, widget.plans),
-    busy: widget.busy,
-    onBuy: () => widget.onBuy(plan),
-  );
+  List<MembershipPlan> _orderedPlans() {
+    // Ưu tiên hiển thị gói hạng cao nhất (Kim Cương VIP) trước giống preview 1.2a
+    final sorted = [...widget.plans];
+    sorted.sort((a, b) => b.durationDays.compareTo(a.durationDays));
+    return sorted;
+  }
+
+  Widget _card(MembershipPlan plan, List<MembershipPlan> ordered) =>
+      _MembershipPlanCard(
+        plan: plan,
+        meta: _resolvePlanCardMeta(
+          plan: plan,
+          plans: ordered,
+          activeMembership: widget.activeMembership,
+        ),
+        busy: widget.busy,
+        onBuy: () => widget.onBuy(plan),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final plans = widget.plans;
-    if (plans.length == 1) return _card(plans.single);
+    final plans = _orderedPlans();
+    if (plans.length == 1) return _card(plans.single, plans);
 
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
     final scrollBehavior = ScrollConfiguration.of(context);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 10.0;
-        final peek = constraints.maxWidth >= 300 ? 26.0 : 0.0;
-        final cardWidth = constraints.maxWidth - peek;
+        final cardWidth = (constraints.maxWidth * 0.78).clamp(242.0, 290.0);
         final stride = cardWidth + gap;
-        double position() => _scroll.hasClients ? _scroll.offset / stride : 0;
-        double focusAt(double page, int index) {
-          final distance = (page - index).abs().clamp(0.0, 1.0);
-          return 1 - Curves.easeInOut.transform(distance);
-        }
 
         return Column(
           children: [
@@ -741,95 +739,23 @@ class _MembershipPlanCarouselState extends State<_MembershipPlanCarousel> {
                 physics: disableAnimations
                     ? null
                     : _MembershipPlanSnapPhysics(stride: stride),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final (index, plan) in plans.indexed) ...[
-                      if (index > 0) const SizedBox(width: gap),
-                      SizedBox(
-                        width: cardWidth,
-                        child: AnimatedBuilder(
-                          animation: _scroll,
-                          child: _card(plan),
-                          builder: (context, child) {
-                            if (disableAnimations) return child!;
-                            return Transform.scale(
-                              alignment: Alignment.topCenter,
-                              scale: 0.98 + focusAt(position(), index) * 0.02,
-                              child: child,
-                            );
-                          },
-                        ),
-                      ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final (index, plan) in plans.indexed) ...[
+                        if (index > 0) const SizedBox(width: gap),
+                        SizedBox(width: cardWidth, child: _card(plan, plans)),
+                      ],
                     ],
-                    SizedBox(width: peek),
-                  ],
+                  ),
                 ),
               ),
             ),
-            AnimatedBuilder(
-              animation: _scroll,
-              builder: (context, _) {
-                final page = position();
-                final selected = page.round().clamp(0, plans.length - 1);
-                return Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [
-                    for (final (index, plan) in plans.indexed)
-                      Semantics(
-                        selected: selected == index,
-                        child: IconButton(
-                          tooltip: plan.name,
-                          onPressed: () {
-                            final offset = (index * stride)
-                                .clamp(0.0, _scroll.position.maxScrollExtent)
-                                .toDouble();
-                            if (disableAnimations) {
-                              _scroll.jumpTo(offset);
-                            } else {
-                              _scroll.animateTo(
-                                offset,
-                                duration: const Duration(milliseconds: 280),
-                                curve: Curves.easeOutCubic,
-                              );
-                            }
-                          },
-                          icon: _PlanPositionDot(
-                            emphasis: disableAnimations
-                                ? (selected == index ? 1 : 0)
-                                : focusAt(page, index),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+            const SizedBox(height: 8),
           ],
         );
       },
-    );
-  }
-}
-
-class _PlanPositionDot extends StatelessWidget {
-  const _PlanPositionDot({required this.emphasis});
-
-  final double emphasis;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 6 + 12 * emphasis,
-      height: 6,
-      decoration: BoxDecoration(
-        color: Color.lerp(
-          MetaGymTheme.textSecondary,
-          MetaGymTheme.brandOrange,
-          emphasis,
-        ),
-        borderRadius: BorderRadius.circular(6),
-      ),
     );
   }
 }
@@ -876,206 +802,172 @@ class _MembershipPlanSnapPhysics extends ScrollPhysics {
 class _MembershipPlanCard extends StatelessWidget {
   const _MembershipPlanCard({
     required this.plan,
-    required this.tier,
+    required this.meta,
     required this.busy,
     required this.onBuy,
   });
 
   final MembershipPlan plan;
-  final _PlanTierMeta tier;
+  final _PlanCardMeta meta;
   final bool busy;
   final VoidCallback onBuy;
 
   @override
   Widget build(BuildContext context) {
-    final perDay = plan.durationDays > 1 && plan.price > 0
-        ? (plan.price / plan.durationDays).round()
-        : null;
-    final perMonth = plan.durationDays >= 300 && plan.price > 0
-        ? (plan.price / 12).round()
-        : null;
+    final description = (plan.description ?? '').trim().isNotEmpty
+        ? plan.description!.trim()
+        : resolveMembershipTierInfo(
+            planName: plan.name,
+            durationDays: plan.durationDays,
+          ).summaryPerks;
 
-    final cardContent = Padding(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: tier.badgeColor.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(
-                    color: tier.badgeColor.withValues(alpha: 0.42),
-                  ),
-                ),
-                child: Icon(
-                  tier.isFeatured
-                      ? Icons.local_fire_department_rounded
-                      : Icons.card_membership_rounded,
-                  color: tier.badgeColor,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xC42B2622),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: meta.borderColor, width: 1.15),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x45000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      plan.name,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
+                    Expanded(
+                      child: Text(
+                        plan.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Thời hạn ${plan.durationDays} ngày',
-                      style: const TextStyle(
-                        color: Color(0xFFD5CCBF),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: meta.badgeColor.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: meta.badgeColor.withValues(alpha: 0.42),
+                        ),
+                      ),
+                      child: Text(
+                        meta.badgeLabel,
+                        style: TextStyle(
+                          color: meta.badgeColor,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              MembershipStatusPill(
-                label: tier.badgeLabel,
-                color: tier.badgeColor,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                formatMembershipMoney(plan.price),
-                style: TextStyle(
-                  color: tier.isFeatured
-                      ? MetaGymTheme.brandOrange
-                      : MetaGymTheme.textPrimary,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+                const SizedBox(height: 6),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      formatMembershipMoney(plan.price),
+                      style: const TextStyle(
+                        color: MetaGymTheme.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                    Text(
+                      meta.periodSuffix,
+                      style: const TextStyle(
+                        color: MetaGymTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              if (perDay != null)
+                const SizedBox(height: 8),
                 Text(
-                  perMonth != null
-                      ? '~${formatMembershipMoney(perMonth)} / tháng'
-                      : '~${formatMembershipMoney(perDay)} / ngày',
+                  description,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFFB7B2AF),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                    color: Color(0xFFD5CCBF),
+                    fontSize: 12,
+                    height: 1.45,
                   ),
                 ),
-            ],
-          ),
-          if (plan.description case final description?
-              when description.trim().isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              description.trim(),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFFE0D9CE),
-                fontSize: 13.5,
-                height: 1.45,
-              ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 44,
+              child: meta.isPrimaryCta
+                  ? FilledButton(
+                      onPressed: busy ? null : onBuy,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.brandOrange,
+                        disabledBackgroundColor: MetaGymTheme.brandOrange
+                            .withValues(alpha: 0.45),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        meta.ctaLabel,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  : OutlinedButton(
+                      onPressed: busy ? null : onBuy,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: MetaGymTheme.textPrimary,
+                        backgroundColor: const Color(0x16FFFFFF),
+                        side: const BorderSide(
+                          color: Color(0x45FFF6EA),
+                          width: 1,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        meta.ctaLabel,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
             ),
           ],
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0x28FFF6EA)),
-          const SizedBox(height: 12),
-          const _PlanBenefitRow(text: 'Mở khóa check-in QR tại phòng tập'),
-          const SizedBox(height: 6),
-          const _PlanBenefitRow(
-            text: 'Đồng bộ lịch tập, nhật ký & thuê Coach 1:1',
-          ),
-          const SizedBox(height: 16),
-          MembershipPrimaryButton(
-            label: 'Mua',
-            icon: Icons.arrow_forward_rounded,
-            onPressed: busy ? null : onBuy,
-          ),
-        ],
+        ),
       ),
-    );
-
-    if (tier.isFeatured) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(21),
-            border: Border.all(
-              color: MetaGymTheme.brandOrange.withValues(alpha: 0.72),
-              width: 1.3,
-            ),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xD4382A23), Color(0xCE28221E)],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: cardContent,
-        ),
-      );
-    }
-
-    return MetaGymGlassCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: cardContent,
-    );
-  }
-}
-
-class _PlanBenefitRow extends StatelessWidget {
-  const _PlanBenefitRow({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(
-          Icons.check_circle_rounded,
-          color: MetaGymTheme.progressGreen,
-          size: 16,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xFFD5CCBF),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1088,31 +980,27 @@ class _HistoryMembershipTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = membershipStatusColor(membership.status);
+    final label = membership.status == 'EXPIRED'
+        ? 'Đã hết hạn'
+        : membership.label;
     return MetaGymGlassCard(
+      solid: false,
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(Icons.history_rounded, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   membership.planName ?? membership.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: MetaGymTheme.textPrimary,
                     fontWeight: FontWeight.w700,
-                    fontSize: 14.5,
+                    fontSize: 13.5,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1120,15 +1008,31 @@ class _HistoryMembershipTile extends StatelessWidget {
                   '${formatMembershipDate(membership.startDate)} → '
                   '${formatMembershipDate(membership.endDate)}',
                   style: const TextStyle(
-                    color: Color(0xFFB7B2AF),
-                    fontSize: 12.5,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                    color: MetaGymTheme.textSecondary,
+                    fontSize: 12,
+                    fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
               ],
             ),
           ),
-          MembershipStatusPill(label: membership.label, color: color),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: color.withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ],
       ),
     );

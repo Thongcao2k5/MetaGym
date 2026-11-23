@@ -15,7 +15,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Gói đang hoạt động'), findsOneWidget);
+    expect(find.text('Dịch vụ đang hoạt động'), findsOneWidget);
     expect(find.text('Gói tháng'), findsNWidgets(2));
     await tester.tap(find.text('Gói tháng').last);
     await tester.pumpAndSettle();

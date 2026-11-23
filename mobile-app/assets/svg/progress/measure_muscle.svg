@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="prg-musc-blush" x1="8" y1="12" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Flexed Arm Blush Fill -->
+  <path d="M13 38C9.8 35.8 9 30.8 10.6 25.5L13.5 16C14.3 13.4 16.5 11.8 19 12.2C21.2 12.6 22.5 14.5 22 16.8L20.5 22.5C22.4 20.5 25.4 19.6 28.4 20.4C32.8 21.6 35.5 25.6 35.2 30.2C34.9 34.8 31.2 38 26.2 38H13Z" fill="url(#prg-musc-blush)"/>
+  <!-- Flexed Bicep & Forearm Contour (#E8EDF5) -->
+  <path d="M19.8 23.2C21.8 20.6 25.2 19.4 28.6 20.4C33 21.6 35.8 25.6 35.4 30.4C35 34.8 31.4 38 26.4 38H13.8C10.2 38 8.4 33.8 9.8 28.4L13.2 16.2C14 13.4 16.4 11.8 19 12.2C21.2 12.6 22.4 14.6 21.8 16.8L19.4 25.2" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bicep Peak Definition Curve (#FF5E36) -->
+  <path d="M23.5 25.2C25.2 24.4 27.6 24.6 29.2 26.2" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Top-Right Strength Gain Plus (#FF5E36) -->
+  <path d="M36 10.5V16.5M33 13.5H39" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

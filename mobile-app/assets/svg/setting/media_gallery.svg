@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-mgal-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<rect x="9" y="10" width="30" height="28" rx="6" fill="url(#set-mgal-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <circle cx="17.5" cy="18.5" r="3" fill="#FF5E36"/>
+  <path d="M10.5 34L19 25.5L25 31L31.5 23.5L38 32" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

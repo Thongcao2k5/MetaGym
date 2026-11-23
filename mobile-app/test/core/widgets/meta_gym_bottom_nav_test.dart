@@ -36,7 +36,7 @@ void main() {
                     widget is Semantics && widget.properties.label == 'AI',
               );
               final gesture = await tester.startGesture(
-                tester.getCenter(find.byIcon(Icons.auto_awesome_rounded)),
+                tester.getCenter(ai),
               );
               await tester.pump(const Duration(milliseconds: 110));
               expect(taps, 0);

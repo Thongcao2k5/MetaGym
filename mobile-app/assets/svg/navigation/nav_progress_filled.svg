@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nav-prog-f-blush" x1="12" y1="14" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Area Blush Strictly Inside Axes (inset 2px from white axes) -->
+  <path d="M13 35V28.5L20.5 22L26.5 26L36 16.5V35H13Z" fill="url(#nav-prog-f-blush)"/>
+  <!-- Chart L-Axes (#E8EDF5) -->
+  <path d="M10.5 11.5V35C10.5 36.4 11.6 37.5 13 37.5H38" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Ascending Trend Line & Arrow (#FF5E36) -->
+  <path d="M14.5 29L20.5 22.5L26.5 26L36.5 15.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M31.5 15.5H36.5V20.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-default-blush" x1="8" y1="12" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Soft Rounded Membership Card with Top-Right '+' Badge (Directly inspired by reference image 4 'Quản lý thẻ cào') -->
+  <rect x="8" y="13" width="31" height="23" rx="6" fill="url(#mem-default-blush)"/>
+  <!-- Open-path Card Contour leaving top-right gap for coral '+' badge -->
+  <path d="M39 22.5V30C39 33.3 36.3 36 33 36H14C10.7 36 8 33.3 8 30V19C8 15.7 10.7 13 14 13H29.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Inner Card Strip / Chip -->
+  <rect x="13.5" y="25.5" width="20" height="5" rx="2" stroke="#E8EDF5" stroke-width="2"/>
+  <!-- Coral Accent: Top-Right '+' Action -->
+  <path d="M36 10.5V18.5M32 14.5H40" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

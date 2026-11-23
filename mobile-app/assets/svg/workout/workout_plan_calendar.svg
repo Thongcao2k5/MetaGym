@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="wk-cal-blush" x1="8" y1="11" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Workout Plan Calendar (Calendar Grid + Coral Dumbbell Workout Day Marker) -->
+  <rect x="8" y="11" width="28" height="26" rx="6.5" fill="url(#wk-cal-blush)"/>
+  <path d="M26.5 37H14.5C10.9 37 8 34.1 8 30.5V17.5C8 13.9 10.9 11 14.5 11H29.5C33.1 11 36 13.9 36 17.5V25" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M15.5 8V13M28.5 8V13" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="9" y1="18.5" x2="35" y2="18.5" stroke="#E8EDF5" stroke-width="2"/>
+  <circle cx="15.5" cy="24.5" r="1.6" fill="#E8EDF5"/>
+  <circle cx="22" cy="24.5" r="1.6" fill="#FF5E36"/>
+  <circle cx="15.5" cy="30" r="1.6" fill="#E8EDF5"/>
+  <!-- Coral Dumbbell Badge Bottom-Right -->
+  <path d="M30.5 35.5H39.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+  <rect x="28" y="32" width="3.2" height="7" rx="1.5" fill="#FF5E36"/>
+  <rect x="38.8" y="32" width="3.2" height="7" rx="1.5" fill="#FF5E36"/>
+</svg>

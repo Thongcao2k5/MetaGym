@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="wk-start-blush" x1="8" y1="8" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Workout Start (Play Disc + Energy Bolt Badge) -->
+  <circle cx="22.5" cy="22.5" r="14.5" fill="url(#wk-start-blush)"/>
+  <path d="M36.5 18.8C34.8 12.6 29.2 8 22.5 8C14.5 8 8 14.5 8 22.5C8 29.2 12.6 34.8 18.8 36.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M19.5 16.8L29.5 22.5L19.5 28.2V16.8Z" fill="#FF5E36" fill-opacity="0.26" stroke="#FF5E36" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Coral Power Bolt Badge Bottom-Right -->
+  <circle cx="35.5" cy="35.5" r="5.5" fill="#FF5E36" fill-opacity="0.20" stroke="#FF5E36" stroke-width="2.1"/>
+  <path d="M36 32.5L33.8 35.6H36.4L35.2 38.5L37.6 35.2H35L36 32.5Z" fill="#FF5E36"/>
+</svg>

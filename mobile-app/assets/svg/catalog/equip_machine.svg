@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-equip-machine-blush" x1="10" y1="10" x2="32" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Soft blush inside weight stack tower -->
+  <rect x="10" y="9" width="20" height="30" rx="5.5" fill="url(#cat-equip-machine-blush)"/>
+  <!-- Main Tower Outline (Open gap at bottom-right for coral gear/selector badge) -->
+  <path d="M22 39H15.5C12.5 39 10 36.5 10 33.5V14.5C10 11.5 12.5 9 15.5 9H24.5C27.5 9 30 11.5 30 14.5V22" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Weight Plates inside stack -->
+  <line x1="15" y1="16" x2="25" y2="16" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="15" y1="22" x2="25" y2="22" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="15" y1="28" x2="21" y2="28" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Coral Accent: Mechanical Gear / Weight Pin Badge (Bottom-Right) -->
+  <circle cx="33" cy="33" r="6" fill="#FF5E36" fill-opacity="0.16" stroke="#FF5E36" stroke-width="2.2"/>
+  <circle cx="33" cy="33" r="2" fill="#FF5E36"/>
+  <path d="M33 24.5V26.5M33 39.5V41.5M24.5 33H26.5M39.5 33H41.5M27 27L28.4 28.4M37.6 37.6L39 39M39 27L37.6 28.4M28.4 37.6L27 39" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+</svg>

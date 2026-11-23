@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nav-msg-blush" x1="10" y1="11" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Tab 4: Messages (Filled / Selected — Soft-Line Duotone: #E8EDF5 Chat Bubble + #FF5E36 Badge & Dots) -->
+  <path d="M9 23.5C9 16.6 15.5 11 23.5 11C31.5 11 38 16.6 38 23.5C38 30.4 31.5 35.5 23.5 35.5H20.5L13.5 40.5V34.5C10.7 32 9 28 9 23.5Z" fill="url(#nav-msg-blush)"/>
+  <path d="M38 22.5V24C38 30.6 31.8 35.5 24.2 35.5H20.5L13.5 40.5V34.5C10.7 32 9 28.2 9 23.8C9 16.7 15.5 11 23.5 11C25.6 11 27.6 11.4 29.4 12.1" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="23.5" r="2.1" fill="#E8EDF5"/>
+  <circle cx="23.8" cy="23.5" r="2.1" fill="#FF5E36"/>
+  <circle cx="29.6" cy="23.5" r="2.1" fill="#FF5E36"/>
+  <!-- Top-Right Unread / Active Pulse Ring -->
+  <circle cx="36" cy="14" r="4.5" fill="#FF5E36"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="prg-sleep-blush" x1="8" y1="10" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Smooth Crescent Moon (Two Exact Circular Arcs) -->
+  <path d="M34.2 31.6C31.7 35.4 27.4 38 22.5 38C14.77 38 8.5 31.73 8.5 24C8.5 16.9 13.78 11.04 20.6 10.12C18.3 12.6 16.9 15.9 16.9 19.6C16.9 27.33 23.17 33.6 30.9 33.6C32.05 33.6 33.16 33.46 34.2 33.2V31.6Z" fill="url(#prg-sleep-blush)"/>
+  <path d="M34.2 31.8C31.7 35.5 27.4 38 22.5 38C14.77 38 8.5 31.73 8.5 24C8.5 16.9 13.78 11.04 20.6 10.12C18.3 12.6 16.9 15.9 16.9 19.6C16.9 27.33 23.17 33.6 30.9 33.6C32.05 33.6 33.16 33.46 34.2 33.2" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Crisp Stepped Zz (#FF5E36) -->
+  <path d="M27.5 11H34.5L27.5 18H34.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M35.5 21.5H40.5L35.5 26.5H40.5" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

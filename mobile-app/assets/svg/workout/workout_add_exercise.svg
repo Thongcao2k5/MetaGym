@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="wk-add-blush" x1="8" y1="12" x2="36" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <!-- Workout Add Exercise (Dumbbell + Coral Plus Action Badge) -->
+  <rect x="9.5" y="13.5" width="7" height="19" rx="3.5" fill="url(#wk-add-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M29.5 24V17C29.5 15.1 31.1 13.5 33 13.5C34.9 13.5 36.5 15.1 36.5 17V23.5" fill="url(#wk-add-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M9.5 18.5H7.2C5.7 18.5 4.5 19.7 4.5 21.2V24.8C4.5 26.3 5.7 27.5 7.2 27.5H9.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="16.5" y1="23" x2="29.5" y2="23" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Coral Plus Badge Bottom-Right -->
+  <circle cx="35" cy="34.5" r="6.2" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M35 31.5V37.5M32 34.5H38" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

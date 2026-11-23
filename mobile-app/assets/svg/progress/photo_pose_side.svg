@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
+  <defs>
+    <linearGradient id="prg-pside-blush" x1="90" y1="36" x2="90" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.24"/>
+    </linearGradient>
+  </defs>
+  <!-- Camera Viewfinder Corner Brackets (#FF5E36) -->
+  <path d="M22 44V26C22 23.8 23.8 22 26 22H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 22H154C156.2 22 158 23.8 158 26V44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 286V304C22 306.2 23.8 308 26 308H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 308H154C156.2 308 158 306.2 158 304V286" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <!-- Plumb Line Posture Guide -->
+  <line x1="90" y1="54" x2="90" y2="288" stroke="#FF5E36" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <line x1="34" y1="158" x2="146" y2="158" stroke="#8E95A5" stroke-opacity="0.28" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <!-- Clean Side Profile Athletic Silhouette (Facing Right, Natural Standing Posture) -->
+  <path d="M92 42C102 42 108 49 107 59C106 66 102 71 98 74L99 82C111 86 117 98 116 114C115 128 112 142 110 156C109 164 114 178 114 196C114 214 109 234 105 250L102 282C104 288 114 291 117 294C119 296 117 299 111 299H81C76 299 74 296 76 292L80 282L77 244C74 226 70 208 69 192C68 176 74 166 74 156C72 142 68 124 70 106C72 92 78 84 85 81V74C80 70 78 64 79 56C80 47 85 42 92 42Z" fill="url(#prg-pside-blush)" stroke="#E8EDF5" stroke-width="2.4" stroke-linejoin="round"/>
+  <!-- Side Arm & Shoulder Contour Line (#E8EDF5) -->
+  <path d="M92 98C98 100 101 108 99 124L95 164C94 171 90 175 86 174C82 173 81 168 82 161L86 120" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Shoulder/Posture Alignment Node (#FF5E36) -->
+  <circle cx="92" cy="108" r="5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2"/>
+  <circle cx="92" cy="108" r="1.8" fill="#FF5E36"/>
+</svg>

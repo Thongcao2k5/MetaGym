@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nav-ai-emblem-blush" x1="10" y1="8" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.40"/>
+    </linearGradient>
+  </defs>
+  <!-- Tab 3 (Center): AI Coach Emblem on Dark Surface (#1F242D / AI Chat Header — Soft-Line Duotone) -->
+  <path d="M22.5 8L26.6 19.4L38 23.5L26.6 27.6L22.5 39L18.4 27.6L7 23.5L18.4 19.4L22.5 8Z" fill="url(#nav-ai-emblem-blush)" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Secondary AI Intelligence Spark (Top-Right) -->
+  <path d="M36.5 7L38 11.5L42.5 13L38 14.5L36.5 19L35 14.5L30.5 13L35 11.5L36.5 7Z" fill="#FF5E36" stroke="#FF5E36" stroke-width="1.4" stroke-linejoin="round"/>
+  <!-- Micro Pulse Dot (Bottom-Right) -->
+  <circle cx="36" cy="36" r="2.3" fill="#FF5E36"/>
+</svg>

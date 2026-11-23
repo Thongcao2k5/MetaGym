@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="wk-ai-blush" x1="8" y1="8" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Workout AI Coach (Smart AI Spark Core + Dumbbell Intelligence Orbit) -->
+  <circle cx="22.5" cy="23.5" r="13.5" fill="url(#wk-ai-blush)"/>
+  <path d="M35.5 19.5C33.8 14 28.6 10 22.5 10C15 10 9 16 9 23.5C9 30.2 13.9 35.8 20.3 36.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Central AI 4-Point Star -->
+  <path d="M22.5 14.5L24.7 21.3L31.5 23.5L24.7 25.7L22.5 32.5L20.3 25.7L13.5 23.5L20.3 21.3L22.5 14.5Z" fill="#FF5E36" fill-opacity="0.28" stroke="#FF5E36" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Mini Spark & Dumbbell Node Bottom-Right -->
+  <path d="M36.5 29L37.6 32.4L41 33.5L37.6 34.6L36.5 38L35.4 34.6L32 33.5L35.4 32.4L36.5 29Z" fill="#FF5E36" stroke="#FF5E36" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>

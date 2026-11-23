@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nut-coach-plan-blush" x1="11" y1="9" x2="37" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECC71" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#2ECC71" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Coach 7-Day Meal Plan & Nutrition Guide (Clipboard + Fork/Leaf Badge) -->
+  <rect x="11" y="10" width="24" height="29" rx="6" fill="url(#nut-coach-plan-blush)"/>
+  <path d="M24 39H17C13.7 39 11 36.3 11 33V16C11 12.7 13.7 10 17 10H29C32.3 10 35 12.7 35 16V24" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Top Clip -->
+  <path d="M18.5 8.5H27.5C28.6 8.5 29.5 9.4 29.5 10.5V12.5H16.5V10.5C16.5 9.4 17.4 8.5 18.5 8.5Z" fill="#2ECC71" fill-opacity="0.28" stroke="#E8EDF5" stroke-width="2.2"/>
+  <!-- Meal Plan Schedule Lines -->
+  <path d="M16.5 19.5H28.5M16.5 25H25.5M16.5 30.5H22" stroke="#2ECC71" stroke-width="2.3" stroke-linecap="round"/>
+  <!-- Bottom-Right Organic Leaf Check Badge -->
+  <circle cx="33.5" cy="33.5" r="6.5" fill="#2ECC71" fill-opacity="0.24" stroke="#2ECC71" stroke-width="2.4"/>
+  <path d="M30.8 33.5L32.7 35.4L36.5 31.6" stroke="#2ECC71" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

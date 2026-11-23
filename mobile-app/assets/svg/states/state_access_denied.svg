@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-deny-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M24 7.5L10 13V23C10 31.5 15.8 39 24 41.5C32.2 39 38 31.5 38 23V13L24 7.5Z" fill="url(#st-deny-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M19 19L29 29M29 19L19 29" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

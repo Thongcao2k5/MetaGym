@@ -187,6 +187,36 @@ void main() {
     },
   );
 
+  testWidgets('LoginPage biometric quick login authenticates cleanly', (
+    tester,
+  ) async {
+    final session = SessionController(
+      _MemoryTokenStorage(),
+      (_) async => throw UnimplementedError(),
+      preferenceStorage: _MemoryPrefStorage(),
+    );
+    final authController = AuthController(_FakeAuthService(), session);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: authController,
+        child: MaterialApp(theme: AppTheme.dark, home: const LoginPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('login-face-id')));
+    await tester.tap(find.byKey(const Key('login-face-id')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('biometric-confirm-btn')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('biometric-confirm-btn')));
+    await tester.pumpAndSettle();
+
+    expect(session.status, SessionStatus.authenticated);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final viewport in const <Size>[Size(375, 812), Size(360, 640)]) {
     testWidgets(
       '${viewport.width.toInt()}x${viewport.height.toInt()} viewport renders Splash, Login, Register, and ForgotPassword cleanly',

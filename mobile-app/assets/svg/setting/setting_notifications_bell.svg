@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-bell-blush" x1="12" y1="9" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.38"/>
+    </linearGradient>
+  </defs>
+  <!-- Setting: Thông báo & Nhắc lịch tập hằng ngày (Notification Bell + Active Pulse Badge) -->
+  <path d="M14 21C14 15.5 18.5 11 24 11C29.5 11 34 15.5 34 21V28.5L37 32.5H11L14 28.5V21Z" fill="url(#set-bell-blush)"/>
+  <path d="M34 22.5V28.5L37 32.5H11L14 28.5V21C14 15.5 18.5 11 24 11C26.1 11 28.1 11.7 29.7 12.8" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bell Clapper & Top Loop -->
+  <path d="M20.5 36C21.2 37.8 22.5 39 24 39C25.5 39 26.8 37.8 27.5 36" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="24" y1="8" x2="24" y2="11" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Top-Right Unread Notification Pulse Dot (#FF5E36) -->
+  <circle cx="34.5" cy="14.5" r="4.2" fill="#FF5E36"/>
+</svg>

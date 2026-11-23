@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="coa-coach-pkg-1on1-blush" x1="8" y1="12" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Dual Person 1-on-1 Coaching (Directly inspired by reference image 2 'Quản Lý Hộ Gia Đình') -->
+  <circle cx="19" cy="18" r="5.5" fill="url(#coa-coach-pkg-1on1-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M9 36C9 31 13.5 27.5 19 27.5C24.5 27.5 29 31 29 36C29 37.1 28.1 38 27 38H11C9.9 38 9 37.1 9 36Z" fill="url(#coa-coach-pkg-1on1-blush)"/>
+  <path d="M26 38H11C9.7 38 8.8 36.8 9.1 35.5C10.1 30.8 14.2 27.5 19 27.5C23.2 27.5 26.8 30 28.3 33.6" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Second Person (Background Right) -->
+  <circle cx="31.5" cy="14.5" r="4.5" fill="url(#coa-coach-pkg-1on1-blush)" stroke="#E8EDF5" stroke-width="2.1"/>
+  <path d="M27.5 23.2C28.7 22.7 30.1 22.5 31.5 22.5C35.8 22.5 39.4 25.2 40.3 29" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <!-- Coral Accent: '+' Connection Badge (Bottom-Right) -->
+  <path d="M35.5 31V41M30.5 36H40.5" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

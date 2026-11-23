@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
@@ -480,16 +481,15 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     }).toList();
 
     final showPackages =
-        !_isCoach ||
         _currentTab == _BookingTab.all ||
         _currentTab == _BookingTab.packages;
     final showUpcoming =
-        !_isCoach ||
         _currentTab == _BookingTab.all ||
         _currentTab == _BookingTab.upcoming;
     final showHistory =
-        _isCoach &&
-        (_currentTab == _BookingTab.all || _currentTab == _BookingTab.history);
+        _currentTab == _BookingTab.history ||
+        (_currentTab == _BookingTab.all &&
+            (_isCoach || pastBookings.isNotEmpty));
 
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,
@@ -502,13 +502,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             child: Column(
               children: [
                 _buildHeader(context, pastBookings),
-                if (_isCoach)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                    child: _buildSegmentedTabs(),
-                  )
-                else
-                  const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                  child: _buildSegmentedTabs(),
+                ),
                 Expanded(
                   child: RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
@@ -521,6 +518,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                             ),
                           )
                         : ListView(
+                            cacheExtent: 600,
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
                               16,
@@ -898,8 +896,16 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                   const SizedBox(height: 18),
                                 ],
                               ] else ...[
-                                // Member: Gói Coach
+                                // Member: Gói Coach đang hiệu lực
                                 if (showPackages) ...[
+                                  if (_packages.isNotEmpty) ...[
+                                    _buildSectionHeader(
+                                      title: 'Gói Coach đang hiệu lực',
+                                      subtitle: '${_packages.length} gói',
+                                      icon: Icons.workspace_premium_rounded,
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
                                   if (_loaded && _packages.isEmpty)
                                     _buildEmptyPackageHeroCard(context),
                                   for (final pack in _packages) ...[
@@ -915,10 +921,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                 _buildSectionHeader(
                                   title: _isCoach
                                       ? 'Lịch tập sắp tới'
-                                      : 'Sắp tới',
+                                      : 'Buổi tập sắp tới',
                                   subtitle: _isCoach
                                       ? '${upcomingBookings.length} buổi đã đặt'
-                                      : '${upcomingBookings.length} buổi',
+                                      : '${upcomingBookings.length} lịch hẹn',
                                   icon: Icons.event_available_rounded,
                                 ),
                                 const SizedBox(height: 8),
@@ -940,8 +946,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                 const SizedBox(height: 14),
                               ],
 
-                              if (!_isCoach) ...[
+                              if (!_isCoach && showUpcoming) ...[
                                 const MetaGymGlassCard(
+                                  solid: false,
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 13,
                                     vertical: 11,
@@ -969,18 +976,14 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 18),
                               ],
 
-                              // Section: Lịch sử buổi tập (Coach only; Member xem ở icon Lịch sử)
+                              // Section: Lịch sử buổi tập
                               if (showHistory) ...[
                                 _buildSectionHeader(
-                                  title: _isCoach
-                                      ? 'Lịch sử buổi tập'
-                                      : 'Lịch sử',
-                                  subtitle: _isCoach
-                                      ? '${pastBookings.length} buổi đã qua'
-                                      : '${pastBookings.length} buổi',
+                                  title: 'Lịch sử buổi tập',
+                                  subtitle: '${pastBookings.length} buổi',
                                   icon: Icons.history_rounded,
                                 ),
                                 const SizedBox(height: 8),
@@ -989,11 +992,14 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     'Chưa có lịch sử buổi tập với Coach.',
                                   ),
                                 for (final booking in pastBookings) ...[
-                                  _buildBookingCard(
-                                    booking,
-                                    isUpcoming: false,
-                                    now: now,
-                                  ),
+                                  if (_isCoach)
+                                    _buildBookingCard(
+                                      booking,
+                                      isUpcoming: false,
+                                      now: now,
+                                    )
+                                  else
+                                    _buildMemberBookingCard(booking, now: now),
                                   const SizedBox(height: 10),
                                 ],
                                 const SizedBox(height: 20),
@@ -1026,7 +1032,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
   }
 
   Widget _buildEmptyPackageHeroCard(BuildContext context) {
-    return MetaGymHeroGlassCard(
+    return MetaGymGlassCard(
+      solid: false,
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -1126,6 +1133,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         children: [
           if (Navigator.of(context).canPop()) ...[
             MetaGymCircleIconButton(
+              svgAsset: MetaGymIcons.commonBack,
               icon: Icons.arrow_back_rounded,
               tooltip: 'Quay lại',
               onTap: () => Navigator.of(context).maybePop(),
@@ -1136,28 +1144,27 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  _isCoach ? 'LỊCH DẠY CÁ NHÂN' : 'HUẤN LUYỆN 1:1',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: MetaGymTheme.brandOrange,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
                 const Text(
                   'Lịch Coach',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Color(0xFFF7F9FC),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _isCoach
-                      ? 'Cấu hình lịch dạy & quản lý buổi hẹn'
-                      : 'Đặt lịch & quản lý buổi tập 1:1',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFBCB5AE),
-                    fontSize: 11.5,
-                    height: 1.25,
                   ),
                 ),
               ],
@@ -1165,6 +1172,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           ),
           if (!_isCoach)
             MetaGymCircleIconButton(
+              svgAsset: MetaGymIcons.workoutHistory,
               icon: Icons.history_rounded,
               tooltip: 'Lịch sử buổi tập',
               onTap: () => Navigator.of(context).push<void>(
@@ -1300,39 +1308,52 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     required IconData icon,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(top: 4, bottom: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: MetaGymTheme.brandOrange, size: 18),
-          const SizedBox(width: 8),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(
+                color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: MetaGymTheme.brandOrange, size: 15),
+          ),
+          const SizedBox(width: 9),
           Expanded(
-            child: SizedBox(
-              width: double.infinity,
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 2,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Color(0xFFC8C2BC),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      fontFeatures: MetaGymTheme.tabularFigures,
-                    ),
-                  ),
-                ],
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: MetaGymTheme.textPrimary,
+                fontSize: 15.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0x66181513),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: const Color(0x45FFF6EA)),
+            ),
+            child: Text(
+              subtitle,
+              style: const TextStyle(
+                color: Color(0xFFD5CCBF),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                fontFeatures: MetaGymTheme.tabularFigures,
               ),
             ),
           ),
@@ -1353,42 +1374,60 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     Color valueColor = MetaGymTheme.textPrimary,
   }) {
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 11),
-          ),
-          const SizedBox(height: 2),
-          Text.rich(
-            TextSpan(
-              text: value,
-              style: TextStyle(
-                color: valueColor,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                fontFeatures: MetaGymTheme.tabularFigures,
-              ),
-              children: [
-                if (suffix != null)
-                  TextSpan(
-                    text: suffix,
-                    style: const TextStyle(
-                      color: Color(0xFFC8C2BC),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      fontFeatures: MetaGymTheme.tabularFigures,
-                    ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+        decoration: BoxDecoration(
+          color: const Color(0x88181513),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0x3DFFF6EA), width: 0.9),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text.rich(
+                TextSpan(
+                  text: value,
+                  style: TextStyle(
+                    color: valueColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    fontFeatures: MetaGymTheme.tabularFigures,
                   ),
-              ],
+                  children: [
+                    if (suffix != null)
+                      TextSpan(
+                        text: suffix,
+                        style: const TextStyle(
+                          color: Color(0xFFB7B2AF),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                  ],
+                ),
+                maxLines: 1,
+                textAlign: TextAlign.center,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFC8C2BC),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1420,12 +1459,76 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
     final progress = total > 0 ? (remaining / total).clamp(0.0, 1.0) : 0.0;
 
+    final coachName = (pack['coachName'] as String? ?? '').trim();
+    final coachNameParts = coachName
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final coachInitials = coachNameParts.isEmpty
+        ? null
+        : coachNameParts.length >= 2
+        ? '${coachNameParts.first[0]}${coachNameParts.last[0]}'.toUpperCase()
+        : coachNameParts.first.substring(0, 1).toUpperCase();
+
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (coachInitials != null) ...[
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFF8C45E), Color(0xFFE0952B)],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF5B041).withValues(alpha: 0.28),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      coachInitials,
+                      style: const TextStyle(
+                        color: Color(0xFF181B22),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  if (!isPaused && !isExpired)
+                    Positioned(
+                      right: -1,
+                      bottom: -1,
+                      child: Container(
+                        width: 13,
+                        height: 13,
+                        decoration: BoxDecoration(
+                          color: MetaGymTheme.progressGreen,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF2B2622),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1434,12 +1537,25 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     pack['planName'] as String,
                     style: const TextStyle(
                       color: MetaGymTheme.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
+                  if (coachName.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'HLV $coachName',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.brandOrange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                   if (endsOn.isNotEmpty) ...[
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       remaining <= 0 && isActivePack
                           ? 'Đã hết số buổi tập · Hạn ${_formatDmy(endsOn)}'
@@ -1463,48 +1579,72 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           ],
         ),
         if (isActivePack) ...[
-          const SizedBox(height: 12),
-          MetaGymMetricPanel(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _buildStatCell(
+                label: 'Còn lại',
+                value: '$remaining',
+                suffix: '/$total',
+              ),
+              const SizedBox(width: 8),
+              _buildStatCell(
+                label: 'Đã đặt',
+                value: '$bookedCount',
+                suffix: ' buổi',
+              ),
+              const SizedBox(width: 8),
+              if (isPaused)
                 _buildStatCell(
-                  label: 'Còn lại',
-                  value: '$remaining',
-                  suffix: '/$total',
-                ),
-                const SizedBox(width: 8),
+                  label: 'Trạng thái',
+                  value: 'Tạm dừng',
+                  valueColor: MetaGymTheme.warningAmber,
+                )
+              else
                 _buildStatCell(
-                  label: 'Đã đặt',
-                  value: '$bookedCount',
-                  suffix: ' buổi',
+                  label: 'Chưa đặt',
+                  value: '$availableToBook',
+                  suffix: ' lượt',
+                  valueColor: availableToBook > 0
+                      ? MetaGymTheme.brandOrange
+                      : MetaGymTheme.textPrimary,
                 ),
-                const SizedBox(width: 8),
-                if (isPaused)
-                  _buildStatCell(
-                    label: 'Trạng thái',
-                    value: 'Tạm dừng',
-                    valueColor: MetaGymTheme.warningAmber,
-                  )
-                else
-                  _buildStatCell(
-                    label: 'Chưa đặt',
-                    value: '$availableToBook',
-                    suffix: ' lượt',
-                    valueColor: availableToBook > 0
-                        ? MetaGymTheme.brandOrange
-                        : MetaGymTheme.textPrimary,
-                  ),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Tiến độ buổi tập còn lại',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFFC8C2BC),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${(progress * 100).round()}%',
+                style: const TextStyle(
+                  color: MetaGymTheme.brandOrange,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: MetaGymTheme.tabularFigures,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 5,
-              backgroundColor: const Color(0x80211E1C),
+              minHeight: 6,
+              backgroundColor: const Color(0x45FFFFFF),
               valueColor: AlwaysStoppedAnimation<Color>(
                 isPaused
                     ? MetaGymTheme.warningAmber
@@ -1572,16 +1712,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
       ],
     );
 
-    if (isActivePack && !isPaused && !isExpired) {
-      return MetaGymHeroGlassCard(
-        padding: const EdgeInsets.all(16),
-        child: content,
-      );
-    }
-    return CoachingGraphiteCard(
-      backgroundColor: const Color(0xC42B2622),
-      borderColor: const Color(0xA3A79D92),
-      padding: const EdgeInsets.all(16),
+    return MetaGymGlassCard(
+      solid: false,
+      padding: const EdgeInsets.all(15),
       child: content,
     );
   }

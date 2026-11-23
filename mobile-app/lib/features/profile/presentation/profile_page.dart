@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show MethodChannel, Uint8List;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
@@ -521,7 +522,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       _buildSupportInfoMenuCard(),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
+                  _buildOfflineDemoCard(),
+                  const SizedBox(height: 16),
                   _buildSignOutButton(),
                   const SizedBox(height: 24),
                 ],
@@ -538,6 +541,129 @@ class _ProfilePageState extends State<ProfilePage> {
       () => _expandedCategory = _expandedCategory == index ? null : index,
     );
   }
+
+  Widget _buildOfflineDemoCard() => ValueListenableBuilder<DemoUiStateMode>(
+    valueListenable: OfflineDemoControl.mode,
+    builder: (context, activeMode, _) {
+      return MetaGymGlassCard(
+        solid: false,
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.science_rounded,
+                  color: MetaGymTheme.brandOrange,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Chế độ Demo Offline',
+                    style: TextStyle(
+                      color: MetaGymTheme.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.progressGreen.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: MetaGymTheme.progressGreen.withValues(alpha: 0.42),
+                    ),
+                  ),
+                  child: const Text(
+                    'Không gọi API',
+                    style: TextStyle(
+                      color: MetaGymTheme.progressGreen,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Chuyển trạng thái dữ liệu mẫu để kiểm thử giao diện (Trống, Đang tải, Lỗi, Bình thường):',
+              style: TextStyle(
+                color: MetaGymTheme.textSecondary,
+                fontSize: 11.5,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final mode in DemoUiStateMode.values)
+                  ChoiceChip(
+                    label: Text(OfflineDemoControl.modeLabel(mode)),
+                    selected: activeMode == mode,
+                    onSelected: (_) {
+                      OfflineDemoControl.mode.value = mode;
+                      _showToast(
+                        'Đã chuyển sang chế độ: ${OfflineDemoControl.modeLabel(mode)}',
+                      );
+                    },
+                    selectedColor: MetaGymTheme.brandOrange,
+                    backgroundColor: const Color(0x66181513),
+                    labelStyle: TextStyle(
+                      color: activeMode == mode
+                          ? Colors.white
+                          : MetaGymTheme.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    side: BorderSide(
+                      color: activeMode == mode
+                          ? MetaGymTheme.brandOrange
+                          : const Color(0x55A79D92),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await OfflineDemoControl.resetData();
+                  if (!mounted) return;
+                  await _reloadProfile();
+                  _showToast('Đã đặt lại toàn bộ dữ liệu mẫu offline.');
+                },
+                icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                label: const Text('Đặt lại dữ liệu mẫu gốc'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: MetaGymTheme.textPrimary,
+                  backgroundColor: const Color(0x18FFFFFF),
+                  side: const BorderSide(color: Color(0x45FFF6EA)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 
   Widget _buildSignOutButton() => SizedBox(
     width: double.infinity,
