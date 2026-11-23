@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-band-blush" x1="10" y1="10" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Equip: Elastic Resistance Band with Handles -->
+  <path d="M14 14C14 27 20 35 24 35C28 35 34 27 34 14" fill="url(#cat-band-blush)"/>
+  <path d="M13.5 15C13.5 27.5 18.5 35.5 23.5 35.5C26.5 35.5 29.2 32.8 31.2 28" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M18.5 15C18.5 24.5 21.2 30.5 24 30.5C26.8 30.5 29.5 24.5 29.5 15" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <!-- Left & Right Handles -->
+  <rect x="10.5" y="9" width="8.5" height="5.5" rx="2.5" stroke="#FF5E36" stroke-width="2.2"/>
+  <rect x="28.5" y="9" width="8.5" height="5.5" rx="2.5" stroke="#FF5E36" stroke-width="2.2"/>
+  <!-- Coral Stretch Arrows Badge Bottom-Right -->
+  <path d="M31 35.5H40M33 33L30.5 35.5L33 38M37.5 33L40 35.5L37.5 38" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

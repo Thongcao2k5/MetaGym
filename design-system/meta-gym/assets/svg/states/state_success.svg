@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-succ-blush" x1="8" y1="8" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECC71" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- State Success (Celebration Shield Ring + Bold Checkmark & Sparkle) -->
+  <circle cx="23" cy="24" r="14.5" fill="url(#st-succ-blush)"/>
+  <path d="M36.8 19.5C34.9 13.7 29.5 9.5 23 9.5C15 9.5 8.5 16 8.5 24C8.5 32 15 38.5 23 38.5C29.4 38.5 34.8 34.4 36.7 28.6" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M16.5 24.2L21.2 28.8L30.5 19.5" stroke="#FF5E36" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Celebration Sparkle Top-Right -->
+  <path d="M38.5 9V15M35.5 12H41.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

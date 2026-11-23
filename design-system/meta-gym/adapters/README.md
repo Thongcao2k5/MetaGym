@@ -1,10 +1,10 @@
-# Meta Gym Theme Adapters
+# Bộ Chuyển đổi Theme Meta Gym (Theme Adapters)
 
-These files translate the tokens in the repository root `DESIGN.md` into the two planned UI stacks. `DESIGN.md` remains the source of truth.
+Các tệp trong thư mục này chuyển đổi bộ token từ tệp chuẩn gốc `DESIGN.md` sang hai nền tảng giao diện của dự án. `DESIGN.md` vẫn luôn là nguồn chuẩn cao nhất.
 
-## Flutter
+## Flutter (Ứng dụng Di động)
 
-Copy `meta_gym_theme.dart` into the Flutter app theme directory, then configure the app:
+Sao chép tệp `meta_gym_theme.dart` vào thư mục theme của ứng dụng Flutter, sau đó cấu hình ứng dụng:
 
 ```dart
 MaterialApp.router(
@@ -15,31 +15,31 @@ MaterialApp.router(
 );
 ```
 
-Bundle Be Vietnam Pro as a local variable-font asset and keep the exact family name `Be Vietnam Pro` in `pubspec.yaml`. Local assets avoid runtime font downloads and give predictable offline behavior.
+Đóng gói phông chữ **Be Vietnam Pro** dưới dạng tệp tài nguyên nội bộ (local variable-font asset) và giữ chính xác tên họ phông `Be Vietnam Pro` trong `pubspec.yaml`. Dùng tài nguyên nội bộ giúp tránh tải phông qua mạng khi chạy ứng dụng và đảm bảo hoạt động ổn định khi mất kết nối (offline).
 
-Use `go_router` when the real Flutter app is scaffolded. Member and Coach may have different route trees, but both should use declarative routing, predictable back behavior, and no more than five top-level mobile destinations.
+Sử dụng `go_router` khi dựng cấu trúc điều hướng của ứng dụng Flutter. Hội viên (Member) và Huấn luyện viên (Coach) có thể có cây định tuyến (route tree) riêng, nhưng cả hai đều phải dùng định tuyến khai báo (declarative routing), hành vi nút quay lại nhất quán và không vượt quá 5 mục đích cấp cao nhất trên thanh điều hướng di động.
 
-## Bootstrap Admin
+## Bootstrap Admin (Cổng Quản trị Web)
 
-Load Bootstrap 5.3 first, then load `bootstrap-theme.css` so the Meta Gym variables and component overrides win in the cascade:
+Nạp Bootstrap 5.3 trước, sau đó nạp `bootstrap-theme.css` để các biến màu và phần ghi đè component của Meta Gym có độ ưu tiên cao hơn trong CSS cascade:
 
 ```js
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/bootstrap-theme.css';
 ```
 
-Set `data-bs-theme="light"` or `data-bs-theme="dark"` on the document root. Use system preference as the initial value and persist an explicit user choice.
+Thiết lập `data-bs-theme="light"` hoặc `data-bs-theme="dark"` trên phần tử gốc của tài liệu (`<html>`). Sử dụng tùy chọn hệ thống làm giá trị khởi tạo và lưu lại lựa chọn chủ động của người dùng.
 
-Self-host Be Vietnam Pro with `@font-face` before this theme file. Do not use the Google Fonts runtime stylesheet in production.
+Tự lưu trữ (self-host) phông **Be Vietnam Pro** bằng `@font-face` trước tệp theme này. Không dùng liên kết stylesheet trực tuyến của Google Fonts trên môi trường production.
 
-The Flutter app carries the full dark-first Futuristic Performance Glass identity. The Admin app intentionally uses mostly solid Bootstrap surfaces because dense data views benefit from stable contrast and lower rendering cost.
+Ứng dụng Flutter mang trọn vẹn bản sắc nền tối **Futuristic Performance Glass**. Cổng Quản trị Admin chủ động ưu tiên các bề mặt đặc của Bootstrap vì giao diện dữ liệu mật độ cao cần độ tương phản ổn định và chi phí kết xuất (rendering cost) thấp.
 
-## Validation
+## Kiểm tra hợp lệ (Validation)
 
-Run this after changing design tokens:
+Chạy lệnh sau mỗi khi thay đổi các design token:
 
 ```powershell
 designmd lint DESIGN.md
 ```
 
-The current baseline is zero errors and zero warnings.
+Mức chuẩn hiện tại là 0 lỗi (zero errors) và 0 cảnh báo (zero warnings).

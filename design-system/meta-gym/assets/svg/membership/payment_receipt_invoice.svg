@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-receipt-blush" x1="11" y1="8" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Invoice / Transaction Receipt with VND Coin Badge (Directly inspired by reference image 4 'Hóa đơn') -->
+  <path d="M11 14C11 10.7 13.7 8 17 8H29C32.3 8 35 10.7 35 14V36L24 38L20.5 35.5L17 38L13.5 35.5L11 37.5V14Z" fill="url(#mem-receipt-blush)"/>
+  <!-- Open Receipt Contour with serrated bottom left & gap on bottom-right for coin badge -->
+  <path d="M24 38L20.5 35.5L17 38L13.5 35.5L11 37.5V14C11 10.7 13.7 8 17 8H29C32.3 8 35 10.7 35 14V23" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="17" y1="15.5" x2="29" y2="15.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="17" y1="21" x2="25" y2="21" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Coral Accent: Currency 'đ' Circle Badge (Bottom-Right) -->
+  <circle cx="33" cy="33" r="6.8" fill="#FF5E36" fill-opacity="0.16" stroke="#FF5E36" stroke-width="2.2"/>
+  <circle cx="32.2" cy="34.2" r="2.1" stroke="#FF5E36" stroke-width="1.9"/>
+  <path d="M34.3 29.2V36.2M32.3 30.6H35.6" stroke="#FF5E36" stroke-width="1.9" stroke-linecap="round"/>
+</svg>

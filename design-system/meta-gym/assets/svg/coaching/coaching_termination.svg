@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="coa-coaching-termination-blush" x1="10" y1="12" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Termination / Cancellation Circle with Top-Right Coral Refresh Loop (Directly inspired by reference image 3 'Thay đổi hạn mức sử dụng') -->
+  <circle cx="22.5" cy="25.5" r="13.5" fill="url(#coa-coaching-termination-blush)"/>
+  <!-- Open Circle Contour with diagonal slash -->
+  <path d="M35.6 22.5C35.9 23.5 36 24.5 36 25.5C36 33 29.9 39 22.5 39C15 39 9 33 9 25.5C9 18 15 12 22.5 12C23.8 12 25.1 12.2 26.3 12.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="13.2" y1="16.2" x2="31.8" y2="34.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Coral Accent: Top-Right Curved Sync/Reversal Arrows -->
+  <path d="M29.5 12.5C30.8 10.2 33.8 9.5 36.2 10.8C37.2 11.4 37.9 12.2 38.3 13.2" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M38.8 10.2V13.6H35.4" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38.5 16.5C37.2 18.8 34.2 19.5 31.8 18.2C30.8 17.6 30.1 16.8 29.7 15.8" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M29.2 18.8V15.4H32.6" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

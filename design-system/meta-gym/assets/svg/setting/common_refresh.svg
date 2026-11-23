@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-crefresh-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<circle cx="24" cy="24" r="13.5" fill="url(#set-crefresh-blush)"/>
+  <path d="M36.2 19C34.2 13.7 29.1 10 23.2 10C15.5 10 9.2 16.3 9.2 24C9.2 25.5 9.4 27 9.9 28.4" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M11.8 29C13.8 34.3 18.9 38 24.8 38C32.5 38 38.8 31.7 38.8 24" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M32 19.5H37V14.5M16 28.5H11V33.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

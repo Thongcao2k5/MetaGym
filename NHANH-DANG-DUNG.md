@@ -1,14 +1,14 @@
 # MetaGym — bản Trường đã đồng bộ các nhánh
 
-Ngày đồng bộ: 22/11/2026 (giờ Việt Nam).
+Ngày đồng bộ: 23/11/2026 (giờ Việt Nam).
 
 ## Nhận diện bản local
 
 - Thư mục: `F:\MetaGym-truong_ship_it`.
-- Nhánh làm việc: `codex/truong_ship_it-sync`.
+- Nhánh làm việc: `codex/thong-mobile-integrated`.
 - Nhánh gốc được giữ nguyên tại local: `truong_ship_it`.
 - Repository: https://github.com/Thongcao2k5/MetaGym.
-- Đây là bản gộp local; chưa push, mở PR hoặc deploy.
+- Bản gộp đã push lên origin/codex/thong-mobile-integrated; chưa merge vào thong hoặc deploy.
 
 ## Nguồn đã tích hợp
 
@@ -16,7 +16,7 @@ Ngày đồng bộ: 22/11/2026 (giờ Việt Nam).
 | --- | --- |
 | `origin/truong_ship_it` | `1d30ba77c79095958510134ac51d011c446a746e` |
 | `origin/main` | `be7d032f6b8d5411b3c1d82ef0cd5b3efbb73206` |
-| `origin/thong` | `9b7e8b28f4a9feb92117bb83297c01da95b8cedb` (đã nằm trong main) |
+| `origin/thong` | `68f0729` (gồm 7 commit preview/design-system mới, đến 23/11/2026) |
 | `origin/thuc` | `0cc7d6d9ee6fb17886ff4ab5b8d3651f51650ef4` (đã nằm trong main) |
 
 Đã merge toàn bộ main vào bản Trường, bao gồm backend, mobile, admin-web,
@@ -67,9 +67,17 @@ git branch --show-current
 git status --short --branch
 ```
 
-Nhánh cần hiển thị là `codex/truong_ship_it-sync`.
+Nhánh cần hiển thị là `codex/thong-mobile-integrated`.
 Mở thư mục `mobile-app` trong Android Studio để làm việc với ứng dụng Flutter.
 
 Muốn xem lại bản gốc Trường, bảo đảm đã lưu/commit công việc hiện tại trước khi
 chuyển nhánh bằng `git switch truong_ship_it`. Quay lại bản gộp bằng
-`git switch codex/truong_ship_it-sync`.
+`git switch codex/thong-mobile-integrated`.
+
+## Preview tiếp tục làm việc
+
+Đã gộp toàn bộ origin/thong đến commit 68f0729 vào nhánh này.
+Preview: design-system/flutter-screens/22-11-2026/screens-preview.html.
+Trang tổng hợp: design-system/index.html.
+Phần mobile-app và backend giữ nguyên so với bản tích hợp a90c17f.
+Các kết quả kiểm chứng phía trên được ghi nhận cho lần tích hợp ứng dụng ngày 22/11/2026; không phải lần chạy kiểm thử mới cho preview.

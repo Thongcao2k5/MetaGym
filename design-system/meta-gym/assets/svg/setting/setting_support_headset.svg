@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-supp-blush" x1="11" y1="11" x2="37" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Setting: Phòng tập & Hỗ trợ CSKH (Customer Support Headset + Mic Boom) -->
+  <path d="M13 24C13 17.9 17.9 13 24 13C30.1 13 35 17.9 35 24" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- Left & Right Ear Cups -->
+  <rect x="9.5" y="22.5" width="6.5" height="10.5" rx="3.25" fill="url(#set-supp-blush)" stroke="#E8EDF5" stroke-width="2.4"/>
+  <rect x="32" y="22.5" width="6.5" height="10.5" rx="3.25" fill="url(#set-supp-blush)" stroke="#E8EDF5" stroke-width="2.4"/>
+  <!-- Microphone Boom & Capsule (#FF5E36) -->
+  <path d="M35 33V34.5C35 37.3 32.8 39.5 30 39.5H25.5" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="20.5" y="37" width="6" height="4.5" rx="2.25" fill="#FF5E36"/>
+  <!-- Center Help Heart / Spark -->
+  <path d="M24 19.5V25.5M21 22.5H27" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

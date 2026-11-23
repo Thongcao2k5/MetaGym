@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="br-adm-blush" x1="10" y1="8" x2="36" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <path d="M23 7L10 12.5V22.5C10 31.2 15.6 38.8 23 41.5C25.4 40.6 27.6 39.2 29.5 37.5" fill="url(#br-adm-blush)"/>
+  <path d="M35.5 23.5V12.5L23 7L10 12.5V22.5C10 31.2 15.6 38.8 23 41.5C25.2 40.7 27.2 39.4 29 37.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Coral Crown / Gear Admin Accent -->
+  <path d="M17 23L19.5 18L23 21.5L26.5 18L29 23H17Z" fill="#FF5E36" fill-opacity="0.25" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="35.5" cy="33.5" r="5.5" fill="#FF5E36" fill-opacity="0.2" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M33.5 33.5L35 35L38 32" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

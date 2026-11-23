@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nut-default-blush" x1="12" y1="10" x2="36" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECC71" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#2ECC71" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Default Nutrition Icon (Organic Nutrition Apple + Leaf — Soft-Line Duotone) -->
+  <path d="M24 16C19.5 13.5 11.5 15 11.5 24.5C11.5 32.5 16.8 39 21 39C22.6 39 23.3 38.2 24 38.2C24.7 38.2 25.4 39 27 39C31.2 39 36.5 32.5 36.5 24.5C36.5 15 28.5 13.5 24 16Z" fill="url(#nut-default-blush)"/>
+  <path d="M36.3 26.5C35.5 33.4 30.8 39 27 39C25.4 39 24.7 38.2 24 38.2C23.3 38.2 22.6 39 21 39C16.8 39 11.5 32.5 11.5 24.5C11.5 15 19.5 13.5 24 16C27.9 13.8 34.4 14.8 36.1 21.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Stem & Healthy Green Leaf -->
+  <path d="M24 15.5C24 12.2 25.5 9.8 28 8.5" stroke="#2ECC71" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M25.5 13C25.5 9.5 29.5 7.5 33.5 8.5C33.5 12.2 29.8 14.2 25.5 13Z" fill="#2ECC71" fill-opacity="0.28" stroke="#2ECC71" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Corner Energy Spark -->
+  <circle cx="37" cy="24" r="1.9" fill="#2ECC71"/>
+</svg>

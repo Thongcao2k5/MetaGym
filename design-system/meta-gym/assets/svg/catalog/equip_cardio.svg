@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-car-blush" x1="8" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Heart Blush Fill -->
+  <path d="M24 39C24 39 9 29.6 9 19C9 13.8 13 10 17.8 10C20.7 10 23 11.5 24 13.6C25 11.5 27.3 10 30.2 10C35 10 39 13.8 39 19C39 29.6 24 39 24 39Z" fill="url(#cat-car-blush)"/>
+  <!-- Open-Path Heart Contour (#E8EDF5, cleanly broken for ECG pulse line entry/exit) -->
+  <path d="M9.6 21.8C9.2 20.9 9 19.9 9 18.8C9 13.8 13 10 17.8 10C20.7 10 23 11.5 24 13.6C25 11.5 27.3 10 30.2 10C35 10 39 13.8 39 18.8C39 19.9 38.8 20.9 38.4 21.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12.2 27.5C15.8 32.8 21.4 37.2 24 39C26.6 37.2 32.2 32.8 35.8 27.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Live ECG Pulse Waveform Across Heart (#FF5E36) -->
+  <path d="M7.5 24.5H15.5L18.5 18.5L22.5 29.5L26 21.5L28.5 24.5H40.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

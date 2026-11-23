@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 393 852" width="393" height="852"
+  preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Base Obsidian Velvet Canvas -->
+    <linearGradient id="darkCanvas" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#141822" />
+      <stop offset="48%" stop-color="#0F1115" />
+      <stop offset="100%" stop-color="#0B0D12" />
+    </linearGradient>
+
+    <!-- Soft Diffused Luxury Silk Orbs -->
+    <radialGradient id="darkSilkTop" cx="86%" cy="10%" r="58%">
+      <stop offset="0%" stop-color="#A9C7E8" stop-opacity="0.20" />
+      <stop offset="52%" stop-color="#6084B0" stop-opacity="0.07" />
+      <stop offset="100%" stop-color="#0F1115" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="darkSilkWarm" cx="12%" cy="84%" r="60%">
+      <stop offset="0%" stop-color="#FF5E36" stop-opacity="0.16" />
+      <stop offset="46%" stop-color="#D8A763" stop-opacity="0.09" />
+      <stop offset="100%" stop-color="#0F1115" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Champagne Gold & Cool Platinum Stroke Gradients -->
+    <linearGradient id="goldLineDark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F2D9A6" stop-opacity="0.30" />
+      <stop offset="50%" stop-color="#D4A96A" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#A9C7E8" stop-opacity="0.24" />
+    </linearGradient>
+    <linearGradient id="archGoldDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8C98F" stop-opacity="0.28" />
+      <stop offset="60%" stop-color="#A9C7E8" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#E8C98F" stop-opacity="0.02" />
+    </linearGradient>
+
+    <!-- Aristocratic Diamond Filigree Pattern -->
+    <pattern id="royalLatticeDark" width="76" height="76" patternUnits="userSpaceOnUse">
+      <path d="M38 0 L76 38 L38 76 L0 38 Z" fill="none" stroke="#E5C892" stroke-opacity="0.13" stroke-width="0.9" />
+      <path d="M38 11 L65 38 L38 65 L11 38 Z" fill="none" stroke="#A9C7E8" stroke-opacity="0.085" stroke-width="0.75" />
+      <path d="M38 22 C40 32.5 43.5 36 54 38 C43.5 40 40 43.5 38 54 C36 43.5 32.5 40 22 38 C32.5 36 36 32.5 38 22 Z"
+        fill="#E8C98F" fill-opacity="0.035" stroke="#E8C98F" stroke-opacity="0.17" stroke-width="0.85" />
+      <circle cx="38" cy="38" r="1.6" fill="#E8C98F" fill-opacity="0.28" />
+      <circle cx="0" cy="0" r="1.3" fill="#A9C7E8" fill-opacity="0.22" />
+      <circle cx="76" cy="0" r="1.3" fill="#A9C7E8" fill-opacity="0.22" />
+      <circle cx="0" cy="76" r="1.3" fill="#A9C7E8" fill-opacity="0.22" />
+      <circle cx="76" cy="76" r="1.3" fill="#A9C7E8" fill-opacity="0.22" />
+    </pattern>
+
+    <!-- Soft Silk Blur for Ambient Orbs Only -->
+    <filter id="silkBlurDark" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="26" />
+    </filter>
+
+    <!-- Center Calm Vignette Mask -->
+    <radialGradient id="edgeFadeDark" cx="50%" cy="46%" r="66%">
+      <stop offset="0%" stop-color="#0F1115" stop-opacity="0.34" />
+      <stop offset="66%" stop-color="#0F1115" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#0F1115" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Layer 1: Deep Obsidian Base -->
+  <rect width="393" height="852" fill="url(#darkCanvas)" />
+
+  <!-- Layer 2: Soft Diffused Luxury Silk Glows -->
+  <g filter="url(#silkBlurDark)">
+    <rect width="393" height="852" fill="url(#darkSilkTop)" />
+    <rect width="393" height="852" fill="url(#darkSilkWarm)" />
+  </g>
+
+  <!-- Layer 3: Crisp Aristocratic Royal Diamond Filigree -->
+  <rect width="393" height="852" fill="url(#royalLatticeDark)" />
+
+  <!-- Layer 4: Watchmaker Guilloché Concentric Medallions -->
+  <g fill="none" stroke="url(#goldLineDark)">
+    <circle cx="348" cy="116" r="172" stroke-width="1.1" />
+    <circle cx="348" cy="116" r="138" stroke-width="0.85" stroke-dasharray="3 5" />
+    <circle cx="348" cy="116" r="102" stroke-width="1" />
+    <circle cx="348" cy="116" r="64" stroke-width="0.75" />
+
+    <circle cx="42" cy="738" r="188" stroke-width="1.1" />
+    <circle cx="42" cy="738" r="150" stroke-width="0.85" stroke-dasharray="2 6" />
+    <circle cx="42" cy="738" r="112" stroke-width="1" />
+    <circle cx="42" cy="738" r="72" stroke-width="0.75" />
+  </g>
+
+  <!-- Layer 5: Art-Deco Architectural Framing Arches -->
+  <g fill="none" stroke="url(#archGoldDark)">
+    <path d="M20 240 L20 106 C20 56 62 20 196.5 20 C331 20 373 56 373 106 L373 240" stroke-width="1.1" />
+    <path d="M30 226 L30 112 C30 68 70 32 196.5 32 C323 32 363 68 363 112 L363 226" stroke-width="0.75"
+      stroke-opacity="0.65" />
+    <path d="M20 612 L20 746 C20 796 62 832 196.5 832 C331 832 373 796 373 746 L373 612" stroke-width="1"
+      stroke-opacity="0.75" />
+  </g>
+
+  <!-- Layer 6: Gentle Center Calm Veil -->
+  <rect width="393" height="852" fill="url(#edgeFadeDark)" />
+</svg>

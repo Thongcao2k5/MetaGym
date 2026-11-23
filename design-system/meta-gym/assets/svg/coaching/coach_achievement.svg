@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="coa-ach-blush" x1="12" y1="8" x2="36" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Medal Blush Fill -->
+  <circle cx="24" cy="20" r="11" fill="url(#coa-ach-blush)"/>
+  <!-- Bottom Ribbon Tails (Layer 1, cleanly emerging from below medal rim) -->
+  <path d="M18.2 29.8L16 39.5L24 35.8L32 39.5L29.8 29.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Medal Outer Ring (#E8EDF5, open top-right for spark) -->
+  <path d="M34.8 18C34.93 18.65 35 19.32 35 20C35 26.08 30.08 31 24 31C17.92 31 13 26.08 13 20C13 13.92 17.92 9 24 9C26.4 9 28.6 9.77 30.4 11.08" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Center Achievement Star (#FF5E36) -->
+  <path d="M24 14.5L25.6 17.8L29.2 18.3L26.6 20.8L27.2 24.4L24 22.7L20.8 24.4L21.4 20.8L18.8 18.3L22.4 17.8L24 14.5Z" fill="#FF5E36" fill-opacity="0.24" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Top-Right Victory Spark (#FF5E36) -->
+  <path d="M37 10V14M35 12H39" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+</svg>

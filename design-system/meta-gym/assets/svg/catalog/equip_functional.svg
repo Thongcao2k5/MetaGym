@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-equip-functional-blush" x1="12" y1="18" x2="36" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Soft blush inside kettlebell belly -->
+  <path d="M12 28C12 21.4 17.4 18 24 18C30.6 18 36 21.4 36 28C36 33.8 32.2 38.5 28.5 40H19.5C15.8 38.5 12 33.8 12 28Z" fill="url(#cat-equip-functional-blush)"/>
+  <!-- Kettlebell Handle -->
+  <path d="M17 18.5V14.5C17 11.2 19.7 8.5 23 8.5H25C28.3 8.5 31 11.2 31 14.5V18.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Kettlebell Body (Open contour on right for coral power bolt) -->
+  <path d="M33.5 21.5C31.2 19.2 27.8 18 24 18C17.4 18 12 21.8 12 28.2C12 33.8 15.6 38.4 19.5 40H28.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Inner shine curve (like water drop in reference image 4) -->
+  <path d="M16.5 26.5C16.5 29.5 18.2 32.2 20.8 33.5" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+  <!-- Coral Accent: Energy Bolt Badge (Bottom-Right) -->
+  <path d="M35.5 25L31 32.5H36L33.5 39.5L40 31H35L35.5 25Z" fill="#FF5E36" stroke="#FF5E36" stroke-width="1.3" stroke-linejoin="round"/>
+</svg>

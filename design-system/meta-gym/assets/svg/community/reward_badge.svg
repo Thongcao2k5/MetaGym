@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-badge-blush" x1="10" y1="8" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Reward Badge (Hexagonal Shield Medal + Ribbons + Coral Star Center) -->
+  <path d="M24 8L36 14.5V26.5L24 33L12 26.5V14.5L24 8Z" fill="url(#com-badge-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M17 30.5L14.5 40.5L21 37.5L24 41" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M31 30.5L33.5 40.5L27 37.5" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Coral Center Star -->
+  <path d="M24 14.5L25.6 18.2L29.5 18.7L26.6 21.4L27.4 25.3L24 23.4L20.6 25.3L21.4 21.4L18.5 18.7L22.4 18.2L24 14.5Z" fill="#FF5E36" fill-opacity="0.28" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+</svg>

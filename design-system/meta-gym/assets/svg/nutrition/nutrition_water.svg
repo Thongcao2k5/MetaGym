@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nut-water-blush" x1="13" y1="8" x2="35" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.40"/>
+    </linearGradient>
+  </defs>
+  <!-- Hydration & Micronutrients (Water Droplet + Wave & Spark) -->
+  <path d="M24 8C24 8 36 20.2 36 29C36 35.6 30.6 40.5 24 40.5C17.4 40.5 12 35.6 12 29C12 20.2 24 8 24 8Z" fill="url(#nut-water-blush)"/>
+  <path d="M35.5 32C34.2 36.9 29.6 40.5 24 40.5C17.4 40.5 12 35.6 12 29C12 20.2 24 8 24 8C24 8 34.2 18.4 35.8 27" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Inner Hydration Wave (#A9C7E8) -->
+  <path d="M16.5 29.5C18.5 27.8 21 27.8 23.5 29.5C26 31.2 28.5 31.2 31.5 29.5" stroke="#A9C7E8" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M18.5 34.5C20.5 33.2 22.8 33.2 24.8 34.5" stroke="#A9C7E8" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Top-Right Hydration Plus Spark -->
+  <path d="M37 11V16M34.5 13.5H39.5" stroke="#A9C7E8" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

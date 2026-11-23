@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-streak-blush" x1="13" y1="8" x2="35" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.42"/>
+    </linearGradient>
+  </defs>
+  <!-- Gym Consistency Streak Flame ('Chuỗi ngày tập 🔥' — member_dashboard_view.dart & gym_visits_page.dart) -->
+  <path d="M25.5 7.5C25.5 7.5 36.5 15.8 36.5 26.8C36.5 34.2 30.8 40 24 40C17.2 40 11.5 34.2 11.5 26.8C11.5 21.6 14.5 16.9 17.5 14.2C17.5 17.4 19.6 19.2 21 19.8C19.8 15 21.8 10.2 25.5 7.5Z" fill="url(#st-streak-blush)"/>
+  <path d="M36 29.5C34.8 35.6 29.9 40 24 40C17.2 40 11.5 34.2 11.5 26.8C11.5 21.6 14.5 16.9 17.5 14.2C17.5 17.4 19.6 19.2 21 19.8C19.8 15 21.8 10.2 25.5 7.5C25.5 7.5 35.4 15 36.4 25" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Inner Core Flame (#FF5E36 + #F39C12) -->
+  <path d="M24.5 22C24.5 22 29.5 26 29.5 31C29.5 34.3 27 36.8 24 36.8C21 36.8 18.5 34.3 18.5 31C18.5 27.6 21.5 24.5 24.5 22Z" fill="#FF5E36" fill-opacity="0.4" stroke="#FF5E36" stroke-width="2.3" stroke-linejoin="round"/>
+  <!-- Top-Right Streak Spark -->
+  <path d="M37.5 10.5L38.6 13.4L41.5 14.5L38.6 15.6L37.5 18.5L36.4 15.6L33.5 14.5L36.4 13.4L37.5 10.5Z" fill="#FF5E36"/>
+</svg>

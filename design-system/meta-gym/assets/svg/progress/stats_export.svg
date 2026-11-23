@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="prog-exp-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M35 25.5V34C35 36.8 32.8 39 30 39H14C11.2 39 9 36.8 9 34V18C9 15.2 11.2 13 14 13H22.5" fill="url(#prog-exp-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M23 25L38 10M29.5 10H38V18.5" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-lang-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Setting: Ngôn ngữ & Khu vực (Globe Meridian Grid + Location Spark) -->
+  <circle cx="24" cy="24" r="13.5" fill="url(#set-lang-blush)"/>
+  <path d="M36.8 19.5C37.3 20.9 37.5 22.4 37.5 24C37.5 31.5 31.5 37.5 24 37.5C16.5 37.5 10.5 31.5 10.5 24C10.5 16.5 16.5 10.5 24 10.5C27.1 10.5 29.9 11.5 32.2 13.3" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Latitude & Longitude Curves (#A9C7E8 & #FF5E36) -->
+  <ellipse cx="24" cy="24" rx="5.8" ry="13.2" stroke="#A9C7E8" stroke-width="2.2"/>
+  <line x1="11.2" y1="20.5" x2="36.8" y2="20.5" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="11.2" y1="27.5" x2="36.8" y2="27.5" stroke="#A9C7E8" stroke-width="2.1" stroke-linecap="round"/>
+  <circle cx="35.5" cy="15.5" r="2.1" fill="#FF5E36"/>
+</svg>

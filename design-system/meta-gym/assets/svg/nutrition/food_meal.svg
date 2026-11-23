@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nut-logged-blush" x1="10" y1="12" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.38"/>
+    </linearGradient>
+  </defs>
+  <!-- Daily Logged Dishes Counter ('Món đã ghi' — Covered Cloche Tray + Plus/Check Badge) -->
+  <path d="M10 28.5C10 21.3 15.8 15.5 23 15.5C30.2 15.5 36 21.3 36 28.5H10Z" fill="url(#nut-logged-blush)"/>
+  <path d="M35.7 25.5C34.4 19.8 29.2 15.5 23 15.5C15.8 15.5 10 21.3 10 28.5H26.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 32.5H25.5" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="23" cy="12.5" r="2.2" fill="#A9C7E8"/>
+  <!-- Bottom-Right Logged Dish Check Badge (#2ECC71) -->
+  <circle cx="34" cy="32.5" r="6.5" fill="#2ECC71" fill-opacity="0.24" stroke="#2ECC71" stroke-width="2.4"/>
+  <path d="M31.3 32.5L33.2 34.4L37 30.6" stroke="#2ECC71" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

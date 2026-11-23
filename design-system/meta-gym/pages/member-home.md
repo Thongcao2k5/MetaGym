@@ -1,64 +1,63 @@
-# Member Home — Page Rules
+# Trang chủ Hội viên (Member Home) — Quy tắc Thiết kế Trang
 
-This page inherits `../MASTER.md`. These rules resolve the home-screen composition shown in the current Meta Gym concept.
+Trang này kế thừa từ [`../MASTER.md`](../MASTER.md). Các quy tắc dưới đây chuẩn hóa bố cục màn hình Trang chủ trong concept hiện tại của Meta Gym.
 
-## Visual hierarchy
+## Phân cấp thị giác
 
-1. Greeting (`META GYM` / `Chào, <Tên>`) and circular glass search action.
-2. Quick-action dock: 4 equal squircle tiles (`Lịch tập`, `Giáo trình`, `Dinh dưỡng`, `Coach`).
-3. Membership & Coach summary (`Gói tập & Coach` Warm Glass card, or `Gói tập của bạn` when the member has no active Coach).
-4. Today's workout (`Hôm nay` featured Liquid Glass card, or `Tự tập hôm nay` self-workout card when the member has no Coach).
-5. 2-column balanced Bento pair (`Dinh dưỡng` and `Tiến độ tập luyện` / `Tiến độ tuần`, equal height `128px`).
-6. `Khám phá Meta Gym`, collapsible full feature workbench directory, and 5-item bottom navigation with AI as the single elevated action.
+1. Lời chào (`META GYM` / `Chào, <Tên>`) và nút tìm kiếm hình tròn hiệu ứng kính.
+2. Thanh thao tác nhanh (Quick-action dock): 4 ô vuông bo góc (squircle) đều nhau (`Lịch tập`, `Giáo trình`, `Dinh dưỡng`, `Coach`).
+3. Thẻ tóm tắt Gói tập & Coach (`Gói tập & Coach` dạng Warm Glass, hoặc `Gói tập của bạn` khi hội viên chưa có Coach hoạt động).
+4. Buổi tập hôm nay (thẻ nổi bật `Hôm nay` dạng Liquid Glass, hoặc thẻ `Tự tập hôm nay` khi hội viên không có Coach).
+5. Cặp thẻ Bento 2 cột cân đối (`Dinh dưỡng` và `Tiến độ tập luyện` / `Tiến độ tuần`, đồng chiều cao `128px`).
+6. Khu vực `Khám phá Meta Gym`, danh mục tính năng đầy đủ có thể thu gọn và thanh điều hướng đáy 5 mục với nút AI là hành động duy nhất được nâng nổi.
 
-## Material allocation & Warm Glass + Bento Layout
+## Phân bổ vật liệu & Bố cục Warm Glass + Bento
 
-- **Canvas & Ambient Depth**: Deep Graphite canvas (`#0F1115`) over the single dimmed static gym background image with subtle vertical obsidian scrim (`0x9E0F1115` → `0x900F1115` → `0xAA0F1115`), cool top-right ambient tint (`rgba(169, 199, 232, 0.16)`), and warm bottom-left ambient glow (`rgba(255, 94, 54, 0.10)`).
-- **Quick-action Dock**: 4 symmetric Warm Glass squircle tiles (`radius: 18px`, warm smoked gradient `0xC637302A` → `0xBB2C2621`, border `0xB7ADA396`), zero dividers between actions, `>= 48dp` touch targets.
-- **Membership & Coach Card (`Gói tập & Coach`)**: Warm Glass card (`radius: 24px`, `BackdropFilter` blur `sigma: 10`, warm smoked gradient `0xCD342D28` → `0xC829241F`, border `0xB7B3A99D`, top specular highlight `0x75FFF5E9`), inner metric panels (`radius: 17px`, min-height `82px`, translucent `#80211E1C` fill with `#9A8C8176` border), Coach avatar monogram, and Vietnamese status pill (`"Hiệu lực"`).
-- **Featured Card (`Hôm nay`) & Bento Cards (`Dinh dưỡng` + `Tiến độ`)**: Liquid Glass surfaces (`sigma: 12` when featured, subtle top specular highlight `0x70FFF6EA`). The 2-column Bento row splits `Dinh dưỡng` (left) and weekly workout progress (right) equally in a `128px`-tall row.
-- **Bottom Navigation & Scroll Clearance**: Floating navigation with 5 destinations and elevated AI center button; scrollable list includes `bottomPadding + 32` clearance so the bottom Explore/workbench items are never obscured.
-- **Terminology & Typography Refinement**:
-  - Replace English status chips with Vietnamese (`"Hiệu lực"` instead of `"Active"`).
-  - Crisp font rendering (`Be Vietnam Pro`), zero text-shadow blur or RGB subpixel fringe, `tabularFigures` for remaining days and workout metrics.
-- **Color Palette Standards**:
-  - Scaffold / Canvas: `#0F1115` (Deep Graphite).
-  - Card Surface (solid fallback & non-blurred containers): `#181B22` with 1px border `#262A34`.
-  - Primary Accent: `#FF5E36` (Coral Orange) for primary CTA, active navigation, active tiles, and key progress; with strictly white `#FFFFFF` text and icons on primary buttons.
-  - Semantic Colors: Green `#2ECC71` (Hoàn thành / Đang hiệu lực / Dinh dưỡng), Yellow `#F39C12` (Cảnh báo / Avatar phụ), Gray `#8E95A5` (Chữ phụ / Trạng thái tương lai chưa diễn ra).
-  - Coach Avatar `"LN"` (Lê Hoàng Nam): background `#F5B041`, text `#181B22` bold, synchronized across cards.
-- **Performance Mode Fallback (`useSolidGlassFallback` / Reduced Motion / Tests)**:
-  - Disable `BackdropFilter` blur and fall back to solid graphite/warm-dark surfaces (`#181B22` / `#302923` dock tiles, `rgba(24,27,34,0.92)` chrome) while maintaining borders and contrast.
+- **Nền chính & Chiều sâu không gian:** Nền Deep Graphite (`#0F1115`) nằm dưới duy nhất một ảnh nền phòng tập tĩnh đã làm tối với lớp phủ dọc obsidian scrim (`0x9E0F1115` → `0x900F1115` → `0xAA0F1115`), ánh phản xạ lạnh góc trên-phải (`rgba(169, 199, 232, 0.16)`) và quầng sáng ấm góc dưới-trái (`rgba(255, 94, 54, 0.10)`).
+- **Thanh thao tác nhanh (Quick-action Dock):** 4 ô squircle Warm Glass đối xứng (`radius: 18px`, gradient khói ấm `0xC637302A` → `0xBB2C2621`, viền `0xB7ADA396`), không dùng đường kẻ ngăn giữa các ô, vùng chạm tối thiểu `>= 48dp`.
+- **Thẻ Gói tập & Coach (`Gói tập & Coach`):** Thẻ Warm Glass (`radius: 24px`, `BackdropFilter` blur `sigma: 10`, gradient khói ấm `0xCD342D28` → `0xC829241F`, viền `0xB7B3A99D`, ánh phản chiếu cạnh trên `0x75FFF5E9`), các ô chỉ số bên trong (`radius: 17px`, chiều cao tối thiểu `82px`, nền bán trong suốt `#80211E1C` kèm viền `#9A8C8176`), avatar chữ viết tắt của Coach và nhãn trạng thái tiếng Việt (`"Hiệu lực"`).
+- **Thẻ nổi bật (`Hôm nay`) & Thẻ Bento (`Dinh dưỡng` + `Tiến độ`):** Bề mặt Liquid Glass (`sigma: 12` cho thẻ nổi bật, vệt sáng cạnh trên tinh tế `0x70FFF6EA`). Hàng Bento 2 cột chia đều `Dinh dưỡng` (bên trái) và tiến độ tập trong tuần (bên phải) với chiều cao đồng nhất `128px`.
+- **Thanh điều hướng đáy & Khoảng trống cuộn:** Thanh điều hướng nổi gồm 5 mục đích với nút AI nâng cao ở chính giữa; danh sách cuộn phải chừa khoảng đệm `bottomPadding + 32` để các mục Khám phá / danh mục bên dưới không bao giờ bị che khuất.
+- **Thuật ngữ & Tinh chỉnh kiểu chữ:**
+  - Thay toàn bộ nhãn trạng thái tiếng Anh sang tiếng Việt (`"Hiệu lực"` thay vì `"Active"`).
+  - Hiển thị chữ sắc nét (`Be Vietnam Pro`), không đổ bóng mờ chữ hoặc viền sắc sai RGB, dùng số dạng bảng (`tabularFigures`) cho số ngày còn lại và các chỉ số tập luyện.
+- **Tiêu chuẩn bảng màu:**
+  - Nền khung (Scaffold / Canvas): `#0F1115` (Deep Graphite).
+  - Bề mặt thẻ (nền dự phòng đặc & các khung không blur): `#181B22` kèm viền 1px `#262A34`.
+  - Màu nhấn chính: `#FF5E36` (Coral Orange) cho CTA chính, mục điều hướng đang chọn, ô đang kích hoạt và tiến độ chính; chữ và icon trên nút chính bắt buộc dùng màu trắng `#FFFFFF`.
+  - Màu ngữ nghĩa: Xanh lá `#2ECC71` (Hoàn thành / Đang hiệu lực / Dinh dưỡng), Vàng `#F39C12` (Cảnh báo / Avatar phụ), Xám `#8E95A5` (Chữ phụ / Trạng thái tương lai chưa diễn ra).
+  - Avatar Coach `"LN"` (Lê Hoàng Nam): nền `#F5B041`, chữ `#181B22` đậm, đồng bộ trên toàn bộ các thẻ.
+- **Chế độ dự phòng hiệu năng (`useSolidGlassFallback` / Giảm chuyển động / Kiểm thử):**
+  - Tắt `BackdropFilter` blur và chuyển về bề mặt graphite/nâu tối đặc (`#181B22` / `#302923` cho ô dock, `rgba(24,27,34,0.92)` cho thanh điều hướng) nhưng vẫn giữ nguyên viền và độ tương phản.
 
+## Quy tắc tinh giản
 
-## Simplification rules
+- Bỏ đường viền bao quanh nội dung bên trong khi thẻ cha đã tạo ranh giới rõ ràng.
+- Chỉ dùng bố cục 2 cột cho các cụm số liệu tóm tắt ngắn gọn.
+- Giữ tối đa một thẻ nổi bật dùng hình ảnh trên mỗi khung nhìn; các thẻ còn lại sử dụng icon và kiểu chữ.
+- Tránh cắt ngắn tên Coach trừ khi toàn bộ hàng đó có thể bấm vào và hiển thị đầy đủ họ tên ở màn hình đích.
+- Dùng khoảng cách giữa các mục (section spacing) thay vì bọc thêm một khung chứa mới cho từng tiểu mục.
 
-- Remove borders around inner content when the parent card already provides a boundary.
-- Use two-column layouts only for short numeric summaries.
-- Keep one image-led featured card per viewport; remaining cards use icons and typography.
-- Avoid truncating the coach name unless the entire row remains tappable and exposes the full name on the destination screen.
-- Use section spacing rather than adding a new container around every subsection.
+## Phân bổ màu cam
 
-## Orange distribution
+- Ô thao tác nhanh đang kích hoạt hoặc nút CTA chính.
+- Ngày tập hiện tại / đang được chọn.
+- Mục điều hướng đáy đang hoạt động.
+- Nút AI trung tâm.
 
-- Active quick action or primary CTA.
-- Current/selected workout day.
-- Active bottom-navigation destination.
-- AI central action.
+Không áp dụng quầng sáng mạnh (glow) đồng thời cho cả bốn vị trí trên. Điểm nhấn sáng mạnh nhất chỉ dành cho hành động mà người dùng được kỳ vọng bấm tiếp theo.
 
-Do not apply a strong glow to all four simultaneously. The strongest glow belongs to the action currently expected from the user.
+## Mục tiêu hiệu năng khi trình diễn (Demo)
 
-## Performance target for demo
+- Giới hạn `BackdropFilter` Warm/Liquid Glass (`sigma: 10–12`) trong `RepaintBoundary` trên các thẻ hero/tóm tắt và thanh điều hướng, có sẵn chế độ dự phòng nền đặc (`useSolidGlassFallback` / giảm chuyển động) cho thiết bị cấu hình thấp.
+- Tải trước ảnh nền duy nhất (`assets/images/gym_banner.png`).
+- Tránh hiệu ứng thị sai (parallax) và hoạt ảnh phát sáng chạy liên tục.
+- Chỉ dùng `opacity`/`transform` cho hiệu ứng xuất hiện thẻ và chuyển đổi trạng thái.
 
-- Keep Warm/Liquid Glass `BackdropFilter` (`sigma: 10–12`) bounded with `RepaintBoundary` on hero/summary cards and navigation, with solid fallback (`useSolidGlassFallback` / reduced motion) for low-end devices.
-- Precache the single background image (`assets/images/gym_banner.png`).
-- Avoid parallax and continuously animated glow.
-- Use opacity/transform only for card entrance and state changes.
+## Tiêu chí nghiệm thu
 
-## Acceptance checks
-
-- The next workout is discoverable within three seconds.
-- Navigation and quick actions retain 48dp minimum hit areas.
-- Secondary text remains readable over the real composed background.
-- Bottom content is not hidden by the glass navigation bar.
-- Home remains clear if the background image fails to load.
+- Người dùng nhận ra buổi tập tiếp theo trong vòng 3 giây.
+- Thanh điều hướng và các ô thao tác nhanh giữ vùng chạm tối thiểu `48dp`.
+- Chữ phụ luôn dễ đọc trên nền ảnh thực tế sau khi ghép lớp.
+- Nội dung cuối trang không bị thanh điều hướng kính che mất.
+- Trang chủ vẫn rõ ràng và sử dụng bình thường nếu ảnh nền không tải được.
