@@ -37,6 +37,9 @@ try {
 }
 const app = createApp({
   database,
+  enableDatabaseUi: process.env.ENABLE_DB_UI
+    ? process.env.ENABLE_DB_UI === 'true'
+    : process.env.NODE_ENV !== 'production',
   vnpay,
   momo,
   zalopay,
