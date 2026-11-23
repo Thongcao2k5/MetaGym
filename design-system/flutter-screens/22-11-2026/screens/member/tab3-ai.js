@@ -78,7 +78,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         </div>
 
         <!-- Thanh nhập câu hỏi + gợi ý nhanh cố định phía trên Bottom Nav -->
-        <div style="position:absolute;left:0;right:0;bottom:84px;z-index:9;padding:8px 14px 10px;background:linear-gradient(180deg,rgba(15,17,21,0) 0%,rgba(15,17,21,0.92) 24%,rgba(15,17,21,0.98) 100%);">
+        <div class="ai-composer-dock" style="position:absolute;left:0;right:0;bottom:84px;z-index:9;padding:8px 14px 10px;background:linear-gradient(180deg,rgba(15,17,21,0) 0%,rgba(15,17,21,0.92) 24%,rgba(15,17,21,0.98) 100%);">
           <div class="filter-row" style="margin-bottom:7px;padding-bottom:0;">
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Gợi ý bữa phụ 25g đạm</span>
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Chỉnh form Bench Press</span>

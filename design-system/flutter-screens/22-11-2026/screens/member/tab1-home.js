@@ -262,19 +262,19 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="qr-sheet">
             <div class="row-between" style="margin-bottom:8px;">
               <span class="pill pill-success tnum">● Hôm nay · 22/11/2026</span>
-              <span class="tnum" style="font-size:11.5px;color:#8E95A5;">ID MG-2048</span>
+              <span class="tnum" style="font-size:11.5px;color:var(--text-secondary);">ID MG-2048</span>
             </div>
             <div style="font-size:17px;font-weight:800;">QR Check-in Phòng Tập</div>
-            <div style="font-size:12px;color:#8E95A5;margin-top:2px;">Mã riêng của Nguyễn Minh Quân · Chỉ dùng trong ngày</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Mã riêng của Nguyễn Minh Quân · Chỉ dùng trong ngày</div>
 
             <div class="qr-box-white" data-qr-svg-host></div>
 
-            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:8px 10px;margin-bottom:12px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:8px 10px;margin-bottom:12px;">
               <div class="row-between" style="font-size:11.5px;">
-                <span style="color:#8E95A5;">Mã phiên duy nhất</span>
-                <strong class="tnum" style="color:#FF5E36;letter-spacing:0.04em;" data-qr-token>MG-261122-8F4A</strong>
+                <span style="color:var(--text-secondary);">Mã phiên duy nhất</span>
+                <strong class="tnum" style="color:var(--primary);letter-spacing:0.04em;" data-qr-token>MG-261122-8F4A</strong>
               </div>
-              <div class="tnum" style="font-size:10.5px;color:#C8C2BC;margin-top:3px;text-align:left;" data-qr-meta>
+              <div class="tnum" style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;text-align:left;" data-qr-meta>
                 Hết hạn 23:59 hôm nay · Đổi mã mới mỗi lần mở hoặc tạo lại
               </div>
             </div>
@@ -375,7 +375,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="card-liquid tier-pkg-card" style="border-color:rgba(112,174,232,0.55);">
               <div class="row-between" style="margin-bottom:4px;">
                 <strong style="font-size:14.5px;">Kim Cương VIP</strong>
-                <span class="pill" style="background:rgba(112,174,232,0.18);color:#70AEE8;">Đề xuất</span>
+                <span class="pill" style="background:rgba(112,174,232,0.18);color:var(--info);">Đề xuất</span>
               </div>
               <div class="tnum" style="font-size:20px;font-weight:800;margin:4px 0;">8.490.000đ <span class="txt-xs">/ năm</span></div>
               <div class="txt-xs" style="margin-bottom:12px;line-height:1.45;">Thẻ Kim Cương NFC · InBody không giới hạn · Ưu tiên lịch Coach · 6 buổi PT 1:1</div>
@@ -443,57 +443,85 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         <div class="phone-scrim"></div>
         <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
 
-        <div class="phone-body no-nav">
-          <div class="mg-header">
+        <div class="phone-body" style="padding-bottom:88px;">
+          <div class="mg-header" style="margin-bottom:8px;">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
-              <div class="mg-eyebrow">HỘI VIÊN &amp; ƯU ĐÃI</div>
-              <div class="mg-title">Gói tập</div>
+              <div class="mg-eyebrow">THẺ HỘI VIÊN NFC · 4 HẠNG</div>
+              <div class="mg-title">Chọn gói tập</div>
             </div>
+            <span class="pill pill-muted" style="font-size:10px;">Chưa có gói</span>
           </div>
 
-          <!-- Empty State: Chưa đăng ký gói -->
-          <div class="card-warm-glass" style="text-align:center;padding:22px 16px;">
-            <div style="width:60px;height:60px;border-radius:50%;margin:0 auto 12px;background:rgba(255,94,54,0.16);border:1px solid rgba(255,94,54,0.45);display:flex;align-items:center;justify-content:center;">
-              <img class="ico-lg" src="../../meta-gym/assets/svg/membership/premium_unlock.svg" alt="Chưa có gói" style="background:transparent;padding:0;" />
+          <!-- 4 Thẻ Đứng Trượt Ngang Mượt Mà (Vertical Swipe Deck) -->
+          <div data-wallet-deck data-active="2">
+            <div class="wallet-tabs">
+              <div class="wallet-tab" data-wallet-idx="0">Đồng</div>
+              <div class="wallet-tab" data-wallet-idx="1">Bạc</div>
+              <div class="wallet-tab active" data-wallet-idx="2">Vàng ★</div>
+              <div class="wallet-tab" data-wallet-idx="3">Kim Cương</div>
             </div>
-            <div style="font-size:17px;font-weight:800;">Chưa có gói tập hiệu lực</div>
-            <div class="txt-xs" style="margin:6px 0 14px;line-height:1.5;">
-              Đăng ký gói Hội viên để nhận thẻ NFC quẹt cổng phòng tập, theo dõi nhật ký và đặt lịch Coach 1:1.
-            </div>
-          </div>
 
-          <div class="sec-head"><h3 class="row" style="gap:6px;"><img class="ico-sm" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Gói đang bán" /><span>Chọn gói bắt đầu</span></h3><span class="txt-xs tnum">4 hạng thẻ</span></div>
-
-          <div class="card-solid" style="border-color:rgba(255,94,54,0.55);margin-bottom:10px;">
-            <div class="row-between" style="margin-bottom:4px;">
-              <strong style="font-size:15px;">Hạng Vàng — Pro 6 Tháng</strong>
-              <span class="pill pill-orange">Phổ biến</span>
-            </div>
-            <div class="tnum" style="font-size:21px;font-weight:800;margin:4px 0;">4.490.000đ <span class="txt-xs">/ 6 tháng</span></div>
-            <div class="txt-xs" style="margin-bottom:10px;">Thẻ Vàng NFC · InBody hàng tháng · Tặng 2 buổi PT 1:1</div>
-            <button class="btn-primary" data-go="member-checkout">Đăng ký ngay →</button>
-          </div>
-
-          <div class="card-solid" style="margin-bottom:10px;">
-            <div class="row-between">
-              <div>
-                <strong class="txt-sm">Hạng Bạc — Plus 3 Tháng</strong>
-                <div class="tnum txt-sm txt-bold" style="margin-top:2px;">2.490.000đ <span class="txt-xs">/ 3 tháng</span></div>
+            <div class="fan-stage" data-wallet-stage style="height:296px;margin-bottom:8px;">
+              <div class="fan-card" data-wallet-card="0" data-pos="2"
+                   data-name="Hạng Đồng — Starter 1 Tháng" data-badge="Khởi đầu" data-badge-cls="pill-muted"
+                   data-price="890.000đ" data-period="/ tháng" data-sub="~29.600đ / ngày · Linh hoạt trải nghiệm"
+                   data-coach="0%" data-inbody="Trả phí lẻ" data-pts="×1.0 điểm" data-cta="Đăng ký Hạng Đồng · 890.000đ →">
+                <img src="../../meta-gym/assets/images/membership/card_bronze.jpg?v=2" alt="Thẻ Đồng Meta Gym" />
               </div>
-              <span class="btn-secondary" data-go="member-checkout" style="cursor:pointer;">Chọn gói</span>
-            </div>
-          </div>
-
-          <div class="card-solid">
-            <div class="row-between">
-              <div>
-                <strong class="txt-sm">Hạng Đồng — Starter 1 Tháng</strong>
-                <div class="tnum txt-sm txt-bold" style="margin-top:2px;">890.000đ <span class="txt-xs">/ tháng</span></div>
+              <div class="fan-card" data-wallet-card="1" data-pos="-1"
+                   data-name="Hạng Bạc — Plus 3 Tháng" data-badge="Tiết kiệm" data-badge-cls="pill-muted"
+                   data-price="2.490.000đ" data-period="/ 3 tháng" data-sub="~830.000đ / tháng · Tặng 1 lần đo InBody"
+                   data-coach="-3%" data-inbody="1 lần miễn phí" data-pts="×1.2 điểm" data-cta="Đăng ký Hạng Bạc · 2.490.000đ →">
+                <img src="../../meta-gym/assets/images/membership/card_silver.jpg?v=2" alt="Thẻ Bạc Meta Gym" />
               </div>
-              <span class="btn-secondary" data-go="member-checkout" style="cursor:pointer;">Chọn gói</span>
+              <div class="fan-card" data-wallet-card="2" data-pos="0"
+                   data-name="Hạng Vàng — Pro 6 Tháng" data-badge="Phổ biến nhất" data-badge-cls="pill-orange"
+                   data-price="4.490.000đ" data-period="/ 6 tháng" data-sub="~748.000đ / tháng · Tặng 2 buổi PT 1:1"
+                   data-coach="-5%" data-inbody="Hàng tháng" data-pts="×1.5 điểm" data-cta="Đăng ký Hạng Vàng · 4.490.000đ →">
+                <img src="../../meta-gym/assets/images/membership/card_gold.jpg?v=2" alt="Thẻ Vàng Meta Gym" />
+              </div>
+              <div class="fan-card" data-wallet-card="3" data-pos="1"
+                   data-name="Kim Cương VIP — 12 Tháng" data-badge="VIP Cao cấp" data-badge-cls="pill-success"
+                   data-price="8.490.000đ" data-period="/ năm" data-sub="~707.000đ / tháng · Tặng 6 buổi PT 1:1"
+                   data-coach="-10%" data-inbody="Không giới hạn" data-pts="×2.0 điểm" data-cta="Đăng ký Kim Cương · 8.490.000đ →">
+                <img src="../../meta-gym/assets/images/membership/card_diamond.jpg?v=2" alt="Thẻ Kim Cương Meta Gym" />
+              </div>
+            </div>
+
+            <div class="fan-dots" style="margin:0 0 10px;">
+              <span class="fan-dot" data-wallet-idx="0"></span>
+              <span class="fan-dot" data-wallet-idx="1"></span>
+              <span class="fan-dot active" data-wallet-idx="2"></span>
+              <span class="fan-dot" data-wallet-idx="3"></span>
+            </div>
+
+            <!-- Chi tiết quyền lợi hạng thẻ đang chọn -->
+            <div class="card-solid" style="padding:14px;">
+              <div class="row-between" style="margin-bottom:4px;">
+                <strong style="font-size:15px;" data-w-name>Hạng Vàng — Pro 6 Tháng</strong>
+                <span class="pill pill-orange" data-w-badge>Phổ biến nhất</span>
+              </div>
+              <div class="row" style="gap:6px;align-items:baseline;margin:4px 0 2px;">
+                <span class="tnum txt-orange" style="font-size:22px;font-weight:800;" data-w-price>4.490.000đ</span>
+                <span class="txt-xs" data-w-period>/ 6 tháng</span>
+              </div>
+              <div class="txt-xs tnum" style="margin-bottom:10px;" data-w-sub>~748.000đ / tháng · Tặng 2 buổi PT 1:1</div>
+
+              <div class="divider" style="margin:8px 0;"></div>
+
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                <div class="row-between"><span>✓ Quẹt thẻ kim loại NFC &amp; QR Check-in</span><strong class="txt-green">Full giờ</strong></div>
+                <div class="row-between"><span>✓ Giảm trực tiếp phí Gói Coach 1:1</span><strong class="tnum txt-orange" data-w-coach>-5%</strong></div>
+                <div class="row-between"><span>✓ Đo chỉ số cơ thể InBody</span><strong data-w-inbody>Hàng tháng</strong></div>
+                <div class="row-between"><span>✓ Hệ số tích điểm Meta Points</span><strong class="tnum" data-w-pts>×1.5 điểm</strong></div>
+              </div>
             </div>
           </div>
+        </div>
+
+        <div class="bottom-cta-dock">
+          <button type="button" class="btn-primary tnum" data-go="member-checkout" data-w-cta>Đăng ký Hạng Vàng · 4.490.000đ →</button>
         </div>
       </div>
     `
@@ -550,7 +578,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <span class="pill pill-success tnum" data-voucher-badge>METAGYM200 · -200k</span>
             </div>
             <div class="row" style="gap:7px;margin-bottom:7px;">
-              <input type="text" data-voucher-input value="METAGYM200" placeholder="Nhập mã giảm giá..." style="flex:1;height:38px;padding:0 11px;border-radius:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);color:var(--text-primary);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;min-width:0;" />
+              <input type="text" data-voucher-input value="METAGYM200" placeholder="Nhập mã giảm giá..." style="flex:1;height:38px;padding:0 11px;border-radius:11px;background:var(--surface-raised);border:1px solid var(--border-solid);color:var(--text-primary);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;min-width:0;" />
               <button type="button" class="btn-mini-orange" data-apply-voucher-input style="height:38px;padding:0 12px;border-radius:11px;cursor:pointer;flex-shrink:0;">Áp dụng</button>
             </div>
             <div class="row" style="gap:6px;flex-wrap:wrap;">
@@ -591,7 +619,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                     <div class="txt-xs">Thanh toán nhanh qua Zalo · Hoàn tiền 2%</div>
                   </div>
                 </div>
-                <span data-pay-radio style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.28);flex-shrink:0;"></span>
+                <span data-pay-radio style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-solid);flex-shrink:0;"></span>
               </div>
             </div>
 
@@ -605,7 +633,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                     <div class="txt-xs">Hỗ trợ 35+ ứng dụng ngân hàng Việt Nam</div>
                   </div>
                 </div>
-                <span data-pay-radio style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.28);flex-shrink:0;"></span>
+                <span data-pay-radio style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-solid);flex-shrink:0;"></span>
               </div>
             </div>
 
@@ -613,16 +641,16 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="card-solid" data-pay-method="Chuyển khoản (VietQR)" style="padding:11px 13px;margin-bottom:0;cursor:pointer;">
               <div class="row-between">
                 <div class="row" style="gap:10px;">
-                  <div style="width:36px;height:36px;border-radius:10px;background:rgba(46,204,113,0.18);border:1px solid rgba(46,204,113,0.45);color:#2ECC71;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">CK</div>
+                  <div style="width:36px;height:36px;border-radius:10px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.45);color:var(--success);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">CK</div>
                   <div>
                     <div class="txt-sm txt-bold">Chuyển khoản ngân hàng (VietQR)</div>
                     <div class="txt-xs">MB Bank · Đối soát tự động 24/7 trong 5 giây</div>
                   </div>
                 </div>
-                <span data-pay-radio style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.28);flex-shrink:0;"></span>
+                <span data-pay-radio style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border-solid);flex-shrink:0;"></span>
               </div>
               <!-- Thông tin CK hiện khi chọn CK -->
-              <div data-ck-box style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
+              <div data-ck-box style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-solid);">
                 <div class="row-between txt-xs" style="margin-bottom:4px;"><span>Ngân hàng</span><strong style="color:var(--text-primary);">MB Bank · Meta Gym JSC</strong></div>
                 <div class="row-between txt-xs tnum" style="margin-bottom:4px;"><span>Số tài khoản</span><strong style="color:var(--primary);">8888 2026 9999</strong></div>
                 <div class="row-between txt-xs tnum"><span>Nội dung CK</span><strong style="color:var(--success);">MG2048 GOLD6M</strong></div>

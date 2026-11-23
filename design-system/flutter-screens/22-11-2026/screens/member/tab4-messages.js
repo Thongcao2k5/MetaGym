@@ -42,7 +42,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="row" style="gap:6px;margin-bottom:7px;">
               <img class="ico-xs" src="../../meta-gym/assets/svg/community/comm_chat.svg" alt="Coach cá nhân" />
               <strong style="font-size:10.5px;letter-spacing:0.05em;">COACH CÁ NHÂN</strong>
-              <span class="pill" style="background:rgba(35,201,151,0.16);color:#23C997;font-size:9px;padding:1px 6px;">● Đang hoạt động</span>
+              <span class="pill" style="background:rgba(35,201,151,0.16);color:var(--success);font-size:9px;padding:1px 6px;">● Đang hoạt động</span>
             </div>
             <div class="row">
               <div class="avatar-ln">LN</div>

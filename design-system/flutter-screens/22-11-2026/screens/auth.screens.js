@@ -36,7 +36,7 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
 
             <!-- _WarmGlassProgressBar (172px x 5px + % tabular-nums) -->
             <div class="row" style="justify-content:center;gap:10px;margin-top:18px;">
-              <div style="width:172px;height:5px;border-radius:999px;background:rgba(33,30,28,0.55);border:1px solid rgba(167,157,146,0.4);overflow:hidden;">
+              <div style="width:172px;height:5px;border-radius:999px;background:var(--metric-panel-bg);border:1px solid var(--metric-panel-border);overflow:hidden;">
                 <div style="width:78%;height:100%;border-radius:999px;background:linear-gradient(90deg, var(--primary), #F5B041);"></div>
               </div>
               <span class="tnum" style="width:36px;text-align:right;font-size:12.5px;font-weight:700;color:var(--primary);">78%</span>

@@ -203,7 +203,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="row" style="gap:7px;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Hạng Vàng" />
                 <div>
-                  <div class="txt-xs txt-bold" style="color:#E8C27A;">Đặc quyền Thẻ Vàng đang áp dụng</div>
+                  <div class="txt-xs txt-bold" style="color:var(--warning);">Đặc quyền Thẻ Vàng đang áp dụng</div>
                   <div class="txt-xs">Giảm trực tiếp 5% mọi gói Coach 1:1 + Tích Meta Points</div>
                 </div>
               </div>
@@ -381,15 +381,30 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
             <div class="field">
               <label>Mật khẩu hiện tại</label>
-              <div class="input-box"><span>••••••••••</span><img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_show_password.svg" alt="Hiện" /></div>
+              <div class="input-box pass-input-box">
+                <input type="password" class="pass-field-input" value="MetaGym@2025" aria-label="Mật khẩu hiện tại" />
+                <button type="button" class="pass-eye-btn" data-toggle-pass aria-label="Hiện mật khẩu" title="Hiện mật khẩu" aria-pressed="false">
+                  <img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_show_password.svg" alt="Hiện mật khẩu" />
+                </button>
+              </div>
             </div>
             <div class="field">
               <label>Mật khẩu mới</label>
-              <div class="input-box focus"><span>••••••••••••</span><img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_show_password.svg" alt="Hiện" /></div>
+              <div class="input-box focus pass-input-box">
+                <input type="password" class="pass-field-input" value="MetaGym#2026" aria-label="Mật khẩu mới" />
+                <button type="button" class="pass-eye-btn" data-toggle-pass aria-label="Hiện mật khẩu" title="Hiện mật khẩu" aria-pressed="false">
+                  <img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_show_password.svg" alt="Hiện mật khẩu" />
+                </button>
+              </div>
             </div>
             <div class="field" style="margin-bottom:0;">
               <label>Xác nhận mật khẩu mới</label>
-              <div class="input-box"><span>••••••••••••</span><img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_show_password.svg" alt="Hiện" /></div>
+              <div class="input-box pass-input-box">
+                <input type="password" class="pass-field-input" value="MetaGym#2026" aria-label="Xác nhận mật khẩu mới" />
+                <button type="button" class="pass-eye-btn" data-toggle-pass aria-label="Hiện mật khẩu" title="Hiện mật khẩu" aria-pressed="false">
+                  <img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_show_password.svg" alt="Hiện mật khẩu" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -498,7 +513,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                   <div class="txt-xs" data-theme-mode-desc>Tối · Futuristic Performance Glass</div>
                 </div>
               </div>
-              <div class="row" data-app-theme-switch style="gap:4px;padding:3px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);cursor:pointer;flex-shrink:0;">
+              <div class="row" data-app-theme-switch style="gap:4px;padding:3px;border-radius:999px;background:var(--surface-raised);border:1px solid var(--border-solid);cursor:pointer;flex-shrink:0;">
                 <span data-theme-opt="dark" style="padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;background:var(--primary);color:#FFF;transition:all 160ms ease;">Tối</span>
                 <span data-theme-opt="light" style="padding:4px 9px;border-radius:999px;font-size:11px;font-weight:600;color:var(--text-secondary);transition:all 160ms ease;">Sáng</span>
               </div>

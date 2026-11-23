@@ -32,6 +32,12 @@
   --text-primary: #F7F9FC;
   --text-secondary: #8E95A5;
   --text-warm-muted: #C8C2BC;
+  --primary-text: #FF5E36;
+  --chip-active-bg: rgba(255, 94, 54, 0.22);
+  --chip-active-text: #FFFFFF;
+  --ruler-major: #F7F9FC;
+  --ruler-mid: rgba(232, 237, 245, 0.58);
+  --ruler-minor: rgba(232, 237, 245, 0.28);
 
   /* Semantic Colors */
   --success: #2ECC71;
@@ -51,9 +57,13 @@
   --r-xl: 24px;
   --r-full: 999px;
 
-  /* Preview Device Width (toggleable 375px / 393px) */
-  --device-width: 375px;
-  --device-height: 812px;
+  /* Preview Device Dimensions — Default: iPhone 14 Pro (393x852 logical pt) */
+  --device-width: 393px;
+  --device-height: 852px;
+  --device-radius: 55px;
+  --island-w: 126px;
+  --island-h: 37px;
+  --status-h: 59px;
 }
 
 /* Solid fallback mode (DESIGN.md §12: usable when blur & photo disabled) */
@@ -67,141 +77,299 @@ body.solid-fallback .phone-bg-photo {
   opacity: 0 !important;
 }
 
-/* Light Mode — Daylight Studio Tokens (DESIGN.md) */
+/* Light Mode — Daylight Studio Tokens (4-Layer Tonal Depth: Titanium Canvas -> Porcelain Cards -> Machined Icon Wells) */
 body.light-mode {
-  --bg-canvas: #F5F7FA;
+  --bg-canvas: #E8EEF5;
   --surface-solid: #FFFFFF;
-  --surface-raised: #EDF1F5;
-  --border-solid: #CBD4DF;
-  --glass-cool-bg: rgba(255, 255, 255, 0.86);
-  --glass-cool-border: rgba(203, 212, 223, 0.90);
-  --glass-warm-top: rgba(255, 255, 255, 0.92);
-  --glass-warm-bottom: rgba(245, 247, 250, 0.90);
-  --glass-warm-border: rgba(203, 212, 223, 0.95);
-  --glass-highlight: rgba(255, 255, 255, 0.95);
-  --metric-panel-bg: #EDF1F5;
-  --metric-panel-border: #CBD4DF;
+  --surface-raised: #ECF1F7;
+  --border-solid: #C2CDD9;
+  --glass-cool-bg: rgba(255, 255, 255, 0.92);
+  --glass-cool-border: rgba(184, 197, 214, 0.95);
+  --glass-warm-top: rgba(255, 255, 255, 0.98);
+  --glass-warm-bottom: rgba(247, 249, 252, 0.96);
+  --glass-warm-border: rgba(184, 197, 214, 0.95);
+  --glass-highlight: rgba(255, 255, 255, 0.98);
+  --metric-panel-bg: #EDF2F8;
+  --metric-panel-border: #C4D0DF;
   --text-primary: #11151A;
-  --text-secondary: #4D5968;
-  --text-warm-muted: #4D5968;
-  background: #E8EDF3;
+  --text-secondary: #475569;
+  --text-warm-muted: #475569;
+  /* Calibrated Light Mode Accent & Semantic Tokens (>= 4.5:1 on #FFFFFF) */
+  --primary-text: #C93B16;
+  --chip-active-bg: rgba(255, 94, 54, 0.14);
+  --chip-active-text: #C93B16;
+  --ruler-major: #1E293B;
+  --ruler-mid: rgba(30, 41, 59, 0.52);
+  --ruler-minor: rgba(30, 41, 59, 0.24);
+  --reflection: #1D5FA7;
+  --success: #15803D;
+  --warning: #B45309;
+  --error: #C92A37;
+  --info: #1D63B8;
+  background: #DCE4EE;
 }
 body.light-mode .studio-bar {
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom-color: #CBD4DF;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom-color: #B8C5D6;
+}
+body.light-mode .role-tab .tab-count {
+  background: rgba(17, 21, 26, 0.08);
+  color: #334155;
+}
+body.light-mode .role-tab.active .tab-count {
+  background: rgba(0, 0, 0, 0.22);
+  color: #FFFFFF;
 }
 body.light-mode .phone {
-  border-color: #CBD4DF;
-  box-shadow: 0 20px 50px rgba(17, 21, 26, 0.14), 0 0 0 1px rgba(17, 21, 26, 0.06);
+  border-color: #9AA8BA;
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.08);
 }
 body.light-mode .phone-bg-photo {
-  opacity: 0.08;
+  background-image: url('../../meta-gym/assets/svg/backgrounds/bg_luxury_light.svg?v=2');
+  opacity: 1;
+  filter: none;
 }
 body.light-mode .phone-scrim {
-  background:
-    radial-gradient(circle at 92% 8%, rgba(169, 199, 232, 0.24), transparent 44%),
-    radial-gradient(circle at 10% 88%, rgba(255, 94, 54, 0.10), transparent 42%),
-    linear-gradient(180deg, rgba(245, 247, 250, 0.84) 0%, rgba(245, 247, 250, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(234, 240, 247, 0.14) 0%, rgba(225, 232, 242, 0.06) 50%, rgba(218, 226, 238, 0.18) 100%);
 }
 body.light-mode .notch { background: #1E242D; }
+body.light-mode .card-solid {
+  border-color: #C4D0DF;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+body.light-mode .card-warm-glass {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F9FBFE 100%);
+  border-color: #BFCBDA;
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.08);
+}
 body.light-mode .card-liquid,
 body.light-mode .card-liquid.featured {
   background: #FFFFFF;
-  border-color: #CBD4DF;
-  box-shadow: 0 2px 10px rgba(17, 21, 26, 0.05);
+  border-color: #BFCBDA;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+body.light-mode .card-liquid.featured::before {
+  background: linear-gradient(90deg, rgba(255, 94, 54, 0.65), rgba(29, 99, 184, 0.40));
 }
 body.light-mode .quick-tile {
   background: #FFFFFF;
-  border-color: #CBD4DF;
-  box-shadow: 0 2px 8px rgba(17, 21, 26, 0.05);
+  border-color: #BFCBDA;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+}
+body.light-mode .quick-tile.active {
+  background: rgba(255, 94, 54, 0.10);
+  border-color: var(--primary);
+}
+/* Luxury Porcelain & Brushed Titanium Icon System (Light Mode)
+   Distinct tonal separation against #FFFFFF cards & #E8EEF5 canvas without harsh #222834 blocks. */
+body.light-mode img[src$=".svg"] {
+  filter: invert(0.92) hue-rotate(180deg) saturate(1.18) contrast(1.06);
+}
+body.light-mode .btn-primary img[src$=".svg"],
+body.light-mode .nav-ai-btn img[src$=".svg"],
+body.light-mode .fan-card img[src$=".svg"] {
+  filter: none !important;
 }
 body.light-mode .circle-btn {
-  background: #222834;
-  border-color: #343D4D;
-  color: #F7F9FC;
-  box-shadow: 0 2px 6px rgba(17, 21, 26, 0.14);
+  background: linear-gradient(180deg, #FFFFFF 0%, #E5ECF5 100%);
+  border-color: #B4C2D4;
+  color: #11151A;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.10), inset 0 1px 0 #FFFFFF;
+}
+body.light-mode .circle-btn:hover {
+  border-color: rgba(217, 67, 30, 0.50);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.13), inset 0 1px 0 #FFFFFF;
 }
 body.light-mode .quick-ico {
-  background: #222834 !important;
-  border: 1px solid rgba(17, 21, 26, 0.10);
+  background: linear-gradient(145deg, #E8EEF7 0%, #DCE5F2 100%) !important;
+  border: 1px solid #BAC7D9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
-body.light-mode .ico-dock {
-  width: 42px;
-  height: 42px;
-  padding: 4px;
-  border-radius: 12px;
-  background: #222834;
-  box-shadow: 0 2px 6px rgba(17, 21, 26, 0.12);
-}
-body.light-mode .ico-lg {
-  width: 42px;
-  height: 42px;
-  padding: 4px;
-  border-radius: 12px;
-  background: #222834;
-}
+body.light-mode .ico-dock,
+body.light-mode .ico-lg,
 body.light-mode .ico-sm,
 body.light-mode .ico-xs {
-  padding: 3px;
-  border-radius: 7px;
-  background: #222834;
-  box-sizing: content-box;
-}
-body.light-mode .circle-btn img,
-body.light-mode .quick-ico img,
-body.light-mode .btn-secondary img,
-body.light-mode .nav-item img,
-body.light-mode .nav-ai-btn img {
-  background: transparent;
   padding: 0;
   border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   box-sizing: border-box;
 }
 body.light-mode .btn-secondary:has(img) {
-  background: #222834;
-  border-color: #343D4D;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E7EEF6 100%);
+  border-color: #B4C2D4;
+  color: #11151A;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07), inset 0 1px 0 #FFFFFF;
+}
+body.light-mode .chat-ai-avatar {
+  background: linear-gradient(145deg, #FFEBE3 0%, #FFDED2 100%);
+  border-color: rgba(217, 67, 30, 0.42);
+}
+body.light-mode .btn-mini-orange,
+body.light-mode .pill-orange,
+body.light-mode .sub-chip.active,
+body.light-mode .ctrl-btn.active,
+body.light-mode .time-slot.selected,
+body.light-mode .meta-cal-day.is-today,
+body.light-mode .notes-card-tag {
+  color: #C93B16;
+  background: rgba(255, 94, 54, 0.12);
+  border-color: rgba(217, 67, 30, 0.40);
+}
+body.light-mode .pill-success {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803D;
+}
+body.light-mode .pill-warning {
+  background: rgba(180, 83, 9, 0.12);
+  color: #B45309;
+}
+body.light-mode .pill-muted {
+  background: #E8EEF5;
+  color: #334155;
+}
+body.light-mode .sec-link,
+body.light-mode .txt-orange,
+body.light-mode .mg-eyebrow,
+body.light-mode .fan-badge-row {
+  color: #D43E1A;
 }
 body.light-mode .seg-tabs {
-  background: #EDF1F5;
-  border-color: #CBD4DF;
+  background: #E8EEF5;
+  border-color: #C2CDD9;
+}
+body.light-mode .seg-tab {
+  color: #475569;
 }
 body.light-mode .filter-pill {
   background: #FFFFFF;
-  border-color: #CBD4DF;
-  color: #4D5968;
+  border-color: #C2CDD9;
+  color: #334155;
 }
 body.light-mode .filter-pill.active {
   background: rgba(255, 94, 54, 0.12);
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: #D43E1A;
+  color: #C93B16;
 }
 body.light-mode .bottom-nav {
-  background: rgba(24, 27, 34, 0.92);
-  border-color: rgba(38, 42, 52, 0.90);
-  box-shadow: 0 12px 28px rgba(17, 21, 26, 0.22);
+  background: rgba(242, 246, 251, 0.94);
+  border-color: #B4C2D4;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+body.light-mode .bottom-nav .nav-item {
+  color: #334155;
+}
+body.light-mode .bottom-nav .nav-item.active {
+  color: #C93B16;
 }
 body.light-mode .bottom-cta-dock {
-  background: rgba(255, 255, 255, 0.95);
-  border-top-color: #CBD4DF;
+  background: rgba(255, 255, 255, 0.96);
+  border-top-color: #C2CDD9;
+}
+body.light-mode .ai-composer-dock {
+  background: linear-gradient(180deg, rgba(245, 247, 250, 0) 0%, rgba(245, 247, 250, 0.94) 24%, rgba(245, 247, 250, 0.99) 100%) !important;
+}
+body.light-mode .checkin-alert-card {
+  background: linear-gradient(135deg, rgba(255, 94, 54, 0.12), #FFFFFF) !important;
+  border-color: rgba(217, 67, 30, 0.45) !important;
 }
 body.light-mode .ai-msg-user {
-  background: #EDF1F5;
-  border-color: #CBD4DF;
+  background: #EDF2F7;
+  border-color: #C2CDD9;
 }
 body.light-mode .ai-msg-bot {
   background: #FFFFFF;
-  border-color: rgba(255, 94, 54, 0.45);
+  border-color: rgba(217, 67, 30, 0.40);
+}
+body.light-mode .day-bubble {
+  color: #475569;
 }
 body.light-mode .day-dot {
-  background: #EDF1F5;
-  border-color: #CBD4DF;
+  background: #E8EEF5;
+  border-color: #B8C4D2;
+  color: #334155;
+}
+body.light-mode .day-dot.done,
+body.light-mode .day-dot.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+body.light-mode .day-dot.active {
+  border-color: #11151A;
 }
 body.light-mode .prog-track {
-  background: #E2E8F0;
+  background: #DCE4EE;
 }
 body.light-mode .count-pill {
-  background: #EDF1F5;
-  color: #4D5968;
+  background: #E8EEF5;
+  color: #334155;
+}
+body.light-mode .accordion-row:active {
+  background: rgba(17, 21, 26, 0.05);
+}
+body.light-mode .qr-overlay,
+body.light-mode .meta-cal-overlay {
+  background: rgba(17, 21, 26, 0.46);
+}
+body.light-mode .meta-cal-dialog {
+  box-shadow: 0 20px 50px rgba(17, 21, 26, 0.22);
+}
+body.light-mode .flow-toast {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(217, 67, 30, 0.45);
+  color: #11151A;
+  box-shadow: 0 12px 30px rgba(17, 21, 26, 0.16);
+}
+body.light-mode .qr-sheet {
+  background: #FFFFFF;
+  border-color: #C2CDD9;
+  color: #11151A;
+  box-shadow: 0 20px 50px rgba(17, 21, 26, 0.24);
+}
+body.light-mode .qr-box-white {
+  border: 1px solid #CBD4DF;
+  box-shadow: 0 6px 18px rgba(17, 21, 26, 0.10);
+}
+body.light-mode .body-picker-sheet {
+  background: #FFFFFF;
+  border-color: #C2CDD9;
+  color: #11151A;
+  box-shadow: 0 24px 56px rgba(17, 21, 26, 0.24);
+}
+body.light-mode .inline-ruler-wrap,
+body.light-mode .stadiometer-stage,
+body.light-mode .weight-dial-stage,
+body.light-mode .torso-stage {
+  background: #EDF2F7 !important;
+  border-color: #C2CDD9 !important;
+}
+body.light-mode .stadiometer-ruler {
+  border-left-color: #B8C4D2;
+}
+body.light-mode .inline-ruler-tick .bar {
+  background: rgba(17, 21, 26, 0.24);
+}
+body.light-mode .inline-ruler-tick.mid .bar {
+  background: rgba(17, 21, 26, 0.48);
+}
+body.light-mode .inline-ruler-tick.major .bar {
+  background: rgba(17, 21, 26, 0.78);
+}
+body.light-mode .inline-ruler-tick .lbl {
+  color: #475569;
+}
+body.light-mode .step-chip-btn {
+  background: #EDF2F7;
+  border-color: #C2CDD9;
+  color: #11151A;
+}
+body.light-mode .input-box.focus {
+  border-color: #1D63B8;
+}
+body.light-mode .fan-dot {
+  background: rgba(71, 85, 105, 0.35);
 }
 body.light-mode.solid-fallback {
   --glass-cool-bg: #FFFFFF;
@@ -420,61 +588,181 @@ body {
 .slot-tag.p0 { color: var(--error); border-color: rgba(241, 91, 100, 0.4); background: rgba(241, 91, 100, 0.12); }
 
 /* ==========================================================================
-   Mobile Device Frame (375x812 / 393x852)
+   Mobile Device Frame — Exact iPhone 14 Pro (393x852pt) & Compact (375x812pt)
+   Apple HIG iPhone 14 Pro spec:
+   - Inner viewport: 393x852px, screen radius: 55px (outer bezel: 61px)
+   - Status bar / Top safe area: 59px
+   - Dynamic Island: 126x37px, top offset: 11px (11 + 37 + 11 = 59px)
+   - Time: 15px Semibold; 5G: 13px Semibold; Battery: 25x12px + 1.5px cap
    ========================================================================== */
 .phone {
-  width: var(--device-width);
-  height: var(--device-height);
-  border-radius: 42px;
+  width: calc(var(--device-width) + 12px);
+  height: calc(var(--device-height) + 12px);
+  border-radius: calc(var(--device-radius) + 6px);
   border: 6px solid #222732;
   background: var(--bg-canvas);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  transition: width 220ms ease;
+  transition: width 220ms ease, height 220ms ease, border-radius 220ms ease;
+}
+.phone::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 139px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(247, 249, 252, 0.32);
+  pointer-events: none;
+  z-index: 25;
+}
+body.light-mode .phone::after {
+  background: rgba(17, 21, 26, 0.28);
 }
 
-/* Gym Photo + Obsidian Scrim + Ambient Depth Lights */
+/* Bespoke Luxury Guilloché Vector Backgrounds (Dark & Light — No Photography) */
 .phone-bg-photo {
   position: absolute;
   inset: 0;
-  background-image: url('../../meta-gym/assets/images/backgrounds/bg_interior_mobile.webp');
+  background-image: url('../../meta-gym/assets/svg/backgrounds/bg_luxury_dark.svg?v=2');
   background-size: cover;
   background-position: center;
-  opacity: 0.32;
+  opacity: 1;
   pointer-events: none;
-  transition: opacity 200ms ease;
+  transition: opacity 200ms ease, background-image 220ms ease;
 }
 .phone-scrim {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 92% 8%, rgba(169, 199, 232, 0.16), transparent 44%),
-    radial-gradient(circle at 10% 88%, rgba(255, 94, 54, 0.11), transparent 42%),
-    linear-gradient(180deg, rgba(15, 17, 21, 0.62) 0%, rgba(15, 17, 21, 0.58) 48%, rgba(15, 17, 21, 0.78) 100%);
+  background: linear-gradient(180deg, rgba(15, 17, 21, 0.14) 0%, rgba(15, 17, 21, 0.06) 50%, rgba(11, 13, 18, 0.22) 100%);
   pointer-events: none;
 }
 
 .status-bar {
   position: relative;
   z-index: 5;
-  height: 36px;
-  padding: 10px 22px 0;
-  display: flex;
+  height: var(--status-h);
+  padding: 0 12px;
+  display: grid;
+  grid-template-columns: 1fr var(--island-w) 1fr;
   align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
   color: var(--text-primary);
   flex-shrink: 0;
+  user-select: none;
+}
+.status-bar > :first-child {
+  justify-self: center;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.status-bar > :last-child {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .notch {
-  width: 96px;
-  height: 22px;
-  background: #08090C;
+  position: relative;
+  width: var(--island-w);
+  height: var(--island-h);
+  background: #000000;
   border-radius: 999px;
+  justify-self: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.notch::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%, #253459 0%, #0C1120 55%, #05070D 100%);
+  box-shadow: inset 0 0 0 1px rgba(120, 150, 210, 0.25);
+}
+body.light-mode .notch {
+  background: #000000;
+}
+
+/* iPhone 14 Pro Right Status Cluster: Signal + 5G + iOS Battery Pill (25x12px) */
+.ios-signal {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 11px;
+}
+.ios-signal i {
+  display: block;
+  width: 3px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.ios-signal i:nth-child(1) { height: 4px; }
+.ios-signal i:nth-child(2) { height: 6px; }
+.ios-signal i:nth-child(3) { height: 8.5px; }
+.ios-signal i:nth-child(4) { height: 11px; }
+.ios-net {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.ios-battery {
+  position: relative;
+  width: 25px;
+  height: 12.5px;
+  border-radius: 3.5px;
+  border: 1.2px solid currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2px;
+  overflow: visible;
+}
+.ios-battery::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.6px;
+  height: 4.5px;
+  border-radius: 0 1.5px 1.5px 0;
+  background: currentColor;
+  opacity: 0.65;
+}
+.ios-battery-fill {
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  bottom: 1px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.92;
+}
+.ios-battery-pct {
+  position: relative;
+  z-index: 1;
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--bg-canvas);
 }
 
 .phone-body {
@@ -550,8 +838,9 @@ body {
 .qr-checkin-btn:hover { transform: scale(1.04); border-color: var(--primary); }
 .qr-checkin-btn img { width: 28px; height: 28px; object-fit: contain; display: block; }
 body.light-mode .qr-checkin-btn {
-  background: #222834;
-  border-color: var(--primary);
+  background: linear-gradient(145deg, #FFEAE2 0%, #FFDCD0 100%);
+  border-color: rgba(217, 67, 30, 0.48);
+  box-shadow: 0 4px 12px rgba(255, 94, 54, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.90);
 }
 
 /* Level 3 Overlay Glass — QR Check-in Modal inside Phone */
@@ -835,6 +1124,42 @@ body.light-mode .qr-checkin-btn {
   color: var(--text-primary);
 }
 .input-box.focus { border-color: #8DBCF0; }
+.pass-input-box {
+  padding: 0 4px 0 14px;
+  gap: 6px;
+}
+.pass-field-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.pass-eye-btn {
+  min-width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 120ms ease, background 150ms ease;
+}
+.pass-eye-btn:hover {
+  background: rgba(255, 94, 54, 0.10);
+}
+.pass-eye-btn:active {
+  transform: scale(0.94);
+}
 
 /* Day Strip */
 .day-strip {
@@ -1002,11 +1327,24 @@ body.light-mode .auth-policy-link {
   opacity: 0.35;
 }
 body.light-mode .cal-cell {
-  background: #EDF1F5;
+  background: #EDF2F7;
+  color: #334155;
 }
 body.light-mode .cal-cell.visited {
   background: rgba(255, 94, 54, 0.14);
-  color: var(--primary-hover);
+  border: 1px solid rgba(217, 67, 30, 0.50);
+  color: #C93B16;
+}
+body.light-mode .cal-cell.today {
+  background: var(--primary);
+  border: 1px solid var(--primary-hover);
+  color: #FFFFFF;
+  box-shadow: 0 3px 10px rgba(255, 94, 54, 0.35);
+}
+body.light-mode .cal-cell.future {
+  opacity: 0.65;
+  background: #F1F5F9;
+  color: #64748B;
 }
 
 /* Toggle Switch Pill (Settings & Privacy) */
@@ -2012,4 +2350,356 @@ body.light-mode .fan-card {
   stroke-dasharray: 48;
   stroke-dashoffset: 0;
   animation: mgCheckDraw 420ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ==========================================================================
+   1.2b Apple-Wallet Stacked 4-Tier Metal Card Selector
+   ========================================================================== */
+.wallet-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.wallet-tab {
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+.wallet-tab.active {
+  background: rgba(255, 94, 54, 0.18);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+.wallet-stack {
+  position: relative;
+  height: 292px;
+  margin-bottom: 12px;
+}
+.wallet-card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.48), 0 14px 32px rgba(0, 0, 0, 0.58);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms ease, filter 240ms ease;
+  transform-origin: center top;
+}
+.wallet-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.wallet-card[data-slot="0"] { top: 0px;  transform: scale(0.90); z-index: 1; filter: brightness(0.76); }
+.wallet-card[data-slot="1"] { top: 26px; transform: scale(0.94); z-index: 2; filter: brightness(0.84); }
+.wallet-card[data-slot="2"] { top: 54px; transform: scale(0.97); z-index: 3; filter: brightness(0.92); }
+.wallet-card[data-slot="3"] { top: 84px; transform: scale(1.00); z-index: 4; filter: brightness(1.00); }
+
+/* ==========================================================================
+   Tab 4: Ghi chú (Application Requirements Notes)
+   Level 1 solid surface (#181B22 + 1px #262A34), 4/8px rhythm, DESIGN.md tokens
+   ========================================================================== */
+.notes-board {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.notes-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 4px 4px 0;
+}
+.notes-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+.notes-header p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.notes-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.notes-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.notes-toggle-all {
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+.notes-toggle-all:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.notes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.notes-card {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  border-radius: var(--r-lg);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.notes-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-solid);
+}
+.notes-card-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+.notes-card-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.notes-card-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  background: rgba(255, 94, 54, 0.14);
+  color: var(--primary);
+  border: 1px solid rgba(255, 94, 54, 0.28);
+  font-variant-numeric: tabular-nums;
+}
+.notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.notes-item {
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-solid);
+  overflow: hidden;
+  transition: border-color 160ms ease;
+}
+.notes-item[open] {
+  border-color: rgba(255, 94, 54, 0.42);
+}
+.notes-summary {
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  min-height: 48px;
+  cursor: pointer;
+  user-select: none;
+}
+.notes-summary::-webkit-details-marker {
+  display: none;
+}
+.notes-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--primary);
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+.notes-summary-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.notes-item-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.notes-item-desc {
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.notes-expand-cue {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--r-full);
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.notes-summary:hover .notes-expand-cue {
+  color: var(--text-primary);
+  border-color: var(--reflection);
+}
+.notes-item[open] .notes-expand-cue {
+  color: var(--primary);
+  border-color: rgba(255, 94, 54, 0.35);
+}
+.notes-chevron {
+  display: inline-block;
+  font-size: 11px;
+  transition: transform 180ms ease;
+}
+.notes-item[open] .notes-chevron {
+  transform: rotate(180deg);
+}
+.notes-detail-body {
+  padding: 0 16px 16px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-top: 1px solid var(--border-solid);
+}
+.notes-section-label {
+  margin: 14px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.notes-sublist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.notes-sublist li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+.notes-sublist li::before {
+  content: "–";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+.notes-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.notes-tech-card {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-solid);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.notes-tech-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.notes-tech-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.notes-tech-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: rgba(112, 174, 232, 0.14);
+  color: var(--info);
+  border: 1px solid rgba(112, 174, 232, 0.28);
+}
+.notes-tech-badge.ready {
+  background: rgba(46, 204, 113, 0.14);
+  color: var(--success);
+  border-color: rgba(46, 204, 113, 0.28);
+}
+.notes-tech-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .notes-chevron,
+  .notes-item,
+  .notes-expand-cue,
+  .notes-toggle-all {
+    transition: none;
+  }
 }

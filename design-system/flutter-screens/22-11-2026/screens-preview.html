@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./tokens.css?v=20261123l" />
 </head>
 
 <body>
@@ -32,8 +32,8 @@
           UX</button>
         <button class="ctrl-btn" id="btn-hotspots" title="Hiện viền nét đứt các vùng bấm được">Hiện điểm bấm</button>
         <span class="ctrl-divider"></span>
-        <button class="ctrl-btn active" id="btn-375">375px</button>
-        <button class="ctrl-btn" id="btn-393">393px</button>
+        <button class="ctrl-btn active" id="btn-393" title="iPhone 14 Pro — 393×852pt, Dynamic Island 126×37pt">iPhone 14 Pro (393×852)</button>
+        <button class="ctrl-btn" id="btn-375" title="iPhone 13 mini / 375×812pt">375×812</button>
         <span class="ctrl-divider"></span>
         <button class="ctrl-btn" id="btn-theme" style="display:inline-flex;align-items:center;gap:6px;">
           <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_theme_appearance.svg" alt="Giao diện" />
@@ -63,6 +63,8 @@
           id="cnt-member">0</span></button>
       <button class="role-tab" role="tab" data-tab="coach">Huấn luyện viên (Coach) <span class="tab-count"
           id="cnt-coach">0</span></button>
+      <button class="role-tab" role="tab" data-tab="notes">Ghi chú <span class="tab-count"
+          id="cnt-notes">0</span></button>
     </div>
   </div>
 
@@ -74,21 +76,23 @@
     <div class="tab-panel" data-panel="auth"></div>
     <div class="tab-panel active" data-panel="member"></div>
     <div class="tab-panel" data-panel="coach"></div>
+    <div class="tab-panel" data-panel="notes"></div>
   </main>
 
   <div class="flow-toast" id="flow-toast"></div>
 
   <!-- Modular Screen Registries -->
-  <script src="./screens/auth.screens.js?v=20261122j"></script>
-  <script src="./screens/member/tab1-home.js?v=20261122i"></script>
-  <script src="./screens/member/tab2-training.js?v=20261122d"></script>
-  <script src="./screens/member/tab2-training.js?v=20261122e"></script>
-  <script src="./screens/member/tab3-ai.js?v=20261122c"></script>
-  <script src="./screens/member/tab4-messages.js?v=20261122c"></script>
-  <script src="./screens/member/tab5-profile.js?v=20261122c"></script>
-  <script src="./screens/member/tab5-profile-sub.js?v=20261122h"></script>
+  <script src="./screens/auth.screens.js?v=20261123b"></script>
+  <script src="./screens/member/tab1-home.js?v=20261123b"></script>
+  <script src="./screens/member/tab2-training.js?v=20261123c"></script>
+  <script src="./screens/member/tab2-training.js?v=20261123c"></script>
+  <script src="./screens/member/tab3-ai.js?v=20261123b"></script>
+  <script src="./screens/member/tab4-messages.js?v=20261123b"></script>
+  <script src="./screens/member/tab5-profile.js?v=20261123b"></script>
+  <script src="./screens/member/tab5-profile-sub.js?v=20261123c"></script>
   <script src="./screens/coach/core.js?v=20261122c"></script>
   <script src="./screens/coach/detail.js?v=20261122c"></script>
+  <script src="./screens/notes.js?v=20261123c"></script>
 
   <script>
     const registry = window.METAGYM_SCREENS || {};
@@ -119,6 +123,124 @@
         </section>
       `).join('');
     });
+
+    // 1b. Render Tab 4: Ghi chú (Application Requirements Notes — Expandable with Tech Suggestions)
+    (function renderNotesPanel() {
+      const notesGroups = Array.isArray(window.METAGYM_NOTES) ? window.METAGYM_NOTES : [];
+      const totalItems = notesGroups.reduce((sum, g) => sum + (Array.isArray(g.items) ? g.items.length : 0), 0);
+      const countEl = document.getElementById('cnt-notes');
+      if (countEl) countEl.textContent = totalItems;
+      const panel = document.querySelector('.tab-panel[data-panel="notes"]');
+      if (!panel) return;
+      const esc = (str) => String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      const renderItem = (rawItem) => {
+        const item = typeof rawItem === 'string' ? { title: rawItem } : (rawItem || {});
+        const details = Array.isArray(item.details) ? item.details : [];
+        const techStack = Array.isArray(item.techStack) ? item.techStack : [];
+        const hasExtra = details.length > 0 || techStack.length > 0;
+        if (!hasExtra) {
+          return `
+            <li class="notes-item">
+              <div class="notes-summary" style="cursor:default;">
+                <span class="notes-bullet" aria-hidden="true"></span>
+                <div class="notes-summary-main">
+                  <span class="notes-item-title">${esc(item.title || '')}</span>
+                  ${item.summary ? `<span class="notes-item-desc">${esc(item.summary)}</span>` : ''}
+                </div>
+              </div>
+            </li>
+          `;
+        }
+        return `
+          <li>
+            <details class="notes-item">
+              <summary class="notes-summary">
+                <span class="notes-bullet" aria-hidden="true"></span>
+                <div class="notes-summary-main">
+                  <span class="notes-item-title">${esc(item.title || '')}</span>
+                  ${item.summary ? `<span class="notes-item-desc">${esc(item.summary)}</span>` : ''}
+                </div>
+                <span class="notes-expand-cue">
+                  <span>Chi tiết &amp; Công nghệ</span>
+                  <span class="notes-chevron" aria-hidden="true">▾</span>
+                </span>
+              </summary>
+              <div class="notes-detail-body">
+                ${details.length ? `
+                  <div>
+                    <div class="notes-section-label">Diễn giải hành vi chi tiết</div>
+                    <ul class="notes-sublist">
+                      ${details.map(d => `<li>${esc(d)}</li>`).join('')}
+                    </ul>
+                  </div>
+                ` : ''}
+                ${techStack.length ? `
+                  <div>
+                    <div class="notes-section-label">Gợi ý công nghệ triển khai (Flutter)</div>
+                    <div class="notes-tech-grid">
+                      ${techStack.map(t => {
+                        const isReady = t.status && (t.status.includes('Đã có') || t.status.includes('Có sẵn'));
+                        return `
+                          <div class="notes-tech-card">
+                            <div class="notes-tech-head">
+                              <span class="notes-tech-name">${esc(t.name || '')}</span>
+                              ${t.status ? `<span class="notes-tech-badge ${isReady ? 'ready' : ''}">${esc(t.status)}</span>` : ''}
+                            </div>
+                            ${t.note ? `<p class="notes-tech-note">${esc(t.note)}</p>` : ''}
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            </details>
+          </li>
+        `;
+      };
+      panel.innerHTML = `
+        <div class="notes-board">
+          <div class="notes-header">
+            <div>
+              <h2>Ghi chú yêu cầu ứng dụng</h2>
+              <p>Bấm vào từng gạch đầu dòng để mở rộng phần diễn giải chi tiết và gợi ý công nghệ Flutter.</p>
+            </div>
+            <div class="notes-header-actions">
+              <span class="notes-meta-pill">${totalItems} mục ghi chú · screens/notes.js</span>
+              <button type="button" class="notes-toggle-all" id="btn-notes-toggle-all">Mở rộng tất cả</button>
+            </div>
+          </div>
+          <div class="notes-grid">
+            ${notesGroups.map(group => `
+              <section class="notes-card" data-note-group="${esc(group.id || '')}">
+                <div class="notes-card-head">
+                  <div>
+                    <h3 class="notes-card-title">${esc(group.title || 'Ghi chú')}</h3>
+                    ${group.subtitle ? `<p class="notes-card-sub">${esc(group.subtitle)}</p>` : ''}
+                  </div>
+                  <span class="notes-card-tag">${esc(group.tag || 'Note')} · ${(group.items || []).length}</span>
+                </div>
+                <ul class="notes-list">
+                  ${(group.items || []).map(renderItem).join('')}
+                </ul>
+              </section>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      const btnToggleAll = document.getElementById('btn-notes-toggle-all');
+      if (btnToggleAll) {
+        btnToggleAll.addEventListener('click', () => {
+          const allDetails = Array.from(panel.querySelectorAll('details.notes-item'));
+          const anyClosed = allDetails.some(d => !d.open);
+          allDetails.forEach(d => { d.open = anyClosed; });
+          btnToggleAll.textContent = anyClosed ? 'Thu gọn tất cả' : 'Mở rộng tất cả';
+        });
+      }
+    })();
 
     // 2. Declarative UX Flow Wiring (Auto-binds interactive links across all 35 screens)
     const fallbackParent = {
@@ -461,6 +583,16 @@
         return;
       }
 
+      // Vertical 4-Card Swipe Deck (1.2b Gói tập Chưa đăng ký)
+      const wPick = e.target.closest('[data-wallet-idx], [data-wallet-card]');
+      if (wPick) {
+        e.stopPropagation();
+        const deck = wPick.closest('[data-wallet-deck]');
+        const idx = Number(wPick.dataset.walletIdx ?? wPick.dataset.walletCard);
+        if (deck && !Number.isNaN(idx)) setWalletDeckActive(deck, idx);
+        return;
+      }
+
       // System State & Alert Modals (6. Modal Trạng thái Hệ thống)
       const sysModalBtn = e.target.closest('[data-open-sys-modal]');
       if (sysModalBtn) {
@@ -498,7 +630,7 @@
           card.style.background = on ? 'rgba(255,94,54,0.08)' : '';
           const radio = card.querySelector('[data-pay-radio]');
           if (radio) {
-            radio.style.border = on ? '5px solid var(--primary)' : '2px solid rgba(255,255,255,0.28)';
+            radio.style.border = on ? '5px solid var(--primary)' : '2px solid var(--border-solid)';
             radio.style.background = on ? '#FFF' : 'transparent';
           }
           const ckBox = card.querySelector('[data-ck-box]');
@@ -740,6 +872,29 @@
       }
     });
 
+    // Global Password Show/Hide Toggle (5.11 Bảo mật & Tài khoản, Auth...)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-toggle-pass]');
+      if (!btn) return;
+      e.stopPropagation();
+      const box = btn.closest('.input-box');
+      const input = box ? box.querySelector('input') : null;
+      if (!input) return;
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.setAttribute('aria-pressed', String(!showing));
+      const label = showing ? 'Hiện mật khẩu' : 'Ẩn mật khẩu';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      const img = btn.querySelector('img');
+      if (img) {
+        img.src = showing
+          ? '../../meta-gym/assets/svg/setting/auth_show_password.svg'
+          : '../../meta-gym/assets/svg/setting/auth_hide_password.svg';
+        img.alt = label;
+      }
+    });
+
     // 4. Sub-filters & Role Tabs
     const subFiltersEl = document.getElementById('sub-filters');
     function renderSubFilters(role) {
@@ -819,13 +974,49 @@
 
     const btn375 = document.getElementById('btn-375');
     const btn393 = document.getElementById('btn-393');
-    btn375.addEventListener('click', () => {
-      document.documentElement.style.setProperty('--device-width', '375px');
-      btn375.classList.add('active'); btn393.classList.remove('active');
-    });
-    btn393.addEventListener('click', () => {
-      document.documentElement.style.setProperty('--device-width', '393px');
-      btn393.classList.add('active'); btn375.classList.remove('active');
+    function applyDevicePreset(preset) {
+      const root = document.documentElement.style;
+      if (preset === '375') {
+        root.setProperty('--device-width', '375px');
+        root.setProperty('--device-height', '812px');
+        root.setProperty('--device-radius', '47px');
+        root.setProperty('--island-w', '114px');
+        root.setProperty('--island-h', '33px');
+        root.setProperty('--status-h', '52px');
+        btn375.classList.add('active'); btn393.classList.remove('active');
+      } else {
+        // Exact iPhone 14 Pro logical spec: 393x852pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
+        root.setProperty('--device-width', '393px');
+        root.setProperty('--device-height', '852px');
+        root.setProperty('--device-radius', '55px');
+        root.setProperty('--island-w', '126px');
+        root.setProperty('--island-h', '37px');
+        root.setProperty('--status-h', '59px');
+        btn393.classList.add('active'); btn375.classList.remove('active');
+      }
+    }
+    btn375.addEventListener('click', () => applyDevicePreset('375'));
+    btn393.addEventListener('click', () => applyDevicePreset('393'));
+    applyDevicePreset('393');
+
+    // Upgrade all phone status-bar right clusters to authentic iPhone 14 Pro Signal + 5G + Battery pill
+    document.querySelectorAll('.status-bar').forEach(bar => {
+      const right = bar.lastElementChild;
+      if (!right || right.classList.contains('notch')) return;
+      const raw = (right.textContent || '5G 92%').trim();
+      const netMatch = raw.match(/(5G|LTE|4G|Wi-Fi)/i);
+      const pctMatch = raw.match(/(\d{1,3})%/);
+      const net = netMatch ? netMatch[1].toUpperCase() : '5G';
+      const pct = pctMatch ? Math.max(5, Math.min(100, Number(pctMatch[1]))) : 92;
+      const fillW = Math.round((pct / 100) * 20.6);
+      right.innerHTML = `
+        <span class="ios-signal" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="ios-net">${net}</span>
+        <span class="ios-battery" title="Pin ${pct}%">
+          <span class="ios-battery-fill" style="width:${fillW}px;"></span>
+          <span class="ios-battery-pct">${pct}</span>
+        </span>
+      `;
     });
 
     const btnSolid = document.getElementById('btn-solid');
@@ -1063,32 +1254,32 @@
       overlay.innerHTML = `
         <div class="qr-sheet" style="text-align:left;">
           <div class="row-between" style="margin-bottom:4px;">
-            <strong style="font-size:16.5px;color:#F7F9FC;">Cập nhật ảnh đại diện</strong>
+            <strong style="font-size:16.5px;color:var(--text-primary);">Cập nhật ảnh đại diện</strong>
             <span class="pill pill-success" style="font-size:10px;">Đã cấp quyền ảnh</span>
           </div>
-          <div style="font-size:12px;color:#9BA3B4;margin-bottom:14px;">Chọn nguồn tải ảnh mới cho hồ sơ hội viên của bạn</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Chọn nguồn tải ảnh mới cho hồ sơ hội viên của bạn</div>
 
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-            <button type="button" data-avatar-act="camera" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+            <button type="button" data-avatar-act="camera" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:var(--surface-raised);border:1px solid var(--border-solid);color:var(--text-primary);display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
               <span style="width:36px;height:36px;border-radius:10px;background:rgba(255,94,54,0.16);border:1px solid rgba(255,94,54,0.38);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_camera.svg" alt="Camera" style="background:transparent;padding:0;" />
               </span>
               <span style="flex:1;">
                 <div style="font-size:13.5px;font-weight:700;">Chụp ảnh mới</div>
-                <div style="font-size:11px;color:#8E95A5;">Mở camera trước hoặc sau</div>
+                <div style="font-size:11px;color:var(--text-secondary);">Mở camera trước hoặc sau</div>
               </span>
-              <span style="color:#8E95A5;font-size:15px;">›</span>
+              <span style="color:var(--text-secondary);font-size:15px;">›</span>
             </button>
 
-            <button type="button" data-avatar-act="gallery" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+            <button type="button" data-avatar-act="gallery" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:var(--surface-raised);border:1px solid var(--border-solid);color:var(--text-primary);display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
               <span style="width:36px;height:36px;border-radius:10px;background:rgba(112,174,232,0.16);border:1px solid rgba(112,174,232,0.38);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/setting/media_gallery.svg" alt="Thư viện" style="background:transparent;padding:0;" />
               </span>
               <span style="flex:1;">
                 <div style="font-size:13.5px;font-weight:700;">Chọn từ thư viện ảnh</div>
-                <div style="font-size:11px;color:#8E95A5;">Hỗ trợ JPG, PNG · Tối đa 5MB</div>
+                <div style="font-size:11px;color:var(--text-secondary);">Hỗ trợ JPG, PNG · Tối đa 5MB</div>
               </span>
-              <span style="color:#8E95A5;font-size:15px;">›</span>
+              <span style="color:var(--text-secondary);font-size:15px;">›</span>
             </button>
 
             <button type="button" data-avatar-act="remove" style="width:100%;min-height:46px;padding:10px 12px;border-radius:14px;background:rgba(241,91,100,0.08);border:1px solid rgba(241,91,100,0.28);color:#F15B64;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:13px;font-weight:700;">
@@ -1221,11 +1412,11 @@
             <div class="row-between">
               <div>
                 <div style="font-size:16px;font-weight:800;">Thước đo chiều cao</div>
-                <div style="font-size:11.5px;color:#8E95A5;">Kéo thước lên/xuống hoặc lăn chuột</div>
+                <div style="font-size:11.5px;color:var(--text-secondary);">Kéo thước lên/xuống hoặc lăn chuột</div>
               </div>
               <div style="text-align:right;">
                 <div class="tnum" style="font-size:24px;font-weight:800;color:#FF5E36;line-height:1;" data-h-val>${val} cm</div>
-                <div class="tnum" style="font-size:11px;color:#8E95A5;margin-top:2px;" data-h-sub>${cmToFtIn(val)}</div>
+                <div class="tnum" style="font-size:11px;color:var(--text-secondary);margin-top:2px;" data-h-sub>${cmToFtIn(val)}</div>
               </div>
             </div>
 
@@ -1266,8 +1457,8 @@
         for (let cm = max; cm >= min; cm--) {
           const major = cm % 10 === 0, mid = !major && cm % 5 === 0;
           rows += `<div style="height:${pxPerCm}px;display:flex;align-items:center;gap:6px;padding-left:6px;">
-            <span style="display:inline-block;height:${major ? 2 : 1}px;width:${major ? 26 : mid ? 16 : 9}px;background:${major ? '#F7F9FC' : 'rgba(232,237,245,0.35)'};border-radius:2px;"></span>
-            ${major ? `<span class="tnum" style="font-size:10px;color:#9BA3B4;font-weight:700;">${cm}</span>` : ''}
+            <span style="display:inline-block;height:${major ? 2 : 1}px;width:${major ? 26 : mid ? 16 : 9}px;background:${major ? 'var(--ruler-major)' : 'var(--ruler-minor)'};border-radius:2px;"></span>
+            ${major ? `<span class="tnum" style="font-size:10px;color:var(--text-secondary);font-weight:700;">${cm}</span>` : ''}
           </div>`;
         }
         track.innerHTML = rows;
@@ -1326,15 +1517,15 @@
             <div class="row-between" style="margin-bottom:8px;">
               <div>
                 <div style="font-size:16px;font-weight:800;">Cân đĩa tạ Meta Gym</div>
-                <div style="font-size:11.5px;color:#8E95A5;">Xoay mặt cân hoặc kéo ngang để đổi mức tạ</div>
+                <div style="font-size:11.5px;color:var(--text-secondary);">Xoay mặt cân hoặc kéo ngang để đổi mức tạ</div>
               </div>
               <span class="pill pill-orange tnum">± 0.1 kg</span>
             </div>
 
             <!-- Live Olympic Barbell + Stacked Plates Visualizer -->
-            <div style="background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:8px 10px 6px;margin-bottom:8px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:14px;padding:8px 10px 6px;margin-bottom:8px;">
               <svg data-barbell-svg viewBox="0 0 300 68" style="width:100%;height:62px;display:block;"></svg>
-              <div class="row-between" style="font-size:10px;color:#8E95A5;margin-top:2px;">
+              <div class="row-between" style="font-size:10px;color:var(--text-secondary);margin-top:2px;">
                 <span>Đòn tạ 20kg + Đĩa đối xứng</span>
                 <span class="tnum" style="color:#E8EDF5;font-weight:700;" data-plate-summary>25 · 1.25 kg / bên</span>
               </div>
@@ -1342,25 +1533,25 @@
 
             <div class="weight-dial-stage" data-w-dial style="height:172px;margin:0 0 10px;">
               <svg viewBox="0 0 320 172" style="width:100%;height:100%;display:block;">
-                <circle cx="160" cy="222" r="186" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+                <circle cx="160" cy="222" r="186" fill="none" stroke="var(--border-solid)" stroke-width="2"/>
                 <circle cx="160" cy="222" r="136" fill="rgba(24,27,34,0.88)" stroke="rgba(169,199,232,0.16)" stroke-width="1"/>
                 <g data-dial-ticks></g>
                 <polygon points="160,26 154,12 166,12" fill="#FF5E36"/>
                 <line x1="160" y1="24" x2="160" y2="66" stroke="#FF5E36" stroke-width="2.5" stroke-linecap="round"/>
               </svg>
               <div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;pointer-events:none;">
-                <div class="tnum" style="font-size:32px;font-weight:800;letter-spacing:-0.02em;line-height:1;" data-w-val>${val.toFixed(1)} <span style="font-size:15px;color:#8E95A5;font-weight:600;">kg</span></div>
-                <div class="tnum" style="font-size:11px;color:#9BA3B4;margin-top:3px;" data-w-lbs>${(val * 2.20462).toFixed(1)} lbs</div>
+                <div class="tnum" style="font-size:32px;font-weight:800;letter-spacing:-0.02em;line-height:1;" data-w-val>${val.toFixed(1)} <span style="font-size:15px;color:var(--text-secondary);font-weight:600;">kg</span></div>
+                <div class="tnum" style="font-size:11px;color:var(--text-secondary);margin-top:3px;" data-w-lbs>${(val * 2.20462).toFixed(1)} lbs</div>
               </div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:8px 12px;margin-bottom:10px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:8px 12px;margin-bottom:10px;">
               <div class="row-between" style="font-size:11.5px;">
-                <span style="color:#9BA3B4;">Chỉ số BMI (Cao ${curH} cm)</span>
-                <strong class="tnum" data-w-bmi-lbl style="color:#2ECC71;">23.9 · Bình thường</strong>
+                <span style="color:var(--text-secondary);">Chỉ số BMI (Cao ${curH} cm)</span>
+                <strong class="tnum" data-w-bmi-lbl style="color:var(--success);">23.9 · Bình thường</strong>
               </div>
               <div class="bmi-bar-track"><div class="bmi-bar-dot" data-bmi-dot style="left:45%;"></div></div>
-              <div class="row-between" style="font-size:9.5px;color:#8E95A5;">
+              <div class="row-between" style="font-size:9.5px;color:var(--text-secondary);">
                 <span>Thiếu cân</span><span>Bình thường</span><span>Thừa cân</span><span>Béo phì</span>
               </div>
             </div>
@@ -1434,20 +1625,20 @@
             const y1 = cy + Math.sin(rad) * rOuter;
             const x2 = cx + Math.cos(rad) * (rOuter - len);
             const y2 = cy + Math.sin(rad) * (rOuter - len);
-            const stroke = isMajor ? '#F7F9FC' : isHalf ? 'rgba(232,237,245,0.65)' : 'rgba(232,237,245,0.28)';
+            const stroke = isMajor ? 'var(--ruler-major)' : isHalf ? 'var(--ruler-mid)' : 'var(--ruler-minor)';
             html += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${isMajor ? 2 : 1.2}" stroke-linecap="round"/>`;
             if (isMajor && t % 20 === 0) {
               const lx = cx + Math.cos(rad) * (rOuter - 34);
               const ly = cy + Math.sin(rad) * (rOuter - 34);
-              html += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#9BA3B4" font-size="11" font-weight="700" font-family="Be Vietnam Pro, sans-serif">${kg.toFixed(0)}</text>`;
+              html += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="var(--text-secondary)" font-size="11" font-weight="700" font-family="Be Vietnam Pro, sans-serif">${kg.toFixed(0)}</text>`;
             }
           }
           ticksG.innerHTML = html;
-          overlay.querySelector('[data-w-val]').innerHTML = `${val.toFixed(1)} <span style="font-size:15px;color:#8E95A5;font-weight:600;">kg</span>`;
+          overlay.querySelector('[data-w-val]').innerHTML = `${val.toFixed(1)} <span style="font-size:15px;color:var(--text-secondary);font-weight:600;">kg</span>`;
           overlay.querySelector('[data-w-lbs]').textContent = `${(val * 2.20462).toFixed(1)} lbs`;
           const info = calcBmiInfo(curH, val);
           overlay.querySelector('[data-w-bmi-lbl]').textContent = `${info.bmi.toFixed(1)} · ${info.label}`;
-          overlay.querySelector('[data-w-bmi-lbl]').style.color = info.bmi < 18.5 ? '#56A8F5' : info.bmi < 25 ? '#2ECC71' : info.bmi < 30 ? '#F5A623' : '#F15B64';
+          overlay.querySelector('[data-w-bmi-lbl]').style.color = info.bmi < 18.5 ? 'var(--info)' : info.bmi < 25 ? 'var(--success)' : info.bmi < 30 ? 'var(--warning)' : 'var(--error)';
           overlay.querySelector('[data-bmi-dot]').style.left = `${info.pct.toFixed(1)}%`;
         }
         updateWeightUI();
@@ -1511,10 +1702,10 @@
               <img class="ico-lg" src="${iconSrc}" alt="${methodLbl}" style="width:40px;height:40px;background:transparent;padding:0;" />
             </div>
 
-            <div style="font-size:17px;font-weight:800;color:#F7F9FC;" data-bio-title>
+            <div style="font-size:17px;font-weight:800;color:var(--text-primary);" data-bio-title>
               ${isLogin ? `Đăng nhập bằng ${methodLbl}` : `Kích hoạt ${methodLbl}`}
             </div>
-            <div style="font-size:12px;color:#9BA3B4;margin:6px 0 14px;line-height:1.5;" data-bio-desc>
+            <div style="font-size:12px;color:var(--text-secondary);margin:6px 0 14px;line-height:1.5;" data-bio-desc>
               ${isLogin
             ? `Xác thực ${methodLbl} để mở nhanh tài khoản minhquan@metagym.vn mà không cần mật khẩu.`
             : `Liên kết ${methodLbl} của thiết bị này để đăng nhập nhanh sau mỗi phiên sử dụng Meta Gym.`}
@@ -1607,7 +1798,7 @@
           <div class="row-between" style="margin-bottom:8px;">
             <div>
               <div style="font-size:16px;font-weight:800;">Ghi nhận chỉ số mới</div>
-              <div style="font-size:11px;color:#8E95A5;">Đĩa tạ Olympic &amp; Thước 3 vòng sống</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Đĩa tạ Olympic &amp; Thước 3 vòng sống</div>
             </div>
             <span class="pill pill-orange tnum" data-pick-date="2026-11-22" style="cursor:pointer;"><span class="tnum">22/11/2026</span></span>
           </div>
@@ -1619,9 +1810,9 @@
 
           <!-- PANE 1: Cân nặng (Đĩa tạ Olympic) + Mỡ cơ thể -->
           <div data-mpane="weight">
-            <div style="background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:8px 10px 6px;margin-bottom:8px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:14px;padding:8px 10px 6px;margin-bottom:8px;">
               <div class="row-between" style="margin-bottom:2px;">
-                <span style="font-size:11px;color:#9BA3B4;">Cân nặng cơ thể</span>
+                <span style="font-size:11px;color:var(--text-secondary);">Cân nặng cơ thể</span>
                 <strong class="tnum txt-orange" style="font-size:20px;" data-mw-readout>${weightVal.toFixed(1)} kg</strong>
               </div>
               <svg data-m-barbell viewBox="0 0 300 62" style="width:100%;height:56px;display:block;"></svg>
@@ -1632,16 +1823,16 @@
               </div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:9px 12px;margin-bottom:10px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:14px;padding:9px 12px;margin-bottom:10px;">
               <div class="row-between" style="margin-bottom:5px;">
-                <span style="font-size:11.5px;color:#9BA3B4;">Tỷ lệ mỡ cơ thể</span>
+                <span style="font-size:11.5px;color:var(--text-secondary);">Tỷ lệ mỡ cơ thể</span>
                 <div class="row" style="gap:6px;">
                   <span class="pill pill-success" style="font-size:10px;padding:2px 7px;" data-mfat-zone>Chuẩn Gym</span>
-                  <strong class="tnum" style="font-size:16px;color:#2ECC71;" data-mfat-readout>${fatVal.toFixed(1)}%</strong>
+                  <strong class="tnum" style="font-size:16px;color:var(--success);" data-mfat-readout>${fatVal.toFixed(1)}%</strong>
                 </div>
               </div>
-              <input type="range" min="6" max="40" step="0.1" value="${fatVal}" data-mfat-range style="width:100%;accent-color:#2ECC71;cursor:pointer;" />
-              <div class="row-between tnum" style="font-size:10.5px;color:#8E95A5;margin-top:4px;">
+              <input type="range" min="6" max="40" step="0.1" value="${fatVal}" data-mfat-range style="width:100%;accent-color:var(--success);cursor:pointer;" />
+              <div class="row-between tnum" style="font-size:10.5px;color:var(--text-secondary);margin-top:4px;">
                 <span data-mbmi-txt>BMI 23.9 · Bình thường</span>
                 <span data-mplate-txt>Đòn 20kg + Đĩa đối xứng</span>
               </div>
@@ -1652,22 +1843,22 @@
           <div data-mpane="tape" style="display:none;">
             <div class="grid-3" style="gap:6px;margin-bottom:8px;" data-mtape-tabs>
               <button type="button" data-mpart="chest" style="padding:6px 4px;border-radius:10px;border:1px solid #FF5E36;background:rgba(255,94,54,0.16);color:#FFF;cursor:pointer;text-align:center;">
-                <div style="font-size:10px;color:#9BA3B4;">Ngực</div>
+                <div style="font-size:10px;color:var(--text-secondary);">Ngực</div>
                 <div class="tnum" style="font-size:13.5px;font-weight:800;" data-mt-chest>${vong.chest} cm</div>
               </button>
-              <button type="button" data-mpart="waist" style="padding:6px 4px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#FFF;cursor:pointer;text-align:center;">
-                <div style="font-size:10px;color:#9BA3B4;">Eo</div>
+              <button type="button" data-mpart="waist" style="padding:6px 4px;border-radius:10px;border:1px solid var(--border-solid);background:var(--surface-raised);color:#FFF;cursor:pointer;text-align:center;">
+                <div style="font-size:10px;color:var(--text-secondary);">Eo</div>
                 <div class="tnum" style="font-size:13.5px;font-weight:800;" data-mt-waist>${vong.waist} cm</div>
               </button>
-              <button type="button" data-mpart="hip" style="padding:6px 4px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#FFF;cursor:pointer;text-align:center;">
-                <div style="font-size:10px;color:#9BA3B4;">Hông</div>
+              <button type="button" data-mpart="hip" style="padding:6px 4px;border-radius:10px;border:1px solid var(--border-solid);background:var(--surface-raised);color:#FFF;cursor:pointer;text-align:center;">
+                <div style="font-size:10px;color:var(--text-secondary);">Hông</div>
                 <div class="tnum" style="font-size:13.5px;font-weight:800;" data-mt-hip>${vong.hip} cm</div>
               </button>
             </div>
-            <div style="height:142px;background:radial-gradient(circle at 50% 50%,rgba(169,199,232,0.12),rgba(15,17,21,0.72) 72%);border:1px solid rgba(255,255,255,0.09);border-radius:14px;margin-bottom:8px;overflow:hidden;">
+            <div class="torso-stage" style="height:142px;background:radial-gradient(circle at 50% 50%,rgba(169,199,232,0.12),rgba(15,17,21,0.72) 72%);border:1px solid var(--border-solid);border-radius:14px;margin-bottom:8px;overflow:hidden;">
               <svg data-m-torso viewBox="0 0 300 160" style="width:100%;height:100%;display:block;"></svg>
             </div>
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:8px 12px;margin-bottom:10px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:8px 12px;margin-bottom:10px;">
               <div class="row-between" style="margin-bottom:4px;">
                 <span style="font-size:11.5px;font-weight:700;" data-mpart-lbl>Vòng ngực</span>
                 <strong class="tnum" style="font-size:15px;" data-mpart-val>${vong.chest} cm</strong>
@@ -1728,16 +1919,16 @@
           const on = r.key === activePart, col = vongMeta[r.key].color;
           const lx = r.side === 'right' ? cx + r.rx + 16 : cx - r.rx - 16;
           const tx = r.side === 'right' ? lx + 4 : lx - 4;
-          rSvg += `<g data-mpart="${r.key}" style="cursor:pointer;"><ellipse cx="${cx}" cy="${r.y}" rx="${r.rx.toFixed(1)}" ry="${on ? 8 : 5.5}" fill="${on ? col + '24' : 'none'}" stroke="${col}" stroke-width="${on ? 2.4 : 1.3}" stroke-dasharray="${on ? '' : '4 3'}"/><line x1="${(r.side === 'right' ? cx + r.rx : cx - r.rx).toFixed(1)}" y1="${r.y}" x2="${lx.toFixed(1)}" y2="${r.y}" stroke="${col}" stroke-width="${on ? 1.6 : 1}"/><text x="${tx.toFixed(1)}" y="${r.y + 4}" text-anchor="${r.side === 'right' ? 'start' : 'end'}" fill="${on ? '#FFF' : '#9BA3B4'}" font-size="${on ? 12 : 10}" font-weight="${on ? 800 : 600}" font-family="Be Vietnam Pro,sans-serif">${r.label}</text></g>`;
+          rSvg += `<g data-mpart="${r.key}" style="cursor:pointer;"><ellipse cx="${cx}" cy="${r.y}" rx="${r.rx.toFixed(1)}" ry="${on ? 8 : 5.5}" fill="${on ? col + '24' : 'none'}" stroke="${col}" stroke-width="${on ? 2.4 : 1.3}" stroke-dasharray="${on ? '' : '4 3'}"/><line x1="${(r.side === 'right' ? cx + r.rx : cx - r.rx).toFixed(1)}" y1="${r.y}" x2="${lx.toFixed(1)}" y2="${r.y}" stroke="${col}" stroke-width="${on ? 1.6 : 1}"/><text x="${tx.toFixed(1)}" y="${r.y + 4}" text-anchor="${r.side === 'right' ? 'start' : 'end'}" fill="${on ? '#FFF' : 'var(--text-secondary)'}" font-size="${on ? 12 : 10}" font-weight="${on ? 800 : 600}" font-family="Be Vietnam Pro,sans-serif">${r.label}</text></g>`;
         });
-        overlay.querySelector('[data-m-torso]').innerHTML = `<path d="${pathD}" fill="rgba(169,199,232,0.18)" stroke="rgba(232,237,245,0.45)" stroke-width="1.4"/>${rSvg}`;
+        overlay.querySelector('[data-m-torso]').innerHTML = `<path d="${pathD}" fill="rgba(169,199,232,0.18)" stroke="var(--ruler-mid)" stroke-width="1.4"/>${rSvg}`;
         overlay.querySelector('[data-mt-chest]').textContent = `${vong.chest} cm`;
         overlay.querySelector('[data-mt-waist]').textContent = `${vong.waist} cm`;
         overlay.querySelector('[data-mt-hip]').textContent = `${vong.hip} cm`;
         overlay.querySelectorAll('[data-mtape-tabs] [data-mpart]').forEach(b => {
           const on = b.dataset.mpart === activePart, col = vongMeta[b.dataset.mpart].color;
-          b.style.borderColor = on ? col : 'rgba(255,255,255,0.12)';
-          b.style.background = on ? col + '26' : 'rgba(255,255,255,0.05)';
+          b.style.borderColor = on ? col : 'var(--border-solid)';
+          b.style.background = on ? col + '26' : 'var(--surface-raised)';
         });
         const lEl = overlay.querySelector('[data-mpart-lbl]'); lEl.textContent = cfg.label; lEl.style.color = cfg.color;
         const vEl = overlay.querySelector('[data-mpart-val]'); vEl.textContent = `${vong[activePart]} cm`; vEl.style.color = cfg.color;
@@ -1826,7 +2017,7 @@
           <div class="row-between" style="margin-bottom:8px;">
             <div>
               <div style="font-size:16px;font-weight:800;">${isEdit ? `Chỉnh sửa ${mealSlot}` : 'Ghi lại bữa ăn'}</div>
-              <div style="font-size:11.5px;color:#8E95A5;">Chọn món &amp; kéo khẩu phần — Macro tự tính</div>
+              <div style="font-size:11.5px;color:var(--text-secondary);">Chọn món &amp; kéo khẩu phần — Macro tự tính</div>
             </div>
             <span class="pill pill-success tnum">Smart Macro</span>
           </div>
@@ -1834,30 +2025,30 @@
           <!-- 4 Khung bữa -->
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;" data-meal-slots>
             ${['Bữa sáng', 'Bữa trưa', 'Sau tập', 'Bữa tối'].map(s => `
-              <button type="button" data-slot="${s}" style="height:32px;border-radius:10px;border:1px solid ${s === mealSlot ? 'var(--primary)' : 'rgba(255,255,255,0.12)'};background:${s === mealSlot ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)'};color:${s === mealSlot ? '#FFF' : '#9BA3B4'};font-size:11px;font-weight:700;cursor:pointer;">${s}</button>
+              <button type="button" data-slot="${s}" style="height:32px;border-radius:10px;border:1px solid ${s === mealSlot ? 'var(--primary)' : 'var(--border-solid)'};background:${s === mealSlot ? 'var(--chip-active-bg)' : 'var(--surface-raised)'};color:${s === mealSlot ? 'var(--chip-active-text)' : 'var(--text-secondary)'};font-size:11px;font-weight:700;cursor:pointer;">${s}</button>
             `).join('')}
           </div>
 
           <!-- Live SVG Macro Donut Ring + Breakdown -->
-          <div style="display:flex;align-items:center;gap:14px;background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:10px 12px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:14px;background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:16px;padding:10px 12px;margin-bottom:10px;">
             <div style="position:relative;width:86px;height:86px;flex-shrink:0;">
               <svg viewBox="0 0 100 100" style="width:86px;height:86px;transform:rotate(-90deg);">
-                <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+                <circle cx="50" cy="50" r="38" fill="none" stroke="var(--border-solid)" stroke-width="10"/>
                 <circle data-arc-p cx="50" cy="50" r="38" fill="none" stroke="#2ECC71" stroke-width="10" stroke-linecap="round"/>
                 <circle data-arc-c cx="50" cy="50" r="38" fill="none" stroke="#FF5E36" stroke-width="10" stroke-linecap="round"/>
                 <circle data-arc-f cx="50" cy="50" r="38" fill="none" stroke="#F5B041" stroke-width="10" stroke-linecap="round"/>
               </svg>
               <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
                 <div class="tnum" style="font-size:17px;font-weight:800;line-height:1;" data-m-kcal>330</div>
-                <div style="font-size:9.5px;color:#8E95A5;">kcal</div>
+                <div style="font-size:9.5px;color:var(--text-secondary);">kcal</div>
               </div>
             </div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:13.5px;font-weight:800;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" data-m-name>Ức gà áp chảo</div>
               <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;">
-                <div class="row-between"><span style="color:#2ECC71;">● Đạm (Protein)</span><strong class="tnum" data-m-p>62.0 g</strong></div>
-                <div class="row-between"><span style="color:#FF5E36;">● Tinh bột (Carb)</span><strong class="tnum" data-m-c>0.0 g</strong></div>
-                <div class="row-between"><span style="color:#F5B041;">● Chất béo (Fat)</span><strong class="tnum" data-m-f>7.2 g</strong></div>
+                <div class="row-between"><span style="color:var(--success);">● Đạm (Protein)</span><strong class="tnum" data-m-p>62.0 g</strong></div>
+                <div class="row-between"><span style="color:var(--primary-text);">● Tinh bột (Carb)</span><strong class="tnum" data-m-c>0.0 g</strong></div>
+                <div class="row-between"><span style="color:var(--warning);">● Chất béo (Fat)</span><strong class="tnum" data-m-f>7.2 g</strong></div>
               </div>
             </div>
           </div>
@@ -1865,14 +2056,14 @@
           <!-- Chọn nhanh món gym -->
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;" data-food-chips>
             ${foods.map((f, i) => `
-              <button type="button" data-food-idx="${i}" style="padding:5px 9px;border-radius:999px;border:1px solid ${i === foodIdx ? 'var(--primary)' : 'rgba(255,255,255,0.12)'};background:${i === foodIdx ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)'};color:${i === foodIdx ? '#FFF' : '#C8C2BC'};font-size:11px;font-weight:600;cursor:pointer;">${f.name}</button>
+              <button type="button" data-food-idx="${i}" style="padding:5px 9px;border-radius:999px;border:1px solid ${i === foodIdx ? 'var(--primary)' : 'var(--border-solid)'};background:${i === foodIdx ? 'var(--chip-active-bg)' : 'var(--surface-raised)'};color:${i === foodIdx ? 'var(--chip-active-text)' : 'var(--text-secondary)'};font-size:11px;font-weight:600;cursor:pointer;">${f.name}</button>
             `).join('')}
           </div>
 
           <!-- Khẩu phần Gram tương tác -->
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px 12px;margin-bottom:12px;">
+          <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:12px;">
             <div class="row-between" style="margin-bottom:6px;">
-              <span style="font-size:11.5px;color:#9BA3B4;">Khẩu phần</span>
+              <span style="font-size:11.5px;color:var(--text-secondary);">Khẩu phần</span>
               <div class="row" style="gap:8px;">
                 <button type="button" class="step-chip-btn" style="height:28px;min-width:36px;padding:0 8px;" data-g-step="-20">−20</button>
                 <strong class="tnum txt-orange" style="font-size:15px;min-width:48px;text-align:center;" data-m-grams>${grams} g</strong>
@@ -1935,9 +2126,9 @@
           mealSlot = slotBtn.dataset.slot;
           overlay.querySelectorAll('[data-slot]').forEach(b => {
             const on = b.dataset.slot === mealSlot;
-            b.style.borderColor = on ? 'var(--primary)' : 'rgba(255,255,255,0.12)';
-            b.style.background = on ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)';
-            b.style.color = on ? '#FFF' : '#9BA3B4';
+            b.style.borderColor = on ? 'var(--primary)' : 'var(--border-solid)';
+            b.style.background = on ? 'var(--chip-active-bg)' : 'var(--surface-raised)';
+            b.style.color = on ? 'var(--chip-active-text)' : 'var(--text-secondary)';
           });
           return;
         }
@@ -1948,9 +2139,9 @@
           grams = foods[foodIdx].baseG;
           overlay.querySelectorAll('[data-food-idx]').forEach(b => {
             const on = Number(b.dataset.foodIdx) === foodIdx;
-            b.style.borderColor = on ? 'var(--primary)' : 'rgba(255,255,255,0.12)';
-            b.style.background = on ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)';
-            b.style.color = on ? '#FFF' : '#C8C2BC';
+            b.style.borderColor = on ? 'var(--primary)' : 'var(--border-solid)';
+            b.style.background = on ? 'var(--chip-active-bg)' : 'var(--surface-raised)';
+            b.style.color = on ? 'var(--chip-active-text)' : 'var(--text-secondary)';
           });
           updateMacroUI();
           return;
@@ -2033,34 +2224,34 @@
           <div class="row-between" style="margin-bottom:8px;gap:8px;">
             <div style="min-width:0;flex:1;">
               <div style="font-size:15.5px;font-weight:800;white-space:nowrap;">Đo 3 vòng cơ thể</div>
-              <div style="font-size:11px;color:#8E95A5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Chọn vòng trên hình hoặc kéo thước</div>
+              <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Chọn vòng trên hình hoặc kéo thước</div>
             </div>
             <span class="pill pill-success tnum" data-vtaper-pill style="flex-shrink:0;white-space:nowrap;min-width:94px;text-align:center;">V-Taper 1.26</span>
           </div>
 
           <!-- 3-Part Switcher -->
           <div class="grid-3" style="gap:6px;margin-bottom:10px;" data-tape-tabs>
-            <button type="button" data-part="chest" style="padding:7px 4px;border-radius:11px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F7F9FC;cursor:pointer;text-align:center;">
-              <div style="font-size:10px;color:#9BA3B4;">Ngực</div>
+            <button type="button" data-part="chest" style="padding:7px 4px;border-radius:11px;border:1px solid var(--border-solid);background:var(--surface-raised);color:var(--text-primary);cursor:pointer;text-align:center;">
+              <div style="font-size:10px;color:var(--text-secondary);">Ngực</div>
               <div class="tnum" style="font-size:14px;font-weight:800;" data-tab-chest>${vals.chest} cm</div>
             </button>
-            <button type="button" data-part="waist" style="padding:7px 4px;border-radius:11px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F7F9FC;cursor:pointer;text-align:center;">
-              <div style="font-size:10px;color:#9BA3B4;">Eo</div>
+            <button type="button" data-part="waist" style="padding:7px 4px;border-radius:11px;border:1px solid var(--border-solid);background:var(--surface-raised);color:var(--text-primary);cursor:pointer;text-align:center;">
+              <div style="font-size:10px;color:var(--text-secondary);">Eo</div>
               <div class="tnum" style="font-size:14px;font-weight:800;" data-tab-waist>${vals.waist} cm</div>
             </button>
-            <button type="button" data-part="hip" style="padding:7px 4px;border-radius:11px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F7F9FC;cursor:pointer;text-align:center;">
-              <div style="font-size:10px;color:#9BA3B4;">Hông</div>
+            <button type="button" data-part="hip" style="padding:7px 4px;border-radius:11px;border:1px solid var(--border-solid);background:var(--surface-raised);color:var(--text-primary);cursor:pointer;text-align:center;">
+              <div style="font-size:10px;color:var(--text-secondary);">Hông</div>
               <div class="tnum" style="font-size:14px;font-weight:800;" data-tab-hip>${vals.hip} cm</div>
             </button>
           </div>
 
           <!-- Dynamic Body Contour SVG + 3 Glowing Measurement Rings -->
-          <div style="position:relative;height:178px;background:radial-gradient(circle at 50% 50%, rgba(169,199,232,0.12), rgba(15,17,21,0.72) 72%);border:1px solid rgba(255,255,255,0.09);border-radius:16px;margin-bottom:10px;overflow:hidden;">
+          <div style="position:relative;height:178px;background:radial-gradient(circle at 50% 50%, rgba(169,199,232,0.12), rgba(15,17,21,0.72) 72%);border:1px solid var(--border-solid);border-radius:16px;margin-bottom:10px;overflow:hidden;">
             <svg data-torso-svg viewBox="0 0 300 178" style="width:100%;height:100%;display:block;"></svg>
           </div>
 
           <!-- Interactive Wrapping Tape Slider -->
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px 12px;margin-bottom:10px;">
+          <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:10px;">
             <div class="row-between" style="margin-bottom:6px;">
               <span style="font-size:12px;font-weight:700;" data-active-label>Vòng ngực</span>
               <div class="row" style="gap:8px;">
@@ -2070,7 +2261,7 @@
               </div>
             </div>
             <input type="range" min="70" max="135" step="1" value="${vals.chest}" data-t-range style="width:100%;accent-color:#FF5E36;cursor:pointer;" />
-            <div class="row-between" style="font-size:10px;color:#8E95A5;margin-top:4px;gap:8px;flex-wrap:nowrap;">
+            <div class="row-between" style="font-size:10px;color:var(--text-secondary);margin-top:4px;gap:8px;flex-wrap:nowrap;">
               <span class="tnum" data-whr-txt style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">WHR: 0.83 · Chuẩn thể hình</span>
               <span class="tnum" data-range-bounds style="white-space:nowrap;flex-shrink:0;">70 – 135 cm</span>
             </div>
@@ -2120,7 +2311,7 @@
               <ellipse cx="${cx}" cy="${r.y}" rx="${r.rx.toFixed(1)}" ry="${isAct ? 9 : 6.5}" fill="${isAct ? col + '22' : 'none'}" stroke="${col}" stroke-width="${isAct ? 2.6 : 1.4}" stroke-dasharray="${isAct ? '' : '4 3'}" opacity="${isAct ? 1 : 0.65}"/>
               <line x1="${(r.side === 'right' ? cx + r.rx : cx - r.rx).toFixed(1)}" y1="${r.y}" x2="${lx.toFixed(1)}" y2="${r.y}" stroke="${col}" stroke-width="${isAct ? 1.8 : 1}" opacity="${isAct ? 1 : 0.6}"/>
               <circle cx="${lx.toFixed(1)}" cy="${r.y}" r="${isAct ? 3.2 : 2}" fill="${col}"/>
-              <text x="${tx.toFixed(1)}" y="${r.y + 4}" text-anchor="${anchor}" fill="${isAct ? '#FFFFFF' : '#9BA3B4'}" font-size="${isAct ? 12.5 : 10.5}" font-weight="${isAct ? 800 : 600}" font-family="Be Vietnam Pro, sans-serif">${r.label}</text>
+              <text x="${tx.toFixed(1)}" y="${r.y + 4}" text-anchor="${anchor}" fill="${isAct ? 'var(--text-primary)' : 'var(--text-secondary)'}" font-size="${isAct ? 12.5 : 10.5}" font-weight="${isAct ? 800 : 600}" font-family="Be Vietnam Pro, sans-serif">${r.label}</text>
             </g>
           `;
         });
@@ -2131,7 +2322,7 @@
               <stop offset="100%" stop-color="#FF5E36" stop-opacity="0.14"/>
             </linearGradient>
           </defs>
-          <path d="${pathD}" fill="url(#mgTorsoGrad)" stroke="rgba(232,237,245,0.45)" stroke-width="1.5"/>
+          <path d="${pathD}" fill="url(#mgTorsoGrad)" stroke="var(--ruler-mid)" stroke-width="1.5"/>
           ${ringsSvg}
         `;
 
@@ -2142,8 +2333,8 @@
         overlay.querySelectorAll('[data-tape-tabs] [data-part]').forEach(b => {
           const on = b.dataset.part === part;
           const col = meta[b.dataset.part].color;
-          b.style.borderColor = on ? col : 'rgba(255,255,255,0.12)';
-          b.style.background = on ? col + '26' : 'rgba(255,255,255,0.05)';
+          b.style.borderColor = on ? col : 'var(--border-solid)';
+          b.style.background = on ? col + '26' : 'var(--surface-raised)';
         });
 
         const lbl = overlay.querySelector('[data-active-label]');
@@ -2222,16 +2413,16 @@
             </svg>
           </div>
           <span class="pill pill-success" style="margin-bottom:8px;">● Đồng bộ thành công</span>
-          <div style="font-size:18px;font-weight:800;color:#F7F9FC;margin-top:4px;">Đã lưu thay đổi!</div>
-          <div style="font-size:12.5px;color:#9BA3B4;margin:6px 0 14px;line-height:1.5;">
+          <div style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:4px;">Đã lưu thay đổi!</div>
+          <div style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 14px;line-height:1.5;">
             Dữ liệu <strong style="color:#E8EDF5;">${screenTitle}</strong> đã được cập nhật an toàn lên hệ thống Meta Gym.
           </div>
-          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
+          <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
             <div class="row-between" style="font-size:11.5px;">
-              <span style="color:#8E95A5;">Trạng thái</span>
-              <strong style="color:#2ECC71;">Đã đồng bộ với Coach</strong>
+              <span style="color:var(--text-secondary);">Trạng thái</span>
+              <strong style="color:var(--success);">Đã đồng bộ với Coach</strong>
             </div>
-            <div class="row-between tnum" style="font-size:11px;color:#8E95A5;margin-top:4px;">
+            <div class="row-between tnum" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
               <span>Thời gian lưu</span>
               <span style="color:#E8EDF5;">22/11/2026 · ${hh}:${mm}</span>
             </div>
@@ -2265,20 +2456,20 @@
           <div class="row-between" style="margin-bottom:8px;gap:8px;">
             <div>
               <div style="font-size:15.5px;font-weight:800;white-space:nowrap;">Thêm thành tích buổi tập</div>
-              <div style="font-size:11px;color:#8E95A5;">Ghi nhận mức tạ &amp; ước tính 1RM</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Ghi nhận mức tạ &amp; ước tính 1RM</div>
             </div>
             <span class="pill pill-orange tnum" data-pr-1rm style="flex-shrink:0;white-space:nowrap;">1RM ~105 kg</span>
           </div>
 
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;" data-pr-ex-list>
             ${exercises.map((name, i) => `
-              <button type="button" data-pr-ex="${name}" style="padding:5px 9px;border-radius:999px;border:1px solid ${i === 0 ? 'var(--primary)' : 'rgba(255,255,255,0.12)'};background:${i === 0 ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)'};color:${i === 0 ? '#FFF' : '#C8C2BC'};font-size:11px;font-weight:600;cursor:pointer;">${name}</button>
+              <button type="button" data-pr-ex="${name}" style="padding:5px 9px;border-radius:999px;border:1px solid ${i === 0 ? 'var(--primary)' : 'var(--border-solid)'};background:${i === 0 ? 'var(--chip-active-bg)' : 'var(--surface-raised)'};color:${i === 0 ? 'var(--chip-active-text)' : 'var(--text-secondary)'};font-size:11px;font-weight:600;cursor:pointer;">${name}</button>
             `).join('')}
           </div>
 
-          <div style="background:rgba(15,17,21,0.68);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:10px 12px;margin-bottom:10px;">
+          <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:14px;padding:10px 12px;margin-bottom:10px;">
             <div class="row-between" style="margin-bottom:6px;">
-              <span style="font-size:11.5px;color:#9BA3B4;">Mức tạ (kg)</span>
+              <span style="font-size:11.5px;color:var(--text-secondary);">Mức tạ (kg)</span>
               <div class="row" style="gap:8px;">
                 <button type="button" class="step-chip-btn" style="height:28px;min-width:44px;padding:0 8px;font-size:11px;" data-pr-kg="-2.5">−2.5</button>
                 <strong class="tnum txt-orange" style="font-size:18px;min-width:64px;text-align:center;" data-pr-kg-val>${kg} kg</strong>
@@ -2288,7 +2479,7 @@
             <input type="range" min="10" max="200" step="2.5" value="${kg}" data-pr-kg-range style="width:100%;accent-color:#FF5E36;cursor:pointer;margin-bottom:8px;" />
 
             <div class="row-between">
-              <span style="font-size:11.5px;color:#9BA3B4;">Số lần lặp (Reps)</span>
+              <span style="font-size:11.5px;color:var(--text-secondary);">Số lần lặp (Reps)</span>
               <div class="row" style="gap:8px;">
                 <button type="button" class="step-chip-btn" style="height:28px;min-width:36px;padding:0 8px;" data-pr-rep="-1">−1</button>
                 <strong class="tnum" style="font-size:16px;min-width:56px;text-align:center;" data-pr-rep-val>${reps} reps</strong>
@@ -2325,9 +2516,9 @@
           exName = exBtn.dataset.prEx;
           overlay.querySelectorAll('[data-pr-ex]').forEach(b => {
             const on = b.dataset.prEx === exName;
-            b.style.borderColor = on ? 'var(--primary)' : 'rgba(255,255,255,0.12)';
-            b.style.background = on ? 'rgba(255,94,54,0.2)' : 'rgba(255,255,255,0.05)';
-            b.style.color = on ? '#FFF' : '#C8C2BC';
+            b.style.borderColor = on ? 'var(--primary)' : 'var(--border-solid)';
+            b.style.background = on ? 'var(--chip-active-bg)' : 'var(--surface-raised)';
+            b.style.color = on ? 'var(--chip-active-text)' : 'var(--text-secondary)';
           });
           return;
         }
@@ -2342,7 +2533,7 @@
           if (list) {
             const row = document.createElement('div');
             row.className = 'row-between txt-sm';
-            row.style.cssText = 'padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.07);';
+            row.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--border-solid);';
             row.innerHTML = `<span>${exName}</span><strong class="tnum txt-orange">${kg} kg × ${reps}</strong>`;
             list.prepend(row);
           }
@@ -2364,20 +2555,20 @@
       overlay.innerHTML = `
         <div class="qr-sheet" style="text-align:center;padding:20px 16px 16px;">
           <span class="pill pill-success" style="margin-bottom:10px;">✓ Thanh toán thành công</span>
-          <div style="font-size:17.5px;font-weight:800;color:#F7F9FC;">Đã kích hoạt Thẻ Vàng NFC!</div>
-          <div style="font-size:12px;color:#9BA3B4;margin:4px 0 12px;">Gói Pro 6 Tháng đã sẵn sàng sử dụng ngay hôm nay</div>
+          <div style="font-size:17.5px;font-weight:800;color:var(--text-primary);">Đã kích hoạt Thẻ Vàng NFC!</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin:4px 0 12px;">Gói Pro 6 Tháng đã sẵn sàng sử dụng ngay hôm nay</div>
 
           <div style="border-radius:16px;overflow:hidden;box-shadow:0 14px 32px rgba(0,0,0,0.6),0 0 0 1.5px rgba(218,176,102,0.5);margin-bottom:12px;">
             <img src="../../meta-gym/assets/images/membership/card_gold_horizontal.jpg?v=2" alt="Thẻ Vàng Meta Gym" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" />
           </div>
 
-          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:12px;text-align:left;font-size:11.5px;">
-            <div class="row-between" style="margin-bottom:4px;"><span style="color:#8E95A5;">Cổng thanh toán</span><strong style="color:#F7F9FC;">${method}</strong></div>
-            <div class="row-between tnum" style="margin-bottom:4px;"><span style="color:#8E95A5;">Số tiền đã thanh toán</span><strong style="color:#2ECC71;">${total}</strong></div>
-            <div class="row-between tnum"><span style="color:#8E95A5;">Mã giao dịch</span><span style="color:#E8EDF5;">MG-PAY-261122</span></div>
+          <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:12px;text-align:left;font-size:11.5px;">
+            <div class="row-between" style="margin-bottom:4px;"><span style="color:var(--text-secondary);">Cổng thanh toán</span><strong style="color:var(--text-primary);">${method}</strong></div>
+            <div class="row-between tnum" style="margin-bottom:4px;"><span style="color:var(--text-secondary);">Số tiền đã thanh toán</span><strong style="color:var(--success);">${total}</strong></div>
+            <div class="row-between tnum"><span style="color:var(--text-secondary);">Mã giao dịch</span><span style="color:#E8EDF5;">MG-PAY-261122</span></div>
           </div>
 
-          <div style="font-size:11px;color:#9BA3B4;margin-bottom:12px;">Bạn có thể quẹt QR Check-in ngay lập tức và nhận thẻ cứng NFC tại quầy lễ tân.</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px;">Bạn có thể quẹt QR Check-in ngay lập tức và nhận thẻ cứng NFC tại quầy lễ tân.</div>
 
           <button type="button" class="btn-primary" style="width:100%;height:44px;" data-ck-done>Xem thẻ hội viên của tôi →</button>
         </div>
@@ -2401,43 +2592,43 @@
       overlay.innerHTML = `
         <div class="qr-sheet" style="text-align:left;">
           <div class="row-between" style="margin-bottom:4px;">
-            <strong style="font-size:16.5px;color:#F7F9FC;">Liên hệ Hỗ trợ Meta Gym</strong>
+            <strong style="font-size:16.5px;color:var(--text-primary);">Liên hệ Hỗ trợ Meta Gym</strong>
             <span class="pill pill-success" style="font-size:10px;">● Trực tuyến</span>
           </div>
-          <div style="font-size:12px;color:#9BA3B4;margin-bottom:14px;">Chọn kênh hỗ trợ nhanh nhất cho bạn</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Chọn kênh hỗ trợ nhanh nhất cho bạn</div>
 
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-            <button type="button" data-sup-act="chat" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,94,54,0.12);border:1px solid rgba(255,94,54,0.42);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+            <button type="button" data-sup-act="chat" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,94,54,0.12);border:1px solid rgba(255,94,54,0.42);color:var(--text-primary);display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
               <span style="width:36px;height:36px;border-radius:10px;background:rgba(255,94,54,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/community/comm_chat.svg" alt="Chat" style="background:transparent;padding:0;" />
               </span>
               <span style="flex:1;">
                 <div style="font-size:13.5px;font-weight:700;">Chat trực tuyến với CSKH</div>
-                <div style="font-size:11px;color:#9BA3B4;">Phản hồi nhanh trong ~2 phút</div>
+                <div style="font-size:11px;color:var(--text-secondary);">Phản hồi nhanh trong ~2 phút</div>
               </span>
               <span style="color:#FF5E36;font-size:16px;">›</span>
             </button>
 
-            <button type="button" data-sup-act="call" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+            <button type="button" data-sup-act="call" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:var(--surface-raised);border:1px solid var(--border-solid);color:var(--text-primary);display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
               <span style="width:36px;height:36px;border-radius:10px;background:rgba(46,204,113,0.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/setting/call_audio_badge.svg" alt="Gọi" style="background:transparent;padding:0;" />
               </span>
               <span style="flex:1;">
                 <div style="font-size:13.5px;font-weight:700;" class="tnum">Gọi Hotline 1900 6868</div>
-                <div style="font-size:11px;color:#8E95A5;">05:30 – 22:00 · Tất cả các ngày</div>
+                <div style="font-size:11px;color:var(--text-secondary);">05:30 – 22:00 · Tất cả các ngày</div>
               </span>
-              <span style="color:#8E95A5;font-size:16px;">›</span>
+              <span style="color:var(--text-secondary);font-size:16px;">›</span>
             </button>
 
-            <button type="button" data-sup-act="email" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#F7F9FC;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
+            <button type="button" data-sup-act="email" style="width:100%;min-height:52px;padding:10px 12px;border-radius:14px;background:var(--surface-raised);border:1px solid var(--border-solid);color:var(--text-primary);display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;">
               <span style="width:36px;height:36px;border-radius:10px;background:rgba(112,174,232,0.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/community/comm_email.svg" alt="Email" style="background:transparent;padding:0;" />
               </span>
               <span style="flex:1;">
                 <div style="font-size:13.5px;font-weight:700;">Gửi Email CSKH</div>
-                <div style="font-size:11px;color:#8E95A5;">cskh@metagym.vn</div>
+                <div style="font-size:11px;color:var(--text-secondary);">cskh@metagym.vn</div>
               </span>
-              <span style="color:#8E95A5;font-size:16px;">›</span>
+              <span style="color:var(--text-secondary);font-size:16px;">›</span>
             </button>
           </div>
 
@@ -2483,16 +2674,16 @@
       overlay.innerHTML = `
         <div class="qr-sheet" style="text-align:left;">
           <div class="row-between" style="margin-bottom:4px;">
-            <strong style="font-size:16px;color:#F7F9FC;">Đổi điểm Meta Points</strong>
+            <strong style="font-size:16px;color:var(--text-primary);">Đổi điểm Meta Points</strong>
             <span class="pill pill-orange tnum">${curPts.toLocaleString('vi-VN')} điểm</span>
           </div>
-          <div style="font-size:12px;color:#9BA3B4;margin-bottom:12px;">Tích điểm từ điểm danh QR, gia hạn thẻ &amp; mua gói Coach</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Tích điểm từ điểm danh QR, gia hạn thẻ &amp; mua gói Coach</div>
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
             ${rewards.map(r => `
-              <div style="padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <div style="padding:10px 12px;border-radius:14px;background:var(--surface-raised);border:1px solid var(--border-solid);display:flex;align-items:center;justify-content:space-between;gap:10px;">
                 <div style="min-width:0;flex:1;">
-                  <div style="font-size:13px;font-weight:700;color:#F7F9FC;">${r.title}</div>
-                  <div style="font-size:11px;color:#8E95A5;margin-top:2px;">${r.desc}</div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${r.title}</div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${r.desc}</div>
                 </div>
                 <button type="button" class="btn-mini-orange tnum" data-redeem-cost="${r.cost}" data-redeem-title="${r.title}" style="height:32px;padding:0 10px;border-radius:10px;cursor:pointer;flex-shrink:0;opacity:${curPts >= r.cost ? '1' : '0.45'};">−${r.cost}</button>
               </div>
@@ -2542,7 +2733,7 @@
           pill: '● Bảo trì định kỳ', pillCls: 'pill-orange',
           title: 'Hệ thống đang cập nhật',
           desc: 'Meta Gym đang nâng cấp máy chủ để tăng tốc độ đồng bộ dữ liệu tập luyện và điểm danh NFC.',
-          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:#8E95A5;">Thời gian dự kiến</span><strong style="color:#F5B041;">23:00 – 01:00 hôm nay</strong></div>`,
+          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Thời gian dự kiến</span><strong style="color:var(--warning);">23:00 – 01:00 hôm nay</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Thử lại sau', priToast: 'Hệ thống vẫn đang nâng cấp, vui lòng thử lại sau ít phút'
         },
         'coming-soon': {
@@ -2551,7 +2742,7 @@
           pill: '✦ Sắp ra mắt', pillCls: 'pill-muted',
           title: 'Tính năng đang phát triển',
           desc: 'Đồng bộ Apple Watch / Garmin & Bảng xếp hạng Thử thách Cộng đồng sẽ sớm có mặt ở phiên bản tiếp theo.',
-          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:#8E95A5;">Dự kiến phát hành</span><strong style="color:#70AEE8;">Phiên bản v1.2.0</strong></div>`,
+          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Dự kiến phát hành</span><strong style="color:#70AEE8;">Phiên bản v1.2.0</strong></div>`,
           secLbl: 'Để sau', priLbl: 'Nhắc tôi khi có', priToast: 'Đã đăng ký nhận thông báo khi tính năng ra mắt!'
         },
         error: {
@@ -2560,7 +2751,7 @@
           pill: '● Mã lỗi ERR-503', pillCls: 'pill-orange',
           title: 'Đã xảy ra lỗi hệ thống',
           desc: 'Không thể tải dữ liệu lúc này do máy chủ đang quá tải. Dữ liệu tập luyện của bạn vẫn an toàn.',
-          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:#8E95A5;">Mã đối chiếu</span><strong style="color:#F15B64;">#REQ-261122-9F</strong></div>`,
+          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Mã đối chiếu</span><strong style="color:#F15B64;">#REQ-261122-9F</strong></div>`,
           secLbl: 'Báo hỗ trợ', priLbl: 'Thử lại ngay', secAction: 'support', priToast: 'Đang kết nối lại máy chủ Meta Gym...'
         },
         update: {
@@ -2569,7 +2760,7 @@
           pill: '● Bản mới v1.1.0', pillCls: 'pill-success',
           title: 'Có bản cập nhật mới!',
           desc: 'Cập nhật Meta Gym v1.1.0 để trải nghiệm Cân đĩa tạ Olympic, thanh toán 4 cổng và hiệu năng mượt hơn 30%.',
-          infoHtml: `<div style="font-size:11px;color:#C8C2BC;text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
+          infoHtml: `<div style="font-size:11px;color:var(--text-secondary);text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
           secLbl: 'Để sau', priLbl: 'Cập nhật ngay', priToast: 'Đang mở App Store / Google Play để cập nhật v1.1.0...'
         },
         offline: {
@@ -2578,7 +2769,7 @@
           pill: '● Ngoại tuyến', pillCls: 'pill-muted',
           title: 'Mất kết nối mạng',
           desc: 'Vui lòng kiểm tra lại kết nối Wi-Fi hoặc dữ liệu di động 4G/5G để tiếp tục đồng bộ với Meta Gym.',
-          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:#8E95A5;">Trạng thái mạng</span><strong style="color:#F15B64;">Không có Internet</strong></div>`,
+          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Trạng thái mạng</span><strong style="color:#F15B64;">Không có Internet</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Kiểm tra lại', priToast: 'Đã khôi phục kết nối mạng thành công!'
         },
         session: {
@@ -2587,7 +2778,7 @@
           pill: '● Bảo mật phiên', pillCls: 'pill-orange',
           title: 'Phiên đăng nhập hết hạn',
           desc: 'Vì lý do bảo mật tài khoản, phiên đăng nhập của bạn đã hết hiệu lực. Vui lòng đăng nhập lại bằng Mật khẩu hoặc Face ID.',
-          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:#8E95A5;">Tài khoản</span><strong style="color:#F7F9FC;">minhquan@metagym.vn</strong></div>`,
+          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Tài khoản</span><strong style="color:var(--text-primary);">minhquan@metagym.vn</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Đăng nhập lại →', priAction: 'login'
         }
       };
@@ -2599,9 +2790,9 @@
             <img class="ico-lg" src="${s.icon}" alt="${s.title}" style="width:40px;height:40px;background:transparent;padding:0;" />
           </div>
           <span class="pill ${s.pillCls}" style="margin-bottom:8px;">${s.pill}</span>
-          <div style="font-size:17.5px;font-weight:800;color:#F7F9FC;margin-top:4px;">${s.title}</div>
-          <div style="font-size:12.5px;color:#9BA3B4;margin:6px 0 12px;line-height:1.5;">${s.desc}</div>
-          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
+          <div style="font-size:17.5px;font-weight:800;color:var(--text-primary);margin-top:4px;">${s.title}</div>
+          <div style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 12px;line-height:1.5;">${s.desc}</div>
+          <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
             ${s.infoHtml}
           </div>
           <div class="grid-2" style="gap:10px;">
@@ -2627,6 +2818,68 @@
       });
       phone.appendChild(overlay);
     }
+
+    // 5c. Vertical 4-Card Swipe Deck Controller (1.2b Gói tập Chưa đăng ký)
+    function setWalletDeckActive(deck, activeIdx) {
+      const cards = Array.from(deck.querySelectorAll('[data-wallet-card]'));
+      const total = cards.length;
+      if (!total) return;
+      const norm = ((activeIdx % total) + total) % total;
+      deck.setAttribute('data-active', String(norm));
+      cards.forEach((card, i) => {
+        let diff = (i - norm + total) % total;
+        if (diff === total - 1) diff = -1;
+        card.setAttribute('data-pos', String(diff));
+      });
+      deck.querySelectorAll('[data-wallet-idx]').forEach(el => {
+        el.classList.toggle('active', Number(el.dataset.walletIdx) === norm);
+      });
+      const activeCard = cards[norm];
+      if (activeCard) {
+        deck.querySelector('[data-w-name]').textContent = activeCard.dataset.name;
+        const b = deck.querySelector('[data-w-badge]');
+        b.className = `pill ${activeCard.dataset.badgeCls || 'pill-orange'}`;
+        b.textContent = activeCard.dataset.badge;
+        deck.querySelector('[data-w-price]').textContent = activeCard.dataset.price;
+        deck.querySelector('[data-w-period]').textContent = activeCard.dataset.period;
+        deck.querySelector('[data-w-sub]').textContent = activeCard.dataset.sub;
+        deck.querySelector('[data-w-coach]').textContent = activeCard.dataset.coach;
+        deck.querySelector('[data-w-inbody]').textContent = activeCard.dataset.inbody;
+        deck.querySelector('[data-w-pts]').textContent = activeCard.dataset.pts;
+        const cta = deck.closest('.phone')?.querySelector('[data-w-cta]');
+        if (cta) cta.textContent = activeCard.dataset.cta;
+      }
+    }
+    document.querySelectorAll('[data-wallet-stage]').forEach(stage => {
+      const deck = stage.closest('[data-wallet-deck]');
+      let startX = null;
+      stage.addEventListener('mousedown', (e) => { startX = e.clientX; e.stopPropagation(); });
+      stage.addEventListener('mouseup', (e) => {
+        if (startX === null) return;
+        const dx = e.clientX - startX;
+        startX = null;
+        if (Math.abs(dx) > 32) {
+          suppressClickUntil = Date.now() + 200;
+          setWalletDeckActive(deck, Number(deck.dataset.active || 2) + (dx < 0 ? 1 : -1));
+        }
+      });
+      stage.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+      stage.addEventListener('touchend', (e) => {
+        if (startX === null) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        startX = null;
+        if (Math.abs(dx) > 32) {
+          setWalletDeckActive(deck, Number(deck.dataset.active || 2) + (dx < 0 ? 1 : -1));
+        }
+      });
+      stage.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) > 10 || Math.abs(e.deltaY) > 10) {
+          e.preventDefault(); e.stopPropagation();
+          const dir = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) > 0 ? 1 : -1;
+          setWalletDeckActive(deck, Number(deck.dataset.active || 2) + dir);
+        }
+      }, { passive: false });
+    });
 
     // 7. Natural Touch-like Drag-to-Scroll (Vertical .phone-body & Horizontal .filter-row)
     let dragEl = null, dragAxis = 'y', startPos = 0, startScroll = 0, didDrag = false;

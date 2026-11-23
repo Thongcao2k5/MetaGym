@@ -109,13 +109,13 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div style="width:56px;height:56px;border-radius:50%;margin:0 auto 12px;background:rgba(241,91,100,0.16);border:1px solid rgba(241,91,100,0.45);display:flex;align-items:center;justify-content:center;">
               <img class="ico-md" src="../../meta-gym/assets/svg/setting/setting_logout.svg" alt="Đăng xuất" style="background:transparent;padding:0;" />
             </div>
-            <div style="font-size:17px;font-weight:800;color:#F7F9FC;">Đăng xuất tài khoản?</div>
-            <div style="font-size:12.5px;color:#9BA3B4;margin:6px 0 12px;line-height:1.5;">
+            <div style="font-size:17px;font-weight:800;color:var(--text-primary);">Đăng xuất tài khoản?</div>
+            <div style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 12px;line-height:1.5;">
               Bạn sẽ cần đăng nhập lại để quẹt thẻ NFC, xem lịch Coach và đồng bộ nhật ký tập luyện.
             </div>
-            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:9px 12px;margin-bottom:14px;text-align:left;">
-              <div style="font-size:12.5px;font-weight:700;color:#F7F9FC;">Nguyễn Minh Quân</div>
-              <div style="font-size:11px;color:#8E95A5;margin-top:2px;">minhquan@metagym.vn · Hội viên Hạng Vàng</div>
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:14px;text-align:left;">
+              <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);">Nguyễn Minh Quân</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">minhquan@metagym.vn · Hội viên Hạng Vàng</div>
             </div>
             <div class="grid-2" style="gap:10px;">
               <button type="button" class="btn-secondary" style="height:44px;" data-close-logout>Huỷ</button>
@@ -280,9 +280,9 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="metric-box" style="padding:11px 12px;cursor:pointer;border:1px solid rgba(112,174,232,0.32);" data-open-body-picker="weight" data-value="72.4">
                 <div class="row-between" style="margin-bottom:4px;">
                   <span class="txt-xs">Cân nặng</span>
-                  <span style="font-size:10px;color:#70AEE8;font-weight:700;">Cân tạ ↗</span>
+                  <span style="font-size:10px;color:var(--info);font-weight:700;">Cân tạ ↗</span>
                 </div>
-                <div class="tnum" style="font-size:20px;font-weight:800;line-height:1.1;color:#F7F9FC;" data-summary-weight>72.4 kg</div>
+                <div class="tnum" style="font-size:20px;font-weight:800;line-height:1.1;color:var(--text-primary);" data-summary-weight>72.4 kg</div>
                 <div class="txt-xs tnum" style="margin-top:3px;" data-weight-lbs>159.6 lbs</div>
               </div>
             </div>

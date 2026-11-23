@@ -96,24 +96,24 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="sec-head"><h3>Công cụ &amp; Khám phá</h3></div>
           <div class="grid-2" style="margin-bottom:10px;">
             <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div style="margin-bottom:6px;"><img class="ico-lg" src="../../meta-gym/assets/svg/progress/stats_report.svg" alt="Nhật ký" /></div>
+              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/progress/stats_report.svg" alt="Nhật ký" /></div>
               <div class="txt-sm txt-bold">Nhật ký tập luyện</div>
               <div class="txt-xs" style="margin-top:3px;">Ghi thành tích, ảnh và số đo theo ngày</div>
             </div>
             <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div style="margin-bottom:6px;"><img class="ico-lg" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
+              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
               <div class="txt-sm txt-bold">Lịch sử tập luyện</div>
               <div class="txt-xs" style="margin-top:3px;">Xem các ngày và lượt đến phòng gym</div>
             </div>
           </div>
           <div class="grid-2">
             <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div style="margin-bottom:6px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thư viện bài tập" /></div>
+              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thư viện bài tập" /></div>
               <div class="txt-sm txt-bold">Thư viện bài tập</div>
               <div class="txt-xs" style="margin-top:3px;">Tìm bài theo nhóm cơ và cách thực hiện</div>
             </div>
             <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div style="margin-bottom:6px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Phòng gym & thiết bị" /></div>
+              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Phòng gym & thiết bị" /></div>
               <div class="txt-sm txt-bold">Phòng gym &amp; thiết bị</div>
               <div class="txt-xs" style="margin-top:3px;">Nội quy và hướng dẫn dùng máy</div>
             </div>
@@ -242,7 +242,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 <div class="quick-ico" style="width:28px;height:28px;background:rgba(245,176,65,0.14);"><img class="ico-sm" src="../../meta-gym/assets/svg/nutrition/nutrition_coach_plan.svg" alt="Gợi ý" /></div>
                 <div class="txt-sm tnum" style="color:var(--text-warm-muted);">Cơm gạo lứt · 180 g</div>
               </div>
-              <span class="pill" style="background:rgba(245,176,65,0.14);color:var(--coach-avatar-bg);border:1px solid rgba(245,176,65,0.35);">Gợi ý</span>
+              <span class="pill" style="background:rgba(245,176,65,0.14);color:var(--warning);border:1px solid rgba(245,176,65,0.35);">Gợi ý</span>
             </div>
           </div>
         </div>
@@ -447,7 +447,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           </div>
 
           <!-- Trạng thái chưa điểm danh hôm nay + Nút điểm danh nhanh -->
-          <div class="card-solid" style="padding:12px 14px;border-color:rgba(255,94,54,0.48);background:linear-gradient(135deg,rgba(255,94,54,0.14),rgba(24,27,34,0.92));">
+          <div class="card-solid checkin-alert-card" style="padding:12px 14px;border-color:rgba(255,94,54,0.48);background:linear-gradient(135deg,rgba(255,94,54,0.14),rgba(24,27,34,0.92));">
             <div class="row-between" style="gap:10px;">
               <div class="row" style="gap:10px;min-width:0;flex:1;">
                 <div class="quick-ico" style="background:rgba(255,94,54,0.18);border:1px solid rgba(255,94,54,0.42);">
@@ -553,19 +553,19 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="qr-sheet">
             <div class="row-between" style="margin-bottom:8px;">
               <span class="pill pill-success tnum">● Hôm nay · 22/11/2026</span>
-              <span class="tnum" style="font-size:11.5px;color:#8E95A5;">ID MG-2048</span>
+              <span class="tnum" style="font-size:11.5px;color:var(--text-secondary);">ID MG-2048</span>
             </div>
             <div style="font-size:17px;font-weight:800;">QR Check-in Phòng Tập</div>
-            <div style="font-size:12px;color:#8E95A5;margin-top:2px;">Mã riêng của Nguyễn Minh Quân · Chỉ dùng trong ngày</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Mã riêng của Nguyễn Minh Quân · Chỉ dùng trong ngày</div>
 
             <div class="qr-box-white" data-qr-svg-host></div>
 
-            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:8px 10px;margin-bottom:12px;">
+            <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:8px 10px;margin-bottom:12px;">
               <div class="row-between" style="font-size:11.5px;">
-                <span style="color:#8E95A5;">Mã phiên duy nhất</span>
-                <strong class="tnum" style="color:#FF5E36;letter-spacing:0.04em;" data-qr-token>MG-261122-8F4A</strong>
+                <span style="color:var(--text-secondary);">Mã phiên duy nhất</span>
+                <strong class="tnum" style="color:var(--primary);letter-spacing:0.04em;" data-qr-token>MG-261122-8F4A</strong>
               </div>
-              <div class="tnum" style="font-size:10.5px;color:#C8C2BC;margin-top:3px;text-align:left;" data-qr-meta>
+              <div class="tnum" style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;text-align:left;" data-qr-meta>
                 Hết hạn 23:59 hôm nay · Đổi mã mới mỗi lần mở hoặc tạo lại
               </div>
             </div>
