@@ -34,6 +34,7 @@ import { createDashboardRouter } from './routes/dashboard.routes.js';
 import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
 import { createCallsRouter } from './routes/calls.routes.js';
 import { createDocsRouter } from './routes/docs.routes.js';
+import { createDatabaseUiRouter } from './routes/database-ui.routes.js';
 import { createPasswordResetsRouter } from './routes/password-resets.routes.js';
 import { createMediaRouter } from './routes/media.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
@@ -90,6 +91,9 @@ export function createApp({
   nodeEnv = process.env.NODE_ENV,
   enableLegacyWrites = false,
   enableCoachWorkflows = false,
+  enableDatabaseUi = nodeEnv !== 'production',
+  databaseUiUsername = process.env.DB_UI_USERNAME || 'admin',
+  databaseUiPassword = process.env.DB_UI_PASSWORD || 'admin',
 }) {
   validateJwtSecret(jwtSecret);
   const corsOrigin = allowedCorsOrigins(corsAllowedOrigins, nodeEnv);
@@ -112,6 +116,17 @@ export function createApp({
   });
 
   app.use('/api-docs', createDocsRouter());
+  if (enableDatabaseUi) {
+    app.use(
+      '/database',
+      createDatabaseUiRouter({
+        database,
+        jwtSecret,
+        username: databaseUiUsername,
+        password: databaseUiPassword,
+      }),
+    );
+  }
   app.use(
     '/api/v1/auth',
     createAuthRouter({ database, jwtSecret, loginRateLimiter }),
