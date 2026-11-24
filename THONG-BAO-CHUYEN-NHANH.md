@@ -53,7 +53,23 @@ git push -u origin feature/mobile/ten-task
 ```
 → Lên GitHub mở **Pull Request vào `develop`** → Review & CI xanh → Merge & xóa nhánh tạm.
 
-### B. Phát hành bản mới (`release`) lên `main`
+### B. Format bắt buộc khi mở PR & Merge vào `develop` (nhất là khi có nhiều commit)
+
+Khi merge nhánh nhỏ (`feature/*`, `fix/*`, `update/*`, `refactor/*`) vào `develop`, dùng **`Squash and merge`** (GitHub tự lấy Tiêu đề PR + Nội dung PR làm commit message và tự xóa nhánh tạm). Bắt buộc điền theo đúng format:
+
+```markdown
+Tiêu đề PR:
+<type>(<folder>): <tóm tắt ngắn gọn 1 dòng của cả PR>
+
+Nội dung tóm tắt (ánh xạ theo từng commit):
+- [feat] <Hạng mục 1 đã làm> — (`feat(<scope>): <tiêu đề commit 1>`)
+- [fix] <Hạng mục 2 đã làm> — (`fix(<scope>): <tiêu đề commit 2>`)
+- [test] <Hạng mục 3 đã làm> — (`test(<scope>): <tiêu đề commit 3>`)
+```
+
+> Khi merge **`release/vX.Y.Z`** hoặc **`hotfix/*`** vào `main`, dùng **`Create a merge commit`** để giữ mốc phiên bản.
+
+### C. Phát hành bản mới (`release`) lên `main`
 ```bash
 git fetch origin --prune
 git checkout develop && git pull origin develop
@@ -62,7 +78,7 @@ git push -u origin release/v1.1.0
 ```
 → Chạy QA toàn bộ module → Mở **Pull Request `release/v1.1.0` → `main`** → Chờ CI PostgreSQL & Cloudflare Pages xanh → Merge `main` (Render tự deploy) → Gắn tag `v1.1.0` và tạo GitHub Release.
 
-### C. Vá lỗi khẩn cấp trên Production (`hotfix`)
+### D. Vá lỗi khẩn cấp trên Production (`hotfix`)
 ```bash
 git fetch origin --prune
 git checkout main && git pull origin main
