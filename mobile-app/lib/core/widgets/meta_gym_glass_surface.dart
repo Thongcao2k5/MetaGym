@@ -525,15 +525,15 @@ class MetaGymBrandHeader extends StatelessWidget {
 /// Hỗ trợ cả `IconData` lẫn `svgAsset` từ [MetaGymIcons].
 class MetaGymCircleIconButton extends StatefulWidget {
   const MetaGymCircleIconButton({
-    required this.icon,
+    this.icon,
     required this.onTap,
     this.svgAsset,
     this.tooltip,
     this.isActive = false,
     super.key,
-  });
+  }) : assert(icon != null || svgAsset != null);
 
-  final IconData icon;
+  final IconData? icon;
   final String? svgAsset;
   final VoidCallback? onTap;
   final String? tooltip;
@@ -569,7 +569,9 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
   Widget build(BuildContext context) {
     final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
-    final label = widget.tooltip ?? _iconActionName(widget.icon);
+    final label =
+        widget.tooltip ??
+        (widget.icon != null ? _iconActionName(widget.icon!) : 'Hành động');
     final button = Semantics(
       button: true,
       enabled: widget.onTap != null && !_tapLocked,
@@ -614,7 +616,11 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
                           size: 20,
                           fallbackIcon: widget.icon,
                         )
-                      : Icon(widget.icon, size: 20, color: palette.textPrimary),
+                      : Icon(
+                          widget.icon ?? Icons.circle_outlined,
+                          size: 20,
+                          color: palette.textPrimary,
+                        ),
                 ),
               ),
             ),

@@ -4,8 +4,10 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 
-typedef EarlyTerminationRespondCallback =
-    Future<void> Function(String decision, String? reason);
+typedef EarlyTerminationRespondCallback = Future<void> Function(
+  String decision,
+  String? reason,
+);
 
 class EarlyTerminationCard extends StatelessWidget {
   const EarlyTerminationCard({
@@ -39,6 +41,7 @@ class EarlyTerminationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
     final tone = switch (request.status) {
       'PENDING_COUNTERPARTY' || 'PENDING' => CoachingPillTone.amber,
       'DISPUTED' => CoachingPillTone.coral,
@@ -46,7 +49,8 @@ class EarlyTerminationCard extends StatelessWidget {
       'ADMIN_REJECTED' || 'REJECTED' => CoachingPillTone.coral,
       _ => CoachingPillTone.neutral,
     };
-    final canRespond = request.canRespondAsRole(viewerRole) && onRespond != null;
+    final canRespond =
+        request.canRespondAsRole(viewerRole) && onRespond != null;
     final canWithdraw =
         request.canWithdrawAsRole(viewerRole) && onRespond != null;
     final requesterText = request.requestedByName?.isNotEmpty == true
@@ -59,9 +63,9 @@ class EarlyTerminationCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       borderColor: request.isDisputed
-          ? MetaGymTheme.dangerCoral.withValues(alpha: 0.55)
+          ? colors.error.withValues(alpha: 0.55)
           : request.isPendingCounterparty
-          ? MetaGymTheme.warning.withValues(alpha: 0.50)
+          ? colors.warning.withValues(alpha: 0.50)
           : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,10 +87,7 @@ class EarlyTerminationCard extends StatelessWidget {
               if (request.requestedByRole != null)
                 Text(
                   'Gửi bởi: $requesterText',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
             ],
           ),
@@ -94,8 +95,8 @@ class EarlyTerminationCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               title!,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
@@ -104,8 +105,8 @@ class EarlyTerminationCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             request.reason,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: colors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               height: 1.45,
@@ -116,17 +117,13 @@ class EarlyTerminationCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(
-                  Icons.schedule_rounded,
-                  size: 15,
-                  color: MetaGymTheme.warning,
-                ),
+                Icon(Icons.schedule_rounded, size: 15, color: colors.warning),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Hạn phản hồi 72h: ${formatVietnamTime(request.responseDeadlineAt)}',
-                    style: const TextStyle(
-                      color: Color(0xFFFFC573),
+                    style: TextStyle(
+                      color: colors.warning,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       fontFeatures: MetaGymTheme.tabularFigures,
@@ -142,8 +139,8 @@ class EarlyTerminationCard extends StatelessWidget {
               escalationLabel != null
                   ? '$escalationLabel. Yêu cầu đã chuyển Admin phân xử.'
                   : 'Yêu cầu đang ở trạng thái tranh chấp và chờ Admin phân xử.',
-              style: const TextStyle(
-                color: Color(0xFFFF987E),
+              style: TextStyle(
+                color: colors.error,
                 fontSize: 12.5,
                 height: 1.45,
               ),
@@ -153,8 +150,8 @@ class EarlyTerminationCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'Phản hồi đối tác: ${request.counterpartyReason}',
-              style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
+              style: TextStyle(
+                color: colors.textWarmMuted,
                 fontSize: 12.5,
                 height: 1.4,
               ),
@@ -164,8 +161,8 @@ class EarlyTerminationCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'Ghi chú quản trị: ${request.adminNote}',
-              style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
+              style: TextStyle(
+                color: colors.textWarmMuted,
                 fontSize: 12.5,
                 height: 1.4,
               ),
@@ -206,8 +203,10 @@ class EarlyTerminationCard extends StatelessWidget {
                         ? null
                         : () => _confirmAndRespond(context, decision: 'REJECT'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFFF987E),
-                      side: const BorderSide(color: Color(0xFFA54E36)),
+                      foregroundColor: colors.error,
+                      side: BorderSide(
+                        color: colors.error.withValues(alpha: 0.55),
+                      ),
                       minimumSize: const Size(0, 48),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -234,7 +233,7 @@ class EarlyTerminationCard extends StatelessWidget {
                     ? null
                     : () => _confirmAndRespond(context, decision: 'WITHDRAW'),
                 style: TextButton.styleFrom(
-                  foregroundColor: MetaGymTheme.textSecondary,
+                  foregroundColor: colors.textWarmMuted,
                   minimumSize: const Size(48, 48),
                 ),
                 child: const Text('Rút yêu cầu'),
@@ -279,6 +278,7 @@ class _EarlyTerminationRespondDialogState
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
     final title = _isAccept
         ? 'Chấp nhận kết thúc sớm?'
         : _isReject
@@ -296,17 +296,17 @@ class _EarlyTerminationRespondDialogState
         : 'Xác nhận rút';
 
     return AlertDialog(
-      backgroundColor: MetaGymTheme.darkSurface,
+      backgroundColor: colors.overlayGlass,
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-        side: const BorderSide(color: MetaGymTheme.cardBorder, width: 1.1),
+        side: BorderSide(color: colors.liquidGlassBorder, width: 1.1),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: MetaGymTheme.textPrimary,
+        style: TextStyle(
+          color: colors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
@@ -317,8 +317,8 @@ class _EarlyTerminationRespondDialogState
         children: [
           Text(
             description,
-            style: const TextStyle(
-              color: Color(0xFFE4DAD1),
+            style: TextStyle(
+              color: colors.textWarmMuted,
               fontSize: 13.5,
               height: 1.5,
             ),
@@ -331,26 +331,35 @@ class _EarlyTerminationRespondDialogState
               cursorColor: MetaGymTheme.brandOrange,
               maxLength: 1000,
               maxLines: 3,
-              style: const TextStyle(color: MetaGymTheme.textPrimary),
+              style: TextStyle(color: colors.textPrimary),
               decoration: InputDecoration(
                 labelText: _isReject
                     ? 'Lý do từ chối (bắt buộc)'
                     : 'Ghi chú phản hồi (không bắt buộc)',
-                labelStyle: const TextStyle(color: MetaGymTheme.textSecondary),
-                errorText: _showValidation ? 'Vui lòng nhập lý do từ chối.' : null,
+                labelStyle: TextStyle(color: colors.textSecondary),
+                counterStyle: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 11,
+                ),
+                errorText: _showValidation
+                    ? 'Vui lòng nhập lý do từ chối.'
+                    : null,
                 filled: true,
-                fillColor: MetaGymTheme.darkCanvas,
+                fillColor: colors.metricPanelBg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+                  borderSide: BorderSide(color: colors.metricPanelBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  borderSide: const BorderSide(color: MetaGymTheme.cardBorder),
+                  borderSide: BorderSide(color: colors.metricPanelBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  borderSide: const BorderSide(color: MetaGymTheme.primary),
+                  borderSide: const BorderSide(
+                    color: MetaGymTheme.primary,
+                    width: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -361,7 +370,7 @@ class _EarlyTerminationRespondDialogState
         TextButton(
           onPressed: () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            foregroundColor: MetaGymTheme.textSecondary,
+            foregroundColor: colors.textSecondary,
             minimumSize: const Size(48, 48),
           ),
           child: const Text('Quay lại'),
@@ -380,9 +389,7 @@ class _EarlyTerminationRespondDialogState
             );
           },
           style: FilledButton.styleFrom(
-            backgroundColor: _isReject
-                ? MetaGymTheme.dangerCoral
-                : MetaGymTheme.primary,
+            backgroundColor: _isReject ? colors.error : MetaGymTheme.primary,
             foregroundColor: MetaGymTheme.onPrimary,
             minimumSize: const Size(48, 48),
             shape: RoundedRectangleBorder(
