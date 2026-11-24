@@ -83,8 +83,8 @@
   <div class="flow-toast" id="flow-toast"></div>
 
   <!-- Modular Screen Registries -->
-  <script src="./screens/auth.screens.js?v=20261124i"></script>
-  <script src="./screens/member/tab1-home.js?v=20261124e"></script>
+  <script src="./screens/auth.screens.js?v=20261124l"></script>
+  <script src="./screens/member/tab1-home.js?v=20261124f"></script>
   <script src="./screens/member/tab2-training.js?v=20261124c"></script>
   <script src="./screens/member/tab3-ai.js?v=20261124d"></script>
   <script src="./screens/member/tab4-messages.js?v=20261124c"></script>
@@ -2760,12 +2760,13 @@
           secLbl: 'Đóng', priLbl: 'Chia sẻ thành tích', priToast: 'Đã lưu ảnh thành tích Meta Kong vào thư viện!'
         },
         maintenance: {
-          icon: '../../meta-gym/assets/svg/states/state_maintenance.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_maintenance.webp?v=20261124m5',
           ringBg: 'rgba(245,176,65,0.16)', ringBorder: 'rgba(245,176,65,0.55)',
           pill: '● Bảo trì định kỳ', pillCls: 'pill-orange',
           title: 'Hệ thống đang cập nhật',
-          desc: 'Meta Gym đang nâng cấp máy chủ để tăng tốc độ đồng bộ dữ liệu tập luyện và điểm danh NFC.',
-          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Thời gian dự kiến</span><strong style="color:var(--warning);">23:00 – 01:00 hôm nay</strong></div>`,
+          desc: 'Meta Kong đang nâng cấp máy chủ để tăng tốc độ đồng bộ dữ liệu tập luyện và điểm danh NFC.',
+          infoHtml: `<div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Thời gian dự kiến</span><strong style="color:var(--warning);">23:00 – 01:00 hôm nay</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Thử lại sau', priToast: 'Hệ thống vẫn đang nâng cấp, vui lòng thử lại sau ít phút'
         },
         'coming-soon': {
@@ -2788,12 +2789,13 @@
           secLbl: 'Báo hỗ trợ', priLbl: 'Thử lại ngay', secAction: 'support', priToast: 'Đang kết nối lại máy chủ Meta Gym...'
         },
         update: {
-          icon: '../../meta-gym/assets/svg/states/state_update.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_update.webp?v=20261124m6',
           ringBg: 'rgba(46,204,113,0.16)', ringBorder: 'rgba(46,204,113,0.55)',
           pill: '● Bản mới v1.1.0', pillCls: 'pill-success',
           title: 'Có bản cập nhật mới!',
-          desc: 'Cập nhật Meta Gym v1.1.0 để trải nghiệm Cân đĩa tạ Olympic, thanh toán 4 cổng và hiệu năng mượt hơn 30%.',
-          infoHtml: `<div style="font-size:11px;color:var(--text-secondary);text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
+          desc: 'Meta Kong mang đến bản Meta Gym v1.1.0 với Cân đĩa tạ Olympic, thanh toán 4 cổng và hiệu năng mượt hơn 30%.',
+          infoHtml: `<div style="font-size:12px;color:var(--text-secondary);text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
           secLbl: 'Để sau', priLbl: 'Cập nhật ngay', priToast: 'Đang mở App Store / Google Play để cập nhật v1.1.0...'
         },
         offline: {
@@ -2807,13 +2809,23 @@
           secLbl: 'Đóng', priLbl: 'Kiểm tra lại', priToast: 'Đã khôi phục kết nối mạng thành công!'
         },
         session: {
-          icon: '../../meta-gym/assets/svg/states/state_warning.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_session.webp?v=20261124m7',
           ringBg: 'rgba(245,176,65,0.16)', ringBorder: 'rgba(245,176,65,0.55)',
           pill: '● Bảo mật phiên', pillCls: 'pill-orange',
           title: 'Phiên đăng nhập hết hạn',
-          desc: 'Vì lý do bảo mật tài khoản, phiên đăng nhập của bạn đã hết hiệu lực. Vui lòng đăng nhập lại bằng Mật khẩu hoặc Face ID.',
-          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Tài khoản</span><strong style="color:var(--text-primary);">minhquan@metagym.vn</strong></div>`,
+          desc: 'Vì lý do bảo mật tài khoản, phiên đăng nhập đã hết hiệu lực. Meta Kong giữ sẵn chìa khóa để bạn đăng nhập lại nhanh bằng Face ID nhé!',
+          infoHtml: `<div class="row-between" style="font-size:12px;"><span style="color:var(--text-secondary);">Tài khoản</span><strong style="color:var(--text-primary);">minhquan@metagym.vn</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Đăng nhập lại →', priAction: 'login'
+        },
+        promo: {
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_membership_promo.webp?v=20261124m7',
+          pill: '★ Ưu đãi Hội viên VIP', pillCls: 'pill-orange',
+          title: 'Sở hữu Thẻ Vàng Meta Gym',
+          desc: 'Mở khóa phòng tập không giới hạn cùng thẻ kim loại NFC khắc riêng, đo InBody định kỳ và tặng ngay 2 buổi PT 1:1 cùng Coach.',
+          infoHtml: `<div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Gói đề xuất · 6 Tháng</span><strong style="color:var(--primary);">4.490.000đ (-16%)</strong></div>`,
+          secLbl: 'Để sau', priLbl: 'Khám phá gói tập →', priToast: 'Đang mở danh sách đặc quyền Thẻ Hội viên!'
         }
       };
 

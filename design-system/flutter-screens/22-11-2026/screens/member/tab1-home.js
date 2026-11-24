@@ -467,13 +467,16 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <span class="pill pill-muted" style="font-size:11px;">Chưa có gói</span>
           </div>
 
-          <!-- Meta Kong Empty State Guidance Strip -->
-          <div class="card-solid" style="padding:10px 12px;margin-bottom:10px;border-color:rgba(169,199,232,0.28);">
+          <!-- Meta Kong VIP Membership Promo Strip -->
+          <div class="card-solid" data-open-sys-modal="promo" style="padding:10px 12px;margin-bottom:10px;cursor:pointer;border-color:rgba(245,176,65,0.36);">
             <div class="row" style="gap:10px;">
-              <img src="../../meta-gym/assets/images/mascot/meta_kong_empty.webp?v=20261124m4" alt="Meta Kong Gợi ý chọn gói" style="width:54px;height:54px;flex-shrink:0;display:block;object-fit:contain;" />
+              <img src="../../meta-gym/assets/images/mascot/meta_kong_membership_promo.webp?v=20261124m7" alt="Meta Kong Mời nâng hạng VIP" style="width:58px;height:58px;flex-shrink:0;display:block;object-fit:contain;" />
               <div style="flex:1;min-width:0;">
-                <div class="txt-sm txt-bold" style="line-height:1.25;">Bạn chưa kích hoạt thẻ hội viên</div>
-                <div class="txt-xs" style="margin-top:2px;line-height:1.35;">Meta Kong gợi ý chọn 1 trong 4 hạng thẻ kim loại NFC bên dưới nhé!</div>
+                <div class="row-between" style="gap:6px;">
+                  <div class="txt-sm txt-bold" style="line-height:1.25;">Mở khóa đặc quyền VIP</div>
+                  <span class="pill pill-orange" style="font-size:11px;padding:2px 7px;flex-shrink:0;">Ưu đãi ›</span>
+                </div>
+                <div class="txt-xs" style="margin-top:2px;line-height:1.35;">Meta Kong mời bạn chọn thẻ kim loại NFC để nhận ngay 2 buổi PT 1:1!</div>
               </div>
             </div>
           </div>

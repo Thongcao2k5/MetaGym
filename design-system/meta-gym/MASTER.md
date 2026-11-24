@@ -31,7 +31,7 @@ Tệp `DESIGN.md` ở thư mục gốc của kho lưu trữ là nguồn chuẩn 
 - Màu ngữ nghĩa vàng (Warning): `#F39C12` (cảnh báo / avatar phụ).
 - Avatar HLV (Coach Avatar) `"LN"`: nền `#F5B041`, chữ `#181B22` đậm xuyên suốt toàn bộ các thẻ.
 - Phông chữ: **Be Vietnam Pro**, đóng gói nội bộ trong ứng dụng (locally bundled).
-- **Linh vật thương hiệu (Meta Kong):** Bộ 6 tư thế `512×512` Transparent WebP (`assets/images/mascot/meta_kong_{hero,empty,offline,error,loading,streak}.webp`, `38–56 KB`/tệp) dùng cho Empty/Offline/Error/Loading, Streak Celebration, AI Companion và Welcome — luôn giữ nguyên màu gốc trên cả Dark & Light Mode (không đảo màu).
+- **Linh vật thương hiệu (Meta Kong):** Bộ 10 tư thế `512×512` Transparent WebP (`assets/images/mascot/meta_kong_{hero,empty,offline,error,loading,streak,maintenance,update,session,membership_promo}.webp`, `38–55 KB`/tệp) dùng cho toàn bộ trạng thái hệ thống, Streak Celebration, AI Companion, Welcome và Mời nâng cấp VIP — luôn giữ nguyên màu gốc trên cả Dark & Light Mode (không đảo màu).
 - **Thang cỡ chữ Mobile chuẩn 8 bậc số nguyên (`375–393px`):** `11px` (*micro — sàn tuyệt đối cho eyebrow/badge số/T2–CN*), `12px` (*label/metadata — sàn Tiếng Việt có dấu*), `14px` (*body/chat/input/nút phụ*), `15px` (*CTA chính/bài viết*), `16px` (*tiêu đề mục & thẻ*), `20px` (*tiêu đề màn hình AppBar*), `22px` (*headline Auth/Hero*), `28px` (*chỉ số KPI `tnum`*, Splash `40px`). Cấm dùng cỡ `< 11px` hoặc số lẻ `.5px`.
 - Màu cam chỉ chiếm khoảng 5–10% diện tích khung nhìn thông thường và dành riêng cho hành động, mục đang chọn và tiến độ cốt lõi.
 

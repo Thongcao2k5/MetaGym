@@ -175,8 +175,8 @@ window.METAGYM_NOTES = [
         ]
       },
       {
-        title: 'Linh vật Thương hiệu Meta Kong (Studio WebP Nền Trong Suốt)',
-        summary: 'Bộ 6 tư thế linh vật Meta Kong (Hero, Empty, Offline, Error, Loading, Streak) xuất ở định dạng 512×512 Transparent WebP (38–56 KB/tệp) hiển thị sắc nét trên cả Dark Mode và Light Mode.',
+        title: 'Linh vật Thương hiệu Meta Kong (10 Tư Thế Studio WebP Nền Trong Suốt)',
+        summary: 'Trọn bộ 10 tư thế linh vật Meta Kong (Hero, Empty, Offline, Error, Loading, Streak, Maintenance, Update, Session, Membership Promo) xuất ở định dạng 512×512 Transparent WebP (38–55 KB/tệp) hiển thị sắc nét trên cả Dark Mode và Light Mode.',
         details: [
           'Sử dụng ảnh Transparent WebP trong design-system/meta-gym/assets/images/mascot/ thay cho vector 2D để giữ trọn khối cơ bắp, biểu cảm thân thiện và ánh sáng viền Cool Rim Light #A9C7E8.',
           'Gắn điểm nhấn có tiết chế vào các điểm chạm giàu cảm xúc: Màn hình Trạng thái Hệ thống (Empty / Offline / Error / Loading / Streak), Banner cổ vũ chuỗi ngày tập trên Trang chủ (1.1), Màn Chọn gói tập trống (1.2b), Trợ lý AI (3.1) và lời chào Đăng nhập (Auth).',

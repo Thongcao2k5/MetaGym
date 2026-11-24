@@ -72,7 +72,8 @@ function isForegroundPixel(r, g, b, x, y, W, H) {
   if (lum > 118) return true;
 
   // 2. Cool slate / graphite fur / rim light / face / chest / abs / dark metal
-  if (b >= r - 1 && b >= 25 && lum >= 20) return true;
+  if (b >= r && b >= 28 && lum >= 23) return true;
+  if (b >= r - 2 && b >= 34 && lum >= 28) return true;
 
   // 3. Mid-tone neutral grays (wrench, barbell bar, clipboard shadow)
   if (min >= 42 && (max - min) <= 22) return true;
@@ -84,11 +85,11 @@ function isForegroundPixel(r, g, b, x, y, W, H) {
   if (r > 186 && (r - b) > 60) return true;
   if (r > 145 && g > 84 && (r - b) > 45) return true;
 
-  // 6. Outer-zone shaded red-orange/bronze (barbell undersides, shoes, outer props)
-  if (rad > 325 && r > 88 && (r - b) > 40) return true;
+  // 6. Outer-zone shaded red-orange/bronze (barbell undersides, shoes, outer props — excludes dark brown glow R<138)
+  if (rad > 325 && r > 138 && (r - b) > 58) return true;
 
-  // 7. Mid-outer zone (background glow never exceeds R > 115 here)
-  if (rad > 270 && r > 142 && (r - b) > 58) return true;
+  // 7. Mid-outer zone (background glow never exceeds R > 135 here)
+  if (rad > 270 && r > 148 && (r - b) > 62) return true;
 
   return false;
 }
@@ -144,16 +145,21 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
   // Step 3: Split connected components into Major Outlined Shapes vs Minor Floating Accents
   const compId = new Int32Array(N).fill(-1);
   const compSizes = [];
+  const compBright = [];
   const q = new Int32Array(N);
   let nextComp = 0;
 
   for (let i = 0; i < N; i++) {
     if (!fgCore[i] || compId[i] !== -1) continue;
     let head = 0, tail = 0;
+    let sumLum = 0, sumR = 0;
     compId[i] = nextComp;
     q[tail++] = i;
     while (head < tail) {
       const cur = q[head++];
+      const p = cur * 4;
+      sumR += data[p];
+      sumLum += 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
       const x = cur % W, y = (cur - x) / W;
       const push = (ni) => {
         if (fgCore[ni] && compId[ni] === -1) {
@@ -167,6 +173,7 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
       if (y < H - 1) push(cur + W);
     }
     compSizes.push(tail);
+    compBright.push((sumLum / tail) >= 75 || (sumR / tail) >= 135);
     nextComp++;
   }
 
@@ -179,7 +186,7 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
     const cid = compId[i];
     if (cid === -1) continue;
     if (compSizes[cid] >= minMajorArea) majorFg[i] = 1;
-    else if (compSizes[cid] >= minMinorArea) minorFg[i] = 1;
+    else if (compSizes[cid] >= minMinorArea && compBright[cid]) minorFg[i] = 1;
   }
 
   const distMajor = distanceTransform(majorFg, W, H);
@@ -226,13 +233,14 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
       const isBlackInk = (r < 35 && g < 37 && b < 47 && !isWarmRust);
 
       if (distMajor[i] <= inkDist && isBlackInk) {
-        if (globalMaxSoleY > 0 && y > globalMaxSoleY - Math.round(16 * scale)) {
+        if (y > H * 0.84) {
           const colMax = soleColLimit[x];
           if (colMax === 0) continue;
-          if (y > colMax + Math.round(5 * scale)) continue;
+          if (y > colMax + Math.round(4.5 * scale)) continue;
         }
         isBarrier[i] = 1;
       } else if (distMajor[i] <= Math.round(25 * scale) && !isWarmRust && !isSmoothBgColor(r, g, b, x, y, W, H)) {
+        if (y > H * 0.84 && (soleColLimit[x] === 0 || y > soleColLimit[x] + Math.round(4.5 * scale))) continue;
         isBarrier[i] = 1;
       } else if (distMinor[i] <= Math.round(18 * scale) && !isSmoothBgColor(r, g, b, x, y, W, H) && (r > 35 || g > 35 || b > 38)) {
         isBarrier[i] = 1;
@@ -281,10 +289,10 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
     if (y < H - 1) enqueue(i + W);
   }
 
-  // Step 6: Clear true enclosed background pockets (e.g. gap between arms/head/cables)
+  // Step 6: Clear true enclosed background pockets (e.g. gap between arms/head/cables; >= 800px protects pupils/keyholes)
   if (allowHoles) {
     const visitedHole = new Uint8Array(N);
-    const minHoleArea = Math.round(260 * scale * scale);
+    const minHoleArea = Math.round(800 * scale * scale);
     for (let i = 0; i < N; i++) {
       if (exterior[i] || isBarrier[i] || visitedHole[i]) continue;
       head = 0; tail = 0;
@@ -317,17 +325,20 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
     }
   }
 
-  // Step 7: Remove stray disconnected foreground specks (< 45px)
+  // Step 7: Remove stray disconnected foreground specks (< 95px, or < 450px below shoes)
   const fgVis = new Uint8Array(N);
-  const minKeepArea = Math.round(45 * scale * scale);
+  const minKeepArea = Math.round(95 * scale * scale);
+  const minShoeBottomArea = Math.round(450 * scale * scale);
   for (let i = 0; i < N; i++) {
     if (exterior[i] || fgVis[i]) continue;
     head = 0; tail = 0;
     fgVis[i] = 1;
     q[tail++] = i;
+    let sumY = 0;
     while (head < tail) {
       const cur = q[head++];
       const x = cur % W, y = (cur - x) / W;
+      sumY += y;
       const push = (ni) => {
         if (!exterior[ni] && !fgVis[ni]) {
           fgVis[ni] = 1;
@@ -339,7 +350,9 @@ async function cutoutMascot(inputPath, outputPath, opts = {}) {
       if (y > 0) push(cur - W);
       if (y < H - 1) push(cur + W);
     }
-    if (tail < minKeepArea) {
+    const avgY = sumY / tail;
+    const reqArea = avgY > H * 0.86 ? minShoeBottomArea : minKeepArea;
+    if (tail < reqArea) {
       for (let k = 0; k < tail; k++) exterior[q[k]] = 1;
     }
   }

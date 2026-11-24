@@ -597,7 +597,7 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
             <div class="card-solid" data-open-sys-modal="maintenance" style="padding:11px 13px;margin-bottom:0;cursor:pointer;">
               <div class="row-between">
                 <div class="row" style="gap:10px;">
-                  <div class="quick-ico" style="background:rgba(245,176,65,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_maintenance.svg" alt="Bảo trì" /></div>
+                  <img src="../../meta-gym/assets/images/mascot/meta_kong_maintenance.webp?v=20261124m5" alt="Meta Kong Bảo trì" style="width:48px;height:48px;flex-shrink:0;display:block;object-fit:contain;" />
                   <div>
                     <div class="txt-sm txt-bold">Hệ thống đang bảo trì</div>
                     <div class="txt-xs">Thông báo khung giờ nâng cấp máy chủ</div>
@@ -610,7 +610,7 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
             <div class="card-solid" data-open-sys-modal="update" style="padding:11px 13px;margin-bottom:0;cursor:pointer;">
               <div class="row-between">
                 <div class="row" style="gap:10px;">
-                  <div class="quick-ico" style="background:rgba(46,204,113,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_update.svg" alt="Cập nhật" /></div>
+                  <img src="../../meta-gym/assets/images/mascot/meta_kong_update.webp?v=20261124m6" alt="Meta Kong Cập nhật" style="width:48px;height:48px;flex-shrink:0;display:block;object-fit:contain;" />
                   <div>
                     <div class="txt-sm txt-bold">Có bản cập nhật mới</div>
                     <div class="txt-xs tnum">Meta Gym v1.1.0 · Ghi chú phiên bản</div>
@@ -623,10 +623,23 @@ window.METAGYM_SCREENS.auth = (window.METAGYM_SCREENS.auth || []).concat([
             <div class="card-solid" data-open-sys-modal="session" style="padding:11px 13px;margin-bottom:0;cursor:pointer;">
               <div class="row-between">
                 <div class="row" style="gap:10px;">
-                  <div class="quick-ico" style="background:rgba(245,176,65,0.16);"><img class="ico-md" src="../../meta-gym/assets/svg/states/state_warning.svg" alt="Hết phiên" /></div>
+                  <img src="../../meta-gym/assets/images/mascot/meta_kong_session.webp?v=20261124m7" alt="Meta Kong Hết phiên" style="width:48px;height:48px;flex-shrink:0;display:block;object-fit:contain;" />
                   <div>
                     <div class="txt-sm txt-bold">Phiên đăng nhập hết hạn</div>
                     <div class="txt-xs">Bảo mật tài khoản · Đăng nhập lại</div>
+                  </div>
+                </div>
+                <span class="pill pill-orange">Xem ›</span>
+              </div>
+            </div>
+
+            <div class="card-solid" data-open-sys-modal="promo" style="padding:11px 13px;margin-bottom:0;cursor:pointer;">
+              <div class="row-between">
+                <div class="row" style="gap:10px;">
+                  <img src="../../meta-gym/assets/images/mascot/meta_kong_membership_promo.webp?v=20261124m7" alt="Meta Kong Mời mua gói tập" style="width:48px;height:48px;flex-shrink:0;display:block;object-fit:contain;" />
+                  <div>
+                    <div class="txt-sm txt-bold">Mời gọi mua gói tập VIP</div>
+                    <div class="txt-xs">Ưu đãi thẻ kim loại NFC · Tặng PT 1:1</div>
                   </div>
                 </div>
                 <span class="pill pill-orange">Xem ›</span>
