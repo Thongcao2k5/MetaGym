@@ -24,98 +24,197 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="mg-eyebrow">META GYM · TẬP LUYỆN</div>
               <div class="mg-title">Tập luyện</div>
             </div>
-            <div class="circle-btn" title="Thư viện"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Thư viện" /></div>
-            <div class="circle-btn" title="Lịch sử"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
+            <div class="circle-btn" title="Thư viện bài tập" data-go="member-exercises" style="cursor:pointer;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Thư viện" /></div>
+            <div class="circle-btn" title="Lịch sử tập" data-go="member-visits" style="cursor:pointer;"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
           </div>
 
-          <div class="sec-head" style="margin-top:4px;"><h3>Dịch vụ của bạn</h3></div>
-          <div class="card-warm-glass">
-            <div class="grid-2">
-              <div class="metric-box">
-                <div class="row-between" style="margin-bottom:6px;">
-                  <span class="txt-xs txt-bold" style="color:var(--text-primary);">Gói tập</span>
-                  <span class="txt-xs txt-green txt-bold">Hiệu lực</span>
-                </div>
-                <div class="tnum" style="font-size:18px;font-weight:800;">42 ngày</div>
-                <div class="txt-xs" style="margin-top:2px;">Còn lại · Hết hạn 03/01/2027</div>
-                <div class="txt-xs" style="color:var(--reflection);margin-top:8px;font-weight:600;">Xem gói tập ›</div>
+          <!-- Hero Card: Buổi tập hôm nay (Tâm điểm sang trọng Warm Smoked Glass) -->
+          <div class="card-warm-glass" style="padding:15px;margin-bottom:11px;border-color:rgba(255,138,91,0.52);background:linear-gradient(155deg, rgba(66,44,35,0.88) 0%, rgba(43,38,34,0.82) 55%, rgba(32,28,25,0.86) 100%);">
+            <div class="row-between" style="margin-bottom:8px;">
+              <span class="pill pill-orange tnum" style="font-size:10.5px;white-space:nowrap;">● Hôm nay · 18:00</span>
+              <span class="pill pill-muted tnum" style="font-size:10px;white-space:nowrap;">90 phút · Push Day</span>
+            </div>
+            <div style="font-size:16.5px;font-weight:800;line-height:1.25;letter-spacing:-0.02em;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              Ngực &amp; Tay sau · Chest &amp; Triceps
+            </div>
+            <div class="row" style="gap:7px;margin-bottom:12px;min-width:0;">
+              <div class="avatar-ln" style="width:22px;height:22px;font-size:9px;flex-shrink:0;">LN</div>
+              <span class="txt-xs" style="color:var(--text-warm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Giáo trình tuần 4 · <strong style="color:var(--text-primary);">HLV Lê Hoàng Nam</strong></span>
+            </div>
+
+            <div class="grid-3" style="gap:7px;margin-bottom:12px;">
+              <div class="metric-box" style="text-align:center;padding:8px 4px;border-radius:12px;min-width:0;">
+                <div class="tnum" style="font-size:16px;font-weight:800;color:var(--text-primary);white-space:nowrap;">6</div>
+                <div class="txt-xs" style="font-size:10.5px;white-space:nowrap;">Bài tập</div>
               </div>
-              <div class="metric-box">
-                <div class="row-between" style="margin-bottom:6px;">
-                  <div class="row" style="gap:5px;">
-                    <div class="avatar-ln" style="width:20px;height:20px;font-size:8.5px;">LN</div>
-                    <span class="txt-xs txt-bold" style="color:var(--text-primary);">Gói Coach</span>
+              <div class="metric-box" style="text-align:center;padding:8px 4px;border-radius:12px;min-width:0;">
+                <div class="tnum" style="font-size:16px;font-weight:800;color:var(--primary);white-space:nowrap;">22</div>
+                <div class="txt-xs" style="font-size:10.5px;white-space:nowrap;">Tổng hiệp</div>
+              </div>
+              <div class="metric-box" style="text-align:center;padding:8px 4px;border-radius:12px;min-width:0;">
+                <div class="tnum" style="font-size:16px;font-weight:800;color:var(--success);white-space:nowrap;">~540</div>
+                <div class="txt-xs" style="font-size:10.5px;white-space:nowrap;">Kcal</div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="gap:8px;">
+              <button type="button" class="btn-primary" style="height:40px;font-size:12.5px;white-space:nowrap;" data-go="member-workout-log">Bắt đầu tập →</button>
+              <button type="button" class="btn-secondary" style="height:40px;font-size:12.5px;white-space:nowrap;" data-go="member-curriculum">Xem giáo trình</button>
+            </div>
+          </div>
+
+          <!-- 2 Cột Bento sang trọng: Thẻ Hội viên & Coach 1:1 (tất cả 1 dòng, tuyệt đối không xuống hàng) -->
+          <div class="grid-2" style="gap:10px;margin-bottom:12px;align-items:stretch;">
+            <!-- Card Trái: Thẻ Hội viên -->
+            <div class="card-warm-glass" style="margin-bottom:0;padding:13px 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-width:0;border-color:rgba(245,176,65,0.42);background:linear-gradient(160deg, rgba(58,47,36,0.88) 0%, rgba(36,32,28,0.86) 100%);" data-go="member-membership">
+              <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(245,176,65,0.26) 0%, transparent 72%);pointer-events:none;"></div>
+              <div style="min-width:0;">
+                <div class="row-between" style="margin-bottom:8px;">
+                  <div class="row" style="gap:5px;min-width:0;">
+                    <img class="ico-xs" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Hạng Vàng" style="width:13px;height:13px;flex-shrink:0;" />
+                    <span style="font-size:9.5px;font-weight:800;letter-spacing:0.06em;color:#F5B041;white-space:nowrap;">HẠNG VÀNG</span>
                   </div>
-                  <span class="txt-xs txt-green txt-bold">Hiệu lực</span>
+                  <span style="width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px rgba(46,204,113,0.75);flex-shrink:0;"></span>
                 </div>
-                <div style="font-size:14px;font-weight:700;">Lê Hoàng Nam</div>
-                <div class="txt-xs" style="margin-top:2px;">Coach cá nhân · Hiệu lực</div>
-                <div class="txt-xs" style="color:var(--reflection);margin-top:8px;font-weight:600;">Xem gói Coach ›</div>
+                <div class="row" style="align-items:baseline;gap:4px;margin-bottom:3px;white-space:nowrap;">
+                  <span class="tnum" style="font-size:23px;font-weight:800;letter-spacing:-0.03em;line-height:1;color:var(--text-primary);">42</span>
+                  <span style="font-size:11.5px;font-weight:600;color:var(--text-warm-muted);white-space:nowrap;">ngày còn lại</span>
+                </div>
+                <div class="txt-xs tnum" style="font-size:10.5px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hạn 03/01/2027</div>
+              </div>
+              <div>
+                <div class="prog-track" style="height:4px;margin:10px 0 8px;background:rgba(255,255,255,0.12);"><div class="prog-fill" style="width:74%;background:linear-gradient(90deg, #F5B041, #2ECC71);"></div></div>
+                <div class="row-between">
+                  <span style="font-size:11px;font-weight:700;color:#F5B041;white-space:nowrap;">Xem gói tập</span>
+                  <span style="font-size:12px;font-weight:700;color:#F5B041;">›</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Phải: Coach 1:1 -->
+            <div class="card-warm-glass" style="margin-bottom:0;padding:13px 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-width:0;border-color:rgba(255,94,54,0.42);background:linear-gradient(160deg, rgba(60,41,35,0.88) 0%, rgba(36,32,28,0.86) 100%);" data-go="member-coach-booking">
+              <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(255,94,54,0.24) 0%, transparent 72%);pointer-events:none;"></div>
+              <div style="min-width:0;">
+                <div class="row-between" style="margin-bottom:8px;">
+                  <span style="font-size:9.5px;font-weight:800;letter-spacing:0.06em;color:var(--primary);white-space:nowrap;">COACH 1:1</span>
+                  <span style="width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px rgba(46,204,113,0.75);flex-shrink:0;"></span>
+                </div>
+                <div class="row" style="gap:7px;margin-bottom:3px;min-width:0;">
+                  <div class="avatar-ln" style="width:28px;height:28px;font-size:10px;flex-shrink:0;box-shadow:0 4px 10px rgba(245,176,65,0.28);">LN</div>
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-size:12.5px;font-weight:800;line-height:1.2;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lê Hoàng Nam</div>
+                    <div class="txt-xs tnum" style="font-size:10px;color:var(--text-warm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Còn 14/24 buổi</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="prog-track" style="height:4px;margin:10px 0 8px;background:rgba(255,255,255,0.12);"><div class="prog-fill" style="width:58%;background:linear-gradient(90deg, var(--primary), #FF9B73);"></div></div>
+                <div class="row-between">
+                  <span style="font-size:11px;font-weight:700;color:var(--primary);white-space:nowrap;">Lịch Coach</span>
+                  <span style="font-size:12px;font-weight:700;color:var(--primary);">›</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="sec-head"><h3 class="txt-orange">Kế hoạch tập luyện</h3></div>
-          <div class="card-liquid" style="padding:13px;margin-bottom:10px;">
-            <div class="row-between">
-              <div class="row">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/quick_actions/action_curriculum.svg" alt="Giáo trình" /></div>
-                <div>
-                  <div class="txt-sm txt-bold">Giáo trình của Coach</div>
-                  <div class="txt-xs">Kế hoạch tập luyện và ăn uống từ Coach</div>
-                </div>
-              </div>
-              <span class="txt-xs">›</span>
-            </div>
+          <!-- Mục Kế hoạch & Dinh dưỡng -->
+          <div class="sec-head" style="margin-top:2px;">
+            <h3 style="white-space:nowrap;">Kế hoạch &amp; Dinh dưỡng</h3>
+            <span class="txt-xs tnum" style="white-space:nowrap;">Tuần 4</span>
           </div>
-          <div class="card-liquid" style="padding:13px;margin-bottom:10px;">
-            <div class="row-between">
-              <div class="row">
-                <div class="quick-ico" style="background:rgba(169,199,232,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_plan_calendar.svg" alt="Lịch tập" /></div>
-                <div>
-                  <div class="row" style="gap:6px;"><strong class="txt-sm">Lịch tập của tôi</strong><span class="pill pill-orange" style="padding:1px 6px;font-size:9.5px;">Hôm nay</span></div>
-                  <div class="txt-xs tnum">Hôm nay · 18:00 · Push Day</div>
+
+          <!-- Card Dinh dưỡng hôm nay -->
+          <div class="card-warm-glass" style="padding:13px 14px;margin-bottom:9px;cursor:pointer;" data-go="member-nutrition">
+            <div class="row-between" style="margin-bottom:8px;gap:8px;">
+              <div class="row" style="gap:10px;min-width:0;flex:1;">
+                <div class="quick-ico" style="width:38px;height:38px;border-radius:12px;flex-shrink:0;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.38);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Dinh dưỡng" />
+                </div>
+                <div style="min-width:0;flex:1;">
+                  <div class="txt-sm txt-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Dinh dưỡng hôm nay</div>
+                  <div class="txt-xs tnum" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">1.840 / 2.400 kcal · Đạm 140/160g</div>
                 </div>
               </div>
-              <span class="txt-xs">›</span>
+              <span class="pill pill-success tnum" style="font-size:10.5px;flex-shrink:0;white-space:nowrap;">77%</span>
             </div>
+            <div class="prog-track" style="height:5px;margin:0;"><div class="prog-fill" style="width:77%;background:linear-gradient(90deg, var(--success), #59E59A);"></div></div>
           </div>
-          <div class="card-liquid" style="padding:13px;margin-bottom:14px;">
-            <div class="row-between">
-              <div class="row">
-                <div class="quick-ico" style="background:rgba(46,204,113,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Dinh dưỡng" /></div>
-                <div>
-                  <div class="txt-sm txt-bold">Theo dõi dinh dưỡng</div>
-                  <div class="txt-xs">Ghi bữa ăn &amp; đối chiếu thực đơn Coach</div>
+
+          <!-- Card Lịch tập tuần của tôi -->
+          <div class="card-warm-glass" style="padding:13px 14px;margin-bottom:13px;cursor:pointer;" data-go="member-self-training">
+            <div class="row-between" style="margin-bottom:9px;gap:8px;">
+              <div class="row" style="gap:10px;min-width:0;flex:1;">
+                <div class="quick-ico" style="width:38px;height:38px;border-radius:12px;flex-shrink:0;background:rgba(169,199,232,0.16);border:1px solid rgba(169,199,232,0.38);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_plan_calendar.svg" alt="Lịch tập" />
+                </div>
+                <div style="min-width:0;flex:1;">
+                  <div class="txt-sm txt-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lịch tập tuần của tôi</div>
+                  <div class="txt-xs" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hoàn thành 3/5 buổi mục tiêu</div>
                 </div>
               </div>
-              <span class="btn-mini-orange">Mở</span>
+              <span class="txt-xs" style="color:var(--primary);font-weight:700;flex-shrink:0;white-space:nowrap;">Mở ›</span>
+            </div>
+            <div class="row-between tnum" style="gap:5px;">
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:10px;font-weight:700;color:var(--success);white-space:nowrap;">T2✓</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:10px;font-weight:700;color:var(--success);white-space:nowrap;">T3✓</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(255,94,54,0.22);border:1px solid var(--primary);font-size:10px;font-weight:800;color:#FFF;white-space:nowrap;">T4</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:10px;color:var(--text-secondary);white-space:nowrap;">T5</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:10px;color:var(--text-secondary);white-space:nowrap;">T6</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:10px;color:var(--text-secondary);white-space:nowrap;">T7</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.35);border:1px solid rgba(179,169,157,0.18);font-size:10px;color:var(--text-secondary);white-space:nowrap;">CN</div>
             </div>
           </div>
 
-          <div class="sec-head"><h3>Công cụ &amp; Khám phá</h3></div>
-          <div class="grid-2" style="margin-bottom:10px;">
-            <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/progress/stats_report.svg" alt="Nhật ký" /></div>
-              <div class="txt-sm txt-bold">Nhật ký tập luyện</div>
-              <div class="txt-xs" style="margin-top:3px;">Ghi thành tích, ảnh và số đo theo ngày</div>
+          <!-- Công cụ & Khám phá (Bento 2x2 Warm Smoked Glass — 1 dòng gọn gàng) -->
+          <div class="sec-head" style="margin-top:0;">
+            <h3 style="white-space:nowrap;">Công cụ &amp; Thư viện</h3>
+            <span class="txt-xs" style="white-space:nowrap;">4 tiện ích</span>
+          </div>
+          <div class="grid-2" style="gap:9px;margin-bottom:9px;">
+            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-journal">
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="quick-ico" style="width:34px;height:34px;border-radius:10px;background:rgba(255,94,54,0.16);border:1px solid rgba(255,94,54,0.38);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/progress/stats_report.svg" alt="Nhật ký" />
+                </div>
+                <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
+              </div>
+              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nhật ký tập luyện</div>
+              <div class="txt-xs" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lưu PR, ảnh &amp; số đo</div>
             </div>
-            <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
-              <div class="txt-sm txt-bold">Lịch sử tập luyện</div>
-              <div class="txt-xs" style="margin-top:3px;">Xem các ngày và lượt đến phòng gym</div>
+
+            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-visits">
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="quick-ico" style="width:34px;height:34px;border-radius:10px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.38);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" />
+                </div>
+                <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
+              </div>
+              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lịch sử &amp; Check-in</div>
+              <div class="txt-xs tnum" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">18 lượt đến phòng gym</div>
             </div>
           </div>
-          <div class="grid-2">
-            <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thư viện bài tập" /></div>
-              <div class="txt-sm txt-bold">Thư viện bài tập</div>
-              <div class="txt-xs" style="margin-top:3px;">Tìm bài theo nhóm cơ và cách thực hiện</div>
+
+          <div class="grid-2" style="gap:9px;">
+            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-exercises">
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="quick-ico" style="width:34px;height:34px;border-radius:10px;background:rgba(245,176,65,0.16);border:1px solid rgba(245,176,65,0.38);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thư viện bài tập" />
+                </div>
+                <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
+              </div>
+              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Thư viện bài tập</div>
+              <div class="txt-xs tnum" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">120+ bài chuẩn form</div>
             </div>
-            <div class="card-liquid" style="margin-bottom:0;padding:12px;">
-              <div class="quick-ico" style="margin-bottom:8px;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Phòng gym & thiết bị" /></div>
-              <div class="txt-sm txt-bold">Phòng gym &amp; thiết bị</div>
-              <div class="txt-xs" style="margin-top:3px;">Nội quy và hướng dẫn dùng máy</div>
+
+            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-equipment">
+              <div class="row-between" style="margin-bottom:8px;">
+                <div class="quick-ico" style="width:34px;height:34px;border-radius:10px;background:rgba(169,199,232,0.16);border:1px solid rgba(169,199,232,0.38);">
+                  <img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Phòng gym & thiết bị" />
+                </div>
+                <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
+              </div>
+              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Phòng gym &amp; Thiết bị</div>
+              <div class="txt-xs" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hướng dẫn máy &amp; nội quy</div>
             </div>
           </div>
         </div>
