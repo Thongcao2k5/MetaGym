@@ -26,7 +26,7 @@ void main() {
       MaterialApp(home: MemberMeasurementPage(service: service)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Thêm số đo'));
+    await tester.tap(find.text('+ Ghi nhận số đo mới'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('measurement-date')),
@@ -37,8 +37,8 @@ void main() {
     await tester.tap(find.text('Lưu'));
     await tester.pumpAndSettle();
     expect(service.created?['weightKg'], 72.5);
-    expect(find.textContaining('72.5 kg'), findsOneWidget);
-    await tester.tap(find.textContaining('72.5 kg'));
+    expect(find.textContaining('72.5 kg'), findsWidgets);
+    await tester.tap(find.textContaining('72.5 kg').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('measurement-weight')), '71.8');
     await tester.tap(find.text('Lưu'));
@@ -56,7 +56,7 @@ void main() {
       MaterialApp(home: MemberMeasurementPage(service: service)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Thêm số đo'));
+    await tester.tap(find.text('+ Ghi nhận số đo mới'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('measurement-date')),

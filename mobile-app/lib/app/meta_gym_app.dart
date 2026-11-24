@@ -269,7 +269,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
       child: MaterialApp.router(
         title: 'Meta Gym',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
+        theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.dark,
         routerConfig: _router,

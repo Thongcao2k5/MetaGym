@@ -1,15 +1,24 @@
-import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/profile/presentation/widgets/body_metric_pickers.dart';
+import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:provider/provider.dart';
 
+/// Màn hình **5.4 Khai báo thể trạng** khớp sát bố cục preview `tab5-profile.js`
+/// (`member-health-declaration`) trên nền & thẻ Warm Smoked Liquid Glass:
+/// 1. Hero `Tóm tắt thể trạng` (`health_shield.svg` + pill BMI + 3 ô chỉ số chạm đo)
+/// 2. Thẻ `Chỉ số cơ thể hiện tại` (`Chiều cao · cm`, `Cân nặng · kg`, `Tỷ lệ mỡ · % · tùy chọn`)
+/// 3. Thẻ gộp `Bệnh nền & Chấn thương` (`Tiền sử chấn thương`, `Bệnh nền / Lưu ý y tế`)
+/// 4. Thanh CTA đáy `.bottom-cta-dock`: `Lưu khai báo thể trạng`.
 class MemberHealthDeclarationPage extends StatefulWidget {
   const MemberHealthDeclarationPage({
-    this.submitLabel = 'Lưu khai báo',
+    this.submitLabel = 'Lưu khai báo thể trạng',
     super.key,
   });
 
@@ -28,19 +37,13 @@ class _MemberHealthDeclarationPageState
   final _bodyFat = TextEditingController();
   final _conditionDetails = TextEditingController();
   final _injuryDetails = TextEditingController();
-  final _goal = TextEditingController();
+  String? _loadedFitnessGoal;
   bool? _hasCondition;
   bool? _hasInjury;
   bool _loading = true;
   bool _saving = false;
+  String? _loadError;
   String? _error;
-
-  static const List<String> _goalPresets = [
-    'Tăng cơ giảm mỡ',
-    'Giảm mỡ siết cơ',
-    'Tăng sức mạnh tối đa',
-    'Phục hồi vận động & sức bền',
-  ];
 
   @override
   void initState() {
@@ -48,7 +51,9 @@ class _MemberHealthDeclarationPageState
     for (final c in [_height, _weight, _bodyFat]) {
       c.addListener(_onMetricEdited);
     }
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load();
+    });
   }
 
   void _onMetricEdited() {
@@ -56,30 +61,62 @@ class _MemberHealthDeclarationPageState
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+      _error = null;
+    });
     try {
-      final user = (await context.read<ApiClient>().get<Map<String, dynamic>>(
+      final api = optionalProvider<ApiClient>(context);
+      if (api == null) {
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+      final user = (await api.get<Map<String, dynamic>>(
         '/users/me',
         decode: (data) => Map<String, dynamic>.from(data as Map),
       )).data;
       if (!mounted) return;
       final profile = Map<String, dynamic>.from(user['profile'] as Map? ?? {});
-      _height.text = profile['heightCm']?.toString() ?? '';
-      _weight.text = profile['weightKg']?.toString() ?? '';
-      _bodyFat.text = profile['bodyFatPercent']?.toString() ?? '';
-      _conditionDetails.text = profile['healthNotes'] as String? ?? '';
-      _injuryDetails.text = profile['injuryNotes'] as String? ?? '';
-      _goal.text = profile['fitnessGoal'] as String? ?? '';
+      _height.text = _cleanNumericString(profile['heightCm']);
+      _weight.text = _cleanNumericString(profile['weightKg']);
+      _bodyFat.text = _cleanNumericString(profile['bodyFatPercent']);
+      _conditionDetails.text = (profile['healthNotes'] as String? ?? '').trim();
+      _injuryDetails.text = (profile['injuryNotes'] as String? ?? '').trim();
+      _loadedFitnessGoal = (profile['fitnessGoal'] as String?)?.trim();
       if (profile['healthDeclarationCompletedAt'] != null) {
-        _hasCondition = _conditionDetails.text.trim().isNotEmpty;
-        _hasInjury = _injuryDetails.text.trim().isNotEmpty;
+        _hasCondition = _conditionDetails.text.isNotEmpty;
+        _hasInjury = _injuryDetails.text.isNotEmpty;
+      }
+
+      if (_weight.text.trim().isEmpty) {
+        final measurementService = optionalProvider<MemberMeasurementService>(
+          context,
+        );
+        if (measurementService != null) {
+          try {
+            final recent = await measurementService.getPage(1);
+            if (mounted && recent.isNotEmpty && recent.first.weightKg > 0) {
+              _weight.text = _cleanNumericString(recent.first.weightKg);
+            }
+          } catch (_) {}
+        }
       }
     } on ApiException catch (error) {
-      if (mounted) _error = error.message;
+      if (mounted) _loadError = error.message;
     } catch (_) {
-      if (mounted) _error = 'Không tải được hồ sơ. Hãy thử lại.';
+      if (mounted) _loadError = 'Không tải được hồ sơ. Hãy thử lại.';
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _cleanNumericString(Object? raw) {
+    if (raw == null) return '';
+    if (raw is num) {
+      return raw == raw.roundToDouble() ? raw.toStringAsFixed(0) : '$raw';
+    }
+    return raw.toString().trim();
   }
 
   @override
@@ -93,7 +130,6 @@ class _MemberHealthDeclarationPageState
       _bodyFat,
       _conditionDetails,
       _injuryDetails,
-      _goal,
     ]) {
       controller.dispose();
     }
@@ -118,82 +154,103 @@ class _MemberHealthDeclarationPageState
     if (bmi == null) {
       return ('Chờ nhập chỉ số', CoachingPillTone.neutral);
     }
-    if (bmi < 18.5) return ('BMI ${bmi.toStringAsFixed(1)} · Thiếu cân', CoachingPillTone.amber);
-    if (bmi < 25.0) return ('BMI ${bmi.toStringAsFixed(1)} · Cân đối', CoachingPillTone.green);
-    return ('BMI ${bmi.toStringAsFixed(1)} · Thừa cân', CoachingPillTone.coral);
+    if (bmi < 18.5) {
+      return (
+        '● BMI ${bmi.toStringAsFixed(1)} · Thiếu cân',
+        CoachingPillTone.info,
+      );
+    }
+    if (bmi < 25.0) {
+      return (
+        '● BMI ${bmi.toStringAsFixed(1)} · Bình thường',
+        CoachingPillTone.green,
+      );
+    }
+    if (bmi < 30.0) {
+      return (
+        '● BMI ${bmi.toStringAsFixed(1)} · Thừa cân',
+        CoachingPillTone.amber,
+      );
+    }
+    return (
+      '● BMI ${bmi.toStringAsFixed(1)} · Béo phì',
+      CoachingPillTone.coral,
+    );
   }
 
   String? _requiredNumber(String? value, double max, String label) {
     final number = _parseDecimal(value);
-    if (number == null || number <= 0 || number > max) {
+    if (number == null || !number.isFinite || number <= 0 || number > max) {
       return 'Nhập $label hợp lệ';
     }
     return null;
   }
 
-  InputDecoration _inputDecoration({
+  Future<void> _openHeightPicker() async {
+    final currentH = _parseDecimal(_height.text) ?? 174.0;
+    final currentW = _parseDecimal(_weight.text) ?? 72.4;
+    final picked = await showHeightStadiometerPicker(
+      context,
+      initialHeightCm: currentH,
+      referenceWeightKg: currentW,
+    );
+    if (picked != null && mounted) {
+      _height.text = picked.round().toString();
+    }
+  }
+
+  Future<void> _openWeightPicker() async {
+    final currentH = _parseDecimal(_height.text) ?? 174.0;
+    final currentW = _parseDecimal(_weight.text) ?? 72.4;
+    final picked = await showWeightBarbellDialPicker(
+      context,
+      initialWeightKg: currentW,
+      referenceHeightCm: currentH,
+    );
+    if (picked != null && mounted) {
+      _weight.text = picked.toStringAsFixed(1);
+    }
+  }
+
+  InputDecoration _inputDecoration(
+    MetaGymColors colors, {
     required String hint,
-    String? helper,
     String? suffixText,
   }) => InputDecoration(
     hintText: hint,
-    helperText: helper,
     suffixText: suffixText,
-    helperMaxLines: 2,
     errorMaxLines: 2,
-    hintStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 13),
-    helperStyle: const TextStyle(
-      color: Color(0xFFC8C2BC),
-      fontSize: 11.5,
-      height: 1.35,
-    ),
-    suffixStyle: const TextStyle(
-      color: Color(0xFFC8C2BC),
+    hintStyle: TextStyle(color: colors.textSecondary, fontSize: 13),
+    suffixStyle: TextStyle(
+      color: colors.textSecondary,
       fontSize: 12.5,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w500,
     ),
-    counterStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 11),
     filled: true,
-    fillColor: const Color(0x99211E1C),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    fillColor: colors.metricPanelBg,
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      borderSide: BorderSide(color: colors.metricPanelBorder),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      borderSide: BorderSide(color: colors.metricPanelBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.5),
+      borderSide: BorderSide(color: colors.focus, width: 1.4),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+      borderSide: BorderSide(color: colors.error),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral, width: 1.5),
+      borderSide: BorderSide(color: colors.error, width: 1.4),
     ),
   );
-
-  Widget _labeledField({required String label, required Widget field}) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFFEAE6E2),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 7),
-          field,
-        ],
-      );
 
   Future<void> _save() async {
     if (_saving || !_formKey.currentState!.validate()) return;
@@ -203,8 +260,8 @@ class _MemberHealthDeclarationPageState
       );
       return;
     }
-    if (_hasCondition! && _conditionDetails.text.trim().isEmpty ||
-        _hasInjury! && _injuryDetails.text.trim().isEmpty) {
+    if ((_hasCondition! && _conditionDetails.text.trim().isEmpty) ||
+        (_hasInjury! && _injuryDetails.text.trim().isEmpty)) {
       setState(() => _error = 'Hãy mô tả bệnh nền hoặc chấn thương đã chọn.');
       return;
     }
@@ -230,7 +287,9 @@ class _MemberHealthDeclarationPageState
               : null,
           'hasInjury': _hasInjury,
           'injuryDetails': _hasInjury! ? _injuryDetails.text.trim() : null,
-          'fitnessGoal': _goal.text.trim().isEmpty ? null : _goal.text.trim(),
+          'fitnessGoal': _loadedFitnessGoal?.isNotEmpty == true
+              ? _loadedFitnessGoal
+              : null,
         },
         decode: (data) => Map<String, dynamic>.from(data as Map),
       );
@@ -246,21 +305,21 @@ class _MemberHealthDeclarationPageState
     }
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, MetaGymColors colors) {
     final canPop = Navigator.of(context).canPop();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
       child: Row(
         children: [
           if (canPop) ...[
             MetaGymCircleIconButton(
-              icon: Icons.arrow_back_rounded,
+              svgAsset: MetaGymIcons.commonBack,
               tooltip: 'Quay lại',
               onTap: _saving ? null : () => Navigator.of(context).maybePop(),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 11),
           ],
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -269,20 +328,20 @@ class _MemberHealthDeclarationPageState
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: MetaGymTheme.brandOrange,
+                    color: colors.primaryText,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Khai báo thể trạng',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
-                    fontSize: 20,
+                    color: colors.textPrimary,
+                    fontSize: 19,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
                   ),
@@ -295,53 +354,59 @@ class _MemberHealthDeclarationPageState
     );
   }
 
-  Widget _buildHeroSummaryCard() {
+  Widget _buildHeroSummaryCard(MetaGymColors colors) {
     final h = _parseDecimal(_height.text);
     final w = _parseDecimal(_weight.text);
     final fat = _parseDecimal(_bodyFat.text);
     final (bmiLabel, bmiTone) = _bmiStatus;
 
     return MetaGymHeroGlassCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0x26FF5E36),
+                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x52FF5E36)),
+                  border: Border.all(
+                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.34),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.monitor_heart_outlined,
-                  color: MetaGymTheme.brandOrange,
-                  size: 20,
+                alignment: Alignment.center,
+                child: const MetaGymIcon(
+                  MetaGymIcons.healthShield,
+                  size: MetaGymIconSize.md,
+                  excludeFromSemantics: true,
                 ),
               ),
-              const SizedBox(width: 12),
-              const Expanded(
+              const SizedBox(width: 11),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Tóm tắt thể trạng',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFF7F9FC),
-                        fontSize: 15.5,
+                        color: colors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Đồng bộ trực tiếp với Huấn luyện viên phụ trách',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFC8C2BC),
-                        fontSize: 12,
+                        color: colors.textWarmMuted,
+                        fontSize: 11.5,
                       ),
                     ),
                   ],
@@ -351,35 +416,35 @@ class _MemberHealthDeclarationPageState
           ),
           const SizedBox(height: 10),
           CoachingPill(label: bmiLabel, tone: bmiTone),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: MetaGymMetricPanel(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
-                    ),
+                    onTap: _openHeightPicker,
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Chiều cao',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Color(0xFFB8B0A8),
+                            color: colors.textSecondary,
                             fontSize: 11,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Text(
                           h != null ? '${h.toStringAsFixed(0)} cm' : '-- cm',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFF7F9FC),
-                            fontSize: 16,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             fontFeatures: MetaGymTheme.tabularFigures,
                           ),
@@ -391,28 +456,28 @@ class _MemberHealthDeclarationPageState
                 const SizedBox(width: 8),
                 Expanded(
                   child: MetaGymMetricPanel(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
-                    ),
+                    onTap: _openWeightPicker,
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Cân nặng',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Color(0xFFB8B0A8),
+                            color: colors.textSecondary,
                             fontSize: 11,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Text(
                           w != null ? '${w.toStringAsFixed(1)} kg' : '-- kg',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFF7F9FC),
-                            fontSize: 16,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             fontFeatures: MetaGymTheme.tabularFigures,
                           ),
@@ -424,30 +489,29 @@ class _MemberHealthDeclarationPageState
                 const SizedBox(width: 8),
                 Expanded(
                   child: MetaGymMetricPanel(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Tỷ lệ mỡ',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Color(0xFFB8B0A8),
+                            color: colors.textSecondary,
                             fontSize: 11,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Text(
-                          fat != null ? '${fat.toStringAsFixed(1)}%' : 'Tùy chọn',
+                          fat != null ? '${fat.toStringAsFixed(1)}%' : '--',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: fat != null
-                                ? const Color(0xFFF7F9FC)
-                                : const Color(0xFFB8B0A8),
-                            fontSize: fat != null ? 16 : 13,
+                                ? colors.textPrimary
+                                : colors.textSecondary,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             fontFeatures: MetaGymTheme.tabularFigures,
                           ),
@@ -464,137 +528,311 @@ class _MemberHealthDeclarationPageState
     );
   }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.darkCanvas,
-    body: Stack(
-      fit: StackFit.expand,
+  Widget _buildNoteFieldBlock(
+    MetaGymColors colors, {
+    required String label,
+    required bool? toggleValue,
+    required ValueChanged<bool> onToggle,
+    required Key fieldKey,
+    required TextEditingController controller,
+    required String hint,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const MetaGymBackground(),
-        SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: MetaGymTheme.brandOrange,
-                        ),
-                      )
-                    : Form(
-                        key: _formKey,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            6,
-                            16,
-                            MediaQuery.paddingOf(context).bottom + 28,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textWarmMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _InlineYesNoPills(value: toggleValue, onChanged: onToggle),
+          ],
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          key: fieldKey,
+          controller: controller,
+          cursorColor: MetaGymTheme.brandOrange,
+          onChanged: (text) {
+            if (text.trim().isNotEmpty && toggleValue != true) {
+              onToggle(true);
+            } else if (_error != null) {
+              setState(() => _error = null);
+            }
+          },
+          style: TextStyle(
+            color: toggleValue == false
+                ? colors.textSecondary
+                : colors.textPrimary,
+            fontSize: 13,
+            height: 1.4,
+          ),
+          minLines: 1,
+          maxLines: 3,
+          decoration: _inputDecoration(colors, hint: hint),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Scaffold(
+      backgroundColor: colors.canvas,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _buildHeader(context, colors),
+                Expanded(
+                  child: _loading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.brandOrange,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildHeroSummaryCard(),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Trước khi thuê Coach, hãy cung cấp chỉ số cơ thể và những lưu ý về bệnh nền hoặc chấn thương. Coach sẽ dùng thông tin này để lên giáo án phù hợp.',
-                                style: TextStyle(
-                                  color: Color(0xFFC8C2BC),
-                                  fontSize: 13,
-                                  height: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _SolidFormSectionCard(
-                                icon: Icons.straighten_rounded,
-                                title: 'Chỉ số cơ thể hiện tại',
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: _labeledField(
-                                            label: 'Chiều cao · cm',
-                                            field: TextFormField(
-                                              key: const Key('health-height'),
-                                              controller: _height,
-                                              cursorColor:
-                                                  MetaGymTheme.brandOrange,
-                                              style: const TextStyle(
-                                                color: Color(0xFFF7F9FC),
-                                                fontSize: 14.5,
-                                                fontWeight: FontWeight.w600,
-                                                fontFeatures: MetaGymTheme
-                                                    .tabularFigures,
-                                              ),
-                                              keyboardType:
-                                                  const TextInputType.numberWithOptions(
-                                                    decimal: true,
-                                                  ),
-                                              decoration: _inputDecoration(
-                                                hint: 'Ví dụ: 170',
-                                                suffixText: 'cm',
-                                              ),
-                                              validator: (value) =>
-                                                  _requiredNumber(
-                                                    value,
-                                                    300,
-                                                    'chiều cao',
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: _labeledField(
-                                            label: 'Cân nặng · kg',
-                                            field: TextFormField(
-                                              key: const Key('health-weight'),
-                                              controller: _weight,
-                                              cursorColor:
-                                                  MetaGymTheme.brandOrange,
-                                              style: const TextStyle(
-                                                color: Color(0xFFF7F9FC),
-                                                fontSize: 14.5,
-                                                fontWeight: FontWeight.w600,
-                                                fontFeatures: MetaGymTheme
-                                                    .tabularFigures,
-                                              ),
-                                              keyboardType:
-                                                  const TextInputType.numberWithOptions(
-                                                    decimal: true,
-                                                  ),
-                                              decoration: _inputDecoration(
-                                                hint: 'Ví dụ: 65',
-                                                suffixText: 'kg',
-                                              ),
-                                              validator: (value) =>
-                                                  _requiredNumber(
-                                                    value,
-                                                    999.99,
-                                                    'cân nặng',
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                        )
+                      : Form(
+                          key: _formKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (_loadError != null) ...[
+                                  CoachingErrorBanner(message: _loadError!),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton.icon(
+                                      onPressed: _load,
+                                      icon: const Icon(
+                                        Icons.refresh_rounded,
+                                        size: 18,
+                                      ),
+                                      label: const Text('Tải lại hồ sơ'),
                                     ),
-                                    const SizedBox(height: 12),
-                                    _labeledField(
-                                      label: 'Tỷ lệ mỡ · % · tùy chọn',
-                                      field: TextFormField(
+                                  ),
+                                ],
+                                _buildHeroSummaryCard(colors),
+                                const SizedBox(height: 11),
+                                Text(
+                                  'Cung cấp chỉ số cơ thể và lưu ý về bệnh nền hoặc chấn thương để Coach lên giáo án an toàn, phù hợp nhất.',
+                                  style: TextStyle(
+                                    color: colors.textWarmMuted,
+                                    fontSize: 12,
+                                    height: 1.45,
+                                  ),
+                                ),
+                                const SizedBox(height: 11),
+                                // Card 2: Chỉ số cơ thể hiện tại
+                                MetaGymGlassCard(
+                                  solid: false,
+                                  padding: const EdgeInsets.all(15),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const MetaGymIcon(
+                                            MetaGymIcons.bodyMeasureTape,
+                                            size: MetaGymIconSize.sm,
+                                            excludeFromSemantics: true,
+                                          ),
+                                          const SizedBox(width: 7),
+                                          Expanded(
+                                            child: Text(
+                                              'Chỉ số cơ thể hiện tại',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: colors.textPrimary,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          InkWell(
+                                            onTap: _openHeightPicker,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                    vertical: 2,
+                                                  ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    'Chạm để đo',
+                                                    style: TextStyle(
+                                                      color: colors.primaryText,
+                                                      fontSize: 11.5,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 2),
+                                                  Icon(
+                                                    Icons.north_east_rounded,
+                                                    size: 13,
+                                                    color: colors.primaryText,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Chiều cao · cm',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: colors.textWarmMuted,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                TextFormField(
+                                                  key: const Key(
+                                                    'health-height',
+                                                  ),
+                                                  controller: _height,
+                                                  cursorColor:
+                                                      MetaGymTheme.brandOrange,
+                                                  style: TextStyle(
+                                                    color: colors.textPrimary,
+                                                    fontSize: 14.5,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontFeatures: MetaGymTheme
+                                                        .tabularFigures,
+                                                  ),
+                                                  keyboardType:
+                                                      const TextInputType.numberWithOptions(
+                                                        decimal: true,
+                                                      ),
+                                                  decoration: _inputDecoration(
+                                                    colors,
+                                                    hint: '174',
+                                                    suffixText: 'cm',
+                                                  ),
+                                                  validator: (value) =>
+                                                      _requiredNumber(
+                                                        value,
+                                                        300,
+                                                        'chiều cao',
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Cân nặng · kg',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: colors.textWarmMuted,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                TextFormField(
+                                                  key: const Key(
+                                                    'health-weight',
+                                                  ),
+                                                  controller: _weight,
+                                                  cursorColor:
+                                                      MetaGymTheme.brandOrange,
+                                                  style: TextStyle(
+                                                    color: colors.textPrimary,
+                                                    fontSize: 14.5,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontFeatures: MetaGymTheme
+                                                        .tabularFigures,
+                                                  ),
+                                                  keyboardType:
+                                                      const TextInputType.numberWithOptions(
+                                                        decimal: true,
+                                                      ),
+                                                  decoration: _inputDecoration(
+                                                    colors,
+                                                    hint: '72.4',
+                                                    suffixText: 'kg',
+                                                  ),
+                                                  validator: (value) =>
+                                                      _requiredNumber(
+                                                        value,
+                                                        999.99,
+                                                        'cân nặng',
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'Tỷ lệ mỡ · % · tùy chọn',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: colors.textWarmMuted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      TextFormField(
                                         key: const Key('health-body-fat'),
                                         controller: _bodyFat,
                                         cursorColor: MetaGymTheme.brandOrange,
-                                        style: const TextStyle(
-                                          color: Color(0xFFF7F9FC),
+                                        style: TextStyle(
+                                          color: colors.textPrimary,
                                           fontSize: 14.5,
                                           fontWeight: FontWeight.w600,
                                           fontFeatures:
@@ -605,9 +843,8 @@ class _MemberHealthDeclarationPageState
                                               decimal: true,
                                             ),
                                         decoration: _inputDecoration(
-                                          hint: 'Nếu biết, hãy nhập tỷ lệ mỡ',
-                                          helper:
-                                              'Không biết tỷ lệ mỡ? Bạn có thể để trống.',
+                                          colors,
+                                          hint: '16.8',
                                           suffixText: '%',
                                         ),
                                         validator: (value) =>
@@ -619,379 +856,192 @@ class _MemberHealthDeclarationPageState
                                                 'tỷ lệ mỡ',
                                               ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _SolidFormSectionCard(
-                                icon: Icons.medical_information_outlined,
-                                title: 'Bạn có bệnh nền không?',
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _YesNoOptionRow(
-                                      value: _hasCondition,
-                                      onChanged: (next) => setState(() {
-                                        _hasCondition = next;
-                                        _error = null;
-                                      }),
-                                    ),
-                                    if (_hasCondition == true) ...[
-                                      const SizedBox(height: 12),
-                                      _labeledField(
-                                        label: 'Thông tin bệnh nền',
-                                        field: TextField(
-                                          key: const Key(
-                                            'health-condition-details',
-                                          ),
-                                          controller: _conditionDetails,
-                                          cursorColor: MetaGymTheme.brandOrange,
-                                          style: const TextStyle(
-                                            color: Color(0xFFF7F9FC),
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 3,
-                                          maxLength: 1000,
-                                          decoration: _inputDecoration(
-                                            hint:
-                                                'Ví dụ: vấn đề tim mạch, huyết áp...',
-                                          ),
-                                        ),
-                                      ),
                                     ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _SolidFormSectionCard(
-                                icon: Icons.healing_outlined,
-                                title: 'Bạn có chấn thương cần lưu ý không?',
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _YesNoOptionRow(
-                                      value: _hasInjury,
-                                      onChanged: (next) => setState(() {
-                                        _hasInjury = next;
-                                        _error = null;
-                                      }),
-                                    ),
-                                    if (_hasInjury == true) ...[
-                                      const SizedBox(height: 12),
-                                      _labeledField(
-                                        label:
-                                            'Vị trí và tình trạng chấn thương',
-                                        field: TextField(
-                                          key: const Key(
-                                            'health-injury-details',
-                                          ),
-                                          controller: _injuryDetails,
-                                          cursorColor: MetaGymTheme.brandOrange,
-                                          style: const TextStyle(
-                                            color: Color(0xFFF7F9FC),
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 3,
-                                          maxLength: 1000,
-                                          decoration: _inputDecoration(
-                                            hint:
-                                                'Ví dụ: đầu gối trái, đang phục hồi...',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _SolidFormSectionCard(
-                                icon: Icons.flag_outlined,
-                                title: 'Mục tiêu tập luyện · tùy chọn',
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    TextField(
-                                      key: const Key('health-goal'),
-                                      controller: _goal,
-                                      cursorColor: MetaGymTheme.brandOrange,
-                                      style: const TextStyle(
-                                        color: Color(0xFFF7F9FC),
-                                        fontSize: 14,
-                                      ),
-                                      maxLength: 500,
-                                      decoration: _inputDecoration(
-                                        hint:
-                                            'Ví dụ: tăng cơ, cải thiện sức bền',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: [
-                                        for (final preset in _goalPresets)
-                                          Material(
-                                            color: _goal.text.trim() == preset
-                                                ? const Color(0x38FF5E36)
-                                                : const Color(0x99211E1C),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              side: BorderSide(
-                                                color:
-                                                    _goal.text.trim() == preset
-                                                    ? MetaGymTheme.brandOrange
-                                                    : const Color(0x9A8C8176),
-                                              ),
-                                            ),
-                                            clipBehavior: Clip.antiAlias,
-                                            child: InkWell(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              onTap: () => setState(
-                                                () => _goal.text = preset,
-                                              ),
-                                              child: ConstrainedBox(
-                                                constraints:
-                                                    const BoxConstraints(
-                                                      minHeight: 48,
-                                                    ),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 10,
-                                                      ),
-                                                  child: Center(
-                                                    widthFactor: 1,
-                                                    child: Text(
-                                                      preset,
-                                                      style: TextStyle(
-                                                        color:
-                                                            _goal.text.trim() ==
-                                                                preset
-                                                            ? const Color(
-                                                                0xFFF7F9FC,
-                                                              )
-                                                            : const Color(
-                                                                0xFFE4DAD1,
-                                                              ),
-                                                        fontSize: 12.5,
-                                                        fontWeight:
-                                                            _goal.text.trim() ==
-                                                                preset
-                                                            ? FontWeight.w700
-                                                            : FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x1F2ECC71),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: const Color(0x4D2ECC71),
                                   ),
                                 ),
-                                child: const Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      Icons.verified_user_outlined,
-                                      color: MetaGymTheme.progressGreen,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        'Coach phụ trách sẽ xem khai báo này sau khi gói có hiệu lực. Bạn có thể cập nhật bất cứ lúc nào nếu thể trạng thay đổi.',
-                                        style: TextStyle(
-                                          color: Color(0xFFD5CCBF),
-                                          fontSize: 12,
-                                          height: 1.45,
-                                        ),
+                                const SizedBox(height: 12),
+                                // Card 3: Bệnh nền & Chấn thương (1 thẻ gọn đồng bộ preview 5.4)
+                                MetaGymGlassCard(
+                                  solid: false,
+                                  padding: const EdgeInsets.all(15),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const MetaGymIcon(
+                                            MetaGymIcons.healthMedical,
+                                            size: MetaGymIconSize.sm,
+                                            excludeFromSemantics: true,
+                                          ),
+                                          const SizedBox(width: 7),
+                                          Expanded(
+                                            child: Text(
+                                              'Bệnh nền & Chấn thương',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: colors.textPrimary,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 12),
+                                      _buildNoteFieldBlock(
+                                        colors,
+                                        label: 'Tiền sử chấn thương',
+                                        toggleValue: _hasInjury,
+                                        onToggle: (next) => setState(() {
+                                          _hasInjury = next;
+                                          if (!next) _injuryDetails.clear();
+                                          _error = null;
+                                        }),
+                                        fieldKey: const Key(
+                                          'health-injury-details',
+                                        ),
+                                        controller: _injuryDetails,
+                                        hint: 'Không có chấn thương đáng lưu ý',
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _buildNoteFieldBlock(
+                                        colors,
+                                        label: 'Bệnh nền / Lưu ý y tế',
+                                        toggleValue: _hasCondition,
+                                        onToggle: (next) => setState(() {
+                                          _hasCondition = next;
+                                          if (!next) _conditionDetails.clear();
+                                          _error = null;
+                                        }),
+                                        fieldKey: const Key(
+                                          'health-condition-details',
+                                        ),
+                                        controller: _conditionDetails,
+                                        hint: 'Không có bệnh nền tim mạch hay huyết áp',
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 14),
-                              if (_error != null)
-                                CoachingErrorBanner(message: _error!),
-                              CoachingPrimaryButton(
-                                label: _saving
-                                    ? 'Đang lưu...'
-                                    : widget.submitLabel,
-                                icon: Icons.check_circle_outline_rounded,
-                                loading: _saving,
-                                onPressed: _saving ? null : _save,
-                              ),
-                            ],
+                                if (_error != null) ...[
+                                  const SizedBox(height: 12),
+                                  CoachingErrorBanner(message: _error!),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                ),
+                if (!_loading)
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isLight
+                          ? colors.overlayGlass
+                          : const Color(0xF0181513),
+                      border: Border(
+                        top: BorderSide(
+                          color: colors.liquidGlassBorder.withValues(
+                            alpha: 0.65,
                           ),
                         ),
                       ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Level 1 Warm Smoked Surface Card (`featured: false`, no BackdropFilter behind dense forms).
-class _SolidFormSectionCard extends StatelessWidget {
-  const _SolidFormSectionCard({
-    required this.icon,
-    required this.title,
-    required this.child,
-  });
-
-  final IconData icon;
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return MetaGymGlassCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: MetaGymTheme.brandOrange, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: MetaGymTheme.brandOrange,
+                              foregroundColor: MetaGymTheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  MetaGymTheme.radiusInput,
+                                ),
+                              ),
+                            ),
+                            onPressed: _saving ? null : _save,
+                            child: Text(
+                              _saving ? 'Đang lưu...' : widget.submitLabel,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          child,
         ],
       ),
     );
   }
 }
 
-class _YesNoOptionRow extends StatelessWidget {
-  const _YesNoOptionRow({required this.value, required this.onChanged});
+class _InlineYesNoPills extends StatelessWidget {
+  const _InlineYesNoPills({required this.value, required this.onChanged});
 
   final bool? value;
-  final ValueChanged<bool?> onChanged;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _ChoiceTile(
-            label: 'Không',
-            selected: value == false,
-            onTap: () => onChanged(false),
+    final colors = MetaGymColors.of(context);
+    Widget buildChip(String label, bool optionValue) {
+      final selected = value == optionValue;
+      return Semantics(
+        button: true,
+        selected: selected,
+        child: Material(
+          color: selected
+              ? MetaGymTheme.brandOrange.withValues(alpha: 0.20)
+              : colors.metricPanelBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+            side: BorderSide(
+              color: selected
+                  ? MetaGymTheme.brandOrange
+                  : colors.metricPanelBorder,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _ChoiceTile(
-            label: 'Có',
-            selected: value == true,
-            onTap: () => onChanged(true),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChoiceTile extends StatelessWidget {
-  const _ChoiceTile({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      inMutuallyExclusiveGroup: true,
-      selected: selected,
-      button: true,
-      label: label,
-      child: Material(
-        animationDuration: MetaGymTheme.stateDurationOf(context),
-        color: selected
-            ? MetaGymTheme.brandOrange.withValues(alpha: 0.22)
-            : const Color(0x99211E1C),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          side: BorderSide(
-            color: selected
-                ? MetaGymTheme.brandOrange
-                : const Color(0x9A8C8176),
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: MetaGymTap(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 48),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Icon(
-                  selected
-                      ? Icons.radio_button_checked_rounded
-                      : Icons.radio_button_off_rounded,
-                  color: selected
-                      ? MetaGymTheme.brandOrange
-                      : const Color(0xFFB8B0A8),
-                  size: 18,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => onChanged(optionValue),
+            borderRadius: BorderRadius.circular(999),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected ? colors.primaryText : colors.textSecondary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: selected
-                          ? const Color(0xFFF7F9FC)
-                          : const Color(0xFFEAE6E2),
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        buildChip('Không', false),
+        const SizedBox(width: 6),
+        buildChip('Có', true),
+      ],
     );
   }
 }
