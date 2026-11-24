@@ -106,6 +106,89 @@ window.METAGYM_NOTES = [
             note: 'Định nghĩa toàn bộ token màu Sáng/Tối (surface, border, semantic, glass) tại một nơi duy nhất để mọi màn hình, Modal và Toast tự đổi màu không cần if/else rải rác.'
           }
         ]
+      },
+      {
+        title: 'Thang Cỡ Chữ Chuẩn Mobile — 8 Bậc Số Nguyên (Be Vietnam Pro)',
+        summary: 'Chuẩn hóa toàn bộ ứng dụng về đúng 8 bậc cỡ chữ số nguyên (11 / 12 / 14 / 15 / 16 / 20 / 22 / 28px), xóa hoàn toàn cỡ < 11px và số lẻ .5px để Tiếng Việt có dấu kép đọc sắc nét trên màn 375–393px.',
+        details: [
+          'Micro (11px · w700): Sàn tuyệt đối, chỉ dùng cho nhãn in hoa giãn chữ (.mg-eyebrow: META GYM), badge số thông báo (2, 3), ngày ngắn (T2–CN), vạch thước đo và nhãn phụ cực gọn. Cấm dùng cỡ < 11px.',
+          'Label / Metadata (12px · w500–600): Sàn đọc chuẩn cho Tiếng Việt có dấu (.txt-xs, nhãn 4 ô Dock, pill trạng thái, label form, giờ tin nhắn, chỉ số phụ).',
+          'Body Chuẩn (14px · w400–600): Nội dung đọc chính trên thẻ (.txt-sm), ô nhập liệu (Input), bong bóng Chat AI/Coach, nút phụ (.btn-secondary), danh sách bài tập.',
+          'Body Lớn / CTA (15px · w400/700): Nút hành động chính (.btn-primary), nội dung bài viết / hướng dẫn tập luyện.',
+          'Tiêu đề Mục & Thẻ (16px · w700): Tiêu đề mục (.sec-head h3) và tiêu đề thẻ nổi bật.',
+          'Tiêu đề Màn hình (20px · w700): Tiêu đề AppBar (.mg-title), kết hợp maxLines: 1 + TextOverflow.ellipsis.',
+          'Headline (22px · w800) & KPI Data (28px · w700–800 · tnum): Tiêu đề chào mừng Auth / Hero và chỉ số KPI lớn (42 ngày, 1.840 kcal, giá gói tập — bắt buộc bật FontFeature.tabularFigures()).'
+        ],
+        techStack: [
+          {
+            name: 'TextTheme trong MetaGymTheme (app_theme.dart)',
+            status: 'Đã có nền tảng',
+            note: 'Map trực tiếp 8 bậc vào labelSmall(11), labelMedium(12), bodyMedium(14), bodyLarge(15), titleMedium(16), titleLarge(20), headlineSmall(22), displaySmall(28) kèm fontFamily Be Vietnam Pro.'
+          },
+          {
+            name: 'FontFeature.tabularFigures() (tnum)',
+            status: 'Đã có trong MetaGymTheme',
+            note: 'Áp dụng cho mọi số liệu đếm (calo, macro, số ngày còn lại, giá VNĐ, giờ hẹn, đồng hồ nghỉ) để cột số không bị rung lệch khi thay đổi.'
+          },
+          {
+            name: 'MediaQuery.textScalerOf(context) + maxLines',
+            status: 'Có sẵn trong Flutter',
+            note: 'Hỗ trợ phóng to cỡ chữ hệ thống (Dynamic Type) mà không gây lỗi RenderFlex overflow nhờ Expanded/Flexible và ellipsis trên các thẻ 2 cột / Quick Dock ở 375px.'
+          }
+        ]
+      },
+      {
+        title: 'Đồng bộ Khung Quang Học Icon SVG (82% Live Area · 20 / 24 / 29 / 34 / 38px)',
+        summary: 'Toàn bộ 293 icon UI SVG đã được chuẩn hóa viewBox để hình vẽ chiếm đúng 82% khung vuông và căn tâm tuyệt đối; toàn bộ nhóm icon điều khiển được phóng lớn nổi bật, dễ bấm trên điện thoại.',
+        details: [
+          'Chuẩn hóa viewBox 293 tệp .svg (từ tình trạng lệch 52%–87.5% trước đây về đồng đều 81.3%–82.8%, tâm 50%/50%) mà không làm hỏng gradient hay độ dày nét.',
+          'Thống nhất 5 mức khung chuẩn: 20px (.ico-xs · badge/pill), 24px (.ico-sm · tiêu đề mục/input/row), 29px (.ico-md · nút tròn điều khiển 46×46dp trên Header), 34px (.nav-svg & QR · thanh Bottom Navigation 64px), 38px (.ico-lg, .ico-dock & .nav-ai-svg · Quick Dock 4 ô & nút AI 56×56dp trung tâm).'
+        ],
+        techStack: [
+          {
+            name: 'flutter_svg (SvgPicture.asset với hằng số kích cỡ chuẩn)',
+            status: 'Đã có trong pubspec',
+            note: 'Dev truyền đúng bộ hằng số 20 / 24 / 29 / 34 / 38 (dp) — toàn bộ icon điều khiển hiển thị to rõ, đồng đều nhau mà không cần cộng trừ padding thủ công.'
+          }
+        ]
+      },
+      {
+        title: 'Bảo vệ Chân Màn Hình (Bottom Safe Area & Khoảng Thở Đáy)',
+        summary: 'Mọi màn hình, thanh điều hướng đáy, thanh nút CTA ghim đáy, ô nhập tin nhắn và Bottom Sheet đều bắt buộc chừa khoảng đệm an toàn phía trên thanh vuốt Home Indicator / thanh điều hướng Android.',
+        details: [
+          'Màn hình không có Bottom Nav (Chi tiết, Thanh toán, Auth, Pháp lý): luôn có khoảng đệm đáy tối thiểu 48px (34px vùng Home Indicator + 14px khoảng thở) để thẻ cuối cùng không bao giờ dính sát mép màn hình.',
+          'Thanh điều hướng đáy (Bottom Navigation nổi): đặt cách chân màn hình tối thiểu 24px (cao hơn hẳn thanh Home Indicator) và danh sách cuộn bên dưới chừa padding-bottom 132px để nội dung cuối cuộn lên thoáng hoàn toàn.',
+          'Thanh nút CTA ghim đáy & Ô nhập Chat (.bottom-cta-dock): luôn có padding-bottom tối thiểu 34px (kèm MediaQuery.viewInsets.bottom khi bàn phím ảo bật lên), danh sách phía trên chừa 118px.',
+          'Khung nhập Chat AI phía trên Bottom Nav đặt cách đáy 96px, nội dung hội thoại chừa 206px để không bao giờ bị che tin nhắn cuối.'
+        ],
+        techStack: [
+          {
+            name: 'SafeArea(top: false, bottom: true) + MediaQuery.viewPaddingOf(context)',
+            status: 'Có sẵn trong Flutter',
+            note: 'Bọc mọi thanh CTA ghim đáy, BottomSheet và dùng viewPadding.bottom + 16–24dp làm khoảng đệm tối thiểu cho mọi ListView/SingleChildScrollView.'
+          },
+          {
+            name: 'MetaGymBottomNav.contentBottomPadding(context)',
+            status: 'Đã có trong core widgets',
+            note: 'Tái sử dụng helper chuẩn trên toàn bộ màn hình có Bottom Nav (Member & Coach) để đảm bảo phần tử cuối không bao giờ lấp sau thanh điều hướng.'
+          }
+        ]
+      },
+      {
+        title: 'Linh vật Thương hiệu Meta Kong (10 Tư Thế Studio WebP Nền Trong Suốt)',
+        summary: 'Trọn bộ 10 tư thế linh vật Meta Kong (Hero, Empty, Offline, Error, Loading, Streak, Maintenance, Update, Session, Membership Promo) xuất ở định dạng 512×512 Transparent WebP (38–55 KB/tệp) hiển thị sắc nét trên cả Dark Mode và Light Mode.',
+        details: [
+          'Sử dụng ảnh Transparent WebP trong design-system/meta-gym/assets/images/mascot/ thay cho vector 2D để giữ trọn khối cơ bắp, biểu cảm thân thiện và ánh sáng viền Cool Rim Light #A9C7E8.',
+          'Gắn điểm nhấn có tiết chế vào các điểm chạm giàu cảm xúc: Màn hình Trạng thái Hệ thống (Empty / Offline / Error / Loading / Streak), Banner cổ vũ chuỗi ngày tập trên Trang chủ (1.1), Màn Chọn gói tập trống (1.2b), Trợ lý AI (3.1) và lời chào Đăng nhập (Auth).',
+          'Khi thiết kế thêm tư thế mới, dùng script tách nền chuẩn scripts/cutout_mascot.js để đồng bộ viền sạch, tỉ lệ khung 89.8% và cập nhật bảng tổng quan Dark + Light.'
+        ],
+        techStack: [
+          {
+            name: 'Image.asset (Transparent WebP 512×512)',
+            status: 'Có sẵn trong Flutter',
+            note: 'Nạp trực tiếp assets/images/mascot/meta_kong_*.webp (38–56 KB), không áp ColorFilter đảo màu ở Light Mode; đề xuất 136–164dp cho Modal/Empty toàn trang và 48–78dp cho Banner gọn.'
+          }
+        ]
       }
     ]
   }

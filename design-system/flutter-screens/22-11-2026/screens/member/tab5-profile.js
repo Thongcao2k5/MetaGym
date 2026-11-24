@@ -19,7 +19,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
         <div class="phone-body">
           <div class="mg-header">
-            <div class="mg-logo">MG</div>
+            <div class="mg-logo"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">META GYM</div>
               <div class="mg-title">Hồ sơ</div>
@@ -30,11 +30,11 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-warm-glass">
             <div class="row" style="gap:12px;">
               <div style="position:relative;cursor:pointer;" data-open-avatar title="Đổi ảnh đại diện">
-                <div class="avatar-member" style="width:60px;height:60px;font-size:19px;">MQ</div>
+                <div class="avatar-member" style="width:60px;height:60px;font-size:20px;">MQ</div>
                 <div style="position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:#2B2622;border:1px solid #B3A99D;display:flex;align-items:center;justify-content:center;"><img class="ico-xs" src="../../meta-gym/assets/svg/setting/common_camera.svg" alt="Đổi ảnh" /></div>
               </div>
               <div style="flex:1;min-width:0;">
-                <div style="font-size:18px;font-weight:700;line-height:1.2;">Nguyễn Minh Quân</div>
+                <div style="font-size:20px;font-weight:700;line-height:1.2;">Nguyễn Minh Quân</div>
                 <div class="row" style="gap:8px;margin-top:3px;">
                   <span class="txt-xs" style="color:var(--text-secondary);">Hội viên</span>
                   <span class="txt-xs txt-green txt-bold">● Đang hoạt động</span>
@@ -46,7 +46,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <!-- 3 _ProfileCategoryCard Accordions (Bấm tiêu đề để thu gọn / mở rộng) -->
+          <!-- 3 _ProfileCategoryCard Accordions (Mặc định mở rộng toàn bộ để thấy ngay mọi mục) -->
           <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
               <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_personal_info.svg" alt="Cá nhân" /><strong class="txt-sm">Cá nhân &amp; thể trạng</strong></div>
@@ -60,7 +60,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="card-liquid accordion-card" style="padding:13px 14px;">
+          <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
               <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tập luyện" /><strong class="txt-sm">Tập luyện &amp; dịch vụ</strong></div>
               <div class="row" style="gap:6px;"><span class="count-pill">3</span><span class="accordion-chev">›</span></div>
@@ -73,7 +73,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="card-liquid accordion-card" style="padding:13px 14px;">
+          <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
               <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_security_shield.svg" alt="Tài khoản" /><strong class="txt-sm">Tài khoản &amp; hỗ trợ</strong></div>
               <div class="row" style="gap:6px;"><span class="count-pill">5</span><span class="accordion-chev">›</span></div>
@@ -109,12 +109,12 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div style="width:56px;height:56px;border-radius:50%;margin:0 auto 12px;background:rgba(241,91,100,0.16);border:1px solid rgba(241,91,100,0.45);display:flex;align-items:center;justify-content:center;">
               <img class="ico-md" src="../../meta-gym/assets/svg/setting/setting_logout.svg" alt="Đăng xuất" style="background:transparent;padding:0;" />
             </div>
-            <div style="font-size:17px;font-weight:800;color:var(--text-primary);">Đăng xuất tài khoản?</div>
-            <div style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 12px;line-height:1.5;">
+            <div style="font-size:16px;font-weight:800;color:var(--text-primary);">Đăng xuất tài khoản?</div>
+            <div style="font-size:14px;color:var(--text-secondary);margin:6px 0 12px;line-height:1.5;">
               Bạn sẽ cần đăng nhập lại để quẹt thẻ NFC, xem lịch Coach và đồng bộ nhật ký tập luyện.
             </div>
             <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:14px;text-align:left;">
-              <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);">Nguyễn Minh Quân</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);">Nguyễn Minh Quân</div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">minhquan@metagym.vn · Hội viên Hạng Vàng</div>
             </div>
             <div class="grid-2" style="gap:10px;">
@@ -157,7 +157,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div style="position:relative;cursor:pointer;" data-open-avatar title="Đổi ảnh đại diện">
                 <div class="avatar-ln" style="width:64px;height:64px;font-size:20px;border:1.8px solid var(--primary);">MQ</div>
                 <div style="position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:var(--primary);border:2px solid #282320;display:flex;align-items:center;justify-content:center;">
-                  <img src="../../meta-gym/assets/svg/setting/common_camera.svg" alt="Đổi ảnh" style="width:14px;height:14px;background:transparent;padding:0;" />
+                  <img class="ico-xs" src="../../meta-gym/assets/svg/setting/common_camera.svg" alt="Đổi ảnh" />
                 </div>
               </div>
               <div style="flex:1;min-width:0;">
@@ -201,7 +201,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               </div>
             </div>
 
-            <div style="font-size:12.5px;font-weight:600;color:var(--text-secondary);margin:12px 0 8px;">Giới tính</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:12px 0 8px;">Giới tính</div>
             <div class="row" style="flex-wrap:wrap;gap:8px;">
               <span class="filter-pill active">Nam</span>
               <span class="filter-pill">Nữ</span>
@@ -246,9 +246,9 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-liquid" style="padding:15px;">
             <div class="row" style="gap:7px;margin-bottom:8px;">
               <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_training_goal.svg" alt="Mục tiêu" />
-              <strong style="font-size:13.5px;">Mục tiêu tập luyện</strong>
+              <strong style="font-size:14px;">Mục tiêu tập luyện</strong>
             </div>
-            <div class="input-box focus" style="height:auto;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.4;">
+            <div class="input-box focus" style="height:auto;padding:10px 12px;margin-bottom:10px;font-size:14px;line-height:1.4;">
               Tăng cơ giảm mỡ · Duy trì 4 buổi/tuần
             </div>
             <div class="row" style="flex-wrap:wrap;gap:6px;">
@@ -264,7 +264,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="row-between" style="margin-bottom:10px;">
               <div class="row" style="gap:7px;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/progress/body_measure_tape.svg" alt="Chỉ số" />
-                <strong style="font-size:13.5px;">Chiều cao &amp; Cân nặng</strong>
+                <strong style="font-size:14px;">Chiều cao &amp; Cân nặng</strong>
               </div>
               <span class="pill pill-success tnum" data-bmi-pill>● BMI 23.9 · Bình thường</span>
             </div>
@@ -272,7 +272,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="metric-box" style="padding:11px 12px;cursor:pointer;border:1px solid rgba(255,94,54,0.28);" data-open-body-picker="height" data-value="174">
                 <div class="row-between" style="margin-bottom:4px;">
                   <span class="txt-xs">Chiều cao</span>
-                  <span style="font-size:10px;color:var(--primary);font-weight:700;">Laser ↗</span>
+                  <span style="font-size:12px;color:var(--primary);font-weight:700;">Laser ↗</span>
                 </div>
                 <div class="tnum txt-orange" style="font-size:20px;font-weight:800;line-height:1.1;" data-height-readout>174 cm</div>
                 <div class="txt-xs tnum" style="margin-top:3px;" data-height-ft>5'9"</div>
@@ -280,7 +280,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="metric-box" style="padding:11px 12px;cursor:pointer;border:1px solid rgba(112,174,232,0.32);" data-open-body-picker="weight" data-value="72.4">
                 <div class="row-between" style="margin-bottom:4px;">
                   <span class="txt-xs">Cân nặng</span>
-                  <span style="font-size:10px;color:var(--info);font-weight:700;">Cân tạ ↗</span>
+                  <span style="font-size:12px;color:var(--info);font-weight:700;">Cân tạ ↗</span>
                 </div>
                 <div class="tnum" style="font-size:20px;font-weight:800;line-height:1.1;color:var(--text-primary);" data-summary-weight>72.4 kg</div>
                 <div class="txt-xs tnum" style="margin-top:3px;" data-weight-lbs>159.6 lbs</div>
@@ -290,14 +290,14 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <!-- Card 3: Trình độ & Mức độ vận động -->
           <div class="card-liquid" style="padding:15px;">
-            <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Trình độ tập luyện</div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Trình độ tập luyện</div>
             <div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:16px;">
               <span class="filter-pill">Mới bắt đầu</span>
               <span class="filter-pill active">Trung cấp</span>
               <span class="filter-pill">Nâng cao</span>
             </div>
 
-            <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Mức độ vận động hàng ngày</div>
+            <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Mức độ vận động hàng ngày</div>
             <div class="row" style="flex-wrap:wrap;gap:8px;">
               <span class="filter-pill">Ít vận động</span>
               <span class="filter-pill active">Trung bình</span>
@@ -402,13 +402,13 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
             <div class="field">
               <label>Tiền sử chấn thương</label>
-              <div class="input-box" style="height:auto;padding:10px 12px;font-size:13px;line-height:1.4;">
+              <div class="input-box" style="height:auto;padding:10px 12px;font-size:14px;line-height:1.4;">
                 Đau nhẹ khớp vai phải khi đẩy tạ nặng trên 80 kg
               </div>
             </div>
             <div class="field" style="margin-bottom:0;">
               <label>Bệnh nền / Lưu ý y tế</label>
-              <div class="input-box" style="font-size:13px;">Không có bệnh nền tim mạch hay huyết áp</div>
+              <div class="input-box" style="font-size:14px;">Không có bệnh nền tim mạch hay huyết áp</div>
             </div>
           </div>
         </div>
@@ -543,8 +543,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <span class="pill pill-success">Hiệu lực</span>
             </div>
             <div class="grid-2" style="margin-bottom:12px;">
-              <div class="metric-box"><div class="txt-xs">Buổi PT còn lại</div><div class="tnum txt-bold" style="font-size:18px;">14 / 24</div></div>
-              <div class="metric-box"><div class="txt-xs">Hết hạn gói</div><div class="tnum txt-bold" style="font-size:18px;">03/01/27</div></div>
+              <div class="metric-box"><div class="txt-xs">Buổi PT còn lại</div><div class="tnum txt-bold" style="font-size:20px;">14 / 24</div></div>
+              <div class="metric-box"><div class="txt-xs">Hết hạn gói</div><div class="tnum txt-bold" style="font-size:20px;">03/01/27</div></div>
             </div>
             <button class="btn-primary">Xem lịch với Coach</button>
           </div>
@@ -572,7 +572,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="card-liquid" style="padding:12px;text-align:center;color:var(--error);font-size:13px;font-weight:600;">
+          <div class="card-liquid" style="padding:12px;text-align:center;color:var(--error);font-size:14px;font-weight:600;">
             Yêu cầu kết thúc sớm gói Coach
           </div>
         </div>
@@ -608,7 +608,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div style="width:62px;height:62px;border-radius:50%;margin:0 auto 12px;background:rgba(255,94,54,0.16);border:1px solid rgba(255,94,54,0.45);display:flex;align-items:center;justify-content:center;">
               <img class="ico-lg" src="../../meta-gym/assets/svg/states/empty_coach.svg" alt="Chưa có Coach" style="background:transparent;padding:0;" />
             </div>
-            <div style="font-size:18px;font-weight:800;">Chưa có Coach</div>
+            <div style="font-size:20px;font-weight:800;">Chưa có Coach</div>
             <div class="txt-xs" style="margin:6px 0 18px;line-height:1.5;">
               Xem hồ sơ, lịch làm việc và các gói huấn luyện trước khi chọn Coach đồng hành cho mình.
             </div>

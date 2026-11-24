@@ -20,7 +20,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         <div class="phone-body">
           <!-- _buildHeader -->
           <div class="mg-header">
-            <div class="mg-logo">MG</div>
+            <div class="mg-logo"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">META GYM</div>
               <div class="mg-title">Tin nhắn</div>
@@ -41,8 +41,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-liquid featured" data-go="member-chat-detail" style="padding:11px 12px;cursor:pointer;">
             <div class="row" style="gap:6px;margin-bottom:7px;">
               <img class="ico-xs" src="../../meta-gym/assets/svg/community/comm_chat.svg" alt="Coach cá nhân" />
-              <strong style="font-size:10.5px;letter-spacing:0.05em;">COACH CÁ NHÂN</strong>
-              <span class="pill" style="background:rgba(35,201,151,0.16);color:var(--success);font-size:9px;padding:1px 6px;">● Đang hoạt động</span>
+              <strong style="font-size:12px;letter-spacing:0.05em;">COACH CÁ NHÂN</strong>
+              <span class="pill" style="background:rgba(35,201,151,0.16);color:var(--success);font-size:11px;padding:1px 6px;">● Đang hoạt động</span>
             </div>
             <div class="row">
               <div class="avatar-ln">LN</div>
@@ -106,19 +106,19 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="avatar-ln" style="width:36px;height:36px;font-size:12px;">LN</div>
             <div class="mg-header-text">
-              <div class="mg-title" style="font-size:15.5px;">Lê Hoàng Nam</div>
+              <div class="mg-title" style="font-size:16px;">Lê Hoàng Nam</div>
               <div class="txt-xs txt-green">● Đang hoạt động · Coach 1:1</div>
             </div>
             <div class="circle-btn"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/call_audio_badge.svg" alt="Gọi thoại" /></div>
           </div>
 
           <div style="text-align:center;margin:4px 0 12px;">
-            <span class="pill pill-muted tnum" style="font-size:10px;">Hôm nay · 22/11/2026</span>
+            <span class="pill pill-muted tnum" style="font-size:11px;">Hôm nay · 22/11/2026</span>
           </div>
 
           <!-- Coach (Trái) -->
           <div class="chat-row-ai">
-            <div class="avatar-ln" style="width:28px;height:28px;font-size:10px;flex-shrink:0;">LN</div>
+            <div class="avatar-ln" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">LN</div>
             <div style="flex:1;min-width:0;">
               <div class="chat-bubble-ai">
                 Chào Quân, tối nay <strong>18:00</strong> anh đợi ở khu Free Weight nhé! Nhớ khởi động khớp vai 5 phút trước khi đẩy Bench Press.
@@ -137,7 +137,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <!-- Coach (Trái) -->
           <div class="chat-row-ai">
-            <div class="avatar-ln" style="width:28px;height:28px;font-size:10px;flex-shrink:0;">LN</div>
+            <div class="avatar-ln" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">LN</div>
             <div style="flex:1;min-width:0;">
               <div class="chat-bubble-ai">
                 Tuyệt vời! Nay anh xếp sẵn cặp tạ <strong>Incline Dumbbell 24kg</strong> và lịch đo InBody cuối tuần này cho em luôn.
@@ -159,10 +159,10 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           </div>
         </div>
 
-        <div class="bottom-cta-dock" style="padding:10px 14px 16px;">
+        <div class="bottom-cta-dock" style="padding:10px 14px var(--safe-bottom);">
           <div class="row" style="gap:8px;">
             <div class="circle-btn" style="width:40px;height:40px;"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/media_gallery.svg" alt="Gửi ảnh" /></div>
-            <div class="input-box" style="flex:1;height:42px;color:var(--text-secondary);font-size:13px;">Nhập tin nhắn cho Coach...</div>
+            <div class="input-box" style="flex:1;height:42px;color:var(--text-secondary);font-size:14px;">Nhập tin nhắn cho Coach...</div>
             <div style="width:42px;height:42px;border-radius:13px;background:var(--primary);color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">↑</div>
           </div>
         </div>

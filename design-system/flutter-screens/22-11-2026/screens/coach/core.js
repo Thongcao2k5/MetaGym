@@ -20,14 +20,14 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
         <div class="phone-body">
           <!-- _buildHeader (MG + META GYM · COACH / Xin chào + Bell badge + LN avatar) -->
           <div class="mg-header" style="margin-bottom:4px;">
-            <div class="mg-logo">MG</div>
+            <div class="mg-logo"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">META GYM · COACH</div>
               <div class="mg-title">Xin chào, Lê Hoàng Nam</div>
             </div>
             <div style="position:relative;">
               <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/setting_notifications_bell.svg" alt="Thông báo" /></div>
-              <span class="tnum" style="position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--primary);border:2px solid var(--bg-canvas);font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span>
+              <span class="tnum" style="position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--primary);border:2px solid var(--bg-canvas);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span>
             </div>
             <div class="avatar-ln" style="width:40px;height:40px;">LN</div>
           </div>
@@ -48,9 +48,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               <span class="pill pill-success">Đang nhận lịch</span>
             </div>
             <div class="grid-3">
-              <div class="metric-box" style="text-align:center;padding:8px 4px;"><div class="tnum txt-bold" style="font-size:17px;">4</div><div class="txt-xs">Ca dạy</div></div>
-              <div class="metric-box" style="text-align:center;padding:8px 4px;"><div class="tnum txt-bold txt-green" style="font-size:17px;">12</div><div class="txt-xs">Học viên</div></div>
-              <div class="metric-box" style="text-align:center;padding:8px 4px;"><div class="tnum txt-bold txt-orange" style="font-size:17px;">6/7</div><div class="txt-xs">Ngày mở</div></div>
+              <div class="metric-box" style="text-align:center;padding:8px 4px;"><div class="tnum txt-bold" style="font-size:16px;">4</div><div class="txt-xs">Ca dạy</div></div>
+              <div class="metric-box" style="text-align:center;padding:8px 4px;"><div class="tnum txt-bold txt-green" style="font-size:16px;">12</div><div class="txt-xs">Học viên</div></div>
+              <div class="metric-box" style="text-align:center;padding:8px 4px;"><div class="tnum txt-bold txt-orange" style="font-size:16px;">6/7</div><div class="txt-xs">Ngày mở</div></div>
             </div>
           </div>
 
@@ -108,7 +108,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
         <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
         <div class="phone-body">
           <div class="mg-header">
-            <div class="mg-logo">MG</div>
+            <div class="mg-logo"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">META GYM · COACH</div>
               <div class="mg-title">Lịch dạy</div>
@@ -142,7 +142,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
             <div class="txt-xs" style="margin:3px 0 10px;">Upper Body · Sức mạnh · Khung 90 phút</div>
             <div class="grid-2">
               <span class="btn-secondary">Hủy buổi dạy</span>
-              <span class="btn-primary" style="height:38px;font-size:12.5px;">Hoàn thành ca</span>
+              <span class="btn-primary" style="height:38px;font-size:14px;">Hoàn thành ca</span>
             </div>
           </div>
 
@@ -195,7 +195,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           <div class="sec-head" style="margin-top:4px;"><h3>Đang phụ trách</h3><span class="txt-xs tnum">12 hội viên</span></div>
           <div class="card-liquid" style="padding:13px;">
             <div class="row">
-              <div class="avatar-member" style="width:40px;height:40px;font-size:13px;">MQ</div>
+              <div class="avatar-member" style="width:40px;height:40px;font-size:14px;">MQ</div>
               <div style="flex:1;min-width:0;">
                 <div class="row-between">
                   <strong class="txt-sm">Nguyễn Minh Quân</strong>
@@ -209,7 +209,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
 
           <div class="card-liquid" style="padding:13px;">
             <div class="row">
-              <div class="avatar-member" style="width:40px;height:40px;font-size:13px;background:#262A34;">TV</div>
+              <div class="avatar-member" style="width:40px;height:40px;font-size:14px;background:#262A34;">TV</div>
               <div style="flex:1;min-width:0;">
                 <div class="row-between">
                   <strong class="txt-sm">Trần Thảo Vy</strong>
@@ -259,7 +259,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           <div class="card-warm-glass" style="padding:13px;">
             <div class="row-between">
               <div class="row">
-                <div class="avatar-member" style="width:38px;height:38px;font-size:12.5px;">MQ</div>
+                <div class="avatar-member" style="width:38px;height:38px;font-size:14px;">MQ</div>
                 <div>
                   <div class="txt-sm txt-bold">Nguyễn Minh Quân</div>
                   <div class="txt-xs">Đang áp dụng: Giáo trình tăng cơ 8 tuần</div>
@@ -317,7 +317,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           <div class="card-warm-glass" style="padding:13px;">
             <div class="row-between">
               <div class="row">
-                <div class="avatar-member" style="width:38px;height:38px;font-size:12.5px;">MQ</div>
+                <div class="avatar-member" style="width:38px;height:38px;font-size:14px;">MQ</div>
                 <div>
                   <div class="txt-sm txt-bold">Nguyễn Minh Quân</div>
                   <div class="txt-xs tnum">Mục tiêu: 2.200 kcal · 160g đạm/ngày</div>

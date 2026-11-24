@@ -17,19 +17,22 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         <div class="phone-scrim"></div>
         <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
 
-        <div class="phone-body" style="padding-bottom:192px;">
+        <div class="phone-body" style="padding-bottom:206px;">
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
-              <div class="mg-title" style="font-size:17px;">Tư vấn đạm sau buổi tập</div>
+              <div class="mg-title" style="font-size:16px;">Tư vấn đạm sau buổi tập</div>
             </div>
           </div>
 
-          <!-- Disclaimer Card (đúng code thực tế dòng 233) -->
+          <!-- Meta Kong AI Companion + Disclaimer Card -->
           <div class="card-liquid" style="padding:10px 12px;margin-bottom:14px;">
-            <div class="row" style="gap:8px;align-items:flex-start;">
-              <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_info.svg" alt="Lưu ý" />
-              <div class="txt-xs" style="color:var(--text-warm-muted);">Nội dung AI chỉ để tham khảo; không thay thế tư vấn y tế hoặc huấn luyện cá nhân.</div>
+            <div class="row" style="gap:10px;align-items:center;">
+              <img src="../../meta-gym/assets/images/mascot/meta_kong_hero.webp?v=20261124m4" alt="Meta Kong AI" style="width:52px;height:52px;flex-shrink:0;display:block;object-fit:contain;" />
+              <div style="flex:1;min-width:0;">
+                <div class="txt-xs txt-orange txt-bold" style="margin-bottom:2px;">Meta Kong · Trợ lý AI Meta Gym</div>
+                <div class="txt-xs" style="color:var(--text-warm-muted);line-height:1.35;">Nội dung AI chỉ để tham khảo; không thay thế tư vấn y tế hoặc huấn luyện cá nhân.</div>
+              </div>
             </div>
           </div>
 
@@ -78,14 +81,14 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         </div>
 
         <!-- Thanh nhập câu hỏi + gợi ý nhanh cố định phía trên Bottom Nav -->
-        <div class="ai-composer-dock" style="position:absolute;left:0;right:0;bottom:84px;z-index:9;padding:8px 14px 10px;background:linear-gradient(180deg,rgba(15,17,21,0) 0%,rgba(15,17,21,0.92) 24%,rgba(15,17,21,0.98) 100%);">
+        <div class="ai-composer-dock" style="position:absolute;left:0;right:0;bottom:96px;z-index:9;padding:8px 14px 10px;background:linear-gradient(180deg,rgba(15,17,21,0) 0%,rgba(15,17,21,0.92) 24%,rgba(15,17,21,0.98) 100%);">
           <div class="filter-row" style="margin-bottom:7px;padding-bottom:0;">
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Gợi ý bữa phụ 25g đạm</span>
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Chỉnh form Bench Press</span>
             <span class="filter-pill" style="font-size:11px;padding:5px 11px;">Lịch phục hồi vai</span>
           </div>
           <div class="row" style="gap:8px;">
-            <div class="input-box" style="flex:1;height:44px;color:var(--text-secondary);font-size:13px;">Nhập câu hỏi cho Trợ lý AI...</div>
+            <div class="input-box" style="flex:1;height:44px;color:var(--text-secondary);font-size:14px;">Nhập câu hỏi cho Trợ lý AI...</div>
             <div style="width:44px;height:44px;border-radius:14px;background:var(--primary);color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;">↑</div>
           </div>
         </div>

@@ -3,13 +3,14 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Meta Gym — Flutter Full-Data Screen Preview Studio</title>
+  <link rel="icon" type="image/svg+xml" href="../../meta-gym/assets/svg/brand/app_icon_mark.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="./tokens.css?v=20261123l" />
+  <link rel="stylesheet" href="./tokens.css?v=20261124n" />
 </head>
 
 <body>
@@ -20,26 +21,21 @@
       <div class="studio-brand">
         <a href="../../index.html" class="ctrl-btn"
           style="text-decoration:none;display:inline-flex;align-items:center;">← Hub</a>
-        <div class="mg-logo" style="width:34px;height:34px;font-size:12px;border-radius:10px;">MG</div>
-        <div>
-          <h1>Flutter Screen Preview — Bám sát code thực tế (Full Data)</h1>
-          <span>Bấm trực tiếp vào nút / thẻ / thanh điều hướng trên màn hình để chạy luồng UX cho Dev</span>
-        </div>
+        <div class="mg-logo" style="width:36px;height:36px;border-radius:10px;"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
       </div>
 
       <div class="studio-controls">
-        <button class="ctrl-btn" id="btn-proto" title="Xem 1 máy tương tác như Figma Prototype">▶ Chế độ Luồng
-          UX</button>
-        <button class="ctrl-btn" id="btn-hotspots" title="Hiện viền nét đứt các vùng bấm được">Hiện điểm bấm</button>
-        <span class="ctrl-divider"></span>
-        <button class="ctrl-btn active" id="btn-393" title="iPhone 14 Pro — 393×852pt, Dynamic Island 126×37pt">iPhone 14 Pro (393×852)</button>
-        <button class="ctrl-btn" id="btn-375" title="iPhone 13 mini / 375×812pt">375×812</button>
-        <span class="ctrl-divider"></span>
-        <button class="ctrl-btn" id="btn-theme" style="display:inline-flex;align-items:center;gap:6px;">
-          <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_theme_appearance.svg" alt="Giao diện" />
-          <span id="theme-label">Chế độ Sáng</span>
+        <button class="ctrl-btn ctrl-icon-btn" id="btn-proto" title="Chế độ Luồng UX" aria-label="Chế độ Luồng UX">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v14l11-7-11-7z"/></svg>
         </button>
-        <button class="ctrl-btn" id="btn-solid">Tắt Blur / Ảnh nền</button>
+        <span class="ctrl-divider desktop-only-ctrl"></span>
+        <button class="ctrl-btn desktop-only-ctrl" id="btn-430" title="iPhone 14 Pro Max — 430×932pt">14PRM</button>
+        <button class="ctrl-btn active desktop-only-ctrl" id="btn-393" title="iPhone 14 Pro — 393×852pt">14PR</button>
+        <span class="ctrl-divider"></span>
+        <button class="ctrl-btn ctrl-icon-btn" id="btn-theme" title="Chuyển Chế độ Sáng / Tối" aria-label="Chuyển Chế độ Sáng / Tối">
+          <svg id="theme-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-solid" title="Tắt Blur / Ảnh nền">Blur</button>
       </div>
     </div>
   </header>
@@ -81,18 +77,34 @@
 
   <div class="flow-toast" id="flow-toast"></div>
 
+  <!-- Mobile Fullscreen AssistiveTouch Control (chỉ hiện khi bật Play trên điện thoại) -->
+  <div class="mobile-proto-assist" id="mobile-proto-assist" aria-label="Điều khiển chế độ toàn màn hình">
+    <div class="mobile-assist-menu">
+      <button type="button" class="mobile-assist-btn danger" id="assist-exit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        <span>Thoát App</span>
+      </button>
+      <button type="button" class="mobile-assist-btn" id="assist-theme">☀ / ☾ Sáng · Tối</button>
+      <button type="button" class="mobile-assist-btn" id="assist-member">Trang chủ HV</button>
+      <button type="button" class="mobile-assist-btn" id="assist-coach">Trang chủ Coach</button>
+      <button type="button" class="mobile-assist-btn" id="assist-auth">Từ Splash</button>
+    </div>
+    <button type="button" class="mobile-assist-fab" id="assist-toggle" title="Mở điều khiển / Thoát toàn màn hình" aria-label="Điều khiển toàn màn hình">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+    </button>
+  </div>
+
   <!-- Modular Screen Registries -->
-  <script src="./screens/auth.screens.js?v=20261123b"></script>
-  <script src="./screens/member/tab1-home.js?v=20261123b"></script>
-  <script src="./screens/member/tab2-training.js?v=20261123c"></script>
-  <script src="./screens/member/tab2-training.js?v=20261123c"></script>
-  <script src="./screens/member/tab3-ai.js?v=20261123b"></script>
-  <script src="./screens/member/tab4-messages.js?v=20261123b"></script>
-  <script src="./screens/member/tab5-profile.js?v=20261123b"></script>
-  <script src="./screens/member/tab5-profile-sub.js?v=20261123c"></script>
-  <script src="./screens/coach/core.js?v=20261122c"></script>
-  <script src="./screens/coach/detail.js?v=20261122c"></script>
-  <script src="./screens/notes.js?v=20261123c"></script>
+  <script src="./screens/auth.screens.js?v=20261124l"></script>
+  <script src="./screens/member/tab1-home.js?v=20261124f"></script>
+  <script src="./screens/member/tab2-training.js?v=20261124d"></script>
+  <script src="./screens/member/tab3-ai.js?v=20261124d"></script>
+  <script src="./screens/member/tab4-messages.js?v=20261124c"></script>
+  <script src="./screens/member/tab5-profile.js?v=20261124d"></script>
+  <script src="./screens/member/tab5-profile-sub.js?v=20261124b"></script>
+  <script src="./screens/coach/core.js?v=20261124b"></script>
+  <script src="./screens/coach/detail.js?v=20261124b"></script>
+  <script src="./screens/notes.js?v=20261124g"></script>
 
   <script>
     const registry = window.METAGYM_SCREENS || {};
@@ -122,6 +134,11 @@
           ${s.html}
         </section>
       `).join('');
+      // Cache-bust normalized 82% optical SVG icons so browser immediately reloads updated viewBoxes
+      panel.querySelectorAll('img[src*=".svg"]').forEach(img => {
+        const src = img.getAttribute('src');
+        if (src && !src.includes('?v=')) img.setAttribute('src', src + '?v=20261124svg3');
+      });
     });
 
     // 1b. Render Tab 4: Ghi chú (Application Requirements Notes — Expandable with Tech Suggestions)
@@ -950,15 +967,70 @@
 
     // 5. Studio Toolbar Controls
     const btnProto = document.getElementById('btn-proto');
-    btnProto.addEventListener('click', () => {
-      protoMode = !protoMode;
+    const mobileAssist = document.getElementById('mobile-proto-assist');
+    const PLAY_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v14l11-7-11-7z"/></svg>';
+    const STOP_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+    function setProtoMode(enable) {
+      protoMode = !!enable;
+      const isMobileVw = (document.documentElement.clientWidth || window.innerWidth) <= 640;
       document.body.classList.toggle('proto-mode', protoMode);
+      document.body.classList.toggle('mobile-app-fullscreen', protoMode && isMobileVw);
       btnProto.classList.toggle('active', protoMode);
-      btnProto.textContent = protoMode ? '⊞ Thoát Luồng UX' : '▶ Chế độ Luồng UX';
+      btnProto.innerHTML = protoMode ? STOP_SVG : PLAY_SVG;
+      btnProto.title = protoMode ? 'Thoát Luồng UX' : 'Chế độ Luồng UX';
+      mobileAssist?.classList.remove('open');
+
       if (protoMode) {
         const startId = activeRole === 'auth' ? 'auth-splash' : (activeRole === 'coach' ? 'coach-home' : 'member-home');
         flowHistory = [startId];
         navigateToScreen(startId, true);
+        if (isMobileVw) {
+          try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch (_) {}
+          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) {}
+          showFlowToast('Chế độ App toàn màn hình · Bấm nút tròn cạnh phải để thoát');
+        }
+      } else {
+        if (document.fullscreenElement) {
+          try { document.exitFullscreen?.().catch(() => {}); } catch (_) {}
+        }
+        updateMobilePhoneZoom();
+      }
+    }
+
+    btnProto.addEventListener('click', () => setProtoMode(!protoMode));
+
+    document.getElementById('assist-toggle')?.addEventListener('click', () => {
+      mobileAssist?.classList.toggle('open');
+    });
+    document.getElementById('assist-exit')?.addEventListener('click', () => setProtoMode(false));
+    document.getElementById('assist-theme')?.addEventListener('click', () => {
+      applyStudioTheme(!document.body.classList.contains('light-mode'));
+      mobileAssist?.classList.remove('open');
+    });
+    document.getElementById('assist-member')?.addEventListener('click', () => {
+      flowHistory = ['member-home']; navigateToScreen('member-home', true);
+      mobileAssist?.classList.remove('open');
+    });
+    document.getElementById('assist-coach')?.addEventListener('click', () => {
+      flowHistory = ['coach-home']; navigateToScreen('coach-home', true);
+      mobileAssist?.classList.remove('open');
+    });
+    document.getElementById('assist-auth')?.addEventListener('click', () => {
+      flowHistory = ['auth-splash']; navigateToScreen('auth-splash', true);
+      mobileAssist?.classList.remove('open');
+    });
+
+    // Hỗ trợ nút Back vật lý / vuốt cạnh quay lại trên điện thoại để lùi màn hoặc thoát Fullscreen
+    window.addEventListener('popstate', () => {
+      if (protoMode && document.body.classList.contains('mobile-app-fullscreen')) {
+        if (flowHistory.length > 1) {
+          flowHistory.pop();
+          navigateToScreen(flowHistory[flowHistory.length - 1], true);
+          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) {}
+        } else {
+          setProtoMode(false);
+        }
       }
     });
 
@@ -966,24 +1038,32 @@
     document.getElementById('proto-start-member').addEventListener('click', () => { flowHistory = ['member-home']; navigateToScreen('member-home', true); });
     document.getElementById('proto-start-coach').addEventListener('click', () => { flowHistory = ['coach-home']; navigateToScreen('coach-home', true); });
 
-    const btnHotspots = document.getElementById('btn-hotspots');
-    btnHotspots.addEventListener('click', () => {
-      const on = document.body.classList.toggle('show-hotspots');
-      btnHotspots.classList.toggle('active', on);
-    });
-
-    const btn375 = document.getElementById('btn-375');
+    const btn430 = document.getElementById('btn-430');
     const btn393 = document.getElementById('btn-393');
+    let activeDevicePreset = '393';
+    function updateMobilePhoneZoom() {
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const frameW = (activeDevicePreset === '430' ? 430 : 393) + 12;
+      const availW = vw - 20;
+      if (vw <= 540 && availW < frameW) {
+        const z = Math.max(0.68, Math.min(0.96, +(availW / frameW).toFixed(3)));
+        document.documentElement.style.setProperty('--phone-zoom', String(z));
+      } else {
+        document.documentElement.style.setProperty('--phone-zoom', '1');
+      }
+    }
     function applyDevicePreset(preset) {
+      activeDevicePreset = preset === '430' ? '430' : '393';
       const root = document.documentElement.style;
-      if (preset === '375') {
-        root.setProperty('--device-width', '375px');
-        root.setProperty('--device-height', '812px');
-        root.setProperty('--device-radius', '47px');
-        root.setProperty('--island-w', '114px');
-        root.setProperty('--island-h', '33px');
-        root.setProperty('--status-h', '52px');
-        btn375.classList.add('active'); btn393.classList.remove('active');
+      if (activeDevicePreset === '430') {
+        // Exact iPhone 14 Pro Max logical spec: 430x932pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
+        root.setProperty('--device-width', '430px');
+        root.setProperty('--device-height', '932px');
+        root.setProperty('--device-radius', '55px');
+        root.setProperty('--island-w', '126px');
+        root.setProperty('--island-h', '37px');
+        root.setProperty('--status-h', '59px');
+        btn430?.classList.add('active'); btn393?.classList.remove('active');
       } else {
         // Exact iPhone 14 Pro logical spec: 393x852pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
         root.setProperty('--device-width', '393px');
@@ -992,11 +1072,14 @@
         root.setProperty('--island-w', '126px');
         root.setProperty('--island-h', '37px');
         root.setProperty('--status-h', '59px');
-        btn393.classList.add('active'); btn375.classList.remove('active');
+        btn393?.classList.add('active'); btn430?.classList.remove('active');
       }
+      updateMobilePhoneZoom();
     }
-    btn375.addEventListener('click', () => applyDevicePreset('375'));
-    btn393.addEventListener('click', () => applyDevicePreset('393'));
+    btn430?.addEventListener('click', () => applyDevicePreset('430'));
+    btn393?.addEventListener('click', () => applyDevicePreset('393'));
+    window.addEventListener('resize', updateMobilePhoneZoom);
+    window.addEventListener('orientationchange', updateMobilePhoneZoom);
     applyDevicePreset('393');
 
     // Upgrade all phone status-bar right clusters to authentic iPhone 14 Pro Signal + 5G + Battery pill
@@ -1026,11 +1109,13 @@
     });
 
     const btnTheme = document.getElementById('btn-theme');
-    const themeLabel = document.getElementById('theme-label');
+    const SUN_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+    const MOON_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
     function applyStudioTheme(isLight) {
       document.body.classList.toggle('light-mode', isLight);
       btnTheme.classList.toggle('active', isLight);
-      themeLabel.textContent = isLight ? 'Chế độ Tối' : 'Chế độ Sáng';
+      btnTheme.innerHTML = isLight ? MOON_SVG : SUN_SVG;
+      btnTheme.title = isLight ? 'Chuyển sang Chế độ Tối' : 'Chuyển sang Chế độ Sáng';
       document.querySelectorAll('[data-theme-mode-desc]').forEach(el => {
         el.textContent = isLight ? 'Sáng · Crisp Daylight Glass' : 'Tối · Futuristic Performance Glass';
       });
@@ -2559,7 +2644,7 @@
           <div style="font-size:12px;color:var(--text-secondary);margin:4px 0 12px;">Gói Pro 6 Tháng đã sẵn sàng sử dụng ngay hôm nay</div>
 
           <div style="border-radius:16px;overflow:hidden;box-shadow:0 14px 32px rgba(0,0,0,0.6),0 0 0 1.5px rgba(218,176,102,0.5);margin-bottom:12px;">
-            <img src="../../meta-gym/assets/images/membership/card_gold_horizontal.jpg?v=2" alt="Thẻ Vàng Meta Gym" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" />
+            <img src="../../meta-gym/assets/images/membership/card_gold_horizontal.jpg?v=20261124c" alt="Thẻ Vàng Meta Gym" style="width:100%;aspect-ratio:16/10;object-fit:cover;display:block;" />
           </div>
 
           <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:12px;text-align:left;font-size:11.5px;">
@@ -2727,13 +2812,41 @@
       overlay.className = 'qr-overlay open sys-state-overlay';
 
       const specs = {
+        empty: {
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_empty.webp?v=20261124m4',
+          pill: '✦ Danh sách trống', pillCls: 'pill-muted',
+          title: 'Chưa có buổi tập nào',
+          desc: 'Meta Kong thấy lịch hôm nay đang trống! Hãy chọn một giáo trình hoặc đặt lịch 1:1 cùng Coach ngay nhé.',
+          infoHtml: `<div class="row-between" style="font-size:12px;"><span style="color:var(--text-secondary);">Gợi ý nhanh</span><strong style="color:var(--primary);">Push Day · 45 phút</strong></div>`,
+          secLbl: 'Để sau', priLbl: 'Tạo lịch tập →', priToast: 'Chuyển sang Trung tâm Tập luyện!'
+        },
+        loading: {
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_loading.webp?v=20261124m4',
+          pill: '● Đang đồng bộ', pillCls: 'pill-orange',
+          title: 'Đang khởi động dữ liệu...',
+          desc: 'Meta Kong đang nâng tạ chuẩn bị giáo trình, thực đơn và tiến độ tuần mới nhất cho bạn.',
+          infoHtml: `<div class="prog-track" style="height:6px;margin:2px 0 4px;"><div class="prog-fill orange" style="width:74%;"></div></div><div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Đồng bộ máy chủ</span><strong style="color:var(--primary);">74%</strong></div>`,
+          secLbl: 'Ẩn bớt', priLbl: 'Xong ngay', priToast: 'Đã đồng bộ dữ liệu thành công!'
+        },
+        streak: {
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_streak.webp?v=20261124m4',
+          pill: '★ Chuỗi 14 ngày liên tiếp', pillCls: 'pill-success',
+          title: 'Tuyệt đỉnh! Giữ vững phong độ',
+          desc: 'Meta Kong trao tặng bạn cúp lửa bền bỉ! Hoàn thành chuỗi tuần này để nhận thêm điểm thưởng Meta Points.',
+          infoHtml: `<div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Phần thưởng chuỗi</span><strong style="color:var(--primary);">+150 Meta Points</strong></div>`,
+          secLbl: 'Đóng', priLbl: 'Chia sẻ thành tích', priToast: 'Đã lưu ảnh thành tích Meta Kong vào thư viện!'
+        },
         maintenance: {
-          icon: '../../meta-gym/assets/svg/states/state_maintenance.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_maintenance.webp?v=20261124m5',
           ringBg: 'rgba(245,176,65,0.16)', ringBorder: 'rgba(245,176,65,0.55)',
           pill: '● Bảo trì định kỳ', pillCls: 'pill-orange',
           title: 'Hệ thống đang cập nhật',
-          desc: 'Meta Gym đang nâng cấp máy chủ để tăng tốc độ đồng bộ dữ liệu tập luyện và điểm danh NFC.',
-          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Thời gian dự kiến</span><strong style="color:var(--warning);">23:00 – 01:00 hôm nay</strong></div>`,
+          desc: 'Meta Kong đang nâng cấp máy chủ để tăng tốc độ đồng bộ dữ liệu tập luyện và điểm danh NFC.',
+          infoHtml: `<div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Thời gian dự kiến</span><strong style="color:var(--warning);">23:00 – 01:00 hôm nay</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Thử lại sau', priToast: 'Hệ thống vẫn đang nâng cấp, vui lòng thử lại sau ít phút'
         },
         'coming-soon': {
@@ -2746,52 +2859,68 @@
           secLbl: 'Để sau', priLbl: 'Nhắc tôi khi có', priToast: 'Đã đăng ký nhận thông báo khi tính năng ra mắt!'
         },
         error: {
-          icon: '../../meta-gym/assets/svg/states/state_error.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_error.webp?v=20261124m4',
           ringBg: 'rgba(241,91,100,0.16)', ringBorder: 'rgba(241,91,100,0.55)',
           pill: '● Mã lỗi ERR-503', pillCls: 'pill-orange',
           title: 'Đã xảy ra lỗi hệ thống',
-          desc: 'Không thể tải dữ liệu lúc này do máy chủ đang quá tải. Dữ liệu tập luyện của bạn vẫn an toàn.',
-          infoHtml: `<div class="row-between tnum" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Mã đối chiếu</span><strong style="color:#F15B64;">#REQ-261122-9F</strong></div>`,
+          desc: 'Meta Kong đang sửa sự cố kết nối máy chủ. Toàn bộ dữ liệu tập luyện của bạn vẫn an toàn.',
+          infoHtml: `<div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Mã đối chiếu</span><strong style="color:#F15B64;">#REQ-261124-9F</strong></div>`,
           secLbl: 'Báo hỗ trợ', priLbl: 'Thử lại ngay', secAction: 'support', priToast: 'Đang kết nối lại máy chủ Meta Gym...'
         },
         update: {
-          icon: '../../meta-gym/assets/svg/states/state_update.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_update.webp?v=20261124m6',
           ringBg: 'rgba(46,204,113,0.16)', ringBorder: 'rgba(46,204,113,0.55)',
           pill: '● Bản mới v1.1.0', pillCls: 'pill-success',
           title: 'Có bản cập nhật mới!',
-          desc: 'Cập nhật Meta Gym v1.1.0 để trải nghiệm Cân đĩa tạ Olympic, thanh toán 4 cổng và hiệu năng mượt hơn 30%.',
-          infoHtml: `<div style="font-size:11px;color:var(--text-secondary);text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
+          desc: 'Meta Kong mang đến bản Meta Gym v1.1.0 với Cân đĩa tạ Olympic, thanh toán 4 cổng và hiệu năng mượt hơn 30%.',
+          infoHtml: `<div style="font-size:12px;color:var(--text-secondary);text-align:left;line-height:1.5;">• Thêm cổng ZaloPay, VNPay, MoMo &amp; VietQR<br/>• Tích điểm Meta Points &amp; Đổi ưu đãi hạng thẻ<br/>• Tối ưu quẹt thẻ NFC &amp; QR Check-in</div>`,
           secLbl: 'Để sau', priLbl: 'Cập nhật ngay', priToast: 'Đang mở App Store / Google Play để cập nhật v1.1.0...'
         },
         offline: {
-          icon: '../../meta-gym/assets/svg/states/state_no_network.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_offline.webp?v=20261124m4',
           ringBg: 'rgba(169,199,232,0.14)', ringBorder: 'rgba(169,199,232,0.45)',
           pill: '● Ngoại tuyến', pillCls: 'pill-muted',
           title: 'Mất kết nối mạng',
-          desc: 'Vui lòng kiểm tra lại kết nối Wi-Fi hoặc dữ liệu di động 4G/5G để tiếp tục đồng bộ với Meta Gym.',
-          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Trạng thái mạng</span><strong style="color:#F15B64;">Không có Internet</strong></div>`,
+          desc: 'Meta Kong không tìm thấy Wi-Fi / 4G. Bạn vẫn có thể xem giáo trình đã lưu ở chế độ Offline nhé!',
+          infoHtml: `<div class="row-between" style="font-size:12px;"><span style="color:var(--text-secondary);">Trạng thái mạng</span><strong style="color:#F15B64;">Không có Internet</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Kiểm tra lại', priToast: 'Đã khôi phục kết nối mạng thành công!'
         },
         session: {
-          icon: '../../meta-gym/assets/svg/states/state_warning.svg',
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_session.webp?v=20261124m7',
           ringBg: 'rgba(245,176,65,0.16)', ringBorder: 'rgba(245,176,65,0.55)',
           pill: '● Bảo mật phiên', pillCls: 'pill-orange',
           title: 'Phiên đăng nhập hết hạn',
-          desc: 'Vì lý do bảo mật tài khoản, phiên đăng nhập của bạn đã hết hiệu lực. Vui lòng đăng nhập lại bằng Mật khẩu hoặc Face ID.',
-          infoHtml: `<div class="row-between" style="font-size:11.5px;"><span style="color:var(--text-secondary);">Tài khoản</span><strong style="color:var(--text-primary);">minhquan@metagym.vn</strong></div>`,
+          desc: 'Vì lý do bảo mật tài khoản, phiên đăng nhập đã hết hiệu lực. Meta Kong giữ sẵn chìa khóa để bạn đăng nhập lại nhanh bằng Face ID nhé!',
+          infoHtml: `<div class="row-between" style="font-size:12px;"><span style="color:var(--text-secondary);">Tài khoản</span><strong style="color:var(--text-primary);">minhquan@metagym.vn</strong></div>`,
           secLbl: 'Đóng', priLbl: 'Đăng nhập lại →', priAction: 'login'
+        },
+        promo: {
+          mascot: true,
+          icon: '../../meta-gym/assets/images/mascot/meta_kong_membership_promo.webp?v=20261124m7',
+          pill: '★ Ưu đãi Hội viên VIP', pillCls: 'pill-orange',
+          title: 'Sở hữu Thẻ Vàng Meta Gym',
+          desc: 'Mở khóa phòng tập không giới hạn cùng thẻ kim loại NFC khắc riêng, đo InBody định kỳ và tặng ngay 2 buổi PT 1:1 cùng Coach.',
+          infoHtml: `<div class="row-between tnum" style="font-size:12px;"><span style="color:var(--text-secondary);">Gói đề xuất · 6 Tháng</span><strong style="color:var(--primary);">4.490.000đ (-16%)</strong></div>`,
+          secLbl: 'Để sau', priLbl: 'Khám phá gói tập →', priToast: 'Đang mở danh sách đặc quyền Thẻ Hội viên!'
         }
       };
 
       const s = specs[kind] || specs.maintenance;
-      overlay.innerHTML = `
-        <div class="qr-sheet" style="text-align:center;padding:22px 18px 18px;">
-          <div style="width:72px;height:72px;border-radius:50%;margin:0 auto 12px;background:${s.ringBg};border:1.8px solid ${s.ringBorder};display:flex;align-items:center;justify-content:center;">
+      const visualHtml = s.mascot
+        ? `<img src="${s.icon}" alt="${s.title}" style="width:136px;height:136px;margin:0 auto 8px;display:block;object-fit:contain;" />`
+        : `<div style="width:72px;height:72px;border-radius:50%;margin:0 auto 12px;background:${s.ringBg};border:1.8px solid ${s.ringBorder};display:flex;align-items:center;justify-content:center;">
             <img class="ico-lg" src="${s.icon}" alt="${s.title}" style="width:40px;height:40px;background:transparent;padding:0;" />
-          </div>
+          </div>`;
+      overlay.innerHTML = `
+        <div class="qr-sheet" style="text-align:center;padding:20px 18px 18px;">
+          ${visualHtml}
           <span class="pill ${s.pillCls}" style="margin-bottom:8px;">${s.pill}</span>
-          <div style="font-size:17.5px;font-weight:800;color:var(--text-primary);margin-top:4px;">${s.title}</div>
-          <div style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 12px;line-height:1.5;">${s.desc}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-top:4px;">${s.title}</div>
+          <div style="font-size:14px;color:var(--text-secondary);margin:6px 0 12px;line-height:1.45;">${s.desc}</div>
           <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:9px 12px;margin-bottom:14px;">
             ${s.infoHtml}
           </div>

@@ -9,18 +9,18 @@
 | STT | `assetKey` | Têp SVG | Tầng | `viewBox` | Dung lượng | Ý nghĩa & Vị trí sử dụng |
 | :-: | :--- | :--- | :-: | :-: | :-: | :--- |
 | 1 | `admin_badge` | [`admin_badge.svg`](./admin_badge.svg) | Tầng B/C | `48×48` | `1.05 KB` | Huy hiệu cổng Quản trị viên (Khiên bảo vệ + Vương miện & Bánh răng) |
-| 2 | `app_icon_mark` | [`app_icon_mark.svg`](./app_icon_mark.svg) | Tầng C | `64×64` | `1.05 KB` | Biểu tượng đóng khung squircle xuất App Launcher Icon (iOS/Android) |
+| 2 | `app_icon_mark` | [`app_icon_mark.svg`](./app_icon_mark.svg) | Tầng C | `512×512` | `10.30 KB` | Biểu tượng Front Double Biceps đóng khung squircle Obsidian xuất App Launcher Icon (iOS/Android) — kèm bộ PNG `1024px` tại [`../../app-icon/`](../../app-icon/README.md) |
 | 3 | `auth_apple` | [`auth_apple.svg`](./auth_apple.svg) | Tầng C | `48×48` | `0.69 KB` | Đăng nhập thương hiệu Apple ID (Chuẩn hình học chính hãng) |
 | 4 | `auth_facebook` | [`auth_facebook.svg`](./auth_facebook.svg) | Tầng C | `48×48` | `0.41 KB` | Đăng nhập thương hiệu Facebook (Chuẩn hình học chính hãng) |
 | 5 | `auth_google` | [`auth_google.svg`](./auth_google.svg) | Tầng C | `48×48` | `0.75 KB` | Đăng nhập thương hiệu Google (Chuẩn hình học 4 màu chính hãng) |
 | 6 | `auth_zalo` | [`auth_zalo.svg`](./auth_zalo.svg) | Tầng C | `48×48` | `0.49 KB` | Đăng nhập thương hiệu Zalo (Chuẩn thị trường Việt Nam) |
-| 7 | `brand_mark` | [`brand_mark.svg`](./brand_mark.svg) | Tầng C | `64×64` | `1.06 KB` | Biểu tượng V-Taper Athlete độc lập (Header / Avatar thương hiệu) |
-| 8 | `brand_wordmark_dark` | [`brand_wordmark_dark.svg`](./brand_wordmark_dark.svg) | Tầng C | `240×80` | `1.28 KB` | Chữ MetaGym chuẩn trên nền tối #0F1115 / #181B22 |
-| 9 | `brand_wordmark_light` | [`brand_wordmark_light.svg`](./brand_wordmark_light.svg) | Tầng C | `240×80` | `1.22 KB` | Chữ MetaGym chuẩn trên nền sáng #F5F7FA / #FFFFFF |
-| 10 | `default` | [`default.svg`](./default.svg) | Tầng C | `240×80` | `1.28 KB` | Tổ hợp Logo V-Taper Athlete + Wordmark MetaGym (Màn hình Splash) |
+| 7 | `brand_mark` | [`brand_mark.svg`](./brand_mark.svg) | Tầng C | `512×512` | `7.64 KB` | Biểu tượng Front Double Biceps Athlete độc lập nền trong suốt (Header / Avatar / Adaptive Foreground) |
+| 8 | `brand_wordmark_dark` | [`brand_wordmark_dark.svg`](./brand_wordmark_dark.svg) | Tầng C | `240×80` | `6.20 KB` | Biểu tượng + Chữ MetaGym chuẩn trên nền tối #0F1115 / #181B22 |
+| 9 | `brand_wordmark_light` | [`brand_wordmark_light.svg`](./brand_wordmark_light.svg) | Tầng C | `240×80` | `6.20 KB` | Biểu tượng + Chữ MetaGym chuẩn trên nền sáng #F5F7FA / #FFFFFF |
+| 10 | `default` | [`default.svg`](./default.svg) | Tầng C | `240×80` | `6.20 KB` | Tổ hợp Logo Front Double Biceps Athlete + Wordmark MetaGym (Màn hình Splash) |
 | 11 | `flag_en` | [`flag_en.svg`](./flag_en.svg) | Tầng C | `48×48` | `0.76 KB` | Quốc kỳ Vương quốc Anh (Chọn ngôn ngữ Tiếng Anh) |
 | 12 | `flag_vn` | [`flag_vn.svg`](./flag_vn.svg) | Tầng C | `48×48` | `0.38 KB` | Quốc kỳ Việt Nam (Chọn ngôn ngữ Tiếng Việt / Quốc gia) |
-| 13 | `notification_small_monochrome` | [`notification_small_monochrome.svg`](./notification_small_monochrome.svg) | Tầng C | `24×24` | `0.42 KB` | Icon thông báo nhỏ đơn sắc (Monochrome) trên thanh trạng thái |
+| 13 | `notification_small_monochrome` | [`notification_small_monochrome.svg`](./notification_small_monochrome.svg) | Tầng C | `24×24` | `4.34 KB` | Icon thông báo nhỏ đơn sắc (Monochrome `#FFFFFF`) trên thanh trạng thái |
 | 14 | `onboard_slide_coach_ai` | [`onboard_slide_coach_ai.svg`](./onboard_slide_coach_ai.svg) | Tầng C | `48×48` | `1.99 KB` | Minh họa Onboarding 2: HLV 1-1 & Trợ lý AI Coach (Pose #14) |
 | 15 | `onboard_slide_progress` | [`onboard_slide_progress.svg`](./onboard_slide_progress.svg) | Tầng C | `48×48` | `1.20 KB` | Minh họa Onboarding 3: Theo dõi tiến độ, dinh dưỡng & chuỗi kỷ luật |
 | 16 | `onboard_slide_training` | [`onboard_slide_training.svg`](./onboard_slide_training.svg) | Tầng C | `48×48` | `2.22 KB` | Minh họa Onboarding 1: Tập luyện thông minh & Giải phẫu cơ (Pose #18) |

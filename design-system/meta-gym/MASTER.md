@@ -31,6 +31,8 @@ Tệp `DESIGN.md` ở thư mục gốc của kho lưu trữ là nguồn chuẩn 
 - Màu ngữ nghĩa vàng (Warning): `#F39C12` (cảnh báo / avatar phụ).
 - Avatar HLV (Coach Avatar) `"LN"`: nền `#F5B041`, chữ `#181B22` đậm xuyên suốt toàn bộ các thẻ.
 - Phông chữ: **Be Vietnam Pro**, đóng gói nội bộ trong ứng dụng (locally bundled).
+- **Linh vật thương hiệu (Meta Kong):** Bộ 10 tư thế `512×512` Transparent WebP (`assets/images/mascot/meta_kong_{hero,empty,offline,error,loading,streak,maintenance,update,session,membership_promo}.webp`, `38–55 KB`/tệp) dùng cho toàn bộ trạng thái hệ thống, Streak Celebration, AI Companion, Welcome và Mời nâng cấp VIP — luôn giữ nguyên màu gốc trên cả Dark & Light Mode (không đảo màu).
+- **Thang cỡ chữ Mobile chuẩn 8 bậc số nguyên (`375–393px`):** `11px` (*micro — sàn tuyệt đối cho eyebrow/badge số/T2–CN*), `12px` (*label/metadata — sàn Tiếng Việt có dấu*), `14px` (*body/chat/input/nút phụ*), `15px` (*CTA chính/bài viết*), `16px` (*tiêu đề mục & thẻ*), `20px` (*tiêu đề màn hình AppBar*), `22px` (*headline Auth/Hero*), `28px` (*chỉ số KPI `tnum`*, Splash `40px`). Cấm dùng cỡ `< 11px` hoặc số lẻ `.5px`.
 - Màu cam chỉ chiếm khoảng 5–10% diện tích khung nhìn thông thường và dành riêng cho hành động, mục đang chọn và tiến độ cốt lõi.
 
 ## Hình khối và khoảng cách
@@ -40,6 +42,7 @@ Tệp `DESIGN.md` ở thư mục gốc của kho lưu trữ là nguồn chuẩn 
 - Bo góc: nút/điều khiển 10–14px; thẻ nội dung 20px; thanh dock kính và sheet 24px.
 - Padding bên trong thẻ: 16/20/24px tùy theo mức độ nhấn mạnh.
 - Tránh lồng thẻ trong thẻ; ưu tiên dùng khoảng trống, đường kẻ phân cách (divider) hoặc phân nhóm sắc độ trước.
+- **Bảo vệ chân màn hình (Bottom Safe Area):** Mọi nội dung cuối trang, nút CTA ghim đáy, ô nhập chat và thanh điều hướng đều phải có khoảng đệm bảo vệ phía trên thanh Home Indicator / cử chỉ Android (`>= 34pt` safe area; `48px` cho màn cuộn không có nav, `bottom: 24px` + cuộn `132px` cho màn có Bottom Nav, `padding-bottom: 34px` + cuộn `118px` cho thanh CTA ghim đáy).
 
 ## Thành phần giao diện (Components)
 
