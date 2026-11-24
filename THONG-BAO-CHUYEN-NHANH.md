@@ -1,106 +1,89 @@
-# THÔNG BÁO QUAN TRỌNG: NÂNG CẤP CẤU TRÚC NHÁNH GITHUB (24/11/2026)
+# SỔ TAY NHANH: WORKFLOW NHÁNH GITHUB METAGYM (`feat` · `fix` · `release`)
 
 > [!IMPORTANT]
-> Repo **MetaGym** đã chính thức chuyển sang cấu trúc nhánh chuẩn (`main` / `develop` / `release/*` / `hotfix/*` / `feature|fix|update|refactor/<folder>/<task-con>`).
-> **Toàn bộ nhánh cũ và code của mọi người ĐƯỢC GIỮ NGUYÊN 100% — KHÔNG BỊ XÓA.**
+> **Đã hoàn tất nâng cấp & phát hành mốc [`v1.0.0`](https://github.com/Thongcao2k5/MetaGym/releases/tag/v1.0.0) (24/11/2026).**
+> Repo hiện chỉ duy trì **2 nhánh chính được bảo vệ** là **`main`** (Production) và **`develop`** (Integration).
+> Toàn bộ 5 nhánh cũ đã gộp 100% vào `main` & `develop` và được lưu thành **7 tag backup bất biến `backup/2026-11-24/*`**.
 
 ---
 
-## 1. An toàn dữ liệu & Recovery Code
+## 1. Bảng nhớ nhanh 3 luồng chính
 
-- Tất cả các nhánh cũ (`main`, `thong`, `thuc`, `truong_ship_it`, `design`, `codex/thong-mobile-integrated`) vẫn được giữ lại trên GitHub.
-- Toàn bộ trạng thái trước thời điểm nâng cấp đã được lưu thành bộ **Git Tag bất biến**:
-  - `backup/2026-11-24/main`
-  - `backup/2026-11-24/thong`
-  - `backup/2026-11-24/thuc`
-  - `backup/2026-11-24/truong_ship_it`
-  - `backup/2026-11-24/design` & `backup/2026-11-24/design-remote`
-  - `backup/2026-11-24/codex-thong-mobile-integrated`
-- Cần khôi phục code bất kỳ lúc nào:
-  ```bash
-  git fetch --tags origin
-  git checkout backup/2026-11-24/<tên-nhánh>
-  ```
-- **Nhánh `develop`** hiện đã chứa đầy đủ 100% code mới nhất đã gộp của cả 3 thành viên (bao gồm `main`, `thuc`, `truong_ship_it`, `design`, `thong` và `codex/thong-mobile-integrated`).
+| Khi cần làm | Tách từ | Đặt tên nhánh | Commit | Mở PR vào |
+|---|---|---|---|---|
+| **Tính năng mới (`feat`)** | `develop` | `feature/<folder>/<task>` | `feat(<folder>): ...` | `develop` |
+| **Sửa lỗi thường (`fix`)** | `develop` | `fix/<folder>/<task>` | `fix(<folder>): ...` | `develop` |
+| **Cập nhật nhẹ (`update`)** | `develop` | `update/<folder>/<task>` | `update(<folder>): ...` | `develop` |
+| **Phát hành (`release`)** | `develop` | `release/vX.Y.Z` | `chore(release): ...` | `main` *(gắn tag `vX.Y.Z`)* |
+| **Vá khẩn cấp (`hotfix`)** | `main` | `hotfix/<folder>/<task>` | `fix(<folder>): ...` | `main` **+** `develop` |
+
+**`<folder>` tương ứng thư mục gốc:** `mobile` (`mobile-app/`), `backend` (`backend/` + `database/`), `admin` (`admin-web/`), `landing` (`landing-web/`), `design` (`design-system/`), `docs` (`docs/` + `tasks/`).
 
 ---
 
-## 2. Bạn đang code dở trên nhánh cũ chưa đẩy lên? Làm theo 1 trong 2 cách sau
+## 2. Lệnh copy-paste dùng hằng ngày
 
-Không cần hoảng và **không bị mất code**. Hãy commit phần bạn đang làm ở máy local trước, rồi chọn:
-
-### Cách 1 — Nhanh nhất (đang có nhiều thay đổi dở dang)
-Đẩy tiếp lên nhánh cũ của bạn rồi mở **Pull Request vào `develop`**:
-
+### A. Làm tính năng mới (`feat`) hoặc sửa lỗi (`fix`)
 ```bash
-# 1. Lưu code đang làm trên nhánh cũ của bạn
+git fetch origin --prune
+git checkout develop && git pull origin develop
+
+# Tạo nhánh theo loại việc + folder + task con
+git checkout -b feature/mobile/ten-task       # hoặc fix/backend/ten-loi
+
+# Code, test local, rồi commit & push
 git add .
-git commit -m "feat(mobile): <mô tả ngắn việc bạn đang làm>"
-
-# 2. Kéo file thông báo mới nhất (không đụng file code nên không conflict)
-git pull --no-rebase
-
-# 3. Đẩy lên nhánh cũ của bạn bình thường
-git push
+git commit -m "feat(mobile): mô tả ngắn gọn"  # hoặc "fix(backend): ..."
+git push -u origin feature/mobile/ten-task
 ```
+→ Lên GitHub mở **Pull Request vào `develop`** → Review & CI xanh → Merge & xóa nhánh tạm.
 
-Sau đó vào GitHub → tạo **Pull Request** với:
-- **base:** `develop`
-- **compare:** `<nhánh-cũ-của-bạn>`
+### B. Phát hành bản mới (`release`) lên `main`
+```bash
+git fetch origin --prune
+git checkout develop && git pull origin develop
+git checkout -b release/v1.1.0
+git push -u origin release/v1.1.0
+```
+→ Chạy QA toàn bộ module → Mở **Pull Request `release/v1.1.0` → `main`** → Chờ CI PostgreSQL & Cloudflare Pages xanh → Merge `main` (Render tự deploy) → Gắn tag `v1.1.0` và tạo GitHub Release.
 
-Sau khi PR được review & merge vào `develop`, từ task tiếp theo bạn chuyển sang tách nhánh mới từ `develop`.
+### C. Vá lỗi khẩn cấp trên Production (`hotfix`)
+```bash
+git fetch origin --prune
+git checkout main && git pull origin main
+git checkout -b hotfix/backend/ten-loi-khan
+# Sửa lỗi, test kỹ, commit & push
+git push -u origin hotfix/backend/ten-loi-khan
+```
+→ Mở **PR vào `main`** (gắn tag patch `v1.0.1`) **và** mở thêm **PR vào `develop`** để đồng bộ bản vá.
 
-### Cách 2 — Sạch nhất (chuyển thẳng commit đang làm sang nhánh mới từ `develop`)
+---
+
+## 3. Nếu máy bạn vẫn còn nhánh cũ / code dở chưa đẩy lên
 
 ```bash
-# 1. Commit phần code đang làm trên máy
+# 1. Lưu commit trên máy của bạn
 git add .
-git commit -m "feat(mobile): <mô tả ngắn việc bạn đang làm>"
+git commit -m "feat(mobile): mô tả phần đang làm"
+git log -1 --oneline    # ghi lại mã commit (vd: abc1234)
 
-# 2. Lấy mã commit vừa tạo (ví dụ: abc1234)
-git log -1 --oneline
-
-# 3. Lấy nhánh develop mới nhất và tạo nhánh đúng chuẩn
-git fetch origin
+# 2. Đồng bộ repo & tách nhánh mới từ develop
+git fetch origin --prune
 git checkout -b feature/<folder>/<task-con> origin/develop
 
-# 4. Đem commit vừa làm sang nhánh mới
+# 3. Đem commit sang nhánh mới & đẩy lên
 git cherry-pick <mã-commit>
-
-# 5. Đẩy nhánh mới và mở Pull Request vào develop
 git push -u origin feature/<folder>/<task-con>
 ```
 
 ---
 
-## 3. Cây nhánh chuẩn áp dụng từ hôm nay
+## 4. Khôi phục code cũ (Recovery)
 
-```text
-main                                    # Production ổn định (auto-deploy Render)
-├── release/vX.Y.Z                      # Đóng băng & test trước khi phát hành -> PR vào main + develop
-├── hotfix/<folder>/<task-con>          # Vá lỗi khẩn cấp từ main -> PR vào main + develop
-│
-└── develop                             # Nhánh tích hợp chính của team (mọi PR đổ về đây)
-    ├── feature/<folder>/<task-con>     # Tính năng mới
-    ├── fix/<folder>/<task-con>         # Sửa lỗi thường
-    ├── update/<folder>/<task-con>      # Cập nhật UI, config, thư viện, nội dung
-    └── refactor/<folder>/<task-con>    # Tái cấu trúc code
+Toàn bộ lịch sử cũ trước ngày 24/11/2026 luôn khôi phục được qua 7 tag bất biến `backup/2026-11-24/*`:
+```bash
+git fetch --tags origin
+git checkout -b recovery/xem-lai backup/2026-11-24/<main|thong|thuc|truong_ship_it|design|codex-thong-mobile-integrated>
 ```
 
-**Tên `<folder>` tương ứng với thư mục chính trong repo:**
-- `mobile` → `mobile-app/`
-- `backend` → `backend/` & `database/`
-- `admin` → `admin-web/`
-- `landing` → `landing-web/`
-- `design` → `design-system/`
-- `docs` → `docs/` & `tasks/`
-
-**Ví dụ tên nhánh chuẩn:**
-- `feature/mobile/tab2-training-hub`
-- `feature/backend/coach-schedule-api`
-- `fix/mobile/meal-plans-overflow`
-- `update/admin/dashboard-kpi-cards`
-- `feature/design/membership-cards`
-
-> Xem tài liệu quy trình chi tiết đầy đủ tại **`CONTRIBUTING.md`** trên nhánh `develop`:
-> <https://github.com/Thongcao2k5/MetaGym/blob/develop/CONTRIBUTING.md>
+> Xem sổ tay quy trình đầy đủ (quy ước commit, DB migration, bảo mật, CI/CD) tại **[`CONTRIBUTING.md`](CONTRIBUTING.md)**.
