@@ -1,6 +1,11 @@
 # Meta Gym
 
-Hệ thống quản lý phòng tập & huấn luyện cá nhân **Meta Gym** (đồ án chuyên ngành), gồm ứng dụng di động cho **Member & Coach**, trang quản trị **Admin Web**, và **REST API + PostgreSQL**.
+> [!IMPORTANT]
+> **Nâng cấp cấu trúc nhánh GitHub (24/11/2026):** Team chính thức áp dụng cây nhánh `main` → `develop` → `feature|fix|update|refactor/<folder>/<task-con>`, `release/vX.Y.Z`, `hotfix/*`.
+> - Toàn bộ nhánh cũ vẫn được giữ nguyên + lưu tag backup `backup/2026-11-24/*` để recovery code.
+> - **Đang code dở ở nhánh cũ chưa đẩy lên?** Xem hướng dẫn chuyển đổi nhanh tại [THONG-BAO-CHUYEN-NHANH.md](THONG-BAO-CHUYEN-NHANH.md) và quy trình đầy đủ tại [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Hệ thống quản lý phòng tập & huấn luyện cá nhân **Meta Gym** (đồ án chuyên ngành), gồm ứng dụng di động cho **Member & Coach**, trang quản trị **Admin Web**, **Landing Web**, và **REST API + PostgreSQL**.
 
 Repository: <https://github.com/Thongcao2k5/MetaGym>
 
@@ -12,9 +17,10 @@ Repository: <https://github.com/Thongcao2k5/MetaGym>
 |---|---|---|
 | [`mobile-app/`](mobile-app/README.md) | Flutter (Dart `^3.13.2`), Provider, GoRouter, Dio, `fl_chart`, `livekit_client` | Ứng dụng cho **Member** và **Coach** (tập luyện, dinh dưỡng, tiến độ, nhắn tin, gọi thoại/video, trợ lý AI, check-in QR). |
 | [`admin-web/`](admin-web/README.md) | Vite (`^8.3.0`), Bootstrap 5 (`^5.3.8`), Chart.js (`^4.5.1`), QRCode | Trang quản trị **Admin** (quản lý người dùng, gói tập, thanh toán, thiết bị, bài tập, in mã QR check-in). |
+| [`landing-web/`](landing-web/) | Vite + HTML/CSS/JS | Trang giới thiệu thương hiệu, bảng giá và thông tin phòng tập **Meta Gym**. |
 | [`backend/`](backend/package.json) | Node.js (`>= 22`), Express 5, PostgreSQL (`pg`), Zod, JWT, Sharp, LiveKit SDK | REST API nghiệp vụ, xác thực/phân quyền RBAC, xử lý ảnh và kết nối dịch vụ ngoài. |
-| [`database/`](database/README.md) | PostgreSQL 17+ (`citext`, `btree_gist`) | Migrations (`0001`–`0028`), baseline/demo seeds và `schema_assertions.sql`. |
-| [`design-system/`](design-system/meta-gym/MASTER.md) & [`DESIGN.md`](DESIGN.md) | Futuristic Performance Glass | Hệ thống thiết kế, token màu/font (`Be Vietnam Pro`), adapter cho Flutter & Bootstrap 5. |
+| [`database/`](database/README.md) | PostgreSQL 17+ (`citext`, `btree_gist`) | Migrations (`0001`–`0033`), baseline/demo seeds và `schema_assertions.sql`. |
+| [`design-system/`](design-system/meta-gym/MASTER.md) & [`DESIGN.md`](DESIGN.md) | Futuristic Performance Glass | Hệ thống thiết kế, token màu/font (`Be Vietnam Pro`), preview studio, thư viện SVG & adapter cho Flutter/Bootstrap 5. |
 | [`docs/`](docs/README.md) | Markdown & SQL | Đặc tả yêu cầu, hợp đồng API, kiến trúc và kế hoạch triển khai Cloud Free. |
 
 ---
@@ -25,9 +31,10 @@ Repository: <https://github.com/Thongcao2k5/MetaGym>
 MetaGym/
 ├── mobile-app/          # Ứng dụng Flutter (lib/app, lib/core, lib/features)
 ├── admin-web/           # Web Admin (Vite + Bootstrap 5 + Chart.js)
+├── landing-web/         # Landing Page thương hiệu Meta Gym
 ├── backend/             # Express 5 REST API (src/routes, controllers, services, storage)
 ├── database/            # migrations/*.sql, seeds/*.sql, tests/schema_assertions.sql
-├── design-system/       # MASTER.md, page specs và adapters (Bootstrap / Flutter)
+├── design-system/       # MASTER.md, preview studio, SVG icons và adapters (Bootstrap / Flutter)
 ├── docs/                # requirements/, architecture/, deployment/, decisions/
 └── tasks/               # Kế hoạch và tiến độ công việc
 ```
