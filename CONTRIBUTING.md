@@ -195,7 +195,9 @@ git push -u origin hotfix/backend/fix-payment-crash
 
 ---
 
-## 4. Quy ước Commit (Conventional Commits)
+## 4. Quy ước Commit & Format Ghi chú khi Merge vào `develop`
+
+### A. Quy ước từng Commit (Conventional Commits)
 
 Định dạng chuẩn: `<type>(<scope>): <mô tả ngắn gọn>`
 
@@ -209,6 +211,55 @@ git push -u origin hotfix/backend/fix-payment-crash
 | `test` | Thêm hoặc sửa test | `test(mobile): add Member Profile 5.1-5.14 sync tests` |
 | `style` | Format, CSS/token, icon thuần giao diện | `style(design): align Dark Graphite border tokens` |
 | `chore` | CI/CD, build scripts, tooling | `chore(ci): run PostgreSQL migration check on develop PRs` |
+
+### B. Format ghi chú bắt buộc khi Merge nhánh nhỏ vào `develop` (đặc biệt khi có nhiều Commit)
+
+Để lịch sử trên `develop` luôn đọc được ngay toàn bộ thay đổi mà không phải mở từng commit lẻ (như `wip`, `fix typo`, `adjust spacing`):
+
+1. **Chiến lược Merge chuẩn (đã cấu hình tự động trên GitHub):**
+   - **Nhánh nhỏ (`feature/*`, `fix/*`, `update/*`, `refactor/*`) → `develop`:** ưu tiên dùng **`Squash and merge`**. GitHub đã cấu hình tự lấy **`PR_TITLE`** làm tiêu đề commit và **`PR_BODY`** làm nội dung commit trên `develop`, đồng thời **tự động xóa nhánh tạm sau khi merge**.
+   - **Nhánh phát hành (`release/vX.Y.Z`) & Vá khẩn cấp (`hotfix/*`) → `main`:** dùng **`Create a merge commit`** để giữ mốc phiên bản rõ ràng và đồng bộ ngược về `develop` không bị lệch lịch sử.
+
+2. **Format chung bắt buộc cho Tiêu đề & Nội dung PR (ánh xạ rõ từng Commit):**
+
+```markdown
+Tiêu đề PR:
+<type>(<folder>): <tóm tắt ngắn gọn 1 dòng của cả PR>
+
+Nội dung PR (sẽ trở thành commit message trên develop):
+## 1. Tóm tắt các phần đã làm (ánh xạ theo từng commit)
+- [<type>] <Mô tả rõ hạng mục 1> — (`<type>(<scope>): <tiêu đề commit 1>`)
+- [<type>] <Mô tả rõ hạng mục 2> — (`<type>(<scope>): <tiêu đề commit 2>`)
+- [<type>] <Mô tả rõ hạng mục 3> — (`<type>(<scope>): <tiêu đề commit 3>`)
+
+## 2. Ảnh hưởng API / Database / Env
+- <Không thay đổi / liệt kê endpoint hoặc migration 0034_*.sql>
+
+## 3. Kết quả kiểm thử (Verification)
+- <Lệnh test đã chạy & kết quả>
+```
+
+3. **Ví dụ thực tế (1 PR có 4 commit con khi merge vào `develop`):**
+
+```markdown
+Tiêu đề PR:
+feat(mobile): hoàn thiện màn hình Tab 2 Member Training Hub
+
+## 1. Tóm tắt các phần đã làm (ánh xạ theo từng commit)
+- [feat] Xây dựng bố cục Tab 2 Training Hub, thẻ gói tập & lịch tự tập — (`feat(mobile): build member training hub layout`)
+- [style] Đồng bộ màn hình preview `tab2-training.js` theo thiết kế mới — (`style(design): sync tab2-training preview screen`)
+- [fix] Xử lý tràn dòng trên viewport 375x812 khi tên gói tập dài — (`fix(mobile): fix row overflow on 375x812 viewport`)
+- [test] Bổ sung 8 widget tests bao phủ loading, active, locked, expired, error — (`test(mobile): add 8 widget tests for training hub`)
+
+## 2. Ảnh hưởng API / Database / Env
+- Không thay đổi backend hay database migration.
+
+## 3. Kết quả kiểm thử (Verification)
+- `flutter test test/features/training/member_training_hub_page_test.dart`: 8/8 passed
+- `flutter analyze --no-fatal-infos`: 0 errors
+```
+
+> **Quy tắc kiểm soát khi Review PR:** Nếu PR có nhiều commit nhưng phần **Tóm tắt** ghi chung chung (ví dụ chỉ ghi *"update code"* hoặc *"xong task"*), Reviewer yêu cầu tác giả bổ sung đủ danh sách hạng mục ánh xạ theo commit trước khi approve & merge vào `develop`.
 
 ---
 
