@@ -26,7 +26,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="input-box" style="height:42px;margin-bottom:10px;color:var(--text-secondary);font-size:13px;">
+          <div class="input-box" style="height:42px;margin-bottom:10px;color:var(--text-secondary);font-size:14px;">
             <span class="row" style="gap:8px;"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_search.svg" alt="Tìm" /><span>Tìm tên hoặc chuyên môn Coach...</span></span>
           </div>
 
@@ -111,9 +111,9 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <div class="card-warm-glass">
             <div class="row" style="gap:12px;margin-bottom:12px;">
-              <div class="avatar-ln" style="width:58px;height:58px;font-size:19px;">LN</div>
+              <div class="avatar-ln" style="width:58px;height:58px;font-size:20px;">LN</div>
               <div style="flex:1;">
-                <div style="font-size:18px;font-weight:800;">Lê Hoàng Nam</div>
+                <div style="font-size:20px;font-weight:800;">Lê Hoàng Nam</div>
                 <div class="txt-xs" style="margin-top:2px;">Chuyên gia Hypertrophy &amp; Sức mạnh</div>
                 <div class="row" style="gap:6px;margin-top:5px;">
                   <span class="pill pill-success tnum">Còn 2 suất</span>
@@ -216,7 +216,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="row-between" style="margin-bottom:6px;">
               <div class="row" style="gap:6px;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/coaching/coach_pkg_intensive.svg" alt="Gói 24 buổi" />
-                <strong style="font-size:15.5px;">Gói Chuyên Sâu 24 buổi</strong>
+                <strong style="font-size:16px;">Gói Chuyên Sâu 24 buổi</strong>
               </div>
               <span class="pill pill-orange">Phổ biến</span>
             </div>
@@ -234,7 +234,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               </div>
               <span class="txt-xs tnum">45 ngày</span>
             </div>
-            <div class="tnum" style="font-size:19px;font-weight:800;margin:4px 0 8px;">4.560.000đ <span class="txt-xs" style="text-decoration:line-through;opacity:0.65;">4.800.000đ</span></div>
+            <div class="tnum" style="font-size:20px;font-weight:800;margin:4px 0 8px;">4.560.000đ <span class="txt-xs" style="text-decoration:line-through;opacity:0.65;">4.800.000đ</span></div>
             <div class="row-between">
               <span class="txt-xs">12 buổi 1:1 · Giáo trình cá nhân</span>
               <span class="btn-secondary" data-go="member-checkout" style="height:32px;font-size:12px;cursor:pointer;">Chọn gói</span>
@@ -267,7 +267,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="mg-eyebrow">META GYM</div>
               <div class="mg-title">Thông báo</div>
             </div>
-            <span class="sec-link" style="font-size:11.5px;">Đọc tất cả</span>
+            <span class="sec-link" style="font-size:12px;">Đọc tất cả</span>
           </div>
 
           <div class="sec-head" style="margin-top:4px;"><h3>Hôm nay</h3><span class="pill pill-orange tnum">2 chưa đọc</span></div>
@@ -574,7 +574,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <div class="card-warm-glass">
             <div class="row" style="gap:12px;">
-              <div class="mg-logo" style="width:46px;height:46px;">MG</div>
+              <div class="mg-logo" style="width:46px;height:46px;"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
               <div>
                 <div style="font-size:16px;font-weight:800;">Meta Gym Flagship Studio</div>
                 <div class="txt-xs">Không gian tập luyện hiệu suất cao</div>

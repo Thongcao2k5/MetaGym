@@ -19,7 +19,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
         <div class="phone-body">
           <div class="mg-header">
-            <div class="mg-logo">MG</div>
+            <div class="mg-logo"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">META GYM · TẬP LUYỆN</div>
               <div class="mg-title">Tập luyện</div>
@@ -31,35 +31,35 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <!-- Hero Card: Buổi tập hôm nay (Tâm điểm sang trọng Warm Smoked Glass) -->
           <div class="card-warm-glass" style="padding:15px;margin-bottom:11px;border-color:rgba(255,138,91,0.52);background:linear-gradient(155deg, rgba(66,44,35,0.88) 0%, rgba(43,38,34,0.82) 55%, rgba(32,28,25,0.86) 100%);">
             <div class="row-between" style="margin-bottom:8px;">
-              <span class="pill pill-orange tnum" style="font-size:10.5px;white-space:nowrap;">● Hôm nay · 18:00</span>
-              <span class="pill pill-muted tnum" style="font-size:10px;white-space:nowrap;">90 phút · Push Day</span>
+              <span class="pill pill-orange tnum" style="font-size:11px;white-space:nowrap;">● Hôm nay · 18:00</span>
+              <span class="pill pill-muted tnum" style="font-size:11px;white-space:nowrap;">90 phút · Push Day</span>
             </div>
-            <div style="font-size:16.5px;font-weight:800;line-height:1.25;letter-spacing:-0.02em;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <div style="font-size:16px;font-weight:800;line-height:1.25;letter-spacing:-0.02em;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               Ngực &amp; Tay sau · Chest &amp; Triceps
             </div>
             <div class="row" style="gap:7px;margin-bottom:12px;min-width:0;">
-              <div class="avatar-ln" style="width:22px;height:22px;font-size:9px;flex-shrink:0;">LN</div>
+              <div class="avatar-ln" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">LN</div>
               <span class="txt-xs" style="color:var(--text-warm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Giáo trình tuần 4 · <strong style="color:var(--text-primary);">HLV Lê Hoàng Nam</strong></span>
             </div>
 
             <div class="grid-3" style="gap:7px;margin-bottom:12px;">
               <div class="metric-box" style="text-align:center;padding:8px 4px;border-radius:12px;min-width:0;">
                 <div class="tnum" style="font-size:16px;font-weight:800;color:var(--text-primary);white-space:nowrap;">6</div>
-                <div class="txt-xs" style="font-size:10.5px;white-space:nowrap;">Bài tập</div>
+                <div class="txt-xs" style="font-size:12px;white-space:nowrap;">Bài tập</div>
               </div>
               <div class="metric-box" style="text-align:center;padding:8px 4px;border-radius:12px;min-width:0;">
                 <div class="tnum" style="font-size:16px;font-weight:800;color:var(--primary);white-space:nowrap;">22</div>
-                <div class="txt-xs" style="font-size:10.5px;white-space:nowrap;">Tổng hiệp</div>
+                <div class="txt-xs" style="font-size:12px;white-space:nowrap;">Tổng hiệp</div>
               </div>
               <div class="metric-box" style="text-align:center;padding:8px 4px;border-radius:12px;min-width:0;">
                 <div class="tnum" style="font-size:16px;font-weight:800;color:var(--success);white-space:nowrap;">~540</div>
-                <div class="txt-xs" style="font-size:10.5px;white-space:nowrap;">Kcal</div>
+                <div class="txt-xs" style="font-size:12px;white-space:nowrap;">Kcal</div>
               </div>
             </div>
 
             <div class="grid-2" style="gap:8px;">
-              <button type="button" class="btn-primary" style="height:40px;font-size:12.5px;white-space:nowrap;" data-go="member-workout-log">Bắt đầu tập →</button>
-              <button type="button" class="btn-secondary" style="height:40px;font-size:12.5px;white-space:nowrap;" data-go="member-curriculum">Xem giáo trình</button>
+              <button type="button" class="btn-primary" style="height:40px;font-size:14px;white-space:nowrap;" data-go="member-workout-log">Bắt đầu tập →</button>
+              <button type="button" class="btn-secondary" style="height:40px;font-size:14px;white-space:nowrap;" data-go="member-curriculum">Xem giáo trình</button>
             </div>
           </div>
 
@@ -71,16 +71,16 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div style="min-width:0;">
                 <div class="row-between" style="margin-bottom:8px;">
                   <div class="row" style="gap:5px;min-width:0;">
-                    <img class="ico-xs" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Hạng Vàng" style="width:13px;height:13px;flex-shrink:0;" />
-                    <span style="font-size:9.5px;font-weight:800;letter-spacing:0.06em;color:#F5B041;white-space:nowrap;">HẠNG VÀNG</span>
+                    <img class="ico-xs" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Hạng Vàng" />
+                    <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#F5B041;white-space:nowrap;">HẠNG VÀNG</span>
                   </div>
                   <span style="width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px rgba(46,204,113,0.75);flex-shrink:0;"></span>
                 </div>
                 <div class="row" style="align-items:baseline;gap:4px;margin-bottom:3px;white-space:nowrap;">
-                  <span class="tnum" style="font-size:23px;font-weight:800;letter-spacing:-0.03em;line-height:1;color:var(--text-primary);">42</span>
-                  <span style="font-size:11.5px;font-weight:600;color:var(--text-warm-muted);white-space:nowrap;">ngày còn lại</span>
+                  <span class="tnum" style="font-size:22px;font-weight:800;letter-spacing:-0.03em;line-height:1;color:var(--text-primary);">42</span>
+                  <span style="font-size:12px;font-weight:600;color:var(--text-warm-muted);white-space:nowrap;">ngày còn lại</span>
                 </div>
-                <div class="txt-xs tnum" style="font-size:10.5px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hạn 03/01/2027</div>
+                <div class="txt-xs tnum" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hạn 03/01/2027</div>
               </div>
               <div>
                 <div class="prog-track" style="height:4px;margin:10px 0 8px;background:rgba(255,255,255,0.12);"><div class="prog-fill" style="width:74%;background:linear-gradient(90deg, #F5B041, #2ECC71);"></div></div>
@@ -96,14 +96,14 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(255,94,54,0.24) 0%, transparent 72%);pointer-events:none;"></div>
               <div style="min-width:0;">
                 <div class="row-between" style="margin-bottom:8px;">
-                  <span style="font-size:9.5px;font-weight:800;letter-spacing:0.06em;color:var(--primary);white-space:nowrap;">COACH 1:1</span>
+                  <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:var(--primary);white-space:nowrap;">COACH 1:1</span>
                   <span style="width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px rgba(46,204,113,0.75);flex-shrink:0;"></span>
                 </div>
                 <div class="row" style="gap:7px;margin-bottom:3px;min-width:0;">
-                  <div class="avatar-ln" style="width:28px;height:28px;font-size:10px;flex-shrink:0;box-shadow:0 4px 10px rgba(245,176,65,0.28);">LN</div>
+                  <div class="avatar-ln" style="width:28px;height:28px;font-size:11px;flex-shrink:0;box-shadow:0 4px 10px rgba(245,176,65,0.28);">LN</div>
                   <div style="min-width:0;flex:1;">
-                    <div style="font-size:12.5px;font-weight:800;line-height:1.2;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lê Hoàng Nam</div>
-                    <div class="txt-xs tnum" style="font-size:10px;color:var(--text-warm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Còn 14/24 buổi</div>
+                    <div style="font-size:14px;font-weight:800;line-height:1.2;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lê Hoàng Nam</div>
+                    <div class="txt-xs tnum" style="font-size:12px;color:var(--text-warm-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Còn 14/24 buổi</div>
                   </div>
                 </div>
               </div>
@@ -135,7 +135,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                   <div class="txt-xs tnum" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">1.840 / 2.400 kcal · Đạm 140/160g</div>
                 </div>
               </div>
-              <span class="pill pill-success tnum" style="font-size:10.5px;flex-shrink:0;white-space:nowrap;">77%</span>
+              <span class="pill pill-success tnum" style="font-size:11px;flex-shrink:0;white-space:nowrap;">77%</span>
             </div>
             <div class="prog-track" style="height:5px;margin:0;"><div class="prog-fill" style="width:77%;background:linear-gradient(90deg, var(--success), #59E59A);"></div></div>
           </div>
@@ -155,13 +155,13 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <span class="txt-xs" style="color:var(--primary);font-weight:700;flex-shrink:0;white-space:nowrap;">Mở ›</span>
             </div>
             <div class="row-between tnum" style="gap:5px;">
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:10px;font-weight:700;color:var(--success);white-space:nowrap;">T2✓</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:10px;font-weight:700;color:var(--success);white-space:nowrap;">T3✓</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(255,94,54,0.22);border:1px solid var(--primary);font-size:10px;font-weight:800;color:#FFF;white-space:nowrap;">T4</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:10px;color:var(--text-secondary);white-space:nowrap;">T5</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:10px;color:var(--text-secondary);white-space:nowrap;">T6</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:10px;color:var(--text-secondary);white-space:nowrap;">T7</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.35);border:1px solid rgba(179,169,157,0.18);font-size:10px;color:var(--text-secondary);white-space:nowrap;">CN</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:12px;font-weight:700;color:var(--success);white-space:nowrap;">T2✓</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:12px;font-weight:700;color:var(--success);white-space:nowrap;">T3✓</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(255,94,54,0.22);border:1px solid var(--primary);font-size:12px;font-weight:800;color:#FFF;white-space:nowrap;">T4</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T5</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T6</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T7</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.35);border:1px solid rgba(179,169,157,0.18);font-size:12px;color:var(--text-secondary);white-space:nowrap;">CN</div>
             </div>
           </div>
 
@@ -178,8 +178,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 </div>
                 <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
               </div>
-              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nhật ký tập luyện</div>
-              <div class="txt-xs" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lưu PR, ảnh &amp; số đo</div>
+              <div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nhật ký tập luyện</div>
+              <div class="txt-xs" style="font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lưu PR, ảnh &amp; số đo</div>
             </div>
 
             <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-visits">
@@ -189,8 +189,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 </div>
                 <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
               </div>
-              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lịch sử &amp; Check-in</div>
-              <div class="txt-xs tnum" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">18 lượt đến phòng gym</div>
+              <div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lịch sử &amp; Check-in</div>
+              <div class="txt-xs tnum" style="font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">18 lượt đến phòng gym</div>
             </div>
           </div>
 
@@ -202,8 +202,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 </div>
                 <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
               </div>
-              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Thư viện bài tập</div>
-              <div class="txt-xs tnum" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">120+ bài chuẩn form</div>
+              <div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Thư viện bài tập</div>
+              <div class="txt-xs tnum" style="font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">120+ bài chuẩn form</div>
             </div>
 
             <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-equipment">
@@ -213,8 +213,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 </div>
                 <span class="txt-xs" style="color:var(--text-warm-muted);">›</span>
               </div>
-              <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Phòng gym &amp; Thiết bị</div>
-              <div class="txt-xs" style="font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hướng dẫn máy &amp; nội quy</div>
+              <div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Phòng gym &amp; Thiết bị</div>
+              <div class="txt-xs" style="font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hướng dẫn máy &amp; nội quy</div>
             </div>
           </div>
         </div>
@@ -252,7 +252,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
-              <div class="mg-title" style="font-size:19px;">Theo dõi dinh dưỡng</div>
+              <div class="mg-title" style="font-size:20px;">Theo dõi dinh dưỡng</div>
             </div>
           </div>
 
@@ -266,11 +266,11 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="grid-2">
               <div class="metric-box" style="text-align:center;">
                 <div class="txt-xs">Tổng năng lượng</div>
-                <div class="tnum txt-green" style="font-size:21px;font-weight:800;margin-top:2px;" data-nutri-kcal="1840">1.840 kcal</div>
+                <div class="tnum txt-green" style="font-size:22px;font-weight:800;margin-top:2px;" data-nutri-kcal="1840">1.840 kcal</div>
               </div>
               <div class="metric-box" style="text-align:center;">
                 <div class="txt-xs">Số món đã ghi</div>
-                <div class="tnum" style="font-size:21px;font-weight:800;margin-top:2px;" data-nutri-count="4">4 món</div>
+                <div class="tnum" style="font-size:22px;font-weight:800;margin-top:2px;" data-nutri-count="4">4 món</div>
               </div>
             </div>
           </div>
@@ -279,7 +279,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-liquid" style="padding:12px 14px;">
             <div class="row-between">
               <div class="row" style="gap:8px;">
-                <div class="avatar-ln" style="width:28px;height:28px;font-size:10px;">LN</div>
+                <div class="avatar-ln" style="width:28px;height:28px;font-size:11px;">LN</div>
                 <div>
                   <div class="txt-xs">Thực đơn từ Coach</div>
                   <div class="txt-sm txt-bold">Tăng cơ sạch — Tuần 4</div>
@@ -298,7 +298,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="row" style="gap:10px;">
                 <div class="quick-ico" style="width:34px;height:34px;"><img class="ico-md" src="../../meta-gym/assets/svg/nutrition/meal_breakfast.svg" alt="Bữa sáng" /></div>
                 <div>
-                  <div style="font-size:15.5px;font-weight:700;">Bữa sáng</div>
+                  <div style="font-size:16px;font-weight:700;">Bữa sáng</div>
                   <div class="txt-xs tnum">1 món</div>
                 </div>
               </div>
@@ -321,7 +321,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="row" style="gap:10px;">
                 <div class="quick-ico" style="width:34px;height:34px;background:rgba(46,204,113,0.14);"><img class="ico-md" src="../../meta-gym/assets/svg/nutrition/meal_lunch.svg" alt="Bữa trưa" /></div>
                 <div>
-                  <div style="font-size:15.5px;font-weight:700;">Bữa trưa</div>
+                  <div style="font-size:16px;font-weight:700;">Bữa trưa</div>
                   <div class="txt-xs tnum">2 món</div>
                 </div>
               </div>
@@ -373,7 +373,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
-              <div class="mg-title" style="font-size:19px;">Nhật ký tập luyện</div>
+              <div class="mg-title" style="font-size:20px;">Nhật ký tập luyện</div>
             </div>
           </div>
 
@@ -553,7 +553,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                   <img class="ico-md" src="../../meta-gym/assets/svg/states/qr_scan_frame.svg" alt="Điểm danh" style="background:transparent;padding:0;" />
                 </div>
                 <div style="min-width:0;">
-                  <div style="font-size:13.5px;font-weight:700;">Hôm nay chưa điểm danh</div>
+                  <div style="font-size:14px;font-weight:700;">Hôm nay chưa điểm danh</div>
                   <div class="txt-xs">Mở mã QR hoặc quẹt thẻ NFC tại cổng</div>
                 </div>
               </div>
@@ -652,19 +652,19 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="qr-sheet">
             <div class="row-between" style="margin-bottom:8px;">
               <span class="pill pill-success tnum">● Hôm nay · 22/11/2026</span>
-              <span class="tnum" style="font-size:11.5px;color:var(--text-secondary);">ID MG-2048</span>
+              <span class="tnum" style="font-size:12px;color:var(--text-secondary);">ID MG-2048</span>
             </div>
-            <div style="font-size:17px;font-weight:800;">QR Check-in Phòng Tập</div>
+            <div style="font-size:16px;font-weight:800;">QR Check-in Phòng Tập</div>
             <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Mã riêng của Nguyễn Minh Quân · Chỉ dùng trong ngày</div>
 
             <div class="qr-box-white" data-qr-svg-host></div>
 
             <div style="background:var(--surface-raised);border:1px solid var(--border-solid);border-radius:12px;padding:8px 10px;margin-bottom:12px;">
-              <div class="row-between" style="font-size:11.5px;">
+              <div class="row-between" style="font-size:12px;">
                 <span style="color:var(--text-secondary);">Mã phiên duy nhất</span>
                 <strong class="tnum" style="color:var(--primary);letter-spacing:0.04em;" data-qr-token>MG-261122-8F4A</strong>
               </div>
-              <div class="tnum" style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;text-align:left;" data-qr-meta>
+              <div class="tnum" style="font-size:12px;color:var(--text-secondary);margin-top:3px;text-align:left;" data-qr-meta>
                 Hết hạn 23:59 hôm nay · Đổi mã mới mỗi lần mở hoặc tạo lại
               </div>
             </div>
@@ -710,7 +710,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-warm-glass" style="padding:13px 14px;">
             <div class="row-between">
               <div class="row" style="gap:9px;">
-                <div class="avatar-ln" style="width:34px;height:34px;font-size:11.5px;">LN</div>
+                <div class="avatar-ln" style="width:34px;height:34px;font-size:12px;">LN</div>
                 <div>
                   <div class="txt-sm txt-bold">HLV Lê Hoàng Nam</div>
                   <div class="txt-xs tnum">Tuần 4 / 8 · 5 buổi/tuần</div>
@@ -876,7 +876,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="input-box" style="height:42px;margin-bottom:10px;color:var(--text-secondary);font-size:13px;">
+          <div class="input-box" style="height:42px;margin-bottom:10px;color:var(--text-secondary);font-size:14px;">
             <span class="row" style="gap:8px;"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_search.svg" alt="Tìm" /><span>Tìm tên máy hoặc nhóm cơ...</span></span>
           </div>
 
@@ -970,7 +970,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="row" style="gap:12px;margin-bottom:10px;">
               <div class="quick-ico" style="width:52px;height:52px;border-radius:16px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cable Crossover" /></div>
               <div style="flex:1;">
-                <div style="font-size:17px;font-weight:800;">Cable Crossover Dual</div>
+                <div style="font-size:16px;font-weight:800;">Cable Crossover Dual</div>
                 <div class="txt-xs">Khu Máy Cáp · Tầng 2 · Tải tối đa 120 kg</div>
                 <div style="margin-top:6px;"><span class="pill pill-success">● Sẵn sàng sử dụng</span></div>
               </div>

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meta Gym — Design System &amp; Flutter Review Hub</title>
+  <link rel="icon" type="image/svg+xml" href="./meta-gym/assets/svg/brand/app_icon_mark.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -54,13 +55,14 @@
     }
     .brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
     .mg-logo {
-      width: 48px; height: 48px; border-radius: 15px;
-      background: linear-gradient(135deg, #FF6A42, #FF4520);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      box-shadow: 0 6px 18px rgba(255, 94, 54, 0.35);
+      width: 52px; height: 52px; border-radius: 14px;
+      background: transparent;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45), 0 0 18px rgba(255, 94, 54, 0.20);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 16px; color: #FFF;
+      overflow: hidden;
+      flex-shrink: 0;
     }
+    .mg-logo img { width: 100%; height: 100%; display: block; object-fit: cover; }
     .eyebrow {
       font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em;
       text-transform: uppercase; color: var(--primary);
@@ -127,7 +129,7 @@
   <div class="wrap">
     <header class="hero">
       <div class="brand-row">
-        <div class="mg-logo">MG</div>
+        <div class="mg-logo"><img src="./meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
         <div>
           <div class="eyebrow">META GYM • FUTURISTIC PERFORMANCE GLASS</div>
           <h1>Design System &amp; Flutter Review Hub</h1>
