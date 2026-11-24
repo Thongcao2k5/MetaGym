@@ -28,11 +28,28 @@ Tài liệu sổ tay chính thức cho toàn bộ team **MetaGym** về cấu tr
 
 ---
 
-## 2. Cây nhánh GitHub chuẩn
+## 2. Cây nhánh & Luồng 4 chặng chuẩn (Dev → UAT → Production)
+
+```text
+feature / fix / update   (dev tách từ develop để code từng task)
+          │  PR + 1 người review + CI check
+          ▼
+       develop           (nhánh tích hợp chung của cả 3 dev)
+          │  Chốt đủ tính năng của đợt -> tách nhánh đóng băng
+          ▼
+    release/vX.Y.Z       (UAT / QA tổng thể — KHÔNG thêm tính năng mới, chỉ vá bug UAT)
+          │  PR + CI PostgreSQL & Cloudflare Pages xanh
+          ▼
+        main             (Code chính Production · Render deploy · gắn tag vX.Y.Z)
+```
+
+> **Lợi ích của bước `release/vX.Y.Z` (UAT):** Trong lúc bản `release/v1.1.0` đang UAT/kiểm thử trước khi đưa lên `main`, các dev khác vẫn thoải mái làm tính năng của đợt `v1.2.0` trên `develop` mà không làm ảnh hưởng bản đang UAT. Nếu UAT phát hiện lỗi thì vá trực tiếp trên `release/v1.1.0`, UAT đạt thì merge vào `main` (gắn tag `v1.1.0`) rồi **merge ngược bản vá UAT về `develop`**.
+>
+> **Ngoại lệ duy nhất (`hotfix/*`):** Chỉ khi production trên `main` gặp lỗi khẩn cấp mới tách thẳng `hotfix/<folder>/<task-con>` từ `main`, vá xong thì merge vào cả `main` (tag patch) và `develop`.
 
 ```text
 main                                    # Production ổn định (đã bật Branch Protection, gắn tag v1.0.0, v1.1.0...)
-├── release/vX.Y.Z                      # Nhánh đóng băng & kiểm thử phát hành -> PR vào main -> gắn tag vX.Y.Z
+├── release/vX.Y.Z                      # Nhánh đóng băng & UAT/QA trước khi phát hành -> PR vào main -> gắn tag vX.Y.Z
 ├── hotfix/<folder>/<task-con>          # Vá lỗi khẩn cấp production -> PR vào main + develop
 │
 └── develop                             # Nhánh tích hợp chính của team (đã bật Branch Protection)
