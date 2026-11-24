@@ -4,8 +4,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-import 'package:meta_gym_app/features/training/presentation/nutrition_tracking_page.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
@@ -21,6 +19,8 @@ import 'package:meta_gym_app/features/training/data/member_self_training_api.dar
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_hub_page.dart';
+import 'package:meta_gym_app/features/training/presentation/nutrition_tracking_page.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   for (final useButton in [false, true]) {
@@ -59,19 +59,19 @@ void main() {
         final button = find.byKey(const Key('nutrition-tool-open'));
         expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
         expect(tester.getSize(button).width, greaterThanOrEqualTo(48));
-        expect(find.text('Theo dõi dinh dưỡng'), findsOneWidget);
+        expect(find.text('Dinh dưỡng hôm nay'), findsOneWidget);
         final nutritionTop = tester
-            .getTopLeft(find.text('Theo dõi dinh dưỡng'))
+            .getTopLeft(find.text('Dinh dưỡng hôm nay'))
             .dy;
         expect(
           nutritionTop,
-          greaterThan(tester.getTopLeft(find.text('Lịch tập của tôi')).dy),
+          lessThan(tester.getTopLeft(find.text('Lịch tập tuần của tôi')).dy),
         );
         expect(
           nutritionTop,
-          lessThan(tester.getTopLeft(find.text('Công cụ & Khám phá')).dy),
+          lessThan(tester.getTopLeft(find.text('Công cụ & Thư viện')).dy),
         );
-        await tester.tap(useButton ? button : find.text('Theo dõi dinh dưỡng'));
+        await tester.tap(useButton ? button : find.text('Dinh dưỡng hôm nay'));
         await tester.pumpAndSettle();
         expect(find.byType(NutritionTrackingPage), findsOneWidget);
         expect(find.text('Chưa có bữa ăn nào'), findsOneWidget);
@@ -83,6 +83,7 @@ void main() {
       },
     );
   }
+
   void setPhoneViewport(WidgetTester tester) {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
@@ -151,10 +152,9 @@ void main() {
 
     expect(find.text('META GYM · TẬP LUYỆN'), findsOneWidget);
     expect(find.text('Tập luyện'), findsOneWidget);
-    expect(find.text('Dịch vụ của bạn'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Kế hoạch tập luyện'), findsOneWidget);
-    expect(find.text('Công cụ & Khám phá'), findsOneWidget);
+    expect(find.text('Kế hoạch & Dinh dưỡng'), findsOneWidget);
+    expect(find.text('Công cụ & Thư viện'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -189,22 +189,23 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tập luyện'), findsOneWidget);
-      expect(find.text('Dịch vụ của bạn'), findsOneWidget);
-      expect(find.text('Gói tập'), findsOneWidget);
-      expect(find.text('Gói Coach'), findsOneWidget);
-      expect(find.text('LN'), findsOneWidget);
+      expect(find.text('HẠNG VÀNG'), findsOneWidget);
+      expect(find.text('COACH 1:1'), findsOneWidget);
+      expect(find.text('LN'), findsNWidgets(2));
       expect(find.text('Lê Hoàng Nam'), findsOneWidget);
-      expect(find.text('Hiệu lực'), findsNWidgets(2));
-      expect(find.textContaining('ngày'), findsWidgets);
+      expect(find.text('ngày còn lại'), findsOneWidget);
+      expect(find.text('Bắt đầu tập →'), findsOneWidget);
+      expect(find.text('Xem giáo trình'), findsOneWidget);
 
-      expect(find.text('Giáo trình của Coach'), findsOneWidget);
-      expect(find.text('Lịch tập của tôi'), findsOneWidget);
-      expect(find.text('Nhật ký tập luyện'), findsOneWidget);
-      expect(find.text('Lịch sử tập luyện'), findsOneWidget);
+      expect(find.text('Dinh dưỡng hôm nay'), findsOneWidget);
+      expect(find.text('Lịch tập tuần của tôi'), findsOneWidget);
+
       await tester.scrollUntilVisible(find.text('Thư viện bài tập'), 200);
       await tester.pumpAndSettle();
+      expect(find.text('Nhật ký tập luyện'), findsOneWidget);
+      expect(find.text('Lịch sử & Check-in'), findsOneWidget);
       expect(find.text('Thư viện bài tập'), findsOneWidget);
-      expect(find.text('Phòng gym & thiết bị'), findsOneWidget);
+      expect(find.text('Phòng gym & Thiết bị'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // Verify landscape/tablet layout at 800x600 as well.
@@ -228,12 +229,16 @@ void main() {
 
       expect(find.text('Chưa có gói'), findsOneWidget);
       expect(find.text('Khám phá Coach'), findsOneWidget);
-      expect(find.text('Đăng ký'), findsNWidgets(2));
+      expect(find.text('Giáo trình của Coach'), findsOneWidget);
 
-      await tester.tap(find.text('Giáo trình của Coach'));
+      await tester.tap(find.text('Xem giáo trình'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Cần gói tập'), findsOneWidget);
+      expect(find.text('Cần gói tập'), findsWidgets);
+      expect(
+        find.text('Đăng ký gói tập để sử dụng giáo trình của Coach.'),
+        findsOneWidget,
+      );
       expect(find.text('Đăng ký ngay'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -270,19 +275,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Đã hết hạn'), findsOneWidget);
-      expect(find.text('Tạm ngưng'), findsOneWidget);
-      expect(
-        find.text('Tạm ngưng · Gia hạn gói tập để tiếp tục.'),
-        findsOneWidget,
-      );
-      expect(find.text('Gia hạn'), findsOneWidget);
+      expect(find.text('Tạm ngưng · Gia hạn'), findsOneWidget);
 
       await tester.scrollUntilVisible(
         find.text('Nhật ký tập luyện'),
-        120,
+        150,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
+      expect(find.text('Gia hạn'), findsOneWidget);
+
       await tester.tap(find.text('Nhật ký tập luyện'));
       await tester.pumpAndSettle();
 
@@ -324,8 +326,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await tester.scrollUntilVisible(
+        find.text('Lịch tập tuần của tôi'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
       expect(find.byType(MuscleAnatomyTile), findsOneWidget);
-      expect(find.text('Hôm nay'), findsOneWidget);
       expect(find.text('Hôm nay · 18:30 · Ngực & Vai'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -371,7 +379,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Lê Hoàng Nam'), findsOneWidget);
-    expect(find.text('Hiệu lực'), findsNWidgets(2));
+    expect(find.text('HẠNG VÀNG'), findsOneWidget);
     expect(find.text('Thử lại'), findsNothing);
     expect(tester.takeException(), isNull);
   });

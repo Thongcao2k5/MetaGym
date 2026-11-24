@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" fill="none">
+  <defs>
+    <linearGradient id="br-wl-grad" x1="0" y1="12" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF7D57"/>
+      <stop offset="0.55" stop-color="#FF5E36"/>
+      <stop offset="1" stop-color="#E84E27"/>
+    </linearGradient>
+    <linearGradient id="br-wl-line" x1="68" y1="62" x2="222" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36"/>
+      <stop offset="0.72" stop-color="#F39C12"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="18" r="6.5" fill="url(#br-wl-grad)"/>
+  <path d="M12 24C16 20 22 25 25 27H39C42 25 48 20 52 24C54 27 49 34 44 36L36 58C34.5 62 29.5 62 28 58L20 36C15 34 10 27 12 24Z" fill="url(#br-wl-grad)"/>
+  <text x="68" y="50" font-family="Be Vietnam Pro, Segoe UI, Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="-0.4">
+    <tspan fill="#FF5E36">M</tspan><tspan fill="#11151A">eta</tspan><tspan fill="#FF5E36">G</tspan><tspan fill="#11151A">ym</tspan>
+  </text>
+  <line x1="68" y1="62" x2="222" y2="62" stroke="url(#br-wl-line)" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="br-app-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1E232E"/>
+      <stop offset="1" stop-color="#0F1115"/>
+    </linearGradient>
+    <linearGradient id="br-app-coral" x1="14" y1="12" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF8563"/>
+      <stop offset="0.5" stop-color="#FF5E36"/>
+      <stop offset="1" stop-color="#D93D1A"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#br-app-bg)" stroke="#2A303D" stroke-width="1.5"/>
+  <circle cx="32" cy="16" r="5.5" fill="url(#br-app-coral)"/>
+  <path d="M13 23C17 19 22.8 24 25.5 26H38.5C41.2 24 47 19 51 23C53 26 48.2 32.8 43.2 34.8L35.8 53C34.3 56.6 29.7 56.6 28.2 53L20.8 34.8C15.8 32.8 11 26 13 23Z" fill="url(#br-app-coral)"/>
+  <path d="M24 30.5L32 36.2L40 30.5" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

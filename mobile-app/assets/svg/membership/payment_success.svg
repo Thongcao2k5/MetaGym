@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-pay-success-blush" x1="12" y1="9" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Hand Offering Verified Coin / Payment Success (Directly inspired by reference image 3 'Ứng viễn thông') -->
+  <circle cx="26.5" cy="17.5" r="8" fill="url(#mem-pay-success-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M23.5 17.5L25.6 19.6L29.8 15.4" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Palm & Wrist below -->
+  <rect x="9" y="29" width="6" height="10" rx="2" fill="url(#mem-pay-success-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M15 31H26.5C28.2 31 29.5 32.3 29.5 34C29.5 35.7 28.2 37 26.5 37H21" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M15 38.5H28.5C30.4 38.5 32.2 37.6 33.4 36.1L38.2 30.8C39.2 29.7 38.8 28 37.4 27.6C36.4 27.3 35.3 27.7 34.6 28.5L30.5 33" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

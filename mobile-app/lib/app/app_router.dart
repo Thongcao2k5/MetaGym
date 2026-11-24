@@ -4,14 +4,19 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
+import 'package:meta_gym_app/features/auth/presentation/auth_glass_scaffold.dart';
 import 'package:meta_gym_app/features/auth/presentation/login_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/register_page.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:provider/provider.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
+import 'package:meta_gym_app/features/legal/presentation/privacy_policy_page.dart';
+import 'package:meta_gym_app/features/legal/presentation/terms_of_service_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
@@ -40,6 +45,8 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
+  static const terms = '/terms';
+  static const privacyPolicy = '/privacy-policy';
   static const profile = '/profile';
   static const memberHome = '/member';
   static const membership = '/member/features/membership';
@@ -87,6 +94,8 @@ GoRouter createAppRouter({
           AppRoutes.login,
           AppRoutes.register,
           AppRoutes.forgotPassword,
+          AppRoutes.terms,
+          AppRoutes.privacyPolicy,
         };
         return publicRoutes.contains(state.matchedLocation)
             ? null
@@ -131,25 +140,69 @@ GoRouter createAppRouter({
           child: const AppLoadingPage(),
         ),
       ),
-      GoRoute(
-        path: AppRoutes.login,
-        pageBuilder: (context, state) => _smoothAuthTransitionPage(
-          key: state.pageKey,
-          child: const LoginPage(),
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.register,
-        pageBuilder: (context, state) => _smoothAuthTransitionPage(
-          key: state.pageKey,
-          child: const RegisterPage(),
-        ),
+      ShellRoute(
+        builder: (context, state, child) {
+          final isLogin = state.matchedLocation != AppRoutes.register;
+          final auth = context.watch<AuthController>();
+          return AuthModeShell(
+            isLogin: isLogin,
+            onBack: isLogin || auth.isSubmitting
+                ? null
+                : () {
+                    auth.clearErrors();
+                    context.go(AppRoutes.login);
+                  },
+            onSelectLogin: isLogin || auth.isSubmitting
+                ? null
+                : () {
+                    auth.clearErrors();
+                    context.go(AppRoutes.login);
+                  },
+            onSelectRegister: !isLogin || auth.isSubmitting
+                ? null
+                : () {
+                    auth.clearErrors();
+                    context.go(AppRoutes.register);
+                  },
+            child: child,
+          );
+        },
+        routes: [
+          GoRoute(
+            path: AppRoutes.login,
+            pageBuilder: (context, state) =>
+                NoTransitionPage<void>(key: state.pageKey, child: const LoginPage()),
+          ),
+          GoRoute(
+            path: AppRoutes.register,
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              key: state.pageKey,
+              child: const RegisterPage(),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
         pageBuilder: (context, state) => _smoothAuthTransitionPage(
           key: state.pageKey,
           child: const ForgotPasswordPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const TermsOfServicePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.privacyPolicy,
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const PrivacyPolicyPage(),
         ),
       ),
       GoRoute(
@@ -243,11 +296,14 @@ GoRouter createAppRouter({
                     ),
                   )
                 : destination.path == '/coach/features/messages'
-                ? ConversationsPage(currentUserId: sessionController.user!.id)
+                ? ConversationsPage(
+                    currentUserId: sessionController.user!.id,
+                    coachMode: true,
+                  )
                 : destination.path == '/coach/features/calls'
                 ? CallsPage(currentUserId: sessionController.user!.id)
                 : destination.path == '/coach/features/ai'
-                ? const AiConversationsPage()
+                ? const AiConversationsPage(coachMode: true)
                 : throw StateError('Thiếu trang Coach: ${destination.path}'),
           ),
         ),
@@ -283,11 +339,12 @@ String _homeForRole(UserRole role) => switch (role) {
 CustomTransitionPage<void> _smoothAuthTransitionPage({
   required LocalKey key,
   required Widget child,
+  double slideDirection = 1.0,
 }) {
   return CustomTransitionPage<void>(
     key: key,
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 240),
+    transitionDuration: const Duration(milliseconds: 240),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
     child: child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       if (MediaQuery.disableAnimationsOf(context)) {
@@ -296,28 +353,16 @@ CustomTransitionPage<void> _smoothAuthTransitionPage({
       final incoming = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,
-      );
-      final outgoing = CurvedAnimation(
-        parent: secondaryAnimation,
-        curve: Curves.easeInCubic,
+        reverseCurve: Curves.easeInCubic,
       );
       return FadeTransition(
         opacity: incoming,
         child: SlideTransition(
           position: Tween<Offset>(
-            begin: const Offset(0, 0.03),
+            begin: Offset(0.04 * slideDirection, 0),
             end: Offset.zero,
           ).animate(incoming),
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.985, end: 1.0).animate(incoming),
-            child: FadeTransition(
-              opacity: Tween<double>(begin: 1.0, end: 0.0).animate(outgoing),
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 1.0, end: 0.97).animate(outgoing),
-                child: child,
-              ),
-            ),
-          ),
+          child: child,
         ),
       );
     },

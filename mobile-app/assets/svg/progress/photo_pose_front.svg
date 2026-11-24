@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
+  <defs>
+    <linearGradient id="prg-pfront-blush" x1="90" y1="36" x2="90" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.24"/>
+    </linearGradient>
+  </defs>
+  <!-- Camera Viewfinder Corner Brackets (#FF5E36) -->
+  <path d="M22 44V26C22 23.8 23.8 22 26 22H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 22H154C156.2 22 158 23.8 158 26V44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 286V304C22 306.2 23.8 308 26 308H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 308H154C156.2 308 158 306.2 158 304V286" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <!-- Alignment Crosshair Guide -->
+  <line x1="90" y1="54" x2="90" y2="288" stroke="#FF5E36" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <line x1="34" y1="158" x2="146" y2="158" stroke="#8E95A5" stroke-opacity="0.28" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <!-- Smooth Symmetrical Front Silhouette (Athletic Neutral Front Pose) -->
+  <path d="M90 42C99 42 105 49 105 59C105 66 102 71 98 74V81C114 83 128 90 134 105L148 164C150 171 146 177 141 177C137 177 134 173 133 167L122 122L116 158C115 169 118 180 119 194L116 242L113 282C113 288 118 292 120 295C121 297 118 299 113 299H102C99 299 97 297 97 293L98 242L94 196H86L82 242L83 293C83 297 81 299 78 299H67C62 299 59 297 60 295C62 292 67 288 67 282L64 242L61 194C62 180 65 169 64 158L58 122L47 167C46 173 43 177 39 177C34 177 30 171 32 164L46 105C52 90 66 83 82 81V74C78 71 75 66 75 59C75 49 81 42 90 42Z" fill="url(#prg-pfront-blush)" stroke="#E8EDF5" stroke-width="2.4" stroke-linejoin="round"/>
+  <!-- Chest Center Alignment Target (#FF5E36) -->
+  <circle cx="90" cy="116" r="6" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2"/>
+  <circle cx="90" cy="116" r="2" fill="#FF5E36"/>
+</svg>

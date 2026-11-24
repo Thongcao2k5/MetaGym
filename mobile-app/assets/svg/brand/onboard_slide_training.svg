@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="br-onb1-blush" x1="8" y1="8" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Inner Halo Blush Fill -->
+  <circle cx="23.5" cy="23.5" r="15.5" fill="url(#br-onb1-blush)"/>
+  <!-- Precision Tracking Ring (Clean 2.5px+ knockout clearance around bottom-right badge) -->
+  <path d="M38.8 25.8C38.93 25.05 39 24.28 39 23.5C39 14.94 32.06 8 23.5 8C14.94 8 8 14.94 8 23.5C8 32.06 14.94 39 23.5 39C24.28 39 25.05 38.93 25.8 38.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Centered Performance Dumbbell -->
+  <line x1="18.5" y1="23.5" x2="28.5" y2="23.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <rect x="14.5" y="17.5" width="4" height="12" rx="2" fill="url(#br-onb1-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <rect x="28.5" y="17.5" width="4" height="12" rx="2" fill="url(#br-onb1-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <path d="M12 20.5V26.5M35 20.5V26.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Bottom-Right Coral Power Badge (#FF5E36) -->
+  <circle cx="35.5" cy="35.5" r="5.5" fill="#FF5E36" fill-opacity="0.24" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M36 32.3L33.5 35.8H35.8L35 38.7L37.6 35.2H35.3L36 32.3Z" fill="#FF5E36"/>
+</svg>

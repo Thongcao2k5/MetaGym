@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-maud-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<rect x="9" y="11" width="30" height="26" rx="6" fill="url(#set-maud-blush)"/>
+  <path d="M12 21V27M18 15V33M24 11V37M30 17V31M36 21V27" stroke="#FF5E36" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M18 15V33M30 17V31" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-curr-blush" x1="11" y1="10" x2="37" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Empty State: Training Curriculum ('Chưa có giáo trình từ Coach' — member_training_page.dart) -->
+  <rect x="11" y="10.5" width="24" height="28" rx="6" fill="url(#st-curr-blush)"/>
+  <path d="M24 38.5H17C13.7 38.5 11 35.8 11 32.5V16.5C11 13.2 13.7 10.5 17 10.5H29C32.3 10.5 35 13.2 35 16.5V24" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M18.5 8.5H27.5C28.6 8.5 29.5 9.4 29.5 10.5V12.5H16.5V10.5C16.5 9.4 17.4 8.5 18.5 8.5Z" fill="#FF5E36" fill-opacity="0.28" stroke="#E8EDF5" stroke-width="2.2"/>
+  <!-- Dashed Placeholder Curriculum Lines -->
+  <line x1="16.5" y1="20" x2="29" y2="20" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-dasharray="4 3.5"/>
+  <line x1="16.5" y1="26" x2="25" y2="26" stroke="#A9C7E8" stroke-width="2.3" stroke-linecap="round" stroke-dasharray="4 3.5"/>
+  <!-- Bottom-Right Spark Badge (#FF5E36) -->
+  <circle cx="34" cy="33.5" r="6" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.3"/>
+  <path d="M34 31V36M31.5 33.5H36.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

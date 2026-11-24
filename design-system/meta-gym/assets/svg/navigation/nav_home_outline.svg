@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Tab 1: Home (Outline / Inactive — Open-path soft contour) -->
+  <path d="M9 21.5L21.4 10.6C22.9 9.3 25.1 9.3 26.6 10.6L39 21.5" stroke="#9AA5B8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 18.5V34C13 36.8 15.2 39 18 39H30C32.8 39 35 36.8 35 34V24" stroke="#9AA5B8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20.5 39V30.5C20.5 28.6 22.1 27 24 27C25.9 27 27.5 28.6 27.5 30.5V39" stroke="#9AA5B8" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

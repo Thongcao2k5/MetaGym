@@ -41,7 +41,8 @@ test('ZaloPay requires a provider query with the expected amount and renews once
       return Response.json(providerResult);
     });
 
-  const server = createApp({ database, jwtSecret, zalopay }).listen(0);
+  const server = createApp({ database, jwtSecret, zalopay,
+    vnpay: {}, preferredPaymentGateway: 'ZALOPAY' }).listen(0);
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const api = `http://127.0.0.1:${server.address().port}/api/v1`;
   const [admin, member, other, plan] = Array.from({ length: 4 }, () => randomUUID());

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-refund-blush" x1="12" y1="14" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Simulated Refund / Reversal Dual Cards with Looping Coral Arrows (Directly inspired by reference image 3 'Chuyển trả sau') -->
+  <path d="M13 21C13 18.8 14.8 17 17 17H23.5L27 20.5V31C27 33.2 25.2 35 23 35H17C14.8 35 13 33.2 13 31V21Z" fill="url(#mem-refund-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M23 16.5V15C23 12.8 24.8 11 27 11H31.5L35 14.5V25C35 27.2 33.2 29 31 29H27" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Coral Accent: Top & Bottom Curved Reversal Arrows -->
+  <path d="M10 15.5C12.2 11.8 16.8 10 21.2 11.2" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M10 11.5V16H14.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38 32.5C35.8 36.2 31.2 38 26.8 36.8" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M38 36.5V32H33.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

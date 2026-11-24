@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-tread-blush" x1="8" y1="12" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Treadmill Deck Blush Fill -->
+  <path d="M9.5 31.5L28 31.5V37.5H9.5C7.8 37.5 6.5 36.2 6.5 34.5C6.5 32.8 7.8 31.5 9.5 31.5Z" fill="url(#cat-tread-blush)"/>
+  <!-- Console & Upright Column (#E8EDF5) -->
+  <path d="M29.5 11.5H36.5C37.6 11.5 38.4 12.6 38 13.7L36.2 18.5H28.5L29.5 11.5Z" fill="url(#cat-tread-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M35.5 18.5L32.2 27.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Running Belt Deck (cleanly stopped 3px before bottom-right badge) -->
+  <path d="M27.2 37.5H10C8.1 37.5 6.5 35.9 6.5 34C6.5 32.1 8.1 30.5 10 30.5H28.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="10.2" cy="34" r="1.2" fill="#E8EDF5"/>
+  <!-- Motion Speed Lines (#FF5E36) -->
+  <path d="M10.5 22.5H17.5M13.5 26H19.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Bottom-Right Pace/Pulse Badge (#FF5E36) -->
+  <circle cx="35.5" cy="34.5" r="5.5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M32 34.5H33.8L34.9 32.2L36.2 36.8L37.3 34.5H39" stroke="#FF5E36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

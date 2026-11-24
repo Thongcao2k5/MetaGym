@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Tab: Nutrition (Disabled State) -->
+  <path d="M9 23H39C39 31.3 32.3 38 24 38C15.7 38 9 31.3 9 23Z" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="4 3"/>
+  <path d="M17 38H31" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M24 19C24 14 28.5 10.5 33.5 11C34 16 30.5 19.5 24 19Z" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.2" stroke-linejoin="round"/>
+</svg>

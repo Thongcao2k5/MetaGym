@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-cab-blush" x1="10" y1="8" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Frame Blush Interior -->
+  <path d="M10 38V14C10 10.7 12.7 8 16 8H32C35.3 8 38 10.7 38 14V38H10Z" fill="url(#cat-cab-blush)"/>
+  <!-- Outer Cable Tower Frame (#E8EDF5) -->
+  <path d="M10 38V14C10 10.7 12.7 8 16 8H32C35.3 8 38 10.7 38 14V38" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7.5 38H13.5M34.5 38H40.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Top Pulley Wheels -->
+  <circle cx="15.5" cy="14" r="2.2" stroke="#E8EDF5" stroke-width="2"/>
+  <circle cx="32.5" cy="14" r="2.2" stroke="#E8EDF5" stroke-width="2"/>
+  <!-- Cables Converging to Center Handles (clean start from pulley bottom) -->
+  <path d="M16.5 16L20.5 25M31.5 16L27.5 25" stroke="#E8EDF5" stroke-width="2" stroke-linecap="round"/>
+  <!-- D-Handles (#FF5E36) -->
+  <path d="M18.2 27.5C18.2 26.1 19.3 25 20.7 25C22.1 25 23.2 26.1 23.2 27.5H18.2Z" fill="#FF5E36" fill-opacity="0.26" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M24.8 27.5C24.8 26.1 25.9 25 27.3 25C28.7 25 29.8 26.1 29.8 27.5H24.8Z" fill="#FF5E36" fill-opacity="0.26" stroke="#FF5E36" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Center Downward Resistance Arrow (#FF5E36) -->
+  <path d="M24 32V39M21.5 36.8L24 39.3L26.5 36.8" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

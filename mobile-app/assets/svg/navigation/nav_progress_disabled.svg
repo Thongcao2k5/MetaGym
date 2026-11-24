@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Tab: Progress (Disabled State) -->
+  <path d="M10 11V34C10 36.2 11.8 38 14 38H38" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M15 29L21.5 22.5L27 26.5L36 16" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3"/>
+</svg>

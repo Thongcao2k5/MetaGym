@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nut-fat-blush" x1="12" y1="9" x2="35" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F39C12" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#F39C12" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Macro: Healthy Fat (Halved Avocado + Golden Omega Seed) -->
+  <path d="M24 8.5C18.5 8.5 13 18.2 13 27C13 34.2 17.8 39.5 24 39.5C30.2 39.5 35 34.2 35 27C35 18.2 29.5 8.5 24 8.5Z" fill="url(#nut-fat-blush)"/>
+  <path d="M34.8 29.5C33.8 35.4 29.4 39.5 24 39.5C17.8 39.5 13 34.2 13 27C13 18.2 18.5 8.5 24 8.5C29.2 8.5 34.4 17.2 34.9 25.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Golden Core Pit (#F39C12) -->
+  <circle cx="24" cy="27.5" r="5.8" fill="#F39C12" fill-opacity="0.32" stroke="#F39C12" stroke-width="2.4"/>
+  <path d="M22.2 26C22.8 25 24 24.5 25.2 24.8" stroke="#E8EDF5" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Top-Right Omega Spark -->
+  <circle cx="36.5" cy="13.5" r="2.2" fill="#F39C12"/>
+</svg>

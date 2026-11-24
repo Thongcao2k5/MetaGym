@@ -61,7 +61,8 @@ test('VNPay settles membership only from a verified server result and renews onc
     result.vnp_SecureHash = signQueryResponse ? sign(Object.values(result).join('|')) : '0'.repeat(128);
     return Response.json(result);
   });
-  const app = createApp({ database, jwtSecret, vnpay: gateway });
+  const app = createApp({ database, jwtSecret, vnpay: gateway,
+    zalopay: {}, preferredPaymentGateway: 'VNPAY' });
   const server = app.listen(0);
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const api = `http://127.0.0.1:${server.address().port}/api/v1`;

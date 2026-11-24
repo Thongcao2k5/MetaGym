@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-cexp-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<rect x="10" y="10" width="28" height="28" rx="6.5" fill="url(#set-cexp-blush)"/>
+  <path d="M28 12H36V20M35.5 12.5L27 21" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20 36H12V28M12.5 35.5L21 27" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

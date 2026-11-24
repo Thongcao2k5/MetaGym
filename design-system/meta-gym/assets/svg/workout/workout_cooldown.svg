@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="wk-cool-blush" x1="10" y1="10" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.26"/>
+    </linearGradient>
+  </defs>
+  <!-- Workout Cooldown (Soothing Wind Breeze / Lotus Breath + Recovery Pulse Badge) -->
+  <circle cx="22" cy="23" r="13.5" fill="url(#wk-cool-blush)"/>
+  <path d="M9 19.5H27.5C30 19.5 32 17.5 32 15C32 12.5 30 10.5 27.5 10.5C25.3 10.5 23.5 12 23.1 14" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M7.5 25H31.5C34.3 25 36.5 27.2 36.5 30C36.5 32.8 34.3 35 31.5 35C29.2 35 27.2 33.4 26.7 31.2" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M11 30.5H21.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Coral Cooldown Snowflake / Breath Star Badge Top-Right -->
+  <path d="M37 11V19M33 15H41M34.2 12.2L39.8 17.8M39.8 12.2L34.2 17.8" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+</svg>

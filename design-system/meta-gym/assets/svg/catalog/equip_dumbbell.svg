@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-dumb-blush" x1="8" y1="12" x2="38" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <!-- Equip: Hex Dumbbell + Coral Grip Knurling & Load Badge -->
+  <rect x="9.5" y="13.5" width="7.5" height="20" rx="3.5" fill="url(#cat-dumb-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <rect x="30" y="13.5" width="7.5" height="20" rx="3.5" fill="url(#cat-dumb-blush)"/>
+  <path d="M30 22V17C30 15.1 31.6 13.5 33.5 13.5H34C35.9 13.5 37.5 15.1 37.5 17V24.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M9.5 18.5H7C5.6 18.5 4.5 19.6 4.5 21V26C4.5 27.4 5.6 28.5 7 28.5H9.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="17" y1="23.5" x2="30" y2="23.5" stroke="#FF5E36" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Coral Weight Badge Bottom-Right -->
+  <circle cx="36" cy="35" r="5.5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.1"/>
+  <path d="M34 35H38M36 33V37" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round"/>
+</svg>

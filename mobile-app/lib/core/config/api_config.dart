@@ -10,7 +10,7 @@ class ApiConfig {
     return ApiConfig.fromValues(
       environment: const String.fromEnvironment(
         'APP_ENV',
-        defaultValue: 'local',
+        defaultValue: 'emulator',
       ),
       baseUrlOverride: const String.fromEnvironment('API_BASE_URL'),
     );

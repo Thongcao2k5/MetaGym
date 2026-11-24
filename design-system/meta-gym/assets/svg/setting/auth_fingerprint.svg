@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-afing-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<circle cx="24" cy="24" r="14.5" fill="url(#set-afing-blush)"/>
+  <path d="M14.5 16.5C16.8 13.2 20.2 11.5 24 11.5C27.8 11.5 31.2 13.2 33.5 16.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M12.5 24C12.5 17.6 17.6 12.5 24 12.5C30.4 12.5 35.5 17.6 35.5 24V29" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M16.5 33V24C16.5 19.9 19.9 16.5 24 16.5C28.1 16.5 31.5 19.9 31.5 24V34" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20.5 36.5V24C20.5 22.1 22.1 20.5 24 20.5C25.9 20.5 27.5 22.1 27.5 24V37" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="24" y1="24.5" x2="24" y2="38" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

@@ -6,12 +6,22 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_messages_page.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:provider/provider.dart';
 
 class AiConversationsPage extends StatefulWidget {
-  const AiConversationsPage({this.service, this.bottomPadding, super.key});
+  const AiConversationsPage({
+    this.service,
+    this.bottomPadding,
+    this.coachMode,
+    super.key,
+  });
+
   final AiService? service;
   final double? bottomPadding;
+  final bool? coachMode;
+
   @override
   State<AiConversationsPage> createState() => _AiConversationsPageState();
 }
@@ -282,10 +292,20 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
     }
   }
 
+  bool _resolveCoachHeader(BuildContext context) {
+    if (widget.coachMode != null) return widget.coachMode!;
+    try {
+      return context.watch<SessionController?>()?.user?.role == UserRole.coach;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = (widget.bottomPadding ?? 100.0) + 16.0;
     final canPop = Navigator.of(context).canPop();
+    final isCoachHeader = _resolveCoachHeader(context);
 
     return Scaffold(
       backgroundColor: MetaGymTheme.scaffoldBackground,
@@ -310,8 +330,11 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                 children: [
                   const SizedBox(height: 6),
                   MetaGymBrandHeader(
-                    eyebrow: 'META GYM',
+                    eyebrow: isCoachHeader ? 'META GYM · COACH' : 'META GYM',
                     title: 'Trợ lý AI',
+                    subtitle: isCoachHeader
+                        ? 'Hỏi đáp giáo trình, dinh dưỡng & lịch tập'
+                        : null,
                     leading: canPop
                         ? MetaGymCircleIconButton(
                             icon: Icons.arrow_back_rounded,

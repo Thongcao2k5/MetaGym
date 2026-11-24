@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-wallet-online-blush" x1="12" y1="9" x2="34" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Mobile E-Wallet Checkout (MoMo / ZaloPay / VNPAY — Directly inspired by reference image 4 'Thanh toán viễn thông') -->
+  <rect x="12" y="9" width="22" height="30" rx="6" fill="url(#mem-wallet-online-blush)"/>
+  <!-- Open Phone Contour leaving top-right gap for '+' payment action -->
+  <path d="M34 20.5V33C34 36.3 31.3 39 28 39H18C14.7 39 12 36.3 12 33V15C12 11.7 14.7 9 18 9H25.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Home Indicator Button -->
+  <circle cx="23" cy="33" r="1.8" stroke="#E8EDF5" stroke-width="2"/>
+  <!-- Coral Accent: Top-Right '+' Payment Spark -->
+  <path d="M33.5 8.5V16.5M29.5 12.5H37.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

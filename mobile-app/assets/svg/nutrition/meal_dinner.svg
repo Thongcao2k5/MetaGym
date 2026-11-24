@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nut-dinner-blush" x1="10" y1="14" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.38"/>
+    </linearGradient>
+  </defs>
+  <!-- Meal: DINNER (Bữa tối — Light Evening Cloche / Dish + Crescent Moon) -->
+  <!-- Evening Dish Dome -->
+  <path d="M10.5 31C10.5 23.5 16.5 17.5 24 17.5C31.5 17.5 37.5 23.5 37.5 31H10.5Z" fill="url(#nut-dinner-blush)"/>
+  <path d="M29 18.5C33.9 20.5 37.5 25.3 37.5 31H10.5C10.5 23.5 16.5 17.5 24 17.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="8" y1="35" x2="40" y2="35" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="24" cy="14.5" r="2.2" fill="#A9C7E8"/>
+  <!-- Top-Right Crescent Moon (#A9C7E8) -->
+  <path d="M35.5 8.5C33.2 9.4 32 12 32.9 14.3C33.8 16.6 36.4 17.8 38.7 16.9C37.9 17.8 36.7 18.4 35.3 18.4C32.5 18.4 30.3 16.2 30.3 13.4C30.3 10.8 32.2 8.7 34.7 8.4" fill="#A9C7E8" fill-opacity="0.32" stroke="#A9C7E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

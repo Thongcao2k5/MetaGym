@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
 
 typedef ApiDecoder<T> = T Function(Object? data);
 typedef ApiLogger = void Function(String message);
@@ -22,12 +23,12 @@ class ApiClient {
     ApiLogger? logger,
     ApiAccessTokenProvider? accessTokenProvider,
     ApiSessionExpiredCallback? onSessionExpired,
+    bool enableLocalDemoMode = true,
   }) : this._(
-         _createDio(config),
+         _createDio(config, enableLocalDemoMode: enableLocalDemoMode),
          logger,
          accessTokenProvider,
          onSessionExpired,
-         config: config,
        );
 
   ApiClient.withAdapter({
@@ -41,25 +42,19 @@ class ApiClient {
          logger,
          accessTokenProvider,
          onSessionExpired,
-         config: config,
-         isCustomAdapter: true,
        );
 
   ApiClient._(
     this._dio,
     this._logger,
     this._accessTokenProvider,
-    this._onSessionExpired, {
-    this.config,
-    this.isCustomAdapter = false,
-  });
+    this._onSessionExpired,
+  );
 
   final Dio _dio;
   final ApiLogger? _logger;
   final ApiAccessTokenProvider? _accessTokenProvider;
   final ApiSessionExpiredCallback? _onSessionExpired;
-  final ApiConfig? config;
-  final bool isCustomAdapter;
 
   Uri resolveServerPath(String path) {
     final uri = Uri.parse(path);
@@ -197,49 +192,6 @@ class ApiClient {
       _logger?.call('API $method completed (${response.statusCode})');
       return result;
     } on DioException catch (error) {
-      if (!isCustomAdapter &&
-          config?.environment != AppEnvironment.production &&
-          isNetworkFailure(error)) {
-        final currentBase = _dio.options.baseUrl.replaceAll(RegExp(r'/+$'), '');
-        final candidates = [
-          'http://127.0.0.1:3000/api/v1',
-          'http://192.168.100.167:3000/api/v1',
-          'http://10.0.2.2:3000/api/v1',
-        ].where((url) => url != currentBase).toList();
-
-        final requestHeaders = Map<String, dynamic>.of(headers ?? const {});
-        final token = await _accessTokenProvider?.call();
-        final hasAuthorization = requestHeaders.keys.any(
-          (key) => key.toLowerCase() == 'authorization',
-        );
-        if (!hasAuthorization && token != null && token.isNotEmpty) {
-          requestHeaders['authorization'] = 'Bearer $token';
-        }
-
-        for (final candidate in candidates) {
-          try {
-            _dio.options.baseUrl = candidate;
-            final response = await _dio.request<Object?>(
-              path,
-              data: body,
-              queryParameters: queryParameters,
-              options: Options(
-                method: method,
-                headers: requestHeaders,
-                receiveTimeout: receiveTimeout,
-                sendTimeout: const Duration(seconds: 4),
-              ),
-            );
-            final result = _decodeResult(response.data, decode);
-            _logger?.call('API $method fallback to $candidate succeeded (${response.statusCode})');
-            return result;
-          } catch (_) {
-            // Keep trying next candidate
-          }
-        }
-        _dio.options.baseUrl = currentBase;
-      }
-
       final apiException = ApiException.fromDio(error);
       if (apiException.kind == ApiExceptionKind.sessionExpired) {
         try {
@@ -260,8 +212,8 @@ class ApiClient {
   }
 }
 
-Dio _createDio(ApiConfig config) {
-  return Dio(
+Dio _createDio(ApiConfig config, {bool enableLocalDemoMode = false}) {
+  final dio = Dio(
     BaseOptions(
       baseUrl: config.baseUrl.toString(),
       connectTimeout: const Duration(seconds: 10),
@@ -271,6 +223,10 @@ Dio _createDio(ApiConfig config) {
       headers: {Headers.acceptHeader: Headers.jsonContentType},
     ),
   );
+  if (enableLocalDemoMode) {
+    dio.interceptors.add(LocalDemoInterceptor());
+  }
+  return dio;
 }
 
 ApiResult<T> _decodeResult<T>(Object? body, ApiDecoder<T> decode) {

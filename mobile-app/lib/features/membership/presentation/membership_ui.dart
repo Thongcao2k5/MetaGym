@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 final NumberFormat _vndCurrency = NumberFormat.currency(
   locale: 'vi_VN',
@@ -69,6 +71,7 @@ class MembershipTopBar extends StatelessWidget {
         children: [
           if (canPop) ...[
             MetaGymCircleIconButton(
+              svgAsset: MetaGymIcons.commonBack,
               icon: Icons.arrow_back_rounded,
               tooltip: 'Quay lại',
               onTap: onBack ?? () => Navigator.of(context).maybePop(),
@@ -171,47 +174,56 @@ class MembershipStatusPill extends StatelessWidget {
 /// Tiêu đề phân mục thống nhất trên các trang Gói tập.
 class MembershipSectionHeader extends StatelessWidget {
   const MembershipSectionHeader({
-    required this.icon,
-    required this.iconColor,
     required this.title,
+    this.icon,
+    this.iconColor = MetaGymTheme.brandOrange,
+    this.svgAsset,
     this.trailing,
     super.key,
   });
 
-  final IconData icon;
+  final IconData? icon;
   final Color iconColor;
+  final String? svgAsset;
   final String title;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: iconColor.withValues(alpha: 0.35)),
+          if (svgAsset != null) ...[
+            MetaGymSvgIcon(svgAsset!, size: 19),
+            const SizedBox(width: 8),
+          ] else if (icon != null) ...[
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: iconColor.withValues(alpha: 0.35)),
+              ),
+              child: Icon(icon, color: iconColor, size: 15),
             ),
-            child: Icon(icon, color: iconColor, size: 16),
-          ),
-          const SizedBox(width: 10),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: MetaGymTheme.textPrimary,
-                fontSize: 17.5,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
               ),
             ),
           ),
-          ?trailing,
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );

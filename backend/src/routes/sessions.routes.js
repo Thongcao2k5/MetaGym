@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { createAuthentication } from './users.routes.js';
 import { hasCoachCapacity } from '../services/coach-capacity.js';
 
-async function preservesCoachCommitments(client, coachId, startsAt, endsAt) {
+async function preservesCoachCommitments(client, coachId, startsAt, endsAt, sessionId) {
   const { rows: [state] } = await client.query(
     `SELECT EXISTS (
       SELECT 1 FROM coach_entitlements WHERE coach_id = $1 AND status IN ('ACTIVE', 'QUEUED')
@@ -14,7 +14,12 @@ async function preservesCoachCommitments(client, coachId, startsAt, endsAt) {
       SELECT 1 FROM coach_bookings WHERE coach_id = $1 AND status IN ('BOOKED', 'COMPLETED')
         AND starts_at < COALESCE($3::timestamptz, $2::timestamptz + interval '90 minutes')
         AND ends_at > $2::timestamptz
-    ) AS overlaps`, [coachId, startsAt, endsAt],
+    ) OR EXISTS (
+      SELECT 1 FROM training_sessions t JOIN coach_relationships r ON r.id=t.relationship_id
+      WHERE r.coach_id=$1 AND t.status='SCHEDULED' AND t.id<>$4::uuid
+        AND t.scheduled_start_at<COALESCE($3::timestamptz,$2::timestamptz+interval '90 minutes')
+        AND COALESCE(t.scheduled_end_at,t.scheduled_start_at+interval '90 minutes')>$2::timestamptz
+    ) AS overlaps`, [coachId, startsAt, endsAt, sessionId],
   );
   return !state.overlaps && (!state.has_packages || await hasCoachCapacity(client, coachId));
 }
@@ -123,7 +128,7 @@ export function createSessionsRouter({ database, jwtSecret }) {
           data.scheduledStartAt, data.scheduledEndAt ?? null, data.notes ?? null],
       );
       if (!await preservesCoachCommitments(client, request.authUser.id,
-        data.scheduledStartAt, data.scheduledEndAt ?? null)) {
+        data.scheduledStartAt, data.scheduledEndAt ?? null, id)) {
         await client.query('ROLLBACK');
         return fail(response, 409, 'CAPACITY_UNAVAILABLE', 'Thay đổi ảnh hưởng lịch Coach đã cam kết');
       }
@@ -189,7 +194,7 @@ export function createSessionsRouter({ database, jwtSecret }) {
           data.status === 'MEMBER_ABSENT' ? new Date() : null, row.id],
       );
       if (result.rows[0].status === 'SCHEDULED' &&
-        !await preservesCoachCommitments(client, request.authUser.id, start, end)) {
+        !await preservesCoachCommitments(client, request.authUser.id, start, end, row.id)) {
         await client.query('ROLLBACK');
         return fail(response, 409, 'CAPACITY_UNAVAILABLE', 'Thay đổi ảnh hưởng lịch Coach đã cam kết');
       }

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meta Gym — Flutter Screen UI/UX Review (22/11/2026)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0F1115;
+      --surface: #181B22;
+      --surface-raised: #1F232C;
+      --border: #262A34;
+      --primary: #FF5E36;
+      --primary-hover: #E84E27;
+      --text: #F7F9FC;
+      --muted: #8E95A5;
+      --success: #2ECC71;
+      --warning: #F39C12;
+      --error: #F15B64;
+      --info: #70AEE8;
+      --reflection: #A9C7E8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 90% 4%, rgba(169, 199, 232, 0.12), transparent 36%),
+        radial-gradient(circle at 8% 92%, rgba(255, 94, 54, 0.09), transparent 34%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 24px 16px 64px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    /* Header */
+    .hero {
+      background: rgba(24, 27, 34, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 228, 255, 0.18);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 24px; right: 24px; height: 1px;
+      background: rgba(235, 246, 255, 0.32);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 14px; max-width: 780px; }
+
+    /* KPI Row */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .kpi-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .kpi-val {
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+    }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .c-error { color: var(--error); }
+    .c-warning { color: var(--warning); }
+    .c-success { color: var(--success); }
+    .c-primary { color: var(--primary); }
+
+    /* Findings */
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 28px 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .findings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+    }
+    .card h3 { font-size: 15px; font-weight: 700; margin: 8px 0 6px; }
+    .card p { font-size: 13.5px; color: var(--muted); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .b-p0 { background: rgba(241, 91, 100, 0.16); color: var(--error); border: 1px solid rgba(241, 91, 100, 0.35); }
+    .b-p1 { background: rgba(243, 156, 18, 0.16); color: var(--warning); border: 1px solid rgba(243, 156, 18, 0.35); }
+    .b-p2 { background: rgba(112, 174, 232, 0.16); color: var(--info); border: 1px solid rgba(112, 174, 232, 0.35); }
+    .b-pass { background: rgba(46, 204, 113, 0.16); color: var(--success); border: 1px solid rgba(46, 204, 113, 0.35); }
+
+    /* Filter Bar */
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .chip {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 40px;
+      font-family: inherit;
+      transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+    }
+    .chip:hover { color: var(--text); border-color: var(--reflection); }
+    .chip.active {
+      background: rgba(255, 94, 54, 0.16);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .search {
+      margin-left: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13.5px;
+      min-width: 240px;
+      outline: none;
+    }
+    .search:focus { border-color: #8DBCF0; }
+
+    /* Table */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface-raised); }
+    tr:last-child td { border-bottom: none; }
+    .num { font-variant-numeric: tabular-nums; text-align: right; }
+    .file { font-size: 12px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .note { color: #D4DBE6; max-width: 380px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="eyebrow"><a href="../../index.html" style="color:var(--reflection);text-decoration:none;margin-right:8px;">← Hub</a> META GYM • DESIGN SYSTEM AUDIT • 22/11/2026</div>
+      <h1>Review UI/UX các Màn hình Ứng dụng Flutter</h1>
+      <p class="subtitle">
+        Kiểm duyệt thực tế toàn bộ 53 file màn hình trong <code>mobile-app/lib/features/</code> theo chuẩn
+        <strong>Futuristic Performance Glass</strong> (<code>DESIGN.md</code>, quy tắc 80/20, tương phản 4.5:1, vùng chạm 48dp và hiệu năng demo).
+      </p>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Màn hình kiểm duyệt</div>
+          <div class="kpi-val">53</div>
+          <div class="kpi-sub">13 nhóm tính năng Member &amp; Coach</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Ưu tiên P0 (Critical)</div>
+          <div class="kpi-val c-error">7</div>
+          <div class="kpi-sub">God-files, 80/20 blur, &gt;80 hex hardcode</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Hex Color Hardcode</div>
+          <div class="kpi-val c-warning">1.200+</div>
+          <div class="kpi-sub">Riêng 0xFFF7F9FC lặp 311 lần</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">GlassCard dùng Solid</div>
+          <div class="kpi-val c-primary">6 / 100</div>
+          <div class="kpi-sub">Cần chuyển về &ge;80% bề mặt đặc</div>
+        </div>
+      </div>
+    </header>
+
+    <h2 class="section-title">Phát hiện trọng yếu cấp hệ thống</h2>
+    <section class="findings-grid">
+      <article class="card">
+        <span class="badge b-p0">CRITICAL • TOKEN</span>
+        <h3>Lệch token &amp; 1.200+ hex hardcode</h3>
+        <p><code>MetaGymTheme.textPrimary</code> là <code>#FFFFFF</code> thay vì <code>#F7F9FC</code> như <code>DESIGN.md</code>; các màu warm-glass lặp lại hàng trăm lần chưa gom thành token.</p>
+      </article>
+      <article class="card">
+        <span class="badge b-p0">CRITICAL • 80/20 &amp; FPS</span>
+        <h3>37 HeroGlassCard thiếu RepaintBoundary</h3>
+        <p><code>MetaGymHeroGlassCard</code> dùng <code>BackdropFilter</code> nhưng chưa bọc <code>RepaintBoundary</code> và chưa tắt blur khi bật Reduced Motion (<code>disableAnimations</code>).</p>
+      </article>
+      <article class="card">
+        <span class="badge b-p1">WARNING • STRUCTURE</span>
+        <h3>8 God-Files vượt 1.500–3.591 dòng</h3>
+        <p><code>coach_home_page</code> (3.591), <code>profile_page</code> (3.393), <code>conversations_page</code> (3.073), <code>member_journal_page</code> (2.683), <code>coach_booking_page</code> (2.486)...</p>
+      </article>
+      <article class="card">
+        <span class="badge b-pass">PASS • CORE</span>
+        <h3>Nền tảng Navigation &amp; A11y tốt</h3>
+        <p><code>MetaGymBottomNav</code>, <code>MetaGymCircleIconButton</code> và <code>app_router.dart</code> đạt chuẩn 48dp, chống bấm đúp, có fallback và tiếng Việt đồng nhất.</p>
+      </article>
+    </section>
+
+    <div class="section-title">
+      <span>Danh sách Màn hình Cần Fix / Update</span>
+    </div>
+
+    <div class="filters">
+      <button class="chip active" data-filter="ALL">Tất cả</button>
+      <button class="chip" data-filter="P0">P0 Critical</button>
+      <button class="chip" data-filter="P1">P1 Warning</button>
+      <button class="chip" data-filter="P2">P2 Polish</button>
+      <button class="chip" data-filter="PASS">Pass</button>
+      <input id="search" class="search" type="search" placeholder="Tìm tên màn hình hoặc module..." />
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Mức độ</th>
+            <th>Màn hình / File</th>
+            <th>Module</th>
+            <th class="num">Dòng</th>
+            <th class="num">Hex</th>
+            <th>Nhận xét &amp; Đề xuất</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const screens = [
+      { p: "P0", name: "Trang chủ Coach", file: "coach/presentation/coach_home_page.dart", mod: "Coach", lines: 3591, hex: 97, note: "File lớn nhất app; cần tách modular & chuẩn hóa token màu." },
+      { p: "P0", name: "Hồ sơ cá nhân", file: "profile/presentation/profile_page.dart", mod: "Profile", lines: 3393, hex: 118, note: "118 hex hardcode + 2 blur; tách section Thông tin / Gói tập / Cài đặt." },
+      { p: "P0", name: "Tin nhắn", file: "messaging/presentation/conversations_page.dart", mod: "Messaging", lines: 3073, hex: 83, note: "6 lớp blur/glass & thiếu disableAnimations fallback; tách list và chat." },
+      { p: "P0", name: "Nhật ký tập luyện", file: "progress/presentation/member_journal_page.dart", mod: "Progress", lines: 2683, hex: 111, note: "111 hex + 14 Material colors; chuẩn hóa dark surface & tnum." },
+      { p: "P0", name: "Theo dõi dinh dưỡng", file: "training/presentation/nutrition_tracking_page.dart", mod: "Training", lines: 2577, hex: 42, note: "God-file 2.577 dòng; kiểm tra tnum cho macro/calo & overflow 375px." },
+      { p: "P0", name: "Đặt lịch Coach", file: "sessions/presentation/coach_booking_page.dart", mod: "Sessions", lines: 2486, hex: 125, note: "125 hex hardcode (cao nhất app); tách widget & chuẩn hóa token." },
+      { p: "P0", name: "Member Training Hub", file: "training/presentation/member_training_hub_page.dart", mod: "Training", lines: 1533, hex: 35, note: "5 lớp blur/glass; chuyển thẻ nội dung sang solid #181B22." },
+      { p: "P1", name: "Member Dashboard View", file: "member/presentation/member_dashboard_view.dart", mod: "Member", lines: 1995, hex: 22, note: "Đã có RepaintBoundary & disableAnimations; nên tách sub-widgets." },
+      { p: "P1", name: "Chi tiết giáo trình", file: "training/presentation/member_curriculum_detail_page.dart", mod: "Training", lines: 1282, hex: 57, note: "57 hex hardcode + 2 blur; chuẩn hóa tnum cho set/rep/weight." },
+      { p: "P1", name: "Lịch dạy Coach", file: "sessions/presentation/coach_sessions_page.dart", mod: "Sessions", lines: 1181, hex: 54, note: "54 hex hardcode; thêm RepaintBoundary quanh Hero Glass." },
+      { p: "P1", name: "Thực đơn mẫu", file: "training/presentation/meal_plans_page.dart", mod: "Training", lines: 721, hex: 48, note: "48 hex; thiếu trạng thái Loading & SafeArea tường minh." },
+      { p: "P1", name: "Tự tập", file: "training/presentation/member_self_training_page.dart", mod: "Training", lines: 1079, hex: 46, note: "46 hex + 16 Material colors; kiểm tra tương phản nền tối." },
+      { p: "P1", name: "Chọn khung giờ", file: "sessions/presentation/coach_schedule_picker_page.dart", mod: "Sessions", lines: 1268, hex: 43, note: "Kiểm tra vùng chạm >= 48dp cho từng slot giờ & tnum." },
+      { p: "P1", name: "Khai báo sức khỏe", file: "coaching/presentation/member_health_declaration_page.dart", mod: "Coaching", lines: 998, hex: 39, note: "Form dài; không đặt blur phía sau input theo DESIGN.md §11." },
+      { p: "P1", name: "Lịch sử ghé phòng", file: "training/presentation/gym_visits_page.dart", mod: "Training", lines: 760, hex: 39, note: "39 hex; thiếu RepaintBoundary cho Hero Glass." },
+      { p: "P1", name: "Gói đề xuất Coach", file: "coaching/presentation/coach_offers_page.dart", mod: "Coaching", lines: 975, hex: 38, note: "38 hex; đảm bảo tnum cho giá gói & hạn dùng." },
+      { p: "P1", name: "Chi tiết học viên", file: "coaching/presentation/coach_member_detail_page.dart", mod: "Coaching", lines: 1085, hex: 36, note: "36 hex; chuẩn hóa khoảng cách section 20–24px." },
+      { p: "P1", name: "Cuộc gọi trực tiếp", file: "calls/presentation/live_call_page.dart", mod: "Calls", lines: 1307, hex: 35, note: "Bổ sung trạng thái Loading khi đang kết nối; kiểm tra nút >= 48dp." },
+      { p: "P1", name: "Form tạo giáo án", file: "training/presentation/coach_plan_form_page.dart", mod: "Coach", lines: 1095, hex: 33, note: "Thiếu SafeArea; tránh lồng thẻ trong thẻ." },
+      { p: "P1", name: "Trợ lý AI (Hội thoại & Chat)", file: "ai/presentation/ai_conversations_page.dart + ai_messages_page.dart", mod: "AI", lines: 1040, hex: 46, note: "Chuẩn hóa token; kiểm tra bàn phím ảo & khả năng đọc câu trả lời dài." },
+      { p: "P1", name: "Gói hội viên & Thanh toán", file: "membership/presentation/membership_page.dart + checkout", mod: "Membership", lines: 2094, hex: 36, note: "Đảm bảo 1 CTA cam chính, giá dùng tnum, chặn bấm trùng MoMo/VNPay." },
+      { p: "P1", name: "Tiến độ / Chỉ số / Ảnh", file: "progress/presentation/member_progress|measurement|photo_page.dart", mod: "Progress", lines: 1775, hex: 68, note: "Thiếu SafeArea tường minh; rà soát Material colors & tnum." },
+      { p: "P1", name: "Catalog (Thiết bị & Bài tập)", file: "catalog/presentation/gym_equipment|exercise_library_page.dart", mod: "Catalog", lines: 1211, hex: 37, note: "Thiếu SafeArea; filter chips không tô cam đặc cả hàng." },
+      { p: "P1", name: "Kế hoạch ngày & Lịch sử đặt lịch", file: "member_day_plan_page.dart + coach_booking_history_page.dart", mod: "Training/Sessions", lines: 705, hex: 30, note: "Bổ sung trạng thái Error/Retry và Loading rõ ràng." },
+      { p: "P2", name: "Auth (Đăng nhập / Đăng ký / Quên MK)", file: "auth/presentation/login|register + forgot_password", mod: "Auth", lines: 977, hex: 25, note: "Gọn, dùng AuthGlassScaffold tốt; test bàn phím ảo trên 375px." },
+      { p: "P2", name: "Thanh toán (Lịch sử & Chi tiết)", file: "membership/presentation/payment_history|detail_page.dart", mod: "Membership", lines: 615, hex: 8, note: "Gọn, gần chuẩn token; kiểm tra badge trạng thái." },
+      { p: "PASS", name: "Member Home Shell & BottomNav", file: "member_home_page.dart + meta_gym_bottom_nav.dart", mod: "Core", lines: 472, hex: 0, note: "Đạt chuẩn RepaintBoundary, 48dp hit target, contentBottomPadding." }
+    ];
+
+    let activeFilter = "ALL";
+    const tbody = document.getElementById("rows");
+    const searchEl = document.getElementById("search");
+
+    function badgeClass(p) {
+      return p === "P0" ? "b-p0" : p === "P1" ? "b-p1" : p === "P2" ? "b-p2" : "b-pass";
+    }
+
+    function render() {
+      const q = searchEl.value.trim().toLowerCase();
+      const list = screens.filter(s =>
+        (activeFilter === "ALL" || s.p === activeFilter) &&
+        (!q || s.name.toLowerCase().includes(q) || s.file.toLowerCase().includes(q) || s.mod.toLowerCase().includes(q))
+      );
+      tbody.innerHTML = list.map(s => `
+        <tr>
+          <td><span class="badge ${badgeClass(s.p)}">${s.p}</span></td>
+          <td><strong>${s.name}</strong><div class="file">${s.file}</div></td>
+          <td>${s.mod}</td>
+          <td class="num">${s.lines.toLocaleString("vi-VN")}</td>
+          <td class="num">${s.hex}</td>
+          <td class="note">${s.note}</td>
+        </tr>
+      `).join("");
+    }
+
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        render();
+      });
+    });
+    searchEl.addEventListener("input", render);
+    render();
+  </script>
+</body>
+</html>

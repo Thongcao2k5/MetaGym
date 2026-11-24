@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330" fill="none">
+  <defs>
+    <linearGradient id="prg-pback-blush" x1="90" y1="36" x2="90" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.24"/>
+    </linearGradient>
+  </defs>
+  <!-- Camera Viewfinder Corner Brackets (#FF5E36) -->
+  <path d="M22 44V26C22 23.8 23.8 22 26 22H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 22H154C156.2 22 158 23.8 158 26V44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 286V304C22 306.2 23.8 308 26 308H44" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <path d="M136 308H154C156.2 308 158 306.2 158 304V286" stroke="#FF5E36" stroke-width="3" stroke-linecap="round"/>
+  <!-- Alignment Crosshair Guide -->
+  <line x1="90" y1="54" x2="90" y2="288" stroke="#FF5E36" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <line x1="34" y1="158" x2="146" y2="158" stroke="#8E95A5" stroke-opacity="0.28" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <!-- Smooth Symmetrical Back Silhouette (Athletic V-Taper Standing) -->
+  <path d="M90 42C99 42 105 49 105 59C105 66 102 71 98 74V81C112 83 128 89 135 103L146 140C148 147 146 156 141 162L133 171C130 174 126 172 126 168L130 144L122 117L117 156C116 167 119 178 120 192L117 242L114 282C114 288 119 292 121 295C122 297 119 299 114 299H103C100 299 98 297 98 293L99 242L94 196H86L81 242L82 293C82 297 80 299 77 299H66C61 299 58 297 59 295C61 292 66 288 66 282L63 242L60 192C61 178 64 167 63 156L58 117L50 144L54 168C54 172 50 174 47 171L39 162C34 156 32 147 34 140L45 103C52 89 68 83 82 81V74C78 71 75 66 75 59C75 49 81 42 90 42Z" fill="url(#prg-pback-blush)" stroke="#E8EDF5" stroke-width="2.4" stroke-linejoin="round"/>
+  <!-- Upper-Back Scapula & Spine Alignment Accent (#FF5E36) -->
+  <path d="M72 104L90 128L108 104" stroke="#FF5E36" stroke-opacity="0.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90" cy="116" r="5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2"/>
+</svg>

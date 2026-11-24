@@ -34,6 +34,7 @@ import { createDashboardRouter } from './routes/dashboard.routes.js';
 import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
 import { createCallsRouter } from './routes/calls.routes.js';
 import { createDocsRouter } from './routes/docs.routes.js';
+import { createDatabaseUiRouter } from './routes/database-ui.routes.js';
 import { createPasswordResetsRouter } from './routes/password-resets.routes.js';
 import { createMediaRouter } from './routes/media.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
@@ -85,9 +86,14 @@ export function createApp({
   vnpay,
   momo,
   zalopay,
+  preferredPaymentGateway,
   corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS,
   nodeEnv = process.env.NODE_ENV,
   enableLegacyWrites = false,
+  enableCoachWorkflows = false,
+  enableDatabaseUi = nodeEnv !== 'production',
+  databaseUiUsername = process.env.DB_UI_USERNAME || 'admin',
+  databaseUiPassword = process.env.DB_UI_PASSWORD || 'admin',
 }) {
   validateJwtSecret(jwtSecret);
   const corsOrigin = allowedCorsOrigins(corsAllowedOrigins, nodeEnv);
@@ -110,11 +116,22 @@ export function createApp({
   });
 
   app.use('/api-docs', createDocsRouter());
+  if (enableDatabaseUi) {
+    app.use(
+      '/database',
+      createDatabaseUiRouter({
+        database,
+        jwtSecret,
+        username: databaseUiUsername,
+        password: databaseUiPassword,
+      }),
+    );
+  }
   app.use(
     '/api/v1/auth',
     createAuthRouter({ database, jwtSecret, loginRateLimiter }),
   );
-  if (!enableLegacyWrites) app.use('/api/v1', retireLegacyWrites());
+  if (!enableLegacyWrites) app.use('/api/v1', retireLegacyWrites({ enableCoachWorkflows }));
   app.use('/api/v1/health', createHealthRouter({ database }));
   app.use('/api/v1/payments/vnpay', createVnpayCallbacksRouter({ database, vnpay }));
   app.use('/api/v1/payments/momo', createMomoCallbacksRouter({ database, momo }));
@@ -143,7 +160,7 @@ export function createApp({
   app.use('/api/v1', createDashboardRouter({ database, jwtSecret }));
   app.use('/api/v1', createAiConversationsRouter({ database, jwtSecret, aiResponder }));
   app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime }));
-  app.use('/api/v1', createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay,
+  app.use('/api/v1', createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay, preferredPaymentGateway,
     allowMockPayments: nodeEnv !== 'production' && !vnpay && !momo && !zalopay }));
   app.use('/api/v1', createCoachingRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachIncidentsRouter({ database, jwtSecret }));

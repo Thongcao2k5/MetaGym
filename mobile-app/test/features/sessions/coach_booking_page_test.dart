@@ -191,11 +191,8 @@ void main() {
       expect(find.textContaining('Lê Hoàng Nam'), findsOneWidget);
       expect(find.byIcon(Icons.fitness_center_rounded), findsOneWidget);
 
-      await tester.scrollUntilVisible(
-        find.text('Ngực & Vai'),
-        -240,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await tester.ensureVisible(find.text('Ngực & Vai'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Ngực & Vai'));
       await tester.pumpAndSettle();
       expect(find.byType(MemberDayPlanPage), findsOneWidget);
@@ -231,6 +228,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(CoachMuscleAnatomyTile), findsNothing);
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
+      await tester.pumpAndSettle();
       expect(find.byIcon(Icons.fitness_center_rounded), findsNWidgets(2));
       expect(find.text('Lê Hoàng Nam'), findsNWidgets(2));
       expect(tester.takeException(), isNull);

@@ -31,10 +31,12 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
       await tester.ensureVisible(
-        find.widgetWithText(FilledButton, 'Lưu khai báo'),
+        find.widgetWithText(FilledButton, 'Lưu khai báo thể trạng'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Lưu khai báo'));
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Lưu khai báo thể trạng'),
+      );
       await tester.pump();
       expect(find.textContaining('Hãy chọn Có hoặc Không'), findsOneWidget);
       expect(adapter.saved, isNull);
@@ -46,10 +48,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Không').last);
       await tester.ensureVisible(
-        find.widgetWithText(FilledButton, 'Lưu khai báo'),
+        find.widgetWithText(FilledButton, 'Lưu khai báo thể trạng'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Lưu khai báo'));
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Lưu khai báo thể trạng'),
+      );
       await tester.pumpAndSettle();
       expect(adapter.saved?['heightCm'], 170);
       expect(adapter.saved?['weightKg'], 65.5);
@@ -79,9 +83,8 @@ void main() {
           value: client,
           child: MaterialApp(
             builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: const TextScaler.linear(1.3),
-              ),
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: const TextScaler.linear(1.3)),
               child: child!,
             ),
             home: const MemberHealthDeclarationPage(),
@@ -106,7 +109,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Không').last);
 
-      final saveButton = find.widgetWithText(FilledButton, 'Lưu khai báo');
+      final saveButton = find.widgetWithText(
+        FilledButton,
+        'Lưu khai báo thể trạng',
+      );
       await tester.ensureVisible(saveButton);
       await tester.pumpAndSettle();
       await tester.tap(saveButton);

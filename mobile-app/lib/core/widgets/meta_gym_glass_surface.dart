@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
-import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
 /// Nền hình ảnh phòng gym kết hợp ánh sáng môi trường (Ambient Depth Lights)
-/// và lớp phủ scrim đồng bộ chính xác với Trang chủ Hội viên & Hồ sơ.
+/// và lớp phủ scrim đồng bộ với DESIGN.md và tokens.css (hỗ trợ cả Dark & Light).
 class MetaGymBackground extends StatelessWidget {
-  const MetaGymBackground({super.key});
+  const MetaGymBackground({this.useSolidFallback = false, super.key});
+
+  final bool useSolidFallback;
 
   static const AssetImage bannerAsset = AssetImage(
     'assets/images/gym_banner.png',
@@ -16,100 +19,152 @@ class MetaGymBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image(
-            image: bannerAsset,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) =>
-                const ColoredBox(color: MetaGymTheme.darkCanvas),
-          ),
-          // Ambient glow: Cool blue ở góc trên bên phải
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.85, -0.75),
-                radius: 0.9,
-                colors: [Color(0x2E8EB9E5), Colors.transparent],
-              ),
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
+
+    if (useSolidFallback) {
+      return IgnorePointer(child: ColoredBox(color: palette.canvas));
+    }
+
+    if (isLight) {
+      return IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: palette.canvas,
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFEAF0F7), Color(0xFFE1E8F2), Color(0xFFDCE4EE)],
             ),
           ),
-          // Ambient glow: Warm orange ở góc dưới bên trái
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.85, 0.75),
-                radius: 0.8,
-                colors: [Color(0x24FF5A36), Colors.transparent],
+        ),
+      );
+    }
+
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image(
+              image: bannerAsset,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) =>
+                  const ColoredBox(color: MetaGymTheme.darkCanvas),
+            ),
+            // Ambient glow: Cool blue ở góc trên bên phải
+            Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0.85, -0.75),
+                  radius: 0.9,
+                  colors: [Color(0x2E8EB9E5), Colors.transparent],
+                ),
               ),
             ),
-          ),
-          // Lớp phủ scrim đồng bộ với member_dashboard_view.dart & profile_page.dart
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x9E0F1115),
-                  Color(0x900F1115),
-                  Color(0xAA0F1115),
-                ],
-                stops: [0.0, 0.48, 1.0],
+            // Ambient glow: Warm orange ở góc dưới bên trái
+            Container(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-0.85, 0.75),
+                  radius: 0.8,
+                  colors: [Color(0x24FF5A36), Colors.transparent],
+                ),
               ),
             ),
-          ),
-        ],
+            // Lớp phủ scrim đồng bộ (72–84% tương phản đọc chữ)
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x9E0F1115),
+                    Color(0x900F1115),
+                    Color(0xAA0F1115),
+                  ],
+                  stops: [0.0, 0.48, 1.0],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Thẻ Hero Kính Ấm (Hero Smoked-Glass Card) giống thẻ GÓI TẬP & COACH ở Trang chủ:
-/// - Bo góc: 24px
-/// - Nền gradient: `[0xCD342D28, 0xC829241F]`
-/// - Viền: `1.2px Color(0xB7B3A99D)`
-/// - Vạch phản quang cạnh trên: `Color(0x75FFF5E9)`
-/// - Blur: `sigma 10`
+/// Thẻ Hero Kính Ấm (Hero Smoked-Glass Card — Level 2 Performance Glass):
+/// - Bo góc: 24px (`MetaGymTheme.radiusGlassDock`)
+/// - Bọc `RepaintBoundary` quanh `BackdropFilter` và tự tắt blur khi bật Reduced Motion.
 class MetaGymHeroGlassCard extends StatelessWidget {
   const MetaGymHeroGlassCard({
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin,
+    this.useSolidFallback = false,
     super.key,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
+  final bool useSolidFallback;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(24);
-    final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
+    final radius = BorderRadius.circular(MetaGymTheme.radiusGlassDock);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final useGlass = !useSolidFallback && !disableAnimations && !isLight;
+    final enableBlur = useGlass && !MetaGymTheme.isFlutterTestEnvironment;
 
     final cardSurface = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: radius,
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xCD342D28), Color(0xC829241F)],
+          colors: isLight
+              ? const [Color(0xFFFFFFFF), Color(0xFFF9FBFE)]
+              : useGlass
+              ? const [
+                  MetaGymWarmGlassTokens.heroTop,
+                  MetaGymWarmGlassTokens.heroBottom,
+                ]
+              : const [Color(0xFF23201D), Color(0xFF1B1917)],
         ),
-        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
+        border: Border.all(
+          color: isLight
+              ? palette.warmGlassBorder
+              : MetaGymWarmGlassTokens.heroBorder,
+          width: isLight ? 1.0 : 1.2,
+        ),
+        boxShadow: isLight
+            ? const [
+                BoxShadow(
+                  color: Color(0x140F172A),
+                  blurRadius: 16,
+                  offset: Offset(0, 5),
+                ),
+              ]
+            : null,
       ),
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             left: 20,
             right: 20,
             top: 0,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: Color(0x75FFF5E9)),
+              child: ColoredBox(
+                color: isLight
+                    ? palette.glassHighlight
+                    : MetaGymWarmGlassTokens.heroHighlight,
+              ),
             ),
           ),
           Padding(padding: padding, child: child),
@@ -118,11 +173,16 @@ class MetaGymHeroGlassCard extends StatelessWidget {
     );
 
     final Widget wrapped = enableBlur
-        ? ClipRRect(
-            borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: cardSurface,
+        ? RepaintBoundary(
+            child: ClipRRect(
+              borderRadius: radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: MetaGymTheme.performanceGlassBlur,
+                  sigmaY: MetaGymTheme.performanceGlassBlur,
+                ),
+                child: cardSurface,
+              ),
             ),
           )
         : cardSurface;
@@ -134,12 +194,11 @@ class MetaGymHeroGlassCard extends StatelessWidget {
   }
 }
 
-/// Thẻ nội dung Kính Ấm (Liquid Glass Card) đồng bộ chính xác với
-/// `_buildLiquidGlassCard` ở Trang chủ Hội viên & Hồ sơ:
-/// - Bo góc: `MetaGymTheme.radiusCard` (20px)
-/// - Nền: `featured ? Color(0xB82D2824) : Color(0xC42B2622)`
-/// - Viền: `1.1px Color(0xA3A79D92)`
-/// - Vạch phản quang cạnh trên: `Color(0x70FFF6EA)`
+/// Thẻ nội dung tiêu chuẩn (mặc định Level 1 Solid Surface `#181B22` + viền 1px `#262A34`
+/// theo quy tắc 80/20 của DESIGN.md).
+///
+/// Truyền `solid: false` (hoặc `featured: true`) khi cần thẻ Kính Ấm có kiểm soát;
+/// mọi lớp blur đều bọc `RepaintBoundary` và tôn trọng `disableAnimations`.
 class MetaGymGlassCard extends StatelessWidget {
   const MetaGymGlassCard({
     required this.child,
@@ -149,7 +208,7 @@ class MetaGymGlassCard extends StatelessWidget {
     this.borderColor,
     this.onTap,
     this.featured = false,
-    this.solid = false,
+    this.solid = true,
     this.clipBehavior = Clip.antiAlias,
     super.key,
   });
@@ -162,7 +221,7 @@ class MetaGymGlassCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool featured;
 
-  /// Stable Level 1 surface for forms, long lists and reading content.
+  /// Stable Level 1 surface for forms, long lists and reading content (default `true`).
   final bool solid;
   final Clip clipBehavior;
 
@@ -170,8 +229,16 @@ class MetaGymGlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius =
         borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final isSolidSurface = solid && !featured;
     final enableBlur =
-        !solid && featured && !MetaGymTheme.isFlutterTestEnvironment;
+        !isSolidSurface &&
+        featured &&
+        !isLight &&
+        !disableAnimations &&
+        !MetaGymTheme.isFlutterTestEnvironment;
 
     final Widget innerContent = padding != null
         ? Padding(padding: padding!, child: child)
@@ -188,34 +255,60 @@ class MetaGymGlassCard extends StatelessWidget {
           )
         : innerContent;
 
+    final Color resolvedBg;
+    if (isLight) {
+      resolvedBg = palette.surfaceSolid;
+    } else if (isSolidSurface) {
+      resolvedBg = palette.surfaceSolid;
+    } else if (disableAnimations) {
+      resolvedBg = const Color(0xFF1F1C1A);
+    } else {
+      resolvedBg = featured
+          ? MetaGymWarmGlassTokens.cardFeaturedFill
+          : MetaGymWarmGlassTokens.cardFill;
+    }
+
+    final Color resolvedBorder =
+        borderColor ??
+        (isLight
+            ? palette.borderSolid
+            : isSolidSurface
+            ? palette.borderSolid
+            : MetaGymWarmGlassTokens.cardBorder);
+
     final surface = Container(
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: solid
-            ? MetaGymTheme.cardSurface
-            : featured
-            ? const Color(0xB82D2824)
-            : const Color(0xC42B2622),
+        color: resolvedBg,
         borderRadius: radius,
         border: Border.all(
-          color:
-              borderColor ??
-              (solid ? MetaGymTheme.cardBorder : const Color(0xA3A79D92)),
-          width: solid ? 1 : 1.1,
+          color: resolvedBorder,
+          width: isSolidSurface || isLight ? 1 : 1.1,
         ),
+        boxShadow: isLight
+            ? const [
+                BoxShadow(
+                  color: Color(0x0F0F172A),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         type: MaterialType.transparency,
         child: Stack(
           children: [
-            if (!solid)
+            if (!isSolidSurface && !isLight)
               const Positioned(
                 top: 0,
                 left: 18,
                 right: 18,
                 child: SizedBox(
                   height: 1,
-                  child: ColoredBox(color: Color(0x70FFF6EA)),
+                  child: ColoredBox(
+                    color: MetaGymWarmGlassTokens.cardHighlight,
+                  ),
                 ),
               ),
             interactiveContent,
@@ -225,12 +318,17 @@ class MetaGymGlassCard extends StatelessWidget {
     );
 
     final Widget wrapped = enableBlur
-        ? ClipRRect(
-            borderRadius: radius,
-            clipBehavior: clipBehavior,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: surface,
+        ? RepaintBoundary(
+            child: ClipRRect(
+              borderRadius: radius,
+              clipBehavior: clipBehavior,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: MetaGymTheme.performanceGlassBlur,
+                  sigmaY: MetaGymTheme.performanceGlassBlur,
+                ),
+                child: surface,
+              ),
             ),
           )
         : surface;
@@ -242,10 +340,7 @@ class MetaGymGlassCard extends StatelessWidget {
   }
 }
 
-/// Ô thông tin con bên trong thẻ (`_buildMembershipMetricPanel` ở Trang chủ & Hồ sơ):
-/// - Nền: `Color(0x80211E1C)`
-/// - Bo góc: `17px`
-/// - Viền: `1px Color(0x9A8C8176)`
+/// Ô thông tin con bên trong thẻ (đồng bộ Dark & Light mode theo `tokens.css`).
 class MetaGymMetricPanel extends StatelessWidget {
   const MetaGymMetricPanel({
     required this.child,
@@ -260,12 +355,13 @@ class MetaGymMetricPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final radius = BorderRadius.circular(17);
     return Material(
-      color: const Color(0x80211E1C),
+      color: palette.metricPanelBg,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
-        side: const BorderSide(color: Color(0x9A8C8176), width: 1),
+        side: BorderSide(color: palette.metricPanelBorder, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: MetaGymTap(
@@ -281,10 +377,7 @@ class MetaGymMetricPanel extends StatelessWidget {
 }
 
 /// Header thương hiệu Meta Gym dùng chung cho các tab chính (Trang chủ,
-/// Tập luyện/Lịch dạy, Trợ lý AI, Tin nhắn, Hồ sơ):
-/// - Huy hiệu `MG` gradient cam bo góc 13px (`42x42`), viền sáng nhẹ + shadow.
-/// - Nhãn eyebrow cam viết hoa (`10.5px`, `w700`).
-/// - Tiêu đề chính (`18px`, `w700`, `#F7F9FC`) và mô tả phụ tùy chọn.
+/// Tập luyện/Lịch dạy, Trợ lý AI, Tin nhắn, Hồ sơ).
 class MetaGymBrandHeader extends StatelessWidget {
   const MetaGymBrandHeader({
     required this.eyebrow,
@@ -307,6 +400,8 @@ class MetaGymBrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final trimmedSubtitle = subtitle?.trim();
     final hasSubtitle = trimmedSubtitle != null && trimmedSubtitle.isNotEmpty;
     return Column(
@@ -362,8 +457,8 @@ class MetaGymBrandHeader extends StatelessWidget {
                       eyebrow,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
+                      style: TextStyle(
+                        color: palette.primaryText,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.4,
@@ -375,8 +470,8 @@ class MetaGymBrandHeader extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.3,
@@ -389,8 +484,10 @@ class MetaGymBrandHeader extends StatelessWidget {
                         trimmedSubtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFB8B0A8),
+                        style: TextStyle(
+                          color: isLight
+                              ? palette.textSecondary
+                              : MetaGymWarmGlassTokens.subtitleMuted,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w400,
                         ),
@@ -412,8 +509,8 @@ class MetaGymBrandHeader extends StatelessWidget {
             trimmedSubtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.darkTextSecondary,
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -424,20 +521,20 @@ class MetaGymBrandHeader extends StatelessWidget {
   }
 }
 
-/// Nút tròn trên thanh tiêu đề giống `_CircleHeaderGlassButton` ở Trang chủ & Hồ sơ:
-/// - Vùng chạm Android: `48x48` (hình tròn hiển thị `44x44`)
-/// - Nền: `Color(0x9E2F2924)`
-/// - Viền: `1px Color(0x95ADA295)`
+/// Nút tròn trên thanh tiêu đề (48×48dp hit target, vòng hiển thị 44×44).
+/// Hỗ trợ cả `IconData` lẫn `svgAsset` từ [MetaGymIcons].
 class MetaGymCircleIconButton extends StatefulWidget {
   const MetaGymCircleIconButton({
-    required this.icon,
+    this.icon,
     required this.onTap,
+    this.svgAsset,
     this.tooltip,
     this.isActive = false,
     super.key,
-  });
+  }) : assert(icon != null || svgAsset != null);
 
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAsset;
   final VoidCallback? onTap;
   final String? tooltip;
   final bool isActive;
@@ -470,7 +567,11 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.tooltip ?? _iconActionName(widget.icon);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
+    final label =
+        widget.tooltip ??
+        (widget.icon != null ? _iconActionName(widget.icon!) : 'Hành động');
     final button = Semantics(
       button: true,
       enabled: widget.onTap != null && !_tapLocked,
@@ -495,19 +596,31 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: widget.isActive
-                      ? const Color(0x2EFF5A36)
-                      : const Color(0x9E2F2924),
+                      ? palette.chipActiveBg
+                      : isLight
+                      ? palette.surfaceSolid
+                      : MetaGymWarmGlassTokens.circleButtonFill,
                   border: Border.all(
                     color: widget.isActive
                         ? MetaGymTheme.brandOrange
-                        : const Color(0x95ADA295),
+                        : isLight
+                        ? palette.borderSolid
+                        : MetaGymWarmGlassTokens.circleButtonBorder,
                     width: widget.isActive ? 1.1 : 1,
                   ),
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: 20,
-                  color: const Color(0xFFF7F9FC),
+                child: Center(
+                  child: widget.svgAsset != null
+                      ? MetaGymSvgIcon(
+                          widget.svgAsset!,
+                          size: 20,
+                          fallbackIcon: widget.icon,
+                        )
+                      : Icon(
+                          widget.icon ?? Icons.circle_outlined,
+                          size: 20,
+                          color: palette.textPrimary,
+                        ),
                 ),
               ),
             ),

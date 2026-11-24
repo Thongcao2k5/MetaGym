@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-goal-blush" x1="8" y1="8" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Target Blush Fill -->
+  <circle cx="22.5" cy="24.5" r="14.5" fill="url(#com-goal-blush)"/>
+  <!-- Outer Target Ring (open top-right for arrow & open bottom-right for check badge) -->
+  <path d="M27.8 37.9C26.1 38.6 24.4 39 22.5 39C14.49 39 8 32.51 8 24.5C8 16.49 14.49 10 22.5 10C24.8 10 27 10.54 28.9 11.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M35.6 18.2C36.5 20.1 37 22.2 37 24.5C37 25.3 36.93 26.1 36.8 26.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Inner Target Ring (open top-right for arrow shaft) -->
+  <path d="M30.5 21.8C30.8 22.6 31 23.5 31 24.5C31 29.19 27.19 33 22.5 33C17.81 33 14 29.19 14 24.5C14 19.81 17.81 16 22.5 16C23.5 16 24.4 16.17 25.2 16.5" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <!-- Bullseye Center Dot + Precision Arrow (#FF5E36) -->
+  <circle cx="22.5" cy="24.5" r="2.6" fill="#FF5E36"/>
+  <path d="M24.4 22.6L37.5 9.5M32.5 9.5H37.5V14.5" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-Right Goal Done Check Badge (#FF5E36) -->
+  <circle cx="35.5" cy="35.5" r="5.5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M33.1 35.5L34.8 37.2L38.1 33.9" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

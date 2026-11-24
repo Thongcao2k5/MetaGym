@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 
 enum MetaGymActionButtonStatus { idle, loading, success, error }
 
@@ -14,6 +15,7 @@ class MetaGymActionButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.svgAsset,
     this.status = MetaGymActionButtonStatus.idle,
     this.enabled = true,
     this.showSuccessOnCompletion = false,
@@ -28,6 +30,7 @@ class MetaGymActionButton extends StatefulWidget {
   final String label;
   final FutureOr<void> Function()? onPressed;
   final IconData? icon;
+  final String? svgAsset;
   final MetaGymActionButtonStatus status;
   final bool enabled;
   final bool showSuccessOnCompletion;
@@ -142,9 +145,19 @@ class _MetaGymActionButtonState extends State<MetaGymActionButton> {
             const Icon(Icons.check_circle_outline_rounded, size: 19)
           else if (isError)
             const Icon(Icons.error_outline_rounded, size: 19)
+          else if (widget.svgAsset != null)
+            MetaGymIcon(
+              widget.svgAsset!,
+              size: 19,
+              adaptForLightMode: false,
+              excludeFromSemantics: true,
+            )
           else if (widget.icon != null)
             Icon(widget.icon, size: 19),
-          if (isSuccess || isError || widget.icon != null)
+          if (isSuccess ||
+              isError ||
+              widget.svgAsset != null ||
+              widget.icon != null)
             const SizedBox(width: 8),
           Flexible(
             child: Text(

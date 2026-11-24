@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-exercise-step-guide-blush" x1="10" y1="8" x2="32" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Rolled Receipt / Guide Sheet with Soft Blush (matches reference image 2 'Lịch sử đăng ký dịch vụ') -->
+  <path d="M10 14C10 10.7 12.7 8 16 8H31V36L23 38L19.5 35.5L16 38L12.5 35.5L10 37.5V14Z" fill="url(#cat-exercise-step-guide-blush)"/>
+  <!-- Main Sheet Contour with clean curled top-right ear & wavy bottom edge -->
+  <path d="M23.5 38L20 35.5L16.5 38L13 35.5L10 37.5V14C10 10.7 12.7 8 16 8H31V23" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M31 8H35.5C38 8 40 10 40 12.5V14.5C40 17 38 19 35.5 19H31" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bullet Step Lines -->
+  <circle cx="15.5" cy="18" r="1.4" fill="#FF5E36"/>
+  <line x1="20" y1="18" x2="26.5" y2="18" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <circle cx="15.5" cy="24.5" r="1.4" fill="#FF5E36"/>
+  <line x1="20" y1="24.5" x2="25" y2="24.5" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <!-- Coral Accent Badge: Check / Step Circle (Bottom-Right) -->
+  <circle cx="33.5" cy="33.5" r="6.8" fill="#FF5E36" fill-opacity="0.16" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M30.5 33.5L32.6 35.6L36.8 31.4" stroke="#FF5E36" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

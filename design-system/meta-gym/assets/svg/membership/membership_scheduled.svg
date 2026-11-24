@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="mem-scheduled-blush" x1="10" y1="12" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Scheduled / Queued Renewal Wallet with Clock Badge (Directly inspired by reference image 4 'Lịch sử thanh toán/nạp tiền') -->
+  <rect x="11" y="13" width="28" height="23" rx="6" fill="url(#mem-scheduled-blush)"/>
+  <path d="M18 13V11C18 9.9 18.9 9 20 9H34C35.7 9 37 10.3 37 12V13" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M11 23V19C11 15.7 13.7 13 17 13H33C36.3 13 39 15.7 39 19V30C39 33.3 36.3 36 33 36H23.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="33.5" cy="24.5" r="1.6" fill="#E8EDF5"/>
+  <!-- Coral Accent: Scheduled Clock Circle (Bottom-Left) -->
+  <circle cx="14.5" cy="31.5" r="6.5" fill="#FF5E36" fill-opacity="0.16" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M14.5 28.5V31.8L16.8 33.2" stroke="#FF5E36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

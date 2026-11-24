@@ -71,6 +71,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
   bool _requestInFlight = false;
   bool _updating = false;
   bool _joining = false;
+  bool _simulatedConnected = false;
   bool _updatingMedia = false;
   bool _microphone = false;
   bool _camera = false;
@@ -84,7 +85,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
 
   bool get _video => _call.callType == 'VIDEO';
   bool get _incoming => _call.receiverId == widget.currentUserId;
-  bool get _connected => _room.connectionState == rtc.ConnectionState.connected;
+  bool get _connected =>
+      _simulatedConnected || _room.connectionState == rtc.ConnectionState.connected;
   bool get _reconnecting =>
       _room.connectionState == rtc.ConnectionState.reconnecting;
 
@@ -200,6 +202,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
     if (call.isFinished) {
       _poll.cancel();
       _stopDurationTimer();
+      _simulatedConnected = false;
       await _room.disconnect();
     } else if (call.status == 'ANSWERED' && previous != 'ANSWERED') {
       unawaited(_join());
@@ -215,6 +218,18 @@ class _LiveCallPageState extends State<LiveCallPage> {
       _error = null;
     });
     try {
+      final access = await widget.api.getRoomAccess(_call.id);
+      if (!mounted || _call.isFinished) return;
+      if (access.token == 'local-demo-livekit-token') {
+        setState(() {
+          _simulatedConnected = true;
+          _microphone = true;
+          _camera = _video;
+          _error = null;
+        });
+        _startDurationTimerIfNeeded();
+        return;
+      }
       final networks = await Connectivity().checkConnectivity();
       if (!mounted || _call.isFinished) return;
       if (networks.every((network) => network == ConnectivityResult.none)) {
@@ -223,8 +238,6 @@ class _LiveCallPageState extends State<LiveCallPage> {
         );
         return;
       }
-      final access = await widget.api.getRoomAccess(_call.id);
-      if (!mounted || _call.isFinished) return;
       await _room.connect(access.url, access.token);
       if (!mounted) return;
       if (_call.isFinished) {
@@ -299,6 +312,15 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 
   Future<void> _setMedia({bool? microphone, bool? camera}) async {
+    if (_simulatedConnected) {
+      if (mounted && !_call.isFinished) {
+        setState(() {
+          if (microphone != null) _microphone = microphone;
+          if (camera != null) _camera = camera;
+        });
+      }
+      return;
+    }
     final participant = _room.localParticipant;
     if (participant == null || _call.isFinished || _updatingMedia) return;
     setState(() => _updatingMedia = true);

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Tab: Community (Disabled State) -->
+  <circle cx="19" cy="17" r="5.5" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.4"/>
+  <path d="M8.5 35.5C8.5 30.3 13.2 26.5 19 26.5C24.8 26.5 29.5 30.3 29.5 35.5C29.5 37 28.3 38 26.8 38H11.2C9.7 38 8.5 37 8.5 35.5Z" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.4" stroke-dasharray="4 3"/>
+  <circle cx="31.5" cy="18.5" r="4.5" stroke="#525A6B" stroke-opacity="0.55" stroke-width="2.2"/>
+</svg>

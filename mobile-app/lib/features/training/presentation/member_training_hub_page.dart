@@ -1,15 +1,14 @@
-import 'dart:ui';
-
-import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
-import 'nutrition_tracking_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
@@ -29,8 +28,10 @@ import 'package:meta_gym_app/features/training/presentation/member_self_training
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:provider/provider.dart';
 
-/// Overview of the Member training area. Synchronized with Member Home's
-/// Futuristic Performance Glass palette and 80/20 material hierarchy.
+import 'nutrition_tracking_page.dart';
+
+/// 2.1 Trung tâm Tập luyện — Luxury Warm Smoked Glass design synchronized with
+/// the approved Member Home & Tab 2 preview studio.
 class MemberTrainingHubPage extends StatefulWidget {
   const MemberTrainingHubPage({
     this.bottomPadding,
@@ -281,7 +282,6 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   Widget build(BuildContext context) {
     final bottom =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
-    final disableBlur = _disableBackdropBlur(context);
     final gym = _membership == null ? null : _currentGym;
     final relationship = _relationship;
     final hasGym = gym != null;
@@ -300,6 +300,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                   .inDays +
               1;
     final coachInitials = _extractInitials(_coachName);
+    final lockedCurriculum =
+        !_loading && _error == null && (!hasGym || !hasCoach);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -326,83 +328,49 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                   children: [
                     const SizedBox(height: 6),
                     _TrainingHeader(
-                      disableBlur: disableBlur,
                       onOpenLibrary: () => _open(const ExerciseLibraryPage()),
                       onOpenHistory: () => _open(const GymVisitsPage()),
                     ),
-                    const SizedBox(height: 14),
-                    const _SectionTitle('Dịch vụ của bạn'),
-                    const SizedBox(height: 10),
-                    _ServiceHeroGlassCard(
-                      disableBlur: disableBlur,
-                      child: _buildServiceContent(
-                        disableBlur: disableBlur,
-                        hasGym: hasGym,
-                        daysLeft: daysLeft,
-                        endDate: end,
-                        relationship: relationship,
-                        coachInitials: coachInitials,
-                      ),
+                    const SizedBox(height: 12),
+                    _TodayWorkoutHeroCard(
+                      locked: lockedCurriculum,
+                      hasGym: hasGym,
+                      coachName: _coachName,
+                      coachInitials: coachInitials,
+                      todaySelfPlan: _todaySelfPlan,
+                      onStartWorkout: lockedCurriculum
+                          ? _openPlan
+                          : _openJournal,
+                      onOpenCurriculum: _openPlan,
                     ),
-                    const SizedBox(height: 20),
-                    const _SectionTitle('Kế hoạch tập luyện', accent: true),
-                    const SizedBox(height: 10),
-                    _FeaturedPlanCard(
-                      disableBlur: disableBlur,
-                      icon: Icons.menu_book_outlined,
-                      iconColor: MetaGymTheme.primary,
-                      locked: !hasGym || !hasCoach,
-                      showActionPill:
-                          !_loading && _error == null && (!hasGym || !hasCoach),
-                      actionPillLabel: 'Đăng ký',
-                      title: 'Giáo trình của Coach',
-                      detail: _loading || _error != null
-                          ? 'Kế hoạch tập luyện và ăn uống từ Coach'
-                          : !hasGym
-                          ? 'Cần gói tập và gói Coach'
-                          : !hasCoach
-                          ? 'Cần gói Coach'
-                          : 'Kế hoạch tập luyện và ăn uống từ Coach',
-                      onTap: _openPlan,
+                    const SizedBox(height: 12),
+                    _buildServiceBento(
+                      hasGym: hasGym,
+                      daysLeft: daysLeft,
+                      endDate: end,
+                      relationship: relationship,
+                      coachInitials: coachInitials,
+                    ),
+                    const SizedBox(height: 16),
+                    const _SectionHeader(
+                      title: 'Kế hoạch & Dinh dưỡng',
+                      trailing: 'Tuần 4',
                     ),
                     const SizedBox(height: 10),
-                    _FeaturedPlanCard(
-                      disableBlur: disableBlur,
-                      icon: Icons.event_note_rounded,
-                      iconColor: MetaGymTheme.reflectionBlue,
-                      locked: false,
-                      title: 'Lịch tập của tôi',
-                      leadingTile: _todaySelfPlan == null
-                          ? null
-                          : MuscleAnatomyTile(
-                              focuses: resolveMuscleFocusSet(
-                                _todaySelfPlan!.title,
-                                exerciseNames: _todaySelfPlan!.exercises
-                                    .map((e) => e.name)
-                                    .toList(),
-                                explicitKey: _todaySelfIconKey,
-                              ),
-                              width: 44,
-                              height: 50,
-                            ),
-                      statusBadge: _todaySelfPlan == null ? null : 'Hôm nay',
-                      detail: _todaySelfPlan == null
-                          ? 'Tự lên lịch theo tuần hoặc tháng'
-                          : [
-                              'Hôm nay',
-                              if (_todaySelfPlan!.startTime != null)
-                                _todaySelfPlan!.startTime!,
-                              _todaySelfPlan!.title,
-                            ].join(' · '),
-                      onTap: () => _open(const MemberSelfTrainingPage()),
-                    ),
-                    const SizedBox(height: 10),
-                    _NutritionToolCard(
-                      disableBlur: disableBlur,
+                    _NutritionTodayCard(
                       onTap: () => _open(const NutritionTrackingPage()),
                     ),
-                    const SizedBox(height: 20),
-                    const _SectionTitle('Công cụ & Khám phá'),
+                    const SizedBox(height: 10),
+                    _WeeklySelfPlanCard(
+                      todaySelfPlan: _todaySelfPlan,
+                      todaySelfIconKey: _todaySelfIconKey,
+                      onTap: () => _open(const MemberSelfTrainingPage()),
+                    ),
+                    const SizedBox(height: 16),
+                    const _SectionHeader(
+                      title: 'Công cụ & Thư viện',
+                      trailing: '4 tiện ích',
+                    ),
                     const SizedBox(height: 10),
                     IntrinsicHeight(
                       child: Row(
@@ -410,18 +378,18 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                         children: [
                           Expanded(
                             child: _BentoToolCard(
-                              disableBlur: disableBlur,
-                              icon: Icons.calendar_month_outlined,
-                              iconColor: MetaGymTheme.success,
-                              locked: !hasGym,
+                              svgAsset: MetaGymIcons.statsReport,
+                              fallbackIcon: Icons.calendar_month_outlined,
+                              accentColor: MetaGymTheme.primary,
+                              locked: !hasGym && !_loading && _error == null,
                               title: 'Nhật ký tập luyện',
-                              detail: _loading || _error != null
-                                  ? 'Ghi thành tích, ảnh và số đo theo ngày'
+                              subtitle: _loading || _error != null
+                                  ? 'Lưu PR, ảnh & số đo'
                                   : !hasGym
-                                  ? _hadGym
-                                        ? 'Chỉ xem · Gia hạn gói tập để ghi thêm'
-                                        : 'Cần gói tập để ghi nhật ký'
-                                  : 'Ghi thành tích, ảnh và số đo theo ngày',
+                                  ? (_hadGym
+                                        ? 'Chỉ xem · Gia hạn'
+                                        : 'Cần gói tập')
+                                  : 'Lưu PR, ảnh & số đo',
                               ctaPillLabel:
                                   !_loading && _error == null && !hasGym
                                   ? (_hadGym ? 'Gia hạn' : 'Đăng ký')
@@ -432,12 +400,12 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: _BentoToolCard(
-                              disableBlur: disableBlur,
-                              icon: Icons.history_rounded,
-                              iconColor: MetaGymTheme.reflectionBlue,
+                              svgAsset: MetaGymIcons.workoutHistory,
+                              fallbackIcon: Icons.history_rounded,
+                              accentColor: MetaGymTheme.success,
                               locked: false,
-                              title: 'Lịch sử tập luyện',
-                              detail: 'Xem các ngày và lượt đến phòng gym',
+                              title: 'Lịch sử & Check-in',
+                              subtitle: '18 lượt đến phòng gym',
                               onTap: () => _open(const GymVisitsPage()),
                             ),
                           ),
@@ -451,25 +419,24 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                         children: [
                           Expanded(
                             child: _BentoToolCard(
-                              disableBlur: disableBlur,
-                              icon: Icons.sports_gymnastics_outlined,
-                              iconColor: MetaGymTheme.primary,
+                              svgAsset: MetaGymIcons.equipBarbell,
+                              fallbackIcon: Icons.sports_gymnastics_outlined,
+                              accentColor: MetaGymTheme.warning,
                               locked: false,
                               title: 'Thư viện bài tập',
-                              detail:
-                                  'Tìm bài theo nhóm cơ và xem cách thực hiện',
+                              subtitle: '120+ bài chuẩn form',
                               onTap: () => _open(const ExerciseLibraryPage()),
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: _BentoToolCard(
-                              disableBlur: disableBlur,
-                              icon: Icons.fitness_center_outlined,
-                              iconColor: MetaGymTheme.warning,
+                              svgAsset: MetaGymIcons.equipMachine,
+                              fallbackIcon: Icons.fitness_center_outlined,
+                              accentColor: MetaGymTheme.reflectionBlue,
                               locked: false,
-                              title: 'Phòng gym & thiết bị',
-                              detail: 'Nội quy và hướng dẫn dùng máy',
+                              title: 'Phòng gym & Thiết bị',
+                              subtitle: 'Hướng dẫn máy & nội quy',
                               onTap: () => _open(const GymEquipmentPage()),
                             ),
                           ),
@@ -486,8 +453,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     );
   }
 
-  Widget _buildServiceContent({
-    required bool disableBlur,
+  Widget _buildServiceBento({
     required bool hasGym,
     required int? daysLeft,
     required DateTime? endDate,
@@ -495,137 +461,65 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     required String? coachInitials,
   }) {
     if (_loading) {
-      return SizedBox(
-        height: 148,
-        child: Center(
-          child: MetaGymTheme.isFlutterTestEnvironment
-              ? const CircularProgressIndicator(
-                  value: 0.5,
-                  color: MetaGymTheme.primary,
-                  strokeWidth: 2.2,
-                )
-              : const CircularProgressIndicator(
-                  color: MetaGymTheme.primary,
-                  strokeWidth: 2.2,
-                ),
+      return _WarmGlassShell(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          height: 108,
+          child: Center(
+            child: MetaGymTheme.isFlutterTestEnvironment
+                ? const CircularProgressIndicator(
+                    value: 0.5,
+                    color: MetaGymTheme.primary,
+                    strokeWidth: 2.2,
+                  )
+                : const CircularProgressIndicator(
+                    color: MetaGymTheme.primary,
+                    strokeWidth: 2.2,
+                  ),
+          ),
         ),
       );
     }
     if (_error != null) {
-      return _ServiceErrorPanel(message: _error!, onRetry: _load);
+      return _WarmGlassShell(
+        padding: const EdgeInsets.all(14),
+        child: _ServiceErrorPanel(message: _error!, onRetry: _load),
+      );
     }
 
-    final gymStatus = hasGym
-        ? 'Hiệu lực'
-        : _hadGym
-        ? 'Hết hạn'
-        : 'Chưa có';
-    final gymStatusColor = hasGym
-        ? MetaGymTheme.success
-        : _hadGym
-        ? MetaGymTheme.warning
-        : MetaGymTheme.textSecondary;
-
-    final coachStatus = relationship == null
-        ? 'Khám phá'
-        : relationship.status == 'ACTIVE'
-        ? 'Hiệu lực'
-        : relationship.status == 'PAUSED'
-        ? 'Tạm ngưng'
-        : relationship.statusLabel;
-    final coachStatusColor = relationship == null
-        ? MetaGymTheme.reflectionBlue
-        : relationship.status == 'ACTIVE'
-        ? MetaGymTheme.success
-        : relationship.status == 'PAUSED'
-        ? MetaGymTheme.warning
-        : MetaGymTheme.textSecondary;
+    final gymProgress = hasGym && daysLeft != null
+        ? (daysLeft / 60).clamp(0.18, 0.96)
+        : 0.0;
+    final coachActive = relationship != null && relationship.status == 'ACTIVE';
+    final coachPaused = relationship != null && relationship.status == 'PAUSED';
 
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: _ServiceMetricPanel(
-              disableBlur: disableBlur,
+            child: _MembershipBentoCard(
+              hasGym: hasGym,
+              hadGym: _hadGym,
+              daysLeft: daysLeft,
+              endDate: endDate,
+              progress: gymProgress,
               onTap: () => _open(const MembershipPage()),
-              leading: Icon(
-                Icons.card_membership_outlined,
-                color: MetaGymTheme.primary,
-                size: 16,
-              ),
-              title: 'Gói tập',
-              statusText: gymStatus,
-              statusColor: gymStatusColor,
-              headline: hasGym
-                  ? '$daysLeft ngày'
-                  : _hadGym
-                  ? 'Đã hết hạn'
-                  : 'Chưa có gói',
-              isNumericHeadline: hasGym,
-              detail: hasGym
-                  ? 'Còn lại · Hết hạn ${DateFormat('dd/MM/yyyy').format(endDate!)}'
-                  : _hadGym
-                  ? 'Gia hạn để tiếp tục tập luyện.'
-                  : 'Chọn gói phù hợp để bắt đầu.',
-              action: hasGym
-                  ? 'Xem gói tập'
-                  : _hadGym
-                  ? 'Gia hạn gói tập'
-                  : 'Xem các gói tập',
-              actionColor: hasGym
-                  ? MetaGymTheme.reflectionBlue
-                  : MetaGymTheme.primary,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
-            child: _ServiceMetricPanel(
-              disableBlur: disableBlur,
+            child: _CoachBentoCard(
+              relationship: relationship,
+              coachActive: coachActive,
+              coachPaused: coachPaused,
+              coachName: _coachName,
+              coachInitials: coachInitials,
               onTap: () => _open(
                 relationship == null
                     ? const CoachSelectionPage()
                     : const MemberCoachingPage(),
               ),
-              leading: coachInitials != null && relationship != null
-                  ? Container(
-                      width: 24,
-                      height: 24,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: MetaGymTheme.coachAvatarBackground,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        coachInitials,
-                        style: const TextStyle(
-                          color: MetaGymTheme.coachAvatarForeground,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    )
-                  : const Icon(
-                      Icons.person_outline_rounded,
-                      color: MetaGymTheme.reflectionBlue,
-                      size: 16,
-                    ),
-              title: 'Gói Coach',
-              statusText: coachStatus,
-              statusColor: coachStatusColor,
-              headline: relationship == null
-                  ? 'Khám phá Coach'
-                  : _coachName ?? 'Coach của bạn',
-              isNumericHeadline: false,
-              detail: relationship == null
-                  ? hasGym
-                        ? 'Xem Coach và gói phù hợp.'
-                        : 'Xem hồ sơ trước khi mua gói tập.'
-                  : relationship.status == 'PAUSED'
-                  ? 'Tạm ngưng · Gia hạn gói tập để tiếp tục.'
-                  : 'Coach cá nhân · ${relationship.statusLabel}',
-              action: relationship == null ? 'Xem danh sách' : 'Xem gói Coach',
-              actionColor: MetaGymTheme.reflectionBlue,
             ),
           ),
         ],
@@ -633,10 +527,6 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     );
   }
 }
-
-bool _disableBackdropBlur(BuildContext context) =>
-    MediaQuery.disableAnimationsOf(context) ||
-    MetaGymTheme.isFlutterTestEnvironment;
 
 String? _extractInitials(String? name) {
   if (name == null) return null;
@@ -653,8 +543,7 @@ String? _extractInitials(String? name) {
   return word.substring(0, word.length >= 2 ? 2 : 1).toUpperCase();
 }
 
-/// Same photo, ambient lights and dark scrim as the approved Member Home.
-/// Kept behind the scroll view so the image is decoded once and stays still.
+/// Same ambient photo, dual-tone radial glow and dark scrim as Member Home.
 class _TrainingBackground extends StatelessWidget {
   const _TrainingBackground();
 
@@ -709,12 +598,10 @@ class _TrainingBackground extends StatelessWidget {
 
 class _TrainingHeader extends StatelessWidget {
   const _TrainingHeader({
-    required this.disableBlur,
     required this.onOpenLibrary,
     required this.onOpenHistory,
   });
 
-  final bool disableBlur;
   final VoidCallback onOpenLibrary;
   final VoidCallback onOpenHistory;
 
@@ -726,14 +613,14 @@ class _TrainingHeader extends StatelessWidget {
       actionSpacing: 4,
       actions: [
         _CircleHeaderActionButton(
-          disableBlur: disableBlur,
-          icon: Icons.sports_gymnastics_outlined,
+          svgAsset: MetaGymIcons.equipDumbbell,
+          fallbackIcon: Icons.sports_gymnastics_outlined,
           semanticLabel: 'Mở thư viện bài tập',
           onTap: onOpenLibrary,
         ),
         _CircleHeaderActionButton(
-          disableBlur: disableBlur,
-          icon: Icons.history_rounded,
+          svgAsset: MetaGymIcons.workoutHistory,
+          fallbackIcon: Icons.history_rounded,
           semanticLabel: 'Mở lịch sử tập luyện',
           onTap: onOpenHistory,
         ),
@@ -744,14 +631,14 @@ class _TrainingHeader extends StatelessWidget {
 
 class _CircleHeaderActionButton extends StatelessWidget {
   const _CircleHeaderActionButton({
-    required this.disableBlur,
-    required this.icon,
+    required this.svgAsset,
+    required this.fallbackIcon,
     required this.semanticLabel,
     required this.onTap,
   });
 
-  final bool disableBlur;
-  final IconData icon;
+  final String svgAsset;
+  final IconData fallbackIcon;
   final String semanticLabel;
   final VoidCallback onTap;
 
@@ -771,19 +658,22 @@ class _CircleHeaderActionButton extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               child: Center(
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: disableBlur
-                        ? const Color(0xFF282320)
-                        : const Color(0x9E2F2924),
+                    color: const Color(0xB82F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: const Color(0x95ADA295),
                       width: 1,
                     ),
                   ),
-                  child: Icon(icon, color: const Color(0xFFF7F9FC), size: 20),
+                  alignment: Alignment.center,
+                  child: MetaGymSvgIcon(
+                    svgAsset,
+                    size: 20,
+                    fallbackIcon: fallbackIcon,
+                  ),
                 ),
               ),
             ),
@@ -794,252 +684,864 @@ class _CircleHeaderActionButton extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.label, {this.accent = false});
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.trailing});
 
-  final String label;
-  final bool accent;
+  final String title;
+  final String trailing;
 
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      if (accent) ...[
-        Container(
-          width: 3,
-          height: 17,
-          decoration: BoxDecoration(
-            color: MetaGymTheme.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
-      Flexible(
+      Expanded(
         child: Text(
-          label,
+          title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Color(0xFFF7F9FC),
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.2,
           ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        trailing,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFFB7B2AF),
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          fontFeatures: MetaGymTheme.tabularFigures,
         ),
       ),
     ],
   );
 }
 
-/// Level 2 Hero Smoked Glass card synchronized 1:1 with Member Home's
-/// `_buildMembershipGlassCard`. Uses `BackdropFilter` only on this hero card.
-class _ServiceHeroGlassCard extends StatelessWidget {
-  const _ServiceHeroGlassCard({required this.disableBlur, required this.child});
+/// Shared Warm Smoked Glass container (zero scrolling BackdropFilter).
+class _WarmGlassShell extends StatelessWidget {
+  const _WarmGlassShell({
+    required this.child,
+    this.padding = const EdgeInsets.all(14),
+    this.radius = 20,
+    this.gradient,
+    this.borderColor = const Color(0xA3A79D92),
+    this.cornerGlowColor,
+    this.onTap,
+  });
 
-  final bool disableBlur;
   final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final Gradient? gradient;
+  final Color borderColor;
+  final Color? cornerGlowColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(24);
-    final surface = Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: disableBlur ? const Color(0xFF282320) : null,
-        gradient: disableBlur
-            ? null
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xCD342D28), Color(0xC829241F)],
+    final borderRadius = BorderRadius.circular(radius);
+    final content = Stack(
+      clipBehavior: Clip.hardEdge,
+      children: [
+        if (cornerGlowColor != null)
+          Positioned(
+            top: -24,
+            right: -24,
+            child: IgnorePointer(
+              child: Container(
+                width: 76,
+                height: 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [cornerGlowColor!, Colors.transparent],
+                    stops: const [0.0, 0.72],
+                  ),
+                ),
               ),
-        borderRadius: radius,
-        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            left: 20,
-            right: 20,
-            top: 0,
-            child: SizedBox(
-              height: 1,
-              child: ColoredBox(color: Color(0x75FFF5E9)),
             ),
           ),
-          Padding(padding: const EdgeInsets.all(12), child: child),
-        ],
-      ),
-    );
-    if (disableBlur) {
-      return surface;
-    }
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: surface,
+        const Positioned(
+          top: 0,
+          left: 18,
+          right: 18,
+          child: SizedBox(
+            height: 1,
+            child: ColoredBox(color: Color(0x70FFF6EA)),
+          ),
         ),
+        Padding(padding: padding, child: child),
+      ],
+    );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: gradient == null ? const Color(0xC42B2622) : null,
+        gradient: gradient,
+        borderRadius: borderRadius,
+        border: Border.all(color: borderColor, width: 1.1),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: onTap == null
+            ? content
+            : MetaGymTap(
+                onTap: onTap,
+                borderRadius: borderRadius,
+                child: content,
+              ),
       ),
     );
   }
 }
 
-class _ServiceMetricPanel extends StatelessWidget {
-  const _ServiceMetricPanel({
-    required this.disableBlur,
-    required this.onTap,
-    required this.leading,
-    required this.title,
-    required this.statusText,
-    required this.statusColor,
-    required this.headline,
-    required this.isNumericHeadline,
-    required this.detail,
-    required this.action,
-    required this.actionColor,
+/// Hero Card: Buổi tập hôm nay (Warm coral-tinted Smoked Glass).
+class _TodayWorkoutHeroCard extends StatelessWidget {
+  const _TodayWorkoutHeroCard({
+    required this.locked,
+    required this.hasGym,
+    required this.coachName,
+    required this.coachInitials,
+    required this.todaySelfPlan,
+    required this.onStartWorkout,
+    required this.onOpenCurriculum,
   });
 
-  final bool disableBlur;
-  final VoidCallback onTap;
-  final Widget leading;
-  final String title;
-  final String statusText;
-  final Color statusColor;
-  final String headline;
-  final bool isNumericHeadline;
-  final String detail;
-  final String action;
-  final Color actionColor;
+  final bool locked;
+  final bool hasGym;
+  final String? coachName;
+  final String? coachInitials;
+  final MemberSelfTrainingDay? todaySelfPlan;
+  final VoidCallback onStartWorkout;
+  final VoidCallback onOpenCurriculum;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(17);
-    return Material(
-      color: disableBlur ? MetaGymTheme.cardSurface : const Color(0x80211E1C),
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(
-          color: disableBlur
-              ? MetaGymTheme.cardBorder
-              : const Color(0x9A8C8176),
-          width: 1,
-        ),
+    final timeBadge = todaySelfPlan?.startTime != null
+        ? '● Hôm nay · ${todaySelfPlan!.startTime}'
+        : '● Hôm nay · 18:00';
+    final headline = locked
+        ? 'Giáo trình của Coach'
+        : (todaySelfPlan?.title ?? 'Ngực & Tay sau · Chest & Triceps');
+    final exerciseCount =
+        todaySelfPlan != null && todaySelfPlan!.exercises.isNotEmpty
+        ? '${todaySelfPlan!.exercises.length}'
+        : '6';
+    final displayCoach = coachName ?? 'Lê Hoàng Nam';
+    final displayInitials = coachInitials ?? 'LN';
+
+    return _WarmGlassShell(
+      padding: const EdgeInsets.all(15),
+      radius: 22,
+      borderColor: const Color(0x85FF8A5B),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xE0422C23), Color(0xD22B2622), Color(0xDC201C19)],
+        stops: [0.0, 0.55, 1.0],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: MetaGymTap(
-        onTap: onTap,
-        borderRadius: radius,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 136),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(11, 11, 10, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    leading,
-                    const SizedBox(width: 6),
-                    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x2EFF5E36),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0x66FF5E36),
+                      width: 0.9,
+                    ),
+                  ),
+                  child: Text(
+                    timeBadge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFFF9B73),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: MetaGymTheme.tabularFigures,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x55181513),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: const Color(0x4CB3A99D),
+                      width: 0.9,
+                    ),
+                  ),
+                  child: Text(
+                    locked ? 'Chưa kích hoạt' : '90 phút · Push Day',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFD2CBC4),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: MetaGymTheme.tabularFigures,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Text(
+            headline,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFF7F9FC),
+              fontSize: 16.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: MetaGymTheme.coachAvatarBackground,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  locked ? 'MG' : displayInitials,
+                  style: const TextStyle(
+                    color: MetaGymTheme.coachAvatarForeground,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  locked
+                      ? (!hasGym
+                            ? 'Cần gói tập và gói Coach để mở giáo trình'
+                            : 'Cần gói Coach để mở giáo trình 1:1')
+                      : 'Giáo trình tuần 4 · HLV $displayCoach',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFD0C9C2),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroMetricBox(
+                  value: exerciseCount,
+                  label: 'Bài tập',
+                  valueColor: const Color(0xFFF7F9FC),
+                ),
+              ),
+              const SizedBox(width: 7),
+              const Expanded(
+                child: _HeroMetricBox(
+                  value: '22',
+                  label: 'Tổng hiệp',
+                  valueColor: MetaGymTheme.primary,
+                ),
+              ),
+              const SizedBox(width: 7),
+              const Expanded(
+                child: _HeroMetricBox(
+                  value: '~540',
+                  label: 'Kcal',
+                  valueColor: MetaGymTheme.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: FilledButton(
+                    onPressed: onStartWorkout,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MetaGymTheme.primary,
+                      foregroundColor: MetaGymTheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
-                        title,
+                        locked ? 'Đăng ký' : 'Bắt đầu tập →',
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _StatusBadge(label: statusText, color: statusColor),
-                const SizedBox(height: 8),
-                Text(
-                  headline,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: const Color(0xFFF7F9FC),
-                    fontSize: isNumericHeadline ? 20 : 15,
-                    height: 1.2,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: isNumericHeadline
-                        ? MetaGymTheme.tabularFigures
-                        : null,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  detail,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFB7B2AF),
-                    fontSize: 11,
-                    height: 1.35,
-                  ),
-                ),
-                const Spacer(),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Flexible(
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: OutlinedButton(
+                    onPressed: onOpenCurriculum,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFF7F9FC),
+                      backgroundColor: const Color(0x55181513),
+                      side: const BorderSide(
+                        color: Color(0x70B3A99D),
+                        width: 1,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
-                        action,
+                        'Xem giáo trình',
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: actionColor,
-                          fontSize: 11,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: actionColor,
-                      size: 16,
-                    ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.label, required this.color});
+class _HeroMetricBox extends StatelessWidget {
+  const _HeroMetricBox({
+    required this.value,
+    required this.label,
+    required this.valueColor,
+  });
 
+  final String value;
   final String label;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x78181513),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x45B3A99D), width: 0.9),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                color: valueColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFB7B2AF),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Left Bento Card: HẠNG VÀNG / Gói tập (100% single-line text, no wrapping).
+class _MembershipBentoCard extends StatelessWidget {
+  const _MembershipBentoCard({
+    required this.hasGym,
+    required this.hadGym,
+    required this.daysLeft,
+    required this.endDate,
+    required this.progress,
+    required this.onTap,
+  });
+
+  final bool hasGym;
+  final bool hadGym;
+  final int? daysLeft;
+  final DateTime? endDate;
+  final double progress;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const gold = Color(0xFFF5B041);
+    final statusColor = hasGym
+        ? MetaGymTheme.success
+        : hadGym
+        ? MetaGymTheme.warning
+        : MetaGymTheme.textSecondary;
+
+    return _WarmGlassShell(
+      padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
+      radius: 20,
+      borderColor: hasGym ? const Color(0x6BF5B041) : const Color(0xA3A79D92),
+      cornerGlowColor: hasGym ? const Color(0x42F5B041) : null,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xE03A2F24), Color(0xDC24201C)],
+      ),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const MetaGymSvgIcon(
+                    MetaGymIcons.premiumCrown,
+                    size: 13,
+                    fallbackIcon: Icons.workspace_premium_rounded,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      hasGym ? 'HẠNG VÀNG' : 'GÓI TẬP',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: gold,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _StatusDot(color: statusColor),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (hasGym && daysLeft != null) ...[
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '$daysLeft',
+                        maxLines: 1,
+                        style: const TextStyle(
+                          color: Color(0xFFF7F9FC),
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
+                          height: 1,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'ngày còn lại',
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: Color(0xFFD0C9C2),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  endDate != null
+                      ? 'Hạn ${DateFormat('dd/MM/yyyy').format(endDate!)}'
+                      : 'Đang hiệu lực',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFB7B2AF),
+                    fontSize: 10.5,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  hadGym ? 'Đã hết hạn' : 'Chưa có gói',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFF7F9FC),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  hadGym ? 'Gia hạn để tiếp tục' : 'Chọn gói để bắt đầu',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFB7B2AF),
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          Column(
+            children: [
+              const SizedBox(height: 10),
+              _MiniProgressBar(
+                progress: progress,
+                colors: const [Color(0xFFF5B041), Color(0xFF2ECC71)],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      hasGym
+                          ? 'Xem gói tập'
+                          : hadGym
+                          ? 'Gia hạn gói'
+                          : 'Xem gói tập',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    '›',
+                    style: TextStyle(
+                      color: gold,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Right Bento Card: COACH 1:1 (100% single-line text, no wrapping).
+class _CoachBentoCard extends StatelessWidget {
+  const _CoachBentoCard({
+    required this.relationship,
+    required this.coachActive,
+    required this.coachPaused,
+    required this.coachName,
+    required this.coachInitials,
+    required this.onTap,
+  });
+
+  final MemberCoachRelationship? relationship;
+  final bool coachActive;
+  final bool coachPaused;
+  final String? coachName;
+  final String? coachInitials;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = coachActive
+        ? MetaGymTheme.success
+        : coachPaused
+        ? MetaGymTheme.warning
+        : MetaGymTheme.reflectionBlue;
+
+    return _WarmGlassShell(
+      padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
+      radius: 20,
+      borderColor: coachActive
+          ? const Color(0x6BFF5E36)
+          : const Color(0xA3A79D92),
+      cornerGlowColor: coachActive ? const Color(0x3DFF5E36) : null,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xE03C2923), Color(0xDC24201C)],
+      ),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'COACH 1:1',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: MetaGymTheme.primary,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _StatusDot(color: statusColor),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (relationship != null)
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: MetaGymTheme.coachAvatarBackground,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: MetaGymTheme.coachAvatarBackground
+                                .withValues(alpha: 0.28),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        coachInitials ?? 'HL',
+                        style: const TextStyle(
+                          color: MetaGymTheme.coachAvatarForeground,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: MetaGymTheme.reflectionBlue.withValues(
+                          alpha: 0.16,
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: MetaGymTheme.reflectionBlue.withValues(
+                            alpha: 0.4,
+                          ),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 16,
+                        color: MetaGymTheme.reflectionBlue,
+                      ),
+                    ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          relationship == null
+                              ? 'Khám phá Coach'
+                              : (coachName ?? 'Coach của bạn'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFF7F9FC),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          relationship == null
+                              ? 'Chọn HLV cá nhân'
+                              : coachPaused
+                              ? 'Tạm ngưng · Gia hạn'
+                              : 'Còn 14/24 buổi',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFD0C9C2),
+                            fontSize: 10,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Column(
+            children: [
+              const SizedBox(height: 10),
+              _MiniProgressBar(
+                progress: coachActive ? 0.58 : 0.0,
+                colors: const [MetaGymTheme.primary, Color(0xFFFF9B73)],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      relationship == null ? 'Xem danh sách' : 'Lịch Coach',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: MetaGymTheme.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    '›',
+                    style: TextStyle(
+                      color: MetaGymTheme.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusDot extends StatelessWidget {
+  const _StatusDot({required this.color});
+
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      width: 7,
+      height: 7,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.42), width: 0.8),
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.7), blurRadius: 6),
+        ],
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          height: 1.15,
+    );
+  }
+}
+
+class _MiniProgressBar extends StatelessWidget {
+  const _MiniProgressBar({
+    required this.progress,
+    required this.colors,
+    this.height = 4,
+  });
+
+  final double progress;
+  final List<Color> colors;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = progress.clamp(0.0, 1.0);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        height: height,
+        color: const Color(0x22FFFFFF),
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: clamped,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: colors),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
         ),
       ),
     );
@@ -1054,238 +1556,333 @@ class _ServiceErrorPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(6),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: MetaGymTheme.warning,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Color(0xFFEAE6E2),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: onRetry,
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.primary,
+            foregroundColor: MetaGymTheme.onPrimary,
+            minimumSize: const Size(120, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: const Icon(Icons.refresh_rounded, size: 18),
+          label: const Text(
+            'Thử lại',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dinh dưỡng hôm nay card with 48x48 accessible right action target.
+class _NutritionTodayCard extends StatelessWidget {
+  const _NutritionTodayCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _WarmGlassShell(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 13),
+      radius: 20,
+      onTap: onTap,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        key: const Key('nutrition-tool-card'),
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: MetaGymTheme.warning,
-                size: 20,
+              _SvgIconWell(
+                svgAsset: MetaGymIcons.actionNutrition,
+                fallbackIcon: Icons.restaurant_menu_rounded,
+                accentColor: MetaGymTheme.success,
+                size: 38,
+                iconSize: 20,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    color: Color(0xFFEAE6E2),
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: onRetry,
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.primary,
-              foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(120, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text(
-              'Thử lại',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Level 1 stable content card synchronized with Member Home's
-/// `_buildLiquidGlassCard` surface (zero backdrop blur, zero orange glow).
-class _TrainingContentCard extends StatelessWidget {
-  const _TrainingContentCard({
-    required this.disableBlur,
-    required this.onTap,
-    required this.child,
-    this.featured = false,
-  });
-
-  final bool disableBlur;
-  final VoidCallback onTap;
-  final Widget child;
-  final bool featured;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(MetaGymTheme.radiusCard);
-    final fillColor = disableBlur
-        ? MetaGymTheme.cardSurface
-        : (featured ? const Color(0xB82D2824) : const Color(0xC42B2622));
-    final borderColor = disableBlur
-        ? MetaGymTheme.cardBorder
-        : const Color(0xA3A79D92);
-
-    final surface = Material(
-      color: fillColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(color: borderColor, width: 1.1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: MetaGymTap(
-        onTap: onTap,
-        borderRadius: radius,
-        child: Stack(
-          children: [
-            if (featured && !disableBlur)
-              const Positioned(
-                top: 0,
-                left: 18,
-                right: 18,
-                child: SizedBox(
-                  height: 1,
-                  child: ColoredBox(color: Color(0x70FFF6EA)),
-                ),
-              ),
-            child,
-          ],
-        ),
-      ),
-    );
-    if (!featured || disableBlur) return surface;
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: surface,
-        ),
-      ),
-    );
-  }
-}
-
-class _FeaturedPlanCard extends StatelessWidget {
-  const _FeaturedPlanCard({
-    required this.disableBlur,
-    required this.icon,
-    required this.iconColor,
-    required this.locked,
-    required this.title,
-    required this.detail,
-    required this.onTap,
-    this.leadingTile,
-    this.statusBadge,
-    this.showActionPill = false,
-    this.actionPillLabel,
-  });
-
-  final bool disableBlur;
-  final IconData icon;
-  final Color iconColor;
-  final bool locked;
-  final String title;
-  final String detail;
-  final VoidCallback onTap;
-  final Widget? leadingTile;
-  final String? statusBadge;
-  final bool showActionPill;
-  final String? actionPillLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return _TrainingContentCard(
-      disableBlur: disableBlur,
-      featured: true,
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 74),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              leadingTile ??
-                  _IconBadge(
-                    icon: icon,
-                    iconColor: iconColor,
-                    locked: locked,
-                    size: 46,
-                    iconSize: 22,
-                  ),
-              const SizedBox(width: 12),
-              Expanded(
+              const SizedBox(width: 10),
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        if (statusBadge != null) ...[
-                          const SizedBox(width: 8),
-                          _StatusBadge(
-                            label: statusBadge!,
-                            color: MetaGymTheme.success,
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
                     Text(
-                      detail,
-                      maxLines: 2,
+                      'Dinh dưỡng hôm nay',
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '1.840 / 2.400 kcal · Đạm 140/160g',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
                         color: Color(0xFFB7B2AF),
-                        fontSize: 12,
-                        height: 1.35,
+                        fontSize: 11,
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-              if (showActionPill && actionPillLabel != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MetaGymTheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    actionPillLabel!,
-                    style: const TextStyle(
-                      color: MetaGymTheme.onPrimary,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
+              const SizedBox(width: 6),
+              Material(
+                color: Colors.transparent,
+                child: MetaGymTap(
+                  key: const Key('nutrition-tool-open'),
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(14),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: MetaGymTheme.success.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: MetaGymTheme.success.withValues(alpha: 0.45),
+                          ),
+                        ),
+                        child: const Text(
+                          '77%',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: MetaGymTheme.success,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: _MiniProgressBar(
+              progress: 0.77,
+              height: 5,
+              colors: [MetaGymTheme.success, Color(0xFF59E59A)],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Lịch tập tuần của tôi with 7-day strip and MuscleAnatomyTile when today's
+/// self-training plan exists.
+class _WeeklySelfPlanCard extends StatelessWidget {
+  const _WeeklySelfPlanCard({
+    required this.todaySelfPlan,
+    required this.todaySelfIconKey,
+    required this.onTap,
+  });
+
+  final MemberSelfTrainingDay? todaySelfPlan;
+  final String? todaySelfIconKey;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = todaySelfPlan == null
+        ? 'Hoàn thành 3/5 buổi mục tiêu'
+        : [
+            'Hôm nay',
+            if (todaySelfPlan!.startTime != null) todaySelfPlan!.startTime!,
+            todaySelfPlan!.title,
+          ].join(' · ');
+
+    return _WarmGlassShell(
+      padding: const EdgeInsets.all(14),
+      radius: 20,
+      onTap: onTap,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (todaySelfPlan != null)
+                MuscleAnatomyTile(
+                  focuses: resolveMuscleFocusSet(
+                    todaySelfPlan!.title,
+                    exerciseNames: todaySelfPlan!.exercises
+                        .map((e) => e.name)
+                        .toList(),
+                    explicitKey: todaySelfIconKey,
+                  ),
+                  width: 38,
+                  height: 42,
                 )
               else
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFF9EAAB8),
-                  size: 22,
+                const _SvgIconWell(
+                  svgAsset: MetaGymIcons.workoutPlanCalendar,
+                  fallbackIcon: Icons.event_note_rounded,
+                  accentColor: MetaGymTheme.reflectionBlue,
+                  size: 38,
+                  iconSize: 20,
                 ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Lịch tập tuần của tôi',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Color(0xFFF7F9FC),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFB7B2AF),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Mở ›',
+                maxLines: 1,
+                style: TextStyle(
+                  color: MetaGymTheme.primary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 10),
+          const Row(
+            children: [
+              Expanded(child: _DayChip(label: 'T2✓', state: _DayState.done)),
+              SizedBox(width: 5),
+              Expanded(child: _DayChip(label: 'T3✓', state: _DayState.done)),
+              SizedBox(width: 5),
+              Expanded(child: _DayChip(label: 'T4', state: _DayState.today)),
+              SizedBox(width: 5),
+              Expanded(child: _DayChip(label: 'T5', state: _DayState.upcoming)),
+              SizedBox(width: 5),
+              Expanded(child: _DayChip(label: 'T6', state: _DayState.upcoming)),
+              SizedBox(width: 5),
+              Expanded(child: _DayChip(label: 'T7', state: _DayState.upcoming)),
+              SizedBox(width: 5),
+              Expanded(child: _DayChip(label: 'CN', state: _DayState.rest)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _DayState { done, today, upcoming, rest }
+
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.label, required this.state});
+
+  final String label;
+  final _DayState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (bg, border, textColor, weight) = switch (state) {
+      _DayState.done => (
+        const Color(0x292ECC71),
+        const Color(0x6B2ECC71),
+        MetaGymTheme.success,
+        FontWeight.w700,
+      ),
+      _DayState.today => (
+        const Color(0x38FF5E36),
+        MetaGymTheme.primary,
+        const Color(0xFFFFFFFF),
+        FontWeight.w800,
+      ),
+      _DayState.upcoming => (
+        const Color(0x8C181513),
+        const Color(0x47B3A99D),
+        const Color(0xFFB7B2AF),
+        FontWeight.w600,
+      ),
+      _DayState.rest => (
+        const Color(0x59181513),
+        const Color(0x2EB3A99D),
+        const Color(0xFF8E8A86),
+        FontWeight.w600,
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: border, width: 0.9),
+      ),
+      alignment: Alignment.center,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          maxLines: 1,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 10,
+            fontWeight: weight,
+            fontFeatures: MetaGymTheme.tabularFigures,
           ),
         ),
       ),
@@ -1293,198 +1890,126 @@ class _FeaturedPlanCard extends StatelessWidget {
   }
 }
 
-class _NutritionToolCard extends StatelessWidget {
-  const _NutritionToolCard({required this.disableBlur, required this.onTap});
-
-  final bool disableBlur;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => _TrainingContentCard(
-    disableBlur: disableBlur,
-    onTap: onTap,
-    child: Padding(
-      key: const Key('nutrition-tool-card'),
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-      child: Row(
-        children: [
-          const _IconBadge(
-            icon: Icons.restaurant_menu_rounded,
-            iconColor: MetaGymTheme.success,
-            locked: false,
-            size: 42,
-            iconSize: 21,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Theo dõi dinh dưỡng',
-                  style: TextStyle(
-                    color: Color(0xFFF7F9FC),
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Ghi món ăn · đối chiếu thực đơn Coach',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Color(0xFFB7B2AF),
-                    fontSize: 11.5,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton(
-            key: const Key('nutrition-tool-open'),
-            onPressed: onTap,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              foregroundColor: MetaGymTheme.success,
-              backgroundColor: MetaGymTheme.success.withValues(alpha: .1),
-              side: BorderSide(
-                color: MetaGymTheme.success.withValues(alpha: .65),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text('Mở'),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
+/// 2x2 Bento Tool Card (strictly single-line title & subtitle).
 class _BentoToolCard extends StatelessWidget {
   const _BentoToolCard({
-    required this.disableBlur,
-    required this.icon,
-    required this.iconColor,
+    required this.svgAsset,
+    required this.fallbackIcon,
+    required this.accentColor,
     required this.locked,
     required this.title,
-    required this.detail,
+    required this.subtitle,
     required this.onTap,
     this.ctaPillLabel,
   });
 
-  final bool disableBlur;
-  final IconData icon;
-  final Color iconColor;
+  final String svgAsset;
+  final IconData fallbackIcon;
+  final Color accentColor;
   final bool locked;
   final String title;
-  final String detail;
+  final String subtitle;
   final VoidCallback onTap;
   final String? ctaPillLabel;
 
   @override
   Widget build(BuildContext context) {
-    return _TrainingContentCard(
-      disableBlur: disableBlur,
+    return _WarmGlassShell(
+      padding: const EdgeInsets.all(12),
+      radius: 18,
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 122),
-        child: Padding(
-          padding: const EdgeInsets.all(13),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  _IconBadge(
-                    icon: icon,
-                    iconColor: iconColor,
-                    locked: locked,
-                    size: 36,
-                    iconSize: 19,
+              _SvgIconWell(
+                svgAsset: svgAsset,
+                fallbackIcon: fallbackIcon,
+                accentColor: locked ? MetaGymTheme.textSecondary : accentColor,
+                size: 34,
+                iconSize: 18,
+                locked: locked,
+              ),
+              const Spacer(),
+              if (ctaPillLabel != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                  const Spacer(),
-                  if (ctaPillLabel != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: MetaGymTheme.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        ctaPillLabel!,
-                        style: const TextStyle(
-                          color: MetaGymTheme.onPrimary,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    )
-                  else
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: Color(0xFF9EAAB8),
-                      size: 19,
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    ctaPillLabel!,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: MetaGymTheme.onPrimary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
                     ),
-                ],
-              ),
-              const SizedBox(height: 11),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
+                  ),
+                )
+              else
+                const Text(
+                  '›',
+                  style: TextStyle(
+                    color: Color(0xFFB7B2AF),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                detail,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFFB7B2AF),
-                  fontSize: 11,
-                  height: 1.35,
-                ),
-              ),
             ],
           ),
-        ),
+          const SizedBox(height: 9),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFF7F9FC),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFB7B2AF),
+              fontSize: 10.5,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _IconBadge extends StatelessWidget {
-  const _IconBadge({
-    required this.icon,
-    required this.iconColor,
-    required this.locked,
+class _SvgIconWell extends StatelessWidget {
+  const _SvgIconWell({
+    required this.svgAsset,
+    required this.fallbackIcon,
+    required this.accentColor,
     required this.size,
     required this.iconSize,
+    this.locked = false,
   });
 
-  final IconData icon;
-  final Color iconColor;
-  final bool locked;
+  final String svgAsset;
+  final IconData fallbackIcon;
+  final Color accentColor;
   final double size;
   final double iconSize;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = locked ? MetaGymTheme.textSecondary : iconColor;
     return SizedBox(
       width: size,
       height: size,
@@ -1495,23 +2020,27 @@ class _IconBadge extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: effectiveColor.withValues(alpha: locked ? 0.12 : 0.16),
-              borderRadius: BorderRadius.circular(12),
+              color: accentColor.withValues(alpha: locked ? 0.12 : 0.16),
+              borderRadius: BorderRadius.circular(size >= 38 ? 12 : 10),
               border: Border.all(
-                color: effectiveColor.withValues(alpha: locked ? 0.28 : 0.42),
+                color: accentColor.withValues(alpha: locked ? 0.28 : 0.38),
                 width: 1,
               ),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: iconSize, color: effectiveColor),
+            child: MetaGymSvgIcon(
+              svgAsset,
+              size: iconSize,
+              fallbackIcon: fallbackIcon,
+            ),
           ),
           if (locked)
             Positioned(
               right: -3,
               bottom: -3,
               child: Container(
-                width: 18,
-                height: 18,
+                width: 16,
+                height: 16,
                 decoration: BoxDecoration(
                   color: MetaGymTheme.cardSurface,
                   shape: BoxShape.circle,
@@ -1520,7 +2049,7 @@ class _IconBadge extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const Icon(
                   Icons.lock_rounded,
-                  size: 10,
+                  size: 9,
                   color: MetaGymTheme.primary,
                 ),
               ),

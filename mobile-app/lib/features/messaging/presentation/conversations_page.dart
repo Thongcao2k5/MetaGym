@@ -7,6 +7,7 @@ import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/presentation/live_call_page.dart';
@@ -307,6 +308,8 @@ class ConversationsPage extends StatefulWidget {
     this.picker,
     this.bottomPadding,
     this.isActive = true,
+    this.coachMode,
+    this.onAvatarTap,
     super.key,
   });
 
@@ -315,6 +318,8 @@ class ConversationsPage extends StatefulWidget {
   final ProgressPhotoPicker? picker;
   final double? bottomPadding;
   final bool isActive;
+  final bool? coachMode;
+  final VoidCallback? onAvatarTap;
 
   static void clearSessionCache() => _MessagingSessionCache.clearAll();
 
@@ -854,11 +859,21 @@ class _ConversationsPageState extends State<ConversationsPage> {
     await _load();
   }
 
+  bool _resolveCoachHeader(BuildContext context) {
+    if (widget.coachMode != null) return widget.coachMode!;
+    try {
+      return context.watch<SessionController?>()?.user?.role == UserRole.coach;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final effectiveBottomPadding =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
     final initials = _userInitials(context);
+    final useCoachHeader = _resolveCoachHeader(context);
 
     return Material(
       color: MetaGymTheme.darkCanvas,
@@ -881,10 +896,12 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 ),
                 children: [
                   const SizedBox(height: 6),
-                  _buildHeader(context, initials),
+                  useCoachHeader
+                      ? _buildCoachHeader(context, initials)
+                      : _buildHeader(context, initials),
                   if (_showSearch) ...[
                     const SizedBox(height: 10),
-                    _buildSearchBar(),
+                    _buildSearchBar(useCoachHeader: useCoachHeader),
                   ],
                   const SizedBox(height: 12),
                   _buildQuickFilterDock(),
@@ -1004,7 +1021,74 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildCoachHeader(BuildContext context, String initials) {
+    final canPop = widget.onAvatarTap == null && Navigator.of(context).canPop();
+    final avatarCircle = Container(
+      width: 42,
+      height: 42,
+      decoration: const BoxDecoration(
+        color: MetaGymTheme.coachAvatarBackground,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: MetaGymTheme.coachAvatarForeground,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+
+    return MetaGymBrandHeader(
+      eyebrow: 'META GYM · COACH',
+      title: 'Tin nhắn',
+      subtitle: 'Trao đổi cùng học viên & hỗ trợ',
+      leading: canPop
+          ? MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            )
+          : null,
+      actions: [
+        _CircleGlassIconButton(
+          icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
+          tooltip: 'Tìm kiếm cuộc trò chuyện',
+          isActive: _showSearch,
+          onTap: () {
+            setState(() {
+              _showSearch = !_showSearch;
+              if (!_showSearch) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            });
+          },
+        ),
+        widget.onAvatarTap != null
+            ? Semantics(
+                button: true,
+                label: 'Hồ sơ Coach',
+                child: InkWell(
+                  onTap: widget.onAvatarTap,
+                  customBorder: const CircleBorder(),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    child: Center(child: avatarCircle),
+                  ),
+                ),
+              )
+            : avatarCircle,
+      ],
+    );
+  }
+
+  Widget _buildSearchBar({bool useCoachHeader = false}) {
     return _buildLiquidGlassCard(
       borderRadius: BorderRadius.circular(16),
       child: Padding(
@@ -1025,12 +1109,17 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   color: Color(0xFFF7F9FC),
                   fontSize: 13.5,
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'Tìm Coach hoặc nội dung tin nhắn...',
-                  hintStyle: TextStyle(color: Color(0xFF8E9AA8), fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: useCoachHeader
+                      ? 'Tìm học viên hoặc nội dung tin nhắn...'
+                      : 'Tìm Coach hoặc nội dung tin nhắn...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF8E9AA8),
+                    fontSize: 13,
+                  ),
                   border: InputBorder.none,
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),

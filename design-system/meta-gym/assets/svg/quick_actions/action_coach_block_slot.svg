@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="qa-block-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F39C12" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#F39C12" stop-opacity="0.38"/>
+    </linearGradient>
+  </defs>
+  <!-- Coach Management: Chặn khung giờ bận (90-Min Clock Face + Amber Block Slash Badge) -->
+  <circle cx="22.5" cy="23.5" r="13" fill="url(#qa-block-blush)"/>
+  <path d="M25.5 36.2C24.5 36.4 23.5 36.5 22.5 36.5C15.3 36.5 9.5 30.7 9.5 23.5C9.5 16.3 15.3 10.5 22.5 10.5C29.7 10.5 35.5 16.3 35.5 23.5C35.5 24.4 35.4 25.3 35.2 26.2" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Clock Hands -->
+  <path d="M22.5 16.5V23.5L27.5 26" stroke="#F39C12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-Right Blocked Slot Slash Badge (#F39C12) -->
+  <circle cx="34" cy="34" r="6.2" fill="#F39C12" fill-opacity="0.24" stroke="#F39C12" stroke-width="2.3"/>
+  <line x1="30.2" y1="30.2" x2="37.8" y2="37.8" stroke="#F39C12" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

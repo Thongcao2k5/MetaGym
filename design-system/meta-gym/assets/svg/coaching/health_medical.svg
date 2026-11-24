@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="coa-health-medical-blush" x1="10" y1="10" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded Medical Clipboard with Blush (Directly inspired by reference image 3 'Xác thực thông tin') -->
+  <rect x="10" y="10" width="25" height="28" rx="6.5" fill="url(#coa-health-medical-blush)"/>
+  <!-- Clipboard Contour (Open at bottom-right for coral medical cross badge) -->
+  <path d="M24 38H16.5C12.9 38 10 35.1 10 31.5V16.5C10 12.9 12.9 10 16.5 10H28.5C32.1 10 35 12.9 35 16.5V23" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Top Clip -->
+  <rect x="17.5" y="7.5" width="10" height="5.5" rx="2.5" fill="#181B22" stroke="#E8EDF5" stroke-width="2.1"/>
+  <!-- Record Lines -->
+  <line x1="16" y1="20" x2="26" y2="20" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="16" y1="26" x2="22" y2="26" stroke="#E8EDF5" stroke-width="2.1" stroke-linecap="round"/>
+  <!-- Coral Accent Badge: Medical Cross Circle (Bottom-Right) -->
+  <circle cx="33.5" cy="33.5" r="7" fill="#FF5E36" fill-opacity="0.16" stroke="#FF5E36" stroke-width="2.2"/>
+  <path d="M33.5 30.2V36.8M30.2 33.5H36.8" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

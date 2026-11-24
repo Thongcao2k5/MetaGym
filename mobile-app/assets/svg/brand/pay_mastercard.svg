@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Mastercard Brand Mark (Interlocking Red #EB001B & Amber #F79E1B Circles) -->
+  <rect x="5" y="11" width="38" height="26" rx="6" fill="#181B22" stroke="#262A34" stroke-width="1.5"/>
+  <circle cx="19.5" cy="24" r="8.5" fill="#EB001B"/>
+  <circle cx="28.5" cy="24" r="8.5" fill="#F79E1B" fill-opacity="0.88"/>
+  <path d="M24 17.3C22.2 18.9 21 21.3 21 24C21 26.7 22.2 29.1 24 30.7C25.8 29.1 27 26.7 27 24C27 21.3 25.8 18.9 24 17.3Z" fill="#FF5F00"/>
+</svg>

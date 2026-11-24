@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-cmt-blush" x1="8" y1="10" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <!-- Social Comment Bubble + Coral Reply Accent -->
+  <path d="M9 22.5C9 15.6 15.3 10 23 10C30.7 10 37 15.6 37 22.5C37 29.4 30.7 35 23 35H19.5L12.5 39.5V33.8C10.3 31.4 9 27.2 9 22.5Z" fill="url(#com-cmt-blush)"/>
+  <path d="M29 34C27.2 34.6 25.1 35 23 35H19.5L12.5 39.5V33.8C10.3 31.4 9 27.2 9 22.5C9 15.6 15.3 10 23 10C30.7 10 37 15.6 37 22.5C37 24.4 36.5 26.2 35.6 27.8" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16.5 20.5H27.5M16.5 25.5H23.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+  <circle cx="35.5" cy="34.5" r="4.8" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.1"/>
+  <path d="M35.5 32.5V36.5M33.5 34.5H37.5" stroke="#FF5E36" stroke-width="2" stroke-linecap="round"/>
+</svg>

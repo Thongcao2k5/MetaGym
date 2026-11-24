@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="nav-default-blush" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Default Navigation AI Spark Emblem (Soft-Line Duotone: #E8EDF5 Body + #FF5E36 Accent) -->
+  <path d="M24 7L28.2 19.8L41 24L28.2 28.2L24 41L19.8 28.2L7 24L19.8 19.8L24 7Z" fill="url(#nav-default-blush)" stroke="#E8EDF5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37 8V14M34 11H40" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="11" cy="36" r="2.2" fill="#FF5E36"/>
+</svg>

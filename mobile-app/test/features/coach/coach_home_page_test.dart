@@ -11,6 +11,7 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
@@ -194,6 +195,107 @@ void main() {
   );
 
   testWidgets(
+    'all 5 Coach bottom tabs share MetaGymBrandHeader cleanly at 375x812',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final adapter = _CoachHomeAdapter();
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+      );
+      final controller = SessionController(
+        _MemoryTokenStorage('coach-token'),
+        (_) async => coachUser,
+      );
+
+      await tester.pumpWidget(
+        MetaGymApp(sessionController: controller, apiClient: api),
+      );
+      await tester.pumpAndSettle();
+
+      // Tab 0: Trang chủ
+      expect(find.byType(MetaGymBrandHeader), findsOneWidget);
+      expect(find.text('META GYM · COACH'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MetaGymBrandHeader),
+          matching: find.text('MG'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Xin chào, Lê Hoàng Nam'), findsOneWidget);
+      expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
+      final tab0Top = tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy;
+
+      // Tab 1: Lịch dạy
+      await tester.tap(
+        find.descendant(
+          of: find.byType(MetaGymBottomNav),
+          matching: find.text('Lịch dạy'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MetaGymBrandHeader), findsOneWidget);
+      expect(find.text('META GYM · COACH'), findsOneWidget);
+      expect(tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy, tab0Top);
+      expect(find.text('Lịch dạy & Học viên'), findsOneWidget);
+      expect(find.text('Quản lý ca dạy, yêu cầu & học viên'), findsOneWidget);
+
+      // Tab 2: AI
+      await tester.tap(
+        find.descendant(
+          of: find.byType(MetaGymBottomNav),
+          matching: find.text('AI'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MetaGymBrandHeader), findsOneWidget);
+      expect(find.text('META GYM · COACH'), findsOneWidget);
+      expect(tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy, tab0Top);
+      expect(find.text('Trợ lý AI'), findsOneWidget);
+      expect(
+        find.text('Hỏi đáp giáo trình, dinh dưỡng & lịch tập'),
+        findsOneWidget,
+      );
+
+      // Tab 3: Tin nhắn
+      await tester.tap(
+        find.descendant(
+          of: find.byType(MetaGymBottomNav),
+          matching: find.text('Tin nhắn'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MetaGymBrandHeader), findsOneWidget);
+      expect(find.text('META GYM · COACH'), findsOneWidget);
+      expect(tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy, tab0Top);
+      expect(find.text('Trao đổi cùng học viên & hỗ trợ'), findsOneWidget);
+
+      // Tab 4: Hồ sơ
+      await tester.tap(
+        find.descendant(
+          of: find.byType(MetaGymBottomNav),
+          matching: find.text('Hồ sơ'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MetaGymBrandHeader), findsOneWidget);
+      expect(find.text('META GYM · COACH'), findsOneWidget);
+      expect(tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy, tab0Top);
+      expect(find.text('Hồ sơ cá nhân'), findsOneWidget);
+      expect(
+        find.text('Tài khoản & thiết lập huấn luyện viên'),
+        findsOneWidget,
+      );
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'renders previewMode and error retry cleanly at 375x812 with zero overflow',
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
@@ -234,37 +336,38 @@ void main() {
     },
   );
 
-  testWidgets('enforces hard cap of 8 even if API returns stale memberLimit 12', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(375, 812);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
+  testWidgets(
+    'enforces hard cap of 8 even if API returns stale memberLimit 12',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
-    final adapter = _CoachHomeAdapter(
-      memberLimit: 12,
-      usedSlots: 8,
-      availableSlots: 4,
-    );
-    final api = ApiClient.withAdapter(
-      config: ApiConfig.fromValues(environment: 'local'),
-      adapter: adapter,
-    );
-    final controller = SessionController(
-      _MemoryTokenStorage('coach-token'),
-      (_) async => coachUser,
-    );
+      final adapter = _CoachHomeAdapter(
+        memberLimit: 12,
+        usedSlots: 8,
+        availableSlots: 4,
+      );
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+      );
+      final controller = SessionController(
+        _MemoryTokenStorage('coach-token'),
+        (_) async => coachUser,
+      );
 
-    await tester.pumpWidget(
-      MetaGymApp(sessionController: controller, apiClient: api),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        MetaGymApp(sessionController: controller, apiClient: api),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('8/8'), findsOneWidget);
-    expect(find.text('Đã đủ suất'), findsOneWidget);
-    expect(find.text('8/12'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('8/8'), findsOneWidget);
+      expect(find.text('Đã đủ suất'), findsOneWidget);
+      expect(find.text('8/12'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _MemoryTokenStorage implements TokenStorage {

@@ -1,18 +1,50 @@
 import 'dart:async';
 
-import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
+import 'package:meta_gym_app/features/membership/presentation/widgets/membership_tier_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+class _CheckoutVoucher {
+  const _CheckoutVoucher({
+    required this.code,
+    required this.title,
+    required this.discount,
+    required this.shortLabel,
+  });
+
+  final String code;
+  final String title;
+  final num discount;
+  final String shortLabel;
+}
+
+const List<_CheckoutVoucher> _kCheckoutVouchers = [
+  _CheckoutVoucher(
+    code: 'METAGYM200',
+    title: 'Ưu đãi hội viên mới',
+    discount: 200000,
+    shortLabel: '-200k',
+  ),
+  _CheckoutVoucher(
+    code: 'VIP500',
+    title: 'Đặc quyền nâng hạng',
+    discount: 500000,
+    shortLabel: '-500k',
+  ),
+];
 
 class MembershipCheckoutPage extends StatefulWidget {
   const MembershipCheckoutPage({super.key, this.plan, this.quote});
@@ -28,6 +60,9 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
     with WidgetsBindingObserver {
   late bool _reviewing = widget.quote != null;
   late final Timer _statusPoll;
+  final TextEditingController _voucherController = TextEditingController();
+  _CheckoutVoucher? _appliedVoucher;
+  String? _voucherMessage;
 
   @override
   void initState() {
@@ -44,8 +79,46 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
   @override
   void dispose() {
     _statusPoll.cancel();
+    _voucherController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _applyVoucherInput() {
+    final code = _voucherController.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      setState(() {
+        _appliedVoucher = null;
+        _voucherMessage = null;
+      });
+      return;
+    }
+    final match = _kCheckoutVouchers
+        .where((v) => v.code == code)
+        .firstOrNull;
+    if (match != null) {
+      FocusScope.of(context).unfocus();
+      setState(() {
+        _appliedVoucher = match;
+        _voucherController.text = match.code;
+        _voucherMessage =
+            'Đã áp dụng mã ${match.code} (-${formatMembershipMoney(match.discount)})';
+      });
+    } else {
+      setState(() {
+        _appliedVoucher = null;
+        _voucherMessage =
+            'Mã "$code" không hợp lệ. Thử METAGYM200 hoặc VIP500.';
+      });
+    }
+  }
+
+  void _selectVoucher(_CheckoutVoucher? voucher) {
+    setState(() {
+      _appliedVoucher = voucher;
+      _voucherController.text = voucher?.code ?? '';
+      _voucherMessage = null;
+    });
   }
 
   @override
@@ -101,6 +174,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
   }
 
   Future<void> _openOnlinePayment(Payment payment) async {
+    if (payment.method == 'ZALOPAY') return;
     final url = _paymentCheckoutUri(payment);
     if (url != null) {
       try {
@@ -227,20 +301,39 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
     final reviewing = _reviewing && quote != null && plan != null;
     final pending = payment?.status == 'PENDING';
     final succeeded = !reviewing && payment?.status == 'SUCCESS';
-    final mock = payment?.method == 'MOCK_QR';
-    final online = ['ZALOPAY', 'MOMO', 'VNPAY'].contains(payment?.method);
     final checkoutUri = payment == null ? null : _paymentCheckoutUri(payment);
+    final mock =
+        payment?.method == 'MOCK_QR' ||
+        (payment?.method == 'VNPAY' && checkoutUri == null);
+    final online =
+        !mock && ['ZALOPAY', 'MOMO', 'VNPAY'].contains(payment?.method);
     final title = reviewing
-        ? 'Kiểm tra đơn'
+        ? 'Thanh toán gói tập'
         : pending
-        ? 'Thanh toán'
+        ? 'Thanh toán VNPay'
         : 'Kết quả giao dịch';
+    final eyebrow = reviewing ? 'XÁC NHẬN ĐƠN HÀNG' : 'THANH TOÁN HỘI VIÊN';
     final step = reviewing
         ? 1
         : pending
         ? 2
         : 3;
-    final amount = reviewing ? quote.price : payment?.amount;
+    final rawAmount = reviewing ? quote.price : payment?.amount;
+    final discount =
+        reviewing && _appliedVoucher != null && rawAmount != null
+        ? (_appliedVoucher!.discount > rawAmount
+              ? rawAmount
+              : _appliedVoucher!.discount)
+        : 0;
+    final payableAmount = rawAmount == null
+        ? null
+        : (rawAmount - discount).clamp(0, rawAmount);
+    final tierInfo = plan != null
+        ? resolveMembershipTierInfo(
+            planName: plan.name,
+            durationDays: plan.durationDays,
+          )
+        : null;
 
     return Scaffold(
       backgroundColor: MetaGymTheme.scaffoldBackground,
@@ -252,16 +345,23 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
             child: Column(
               children: [
                 MembershipTopBar(
-                  eyebrow: 'THANH TOÁN HỘI VIÊN',
+                  eyebrow: eyebrow,
                   title: title,
                   onBack: () => Navigator.of(context).pop(),
                 ),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      4,
+                      16,
+                      reviewing ? 20 : 32,
+                    ),
                     children: [
-                      _CheckoutStepper(step: step),
-                      const SizedBox(height: 12),
+                      if (!reviewing) ...[
+                        _CheckoutStepper(step: step),
+                        const SizedBox(height: 12),
+                      ],
                       if (controller.errorMessage case final message?)
                         MembershipErrorCard(message: message),
 
@@ -276,6 +376,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                             _ZalopayQrCard(data: payment.paymentUrl!)
                           else
                             MetaGymGlassCard(
+                              solid: false,
                               padding: const EdgeInsets.all(16),
                               child: Text(
                                 checkoutUri == null
@@ -286,7 +387,8 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                 ),
                               ),
                             ),
-                          if (checkoutUri != null) ...[
+                          if (checkoutUri != null &&
+                              payment.method != 'ZALOPAY') ...[
                             const SizedBox(height: 10),
                             MembershipPrimaryButton(
                               label:
@@ -301,9 +403,9 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                             qrSeed:
                                 payment?.qrPayload ??
                                 payment?.transactionCode ??
-                                'META-GYM-MOCK',
+                                'VNPAY-METAGYM',
                             qrPayload: payment?.qrPayload,
-                            amount: amount,
+                            amount: payableAmount,
                             onCopy: (text) =>
                                 _copyText(text, 'Đã sao chép mã giao dịch.'),
                           ),
@@ -357,223 +459,840 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                         const SizedBox(height: 10),
                       ],
 
-                      // KHỐI THÔNG TIN ĐƠN HÀNG
-                      MetaGymGlassCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (reviewing) ...[
-                              Row(
-                                children: [
-                                  const Expanded(
-                                    child: Text(
-                                      'Chi tiết gói đăng ký',
-                                      style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
-                                        fontSize: 15.5,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  MembershipStatusPill(
-                                    label: '${quote.durationDays} ngày',
-                                    color: MetaGymTheme.brandOrange,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              _info('Gói tập', plan.name),
-                              _info(
-                                quote.isRenewal ? 'Cộng thêm' : 'Thời hạn',
-                                '${quote.durationDays} ngày',
-                              ),
-                              if (!quote.isRenewal)
-                                _info(
-                                  'Bắt đầu dự kiến',
-                                  formatMembershipDate(quote.startDate),
-                                ),
-                              _info(
-                                quote.isRenewal
-                                    ? 'Hạn mới dự kiến'
-                                    : 'Hết hạn dự kiến',
-                                formatMembershipDate(quote.endDate),
-                              ),
-                              if (plan.description case final description?
-                                  when description.trim().isNotEmpty)
-                                _info('Thông tin gói', description),
-                            ] else if (payment != null) ...[
-                              Row(
-                                children: [
-                                  const Expanded(
-                                    child: Text(
-                                      'Thông tin giao dịch',
-                                      style: TextStyle(
-                                        color: MetaGymTheme.textPrimary,
-                                        fontSize: 15.5,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  MembershipStatusPill(
-                                    label: payment.statusLabel,
-                                    color: membershipStatusColor(
-                                      payment.status,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              if (payment.planName case final name?)
-                                _info('Gói tập', name),
-                              if (payment.method case final method?)
-                                _info(
-                                  'Phương thức',
-                                  formatPaymentMethodLabel(method),
-                                ),
-                              if (payment.transactionCode case final code?)
-                                _info(
-                                  'Mã giao dịch',
-                                  code,
-                                  trailing: Semantics(
-                                    button: true,
-                                    label: 'Sao chép mã giao dịch',
-                                    child: MetaGymTap(
-                                      onTap: () => _copyText(
-                                        code,
-                                        'Đã sao chép mã giao dịch.',
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: const SizedBox(
-                                        width: 44,
-                                        height: 44,
-                                        child: Icon(
-                                          Icons.copy_rounded,
-                                          size: 17,
-                                          color: MetaGymTheme.reflectionBlue,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              if (payment.status == 'SUCCESS' &&
-                                  membership != null) ...[
-                                _info('Gói hội viên', membership.label),
-                                _info(
-                                  'Bắt đầu',
-                                  formatMembershipDate(membership.startDate),
-                                ),
-                                _info(
-                                  'Hết hạn',
-                                  formatMembershipDate(membership.endDate),
-                                ),
-                              ],
-                            ] else
-                              const Text(
-                                'Không tìm thấy giao dịch.',
-                                style: TextStyle(
-                                  color: MetaGymTheme.textPrimary,
-                                ),
-                              ),
-                            if (amount != null) ...[
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 8),
-                                child: Divider(
-                                  height: 1,
-                                  color: Color(0x30FFF6EA),
-                                ),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    pending || reviewing
-                                        ? 'Tổng thanh toán'
-                                        : 'Số tiền',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    formatMembershipMoney(amount),
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.brandOrange,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      fontFeatures: [
-                                        FontFeature.tabularFigures(),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // BƯỚC 1: TẠO GIAO DỊCH
+                      // === BƯỚC 1: 1.2c THANH TOÁN GÓI TẬP ===
                       if (reviewing) ...[
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 12),
+                        // 1. Tóm tắt gói đã chọn + thẻ NFC thu nhỏ
+                        MetaGymGlassCard(
+                          solid: false,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(13),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.shield_outlined,
-                                color: MetaGymTheme.reflectionBlue,
-                                size: 17,
+                              Container(
+                                width: 80,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x73000000),
+                                      blurRadius: 12,
+                                      offset: Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Image.asset(
+                                  tierInfo!.horizontalCardAsset,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => Container(
+                                    color: const Color(0xFF1F232C),
+                                    alignment: Alignment.center,
+                                    child: const Icon(
+                                      Icons.credit_card_rounded,
+                                      color: MetaGymTheme.textSecondary,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            plan.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: MetaGymTheme.textPrimary,
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 7,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: MetaGymTheme.brandOrange
+                                                .withValues(alpha: 0.16),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
+                                            border: Border.all(
+                                              color: MetaGymTheme.brandOrange
+                                                  .withValues(alpha: 0.45),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'NFC',
+                                            style: TextStyle(
+                                              color: MetaGymTheme.brandOrange,
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      'Hiệu lực: ${formatMembershipDate(quote.startDate)} → ${formatMembershipDate(quote.endDate)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.textSecondary,
+                                        fontSize: 11.5,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '✓ ${tierInfo.inBodyLabel} · Giảm ${tierInfo.coachDiscountLabel} Coach 1:1',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.progressGreen,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // 2. Card Mã ưu đãi (Voucher) thiết kế lại dạng vé cao cấp
+                        _LuxuryPromoCodeCard(
+                          controller: _voucherController,
+                          appliedVoucher: _appliedVoucher,
+                          message: _voucherMessage,
+                          onApplyInput: _applyVoucherInput,
+                          onSelectVoucher: _selectVoucher,
+                        ),
+
+                        // 3. Phương thức thanh toán (tạm thời chỉ hiển thị VNPay)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 8, top: 2),
+                          child: Row(
+                            children: [
                               Expanded(
                                 child: Text(
-                                  'MetaGym sẽ tạo mã QR để bạn thanh toán thử bằng ví ZaloPay Sandbox.',
+                                  'Phương thức thanh toán',
                                   style: TextStyle(
-                                    color: Color(0xFFD5CCBF),
-                                    fontSize: 12.5,
-                                    height: 1.4,
+                                    color: MetaGymTheme.textPrimary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '1 cổng hỗ trợ',
+                                style: TextStyle(
+                                  color: MetaGymTheme.textSecondary,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 13,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xD0322722),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: MetaGymTheme.brandOrange.withValues(
+                                alpha: 0.72,
+                              ),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: MetaGymTheme.brandOrange.withValues(
+                                  alpha: 0.12,
+                                ),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFF005BAA),
+                                      Color(0xFFE11D48),
+                                    ],
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'VNPay',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'VNPay QR / Thẻ nội địa',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Hỗ trợ 35+ ứng dụng ngân hàng Việt Nam',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textSecondary,
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: MetaGymTheme.brandOrange,
+                                    width: 5.5,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        MembershipPrimaryButton(
-                          label: busy
-                              ? 'Đang tạo giao dịch…'
-                              : 'Thanh toán bằng ZaloPay',
-                          icon: busy ? null : Icons.open_in_new_rounded,
-                          onPressed: busy
-                              ? null
-                              : () async {
-                                  if (await controller.buy(plan) && mounted) {
-                                    setState(() => _reviewing = false);
-                                    final order = controller.pendingPayment;
-                                    if (order?.paymentUrl != null &&
-                                        order?.method != 'ZALOPAY') {
-                                      await _openOnlinePayment(order!);
-                                    }
-                                  }
-                                },
+
+                        // 4. Chi tiết thanh toán (phong cách Shopee: thẳng hàng trái-phải sắc nét)
+                        MetaGymGlassCard(
+                          solid: false,
+                          padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'Chi tiết thanh toán',
+                                style: TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _SummaryPriceRow(
+                                label: 'Tổng tiền gói tập',
+                                value: formatMembershipMoney(quote.price),
+                              ),
+                              if (!quote.isRenewal)
+                                _SummaryPriceRow(
+                                  label: 'Bắt đầu dự kiến',
+                                  value: formatMembershipDate(quote.startDate),
+                                ),
+                              _SummaryPriceRow(
+                                label: quote.isRenewal
+                                    ? 'Hạn mới dự kiến'
+                                    : 'Hết hạn dự kiến',
+                                value: formatMembershipDate(quote.endDate),
+                              ),
+                              if (_appliedVoucher != null && discount > 0)
+                                _SummaryPriceRow(
+                                  label: 'Ưu đãi mã ${_appliedVoucher!.code}',
+                                  value: '-${formatMembershipMoney(discount)}',
+                                  valueColor: MetaGymTheme.brandOrange,
+                                ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10),
+                                child: Divider(
+                                  height: 1,
+                                  color: Color(0x2EFFF6EA),
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Tổng thanh toán',
+                                    style: TextStyle(
+                                      color: MetaGymTheme.textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  Text(
+                                    formatMembershipMoney(payableAmount ?? 0),
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.textPrimary,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w800,
+                                      fontFeatures: MetaGymTheme.tabularFigures,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ] else if (!pending && !succeeded) ...[
-                        MembershipPrimaryButton(
-                          label: 'Về Gói tập',
-                          icon: Icons.check_rounded,
-                          onPressed: () => Navigator.of(context).pop(),
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(4, 10, 4, 4),
+                          child: Text(
+                            'Nhấn "Thanh toán" đồng nghĩa với việc bạn đồng ý tuân theo Điều khoản sử dụng của Meta Gym.',
+                            style: TextStyle(
+                              color: MetaGymTheme.textSecondary,
+                              fontSize: 11.5,
+                              height: 1.4,
+                            ),
+                          ),
                         ),
+                      ] else ...[
+                        // KHỐI THÔNG TIN GIAO DỊCH (BƯỚC 2 & 3)
+                        MetaGymGlassCard(
+                          solid: false,
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (payment != null) ...[
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Thông tin giao dịch',
+                                        style: TextStyle(
+                                          color: MetaGymTheme.textPrimary,
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                    MembershipStatusPill(
+                                      label: payment.statusLabel,
+                                      color: membershipStatusColor(
+                                        payment.status,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                if (payment.planName case final name?)
+                                  _info('Gói tập', name),
+                                if (payment.method case final method?)
+                                  _info(
+                                    'Phương thức',
+                                    formatPaymentMethodLabel(method),
+                                  ),
+                                if (payment.transactionCode case final code?)
+                                  _info(
+                                    'Mã giao dịch',
+                                    code,
+                                    trailing: Semantics(
+                                      button: true,
+                                      label: 'Sao chép mã giao dịch',
+                                      child: MetaGymTap(
+                                        onTap: () => _copyText(
+                                          code,
+                                          'Đã sao chép mã giao dịch.',
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: const SizedBox(
+                                          width: 44,
+                                          height: 44,
+                                          child: Icon(
+                                            Icons.copy_rounded,
+                                            size: 17,
+                                            color: MetaGymTheme.reflectionBlue,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (payment.status == 'SUCCESS' &&
+                                    membership != null) ...[
+                                  _info('Gói hội viên', membership.label),
+                                  _info(
+                                    'Bắt đầu',
+                                    formatMembershipDate(membership.startDate),
+                                  ),
+                                  _info(
+                                    'Hết hạn',
+                                    formatMembershipDate(membership.endDate),
+                                  ),
+                                ],
+                              ] else
+                                const Text(
+                                  'Không tìm thấy giao dịch.',
+                                  style: TextStyle(
+                                    color: MetaGymTheme.textPrimary,
+                                  ),
+                                ),
+                              if (payableAmount != null) ...[
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  child: Divider(
+                                    height: 1,
+                                    color: Color(0x30FFF6EA),
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      pending ? 'Tổng thanh toán' : 'Số tiền',
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      formatMembershipMoney(payableAmount),
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.brandOrange,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        if (!pending && !succeeded)
+                          MembershipPrimaryButton(
+                            label: 'Về Gói tập',
+                            icon: Icons.check_rounded,
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
                       ],
                     ],
                   ),
                 ),
+
+                // BOTTOM CHECKOUT BAR PHONG CÁCH SHOPEE (Tổng cộng + Tiết kiệm | Nút Thanh toán)
+                if (reviewing)
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 14, 14),
+                    decoration: const BoxDecoration(
+                      color: Color(0xF215181F),
+                      border: Border(
+                        top: BorderSide(color: Color(0x2EFFF6EA), width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Wrap(
+                                alignment: WrapAlignment.end,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 5,
+                                children: [
+                                  const Text(
+                                    'Tổng cộng',
+                                    style: TextStyle(
+                                      color: MetaGymTheme.textSecondary,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    formatMembershipMoney(payableAmount ?? 0),
+                                    style: const TextStyle(
+                                      color: MetaGymTheme.brandOrange,
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.3,
+                                      fontFeatures: MetaGymTheme.tabularFigures,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              if (discount > 0)
+                                Wrap(
+                                  alignment: WrapAlignment.end,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 4,
+                                  children: [
+                                    const Text(
+                                      'Tiết kiệm',
+                                      style: TextStyle(
+                                        color: MetaGymTheme.textSecondary,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      formatMembershipMoney(discount),
+                                      style: const TextStyle(
+                                        color: MetaGymTheme.brandOrange,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              else
+                                const Text(
+                                  'Cổng thanh toán VNPay',
+                                  style: TextStyle(
+                                    color: MetaGymTheme.textSecondary,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        SizedBox(
+                          height: 48,
+                          child: FilledButton(
+                            key: const Key('checkout-pay-submit'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: MetaGymTheme.brandOrange,
+                              disabledBackgroundColor: MetaGymTheme.brandOrange
+                                  .withValues(alpha: 0.45),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: busy
+                                ? null
+                                : () async {
+                                    if (await controller.buy(plan) && mounted) {
+                                      setState(() => _reviewing = false);
+                                      final order = controller.pendingPayment;
+                                      if (order?.paymentUrl != null &&
+                                          order?.method != 'ZALOPAY') {
+                                        await _openOnlinePayment(order!);
+                                      }
+                                    }
+                                  },
+                            child: Text(
+                              busy ? 'Đang xử lý…' : 'Thanh toán',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (succeeded) const _SuccessfulCheckoutReturn(),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Dòng hiển thị nhãn trái – giá trị phải gọn gàng cho Chi tiết thanh toán.
+class _SummaryPriceRow extends StatelessWidget {
+  const _SummaryPriceRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFFB7B2AF),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? MetaGymTheme.textPrimary,
+              fontSize: 13.5,
+              fontWeight: valueColor != null ? FontWeight.w700 : FontWeight.w600,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card Mã ưu đãi (Voucher) tinh gọn: chỉ nhập mã & bấm Áp dụng.
+class _LuxuryPromoCodeCard extends StatelessWidget {
+  const _LuxuryPromoCodeCard({
+    required this.controller,
+    required this.appliedVoucher,
+    required this.message,
+    required this.onApplyInput,
+    required this.onSelectVoucher,
+  });
+
+  final TextEditingController controller;
+  final _CheckoutVoucher? appliedVoucher;
+  final String? message;
+  final VoidCallback onApplyInput;
+  final ValueChanged<_CheckoutVoucher?> onSelectVoucher;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasVoucher = appliedVoucher != null;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xD6362A23), Color(0xC826211D)],
+        ),
+        border: Border.all(
+          color: hasVoucher
+              ? const Color(0x88FF8A5B)
+              : MetaGymWarmGlassTokens.cardBorder,
+          width: 1.15,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x4D000000),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0x3DFF5E36), Color(0x22F5B041)],
+                    ),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: const Color(0x55FF5E36)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const MetaGymSvgIcon(
+                    MetaGymIcons.premiumCrown,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mã ưu đãi',
+                        style: TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 1),
+                      Text(
+                        'Nhập mã giảm giá để áp dụng ưu đãi',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: MetaGymTheme.textSecondary,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 11),
+
+            // Thanh nhập mã liền mạch + nút Áp dụng nổi bật
+            Container(
+              height: 46,
+              padding: const EdgeInsets.only(left: 12, right: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xAA14161C),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: const Color(0x45FFF6EA), width: 1),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 17,
+                    color: MetaGymTheme.brandOrange,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      textCapitalization: TextCapitalization.characters,
+                      style: const TextStyle(
+                        color: MetaGymTheme.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Nhập mã ưu đãi...',
+                        hintStyle: TextStyle(
+                          color: MetaGymTheme.textSecondary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0,
+                        ),
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onSubmitted: (_) => onApplyInput(),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    height: 36,
+                    child: FilledButton(
+                      onPressed: onApplyInput,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.brandOrange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Áp dụng',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            if (message != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      message!,
+                      style: TextStyle(
+                        color: hasVoucher
+                            ? MetaGymTheme.progressGreen
+                            : MetaGymTheme.warningAmber,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (hasVoucher)
+                    GestureDetector(
+                      onTap: () => onSelectVoucher(null),
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: Text(
+                          'Gỡ mã',
+                          style: TextStyle(
+                            color: MetaGymTheme.textSecondary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

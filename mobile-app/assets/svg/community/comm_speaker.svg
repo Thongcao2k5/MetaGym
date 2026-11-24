@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-spk-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M10 19.5H16.5L25.5 12V36L16.5 28.5H10C8.9 28.5 8 27.6 8 26.5V21.5C8 20.4 8.9 19.5 10 19.5Z" fill="url(#com-spk-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M31 18.5C33.2 21.5 33.2 26.5 31 29.5M35.5 14.5C39.5 20 39.5 28 35.5 33.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

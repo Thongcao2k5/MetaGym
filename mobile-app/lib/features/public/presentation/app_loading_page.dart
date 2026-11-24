@@ -4,7 +4,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:provider/provider.dart';
 
@@ -269,6 +271,32 @@ class _AppLoadingPageState extends State<AppLoadingPage>
               progress: barValue,
             ),
           ),
+        ),
+        const SizedBox(height: 36),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            MetaGymSvgIcon(
+              MetaGymIcons.settingVersion,
+              size: 14,
+              fallbackIcon: Icons.info_outline_rounded,
+            ),
+            SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'Meta Gym v1.0.0 · Build 2026.11',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: MetaGymTheme.textSecondary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  fontFeatures: MetaGymTheme.tabularFigures,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

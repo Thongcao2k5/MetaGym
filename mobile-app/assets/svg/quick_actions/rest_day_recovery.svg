@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="qa-rest-blush" x1="10" y1="12" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.10"/>
+      <stop offset="0.6" stop-color="#2ECC71" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#A9C7E8" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Rest Day & Muscle Recovery ('Ngày nghỉ phục hồi' — Zen Lotus Petals + Recharge Pulse) -->
+  <!-- Center Lotus Petal -->
+  <path d="M24 11.5C24 11.5 31 19 31 27C31 32.2 27.9 36 24 36C20.1 36 17 32.2 17 27C17 19 24 11.5 24 11.5Z" fill="url(#qa-rest-blush)"/>
+  <!-- Left & Right Lotus Petals -->
+  <path d="M17.2 21.5C12.5 21 9 23.5 8.5 28.5C11 33.5 16.5 36 22 36" fill="url(#qa-rest-blush)" stroke="#A9C7E8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30.8 21.5C35.5 21 39 23.5 39.5 28.5C37 33.5 31.5 36 26 36" fill="url(#qa-rest-blush)" stroke="#A9C7E8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Center Petal Open-Path Contour -->
+  <path d="M30.6 24.5C30.9 25.3 31 26.2 31 27C31 32.2 27.9 36 24 36C20.1 36 17 32.2 17 27C17 19 24 11.5 24 11.5C24 11.5 28.2 16 30.1 21" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Calm Reflection Base Line & Recovery Spark (#2ECC71) -->
+  <path d="M14 39.5H34" stroke="#2ECC71" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M36 11V16M33.5 13.5H38.5" stroke="#2ECC71" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

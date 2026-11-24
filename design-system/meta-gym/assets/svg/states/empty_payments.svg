@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="st-pay-blush" x1="11" y1="9" x2="37" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9C7E8" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <!-- Empty State: Payment History ('Chưa có giao dịch thanh toán' — payment_history_page.dart) -->
+  <path d="M12.5 10H33.5C35.2 10 36.5 11.3 36.5 13V37.5L32.5 35L28.5 37.5L24.5 35L20.5 37.5L16.5 35L12.5 37.5V13C12.5 11.3 13.8 10 15.5 10Z" fill="url(#st-pay-blush)"/>
+  <path d="M36.5 27.5V37.5L32.5 35L28.5 37.5L24.5 35L20.5 37.5L16.5 35L12.5 37.5V13C12.5 11.3 13.8 10 15.5 10H33.5C35.2 10 36.5 11.3 36.5 13V21.5" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Dashed Empty Receipt Lines -->
+  <line x1="18" y1="18" x2="31" y2="18" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round" stroke-dasharray="4 3.5"/>
+  <line x1="18" y1="24" x2="27" y2="24" stroke="#A9C7E8" stroke-width="2.3" stroke-linecap="round" stroke-dasharray="4 3.5"/>
+  <circle cx="36.5" cy="24.5" r="1.9" fill="#FF5E36"/>
+</svg>

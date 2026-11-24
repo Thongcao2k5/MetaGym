@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="com-chat-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<path d="M8 18C8 13.6 11.6 10 16 10H28C32.4 10 36 13.6 36 18V25C36 29.4 32.4 33 28 33H18L11 38V32.2C9.2 30.6 8 28 8 25V18Z" fill="url(#com-chat-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M16 19.5H28M16 24.5H23" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="prog-bar-blush" x1="10" y1="12" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Stats Bar Chart (3 Rounded Columns + Coral Peak Column & Spark) -->
+  <rect x="10" y="24" width="6.5" height="14" rx="2.5" fill="url(#prog-bar-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <rect x="20.5" y="17.5" width="6.5" height="20.5" rx="2.5" fill="url(#prog-bar-blush)" stroke="#E8EDF5" stroke-width="2.2"/>
+  <rect x="31" y="11" width="6.5" height="27" rx="2.5" fill="#FF5E36" fill-opacity="0.28" stroke="#FF5E36" stroke-width="2.3"/>
+  <line x1="7.5" y1="38" x2="40.5" y2="38" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

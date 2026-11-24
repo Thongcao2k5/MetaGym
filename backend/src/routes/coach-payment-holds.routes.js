@@ -89,23 +89,21 @@ export function createCoachPaymentHoldsRouter({ database, jwtSecret }) {
            SELECT coach_id FROM coach_relationships WHERE member_id = $1
              AND status IN ('ACTIVE', 'PAUSED')
          ) AS current_coach, EXISTS (
-           SELECT 1 FROM coach_entitlements WHERE member_id = $1 AND status = 'ACTIVE'
-         ) AS has_package, EXISTS (
            SELECT 1 FROM coach_entitlements WHERE member_id = $1 AND status = 'QUEUED'
          ) AS has_queued, EXISTS (
            SELECT 1 FROM coach_payment_holds WHERE member_id = $1 AND status = 'HELD'
              AND expires_at > statement_timestamp()
          ) AS has_hold`, [memberId],
       )).rows[0];
-      const renewal = unavailable.current_coach === coachId && unavailable.has_package;
-      if (unavailable.current_coach && !renewal) return fail(response, 409, 'RELATIONSHIP_EXISTS', 'Member đã có Coach');
+      const sameCoach = unavailable.current_coach === coachId;
+      if (unavailable.current_coach && !sameCoach) return fail(response, 409, 'RELATIONSHIP_EXISTS', 'Member đã có Coach khác');
       if (unavailable.has_queued) return fail(response, 409, 'QUEUED_EXISTS', 'Member đã có gói Coach đang chờ');
       if (unavailable.has_hold) return fail(response, 409, 'HOLD_EXISTS', 'Member đã có suất đang giữ');
 
       const occupied = (await client.query(
         'SELECT coach_occupied_seats($1) AS count', [coachId],
       )).rows[0].count;
-      if (!renewal && occupied >= Math.min(8, coach.member_limit)) {
+      if (!sameCoach && occupied >= Math.min(8, coach.member_limit)) {
         return fail(response, 409, 'COACH_FULL', 'Coach đã đủ Member');
       }
       const workdays = (await client.query(

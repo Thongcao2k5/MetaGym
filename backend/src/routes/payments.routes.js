@@ -619,6 +619,7 @@ export function createZalopayCallbacksRouter({ database, zalopay }) {
 }
 
 export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay,
+  preferredPaymentGateway,
   allowMockPayments = !vnpay && !momo && !zalopay }) {
   const router = Router();
   const gateways = { VNPAY: vnpay, MOMO: momo, ZALOPAY: zalopay };
@@ -651,16 +652,19 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       return fail(response, 422, 'VALIDATION_ERROR', 'Gói tập hoặc Idempotency-Key không hợp lệ');
     }
     const { planId, method } = parsed.data;
+    if (preferredPaymentGateway && method !== preferredPaymentGateway && method !== 'MOCK_QR') {
+      return fail(response, 409, 'CHECKOUT_METHOD_CHANGED', `Hãy chọn ${preferredPaymentGateway} Sandbox để thanh toán gói tập.`);
+    }
     if (method === 'ZALOPAY' && !zalopay) {
       return fail(response, 503, 'ZALOPAY_NOT_CONFIGURED', 'ZaloPay Sandbox chưa được cấu hình.');
     }
-    if (zalopay && ['MOMO', 'VNPAY'].includes(method)) {
+    if (!preferredPaymentGateway && zalopay && ['MOMO', 'VNPAY'].includes(method)) {
       return fail(response, 409, 'CHECKOUT_METHOD_CHANGED', 'Hãy chọn ZaloPay Sandbox để thanh toán gói tập.');
     }
     if (method === 'MOMO' && !momo) {
       return fail(response, 503, 'MOMO_NOT_CONFIGURED', 'MoMo Sandbox chưa được cấu hình.');
     }
-    if (method === 'VNPAY' && momo) {
+    if (!preferredPaymentGateway && method === 'VNPAY' && momo) {
       return fail(response, 409, 'VNPAY_CHECKOUT_DISABLED', 'Hãy chọn MoMo Sandbox để thanh toán gói tập.');
     }
     if (method === 'VNPAY' && !vnpay) {

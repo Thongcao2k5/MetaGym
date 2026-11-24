@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="qa-curr-blush" x1="11" y1="9" x2="37" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.36"/>
+    </linearGradient>
+  </defs>
+  <!-- Quick Action 2 (Member & Coach): Giáo trình (Training Curriculum Board + Dumbbell Badge) -->
+  <rect x="11" y="10.5" width="24" height="28" rx="6" fill="url(#qa-curr-blush)"/>
+  <path d="M23.5 38.5H17C13.7 38.5 11 35.8 11 32.5V16.5C11 13.2 13.7 10.5 17 10.5H29C32.3 10.5 35 13.2 35 16.5V25" stroke="#E8EDF5" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Top Clipboard Clasp -->
+  <path d="M18.5 8.5H27.5C28.6 8.5 29.5 9.4 29.5 10.5V12.5H16.5V10.5C16.5 9.4 17.4 8.5 18.5 8.5Z" fill="#FF5E36" fill-opacity="0.28" stroke="#E8EDF5" stroke-width="2.2"/>
+  <!-- Exercise Sets & Reps Lines -->
+  <path d="M16.5 19.5H28.5M16.5 25H26.5M16.5 30.5H21.5" stroke="#FF5E36" stroke-width="2.3" stroke-linecap="round"/>
+  <!-- Bottom-Right Mini Dumbbell Badge (#FF5E36) -->
+  <rect x="27" y="30" width="3.5" height="8" rx="1.5" fill="#FF5E36"/>
+  <rect x="36.5" y="30" width="3.5" height="8" rx="1.5" fill="#FF5E36"/>
+  <line x1="30.5" y1="34" x2="36.5" y2="34" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

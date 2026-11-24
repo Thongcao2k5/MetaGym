@@ -1,9 +1,10 @@
-import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Khung toàn màn hình đồng bộ DNA "Futuristic Performance Glass" của Member Home & Coach Home.
 class AuthAtmosphereScaffold extends StatelessWidget {
@@ -135,7 +136,8 @@ class WarmSmokeGlass extends StatelessWidget {
     final inner = padding != null
         ? Padding(padding: padding!, child: child)
         : child;
-    final enableBlur =
+    final routeAnimation = ModalRoute.of(context)?.animation;
+    final canBlur =
         featured &&
         !MediaQuery.disableAnimationsOf(context) &&
         !MetaGymTheme.isFlutterTestEnvironment;
@@ -144,16 +146,22 @@ class WarmSmokeGlass extends StatelessWidget {
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: featured ? null : const Color(0xC42B2622),
+        color: featured ? null : MetaGymWarmGlassTokens.cardFill,
         gradient: featured
             ? const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xCD342D28), Color(0xC829241F)],
+                colors: [
+                  MetaGymWarmGlassTokens.heroTop,
+                  MetaGymWarmGlassTokens.heroBottom,
+                ],
               )
             : null,
         borderRadius: radius,
-        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
+        border: Border.all(
+          color: MetaGymWarmGlassTokens.heroBorder,
+          width: 1.2,
+        ),
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -164,7 +172,7 @@ class WarmSmokeGlass extends StatelessWidget {
             right: 20,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: Color(0x75FFF5E9)),
+              child: ColoredBox(color: MetaGymWarmGlassTokens.heroHighlight),
             ),
           ),
           SizedBox(width: double.infinity, child: inner),
@@ -172,14 +180,44 @@ class WarmSmokeGlass extends StatelessWidget {
       ),
     );
 
-    if (!enableBlur) {
+    if (!canBlur) {
       return surface;
     }
+
+    // DESIGN.md §2 & §9: không animate BackdropFilter trong lúc chuyển trang
+    // để giữ 120fps; chỉ bật blur khi route đã dừng ổn định (completed).
+    if (routeAnimation != null && !routeAnimation.isCompleted) {
+      return AnimatedBuilder(
+        animation: routeAnimation,
+        child: surface,
+        builder: (context, child) {
+          if (!routeAnimation.isCompleted) {
+            return RepaintBoundary(child: child!);
+          }
+          return RepaintBoundary(
+            child: ClipRRect(
+              borderRadius: radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: MetaGymTheme.performanceGlassBlur,
+                  sigmaY: MetaGymTheme.performanceGlassBlur,
+                ),
+                child: child,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     return RepaintBoundary(
       child: ClipRRect(
         borderRadius: radius,
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(
+            sigmaX: MetaGymTheme.performanceGlassBlur,
+            sigmaY: MetaGymTheme.performanceGlassBlur,
+          ),
           child: surface,
         ),
       ),
@@ -200,12 +238,24 @@ class AuthTopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duration =
+        MetaGymTheme.isFlutterTestEnvironment ||
+            MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 220);
     return Row(
       children: [
-        if (showBackButton)
-          _WarmCircleBackButton(onPressed: onBack)
-        else
-          const SizedBox(width: 48),
+        IgnorePointer(
+          ignoring: !showBackButton,
+          child: AnimatedOpacity(
+            opacity: showBackButton ? 1.0 : 0.0,
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: _WarmCircleBackButton(
+              onPressed: showBackButton ? onBack : null,
+            ),
+          ),
+        ),
         const Expanded(
           child: Center(
             child: Padding(
@@ -216,17 +266,39 @@ class AuthTopHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    MetaGymBrandBadge(size: 38, borderRadius: 12, fontSize: 13),
+                    MetaGymBrandBadge(
+                      size: 38,
+                      borderRadius: 12,
+                      fontSize: 13,
+                      enableHero: false,
+                    ),
                     SizedBox(width: 10),
-                    Text(
-                      'META GYM',
-                      style: TextStyle(
-                        color: Color(0xFFF7F9FC),
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.8,
-                        height: 1.0,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'META GYM',
+                          style: TextStyle(
+                            color: MetaGymTheme.brandOrange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.6,
+                            height: 1.1,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Performance Studio',
+                          style: TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                            height: 1.1,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -289,7 +361,126 @@ class _WarmCircleBackButton extends StatelessWidget {
   }
 }
 
-/// Thanh chuyển chế độ Đăng nhập / Đăng ký Member bên trong thẻ kính ấm.
+/// Phạm vi nhận biết khi `LoginPage` / `RegisterPage` đang nằm trong `AuthModeShell`
+/// của `ShellRoute` để dùng chung 1 khung kính `WarmSmokeGlass` có thể trượt mở rộng mượt mà.
+class AuthShellScope extends InheritedWidget {
+  const AuthShellScope({required super.child, super.key});
+
+  static bool isEmbedded(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AuthShellScope>() != null;
+
+  @override
+  bool updateShouldNotify(covariant AuthShellScope oldWidget) => false;
+}
+
+/// Khung chuyển đổi mượt giữa Đăng nhập ↔ Đăng ký:
+/// giữ cố định nền, header và thẻ `WarmSmokeGlass`, đồng thời cho pill tab trượt ngang
+/// (`AnimatedAlign`), thẻ kính tự mở rộng/thu gọn chiều cao mượt mà (`AnimatedSize`)
+/// và nội dung form trượt nhẹ kết hợp fade (`AnimatedSwitcher`).
+class AuthModeShell extends StatelessWidget {
+  const AuthModeShell({
+    required this.isLogin,
+    required this.onSelectLogin,
+    required this.onSelectRegister,
+    required this.child,
+    this.onBack,
+    super.key,
+  });
+
+  final bool isLogin;
+  final VoidCallback? onSelectLogin;
+  final VoidCallback? onSelectRegister;
+  final VoidCallback? onBack;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final reducedMotion =
+        MetaGymTheme.isFlutterTestEnvironment ||
+        MediaQuery.disableAnimationsOf(context);
+    final sizeDuration = reducedMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 300);
+    final switchDuration = reducedMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 260);
+    final slideSign = isLogin ? -1.0 : 1.0;
+
+    final switchedContent = AnimatedSwitcher(
+      duration: switchDuration,
+      reverseDuration: reducedMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOutQuart,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        alignment: Alignment.topCenter,
+        children: [...previousChildren, ?currentChild],
+      ),
+      transitionBuilder: (widget, animation) {
+        if (reducedMotion) return widget;
+        final isIncoming = widget.key == ValueKey<bool>(isLogin);
+        final beginOffset = Offset(
+          isIncoming ? 0.08 * slideSign : -0.06 * slideSign,
+          0,
+        );
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: beginOffset,
+              end: Offset.zero,
+            ).animate(animation),
+            child: widget,
+          ),
+        );
+      },
+      child: KeyedSubtree(
+        key: ValueKey<bool>(isLogin),
+        child: AuthShellScope(child: child),
+      ),
+    );
+
+    return AuthAtmosphereScaffold(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AuthTopHeader(onBack: onBack, showBackButton: !isLogin),
+          const SizedBox(height: 12),
+          WarmSmokeGlass(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthModeSegmentSwitch(
+                  isLogin: isLogin,
+                  onSelectLogin: onSelectLogin,
+                  onSelectRegister: onSelectRegister,
+                ),
+                const SizedBox(height: 14),
+                if (reducedMotion)
+                  switchedContent
+                else
+                  AnimatedSize(
+                    duration: sizeDuration,
+                    curve: Curves.easeOutQuart,
+                    alignment: Alignment.topCenter,
+                    clipBehavior: Clip.hardEdge,
+                    child: switchedContent,
+                  ),
+              ],
+            ),
+          ),
+          const AuthVersionFooter(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Thanh chuyển chế độ Đăng nhập / Đăng ký Member với pill trượt ngang mượt mà.
 class AuthModeSegmentSwitch extends StatelessWidget {
   const AuthModeSegmentSwitch({
     required this.isLogin,
@@ -304,31 +495,68 @@ class AuthModeSegmentSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duration =
+        MetaGymTheme.isFlutterTestEnvironment ||
+            MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 280);
+
     return Container(
+      height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
+        color: MetaGymWarmGlassTokens.metricPanelFill,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x9A8C8176), width: 1),
+        border: Border.all(
+          color: MetaGymWarmGlassTokens.metricPanelBorder,
+          width: 1,
+        ),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
-            child: _AuthModeTab(
-              tabKey: const Key('auth-mode-login'),
-              label: 'Đăng nhập',
-              selected: isLogin,
-              onTap: isLogin ? null : onSelectLogin,
+          AnimatedAlign(
+            alignment: isLogin ? Alignment.centerLeft : Alignment.centerRight,
+            duration: duration,
+            curve: Curves.easeOutQuart,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              heightFactor: 1.0,
+              child: Container(
+                margin: EdgeInsets.only(
+                  right: isLogin ? 2 : 0,
+                  left: isLogin ? 0 : 2,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38302A),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xC8C0B4A6),
+                    width: 1,
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _AuthModeTab(
-              tabKey: const Key('auth-mode-register'),
-              label: 'Đăng ký Member',
-              selected: !isLogin,
-              onTap: !isLogin ? null : onSelectRegister,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _AuthModeTab(
+                  tabKey: const Key('auth-mode-login'),
+                  label: 'Đăng nhập',
+                  selected: isLogin,
+                  onTap: isLogin ? null : onSelectLogin,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _AuthModeTab(
+                  tabKey: const Key('auth-mode-register'),
+                  label: 'Đăng ký Member',
+                  selected: !isLogin,
+                  onTap: !isLogin ? null : onSelectRegister,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -355,7 +583,7 @@ class _AuthModeTab extends StatelessWidget {
         MetaGymTheme.isFlutterTestEnvironment ||
             MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
-        : const Duration(milliseconds: 200);
+        : const Duration(milliseconds: 220);
 
     return Semantics(
       button: true,
@@ -367,54 +595,51 @@ class _AuthModeTab extends StatelessWidget {
           key: tabKey,
           onTap: onTap,
           borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            decoration: BoxDecoration(
-              color: selected ? const Color(0xFF38302A) : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: selected ? const Color(0xC8C0B4A6) : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (selected) ...[
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: MetaGymTheme.brandOrange,
-                          shape: BoxShape.circle,
-                        ),
+          child: SizedBox.expand(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.0 : 0.0,
+                    duration: duration,
+                    curve: Curves.easeOutBack,
+                    child: selected
+                        ? Container(
+                            width: 6,
+                            height: 6,
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: const BoxDecoration(
+                              color: MetaGymTheme.brandOrange,
+                              shape: BoxShape.circle,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  Flexible(
+                    child: AnimatedDefaultTextStyle(
+                      duration: duration,
+                      curve: Curves.easeOutCubic,
+                      style: TextStyle(
+                        fontFamily: MetaGymTheme.fontFamily,
+                        color: selected
+                            ? MetaGymTheme.textPrimary
+                            : MetaGymWarmGlassTokens.subtitleMuted,
+                        fontSize: 13,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        height: 1.1,
                       ),
-                      const SizedBox(width: 6),
-                    ],
-                    Flexible(
                       child: Text(
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: selected
-                              ? const Color(0xFFF7F9FC)
-                              : const Color(0xFFB7B2AF),
-                          fontSize: 13,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w600,
-                          height: 1.1,
-                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -424,8 +649,9 @@ class _AuthModeTab extends StatelessWidget {
   }
 }
 
-/// Hiệu ứng trượt nhẹ lên + phóng nhẹ + mờ dần theo nhịp khi vào màn hình (tắt trong test & giảm chuyển động).
-class AuthStaggeredEntrance extends StatefulWidget {
+/// Wrapper nhẹ giữ tương thích API; chuyển cảnh đã được xử lý đồng nhất tại
+/// `_smoothAuthTransitionPage` để tránh hiệu ứng chồng lấn (double-stutter).
+class AuthStaggeredEntrance extends StatelessWidget {
   const AuthStaggeredEntrance({
     required this.child,
     this.delayMs = 0,
@@ -436,68 +662,7 @@ class AuthStaggeredEntrance extends StatefulWidget {
   final int delayMs;
 
   @override
-  State<AuthStaggeredEntrance> createState() => _AuthStaggeredEntranceState();
-}
-
-class _AuthStaggeredEntranceState extends State<AuthStaggeredEntrance>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _controller;
-  Animation<double>? _opacity;
-  Animation<Offset>? _slide;
-  Animation<double>? _scale;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    if (MetaGymTheme.isFlutterTestEnvironment) return;
-
-    final controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 360),
-    );
-    final curved = CurvedAnimation(
-      parent: controller,
-      curve: Curves.easeOutCubic,
-    );
-    _controller = controller;
-    _opacity = curved;
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(curved);
-    _scale = Tween<double>(begin: 0.985, end: 1.0).animate(curved);
-
-    if (widget.delayMs <= 0) {
-      controller.forward();
-    } else {
-      _timer = Timer(Duration(milliseconds: widget.delayMs), () {
-        if (mounted) controller.forward();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = _controller;
-    if (controller == null || MediaQuery.disableAnimationsOf(context)) {
-      return widget.child;
-    }
-    return FadeTransition(
-      opacity: _opacity!,
-      child: SlideTransition(
-        position: _slide!,
-        child: ScaleTransition(scale: _scale!, child: widget.child),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => child;
 }
 
 /// Ô nhập liệu tách lớp gọn bên trong thẻ kính khói ấm.
@@ -506,6 +671,7 @@ class AuthGlassField extends StatefulWidget {
     required this.controller,
     required this.label,
     required this.icon,
+    this.svgIcon,
     this.fieldKey,
     this.hintText,
     this.errorText,
@@ -525,6 +691,7 @@ class AuthGlassField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
+  final String? svgIcon;
   final String? hintText;
   final String? errorText;
   final String? helperText;
@@ -587,13 +754,22 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
           ),
           helperMaxLines: 2,
           errorMaxLines: 2,
-          prefixIcon: Icon(
-            widget.icon,
-            size: 20,
-            color: _focused
-                ? MetaGymTheme.brandOrange
-                : const Color(0xFFD9CFC1),
-          ),
+          prefixIcon: widget.svgIcon != null
+              ? Padding(
+                  padding: const EdgeInsets.all(13),
+                  child: MetaGymSvgIcon(
+                    widget.svgIcon!,
+                    size: 20,
+                    fallbackIcon: widget.icon,
+                  ),
+                )
+              : Icon(
+                  widget.icon,
+                  size: 20,
+                  color: _focused
+                      ? MetaGymTheme.brandOrange
+                      : const Color(0xFFD9CFC1),
+                ),
           suffixIcon: widget.suffixIcon,
           filled: true,
           fillColor: _focused
@@ -876,6 +1052,44 @@ class _AuthSecondaryGlassButtonState extends State<AuthSecondaryGlassButton> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Chân trang phiên bản đồng bộ giữa Splash, Đăng nhập và Đăng ký.
+class AuthVersionFooter extends StatelessWidget {
+  const AuthVersionFooter({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const MetaGymSvgIcon(
+            MetaGymIcons.settingVersion,
+            size: 14,
+            fallbackIcon: Icons.info_outline_rounded,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              'Meta Gym v1.0.0 · Build 2026.11',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.textSecondary,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

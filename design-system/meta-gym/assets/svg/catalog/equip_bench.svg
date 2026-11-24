@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cat-bench-blush" x1="8" y1="14" x2="38" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>
+  <!-- Equip: Adjustable Incline Gym Bench -->
+  <path d="M9 28.5H27L35.5 14.5C36.3 13.2 38 12.8 39.2 13.6C40.4 14.4 40.8 16 40 17.3L30.5 33H9C7.3 33 6 31.7 6 30C6 29.2 7.3 28.5 9 28.5Z" fill="url(#cat-bench-blush)" stroke="#E8EDF5" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M12 33L9.5 40M27.5 33L29.5 40M7 40H13" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round"/>
+  <!-- Coral Angle Adjust Gear Badge Bottom-Right -->
+  <circle cx="36" cy="36" r="5" fill="#FF5E36" fill-opacity="0.22" stroke="#FF5E36" stroke-width="2.1"/>
+  <circle cx="36" cy="36" r="1.8" fill="#FF5E36"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="set-aface-blush" x1="9" y1="9" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF5E36" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#FF5E36" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+<rect x="9" y="9" width="30" height="30" rx="7" fill="url(#set-aface-blush)"/>
+  <path d="M9 17V13C9 10.8 10.8 9 13 9H17M31 9H35C37.2 9 39 10.8 39 13V17M9 31V35C9 37.2 10.8 39 13 39H17M31 39H35C37.2 39 39 37.2 39 35V31" stroke="#E8EDF5" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M17.5 18.5V21M30.5 18.5V21M24 19V25.5H21.5" stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18 30C20 32.2 28 32.2 30 30" stroke="#FF5E36" stroke-width="2.4" stroke-linecap="round"/>
+</svg>
