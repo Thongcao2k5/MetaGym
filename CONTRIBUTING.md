@@ -127,39 +127,51 @@ git push -u origin fix/mobile/meal-plans-overflow
 
 ---
 
-### Luồng C — `release`: Phát hành phiên bản mới lên `main` (`release/vX.Y.Z`)
+### Luồng C — `release`: Đóng băng bản build (UAT), ghi Release Notes cho Store & Phát hành lên `main`
+
+**Phân biệt rõ vai trò để dễ quay về đúng Đợt Release 1 / 2 / 3:**
+- **Nhánh `release/vX.Y.Z`:** Dùng để **đóng băng đúng commit `develop` tại thời điểm chốt build / UAT** (tăng số version trong `mobile-app/pubspec.yaml`, cập nhật `CHANGELOG.md`, build gửi kiểm thử & chỉ vá bug UAT nếu có).
+- **Git Tag `vX.Y.Z` + GitHub Release:** Sau khi merge `release/vX.Y.Z` vào `main`, **Tag `v1.0.0`, `v1.1.0`, `v1.2.0`...** chính là mốc lưu bất biến cho từng đợt Release 1 / 2 / 3 (không ai push đè lên được và không làm rác danh sách Branches). Sau này muốn quay về đúng bản build Đợt 1 / 2 / 3 bất kỳ lúc nào chỉ cần:
+  ```bash
+  git fetch --tags origin
+  git checkout v1.0.0   # hoặc v1.1.0, v1.2.0...
+  ```
 
 **Quy ước đánh số phiên bản (Semantic Versioning `vMAJOR.MINOR.PATCH`):**
-- **`v1.0.0` → `v1.1.0` (MINOR):** Thêm tính năng mới từ `develop` (mốc sprint/demo mới).
-- **`v1.1.0` → `v1.1.1` (PATCH):** Chỉ gồm bản sửa lỗi / `hotfix`.
+- **`v1.0.0` → `v1.1.0` (MINOR):** Đợt cập nhật có thêm tính năng mới từ `develop` (ví dụ Release Đợt 2, Đợt 3).
+- **`v1.1.0` → `v1.1.1` (PATCH):** Bản vá lỗi / `hotfix`.
 - **`v1.x.x` → `v2.0.0` (MAJOR):** Thay đổi kiến trúc lớn hoặc breaking change.
 
 **Các bước thực hiện (Team Leader chủ trì):**
 
 ```bash
-# 1. Đồng bộ develop mới nhất và tạo nhánh release
+# 1. Đóng băng đúng commit develop tại thời điểm chốt build / UAT
 git fetch origin --prune
 git checkout develop
 git pull origin develop
 git checkout -b release/v1.1.0
-git push -u origin release/v1.1.0
 ```
 
-2. **Đóng băng tính năng & QA tổng thể trên `release/v1.1.0`:**
-   - **Không thêm tính năng mới** vào nhánh `release/*` — chỉ commit các bản vá bug phát sinh trong lúc QA (`fix(...): ...`).
-   - Chạy kiểm thử toàn bộ:
-     - `backend`: `npm run check` & `npm test`
-     - `admin-web`: `npm test` & `npm run build`
-     - `landing-web`: `npm run build`
-     - `mobile-app`: `flutter analyze --no-fatal-infos` & `flutter test`
-3. **Mở Pull Request `release/v1.1.0` → `main`:**
-   - Chờ toàn bộ checks xanh:
-     - `Check migrations on PostgreSQL` *(nếu có thay đổi `backend/` hoặc `database/`)*
-     - `Cloudflare Pages: metagym-admin` & `metagym-landing`
-     - `Branch workflow reminder`
-   - Merge PR vào `main` và xóa nhánh `release/v1.1.0`.
-   - Khi merge vào `main`, nếu có thay đổi `backend/` hoặc `database/`, GitHub Actions sẽ tự kiểm tra PostgreSQL 17 lần cuối và gọi **Render Deploy Hook**; Cloudflare Pages tự build `admin-web` và `landing-web`.
-4. **Gắn Git Tag & tạo GitHub Release:**
+2. **Cập nhật phiên bản & Ghi chú phát hành (`CHANGELOG.md`) trên `release/v1.1.0`:**
+   - Tăng version ứng dụng nếu có build mobile mới (ví dụ `mobile-app/pubspec.yaml`: `version: 1.0.0+1` → `1.1.0+2`).
+   - Cập nhật mục **`## [v1.1.0]`** trong [`CHANGELOG.md`](CHANGELOG.md) theo đúng 2 phần:
+     - **Ghi chú cho Cửa hàng / Người dùng ("What's New"):** viết ngắn gọn, dễ hiểu để copy thẳng lên Google Play / App Store hoặc gửi báo cáo (Tính năng mới, Cải tiến, Sửa lỗi).
+     - **Chi tiết kỹ thuật:** danh sách PR từ `develop`, version, DB migration, kết quả test.
+   - Commit & push nhánh release:
+     ```bash
+     git add CHANGELOG.md mobile-app/pubspec.yaml
+     git commit -m "chore(release): prepare v1.1.0 changelog and app version"
+     git push -u origin release/v1.1.0
+     ```
+3. **UAT / QA tổng thể trên `release/v1.1.0`:**
+   - **Không thêm tính năng mới** vào nhánh `release/*` — chỉ commit bản vá bug phát sinh trong lúc UAT (`fix(...): ...`).
+   - Chạy kiểm thử toàn bộ: `backend` (`npm run check` & `npm test`), `admin-web` (`npm test` & `npm run build`), `landing-web` (`npm run build`), `mobile-app` (`flutter analyze --no-fatal-infos` & `flutter test`).
+4. **Mở Pull Request `release/v1.1.0` → `main` (có đầy đủ Release Notes cho Store):**
+   - **Tiêu đề PR:** `release(v1.1.0): <tóm tắt ngắn gọn điểm nổi bật của phiên bản>`
+   - **Nội dung PR:** Dán đúng 2 phần từ `CHANGELOG.md` (**What's New gửi Cửa hàng** + **Chi tiết kỹ thuật / danh sách PR**).
+   - Chờ toàn bộ checks xanh (`Check migrations on PostgreSQL`, `Cloudflare Pages: metagym-admin`, `metagym-landing`, `Branch workflow reminder`).
+   - Merge PR bằng **`Create a merge commit`** (GitHub tự lưu toàn bộ Release Notes vào merge commit trên `main`, tự xóa nhánh tạm `release/v1.1.0`, và kích hoạt Render + Cloudflare Pages deploy).
+5. **Gắn Git Tag bất biến & xuất bản GitHub Release `v1.1.0`:**
    ```bash
    git fetch origin --prune
    git checkout main
@@ -167,9 +179,9 @@ git push -u origin release/v1.1.0
    git tag -a v1.1.0 -m "Release v1.1.0: <tóm tắt mốc phát hành>"
    git push origin v1.1.0
    ```
-   Sau đó tạo **GitHub Release** từ tag `v1.1.0` (hoặc dùng `gh release create v1.1.0 --title "MetaGym v1.1.0" --notes "..."`).
-5. **Đồng bộ ngược về `develop` (BẮT BUỘC nếu nhánh `release/v1.1.0` có commit vá lỗi QA):**
-   - Mở PR nhỏ từ `main` → `develop` (hoặc `git checkout develop && git merge origin/main`) để các bản vá QA không bị sót ở đợt phát triển sau.
+   Tạo **GitHub Release** từ tag `v1.1.0` với nội dung copy trực tiếp từ mục `## [v1.1.0]` trong `CHANGELOG.md` (giúp sau này xem lại từng Đợt Release 1 / 2 / 3 và copy ghi chú lên Google Play / App Store cực nhanh).
+6. **Đồng bộ ngược về `develop`:**
+   - Mở PR nhỏ từ `main` → `develop` (hoặc đồng bộ `CHANGELOG.md`, `pubspec.yaml` và các bản vá UAT về `develop`) để `develop` luôn cập nhật cùng mốc phiên bản mới nhất.
 
 ---
 

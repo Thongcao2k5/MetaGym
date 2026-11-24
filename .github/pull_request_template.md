@@ -19,6 +19,15 @@ Ví dụ PR nhiều commit:
 
 - [feat/fix/update] ... — (`...`)
 
+<!-- CHỈ ĐIỀN MỤC DƯỚI ĐÂY KHI MỞ PR PHÁT HÀNH (`release/vX.Y.Z` hoặc `hotfix/*`) VÀO `main`:
+### Ghi chú bản cập nhật cho Cửa hàng / Người dùng (Store Release Notes — "What's New")
+*(Đồng bộ với `CHANGELOG.md` để copy đăng Google Play / App Store / báo cáo)*
+- **Tính năng mới:** ...
+- **Cải tiến:** ...
+- **Sửa lỗi:** ...
+- **Phiên bản build:** `vX.Y.Z` (`pubspec.yaml`: `X.Y.Z+N`)
+-->
+
 ---
 
 ## 2. Phạm vi & Phân loại
