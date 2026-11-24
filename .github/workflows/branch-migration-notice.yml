@@ -1,0 +1,77 @@
+name: Branch Migration Notice
+
+on:
+  push:
+    branches:
+      - thong
+      - thuc
+      - truong_ship_it
+      - design
+      - 'codex/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  migration-notice:
+    name: Branch workflow reminder (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Publish workflow guidance
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          PR_HEAD_REF: ${{ github.head_ref }}
+          PR_BASE_REF: ${{ github.base_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$EVENT_NAME" = "push" ]; then
+            echo "::notice title=Nâng cấp cấu trúc nhánh MetaGym::Bạn vừa push lên nhánh cũ ($REF_NAME). Code của bạn vẫn an toàn 100%. Hãy đọc THONG-BAO-CHUYEN-NHANH.md để mở PR vào develop và dùng nhánh chuẩn feature|fix|update/<folder>/<task> cho các task tiếp theo."
+            cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## Thông báo nâng cấp cấu trúc nhánh MetaGym
+
+          Bạn vừa push lên nhánh cũ **\`$REF_NAME\`**. **Code của bạn vẫn được giữ nguyên 100% và không bị chặn.**
+
+          ### Việc cần làm tiếp theo
+          1. **Đưa phần code vừa push vào nhánh tích hợp chung:** mở Pull Request từ **\`$REF_NAME\`** → **\`develop\`**.
+          2. **Cho các task tiếp theo:** tách nhánh mới từ \`develop\` theo chuẩn:
+             - \`feature/<folder>/<task-con>\` (vd: \`feature/mobile/tab2-training-hub\`)
+             - \`fix/<folder>/<task-con>\` (vd: \`fix/mobile/meal-plans-overflow\`)
+             - \`update/<folder>/<task-con>\` (vd: \`update/admin/dashboard-kpi\`)
+          3. **Đọc tài liệu chi tiết & cách recovery code:**
+             - [THONG-BAO-CHUYEN-NHANH.md](https://github.com/$REPO/blob/develop/THONG-BAO-CHUYEN-NHANH.md)
+             - [CONTRIBUTING.md](https://github.com/$REPO/blob/develop/CONTRIBUTING.md)
+          EOF
+          elif [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ "$PR_BASE_REF" = "main" ] && [[ "$PR_HEAD_REF" != release/* ]] && [[ "$PR_HEAD_REF" != hotfix/* ]] && [ "$PR_HEAD_REF" != "develop" ]; then
+              echo "::warning title=Kiểm tra nhánh đích PR::PR từ '$PR_HEAD_REF' đang nhắm vào 'main'. Theo quy trình mới, PR tính năng/sửa lỗi nên nhắm vào 'develop'; chỉ 'release/*' hoặc 'hotfix/*' mới merge vào 'main'."
+              cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## Lưu ý nhánh đích Pull Request
+
+          PR từ **\`$PR_HEAD_REF\`** đang mở vào **\`main\`**.
+          - Merge vào \`main\` sẽ kích hoạt kiểm tra migration & **deploy tự động lên Render**.
+          - Nếu đây là tính năng/sửa lỗi thường, hãy đổi nhánh đích (base branch) sang **\`develop\`**.
+          - Xem chi tiết tại [CONTRIBUTING.md](https://github.com/$REPO/blob/develop/CONTRIBUTING.md).
+          EOF
+            elif [[ "$PR_HEAD_REF" =~ ^(thong|thuc|truong_ship_it|design|codex/.*)$ ]]; then
+              echo "::notice title=Chuyển tiếp từ nhánh cũ::PR từ nhánh cũ '$PR_HEAD_REF' vào '$PR_BASE_REF' hợp lệ để tích hợp code đang dở. Từ task sau hãy tạo nhánh từ develop theo chuẩn feature|fix|update/<folder>/<task>."
+              cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## Tích hợp code đang dở từ nhánh cũ (\`$PR_HEAD_REF\`)
+
+          PR vào **\`$PR_BASE_REF\`** hợp lệ để đồng bộ code đang làm dở.
+          Sau khi PR này được merge, hãy tách nhánh mới từ \`develop\` theo chuẩn trong [CONTRIBUTING.md](https://github.com/$REPO/blob/develop/CONTRIBUTING.md).
+          EOF
+            else
+              cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## Quy trình nhánh hợp lệ
+
+          PR từ **\`$PR_HEAD_REF\`** → **\`$PR_BASE_REF\`** khớp cấu trúc nhánh chuẩn của MetaGym.
+          EOF
+            fi
+          fi
