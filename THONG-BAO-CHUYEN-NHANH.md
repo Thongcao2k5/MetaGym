@@ -7,14 +7,29 @@
 
 ---
 
-## 1. Bảng nhớ nhanh 3 luồng chính
+## 1. Luồng 4 chặng & Bảng nhớ nhanh (`feat` · `fix` · `release`)
+
+```text
+feature / fix / update   (dev tách từ develop để code từng task)
+          │  PR + 1 người review + CI check
+          ▼
+       develop           (nhánh tích hợp chung của cả 3 dev)
+          │  Đóng băng tính năng của đợt -> tách nhánh UAT
+          ▼
+    release/vX.Y.Z       (UAT / QA — chỉ vá bug UAT, không thêm tính năng mới)
+          │  PR + CI PostgreSQL & Cloudflare Pages xanh
+          ▼
+        main             (Code chính Production · Render deploy · gắn tag vX.Y.Z)
+```
+
+> Trong lúc `release/vX.Y.Z` đang UAT, team vẫn tiếp tục phát triển đợt tiếp theo trên `develop` bình thường; nếu có vá bug UAT thì sau khi merge `release/vX.Y.Z` → `main` nhớ merge ngược lại `develop`.
 
 | Khi cần làm | Tách từ | Đặt tên nhánh | Commit | Mở PR vào |
 |---|---|---|---|---|
 | **Tính năng mới (`feat`)** | `develop` | `feature/<folder>/<task>` | `feat(<folder>): ...` | `develop` |
 | **Sửa lỗi thường (`fix`)** | `develop` | `fix/<folder>/<task>` | `fix(<folder>): ...` | `develop` |
 | **Cập nhật nhẹ (`update`)** | `develop` | `update/<folder>/<task>` | `update(<folder>): ...` | `develop` |
-| **Phát hành (`release`)** | `develop` | `release/vX.Y.Z` | `chore(release): ...` | `main` *(gắn tag `vX.Y.Z`)* |
+| **Phát hành / UAT (`release`)** | `develop` | `release/vX.Y.Z` | `chore(release): ...` | `main` *(gắn tag `vX.Y.Z`)* |
 | **Vá khẩn cấp (`hotfix`)** | `main` | `hotfix/<folder>/<task>` | `fix(<folder>): ...` | `main` **+** `develop` |
 
 **`<folder>` tương ứng thư mục gốc:** `mobile` (`mobile-app/`), `backend` (`backend/` + `database/`), `admin` (`admin-web/`), `landing` (`landing-web/`), `design` (`design-system/`), `docs` (`docs/` + `tasks/`).
