@@ -1,0 +1,47 @@
+name: Feature / Task (Tính năng hoặc Nhiệm vụ mới)
+description: Đề xuất tính năng mới, nâng cấp UI hoặc tạo task cho thành viên trong team
+title: "[Task] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Khi triển khai task này, tạo nhánh từ `develop` theo chuẩn trong `CONTRIBUTING.md`:
+        `feature/<folder>/<task-con>`, `update/<folder>/<task-con>` hoặc `refactor/<folder>/<task-con>`.
+  - type: dropdown
+    id: module
+    attributes:
+      label: Folder chính (Owner module)
+      options:
+        - mobile (mobile-app/)
+        - backend (backend/ + database/)
+        - admin (admin-web/)
+        - landing (landing-web/)
+        - design (design-system/)
+        - docs (docs/ + tasks/)
+    validations:
+      required: true
+  - type: input
+    id: suggested_branch
+    attributes:
+      label: Tên nhánh dự kiến
+      placeholder: "Ví dụ: feature/mobile/workout-history hoặc update/admin/member-filter"
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Yêu cầu chi tiết (Requirements)
+      placeholder: |
+        - Yêu cầu 1
+        - Yêu cầu 2
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Tiêu chí hoàn thành (Acceptance Criteria)
+      placeholder: |
+        - [ ] Giao diện đúng thiết kế (375x812 & desktop nếu có)
+        - [ ] API / DB migration hoạt động đúng, không trùng số migration
+        - [ ] Đã chạy test cho module bị ảnh hưởng
+    validations:
+      required: true
