@@ -46,7 +46,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <!-- 3 _ProfileCategoryCard Accordions (Bấm tiêu đề để thu gọn / mở rộng) -->
+          <!-- 3 _ProfileCategoryCard Accordions (Mặc định mở rộng toàn bộ để thấy ngay mọi mục) -->
           <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
               <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_personal_info.svg" alt="Cá nhân" /><strong class="txt-sm">Cá nhân &amp; thể trạng</strong></div>
@@ -60,7 +60,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="card-liquid accordion-card" style="padding:13px 14px;">
+          <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
               <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tập luyện" /><strong class="txt-sm">Tập luyện &amp; dịch vụ</strong></div>
               <div class="row" style="gap:6px;"><span class="count-pill">3</span><span class="accordion-chev">›</span></div>
@@ -73,7 +73,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <div class="card-liquid accordion-card" style="padding:13px 14px;">
+          <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
               <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_security_shield.svg" alt="Tài khoản" /><strong class="txt-sm">Tài khoản &amp; hỗ trợ</strong></div>
               <div class="row" style="gap:6px;"><span class="count-pill">5</span><span class="accordion-chev">›</span></div>

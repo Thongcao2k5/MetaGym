@@ -28,8 +28,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="circle-btn" title="Lịch sử tập" data-go="member-visits" style="cursor:pointer;"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
           </div>
 
-          <!-- Hero Card: Buổi tập hôm nay (Tâm điểm sang trọng Warm Smoked Glass) -->
-          <div class="card-warm-glass" style="padding:15px;margin-bottom:11px;border-color:rgba(255,138,91,0.52);background:linear-gradient(155deg, rgba(66,44,35,0.88) 0%, rgba(43,38,34,0.82) 55%, rgba(32,28,25,0.86) 100%);">
+          <!-- Hero Card: Buổi tập hôm nay (Thích ứng mượt Dark & Light Mode) -->
+          <div class="card-warm-glass" style="padding:15px;margin-bottom:11px;border-color:rgba(255,94,54,0.45);">
             <div class="row-between" style="margin-bottom:8px;">
               <span class="pill pill-orange tnum" style="font-size:11px;white-space:nowrap;">● Hôm nay · 18:00</span>
               <span class="pill pill-muted tnum" style="font-size:11px;white-space:nowrap;">90 phút · Push Day</span>
@@ -66,13 +66,13 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <!-- 2 Cột Bento sang trọng: Thẻ Hội viên & Coach 1:1 (tất cả 1 dòng, tuyệt đối không xuống hàng) -->
           <div class="grid-2" style="gap:10px;margin-bottom:12px;align-items:stretch;">
             <!-- Card Trái: Thẻ Hội viên -->
-            <div class="card-warm-glass" style="margin-bottom:0;padding:13px 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-width:0;border-color:rgba(245,176,65,0.42);background:linear-gradient(160deg, rgba(58,47,36,0.88) 0%, rgba(36,32,28,0.86) 100%);" data-go="member-membership">
-              <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(245,176,65,0.26) 0%, transparent 72%);pointer-events:none;"></div>
+            <div class="card-warm-glass" style="margin-bottom:0;padding:13px 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-width:0;border-color:rgba(245,176,65,0.42);" data-go="member-membership">
+              <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(245,176,65,0.22) 0%, transparent 72%);pointer-events:none;"></div>
               <div style="min-width:0;">
                 <div class="row-between" style="margin-bottom:8px;">
                   <div class="row" style="gap:5px;min-width:0;">
                     <img class="ico-xs" src="../../meta-gym/assets/svg/membership/premium_crown.svg" alt="Hạng Vàng" />
-                    <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#F5B041;white-space:nowrap;">HẠNG VÀNG</span>
+                    <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:var(--warning);white-space:nowrap;">HẠNG VÀNG</span>
                   </div>
                   <span style="width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px rgba(46,204,113,0.75);flex-shrink:0;"></span>
                 </div>
@@ -83,17 +83,17 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 <div class="txt-xs tnum" style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hạn 03/01/2027</div>
               </div>
               <div>
-                <div class="prog-track" style="height:4px;margin:10px 0 8px;background:rgba(255,255,255,0.12);"><div class="prog-fill" style="width:74%;background:linear-gradient(90deg, #F5B041, #2ECC71);"></div></div>
+                <div class="prog-track" style="height:4px;margin:10px 0 8px;"><div class="prog-fill" style="width:74%;background:linear-gradient(90deg, #F5B041, #2ECC71);"></div></div>
                 <div class="row-between">
-                  <span style="font-size:11px;font-weight:700;color:#F5B041;white-space:nowrap;">Xem gói tập</span>
-                  <span style="font-size:12px;font-weight:700;color:#F5B041;">›</span>
+                  <span style="font-size:11px;font-weight:700;color:var(--warning);white-space:nowrap;">Xem gói tập</span>
+                  <span style="font-size:12px;font-weight:700;color:var(--warning);">›</span>
                 </div>
               </div>
             </div>
 
             <!-- Card Phải: Coach 1:1 -->
-            <div class="card-warm-glass" style="margin-bottom:0;padding:13px 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-width:0;border-color:rgba(255,94,54,0.42);background:linear-gradient(160deg, rgba(60,41,35,0.88) 0%, rgba(36,32,28,0.86) 100%);" data-go="member-coach-booking">
-              <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(255,94,54,0.24) 0%, transparent 72%);pointer-events:none;"></div>
+            <div class="card-warm-glass" style="margin-bottom:0;padding:13px 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-width:0;border-color:rgba(255,94,54,0.42);" data-go="member-coach-booking">
+              <div style="position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle, rgba(255,94,54,0.20) 0%, transparent 72%);pointer-events:none;"></div>
               <div style="min-width:0;">
                 <div class="row-between" style="margin-bottom:8px;">
                   <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:var(--primary);white-space:nowrap;">COACH 1:1</span>
@@ -108,7 +108,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 </div>
               </div>
               <div>
-                <div class="prog-track" style="height:4px;margin:10px 0 8px;background:rgba(255,255,255,0.12);"><div class="prog-fill" style="width:58%;background:linear-gradient(90deg, var(--primary), #FF9B73);"></div></div>
+                <div class="prog-track" style="height:4px;margin:10px 0 8px;"><div class="prog-fill" style="width:58%;background:linear-gradient(90deg, var(--primary), #FF9B73);"></div></div>
                 <div class="row-between">
                   <span style="font-size:11px;font-weight:700;color:var(--primary);white-space:nowrap;">Lịch Coach</span>
                   <span style="font-size:12px;font-weight:700;color:var(--primary);">›</span>
@@ -157,11 +157,11 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="row-between tnum" style="gap:5px;">
               <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:12px;font-weight:700;color:var(--success);white-space:nowrap;">T2✓</div>
               <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.42);font-size:12px;font-weight:700;color:var(--success);white-space:nowrap;">T3✓</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(255,94,54,0.22);border:1px solid var(--primary);font-size:12px;font-weight:800;color:#FFF;white-space:nowrap;">T4</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T5</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T6</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.55);border:1px solid rgba(179,169,157,0.28);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T7</div>
-              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:rgba(24,21,19,0.35);border:1px solid rgba(179,169,157,0.18);font-size:12px;color:var(--text-secondary);white-space:nowrap;">CN</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:var(--primary);border:1px solid var(--primary);font-size:12px;font-weight:800;color:#FFFFFF;white-space:nowrap;">T4</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:var(--surface-raised);border:1px solid var(--border-solid);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T5</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:var(--surface-raised);border:1px solid var(--border-solid);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T6</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:var(--surface-raised);border:1px solid var(--border-solid);font-size:12px;color:var(--text-secondary);white-space:nowrap;">T7</div>
+              <div style="flex:1;min-width:0;text-align:center;padding:5px 0;border-radius:9px;background:var(--surface-raised);border:1px solid var(--border-solid);font-size:12px;color:var(--text-secondary);opacity:0.75;white-space:nowrap;">CN</div>
             </div>
           </div>
 

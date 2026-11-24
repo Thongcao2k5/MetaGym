@@ -3,14 +3,14 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Meta Gym — Flutter Full-Data Screen Preview Studio</title>
   <link rel="icon" type="image/svg+xml" href="../../meta-gym/assets/svg/brand/app_icon_mark.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="./tokens.css?v=20261124i" />
+  <link rel="stylesheet" href="./tokens.css?v=20261124n" />
 </head>
 
 <body>
@@ -22,25 +22,20 @@
         <a href="../../index.html" class="ctrl-btn"
           style="text-decoration:none;display:inline-flex;align-items:center;">← Hub</a>
         <div class="mg-logo" style="width:36px;height:36px;border-radius:10px;"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
-        <div>
-          <h1>Flutter Screen Preview — Bám sát code thực tế (Full Data)</h1>
-          <span>Bấm trực tiếp vào nút / thẻ / thanh điều hướng trên màn hình để chạy luồng UX cho Dev</span>
-        </div>
       </div>
 
       <div class="studio-controls">
-        <button class="ctrl-btn" id="btn-proto" title="Xem 1 máy tương tác như Figma Prototype">▶ Chế độ Luồng
-          UX</button>
-        <button class="ctrl-btn" id="btn-hotspots" title="Hiện viền nét đứt các vùng bấm được">Hiện điểm bấm</button>
-        <span class="ctrl-divider"></span>
-        <button class="ctrl-btn active" id="btn-393" title="iPhone 14 Pro — 393×852pt, Dynamic Island 126×37pt">iPhone 14 Pro (393×852)</button>
-        <button class="ctrl-btn" id="btn-375" title="iPhone 13 mini / 375×812pt">375×812</button>
-        <span class="ctrl-divider"></span>
-        <button class="ctrl-btn" id="btn-theme" style="display:inline-flex;align-items:center;gap:6px;">
-          <img class="ico-xs" src="../../meta-gym/assets/svg/setting/setting_theme_appearance.svg" alt="Giao diện" />
-          <span id="theme-label">Chế độ Sáng</span>
+        <button class="ctrl-btn ctrl-icon-btn" id="btn-proto" title="Chế độ Luồng UX" aria-label="Chế độ Luồng UX">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v14l11-7-11-7z"/></svg>
         </button>
-        <button class="ctrl-btn" id="btn-solid">Tắt Blur / Ảnh nền</button>
+        <span class="ctrl-divider desktop-only-ctrl"></span>
+        <button class="ctrl-btn desktop-only-ctrl" id="btn-430" title="iPhone 14 Pro Max — 430×932pt">14PRM</button>
+        <button class="ctrl-btn active desktop-only-ctrl" id="btn-393" title="iPhone 14 Pro — 393×852pt">14PR</button>
+        <span class="ctrl-divider"></span>
+        <button class="ctrl-btn ctrl-icon-btn" id="btn-theme" title="Chuyển Chế độ Sáng / Tối" aria-label="Chuyển Chế độ Sáng / Tối">
+          <svg id="theme-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+        <button class="ctrl-btn" id="btn-solid" title="Tắt Blur / Ảnh nền">Blur</button>
       </div>
     </div>
   </header>
@@ -82,13 +77,30 @@
 
   <div class="flow-toast" id="flow-toast"></div>
 
+  <!-- Mobile Fullscreen AssistiveTouch Control (chỉ hiện khi bật Play trên điện thoại) -->
+  <div class="mobile-proto-assist" id="mobile-proto-assist" aria-label="Điều khiển chế độ toàn màn hình">
+    <div class="mobile-assist-menu">
+      <button type="button" class="mobile-assist-btn danger" id="assist-exit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        <span>Thoát App</span>
+      </button>
+      <button type="button" class="mobile-assist-btn" id="assist-theme">☀ / ☾ Sáng · Tối</button>
+      <button type="button" class="mobile-assist-btn" id="assist-member">Trang chủ HV</button>
+      <button type="button" class="mobile-assist-btn" id="assist-coach">Trang chủ Coach</button>
+      <button type="button" class="mobile-assist-btn" id="assist-auth">Từ Splash</button>
+    </div>
+    <button type="button" class="mobile-assist-fab" id="assist-toggle" title="Mở điều khiển / Thoát toàn màn hình" aria-label="Điều khiển toàn màn hình">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+    </button>
+  </div>
+
   <!-- Modular Screen Registries -->
   <script src="./screens/auth.screens.js?v=20261124l"></script>
   <script src="./screens/member/tab1-home.js?v=20261124f"></script>
-  <script src="./screens/member/tab2-training.js?v=20261124c"></script>
+  <script src="./screens/member/tab2-training.js?v=20261124d"></script>
   <script src="./screens/member/tab3-ai.js?v=20261124d"></script>
   <script src="./screens/member/tab4-messages.js?v=20261124c"></script>
-  <script src="./screens/member/tab5-profile.js?v=20261124c"></script>
+  <script src="./screens/member/tab5-profile.js?v=20261124d"></script>
   <script src="./screens/member/tab5-profile-sub.js?v=20261124b"></script>
   <script src="./screens/coach/core.js?v=20261124b"></script>
   <script src="./screens/coach/detail.js?v=20261124b"></script>
@@ -955,15 +967,70 @@
 
     // 5. Studio Toolbar Controls
     const btnProto = document.getElementById('btn-proto');
-    btnProto.addEventListener('click', () => {
-      protoMode = !protoMode;
+    const mobileAssist = document.getElementById('mobile-proto-assist');
+    const PLAY_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v14l11-7-11-7z"/></svg>';
+    const STOP_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+    function setProtoMode(enable) {
+      protoMode = !!enable;
+      const isMobileVw = (document.documentElement.clientWidth || window.innerWidth) <= 640;
       document.body.classList.toggle('proto-mode', protoMode);
+      document.body.classList.toggle('mobile-app-fullscreen', protoMode && isMobileVw);
       btnProto.classList.toggle('active', protoMode);
-      btnProto.textContent = protoMode ? '⊞ Thoát Luồng UX' : '▶ Chế độ Luồng UX';
+      btnProto.innerHTML = protoMode ? STOP_SVG : PLAY_SVG;
+      btnProto.title = protoMode ? 'Thoát Luồng UX' : 'Chế độ Luồng UX';
+      mobileAssist?.classList.remove('open');
+
       if (protoMode) {
         const startId = activeRole === 'auth' ? 'auth-splash' : (activeRole === 'coach' ? 'coach-home' : 'member-home');
         flowHistory = [startId];
         navigateToScreen(startId, true);
+        if (isMobileVw) {
+          try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch (_) {}
+          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) {}
+          showFlowToast('Chế độ App toàn màn hình · Bấm nút tròn cạnh phải để thoát');
+        }
+      } else {
+        if (document.fullscreenElement) {
+          try { document.exitFullscreen?.().catch(() => {}); } catch (_) {}
+        }
+        updateMobilePhoneZoom();
+      }
+    }
+
+    btnProto.addEventListener('click', () => setProtoMode(!protoMode));
+
+    document.getElementById('assist-toggle')?.addEventListener('click', () => {
+      mobileAssist?.classList.toggle('open');
+    });
+    document.getElementById('assist-exit')?.addEventListener('click', () => setProtoMode(false));
+    document.getElementById('assist-theme')?.addEventListener('click', () => {
+      applyStudioTheme(!document.body.classList.contains('light-mode'));
+      mobileAssist?.classList.remove('open');
+    });
+    document.getElementById('assist-member')?.addEventListener('click', () => {
+      flowHistory = ['member-home']; navigateToScreen('member-home', true);
+      mobileAssist?.classList.remove('open');
+    });
+    document.getElementById('assist-coach')?.addEventListener('click', () => {
+      flowHistory = ['coach-home']; navigateToScreen('coach-home', true);
+      mobileAssist?.classList.remove('open');
+    });
+    document.getElementById('assist-auth')?.addEventListener('click', () => {
+      flowHistory = ['auth-splash']; navigateToScreen('auth-splash', true);
+      mobileAssist?.classList.remove('open');
+    });
+
+    // Hỗ trợ nút Back vật lý / vuốt cạnh quay lại trên điện thoại để lùi màn hoặc thoát Fullscreen
+    window.addEventListener('popstate', () => {
+      if (protoMode && document.body.classList.contains('mobile-app-fullscreen')) {
+        if (flowHistory.length > 1) {
+          flowHistory.pop();
+          navigateToScreen(flowHistory[flowHistory.length - 1], true);
+          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) {}
+        } else {
+          setProtoMode(false);
+        }
       }
     });
 
@@ -971,24 +1038,32 @@
     document.getElementById('proto-start-member').addEventListener('click', () => { flowHistory = ['member-home']; navigateToScreen('member-home', true); });
     document.getElementById('proto-start-coach').addEventListener('click', () => { flowHistory = ['coach-home']; navigateToScreen('coach-home', true); });
 
-    const btnHotspots = document.getElementById('btn-hotspots');
-    btnHotspots.addEventListener('click', () => {
-      const on = document.body.classList.toggle('show-hotspots');
-      btnHotspots.classList.toggle('active', on);
-    });
-
-    const btn375 = document.getElementById('btn-375');
+    const btn430 = document.getElementById('btn-430');
     const btn393 = document.getElementById('btn-393');
+    let activeDevicePreset = '393';
+    function updateMobilePhoneZoom() {
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const frameW = (activeDevicePreset === '430' ? 430 : 393) + 12;
+      const availW = vw - 20;
+      if (vw <= 540 && availW < frameW) {
+        const z = Math.max(0.68, Math.min(0.96, +(availW / frameW).toFixed(3)));
+        document.documentElement.style.setProperty('--phone-zoom', String(z));
+      } else {
+        document.documentElement.style.setProperty('--phone-zoom', '1');
+      }
+    }
     function applyDevicePreset(preset) {
+      activeDevicePreset = preset === '430' ? '430' : '393';
       const root = document.documentElement.style;
-      if (preset === '375') {
-        root.setProperty('--device-width', '375px');
-        root.setProperty('--device-height', '812px');
-        root.setProperty('--device-radius', '47px');
-        root.setProperty('--island-w', '114px');
-        root.setProperty('--island-h', '33px');
-        root.setProperty('--status-h', '52px');
-        btn375.classList.add('active'); btn393.classList.remove('active');
+      if (activeDevicePreset === '430') {
+        // Exact iPhone 14 Pro Max logical spec: 430x932pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
+        root.setProperty('--device-width', '430px');
+        root.setProperty('--device-height', '932px');
+        root.setProperty('--device-radius', '55px');
+        root.setProperty('--island-w', '126px');
+        root.setProperty('--island-h', '37px');
+        root.setProperty('--status-h', '59px');
+        btn430?.classList.add('active'); btn393?.classList.remove('active');
       } else {
         // Exact iPhone 14 Pro logical spec: 393x852pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
         root.setProperty('--device-width', '393px');
@@ -997,11 +1072,14 @@
         root.setProperty('--island-w', '126px');
         root.setProperty('--island-h', '37px');
         root.setProperty('--status-h', '59px');
-        btn393.classList.add('active'); btn375.classList.remove('active');
+        btn393?.classList.add('active'); btn430?.classList.remove('active');
       }
+      updateMobilePhoneZoom();
     }
-    btn375.addEventListener('click', () => applyDevicePreset('375'));
-    btn393.addEventListener('click', () => applyDevicePreset('393'));
+    btn430?.addEventListener('click', () => applyDevicePreset('430'));
+    btn393?.addEventListener('click', () => applyDevicePreset('393'));
+    window.addEventListener('resize', updateMobilePhoneZoom);
+    window.addEventListener('orientationchange', updateMobilePhoneZoom);
     applyDevicePreset('393');
 
     // Upgrade all phone status-bar right clusters to authentic iPhone 14 Pro Signal + 5G + Battery pill
@@ -1031,11 +1109,13 @@
     });
 
     const btnTheme = document.getElementById('btn-theme');
-    const themeLabel = document.getElementById('theme-label');
+    const SUN_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+    const MOON_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
     function applyStudioTheme(isLight) {
       document.body.classList.toggle('light-mode', isLight);
       btnTheme.classList.toggle('active', isLight);
-      themeLabel.textContent = isLight ? 'Chế độ Tối' : 'Chế độ Sáng';
+      btnTheme.innerHTML = isLight ? MOON_SVG : SUN_SVG;
+      btnTheme.title = isLight ? 'Chuyển sang Chế độ Tối' : 'Chuyển sang Chế độ Sáng';
       document.querySelectorAll('[data-theme-mode-desc]').forEach(el => {
         el.textContent = isLight ? 'Sáng · Crisp Daylight Glass' : 'Tối · Futuristic Performance Glass';
       });
