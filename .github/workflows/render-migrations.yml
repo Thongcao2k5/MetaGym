@@ -2,7 +2,7 @@ name: Database migrations and Render deploy
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop, 'release/**']
     paths:
       - 'database/**'
       - 'backend/**'
