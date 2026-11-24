@@ -1,9 +1,10 @@
 # Meta Gym
 
 > [!IMPORTANT]
-> **Nâng cấp cấu trúc nhánh GitHub (24/11/2026):** Team chính thức áp dụng cây nhánh `main` → `develop` → `feature|fix|update|refactor/<folder>/<task-con>`, `release/vX.Y.Z`, `hotfix/*`.
-> - Toàn bộ nhánh cũ vẫn được giữ nguyên + lưu tag backup `backup/2026-11-24/*` để recovery code.
-> - **Đang code dở ở nhánh cũ chưa đẩy lên?** Xem hướng dẫn chuyển đổi nhanh tại [THONG-BAO-CHUYEN-NHANH.md](THONG-BAO-CHUYEN-NHANH.md) và quy trình đầy đủ tại [CONTRIBUTING.md](CONTRIBUTING.md).
+> **Quy trình Git & Nhánh chuẩn (từ mốc [`v1.0.0`](https://github.com/Thongcao2k5/MetaGym/releases/tag/v1.0.0)):** Repo duy trì 2 nhánh chính được bảo vệ là **`main`** (Production) và **`develop`** (Integration).
+> - Mọi task mới đều tách từ `develop` theo chuẩn `feature|fix|update|refactor/<folder>/<task-con>`, phát hành qua `release/vX.Y.Z`, vá khẩn cấp qua `hotfix/*`.
+> - Xem bảng lệnh nhanh **`feat` / `fix` / `release`** tại [THONG-BAO-CHUYEN-NHANH.md](THONG-BAO-CHUYEN-NHANH.md) và sổ tay đầy đủ tại [CONTRIBUTING.md](CONTRIBUTING.md).
+> - Toàn bộ lịch sử các nhánh cũ đã được lưu an toàn trong bộ tag bất biến `backup/2026-11-24/*`.
 
 Hệ thống quản lý phòng tập & huấn luyện cá nhân **Meta Gym** (đồ án chuyên ngành), gồm ứng dụng di động cho **Member & Coach**, trang quản trị **Admin Web**, **Landing Web**, và **REST API + PostgreSQL**.
 
