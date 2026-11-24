@@ -1,46 +1,64 @@
-## Mục đích thay đổi
+<!--
+QUY ƯỚC TIÊU ĐỀ PR (BẮT BUỘC):
+  <type>(<folder>): <tóm tắt ngắn gọn 1 dòng cho cả PR>
+  Ví dụ: feat(mobile): hoàn thiện Tab 2 Training Hub và bộ test widget
+  (GitHub sẽ dùng chính Tiêu đề PR + nội dung bên dưới làm commit log khi merge vào develop/main)
+-->
 
-<!-- Mô tả ngắn gọn tính năng / lỗi được sửa / cập nhật trong PR này -->
+## 1. Tóm tắt các phần đã làm (ánh xạ theo từng commit)
 
-> **Nhắc nhanh quy trình nhánh (`CONTRIBUTING.md`):**
-> - PR tính năng / sửa lỗi / cập nhật thường (`feature/*`, `fix/*`, `update/*`, `refactor/*`) → chọn nhánh đích là **`develop`**.
-> - Nhánh đích **`main`** chỉ dành cho **`release/vX.Y.Z`** hoặc **`hotfix/*`** (merge vào `main` sẽ kích hoạt CI & deploy Render).
-> - Đang chuyển code từ nhánh cũ (`truong_ship_it`, `thuc`, `thong`, `codex/*`, `design`)? Hãy mở PR vào **`develop`** và xem [`THONG-BAO-CHUYEN-NHANH.md`](THONG-BAO-CHUYEN-NHANH.md).
+<!--
+Bắt buộc liệt kê đủ các phần đã làm. Nếu PR có nhiều commit, gom hoặc ánh xạ rõ từng đầu việc với commit tương ứng theo đúng format:
+- [<type>] <Mô tả rõ phần đã làm> — (`<type>(<scope>): <tiêu đề commit>`)
+
+Ví dụ PR nhiều commit:
+- [feat] Xây dựng màn hình Tab 2 Training Hub & thẻ gói tập — (`feat(mobile): build member training hub layout`)
+- [fix] Sửa lỗi tràn dòng trên màn hình 375x812 — (`fix(mobile): resolve row overflow on small viewport`)
+- [test] Bổ sung 8 widget tests kiểm chứng các trạng thái — (`test(mobile): add training hub widget tests`)
+-->
+
+- [feat/fix/update] ... — (`...`)
 
 ---
 
-## Loại công việc
+## 2. Phạm vi & Phân loại
 
-- [ ] `feature` — Tính năng mới
-- [ ] `fix` — Sửa lỗi
-- [ ] `update` — Cập nhật UI / dependencies / config
-- [ ] `refactor` — Tái cấu trúc code
-- [ ] `release` / `hotfix` — Phát hành / vá lỗi production
-- [ ] `docs` — Tài liệu
+**Loại công việc:**
+- [ ] `feat` — Tính năng mới (`feature/<folder>/<task-con>` → `develop`)
+- [ ] `fix` — Sửa lỗi thường (`fix/<folder>/<task-con>` → `develop`)
+- [ ] `update` — Cập nhật UI / deps / config / docs (`update/<folder>/<task-con>` → `develop`)
+- [ ] `refactor` — Tái cấu trúc code (`refactor/<folder>/<task-con>` → `develop`)
+- [ ] `release` / `hotfix` — Phát hành UAT hoặc vá lỗi production (→ `main`)
 
-## Folder chính bị ảnh hưởng
-
+**Folder chính bị ảnh hưởng:**
 - [ ] `mobile-app/`
 - [ ] `backend/`
-- [ ] `database/` *(lưu ý kiểm tra số thứ tự migration mới nhất trên `develop`)*
+- [ ] `database/` *(kiểm tra số migration mới nhất trên `develop`, hiện từ `0034+`)*
 - [ ] `admin-web/`
 - [ ] `landing-web/`
 - [ ] `design-system/`
 - [ ] `docs/` hoặc `tasks/`
 
+**Ảnh hưởng API / Database / Env:**
+- Không thay đổi *(hoặc ghi rõ endpoint mới, file migration `0034_*.sql`, biến môi trường mới)*
+
 ---
 
-## Checklist trước khi yêu cầu Review
+## 3. Kết quả kiểm thử (Verification)
 
-- [ ] Đã cập nhật/đồng bộ mới nhất từ nhánh đích (`develop` hoặc `main`)
+<!-- Ghi rõ lệnh đã chạy và kết quả -->
+- [ ] `mobile-app`: `flutter analyze --no-fatal-infos` & `flutter test ...`
+- [ ] `backend`: `npm run check` & `npm test`
+- [ ] `admin-web`: `npm test` & `npm run build`
+- [ ] `landing-web`: `npm run build`
+
+---
+
+## 4. Checklist trước khi Merge
+
+- [ ] Tiêu đề PR đúng chuẩn `<type>(<folder>): <mô tả>` và mục **1** đã liệt kê đủ các commit/hạng mục
+- [ ] Nhánh đích đúng: **`develop`** cho `feature/fix/update/refactor`; **`main`** chỉ cho `release/*` hoặc `hotfix/*`
 - [ ] Không commit file `.env` hoặc thông tin bí mật
-- [ ] Đã chạy kiểm tra/test cho các module bị ảnh hưởng:
-  - `backend`: `npm run check` & `npm test`
-  - `admin-web`: `npm test` & `npm run build`
-  - `landing-web`: `npm run build`
-  - `mobile-app`: `flutter analyze` & `flutter test`
-- [ ] Đã cập nhật tài liệu / API contract (nếu thay đổi API hoặc DB schema)
-
-## Ảnh chụp / Ghi chú kiểm thử (nếu có)
-
-<!-- Dán screenshot hoặc log test ngắn gọn tại đây -->
+- [ ] Chọn đúng kiểu merge:
+  - **`Squash and merge`** khi merge nhánh nhỏ vào `develop` *(gom nhiều commit lẻ thành 1 commit sạch có đủ tóm tắt)*
+  - **`Create a merge commit`** khi merge `release/vX.Y.Z` hoặc `hotfix/*` vào `main`
