@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Quy trình nhánh Git & Đóng góp (CONTRIBUTING.md)
+    url: https://github.com/Thongcao2k5/MetaGym/blob/main/CONTRIBUTING.md
+    about: Xem cấu trúc nhánh main / develop / release / feature và quy ước Pull Request.
+  - name: Hướng dẫn chuyển tiếp từ nhánh cũ (THONG-BAO-CHUYEN-NHANH.md)
+    url: https://github.com/Thongcao2k5/MetaGym/blob/main/THONG-BAO-CHUYEN-NHANH.md
+    about: Dành cho thành viên đang code dở trên nhánh cũ muốn đồng bộ sang develop không mất code.
+  - name: Báo cáo lỗ hổng bảo mật (SECURITY.md)
+    url: https://github.com/Thongcao2k5/MetaGym/blob/main/SECURITY.md
+    about: Không mở Issue công khai cho lỗi bảo mật — hãy báo cáo riêng theo hướng dẫn.
