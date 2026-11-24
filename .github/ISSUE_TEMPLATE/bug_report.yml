@@ -1,0 +1,52 @@
+name: Bug Report (Báo lỗi)
+description: Báo cáo lỗi giao diện, API, database hoặc hành vi sai trên MetaGym
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã báo lỗi! Nếu đây là **lỗ hổng bảo mật**, vui lòng không tạo Issue công khai — xem `SECURITY.md`.
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module bị ảnh hưởng
+      options:
+        - mobile-app/ (Flutter Member & Coach)
+        - backend/ (Node.js Express API)
+        - database/ (PostgreSQL Migrations / Schema)
+        - admin-web/ (Vite + Bootstrap Admin)
+        - landing-web/ (Landing Page)
+        - design-system/ (Preview Studio / Icons / Tokens)
+        - docs/ hoặc CI/CD
+    validations:
+      required: true
+  - type: input
+    id: branch
+    attributes:
+      label: Nhánh Git đang chạy
+      placeholder: "Ví dụ: develop, main, hoặc feature/mobile/tab2-training-hub"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Mô tả lỗi
+      description: Mô tả rõ ràng chuyện gì đang xảy ra và kết quả bạn mong đợi.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Các bước tái hiện
+      placeholder: |
+        1. Mở màn hình / gọi endpoint '...'
+        2. Bấm vào '...'
+        3. Thấy lỗi '...'
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lỗi / Ảnh chụp màn hình
+      description: Dán stack trace, response API hoặc kéo thả ảnh chụp lỗi vào đây.
