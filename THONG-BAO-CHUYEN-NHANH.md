@@ -69,14 +69,24 @@ Nội dung tóm tắt (ánh xạ theo từng commit):
 
 > Khi merge **`release/vX.Y.Z`** hoặc **`hotfix/*`** vào `main`, dùng **`Create a merge commit`** để giữ mốc phiên bản.
 
-### C. Phát hành bản mới (`release`) lên `main`
+### C. Phát hành bản mới (`release`) lên `main` & Ghi chú cho Cửa hàng (Store Release Notes)
+
 ```bash
 git fetch origin --prune
 git checkout develop && git pull origin develop
 git checkout -b release/v1.1.0
+# 1. Tăng version (vd mobile-app/pubspec.yaml: 1.1.0+2) & cập nhật CHANGELOG.md
+git add CHANGELOG.md mobile-app/pubspec.yaml
+git commit -m "chore(release): prepare v1.1.0 changelog and app version"
 git push -u origin release/v1.1.0
 ```
-→ Chạy QA toàn bộ module → Mở **Pull Request `release/v1.1.0` → `main`** → Chờ CI PostgreSQL & Cloudflare Pages xanh → Merge `main` (Render tự deploy) → Gắn tag `v1.1.0` và tạo GitHub Release.
+→ UAT tổng thể trên `release/v1.1.0` → Mở **Pull Request `release/v1.1.0` → `main`** (điền đủ **What's New gửi Cửa hàng** + **Chi tiết kỹ thuật** từ [`CHANGELOG.md`](CHANGELOG.md)) → Chờ CI xanh → **`Create a merge commit`** vào `main` (Render + Cloudflare tự deploy) → Gắn tag bất biến **`v1.1.0`** & tạo **GitHub Release `v1.1.0`**.
+
+> **Cách quay lại đúng bản build Đợt Release 1 / 2 / 3 sau này:** Nhánh `release/vX.Y.Z` chỉ dùng tạm để đóng băng lúc build/UAT; mốc cố định bất biến để quay lại bất kỳ đợt nào chính là **Git Tag `v1.0.0`, `v1.1.0`, `v1.2.0`...**:
+> ```bash
+> git fetch --tags origin
+> git checkout v1.0.0   # quay về đúng bản Release Đợt 1 (hoặc v1.1.0 cho Đợt 2...)
+> ```
 
 ### D. Vá lỗi khẩn cấp trên Production (`hotfix`)
 ```bash
