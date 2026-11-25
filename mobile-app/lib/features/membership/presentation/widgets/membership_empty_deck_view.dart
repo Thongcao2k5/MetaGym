@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
@@ -20,6 +24,7 @@ class _EmptyWalletTierSpec {
     required this.inBodyText,
     required this.pointsText,
     required this.cardAsset,
+    required this.backCardAsset,
   });
 
   final MembershipTierKind kind;
@@ -35,6 +40,7 @@ class _EmptyWalletTierSpec {
   final String inBodyText;
   final String pointsText;
   final String cardAsset;
+  final String backCardAsset;
 }
 
 const List<_EmptyWalletTierSpec> _kEmptyWalletTiers = [
@@ -52,6 +58,7 @@ const List<_EmptyWalletTierSpec> _kEmptyWalletTiers = [
     inBodyText: 'Trả phí lẻ',
     pointsText: '×1.0 điểm',
     cardAsset: 'assets/images/membership/card_bronze.jpg',
+    backCardAsset: 'assets/images/membership/card_bronze_horizontal.jpg',
   ),
   _EmptyWalletTierSpec(
     kind: MembershipTierKind.silver,
@@ -67,10 +74,11 @@ const List<_EmptyWalletTierSpec> _kEmptyWalletTiers = [
     inBodyText: '1 lần miễn phí',
     pointsText: '×1.2 điểm',
     cardAsset: 'assets/images/membership/card_silver.jpg',
+    backCardAsset: 'assets/images/membership/card_silver_horizontal.jpg',
   ),
   _EmptyWalletTierSpec(
     kind: MembershipTierKind.gold,
-    tabLabel: 'Vàng ★',
+    tabLabel: 'Vàng',
     shortName: 'Hạng Vàng',
     defaultTitle: 'Hạng Vàng — Pro 6 Tháng',
     badgeLabel: 'Phổ biến nhất',
@@ -82,6 +90,7 @@ const List<_EmptyWalletTierSpec> _kEmptyWalletTiers = [
     inBodyText: 'Hàng tháng',
     pointsText: '×1.5 điểm',
     cardAsset: 'assets/images/membership/card_gold.jpg',
+    backCardAsset: 'assets/images/membership/card_gold_horizontal.jpg',
   ),
   _EmptyWalletTierSpec(
     kind: MembershipTierKind.diamond,
@@ -97,11 +106,12 @@ const List<_EmptyWalletTierSpec> _kEmptyWalletTiers = [
     inBodyText: 'Không giới hạn',
     pointsText: '×2.0 điểm',
     cardAsset: 'assets/images/membership/card_diamond.jpg',
+    backCardAsset: 'assets/images/membership/card_diamond_horizontal.jpg',
   ),
 ];
 
 /// Màn hình 1.2b Gói tập (Chưa đăng ký):
-/// 4 tab chọn hạng + Fan Deck 4 thẻ đứng full-bleed + thẻ quyền lợi Warm Smoked Glass
+/// 4 tab chọn hạng + Fan Deck 4 thẻ đứng lật 3D mặt trước/sau + thẻ quyền lợi Warm Smoked Glass
 /// + thanh Bottom CTA Dock cố định theo hạng thẻ đang chọn.
 class MembershipEmptyDeckView extends StatefulWidget {
   const MembershipEmptyDeckView({
@@ -126,12 +136,59 @@ class MembershipEmptyDeckView extends StatefulWidget {
 
 class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
   int _activeIndex = 2; // Mặc định chọn Hạng Vàng ★ giống bản preview 1.2b
+  bool _centerFlipped = false;
+  double _dragAccumX = 0.0;
+  bool _isDragging = false;
 
   void _step(int delta) {
+    if (!MetaGymTheme.isFlutterTestEnvironment) {
+      HapticFeedback.lightImpact();
+    }
     setState(() {
       _activeIndex = (_activeIndex + delta) % _kEmptyWalletTiers.length;
       if (_activeIndex < 0) _activeIndex += _kEmptyWalletTiers.length;
+      _centerFlipped = false;
+      _dragAccumX = 0.0;
+      _isDragging = false;
     });
+  }
+
+  void _selectTier(int index, {bool toggleFlipIfActive = false}) {
+    if (!MetaGymTheme.isFlutterTestEnvironment) {
+      HapticFeedback.lightImpact();
+    }
+    setState(() {
+      if (index == _activeIndex) {
+        if (toggleFlipIfActive) {
+          _centerFlipped = !_centerFlipped;
+        }
+      } else {
+        _activeIndex = index;
+        _centerFlipped = false;
+      }
+      _dragAccumX = 0.0;
+      _isDragging = false;
+    });
+  }
+
+  Future<void> _openVipPromotionsSheet() async {
+    if (!MetaGymTheme.isFlutterTestEnvironment) {
+      HapticFeedback.lightImpact();
+    }
+    final selectedIndex = await showModalBottomSheet<int>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0xA607080B),
+      builder: (sheetContext) => _VipPromotionsSheet(
+        activeIndex: _activeIndex,
+        plans: widget.plans,
+        resolvePlan: _resolvePlanForTier,
+      ),
+    );
+    if (!mounted || selectedIndex == null) return;
+    _selectTier(selectedIndex);
   }
 
   MembershipPlan? _resolvePlanForTier(_EmptyWalletTierSpec tier) {
@@ -167,10 +224,11 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
         MetaGymTheme.isFlutterTestEnvironment ||
         MediaQuery.disableAnimationsOf(context);
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final cardW = (screenWidth * 0.51).clamp(174.0, 224.0);
-    final cardH = (cardW * 1.44).clamp(250.0, 322.0);
-    final sideOffset = (screenWidth * 0.345).clamp(118.0, 165.0);
-    final stageH = cardH + 22.0;
+    final cardW = (screenWidth * 0.37).clamp(134.0, 168.0);
+    final cardH = (cardW * (1426 / 900)).clamp(212.0, 266.0);
+    final sideOffset = (screenWidth * 0.27).clamp(92.0, 130.0);
+    final stageH = cardH + 16.0;
+    final dragOffset = (_dragAccumX * 0.28).clamp(-38.0, 38.0);
 
     return Column(
       children: [
@@ -180,15 +238,93 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
             backgroundColor: const Color(0xFF2B2622),
             onRefresh: widget.onRefresh,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 24),
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 ...widget.topBanners,
 
-                // 4 Tab chọn nhanh hạng thẻ (Đồng | Bạc | Vàng ★ | Kim Cương)
+                // Banner Meta Kong VIP đồng bộ preview 1.2b
+                MetaGymGlassCard(
+                  key: const Key('empty-membership-promo-strip'),
+                  solid: false,
+                  margin: const EdgeInsets.only(bottom: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 7,
+                  ),
+                  borderColor: const Color(0x5CF5B041),
+                  onTap: _openVipPromotionsSheet,
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/mascot/meta_kong_membership_promo.webp',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: Color(0xFFF5B041),
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Mở khóa đặc quyền VIP',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: MetaGymTheme.textPrimary,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 1),
+                            Text(
+                              'Chọn thẻ kim loại NFC & nhận ưu đãi Coach 1:1',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: MetaGymTheme.textSecondary,
+                                fontSize: 11.5,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: MetaGymTheme.brandOrange.withValues(
+                            alpha: 0.16,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Ưu đãi ›',
+                          style: TextStyle(
+                            color: MetaGymTheme.brandOrange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 4 Tab chọn nhanh hạng thẻ (Đồng | Bạc | Vàng | Kim Cương)
                 Container(
-                  padding: const EdgeInsets.all(4),
-                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(3),
+                  margin: const EdgeInsets.only(bottom: 7),
                   decoration: BoxDecoration(
                     color: const Color(0x991C1917),
                     borderRadius: BorderRadius.circular(14),
@@ -203,21 +339,47 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                         Expanded(
                           child: _WalletTabButton(
                             label: _kEmptyWalletTiers[i].tabLabel,
+                            showStar:
+                                _kEmptyWalletTiers[i].kind ==
+                                MembershipTierKind.gold,
                             active: i == _activeIndex,
-                            onTap: () => setState(() => _activeIndex = i),
+                            onTap: () => _selectTier(i),
                           ),
                         ),
                     ],
                   ),
                 ),
 
-                // 4 Thẻ Đứng Trượt Ngang Full-Bleed (giống hệt animation Trang chủ)
+                // 4 Thẻ Ngang CR80 Trượt Ngang Full-Bleed (đồng bộ Trang chủ) + Lật 3D
                 GestureDetector(
                   behavior: HitTestBehavior.translucent,
+                  onHorizontalDragStart: (_) {
+                    setState(() {
+                      _isDragging = true;
+                      _dragAccumX = 0.0;
+                    });
+                  },
+                  onHorizontalDragUpdate: (details) {
+                    setState(() => _dragAccumX += details.delta.dx);
+                  },
                   onHorizontalDragEnd: (details) {
                     final vx = details.primaryVelocity ?? 0;
-                    if (vx < -180) _step(1);
-                    if (vx > 180) _step(-1);
+                    if (vx < -140 || _dragAccumX < -44) {
+                      _step(1);
+                    } else if (vx > 140 || _dragAccumX > 44) {
+                      _step(-1);
+                    } else {
+                      setState(() {
+                        _isDragging = false;
+                        _dragAccumX = 0.0;
+                      });
+                    }
+                  },
+                  onHorizontalDragCancel: () {
+                    setState(() {
+                      _isDragging = false;
+                      _dragAccumX = 0.0;
+                    });
                   },
                   child: SizedBox(
                     height: stageH,
@@ -230,33 +392,36 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                       child: ClipRect(
                         child: _EmptyFanStage(
                           activeIndex: _activeIndex,
+                          centerFlipped: _centerFlipped,
                           screenWidth: screenWidth,
                           cardW: cardW,
                           cardH: cardH,
                           sideOffset: sideOffset,
+                          dragOffset: dragOffset,
+                          isDragging: _isDragging,
                           disableAnim: disableAnim,
-                          onSelect: (index) =>
-                              setState(() => _activeIndex = index),
+                          onSelect: (idx) =>
+                              _selectTier(idx, toggleFlipIfActive: true),
                         ),
                       ),
                     ),
                   ),
                 ),
 
-                // Pagination dots
+                // Pagination dots + nút lật mặt trước/sau
                 Padding(
-                  padding: const EdgeInsets.only(top: 6, bottom: 12),
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       for (var i = 0; i < _kEmptyWalletTiers.length; i++)
                         GestureDetector(
-                          onTap: () => setState(() => _activeIndex = i),
+                          onTap: () => _selectTier(i),
                           behavior: HitTestBehavior.opaque,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 4,
-                              vertical: 4,
+                              vertical: 6,
                             ),
                             child: AnimatedContainer(
                               duration: disableAnim
@@ -273,6 +438,70 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                             ),
                           ),
                         ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        key: const Key('empty-membership-flip-btn'),
+                        onTap: () {
+                          if (!MetaGymTheme.isFlutterTestEnvironment) {
+                            HapticFeedback.lightImpact();
+                          }
+                          setState(() => _centerFlipped = !_centerFlipped);
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 2,
+                            vertical: 4,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _centerFlipped
+                                  ? MetaGymTheme.brandOrange.withValues(
+                                      alpha: 0.18,
+                                    )
+                                  : const Color(0x88181513),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: _centerFlipped
+                                    ? MetaGymTheme.brandOrange.withValues(
+                                        alpha: 0.7,
+                                      )
+                                    : const Color(0x45FFF6EA),
+                                width: 0.9,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.flip_rounded,
+                                  size: 12.5,
+                                  color: _centerFlipped
+                                      ? MetaGymTheme.brandOrange
+                                      : MetaGymTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _centerFlipped
+                                      ? 'Mặt sau · Lật'
+                                      : 'Lật mặt sau',
+                                  style: TextStyle(
+                                    color: _centerFlipped
+                                        ? MetaGymTheme.brandOrange
+                                        : MetaGymTheme.textSecondary,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -280,7 +509,7 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                 // Thẻ chi tiết quyền lợi hạng thẻ đang chọn (Warm Smoked Glass)
                 MetaGymGlassCard(
                   solid: false,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(12),
                   child: AnimatedSwitcher(
                     duration: disableAnim
                         ? Duration.zero
@@ -367,25 +596,25 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                       const Divider(height: 1, color: Color(0x28FFF6EA)),
                       const SizedBox(height: 10),
                       const _EmptyPerkRow(
-                        label: '✓ Quẹt thẻ kim loại NFC & QR Check-in',
+                        label: 'Quẹt thẻ kim loại NFC & QR Check-in',
                         value: 'Full giờ',
                         valueColor: MetaGymTheme.progressGreen,
                       ),
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 6),
                       _EmptyPerkRow(
-                        label: '✓ Giảm trực tiếp phí Gói Coach 1:1',
+                        label: 'Giảm trực tiếp phí Gói Coach 1:1',
                         value: spec.coachDiscount,
                         valueColor: MetaGymTheme.brandOrange,
                       ),
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 6),
                       _EmptyPerkRow(
-                        label: '✓ Đo chỉ số cơ thể InBody',
+                        label: 'Đo chỉ số cơ thể InBody',
                         value: spec.inBodyText,
                         valueColor: MetaGymTheme.textPrimary,
                       ),
-                      const SizedBox(height: 7),
+                      const SizedBox(height: 6),
                       _EmptyPerkRow(
-                        label: '✓ Hệ số tích điểm Meta Points',
+                        label: 'Hệ số tích điểm Meta Points',
                         value: spec.pointsText,
                         valueColor: MetaGymTheme.textPrimary,
                       ),
@@ -446,35 +675,70 @@ class _WalletTabButton extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.showStar = false,
   });
 
   final String label;
   final bool active;
   final VoidCallback onTap;
+  final bool showStar;
 
   @override
   Widget build(BuildContext context) {
+    final textColor = active
+        ? MetaGymTheme.textPrimary
+        : MetaGymTheme.textSecondary;
+    final starColor = showStar
+        ? const Color(0xFFF5B041)
+        : textColor;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        height: 36,
+        height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? MetaGymTheme.brandOrange : Colors.transparent,
+          color: active ? const Color(0x28FF5E36) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
+          border: active
+              ? Border.all(
+                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.78),
+                  width: 1.2,
+                )
+              : null,
         ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: active ? Colors.white : MetaGymTheme.textSecondary,
-            fontSize: 12,
-            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-          ),
-        ),
+        child: showStar
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 12,
+                        fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.star_rounded, size: 12, color: starColor),
+                ],
+              )
+            : Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 12,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
       ),
     );
   }
@@ -483,19 +747,25 @@ class _WalletTabButton extends StatelessWidget {
 class _EmptyFanStage extends StatelessWidget {
   const _EmptyFanStage({
     required this.activeIndex,
+    required this.centerFlipped,
     required this.screenWidth,
     required this.cardW,
     required this.cardH,
     required this.sideOffset,
+    required this.dragOffset,
+    required this.isDragging,
     required this.disableAnim,
     required this.onSelect,
   });
 
   final int activeIndex;
+  final bool centerFlipped;
   final double screenWidth;
   final double cardW;
   final double cardH;
   final double sideOffset;
+  final double dragOffset;
+  final bool isDragging;
   final bool disableAnim;
   final ValueChanged<int> onSelect;
 
@@ -507,6 +777,16 @@ class _EmptyFanStage extends StatelessWidget {
     if (diff == len - 1) return -1; // Left
     return 2; // Back
   }
+
+  Widget _cardErrorFallback() => Container(
+    color: const Color(0xFF1F232C),
+    alignment: Alignment.center,
+    child: const Icon(
+      Icons.credit_card_rounded,
+      color: MetaGymTheme.textSecondary,
+      size: 38,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -540,6 +820,39 @@ class _EmptyFanStage extends StatelessWidget {
     );
   }
 
+  Widget _buildCardFrame({
+    required String assetPath,
+    required bool isCenter,
+    int quarterTurns = 0,
+    double extraShadow = 0.0,
+  }) => Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(
+        color: isCenter ? const Color(0x70FFE2BE) : const Color(0x2EFFFFFF),
+        width: isCenter ? 1.2 : 0.9,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isCenter ? 0.56 : 0.30),
+          blurRadius: (isCenter ? 24 : 12) + extraShadow * 10,
+          offset: Offset(0, 10 + extraShadow * 6),
+        ),
+      ],
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: RotatedBox(
+      quarterTurns: quarterTurns,
+      child: Image.asset(
+        assetPath,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, _, _) => _cardErrorFallback(),
+      ),
+    ),
+  );
+
   Widget _buildCard({
     required int index,
     required int pos,
@@ -547,16 +860,108 @@ class _EmptyFanStage extends StatelessWidget {
     required Duration duration,
   }) {
     final (dx, dy, angleDeg, scale, opacity) = switch (pos) {
-      0 => (0.0, 4.0, 0.0, 1.0, 1.0),
-      -1 => (-sideOffset, 18.0, -7.5, 0.86, 0.90),
-      1 => (sideOffset, 18.0, 7.5, 0.86, 0.90),
-      _ => (0.0, 26.0, 0.0, 0.76, 0.35),
+      0 => (dragOffset, 4.0, 0.0, 1.0, 1.0),
+      -1 => (
+        -sideOffset + dragOffset * 0.35,
+        18.0,
+        -7.5,
+        0.86,
+        centerFlipped ? 0.25 : 0.88,
+      ),
+      1 => (
+        sideOffset + dragOffset * 0.35,
+        18.0,
+        7.5,
+        0.86,
+        centerFlipped ? 0.25 : 0.88,
+      ),
+      _ => (0.0, 26.0, 0.0, 0.76, centerFlipped ? 0.15 : 0.32),
     };
+
+    final spec = _kEmptyWalletTiers[index];
+    final frontCard = _buildCardFrame(
+      assetPath: spec.cardAsset,
+      isCenter: pos == 0,
+    );
+
+    final faceContent = pos == 0
+        ? TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: centerFlipped ? math.pi : 0.0),
+            duration: disableAnim
+                ? Duration.zero
+                : const Duration(milliseconds: 560),
+            curve: Curves.easeInOutCubic,
+            builder: (context, flipAngle, _) {
+              final showBack = flipAngle > math.pi / 2;
+              final edgeSin = math.sin(flipAngle).abs();
+              final liftScale = 1.0 + edgeSin * 0.03;
+              final face = showBack
+                  ? Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.rotationY(math.pi),
+                      child: _buildCardFrame(
+                        assetPath: spec.backCardAsset,
+                        isCenter: true,
+                        quarterTurns: 1,
+                        extraShadow: edgeSin,
+                      ),
+                    )
+                  : _buildCardFrame(
+                      assetPath: spec.cardAsset,
+                      isCenter: true,
+                      extraShadow: edgeSin,
+                    );
+
+              return Transform.scale(
+                scale: liftScale,
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.00145)
+                    ..rotateY(flipAngle),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        face,
+                        if (edgeSin > 0.03)
+                          IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment(
+                                    -0.85 + math.sin(flipAngle) * 1.1,
+                                    -0.8,
+                                  ),
+                                  end: Alignment(
+                                    0.85 + math.sin(flipAngle) * 1.1,
+                                    0.8,
+                                  ),
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white.withValues(
+                                      alpha: (edgeSin * 0.24).clamp(0.0, 0.24),
+                                    ),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          )
+        : frontCard;
 
     return AnimatedPositioned(
       key: ValueKey<String>('empty-fan-card-$index'),
-      duration: duration,
-      curve: Curves.easeOutQuart,
+      duration: isDragging ? Duration.zero : duration,
+      curve: Curves.easeOutCubic,
       left: centerX - (cardW / 2) + dx,
       top: dy,
       width: cardW,
@@ -568,46 +973,13 @@ class _EmptyFanStage extends StatelessWidget {
           opacity: opacity,
           child: AnimatedRotation(
             duration: duration,
-            curve: Curves.easeOutQuart,
+            curve: Curves.easeOutCubic,
             turns: angleDeg / 360.0,
             child: AnimatedScale(
               duration: duration,
-              curve: Curves.easeOutQuart,
+              curve: Curves.easeOutCubic,
               scale: scale,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: pos == 0
-                        ? const Color(0x66FFE2BE)
-                        : const Color(0x2EFFFFFF),
-                    width: pos == 0 ? 1.2 : 0.9,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: pos == 0 ? 0.55 : 0.30,
-                      ),
-                      blurRadius: pos == 0 ? 24 : 12,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  _kEmptyWalletTiers[index].cardAsset,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
-                    color: const Color(0xFF1F232C),
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.credit_card_rounded,
-                      color: MetaGymTheme.textSecondary,
-                      size: 38,
-                    ),
-                  ),
-                ),
-              ),
+              child: faceContent,
             ),
           ),
         ),
@@ -631,6 +1003,12 @@ class _EmptyPerkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        const Icon(
+          Icons.check_rounded,
+          size: 14,
+          color: MetaGymTheme.progressGreen,
+        ),
+        const SizedBox(width: 6),
         Expanded(
           child: Text(
             label,
@@ -638,7 +1016,7 @@ class _EmptyPerkRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFFE0D9CE),
-              fontSize: 12.2,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -648,7 +1026,7 @@ class _EmptyPerkRow extends StatelessWidget {
           value,
           style: TextStyle(
             color: valueColor,
-            fontSize: 12.2,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             fontFeatures: MetaGymTheme.tabularFigures,
           ),
@@ -656,4 +1034,525 @@ class _EmptyPerkRow extends StatelessWidget {
       ],
     );
   }
+}
+
+class _VipPromotionsSheet extends StatelessWidget {
+  const _VipPromotionsSheet({
+    required this.activeIndex,
+    required this.plans,
+    required this.resolvePlan,
+  });
+
+  final int activeIndex;
+  final List<MembershipPlan> plans;
+  final MembershipPlan? Function(_EmptyWalletTierSpec tier) resolvePlan;
+
+  static const _highlightedIndices = [3, 2, 1]; // Kim Cương, Vàng, Bạc
+
+  Color _tierAccent(MembershipTierKind kind) => switch (kind) {
+    MembershipTierKind.diamond => MetaGymTheme.reflectionBlue,
+    MembershipTierKind.gold => const Color(0xFFF5B041),
+    MembershipTierKind.silver => const Color(0xFFC4CCDA),
+    MembershipTierKind.bronze => const Color(0xFFD29162),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final disableAnimations =
+        MetaGymTheme.isFlutterTestEnvironment ||
+        MediaQuery.disableAnimationsOf(context);
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.86;
+    final featuredIdx = activeIndex == 2 ? 3 : 2;
+
+    final content = Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: BoxDecoration(
+        color: const Color(0xF2171A21),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        border: Border.all(color: const Color(0x38FFF6EA), width: 1.0),
+      ),
+      padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + bottomInset),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0x45FFF6EA),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const RadialGradient(
+                      colors: [Color(0x33F5B041), Color(0x14F5B041)],
+                    ),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: const Color(0x55F5B041)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Image.asset(
+                    'assets/images/mascot/meta_kong_membership_promo.webp',
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.workspace_premium_rounded,
+                      color: Color(0xFFF5B041),
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Đặc quyền & Ưu đãi hội viên VIP',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Kích hoạt tự động theo hạng thẻ kim loại NFC',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Color(0xFFB8B0A8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: IconButton(
+                    tooltip: 'Đóng',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0x8824201D),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0x45FFF6EA),
+                          width: 0.9,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: MetaGymTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            for (final idx in _highlightedIndices) ...[
+              _buildPromoTierCard(
+                context,
+                idx,
+                isFeatured: idx == featuredIdx,
+              ),
+              const SizedBox(height: 10),
+            ],
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(top: 1.5),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      size: 14,
+                      color: MetaGymTheme.textSecondary,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Ưu đãi Coach 1:1 và hệ số tích điểm Meta Points tự động kích hoạt sau khi đăng ký thành công.',
+                      style: TextStyle(
+                        color: MetaGymTheme.textSecondary,
+                        fontSize: 11.5,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (disableAnimations) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        child: content,
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: MetaGymTheme.overlayGlassBlur,
+          sigmaY: MetaGymTheme.overlayGlassBlur,
+        ),
+        child: content,
+      ),
+    );
+  }
+
+  Widget _buildPromoTierCard(
+    BuildContext context,
+    int idx, {
+    required bool isFeatured,
+  }) {
+    final spec = _kEmptyWalletTiers[idx];
+    final plan = resolvePlan(spec);
+    final title = plan?.name ?? spec.defaultTitle;
+    final price = formatMembershipMoney(plan?.price ?? spec.defaultPrice);
+    final isCurrentChoice = idx == activeIndex;
+    final accent = _tierAccent(spec.kind);
+    final borderColor = isCurrentChoice
+        ? MetaGymTheme.progressGreen.withValues(alpha: 0.65)
+        : isFeatured
+        ? accent.withValues(alpha: 0.58)
+        : const Color(0x5CA79D92);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.of(context).pop(idx),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                accent.withValues(alpha: isFeatured ? 0.14 : 0.08),
+                const Color(0xD6231F1C),
+              ],
+            ),
+            border: Border.all(
+              color: borderColor,
+              width: isCurrentChoice || isFeatured ? 1.2 : 1.0,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Row 1: Mini CR80 thumbnail + Title & Price + Tier badge
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 54,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: accent.withValues(alpha: 0.58),
+                        width: 0.9,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x66000000),
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      spec.backCardAsset,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => ColoredBox(
+                        color: accent.withValues(alpha: 0.25),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: price,
+                                style: const TextStyle(
+                                  color: MetaGymTheme.brandOrange,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' ${spec.periodLabel}',
+                                style: const TextStyle(
+                                  color: MetaGymTheme.textSecondary,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: spec.badgeColor.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: spec.badgeColor.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: Text(
+                      spec.badgeLabel,
+                      style: TextStyle(
+                        color: spec.badgeColor,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Row 2: Scannable Perk Chips
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _PromoPerkChip(
+                    icon: Icons.fitness_center_rounded,
+                    label: 'Coach 1:1 ${spec.coachDiscount}',
+                    color: MetaGymTheme.brandOrange,
+                  ),
+                  _PromoPerkChip(
+                    icon: Icons.monitor_heart_outlined,
+                    label: 'InBody: ${spec.inBodyText}',
+                    color: MetaGymTheme.progressGreen,
+                  ),
+                  _PromoPerkChip(
+                    icon: Icons.local_fire_department_rounded,
+                    label: 'Tích điểm ${spec.pointsText}',
+                    color: const Color(0xFFF5B041),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Divider(height: 1, color: Color(0x26A79D92)),
+              const SizedBox(height: 9),
+
+              // Row 3: Bonus highlight + Single-primary CTA
+              Row(
+                children: [
+                  const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 14,
+                    color: Color(0xFFF5B041),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      spec.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFE0D9CE),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildSelectTierCta(
+                    context,
+                    idx: idx,
+                    kind: spec.kind,
+                    isCurrentChoice: isCurrentChoice,
+                    isFeatured: isFeatured,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectTierCta(
+    BuildContext context, {
+    required int idx,
+    required MembershipTierKind kind,
+    required bool isCurrentChoice,
+    required bool isFeatured,
+  }) {
+    final key = ValueKey<String>('promo-select-tier-${kind.name}');
+    if (isCurrentChoice) {
+      return OutlinedButton(
+        key: key,
+        onPressed: () => Navigator.of(context).pop(idx),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: MetaGymTheme.progressGreen.withValues(alpha: 0.16),
+          foregroundColor: MetaGymTheme.progressGreen,
+          side: BorderSide(
+            color: MetaGymTheme.progressGreen.withValues(alpha: 0.55),
+          ),
+          minimumSize: const Size(0, 40),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11),
+          ),
+        ),
+        child: const Text(
+          '✓ Đang chọn',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        ),
+      );
+    }
+
+    if (isFeatured) {
+      return FilledButton(
+        key: key,
+        onPressed: () => Navigator.of(context).pop(idx),
+        style: FilledButton.styleFrom(
+          backgroundColor: MetaGymTheme.brandOrange,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(0, 40),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          padding: const EdgeInsets.symmetric(horizontal: 13),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11),
+          ),
+        ),
+        child: const Text(
+          'Chọn hạng →',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+        ),
+      );
+    }
+
+    return OutlinedButton(
+      key: key,
+      onPressed: () => Navigator.of(context).pop(idx),
+      style: OutlinedButton.styleFrom(
+        backgroundColor: const Color(0x1AFFFFFF),
+        foregroundColor: MetaGymTheme.textPrimary,
+        side: const BorderSide(color: Color(0x4DFFF6EA)),
+        minimumSize: const Size(0, 40),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(11),
+        ),
+      ),
+      child: const Text(
+        'Chọn hạng',
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _PromoPerkChip extends StatelessWidget {
+  const _PromoPerkChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+    decoration: BoxDecoration(
+      color: const Color(0x901C1815),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: color.withValues(alpha: 0.34), width: 0.8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12.5, color: color),
+        const SizedBox(width: 4.5),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            fontFeatures: MetaGymTheme.tabularFigures,
+          ),
+        ),
+      ],
+    ),
+  );
 }

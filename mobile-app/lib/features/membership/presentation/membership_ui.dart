@@ -66,7 +66,7 @@ class MembershipTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = onBack != null || Navigator.of(context).canPop();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Row(
         children: [
           if (canPop) ...[
@@ -191,7 +191,7 @@ class MembershipSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 7),
       child: Row(
         children: [
           if (svgAsset != null) ...[

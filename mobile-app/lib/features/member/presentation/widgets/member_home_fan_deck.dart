@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
@@ -11,7 +12,8 @@ class _FanTierItem {
     required this.title,
     required this.price,
     required this.subtitle,
-    required this.imageAsset,
+    required this.frontAsset,
+    required this.backAsset,
     required this.accentColor,
   });
 
@@ -19,12 +21,13 @@ class _FanTierItem {
   final String title;
   final String price;
   final String subtitle;
-  final String imageAsset;
+  final String frontAsset;
+  final String backAsset;
   final Color accentColor;
 }
 
 /// Khu vực "Đặc quyền Hội viên" dạng bộ thẻ quạt 4 hạng (Đồng / Bạc / Vàng / Kim Cương)
-/// nổi trực tiếp trên nền trong suốt, thẻ lớn tràn khung và cụm thông tin + nút pill tinh gọn.
+/// sử dụng thẻ đứng chuẩn CR80, hỗ trợ vuốt ngang mượt và chạm thẻ giữa để lật 3D xem mặt sau.
 class MemberHomeFanDeck extends StatefulWidget {
   const MemberHomeFanDeck({required this.onOpenMembership, super.key});
 
@@ -37,46 +40,63 @@ class MemberHomeFanDeck extends StatefulWidget {
 class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
   static const _tiers = <_FanTierItem>[
     _FanTierItem(
-      badge: '★ Hạng Đồng · 1 Tháng',
+      badge: 'Hạng Đồng · 1 Tháng',
       title: 'Thẻ Đồng — Starter',
       price: '890.000đ / tháng',
       subtitle: 'Quẹt thẻ NFC vào phòng tập · Tủ khóa cá nhân',
-      imageAsset: 'assets/images/membership/card_bronze.jpg',
+      frontAsset: 'assets/images/membership/card_bronze.jpg',
+      backAsset: 'assets/images/membership/card_bronze_horizontal.jpg',
       accentColor: Color(0xFFCD8B5B),
     ),
     _FanTierItem(
-      badge: '★ Hạng Bạc · 3 Tháng',
+      badge: 'Hạng Bạc · 3 Tháng',
       title: 'Thẻ Bạc — Plus',
       price: '2.490.000đ / 3 tháng',
-      subtitle: 'Quẹt thẻ NFC · Tặng 1 lần InBody · Giảm 10% PT',
-      imageAsset: 'assets/images/membership/card_silver.jpg',
+      subtitle: 'Quẹt thẻ NFC · Tặng 1 lần InBody · Giảm 3% PT',
+      frontAsset: 'assets/images/membership/card_silver.jpg',
+      backAsset: 'assets/images/membership/card_silver_horizontal.jpg',
       accentColor: Color(0xFFA9C7E8),
     ),
     _FanTierItem(
-      badge: '★ Phổ biến nhất · 6 Tháng',
+      badge: 'Phổ biến nhất · 6 Tháng',
       title: 'Thẻ Vàng — Pro VIP',
       price: '4.490.000đ / 6 tháng',
       subtitle: 'Quẹt thẻ NFC · InBody hàng tháng · Tặng 2 buổi PT 1:1',
-      imageAsset: 'assets/images/membership/card_gold.jpg',
+      frontAsset: 'assets/images/membership/card_gold.jpg',
+      backAsset: 'assets/images/membership/card_gold_horizontal.jpg',
       accentColor: Color(0xFFF5B041),
     ),
     _FanTierItem(
-      badge: '★ Kim Cương · 12 Tháng',
+      badge: 'Kim Cương · 12 Tháng',
       title: 'Thẻ Kim Cương — Elite',
       price: '8.490.000đ / năm',
       subtitle: 'Thẻ kim loại VIP · InBody không giới hạn · Ưu tiên Coach',
-      imageAsset: 'assets/images/membership/card_diamond.jpg',
+      frontAsset: 'assets/images/membership/card_diamond.jpg',
+      backAsset: 'assets/images/membership/card_diamond_horizontal.jpg',
       accentColor: Color(0xFF70AEE8),
     ),
   ];
 
   int _activeIndex = 2; // Mặc định: Thẻ Vàng — Pro VIP
+  bool _centerFlipped = false;
+  double _dragAccumX = 0.0;
+  bool _isDragging = false;
 
-  void _selectIndex(int index) {
-    final normalized = (index + _tiers.length) % _tiers.length;
-    if (normalized != _activeIndex) {
-      setState(() => _activeIndex = normalized);
+  void _selectIndex(int index, {bool toggleIfActive = false}) {
+    if (!MetaGymTheme.isFlutterTestEnvironment) {
+      HapticFeedback.lightImpact();
     }
+    final normalized = (index + _tiers.length) % _tiers.length;
+    setState(() {
+      if (normalized == _activeIndex && toggleIfActive) {
+        _centerFlipped = !_centerFlipped;
+      } else if (normalized != _activeIndex) {
+        _activeIndex = normalized;
+        _centerFlipped = false;
+      }
+      _dragAccumX = 0.0;
+      _isDragging = false;
+    });
   }
 
   int _relativePosition(int index) {
@@ -153,15 +173,36 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
           ],
         ),
         const SizedBox(height: 10),
-        // Sân khấu thẻ quạt full-bleed tràn sát 2 mép màn hình như HTML preview
+        // Sân khấu thẻ quạt ngang CR80 full-bleed tràn sát 2 mép màn hình + lật 3D
         GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragStart: (_) {
+            setState(() {
+              _isDragging = true;
+              _dragAccumX = 0.0;
+            });
+          },
+          onHorizontalDragUpdate: (details) {
+            setState(() => _dragAccumX += details.delta.dx);
+          },
           onHorizontalDragEnd: (details) {
             final vx = details.primaryVelocity ?? 0;
-            if (vx < -180) {
+            if (vx < -140 || _dragAccumX < -44) {
               _selectIndex(_activeIndex + 1);
-            } else if (vx > 180) {
+            } else if (vx > 140 || _dragAccumX > 44) {
               _selectIndex(_activeIndex - 1);
+            } else {
+              setState(() {
+                _isDragging = false;
+                _dragAccumX = 0.0;
+              });
             }
+          },
+          onHorizontalDragCancel: () {
+            setState(() {
+              _isDragging = false;
+              _dragAccumX = 0.0;
+            });
           },
           child: Builder(
             builder: (context) {
@@ -170,6 +211,7 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
               final cardH = (cardW * 1.44).clamp(250.0, 322.0);
               final sideOffset = (screenW * 0.345).clamp(118.0, 165.0);
               final stageH = cardH + 22.0;
+              final dragOffset = (_dragAccumX * 0.28).clamp(-38.0, 38.0);
               return SizedBox(
                 height: stageH,
                 width: double.infinity,
@@ -190,6 +232,8 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
                             cardW: cardW,
                             cardH: cardH,
                             sideOffset: sideOffset,
+                            dragOffset: dragOffset,
+                            reducedMotion: reducedMotion,
                             duration: duration,
                           ),
                       ],
@@ -213,17 +257,31 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
                 child: Column(
                   key: ValueKey<int>(_activeIndex),
                   children: [
-                    Text(
-                      activeTier.badge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 13,
+                          color: MetaGymTheme.brandOrange,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            activeTier.badge,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: MetaGymTheme.brandOrange,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -345,6 +403,53 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
     );
   }
 
+  Widget _buildCardFrame({
+    required _FanTierItem tier,
+    required String assetPath,
+    required bool isCenter,
+    int quarterTurns = 0,
+    double extraShadow = 0.0,
+  }) => Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(
+        color: isCenter ? const Color(0x70FFE2BE) : const Color(0x2EFFFFFF),
+        width: isCenter ? 1.2 : 0.9,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isCenter ? 0.56 : 0.30),
+          blurRadius: (isCenter ? 24 : 12) + extraShadow * 10,
+          offset: Offset(0, 10 + extraShadow * 6),
+        ),
+      ],
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: RotatedBox(
+      quarterTurns: quarterTurns,
+      child: Image.asset(
+        assetPath,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, _, _) => Container(
+          color: MetaGymTheme.elevatedSurface,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            tier.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   Widget _buildFanCard({
     required int idx,
     required int pos,
@@ -352,72 +457,134 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
     required double cardW,
     required double cardH,
     required double sideOffset,
+    required double dragOffset,
+    required bool reducedMotion,
     required Duration duration,
   }) {
     final tier = _tiers[idx];
     final (dx, dy, angleDeg, scale, opacity) = switch (pos) {
-      0 => (0.0, 4.0, 0.0, 1.0, 1.0),
-      -1 => (-sideOffset, 18.0, -7.5, 0.86, 0.90),
-      1 => (sideOffset, 18.0, 7.5, 0.86, 0.90),
-      _ => (0.0, 26.0, 0.0, 0.76, 0.35),
+      0 => (dragOffset, 4.0, 0.0, 1.0, 1.0),
+      -1 => (
+        -sideOffset + dragOffset * 0.35,
+        18.0,
+        -7.5,
+        0.86,
+        _centerFlipped ? 0.25 : 0.88,
+      ),
+      1 => (
+        sideOffset + dragOffset * 0.35,
+        18.0,
+        7.5,
+        0.86,
+        _centerFlipped ? 0.25 : 0.88,
+      ),
+      _ => (0.0, 26.0, 0.0, 0.76, _centerFlipped ? 0.15 : 0.32),
     };
+
+    final frontCard = _buildCardFrame(
+      tier: tier,
+      assetPath: tier.frontAsset,
+      isCenter: pos == 0,
+    );
+
+    final faceContent = pos == 0
+        ? TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: _centerFlipped ? math.pi : 0.0),
+            duration: reducedMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 560),
+            curve: Curves.easeInOutCubic,
+            builder: (context, flipAngle, _) {
+              final showBack = flipAngle > math.pi / 2;
+              final edgeSin = math.sin(flipAngle).abs();
+              final liftScale = 1.0 + edgeSin * 0.03;
+              final face = showBack
+                  ? Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.rotationY(math.pi),
+                      child: _buildCardFrame(
+                        tier: tier,
+                        assetPath: tier.backAsset,
+                        isCenter: true,
+                        quarterTurns: 1,
+                        extraShadow: edgeSin,
+                      ),
+                    )
+                  : _buildCardFrame(
+                      tier: tier,
+                      assetPath: tier.frontAsset,
+                      isCenter: true,
+                      extraShadow: edgeSin,
+                    );
+
+              return Transform.scale(
+                scale: liftScale,
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.00145)
+                    ..rotateY(flipAngle),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        face,
+                        if (edgeSin > 0.03)
+                          IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment(
+                                    -0.85 + math.sin(flipAngle) * 1.1,
+                                    -0.8,
+                                  ),
+                                  end: Alignment(
+                                    0.85 + math.sin(flipAngle) * 1.1,
+                                    0.8,
+                                  ),
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white.withValues(
+                                      alpha: (edgeSin * 0.24).clamp(0.0, 0.24),
+                                    ),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          )
+        : frontCard;
 
     return AnimatedPositioned(
       key: ValueKey<String>('fan-card-$idx'),
-      duration: duration,
-      curve: Curves.easeOutQuart,
+      duration: _isDragging ? Duration.zero : duration,
+      curve: Curves.easeOutCubic,
       left: centerX - (cardW / 2) + dx,
       top: dy,
       width: cardW,
       height: cardH,
       child: GestureDetector(
-        onTap: () => _selectIndex(idx),
+        onTap: () => _selectIndex(idx, toggleIfActive: true),
         child: AnimatedOpacity(
           duration: duration,
           opacity: opacity,
-          child: Transform.rotate(
-            angle: angleDeg * math.pi / 180,
-            child: Transform.scale(
+          child: AnimatedRotation(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            turns: angleDeg / 360.0,
+            child: AnimatedScale(
+              duration: duration,
+              curve: Curves.easeOutCubic,
               scale: scale,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: pos == 0
-                        ? const Color(0x66FFE2BE)
-                        : const Color(0x2EFFFFFF),
-                    width: pos == 0 ? 1.2 : 0.9,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: pos == 0 ? 0.55 : 0.30,
-                      ),
-                      blurRadius: pos == 0 ? 24 : 12,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  tier.imageAsset,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
-                    color: MetaGymTheme.elevatedSurface,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      tier.title,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              child: faceContent,
             ),
           ),
         ),

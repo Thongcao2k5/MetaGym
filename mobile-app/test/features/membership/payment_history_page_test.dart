@@ -17,12 +17,67 @@ void main() {
 
     expect(find.text('Dịch vụ đang hoạt động'), findsOneWidget);
     expect(find.text('Gói tháng'), findsNWidgets(2));
+    expect(find.text('Chưa đăng ký'), findsOneWidget);
+    expect(find.text('PT 24 buổi'), findsNothing);
     await tester.tap(find.text('Gói tháng').last);
     await tester.pumpAndSettle();
     expect(find.text('Chi tiết giao dịch'), findsOneWidget);
     expect(find.text('MG-123'), findsOneWidget);
     expect(service.loadedPaymentId, 'payment-1');
   });
+
+  testWidgets(
+    'coach bento never infers Đang hiệu lực from invoice alone and renders real coach entitlement across 375x812 and 430x932',
+    (tester) async {
+      for (final size in const [Size(375, 812), Size(430, 932)]) {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final serviceWithInvoiceOnly = _PaymentFixture(includeCoachInvoice: true);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: PaymentHistoryPage(
+              key: ValueKey('invoice-only-$size'),
+              service: serviceWithInvoiceOnly,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Đang hiệu lực'), findsNothing);
+        expect(find.text('Xem lịch Coach'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: PaymentHistoryPage(
+              key: ValueKey('with-coach-$size'),
+              service: serviceWithInvoiceOnly,
+              coachEntitlementsLoader: () async => [
+                {
+                  'id': 'ent-1',
+                  'planName': 'Gói PT 24 buổi · Khung 90 phút',
+                  'status': 'ACTIVE',
+                  'relationshipStatus': 'ACTIVE',
+                  'remainingSessions': 14,
+                  'endsOn': '2030-01-05',
+                },
+              ],
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Còn 14 buổi'), findsOneWidget);
+        expect(find.text('Đang hiệu lực'), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
 
   testWidgets('shows empty state and retries a failed list request', (
     tester,
@@ -41,10 +96,15 @@ void main() {
 }
 
 class _PaymentFixture implements PaymentHistoryService {
-  _PaymentFixture({this.empty = false, this.failFirst = false});
+  _PaymentFixture({
+    this.empty = false,
+    this.failFirst = false,
+    this.includeCoachInvoice = false,
+  });
 
   final bool empty;
   final bool failFirst;
+  final bool includeCoachInvoice;
   int loadCount = 0;
   String? loadedPaymentId;
 
@@ -57,6 +117,15 @@ class _PaymentFixture implements PaymentHistoryService {
     transactionCode: 'MG-123',
   );
 
+  static const coachPayment = Payment(
+    id: 'payment-coach-1',
+    status: 'SUCCESS',
+    planName: 'Gói Coach 24 buổi',
+    amount: 8455000,
+    method: 'VNPAY',
+    transactionCode: 'MG-261120',
+  );
+
   @override
   Future<List<Payment>> getPayments() async {
     loadCount++;
@@ -66,7 +135,8 @@ class _PaymentFixture implements PaymentHistoryService {
         message: 'Không thể tải giao dịch.',
       );
     }
-    return empty ? [] : [payment];
+    if (empty) return [];
+    return includeCoachInvoice ? [coachPayment, payment] : [payment];
   }
 
   @override

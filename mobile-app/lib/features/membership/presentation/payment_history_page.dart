@@ -8,6 +8,8 @@ import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/membership/data/payment_history_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
@@ -18,9 +20,14 @@ enum _PaymentFilterTab { all, membership, coach }
 
 /// Màn hình 1.4 Thanh toán & Giao dịch đồng bộ Warm Smoked Glass.
 class PaymentHistoryPage extends StatefulWidget {
-  const PaymentHistoryPage({this.service, super.key});
+  const PaymentHistoryPage({
+    this.service,
+    this.coachEntitlementsLoader,
+    super.key,
+  });
 
   final PaymentHistoryService? service;
+  final Future<List<CoachRecord>> Function()? coachEntitlementsLoader;
 
   @override
   State<PaymentHistoryPage> createState() => _PaymentHistoryPageState();
@@ -30,6 +37,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   PaymentHistoryService? _service;
   List<Payment> _payments = const [];
   List<Membership> _memberships = const [];
+  List<CoachRecord> _coachEntitlements = const [];
   bool _loading = true;
   String? _error;
   _PaymentFilterTab _filter = _PaymentFilterTab.all;
@@ -44,6 +52,20 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     });
   }
 
+  Future<List<CoachRecord>> _loadCoachEntitlementsSafely() async {
+    try {
+      if (widget.coachEntitlementsLoader != null) {
+        return await widget.coachEntitlementsLoader!();
+      }
+      if (widget.service != null) return const [];
+      final client = optionalProvider<ApiClient>(context);
+      if (client == null) return const [];
+      return await CoachV2Api(client).list('/coach-entitlements');
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<void> _load() async {
     if (mounted) {
       setState(() {
@@ -54,10 +76,12 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     try {
       final payments = await _service!.getPayments();
       final memberships = await _service!.getCurrentMemberships();
+      final entitlements = await _loadCoachEntitlementsSafely();
       if (!mounted) return;
       setState(() {
         _payments = payments;
         _memberships = memberships;
+        _coachEntitlements = entitlements;
       });
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -86,6 +110,83 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     return lower.contains('coach') || lower.contains('pt ');
   }
 
+  bool _isEntitlementExpired(CoachRecord pack, DateTime now) {
+    final endsOnRaw = pack['endsOn'] as String?;
+    if (endsOnRaw == null || endsOnRaw.isEmpty) return false;
+    final parsed = DateTime.tryParse(endsOnRaw);
+    if (parsed == null) return false;
+    final today = DateTime(now.year, now.month, now.day);
+    final endDay = DateTime(parsed.year, parsed.month, parsed.day);
+    return endDay.isBefore(today);
+  }
+
+  ({String title, String pillLabel, Color pillColor}) _resolveCoachBentoState(
+    DateTime now,
+    Payment? latestCoachInvoice,
+  ) {
+    final activeEntitlement = _coachEntitlements.where((pack) {
+      final status = pack['status'] as String?;
+      final rel = pack['relationshipStatus'] as String?;
+      final remaining = (pack['remainingSessions'] as num?)?.toInt() ?? 0;
+      return status == 'ACTIVE' &&
+          rel != 'PAUSED' &&
+          !_isEntitlementExpired(pack, now) &&
+          remaining > 0;
+    }).firstOrNull;
+
+    if (activeEntitlement != null) {
+      final remaining =
+          (activeEntitlement['remainingSessions'] as num?)?.toInt() ?? 0;
+      final planName = (activeEntitlement['planName'] as String?)?.trim();
+      return (
+        title: (planName != null && planName.isNotEmpty)
+            ? planName
+            : (latestCoachInvoice?.planName ?? 'Gói Coach 1:1'),
+        pillLabel: 'Còn $remaining buổi',
+        pillColor: MetaGymTheme.brandOrange,
+      );
+    }
+
+    final latestEntitlement = _coachEntitlements.firstOrNull;
+    if (latestEntitlement != null) {
+      final planName = (latestEntitlement['planName'] as String?)?.trim();
+      final rel = latestEntitlement['relationshipStatus'] as String?;
+      final status = latestEntitlement['status'] as String?;
+      final remaining =
+          (latestEntitlement['remainingSessions'] as num?)?.toInt() ?? 0;
+      final (label, color) = rel == 'PAUSED'
+          ? ('Tạm ngưng', MetaGymTheme.warningAmber)
+          : _isEntitlementExpired(latestEntitlement, now)
+          ? ('Hết hạn', const Color(0xFFA8B1C2))
+          : (status == 'ACTIVE' && remaining <= 0)
+          ? ('Hết lượt', const Color(0xFFA8B1C2))
+          : status == 'QUEUED'
+          ? ('Chờ kích hoạt', MetaGymTheme.reflectionBlue)
+          : ('Đã kết thúc', const Color(0xFFA8B1C2));
+      return (
+        title: (planName != null && planName.isNotEmpty)
+            ? planName
+            : (latestCoachInvoice?.planName ?? 'Gói Coach 1:1'),
+        pillLabel: label,
+        pillColor: color,
+      );
+    }
+
+    if (latestCoachInvoice != null) {
+      return (
+        title: latestCoachInvoice.planName ?? 'Gói Coach 1:1',
+        pillLabel: 'Xem lịch Coach',
+        pillColor: const Color(0xFFA8B1C2),
+      );
+    }
+
+    return (
+      title: 'Chưa đăng ký',
+      pillLabel: 'Tìm Coach',
+      pillColor: const Color(0xFFA8B1C2),
+    );
+  }
+
   List<Payment> get _filteredPayments => switch (_filter) {
     _PaymentFilterTab.all => _payments,
     _PaymentFilterTab.membership =>
@@ -112,7 +213,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     final filtered = _filteredPayments;
     final primaryActive = active.firstOrNull;
     final remainingDays = primaryActive?.remainingDays(now);
-    final hasCoachInvoice = _payments.any(_isCoachPayment);
+    final latestCoachInvoice = _payments.where(_isCoachPayment).firstOrNull;
+    final coachBento = _resolveCoachBentoState(now, latestCoachInvoice);
 
     return Scaffold(
       backgroundColor: MetaGymTheme.scaffoldBackground,
@@ -148,7 +250,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 36),
+                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 36),
                             children: [
                               if (_error != null)
                                 MembershipErrorCard(
@@ -161,55 +263,50 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                 svgAsset: MetaGymIcons.membershipActiveSeal,
                                 title: 'Dịch vụ đang hoạt động',
                               ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _ActiveServiceBentoCard(
-                                      eyebrow: 'Thẻ Hội viên',
-                                      title: primaryActive != null
-                                          ? _membershipName(primaryActive)
-                                          : 'Chưa có gói',
-                                      pillLabel: remainingDays != null
-                                          ? 'Còn $remainingDays ngày'
-                                          : primaryActive != null
-                                          ? primaryActive.label
-                                          : 'Chưa kích hoạt',
-                                      pillColor: primaryActive != null
-                                          ? MetaGymTheme.progressGreen
-                                          : const Color(0xFFA8B1C2),
-                                      accentBorder: primaryActive != null,
-                                      onTap: () => _openRouteIfAvailable(
-                                        '/member/features/membership',
+                              IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: _ActiveServiceBentoCard(
+                                        eyebrow: 'Thẻ Hội viên',
+                                        title: primaryActive != null
+                                            ? _membershipName(primaryActive)
+                                            : 'Chưa có gói',
+                                        pillLabel: remainingDays != null
+                                            ? 'Còn $remainingDays ngày'
+                                            : primaryActive != null
+                                            ? primaryActive.label
+                                            : 'Chưa kích hoạt',
+                                        pillColor: primaryActive != null
+                                            ? MetaGymTheme.progressGreen
+                                            : const Color(0xFFA8B1C2),
+                                        accentBorder: primaryActive != null,
+                                        onTap: () => _openRouteIfAvailable(
+                                          '/member/features/membership',
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _ActiveServiceBentoCard(
-                                      eyebrow: 'Gói Coach 1:1',
-                                      title: hasCoachInvoice ||
-                                              primaryActive != null
-                                          ? 'PT 24 buổi'
-                                          : 'Chưa đăng ký',
-                                      pillLabel: hasCoachInvoice ||
-                                              primaryActive != null
-                                          ? 'Còn 14 buổi'
-                                          : 'Tìm Coach',
-                                      pillColor: hasCoachInvoice ||
-                                              primaryActive != null
-                                          ? MetaGymTheme.brandOrange
-                                          : const Color(0xFFA8B1C2),
-                                      accentBorder: false,
-                                      onTap: () => _openRouteIfAvailable(
-                                        '/member/features/sessions',
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _ActiveServiceBentoCard(
+                                        eyebrow: 'Gói Coach 1:1',
+                                        title: coachBento.title,
+                                        pillLabel: coachBento.pillLabel,
+                                        pillColor: coachBento.pillColor,
+                                        accentBorder: false,
+                                        onTap: () => _openRouteIfAvailable(
+                                          '/member/features/sessions',
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
 
                               if (scheduled.isNotEmpty) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 const MembershipSectionHeader(
                                   icon: Icons.schedule_rounded,
                                   iconColor: MetaGymTheme.reflectionBlue,
@@ -222,15 +319,15 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                   ),
                               ],
 
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 10),
 
                               // 2. BỘ LỌC 3 TAB (TẤT CẢ | THẺ HỘI VIÊN | GÓI COACH)
                               Container(
-                                padding: const EdgeInsets.all(4),
-                                margin: const EdgeInsets.only(bottom: 14),
+                                padding: const EdgeInsets.all(3),
+                                margin: const EdgeInsets.only(bottom: 10),
                                 decoration: BoxDecoration(
                                   color: const Color(0xB8211E1C),
-                                  borderRadius: BorderRadius.circular(15),
+                                  borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
                                     color: const Color(0x9A8C8176),
                                     width: 1.0,
@@ -373,7 +470,7 @@ class _ActiveServiceBentoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+          padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -387,21 +484,23 @@ class _ActiveServiceBentoCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 title,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: MetaGymTheme.textPrimary,
-                  fontSize: 14,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w800,
+                  height: 1.22,
                   letterSpacing: -0.2,
                 ),
               ),
-              const SizedBox(height: 8),
+              const Spacer(),
+              const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: pillColor.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(999),
@@ -445,7 +544,7 @@ class _FilterPillButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        height: 38,
+        height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? MetaGymTheme.brandOrange : Colors.transparent,
@@ -510,41 +609,42 @@ class _PaymentInvoiceCard extends StatelessWidget {
 
     return MetaGymGlassCard(
       solid: false,
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       child: MetaGymTap(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: const Color(0x70181513),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0x45FFF6EA)),
                 ),
                 alignment: Alignment.center,
-                child: MetaGymSvgIcon(_methodSvg(payment.method), size: 22),
+                child: MetaGymSvgIcon(_methodSvg(payment.method), size: 18),
               ),
-              const SizedBox(width: 11),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       payment.planName ?? 'Giao dịch',
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: MetaGymTheme.textPrimary,
                         fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                        fontSize: 13.5,
+                        height: 1.22,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       subLine.isNotEmpty
                           ? subLine
@@ -569,16 +669,16 @@ class _PaymentInvoiceCard extends StatelessWidget {
                       formatMembershipMoney(payment.amount!),
                       style: const TextStyle(
                         color: MetaGymTheme.textPrimary,
-                        fontSize: 14.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                         fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                      horizontal: 7,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
                       color: badgeColor.withValues(alpha: 0.16),

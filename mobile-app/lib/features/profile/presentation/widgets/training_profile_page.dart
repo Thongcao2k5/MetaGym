@@ -1,5 +1,3 @@
-import 'dart:ui' show FontFeature;
-
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
