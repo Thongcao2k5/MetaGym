@@ -1,8 +1,9 @@
 # Tự động migration khi deploy Render
 
 Workflow `.github/workflows/render-migrations.yml` kiểm tra thay đổi trong
-`database/`, `backend/` trên PR và push `main`. PR chỉ kiểm thử. Push `main`
-hoặc chạy thủ công trên `main` sẽ gọi deploy hook **sau khi kiểm tra thành công**.
+`database/`, `backend/` và `.github/workflows/render-migrations.yml` trên PR
+nhắm vào `develop`, `release/**`, `main` cũng như push `main`. PR chỉ kiểm thử.
+Push `main` hoặc chạy thủ công trên `main` sẽ gọi deploy hook **sau khi kiểm tra thành công**.
 Hook deploy đúng commit đã kiểm tra. Job thành công nghĩa là Render đã nhận
 yêu cầu, chưa khẳng định deploy/migration đã hoàn thành: kiểm tra Render Deploys.
 
@@ -73,13 +74,17 @@ hoặc khôi phục backup theo kế hoạch, không tự chạy toàn bộ `.do
 
 ## Migration mới
 
-1. Thêm cặp `NNNN_name.up.sql` / `NNNN_name.down.sql` sau số cuối hiện có.
-   Dùng SQL chạy trong transaction; nếu dùng wrapper thì đặt `BEGIN;` đầu file
-   và `COMMIT;` cuối file như các migration hiện tại. Không dùng transaction
-   control ở giữa hoặc `CREATE INDEX CONCURRENTLY` trong runner này.
-2. Cập nhật schema assertions nếu schema thay đổi, mở PR và kiểm tra Actions.
-3. Merge `main`: Actions kiểm tra rồi gọi Render; xem log `Applying ...` và
-   `Database ready` ở Render, sau đó kiểm tra health.
+1. Đồng bộ nhánh `develop` (`git pull origin develop`), tách nhánh mới theo chuẩn
+   (`feature/backend/...`, `fix/backend/...`) rồi thêm cặp `NNNN_name.up.sql` /
+   `NNNN_name.down.sql` sau số cuối hiện có. Dùng SQL chạy trong transaction;
+   nếu dùng wrapper thì đặt `BEGIN;` đầu file và `COMMIT;` cuối file như các
+   migration hiện tại. Không dùng transaction control ở giữa hoặc
+   `CREATE INDEX CONCURRENTLY` trong runner này.
+2. Cập nhật `database/tests/schema_assertions.sql` nếu schema thay đổi, mở PR vào
+   `develop` và kiểm tra Actions xanh trước khi merge.
+3. Khi phát hành qua `release/vX.Y.Z` (hoặc `hotfix/*`) và merge vào `main`:
+   Actions kiểm tra rồi gọi Render; xem log `Applying ...` và `Database ready` ở
+   Render, sau đó kiểm tra health.
 
 Supabase backend-only: khi tạo object mới, tiếp tục áp dụng chính sách thu hồi
 quyền public/anon/authenticated theo tài liệu triển khai và thiết lập default
@@ -92,7 +97,7 @@ Tài liệu chính thức: [Deploy hooks](https://render.com/docs/deploy-hooks),
 ## Hiểu luồng thực thi
 
 ```text
-Bạn thêm migration rồi push/merge main
+Bạn thêm migration qua PR vào develop → release/vX.Y.Z → merge main
   → GitHub Actions tạo PostgreSQL 17 tạm trên runner
   → npm ci, kiểm tra cú pháp và chạy bộ test sẵn có của backend
   → Chạy 0001 đến migration mới nhất trên database tạm
@@ -125,7 +130,7 @@ minh triển khai rồi bỏ khỏi thay đổi theo yêu cầu; giữ bộ test
 5. Ở Render → Settings → Deploy Hook, copy URL. Sang repo GitHub → Settings →
    Secrets and variables → Actions → New repository secret; nhập tên
    `RENDER_DEPLOY_HOOK_URL`, dán URL vào Secret và bấm Add secret.
-6. Push/merge thay đổi vào `main`. Trên GitHub mở Actions →
+6. Merge thay đổi qua PR vào `main` (từ `release/vX.Y.Z` hoặc `hotfix/*`). Trên GitHub mở Actions →
    **Database migrations and Render deploy** → chọn run mới nhất.
 7. Nếu cần chạy lại mà không sửa code: ở trang workflow chọn **Run workflow**,
    chọn nhánh `main`, rồi bấm nút chạy. Nút này xuất hiện sau khi workflow đã
@@ -133,9 +138,11 @@ minh triển khai rồi bỏ khỏi thay đổi theo yêu cầu; giữ bộ test
 8. Sau khi job **Request Render deploy** xanh, sang Render → Deploys → mở
    deployment mới. Chờ trạng thái Live và xem log migration/API.
 
-## Cách thêm migration tiếp theo (ví dụ 0032)
+## Cách thêm migration tiếp theo (ví dụ 0034)
 
-Tại gốc repo, tạo `database/migrations/0032_ten_thay_doi.up.sql`:
+Đồng bộ `develop` mới nhất (`git fetch origin --prune && git pull origin develop`)
+và tách nhánh theo `CONTRIBUTING.md` (ví dụ `feature/backend/ten-tinh-nang`).
+Tại gốc repo, tạo `database/migrations/0034_ten_thay_doi.up.sql`:
 
 ```sql
 BEGIN;
@@ -143,9 +150,9 @@ BEGIN;
 COMMIT;
 ```
 
-Tạo file rollback `0032_ten_thay_doi.down.sql` tương ứng. Ví dụ trên chỉ là khung,
-không tạo/commit file rỗng. Không chỉnh sửa file `0001`–`0031` đã được ghi lịch sử.
-Cập nhật schema assertions nếu thay đổi số bảng/constraint được kiểm tra.
+Tạo file rollback `0034_ten_thay_doi.down.sql` tương ứng. Ví dụ trên chỉ là khung,
+không tạo/commit file rỗng. Không chỉnh sửa file `0001`–`0033` đã được ghi lịch sử.
+Cập nhật `database/tests/schema_assertions.sql` nếu thay đổi số bảng/constraint được kiểm tra.
 
 Sau đó chạy trên database development của bạn:
 
@@ -156,19 +163,21 @@ npm run db:migrate --prefix backend
 psql -X $env:DATABASE_URL -v ON_ERROR_STOP=1 -f database/tests/schema_assertions.sql
 git diff --check
 git add database/migrations database/tests/schema_assertions.sql
-git commit -m "feat: add migration for the new feature"
-git push
+git commit -m "feat(backend): add 0034 migration for the new feature"
+git push -u origin feature/backend/ten-tinh-nang
 ```
 
-Nếu làm ở nhánh tính năng thì tạo PR vào `main`, đợi check xanh rồi merge.
-Actions tự chạy khi đường dẫn liên quan thay đổi; không cần bấm Run workflow
-mỗi lần. Thay đổi chỉ ở mobile/frontend không kích hoạt workflow backend này.
+Từ nhánh tính năng (`feature/backend/...`, `fix/backend/...`), mở PR vào **`develop`**,
+đợi check xanh rồi merge (không mở PR tính năng trực tiếp vào `main`; chỉ `release/vX.Y.Z`
+hoặc `hotfix/*` mới merge vào `main` để kích hoạt deploy Render). Actions tự chạy khi
+`database/**`, `backend/**` hoặc file workflow thay đổi; không cần bấm Run workflow mỗi lần.
+Thay đổi chỉ ở mobile/frontend không kích hoạt workflow backend này.
 
 ## Đọc kết quả và xử lý lỗi
 
 | Dấu hiệu | Ý nghĩa / cách làm |
 | --- | --- |
-| `Applying 0032_...up.sql` | Render đang áp dụng file chưa có trong lịch sử. |
+| `Applying 0034_...up.sql` | Render đang áp dụng file chưa có trong lịch sử. |
 | `Database ready: 0 migration(s) applied.` | Schema đã theo kịp các file, không chạy lại SQL cũ. |
 | Job check đỏ | Render chưa được workflow này gọi. Mở step lỗi, sửa rồi push commit mới. |
 | Thiếu `RENDER_DEPLOY_HOOK_URL` | Thêm secret đúng repo, sau đó chạy lại workflow trên main. |
@@ -225,8 +234,9 @@ hồi backup theo kế hoạch hoặc viết migration sửa tiếp; không xóa
     Bản clone tạm ngoài repo còn lại chưa chuyển được vào Thùng rác do Windows
     từ chối quyền truy cập; giữ backup hợp lệ để phục hồi khi cần.
 
-**Mốc production sau thiết lập là `0031`.** Migration ở nhánh khác (ví dụ `0032`
-trong repo local) chỉ lên production sau khi PR/merge vào `main` và workflow đạt.
+**Mốc production ngay sau thiết lập ngày 21/11/2026 là `0031`; hiện tại `develop` và `main`
+đã có tới `0033`.** Các migration mới từ `0034` trở đi sẽ đi qua PR vào `develop` →
+`release/vX.Y.Z` → merge `main` và chỉ lên production khi workflow trên `main` đạt.
 Các lệnh baseline trong hướng dẫn là để thiết lập một database cũ khác; không
 chạy lại baseline trên database production đã được ghi lịch sử này.
 
