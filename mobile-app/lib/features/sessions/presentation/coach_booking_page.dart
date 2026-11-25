@@ -904,15 +904,15 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                       subtitle: '${_packages.length} gói',
                                       icon: Icons.workspace_premium_rounded,
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                   ],
                                   if (_loaded && _packages.isEmpty)
                                     _buildEmptyPackageHeroCard(context),
                                   for (final pack in _packages) ...[
                                     _buildPackageCard(pack, gymNow, now),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 8),
                                   ],
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                 ],
                               ],
 
@@ -927,7 +927,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                       : '${upcomingBookings.length} lịch hẹn',
                                   icon: Icons.event_available_rounded,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 if (_loaded && upcomingBookings.isEmpty)
                                   _buildEmptyStateCard(
                                     'Chưa có buổi tập nào sắp tới.',
@@ -941,9 +941,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     )
                                   else
                                     _buildMemberBookingCard(booking, now: now),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 8),
                                 ],
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 10),
                               ],
 
                               if (!_isCoach && showUpcoming) ...[
@@ -1128,7 +1128,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   Widget _buildHeader(BuildContext context, List<CoachRecord> pastBookings) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Row(
         children: [
           if (Navigator.of(context).canPop()) ...[
@@ -1162,11 +1162,21 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Color(0xFFF7F9FC),
-                    fontSize: 21,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                   ),
                 ),
+                if (!_isCoach)
+                  const Text(
+                    'Đặt lịch & quản lý buổi tập 1:1',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Color(0xFFB7B2AF),
+                      fontSize: 12,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1251,10 +1261,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   Widget _buildSegmentedTabs() {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: const Color(0xB8211E1C),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0x9A8C8176), width: 1.1),
       ),
       child: IntrinsicHeight(
@@ -1308,24 +1318,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     required IconData icon,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 2),
+      padding: const EdgeInsets.only(top: 2, bottom: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(
-                color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Icon(icon, color: MetaGymTheme.brandOrange, size: 15),
-          ),
-          const SizedBox(width: 9),
           Expanded(
             child: Text(
               title,
@@ -1333,28 +1329,20 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: MetaGymTheme.textPrimary,
-                fontSize: 15.5,
+                fontSize: 15,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
               ),
             ),
           ),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0x66181513),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0x45FFF6EA)),
-            ),
-            child: Text(
-              subtitle,
-              style: const TextStyle(
-                color: Color(0xFFD5CCBF),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                fontFeatures: MetaGymTheme.tabularFigures,
-              ),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Color(0xFFC8C2BC),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              fontFeatures: MetaGymTheme.tabularFigures,
             ),
           ),
         ],
@@ -1375,10 +1363,10 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
           color: const Color(0x88181513),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(11),
           border: Border.all(color: const Color(0x3DFFF6EA), width: 0.9),
         ),
         child: Column(
@@ -1392,7 +1380,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   text: value,
                   style: TextStyle(
                     color: valueColor,
-                    fontSize: 16,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -1403,7 +1391,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                         text: suffix,
                         style: const TextStyle(
                           color: Color(0xFFB7B2AF),
-                          fontSize: 11.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
@@ -1414,7 +1402,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 1),
             Text(
               label,
               maxLines: 1,
@@ -1457,8 +1445,6 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         !isExpired &&
         availableToBook > 0;
 
-    final progress = total > 0 ? (remaining / total).clamp(0.0, 1.0) : 0.0;
-
     final coachName = (pack['coachName'] as String? ?? '').trim();
     final coachNameParts = coachName
         .split(RegExp(r'\s+'))
@@ -1481,8 +1467,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 46,
-                    height: 46,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
@@ -1492,9 +1478,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFF5B041).withValues(alpha: 0.28),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          color: const Color(0xFFF5B041).withValues(alpha: 0.24),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -1503,7 +1489,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       coachInitials,
                       style: const TextStyle(
                         color: Color(0xFF181B22),
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -1513,73 +1499,87 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       right: -1,
                       bottom: -1,
                       child: Container(
-                        width: 13,
-                        height: 13,
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
                           color: MetaGymTheme.progressGreen,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: const Color(0xFF2B2622),
-                            width: 2,
+                            width: 1.6,
                           ),
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
             ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    pack['planName'] as String,
-                    style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          coachName.isNotEmpty
+                              ? coachName
+                              : (pack['planName'] as String),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildPackageStatusBadge(
+                        status: pack['status'] as String,
+                        relationshipStatus:
+                            pack['relationshipStatus'] as String?,
+                        isExpired: isExpired,
+                        remaining: remaining,
+                      ),
+                    ],
                   ),
                   if (coachName.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
-                      'HLV $coachName',
+                      pack['planName'] as String,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
+                        color: Color(0xFFD5CCBF),
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                   if (endsOn.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       remaining <= 0 && isActivePack
                           ? 'Đã hết số buổi tập · Hạn ${_formatDmy(endsOn)}'
                           : 'Hạn dùng đến ${_formatDmy(endsOn)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFC8C2BC),
-                        fontSize: 12,
+                        color: Color(0xFFA8A098),
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            _buildPackageStatusBadge(
-              status: pack['status'] as String,
-              relationshipStatus: pack['relationshipStatus'] as String?,
-              isExpired: isExpired,
-              remaining: remaining,
-            ),
           ],
         ),
         if (isActivePack) ...[
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Row(
             children: [
               _buildStatCell(
@@ -1611,56 +1611,13 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 13),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Tiến độ buổi tập còn lại',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Color(0xFFC8C2BC),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${(progress * 100).round()}%',
-                style: const TextStyle(
-                  color: MetaGymTheme.brandOrange,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: MetaGymTheme.tabularFigures,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor: const Color(0x45FFFFFF),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isPaused
-                    ? MetaGymTheme.warningAmber
-                    : (remaining > 0
-                          ? MetaGymTheme.brandOrange
-                          : const Color(0xFFC8C2BC)),
-              ),
-            ),
-          ),
           if (_activePlan == null && total > 0) ...[
-            const SizedBox(height: 11),
+            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
                 color: const Color(0x80211E1C),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(11),
                 border: Border.all(color: const Color(0x9A8C8176)),
               ),
               child: Row(
@@ -1686,7 +1643,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                             ? const Color(0xFF59E59A)
                             : const Color(0xFFFFC573),
                         fontSize: 12,
-                        height: 1.4,
+                        height: 1.35,
                       ),
                     ),
                   ),
@@ -1695,14 +1652,14 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             ),
           ],
         ] else ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             pack['status'] == 'QUEUED' ? 'Chờ kích hoạt' : 'Đã kết thúc',
             style: const TextStyle(color: Color(0xFFE4DAD1), fontSize: 13),
           ),
         ],
         if (canBook) ...[
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           CoachingPrimaryButton(
             label: 'Đặt lịch',
             icon: Icons.add_circle_outline_rounded,
@@ -1714,7 +1671,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
     return MetaGymGlassCard(
       solid: false,
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: content,
     );
   }

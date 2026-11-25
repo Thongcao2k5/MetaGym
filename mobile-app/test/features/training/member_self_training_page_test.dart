@@ -36,7 +36,7 @@ void main() {
   });
 
   testWidgets(
-    'allows picking muscle icons for concise outer self-training card',
+    'allows picking muscle icons and entering manual exercises with sets and reps',
     (tester) async {
       SelfTrainingIconStore.clearMemoryCache();
       tester.view.physicalSize = const Size(375, 812);
@@ -81,19 +81,6 @@ void main() {
       expect(find.text('Lưng · Xô · Mặt sau'), findsOneWidget);
 
       await tester.scrollUntilVisible(
-        find.text('Chọn bài tập (0)'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Chọn bài tập (0)'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Lat Pulldown'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Xong'));
-      await tester.pumpAndSettle();
-
-      await tester.scrollUntilVisible(
         find.text('Chọn giờ tập'),
         200,
         scrollable: find.byType(Scrollable).first,
@@ -103,6 +90,51 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
+
+      // Enter manual exercise 1 (name, sets, reps)
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('self-training-exercise-name-0')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-name-0')),
+        'Lat Pulldown',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-sets-0')),
+        '4',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-reps-0')),
+        '10-12',
+      );
+
+      // Add and enter manual exercise 2
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('self-training-add-exercise')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('self-training-add-exercise')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('self-training-exercise-reps-1')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-name-1')),
+        'Dumbbell Curl',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-sets-1')),
+        '3',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-reps-1')),
+        '12',
+      );
 
       await tester.scrollUntilVisible(
         find.text('Lưu kế hoạch'),
@@ -119,13 +151,77 @@ void main() {
       expect(find.text('Lưng · Xô'), findsOneWidget);
       expect(find.text('Lat Pulldown'), findsNothing);
 
-      // Tapping the concise card expands exercise details.
+      // Tapping the concise card expands exercise details with sets and reps.
       await tester.tap(find.text('Buổi đẩy sáng'));
       await tester.pumpAndSettle();
       expect(find.text('Lat Pulldown'), findsOneWidget);
+      expect(find.text('4 set × 10-12 rep'), findsOneWidget);
+      expect(find.text('Dumbbell Curl'), findsOneWidget);
+      expect(find.text('3 set × 12 rep'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('validates manual exercise name, sets, and reps before saving', (
+    tester,
+  ) async {
+    SelfTrainingIconStore.clearMemoryCache();
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      SelfTrainingIconStore.clearMemoryCache();
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final api = _FakeSelfTrainingApi();
+    await tester.pumpWidget(MaterialApp(home: MemberSelfTrainingPage(api: api)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Lên lịch tập'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Buổi ngực');
+    await tester.scrollUntilVisible(
+      find.text('Chọn giờ tập'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Chọn giờ tập'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chọn giờ tập'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('self-training-exercise-name-0')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('self-training-exercise-name-0')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('self-training-exercise-name-0')),
+      'Bench Press',
+    );
+    await tester.scrollUntilVisible(
+      find.text('Lưu kế hoạch'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Lưu kế hoạch'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lưu kế hoạch'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Nhập đầy đủ tên bài tập, số set (1–99) và số rep.'),
+      findsOneWidget,
+    );
+    expect(api.saveCalls, 0);
+  });
 }
 
 class _NoopAdapter implements HttpClientAdapter {
@@ -150,6 +246,7 @@ class _FakeSelfTrainingApi extends MemberSelfTrainingApi {
       );
 
   final Map<String, MemberSelfTrainingDay> _items = {};
+  int saveCalls = 0;
 
   @override
   Future<List<MemberSelfTrainingDay>> getRange(String from, String to) async =>
@@ -161,15 +258,16 @@ class _FakeSelfTrainingApi extends MemberSelfTrainingApi {
     required String title,
     required String? startTime,
     required String notes,
-    required List<String> exerciseIds,
+    required List<SelfTrainingExercise> exercises,
   }) async {
+    saveCalls++;
     final created = MemberSelfTrainingDay(
       id: 'self-$day',
       planDate: day,
       title: title,
       startTime: startTime,
       notes: notes,
-      exercises: const [SelfTrainingExercise(id: 'ex-1', name: 'Lat Pulldown')],
+      exercises: exercises,
     );
     _items[day] = created;
     return created;

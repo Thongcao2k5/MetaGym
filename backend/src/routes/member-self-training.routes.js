@@ -7,13 +7,20 @@ import { createAuthentication } from './users.routes.js';
 
 const date = z.iso.date();
 const range = z.strictObject({ from: date, to: date });
+const manualExercise = z.strictObject({
+  id: z.string().trim().min(1).max(120).optional(),
+  name: z.string().trim().min(1).max(120),
+  sets: z.number().int().min(1).max(99).optional(),
+  reps: z.string().trim().min(1).max(20).optional(),
+});
 const payload = z.strictObject({
   title: z.string().trim().min(1).max(120),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   notes: z.string().trim().max(2000),
+  exercises: z.array(manualExercise).min(1).max(20).optional(),
   exerciseIds: z.array(z.uuid()).min(1).max(20).refine((ids) =>
-    new Set(ids).size === ids.length),
-});
+    new Set(ids).size === ids.length).optional(),
+}).refine((data) => (data.exercises?.length ?? 0) > 0 || (data.exerciseIds?.length ?? 0) > 0);
 
 function fail(response, status, code, message) {
   return response.status(status).json({ error: { code, message, details: {} } });
@@ -74,17 +81,27 @@ export function createMemberSelfTrainingRouter({ database, jwtSecret }) {
         await client.query('ROLLBACK');
         return fail(response, 409, 'DAY_LOCKED', 'Không thể sửa lịch của ngày đã qua');
       }
-      const ids = body.data.exerciseIds;
-      const found = ids.length ? await client.query(
-        `SELECT id, name FROM exercises WHERE id = ANY($1::uuid[])
-         AND status = 'ACTIVE' FOR SHARE`, [ids],
-      ) : { rows: [] };
-      if (found.rows.length !== ids.length) {
-        await client.query('ROLLBACK');
-        return fail(response, 422, 'VALIDATION_ERROR', 'Có bài tập không còn khả dụng');
+      let exercises;
+      if (body.data.exercises?.length) {
+        exercises = body.data.exercises.map((item) => ({
+          id: item.id || randomUUID(),
+          name: item.name,
+          ...(item.sets != null ? { sets: item.sets } : {}),
+          ...(item.reps ? { reps: item.reps } : {}),
+        }));
+      } else {
+        const ids = body.data.exerciseIds ?? [];
+        const found = ids.length ? await client.query(
+          `SELECT id, name FROM exercises WHERE id = ANY($1::uuid[])
+           AND status = 'ACTIVE' FOR SHARE`, [ids],
+        ) : { rows: [] };
+        if (found.rows.length !== ids.length) {
+          await client.query('ROLLBACK');
+          return fail(response, 422, 'VALIDATION_ERROR', 'Có bài tập không còn khả dụng');
+        }
+        const names = new Map(found.rows.map((row) => [row.id, row.name]));
+        exercises = ids.map((id) => ({ id, name: names.get(id) }));
       }
-      const names = new Map(found.rows.map((row) => [row.id, row.name]));
-      const exercises = ids.map((id) => ({ id, name: names.get(id) }));
       const saved = await client.query(
         `INSERT INTO member_self_training_days
          (id, member_id, plan_date, title, start_time, notes, exercises)

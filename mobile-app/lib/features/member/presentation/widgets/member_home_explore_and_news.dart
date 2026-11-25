@@ -264,23 +264,33 @@ class _ArticleCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: categoryColor.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusFull),
-                ),
-                child: Text(
-                  category,
-                  style: TextStyle(
-                    color: categoryColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: categoryColor.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(
+                      MetaGymTheme.radiusFull,
+                    ),
+                  ),
+                  child: Text(
+                    category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: categoryColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 readTime,
                 style: TextStyle(

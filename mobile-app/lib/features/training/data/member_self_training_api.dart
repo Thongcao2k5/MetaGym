@@ -19,14 +19,14 @@ class MemberSelfTrainingApi {
     required String title,
     required String? startTime,
     required String notes,
-    required List<String> exerciseIds,
+    required List<SelfTrainingExercise> exercises,
   }) async => (await client.put<MemberSelfTrainingDay>(
     '/member/self-training-days/$day',
     body: {
       'title': title,
       'startTime': startTime,
       'notes': notes,
-      'exerciseIds': exerciseIds,
+      'exercises': exercises.map((item) => item.toJson()).toList(),
     },
     decode: MemberSelfTrainingDay.fromJson,
   )).data;

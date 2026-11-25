@@ -27,7 +27,7 @@ abstract final class OfflineDemoControl {
 
   static _LocalDemoStore? _sharedStore;
   static const _storage = FlutterSecureStorage();
-  static const _storageKey = 'meta_gym_local_demo_state_v5';
+  static const _storageKey = 'meta_gym_local_demo_state_v7';
 
   static String modeLabel(DemoUiStateMode value) => switch (value) {
     DemoUiStateMode.normal => 'Bình thường',
@@ -339,9 +339,13 @@ class LocalDemoInterceptor extends Interceptor {
       '/training-plans/me/history',
       '/member/self-training-days',
       '/nutrition-guides/me/history',
+      '/meal-plans/me',
       '/member/nutrition/foods',
+      '/nutrition-foods',
       '/body-measurements',
       '/journal',
+      '/journal/charts',
+      '/progress/me/charts',
       '/progress-photos',
       '/workout-logs',
       '/equipment',
@@ -372,11 +376,21 @@ class LocalDemoInterceptor extends Interceptor {
         'entryCount': 0,
       };
     }
+    if (path == '/progress/me/summary') {
+      return const {
+        'workoutCount': 0,
+        'mealCount': 0,
+        'progressPhotoCount': 0,
+        'latestMeasurement': null,
+      };
+    }
     if (path == '/member/nutrition/day') {
       return {
-        'date': _LocalDemoStore._isoDate(DateTime.now()),
-        'target': {'calories': 2400, 'proteinG': 180, 'carbsG': 250, 'fatG': 65},
-        'consumed': {'calories': 0, 'proteinG': 0, 'carbsG': 0, 'fatG': 0},
+        'date': _LocalDemoStore._vnTodayStr(),
+        'hasActiveMembership': true,
+        'canWrite': true,
+        'relationshipStatus': 'NONE',
+        'plan': null,
         'entries': const <Object?>[],
       };
     }
@@ -721,16 +735,18 @@ class LocalDemoInterceptor extends Interceptor {
       return (store.activeTrainingPlan, 200);
     }
     if (path == '/member/self-training-days' && method == 'GET') {
-      return (store.selfTrainingDays, 200);
+      final from = options.queryParameters['from'] as String?;
+      final to = options.queryParameters['to'] as String?;
+      return (store.selfTrainingRange(from: from, to: to), 200);
     }
     if (path.startsWith('/member/self-training-days/') &&
         (method == 'PUT' || method == 'PATCH')) {
-      final dayNum = int.tryParse(path.split('/').last) ?? 1;
-      return (store.upsertSelfTrainingDay(dayNum, body), 200);
+      final dayKey = Uri.decodeComponent(path.split('/').last);
+      return (store.upsertSelfTrainingDay(dayKey, body), 200);
     }
     if (path.startsWith('/member/self-training-days/') && method == 'DELETE') {
-      final dayNum = int.tryParse(path.split('/').last) ?? 1;
-      store.selfTrainingDays.removeWhere((d) => d['dayOfWeek'] == dayNum);
+      final dayKey = Uri.decodeComponent(path.split('/').last);
+      store.selfTrainingDays.removeWhere((d) => d['planDate'] == dayKey);
       return (const {'deleted': true}, 200);
     }
 
@@ -749,6 +765,9 @@ class LocalDemoInterceptor extends Interceptor {
     if (path == '/nutrition-guides/me/history' && method == 'GET') {
       return (<Object?>[store.activeNutritionGuide], 200);
     }
+    if (path == '/meal-plans/me' && method == 'GET') {
+      return (<Object?>[store.coachMealPlan()], 200);
+    }
     if (path.startsWith('/coach/nutrition-guides/') &&
         (method == 'PATCH' || method == 'PUT')) {
       if (body['title'] is String) {
@@ -760,9 +779,11 @@ class LocalDemoInterceptor extends Interceptor {
       return (store.activeNutritionGuide, 200);
     }
     if (path == '/member/nutrition/day' && method == 'GET') {
-      return (store.nutritionDay(), 200);
+      final date = options.queryParameters['date'] as String?;
+      return (store.nutritionDay(date: date), 200);
     }
-    if (path == '/member/nutrition/foods' && method == 'GET') {
+    if ((path == '/member/nutrition/foods' || path == '/nutrition-foods') &&
+        method == 'GET') {
       return (store.nutritionFoods, 200);
     }
     if (path == '/member/nutrition/entries' && method == 'POST') {
@@ -770,11 +791,11 @@ class LocalDemoInterceptor extends Interceptor {
     }
     if (path.startsWith('/member/nutrition/entries/') &&
         (method == 'PATCH' || method == 'PUT')) {
-      final id = path.split('/').last;
+      final id = Uri.decodeComponent(path.split('/').last);
       return (store.updateNutritionEntry(id, body), 200);
     }
     if (path.startsWith('/member/nutrition/entries/') && method == 'DELETE') {
-      final id = path.split('/').last;
+      final id = Uri.decodeComponent(path.split('/').last);
       store.nutritionEntries.removeWhere((e) => e['id'] == id);
       return (const {'deleted': true}, 200);
     }
@@ -784,7 +805,9 @@ class LocalDemoInterceptor extends Interceptor {
       return (store.progressSummary(), 200);
     }
     if (path == '/progress/me/charts' && method == 'GET') {
-      return (store.progressCharts(), 200);
+      final from = options.queryParameters['from'] as String?;
+      final to = options.queryParameters['to'] as String?;
+      return (store.progressCharts(from: from, to: to), 200);
     }
     if (path == '/progress-comments' && method == 'POST') {
       return (
@@ -819,12 +842,12 @@ class LocalDemoInterceptor extends Interceptor {
       return (store.addJournalEntry(body), 201);
     }
     if (path == '/journal/charts' && method == 'GET') {
-      return (store.progressCharts(), 200);
+      return (store.journalCharts(), 200);
     }
     if (path.startsWith('/journal/') &&
         (method == 'PATCH' || method == 'PUT')) {
-      final id = path.split('/').last;
-      return (store.updateById(store.journalEntries, id, body), 200);
+      final id = Uri.decodeComponent(path.split('/').last);
+      return (store.updateJournalEntry(id, body), 200);
     }
     if (path.startsWith('/journal/') && method == 'DELETE') {
       final id = path.split('/').last;
@@ -1073,12 +1096,18 @@ class _LocalDemoStore {
   final List<Map<String, dynamic>> coachNotifications;
   final List<Map<String, dynamic>> calls;
 
+  static DateTime _vnNow() =>
+      DateTime.now().toUtc().add(const Duration(hours: 7));
+
   static String _isoDate(DateTime dt) =>
       '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
+  static String _vnTodayStr() => _isoDate(_vnNow());
+
   factory _LocalDemoStore.seeded() {
-    final now = DateTime.now();
+    final now = _vnNow();
     final todayStr = _isoDate(now);
+    final yesterdayStr = _isoDate(now.subtract(const Duration(days: 1)));
 
     const memberId = '10000000-0000-4000-8000-000000000003';
     const coachId = '10000000-0000-4000-8000-000000000014';
@@ -1491,13 +1520,78 @@ class _LocalDemoStore {
         ],
       },
       selfTrainingDays: [
-        {'dayOfWeek': 1, 'title': 'Ngực & Tay sau', 'muscleFocus': 'CHEST'},
-        {'dayOfWeek': 2, 'title': 'Cardio phục hồi', 'muscleFocus': 'CARDIO'},
-        {'dayOfWeek': 3, 'title': 'Lưng xô & Tay trước', 'muscleFocus': 'BACK'},
-        {'dayOfWeek': 4, 'title': 'Nghỉ phục hồi', 'muscleFocus': 'REST'},
-        {'dayOfWeek': 5, 'title': 'Chân đùi & Core', 'muscleFocus': 'LEGS'},
-        {'dayOfWeek': 6, 'title': 'Vai & Tay', 'muscleFocus': 'SHOULDERS'},
-        {'dayOfWeek': 7, 'title': 'Nghỉ phục hồi', 'muscleFocus': 'REST'},
+        {
+          'id': 'self-demo-001',
+          'planDate': todayStr,
+          'title': 'Ngực & Tay sau · Tập tự do',
+          'startTime': '18:00',
+          'notes': 'Khởi động kỹ khớp vai 10 phút, giữ nhịp hạ tạ 3 giây.',
+          'iconKey': 'chest,arms',
+          'exercises': [
+            {
+              'id': '90000000-0000-4000-8000-000000000021',
+              'name': 'Barbell Bench Press',
+              'sets': 4,
+              'reps': '8-10',
+            },
+            {
+              'id': '90000000-0000-4000-8000-000000000022',
+              'name': 'Incline Dumbbell Press',
+              'sets': 3,
+              'reps': '10-12',
+            },
+            {
+              'id': 'self-ex-003',
+              'name': 'Cable Triceps Pushdown',
+              'sets': 3,
+              'reps': '12-15',
+            },
+          ],
+        },
+        {
+          'id': 'self-demo-002',
+          'planDate': _isoDate(now.add(const Duration(days: 2))),
+          'title': 'Lưng Xô & Tay trước',
+          'startTime': '18:30',
+          'notes': 'Kéo xô kiểm soát, giữ 1 giây cuối mỗi rep.',
+          'iconKey': 'back,arms',
+          'exercises': [
+            {
+              'id': '90000000-0000-4000-8000-000000000024',
+              'name': 'Lat Pulldown Kéo Xô Mặt Trước',
+              'sets': 4,
+              'reps': '10-12',
+            },
+            {
+              'id': '90000000-0000-4000-8000-000000000025',
+              'name': 'Dumbbell Bicep Curl',
+              'sets': 3,
+              'reps': '12',
+            },
+          ],
+        },
+        {
+          'id': 'self-demo-003',
+          'planDate': _isoDate(now.subtract(const Duration(days: 2))),
+          'title': 'Chân Đùi & Cơ Core',
+          'startTime': '17:45',
+          'notes': 'Hoàn thành 4 hiệp Back Squat form chuẩn.',
+          'iconKey': 'legs,core',
+          'exercises': [
+            {
+              'id': '90000000-0000-4000-8000-000000000023',
+              'name': 'Barbell Back Squat',
+              'sets': 4,
+              'reps': '8',
+            },
+            {
+              'id': 'self-ex-core-1',
+              'name': 'Plank Core',
+              'sets': 3,
+              'reps': '60s',
+            },
+          ],
+        },
       ],
       gymVisits: [
         for (final offset in [1, 3, 5, 7, 10])
@@ -1523,10 +1617,22 @@ class _LocalDemoStore {
       },
       nutritionFoods: [
         {
+          'id': 'food-oats',
+          'name': 'Yến mạch nguyên cám',
+          'servingSize': 100,
+          'servingUnit': 'g',
+          'kcalPer100g': 380,
+          'calories': 380,
+          'proteinG': 13.5,
+          'carbsG': 67,
+          'fatG': 6.5,
+        },
+        {
           'id': 'food-001',
           'name': 'Ức gà áp chảo',
           'servingSize': 100,
           'servingUnit': 'g',
+          'kcalPer100g': 165,
           'calories': 165,
           'proteinG': 31,
           'carbsG': 0,
@@ -1535,85 +1641,150 @@ class _LocalDemoStore {
         {
           'id': 'food-002',
           'name': 'Cơm gạo lứt',
-          'servingSize': 150,
+          'servingSize': 100,
           'servingUnit': 'g',
-          'calories': 185,
-          'proteinG': 4,
-          'carbsG': 39,
-          'fatG': 1.5,
+          'kcalPer100g': 123,
+          'calories': 123,
+          'proteinG': 2.7,
+          'carbsG': 26,
+          'fatG': 1.0,
         },
         {
           'id': 'food-003',
           'name': 'Cá hồi phi lê áp chảo',
-          'servingSize': 150,
+          'servingSize': 100,
           'servingUnit': 'g',
-          'calories': 312,
-          'proteinG': 30,
+          'kcalPer100g': 208,
+          'calories': 208,
+          'proteinG': 20,
           'carbsG': 0,
-          'fatG': 20,
+          'fatG': 13.4,
         },
         {
           'id': 'food-004',
-          'name': 'Whey Protein Isolate (1 muỗng)',
-          'servingSize': 30,
+          'name': 'Whey Protein Isolate',
+          'servingSize': 100,
           'servingUnit': 'g',
-          'calories': 120,
-          'proteinG': 25,
-          'carbsG': 2,
-          'fatG': 1,
+          'kcalPer100g': 380,
+          'calories': 380,
+          'proteinG': 83,
+          'carbsG': 6.5,
+          'fatG': 3.0,
+        },
+        {
+          'id': 'food-005',
+          'name': 'Khoai lang hấp',
+          'servingSize': 100,
+          'servingUnit': 'g',
+          'kcalPer100g': 86,
+          'calories': 86,
+          'proteinG': 1.6,
+          'carbsG': 20,
+          'fatG': 0.1,
+        },
+        {
+          'id': 'food-006',
+          'name': 'Trứng gà luộc',
+          'servingSize': 100,
+          'servingUnit': 'g',
+          'kcalPer100g': 155,
+          'calories': 155,
+          'proteinG': 13,
+          'carbsG': 1.1,
+          'fatG': 11,
         },
       ],
       nutritionEntries: [
         {
           'id': 'entry-001',
           'mealType': 'BREAKFAST',
-          'foodName': 'Yến mạch + Chuối + 3 lòng trắng trứng',
-          'calories': 520,
-          'proteinG': 34,
-          'carbsG': 68,
-          'fatG': 10,
-          'loggedAt': DateTime(
-            now.year,
-            now.month,
-            now.day,
-            7,
-            30,
-          ).toIso8601String(),
+          'mealName': 'Yến mạch nguyên cám',
+          'foodId': 'food-oats',
+          'quantity': 80,
+          'unit': 'g',
+          'kcal': 304,
+          'eatenAt': '${todayStr}T07:30:00+07:00',
+          'notes': '',
+          'imageMediaId': null,
         },
         {
           'id': 'entry-002',
           'mealType': 'LUNCH',
-          'foodName': '200g Ức gà áp chảo & Cơm gạo lứt',
-          'calories': 680,
-          'proteinG': 56,
-          'carbsG': 75,
-          'fatG': 14,
-          'loggedAt': DateTime(
-            now.year,
-            now.month,
-            now.day,
-            12,
-            15,
-          ).toIso8601String(),
+          'mealName': 'Ức gà áp chảo',
+          'foodId': 'food-001',
+          'quantity': 200,
+          'unit': 'g',
+          'kcal': 330,
+          'eatenAt': '${todayStr}T12:15:00+07:00',
+          'notes': '',
+          'imageMediaId': null,
         },
         {
           'id': 'entry-003',
           'mealType': 'SNACK',
-          'foodName': 'Whey Isolate + Táo xanh',
-          'calories': 220,
-          'proteinG': 26,
-          'carbsG': 22,
-          'fatG': 2,
-          'loggedAt': DateTime(
-            now.year,
-            now.month,
-            now.day,
-            16,
-            20,
-          ).toIso8601String(),
+          'mealName': 'Whey Protein Isolate',
+          'foodId': 'food-004',
+          'quantity': 30,
+          'unit': 'g',
+          'kcal': 114,
+          'eatenAt': '${todayStr}T16:20:00+07:00',
+          'notes': '',
+          'imageMediaId': null,
+        },
+        {
+          'id': 'entry-yest-001',
+          'mealType': 'BREAKFAST',
+          'mealName': 'Trứng gà luộc',
+          'foodId': 'food-006',
+          'quantity': 150,
+          'unit': 'g',
+          'kcal': 233,
+          'eatenAt': '${yesterdayStr}T07:45:00+07:00',
+          'notes': '',
+          'imageMediaId': null,
+        },
+        {
+          'id': 'entry-yest-002',
+          'mealType': 'LUNCH',
+          'mealName': 'Cơm gạo lứt',
+          'foodId': 'food-002',
+          'quantity': 180,
+          'unit': 'g',
+          'kcal': 221,
+          'eatenAt': '${yesterdayStr}T12:30:00+07:00',
+          'notes': '',
+          'imageMediaId': null,
         },
       ],
       measurements: [
+        {
+          'id': 'meas-000a',
+          'measuredAt': now
+              .subtract(const Duration(days: 28))
+              .toIso8601String(),
+          'weightKg': 74.9,
+          'bodyFatPercent': 20.1,
+          'chestCm': 95.5,
+          'waistCm': 84.5,
+          'hipsCm': 96.0,
+          'armCm': 32.0,
+          'thighCm': 55.5,
+          'notes': 'Buổi đánh giá InBody đầu chu kỳ.',
+        },
+        {
+          'id': 'meas-000b',
+          'measuredAt': now
+              .subtract(const Duration(days: 21))
+              .toIso8601String(),
+          'weightKg': 74.3,
+          'bodyFatPercent': 19.6,
+          'chestCm': 95.8,
+          'waistCm': 83.4,
+          'hipsCm': 95.5,
+          'armCm': 32.2,
+          'thighCm': 55.8,
+          'notes': 'Nhịp tập ổn định 4 buổi/tuần.',
+        },
         {
           'id': 'meas-001',
           'measuredAt': now
@@ -1655,6 +1826,20 @@ class _LocalDemoStore {
       ],
       journalEntries: [
         {
+          'id': 'jour-002',
+          'journalDate': yesterdayStr,
+          'notes':
+              'Buổi tập Chân & Bụng với Coach Nam. Squat 80kg trọn vẹn 4 hiệp form chuẩn.',
+          'chestCm': 98.0,
+          'waistCm': 78.5,
+          'hipsCm': 94.0,
+          'achievements': [
+            {'title': 'Squat', 'result': '80 kg × 4 hiệp'},
+            {'title': 'Đẩy ngực', 'result': '65 kg × 10'},
+          ],
+          'photoMediaIds': <String>[],
+        },
+        {
           'id': 'jour-001',
           'journalDate': _isoDate(now.subtract(const Duration(days: 3))),
           'notes':
@@ -1662,17 +1847,23 @@ class _LocalDemoStore {
           'chestCm': 97.5,
           'waistCm': 79.5,
           'hipsCm': 94.0,
-          'achievements': ['PR Bench Press 70kg', 'Năng lượng tập luyện cao'],
+          'achievements': [
+            {'title': 'Đẩy ngực', 'result': '70 kg × 8'},
+            {'title': 'Kéo lưng', 'result': '60 kg × 10'},
+          ],
+          'photoMediaIds': <String>[],
         },
         {
-          'id': 'jour-002',
-          'journalDate': _isoDate(now.subtract(const Duration(days: 1))),
-          'notes':
-              'Buổi tập Chân & Bụng với Coach Nam. Squat 80kg trọn vẹn 4 hiệp form chuẩn.',
-          'chestCm': 98.0,
-          'waistCm': 78.5,
-          'hipsCm': 94.0,
-          'achievements': ['Squat 80kg x 4 sets', 'Coach feedback: Form chuẩn'],
+          'id': 'jour-003',
+          'journalDate': _isoDate(now.subtract(const Duration(days: 6))),
+          'notes': 'Kéo xô kiểm soát nhịp âm, giữ form vai ổn định suốt buổi.',
+          'chestCm': 97.0,
+          'waistCm': 80.5,
+          'hipsCm': 94.5,
+          'achievements': [
+            {'title': 'Kéo lưng', 'result': '55 kg × 12'},
+          ],
+          'photoMediaIds': <String>[],
         },
       ],
       workoutLogs: [
@@ -2095,42 +2286,168 @@ class _LocalDemoStore {
     return visit;
   }
 
-  Map<String, dynamic> nutritionDay() {
-    num totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
-    for (final e in nutritionEntries) {
-      totalKcal += (e['calories'] as num? ?? 0);
-      totalP += (e['proteinG'] as num? ?? 0);
-      totalC += (e['carbsG'] as num? ?? 0);
-      totalF += (e['fatG'] as num? ?? 0);
+  Map<String, dynamic> coachMealPlan() => {
+    'id': 'meal-plan-demo-001',
+    'title': 'Thực đơn Tăng Cơ Nạc 2.400 kcal',
+    'status': 'ACTIVE',
+    'items': [
+      for (var day = 1; day <= 7; day++) ...[
+        {
+          'day': day,
+          'meal': 'BREAKFAST',
+          'foodId': 'food-oats',
+          'foodName': 'Yến mạch nguyên cám',
+          'kcalPer100g': 380,
+          'grams': 100,
+        },
+        {
+          'day': day,
+          'meal': 'LUNCH',
+          'foodId': 'food-001',
+          'foodName': 'Ức gà áp chảo',
+          'kcalPer100g': 165,
+          'grams': 200,
+        },
+        {
+          'day': day,
+          'meal': 'LUNCH',
+          'foodId': 'food-002',
+          'foodName': 'Cơm gạo lứt',
+          'kcalPer100g': 123,
+          'grams': 150,
+        },
+        {
+          'day': day,
+          'meal': 'DINNER',
+          'foodId': 'food-003',
+          'foodName': 'Cá hồi phi lê áp chảo',
+          'kcalPer100g': 208,
+          'grams': 180,
+        },
+      ],
+    ],
+  };
+
+  double? _computeEntryKcal(
+    Object? foodId,
+    Object? quantity,
+    Object? unit, {
+    Object? explicitKcal,
+  }) {
+    if (foodId is String && foodId.isNotEmpty && unit == 'g') {
+      final qty = quantity is num
+          ? quantity.toDouble()
+          : double.tryParse(quantity?.toString() ?? '');
+      if (qty != null && qty > 0) {
+        for (final food in nutritionFoods) {
+          if (food['id'] == foodId) {
+            final per100g = food['kcalPer100g'];
+            if (per100g is num && per100g > 0) {
+              return double.parse(((per100g * qty) / 100.0).toStringAsFixed(1));
+            }
+          }
+        }
+      }
     }
+    if (explicitKcal is num) return explicitKcal.toDouble();
+    return null;
+  }
+
+  Map<String, dynamic> nutritionDay({String? date}) {
+    final todayStr = _vnTodayStr();
+    final targetDate = (date != null && date.trim().isNotEmpty)
+        ? date.trim()
+        : todayStr;
+    final isToday = targetDate == todayStr;
+    final dayEntries = nutritionEntries
+        .where((e) => (e['eatenAt'] as String? ?? '').startsWith(targetDate))
+        .toList();
+    final parsedDate = DateTime.tryParse(targetDate) ?? _vnNow();
+    final weekday = parsedDate.weekday;
+    final plan = coachMealPlan();
+    final planItems = (plan['items'] as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .where((item) => item['day'] == weekday)
+        .toList();
+
+    final comparisons = <String, dynamic>{};
+    for (final mealKey in const ['BREAKFAST', 'LUNCH', 'DINNER']) {
+      final mealPlanItems =
+          planItems.where((item) => item['meal'] == mealKey).toList();
+      final mealEntries =
+          dayEntries.where((entry) => entry['mealType'] == mealKey).toList();
+      final differences = <Map<String, dynamic>>[];
+      var hasMissingItem = mealPlanItems.isEmpty;
+      for (final planned in mealPlanItems) {
+        final fid = planned['foodId'];
+        final suggested = (planned['grams'] as num?)?.toDouble() ?? 0;
+        final matched = mealEntries
+            .where((e) => e['foodId'] == fid && e['unit'] == 'g')
+            .toList();
+        if (matched.isEmpty) {
+          hasMissingItem = true;
+          continue;
+        }
+        final actual = matched.fold<double>(
+          0,
+          (sum, e) => sum + ((e['quantity'] as num?)?.toDouble() ?? 0),
+        );
+        differences.add({
+          'foodId': fid,
+          'foodName': planned['foodName'],
+          'suggestedGrams': suggested,
+          'actualGrams': actual,
+          'deltaGrams': actual - suggested,
+        });
+      }
+      comparisons[mealKey] = {
+        'status': differences.isNotEmpty
+            ? 'DIFFERENCES'
+            : (hasMissingItem ? 'INSUFFICIENT' : 'MATCHED'),
+        'differences': differences,
+      };
+    }
+    comparisons['SNACK'] = const {
+      'status': 'UNREGULATED',
+      'differences': <Object?>[],
+    };
+
     return {
-      'date': _isoDate(DateTime.now()),
-      'target': {
-        'calories': 2400,
-        'proteinG': 180,
-        'carbsG': 250,
-        'fatG': 65,
-      },
-      'consumed': {
-        'calories': totalKcal,
-        'proteinG': totalP,
-        'carbsG': totalC,
-        'fatG': totalF,
-      },
-      'entries': nutritionEntries,
+      'date': targetDate,
+      'hasActiveMembership': true,
+      'canWrite': isToday,
+      'relationshipStatus': relationship['status'] ?? 'ACTIVE',
+      'plan': plan,
+      'entries': dayEntries,
+      'comparisons': comparisons,
     };
   }
 
   Map<String, dynamic> addNutritionEntry(Map<String, dynamic> body) {
+    final foodId = body['foodId'] as String?;
+    final unit = (body['unit'] as String? ?? 'g').trim();
+    final quantity = body['quantity'] ?? 100;
+    final mealName =
+        (body['mealName'] ?? body['foodName'] ?? body['name'] ?? 'Món ăn tự nhập')
+            .toString()
+            .trim();
+    final kcal = _computeEntryKcal(
+      foodId,
+      quantity,
+      unit,
+      explicitKcal: body['kcal'] ?? body['calories'],
+    );
     final entry = <String, dynamic>{
       'id': 'entry-${DateTime.now().millisecondsSinceEpoch}',
       'mealType': body['mealType'] ?? 'SNACK',
-      'foodName': body['foodName'] ?? body['name'] ?? 'Món ăn tự nhập',
-      'calories': body['calories'] ?? 250,
-      'proteinG': body['proteinG'] ?? 20,
-      'carbsG': body['carbsG'] ?? 25,
-      'fatG': body['fatG'] ?? 6,
-      'loggedAt': DateTime.now().toIso8601String(),
+      'mealName': mealName.isEmpty ? 'Món ăn tự nhập' : mealName,
+      'foodId': (foodId != null && foodId.isNotEmpty) ? foodId : null,
+      'imageMediaId': body['imageMediaId'],
+      'quantity': quantity,
+      'unit': unit,
+      'kcal': kcal,
+      'eatenAt': body['eatenAt'] ?? '${_vnTodayStr()}T12:00:00+07:00',
+      'notes': (body['notes'] as String? ?? '').trim(),
     };
     nutritionEntries.add(entry);
     return entry;
@@ -2146,44 +2463,120 @@ class _LocalDemoStore {
     return m;
   }
 
+  Map<String, dynamic> _normalizeJournalPayload(Map<String, dynamic> body) {
+    final out = Map<String, dynamic>.from(body);
+    if (body['achievements'] is List) {
+      out['achievements'] = (body['achievements'] as List).map((item) {
+        if (item is Map) {
+          return <String, dynamic>{
+            'title': (item['title'] ?? '').toString(),
+            'result': (item['result'] ?? '').toString(),
+          };
+        }
+        return <String, dynamic>{'title': item.toString(), 'result': ''};
+      }).toList();
+    }
+    if (body['photoMediaIds'] is List) {
+      out['photoMediaIds'] =
+          (body['photoMediaIds'] as List).map((e) => e.toString()).toList();
+    }
+    return out;
+  }
+
   Map<String, dynamic> addJournalEntry(Map<String, dynamic> body) {
+    final normalized = _normalizeJournalPayload(body);
     final j = <String, dynamic>{
       'id': 'jour-${DateTime.now().millisecondsSinceEpoch}',
-      'journalDate': body['journalDate'] ?? _isoDate(DateTime.now()),
-      ...body,
+      'journalDate': normalized['journalDate'] ?? _vnTodayStr(),
+      'notes': normalized['notes'],
+      'chestCm': normalized['chestCm'],
+      'waistCm': normalized['waistCm'],
+      'hipsCm': normalized['hipsCm'],
+      'achievements':
+          normalized['achievements'] ?? const <Map<String, dynamic>>[],
+      'photoMediaIds': normalized['photoMediaIds'] ?? const <String>[],
     };
     journalEntries.insert(0, j);
     return j;
   }
 
+  Map<String, dynamic> updateJournalEntry(
+    String id,
+    Map<String, dynamic> body,
+  ) {
+    final normalized = _normalizeJournalPayload(body);
+    final updated = updateById(journalEntries, id, normalized);
+    updated['achievements'] ??= const <Map<String, dynamic>>[];
+    updated['photoMediaIds'] ??= const <String>[];
+    return updated;
+  }
+
   Map<String, dynamic> progressSummary() {
-    final latest = measurements.isNotEmpty ? measurements.last : const {};
+    final latest = measurements.isNotEmpty ? measurements.last : const <String, dynamic>{};
     return {
-      'latestWeightKg': latest['weightKg'] ?? 72.1,
-      'latestBodyFatPercent': latest['bodyFatPercent'] ?? 17.5,
       'workoutCount': workoutLogs.length + 11,
-      'visitCount': gymVisits.length,
+      'mealCount': nutritionEntries.length,
+      'progressPhotoCount': 0,
+      'latestMeasurement': latest.isEmpty
+          ? null
+          : {
+              'measuredAt': latest['measuredAt'],
+              'weightKg': latest['weightKg'],
+              'bodyFatPercent': latest['bodyFatPercent'],
+            },
     };
   }
 
-  Map<String, dynamic> progressCharts() => {
-    'weightSeries': measurements
+  List<Map<String, dynamic>> progressCharts({String? from, String? to}) {
+    final points = measurements
+        .where((m) {
+          final dateStr = (m['measuredAt'] as String? ?? '').split('T').first;
+          if (from != null && from.isNotEmpty && dateStr.compareTo(from) < 0) {
+            return false;
+          }
+          if (to != null && to.isNotEmpty && dateStr.compareTo(to) > 0) {
+            return false;
+          }
+          return m['weightKg'] != null;
+        })
         .map(
-          (m) => {
-            'date': (m['measuredAt'] as String).split('T').first,
-            'value': m['weightKg'],
+          (m) => <String, dynamic>{
+            'measuredAt': m['measuredAt'],
+            'weightKg': m['weightKg'],
+            'bodyFatPercent': m['bodyFatPercent'],
           },
         )
-        .toList(),
-    'bodyFatSeries': measurements
+        .toList()
+      ..sort(
+        (a, b) =>
+            (a['measuredAt'] as String).compareTo(b['measuredAt'] as String),
+      );
+    return points;
+  }
+
+  List<Map<String, dynamic>> journalCharts() {
+    final points = journalEntries
+        .where(
+          (j) =>
+              j['chestCm'] != null ||
+              j['waistCm'] != null ||
+              j['hipsCm'] != null,
+        )
         .map(
-          (m) => {
-            'date': (m['measuredAt'] as String).split('T').first,
-            'value': m['bodyFatPercent'],
+          (j) => <String, dynamic>{
+            'journalDate': j['journalDate'],
+            'chestCm': j['chestCm'],
+            'waistCm': j['waistCm'],
+            'hipsCm': j['hipsCm'],
           },
         )
-        .toList(),
-  };
+        .toList()
+      ..sort(
+        (a, b) =>
+            (a['journalDate'] as String).compareTo(b['journalDate'] as String),
+      );
+    return points;
+  }
 
   Map<String, dynamic> confirmPayment(String paymentId) {
     final payment = payments.firstWhere(
@@ -2334,16 +2727,70 @@ class _LocalDemoStore {
     return updateById(sessions, id, body);
   }
 
+  List<Map<String, dynamic>> selfTrainingRange({String? from, String? to}) {
+    return selfTrainingDays.where((d) {
+      final dateStr = d['planDate'] as String? ?? '';
+      if (dateStr.isEmpty) return false;
+      if (from != null && from.isNotEmpty && dateStr.compareTo(from) < 0) {
+        return false;
+      }
+      if (to != null && to.isNotEmpty && dateStr.compareTo(to) > 0) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
   Map<String, dynamic> upsertSelfTrainingDay(
-    int dayOfWeek,
+    String planDate,
     Map<String, dynamic> body,
   ) {
-    final idx = selfTrainingDays.indexWhere((d) => d['dayOfWeek'] == dayOfWeek);
+    final idx = selfTrainingDays.indexWhere((d) => d['planDate'] == planDate);
+    final mappedExercises = <Map<String, dynamic>>[];
+    if (body['exercises'] is List) {
+      final rawList = body['exercises'] as List;
+      for (var i = 0; i < rawList.length; i++) {
+        final raw = rawList[i];
+        if (raw is! Map) continue;
+        final name = (raw['name'] ?? '').toString().trim();
+        if (name.isEmpty) continue;
+        final rawId = (raw['id'] ?? '').toString().trim();
+        final rawSets = raw['sets'];
+        final sets = rawSets is num
+            ? rawSets.toInt()
+            : int.tryParse(rawSets?.toString() ?? '');
+        final reps = (raw['reps'] ?? '').toString().trim();
+        mappedExercises.add({
+          'id': rawId.isNotEmpty ? rawId : 'custom-$planDate-$i',
+          'name': name,
+          if (sets != null && sets > 0) 'sets': sets,
+          if (reps.isNotEmpty) 'reps': reps,
+        });
+      }
+    } else {
+      final rawIds = (body['exerciseIds'] as List? ?? const [])
+          .map((e) => e.toString())
+          .toList();
+      for (final exId in rawIds) {
+        final matched = exercises.where((e) => e['id'] == exId).firstOrNull;
+        mappedExercises.add({
+          'id': exId,
+          'name': (matched?['name'] as String?) ?? 'Bài tập $exId',
+        });
+      }
+    }
+    final existing = idx >= 0 ? selfTrainingDays[idx] : null;
     final updated = <String, dynamic>{
-      'dayOfWeek': dayOfWeek,
-      'title': body['title'] ?? 'Buổi tự tập',
-      'muscleFocus': body['muscleFocus'] ?? 'FULL_BODY',
-      ...body,
+      'id': existing?['id'] ?? 'self-$planDate',
+      'planDate': planDate,
+      'title': (body['title'] as String? ?? 'Buổi tự tập').trim(),
+      'startTime': body['startTime'] as String?,
+      'notes': (body['notes'] as String? ?? '').trim(),
+      if (body['iconKey'] != null || existing?['iconKey'] != null)
+        'iconKey': body['iconKey'] ?? existing?['iconKey'],
+      'exercises': mappedExercises.isNotEmpty
+          ? mappedExercises
+          : (existing?['exercises'] ?? const <Object?>[]),
     };
     if (idx >= 0) {
       selfTrainingDays[idx] = updated;
@@ -2357,7 +2804,32 @@ class _LocalDemoStore {
     String id,
     Map<String, dynamic> body,
   ) {
-    return updateById(nutritionEntries, id, body);
+    final idx = nutritionEntries.indexWhere((e) => e['id'] == id);
+    final target = idx >= 0
+        ? nutritionEntries[idx]
+        : <String, dynamic>{'id': id};
+    if (body.containsKey('mealType')) target['mealType'] = body['mealType'];
+    if (body.containsKey('mealName') || body.containsKey('foodName')) {
+      target['mealName'] =
+          (body['mealName'] ?? body['foodName'] ?? target['mealName'])
+              .toString();
+    }
+    if (body.containsKey('foodId')) target['foodId'] = body['foodId'];
+    if (body.containsKey('imageMediaId')) {
+      target['imageMediaId'] = body['imageMediaId'];
+    }
+    if (body.containsKey('quantity')) target['quantity'] = body['quantity'];
+    if (body.containsKey('unit')) target['unit'] = body['unit'];
+    if (body.containsKey('eatenAt')) target['eatenAt'] = body['eatenAt'];
+    if (body.containsKey('notes')) target['notes'] = body['notes'];
+    target['kcal'] = _computeEntryKcal(
+      target['foodId'],
+      target['quantity'],
+      target['unit'],
+      explicitKcal: body['kcal'] ?? body['calories'],
+    );
+    if (idx < 0) nutritionEntries.add(target);
+    return target;
   }
 
   Map<String, dynamic> addWorkoutLog(Map<String, dynamic> body) {

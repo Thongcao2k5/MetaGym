@@ -204,7 +204,7 @@ class _MembershipPageState extends State<MembershipPage> {
                           backgroundColor: const Color(0xFF2B2622),
                           onRefresh: () => controller.load(),
                           child: ListView(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 36),
+                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 36),
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
                               if (controller.errorMessage case final error?)
@@ -276,7 +276,7 @@ class _MembershipPageState extends State<MembershipPage> {
 
                               // 4. NÂNG CẤP HẠNG THẺ (CAROUSEL VUỐT NGANG)
                               if (controller.pendingPayment == null) ...[
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 2),
                                 MembershipSectionHeader(
                                   svgAsset: MetaGymIcons.premiumCrown,
                                   title: 'Nâng cấp hạng thẻ',

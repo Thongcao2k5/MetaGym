@@ -165,8 +165,23 @@ void main() {
 
       expect(find.text('Thẻ hội viên của tôi'), findsOneWidget);
       expect(find.text('Hiệu lực'), findsOneWidget);
+      expect(find.text('Mặt sau · Lật'), findsOneWidget);
       expect(find.text('Gia hạn thẻ'), findsOneWidget);
       expect(find.text('Đổi điểm ưu đãi'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('active-membership-flip-card')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mặt trước · Lật'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('active-membership-flip-card')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mặt sau · Lật'), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const Key('active-membership-flip-card')),
+        const Offset(-180, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Mặt trước · Lật'), findsOneWidget);
 
       await tester.scrollUntilVisible(
         find.text('Meta Points'),
@@ -186,7 +201,7 @@ void main() {
 
       await tester.scrollUntilVisible(
         find.text('Nâng cấp hạng thẻ'),
-        200,
+        100,
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Nâng cấp hạng thẻ'), findsOneWidget);
@@ -276,6 +291,60 @@ void main() {
       expect(find.text('VIP Cao cấp'), findsOneWidget);
       expect(find.text('-10%'), findsOneWidget);
       expect(find.text('×2.0 điểm'), findsOneWidget);
+
+      expect(
+        find.byKey(const Key('empty-membership-promo-strip')),
+        findsOneWidget,
+      );
+      expect(find.text('Mở khóa đặc quyền VIP'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('empty-membership-promo-strip')));
+      await tester.pumpAndSettle();
+      expect(find.text('Đặc quyền & Ưu đãi hội viên VIP'), findsOneWidget);
+      expect(find.text('Lật mặt sau'), findsOneWidget);
+      expect(find.text('Mặt sau · Lật'), findsNothing);
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('promo-select-tier-diamond')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('promo-select-tier-diamond')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Đặc quyền & Ưu đãi hội viên VIP'), findsNothing);
+      expect(find.text('Kim Cương VIP — 12 Tháng'), findsOneWidget);
+      expect(find.text('Lật mặt sau'), findsOneWidget);
+
+      expect(find.text('Đo chỉ số cơ thể InBody'), findsOneWidget);
+      expect(find.text('Lật mặt sau'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('empty-membership-flip-btn')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mặt sau · Lật'), findsOneWidget);
+
+      await tester.tap(find.text('Đồng'));
+      await tester.pumpAndSettle();
+      expect(find.text('Lật mặt sau'), findsOneWidget);
+      expect(find.text('0%'), findsOneWidget);
+      expect(find.text('Trả phí lẻ'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('empty-membership-cta')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 cổng hỗ trợ'), findsOneWidget);
+      expect(find.text('VNPay QR / Thẻ nội địa'), findsOneWidget);
+      expect(find.text('Ví điện tử MoMo'), findsNothing);
+      expect(find.text('Ví ZaloPay'), findsNothing);
+      await tester.enterText(find.byType(TextField), 'METAGYM200');
+      await tester.tap(find.text('Áp dụng'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('500.000'), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('checkout-pay-submit')),
+          matching: find.textContaining('VNPay'),
+        ),
+        findsOneWidget,
+      );
     },
   );
 }

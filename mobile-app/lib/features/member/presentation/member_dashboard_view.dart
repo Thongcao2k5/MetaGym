@@ -376,7 +376,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     return MetaGymGlassCard(
       solid: widget.useSolidGlassFallback,
       featured: false,
-      borderRadius: borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard),
+      borderRadius:
+          borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard),
       clipBehavior: clipBehavior,
       child: child,
     );
@@ -422,11 +423,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       const SizedBox(height: 4),
                       // 1. Header
                       _buildHeader(context, userName),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
 
                       // 2. Quick Action Dock (4 nút squircle đối xứng)
                       _buildQuickActionDock(),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
 
                       if (_loadError != null) ...[
                         _buildLoadErrorBanner(),
@@ -435,22 +436,28 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 
                       // 3. Gói tập; chỉ hiện Coach khi đang được phụ trách.
                       _buildMembershipAndCoachCard(context),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
 
                       if (_isLoading ||
                           widget.previewMode ||
                           (_activeMembership != null && _hasCoach)) ...[
                         _buildTodaySection(context),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         _buildBentoSection(context),
-                        const SizedBox(height: 14),
+                        if (!_isLoading && _activeMembership != null) ...[
+                          const SizedBox(height: 10),
+                          _buildMascotActivityBanner(context),
+                        ],
+                        const SizedBox(height: 12),
                       ],
                       if (!_isLoading &&
                           !widget.previewMode &&
                           _activeMembership != null &&
                           !_hasCoach) ...[
                         _buildSelfWorkoutCard(),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
+                        _buildMascotActivityBanner(context),
+                        const SizedBox(height: 12),
                       ],
 
                       // 6. Khám phá Meta Gym (4 tính năng nổi bật)
@@ -591,20 +598,15 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFFFF6A42), Color(0xFFFF4520)],
+                          colors: [Color(0x33FF5E36), Color(0xD629241F)],
                         ),
                         borderRadius: BorderRadius.circular(13),
                         border: Border.all(
-                          color: const Color(0x45FFFFFF),
-                          width: 1.1,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x4DFF5A36),
-                            blurRadius: 10,
-                            offset: Offset(0, 3),
+                          color: MetaGymTheme.brandOrange.withValues(
+                            alpha: 0.60,
                           ),
-                        ],
+                          width: 1.2,
+                        ),
                       ),
                       alignment: Alignment.center,
                       child: const MetaGymSvgIcon(
@@ -954,7 +956,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             button: true,
             label: action,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -962,7 +964,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                     children: [
                       const MetaGymSvgIcon(
                         MetaGymIcons.workoutPlanCalendar,
-                        size: 19,
+                        size: 18,
                         fallbackIcon: Icons.event_note_rounded,
                       ),
                       const SizedBox(width: 7),
@@ -991,7 +993,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 7),
                   Row(
                     children: [
                       Expanded(
@@ -1089,7 +1091,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           child: child,
         ),
       ),
@@ -1174,7 +1176,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 
     return _buildMembershipGlassCard(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -1216,7 +1218,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1511,8 +1513,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   // 5. CẶP BENTO 2 CỘT (DINH DƯỠNG & TIẾN ĐỘ TẬP LUYỆN - LIQUID GLASS)
   // ===========================================================================
   Widget _buildBentoSection(BuildContext context) {
-    return SizedBox(
-      height: 128,
+    return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1522,104 +1523,108 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               child: MetaGymTap(
                 onTap: () => _pushAndReload('/member/features/nutrition'),
                 borderRadius: BorderRadius.circular(20),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const MetaGymSvgIcon(
-                            MetaGymIcons.actionNutrition,
-                            size: 18,
-                            fallbackIcon: Icons.restaurant_rounded,
-                          ),
-                          const SizedBox(width: 5),
-                          const Expanded(
-                            child: Text(
-                              'Dinh dưỡng',
-                              style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 116),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const MetaGymSvgIcon(
+                              MetaGymIcons.actionNutrition,
+                              size: 17,
+                              fallbackIcon: Icons.restaurant_rounded,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _activeNutrition?.title ?? 'Thực đơn tăng cơ',
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        '1.8–2.0g đạm / kg',
-                        style: TextStyle(
-                          color: Color(0xFF9EAAB8),
-                          fontSize: 10.5,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Đạm: 140 / 160g',
-                              style: TextStyle(
-                                color: Color(0xFFF7F9FC),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x242ECC71),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: const Text(
-                              '85%',
-                              style: TextStyle(
-                                color: MetaGymTheme.progressGreen,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
+                            const SizedBox(width: 5),
+                            const Expanded(
+                              child: Text(
+                                'Dinh dưỡng',
+                                style: TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          _activeNutrition?.title ?? 'Thực đơn tăng cơ',
+                          style: const TextStyle(
+                            color: MetaGymTheme.textPrimary,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: const LinearProgressIndicator(
-                          value: 0.85,
-                          minHeight: 3,
-                          backgroundColor: Color(0x26FFFFFF),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            MetaGymTheme.progressGreen,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        const Text(
+                          '1.8–2.0g đạm / kg',
+                          style: TextStyle(
+                            color: Color(0xFF9EAAB8),
+                            fontSize: 10.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Đạm: 140 / 160g',
+                                style: TextStyle(
+                                  color: Color(0xFFF7F9FC),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x242ECC71),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: const Text(
+                                '85%',
+                                style: TextStyle(
+                                  color: MetaGymTheme.progressGreen,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: const LinearProgressIndicator(
+                            value: 0.85,
+                            minHeight: 3,
+                            backgroundColor: Color(0x26FFFFFF),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              MetaGymTheme.progressGreen,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1632,130 +1637,231 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               child: MetaGymTap(
                 onTap: () => _pushAndReload('/member/features/workouts'),
                 borderRadius: BorderRadius.circular(20),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const MetaGymSvgIcon(
-                            MetaGymIcons.statsChartLine,
-                            size: 18,
-                            fallbackIcon: Icons.show_chart_rounded,
-                          ),
-                          const SizedBox(width: 5),
-                          const Expanded(
-                            child: Text(
-                              'Tiến độ',
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 116),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const MetaGymSvgIcon(
+                              MetaGymIcons.statsChartLine,
+                              size: 17,
+                              fallbackIcon: Icons.show_chart_rounded,
+                            ),
+                            const SizedBox(width: 5),
+                            const Expanded(
+                              child: Text(
+                                'Tiến độ',
+                                style: TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x262ECC71),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0x4D2ECC71),
+                                  width: 0.6,
+                                ),
+                              ),
+                              child: const Text(
+                                '3/7',
+                                style: TextStyle(
+                                  color: MetaGymTheme.progressGreen,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildDayBubble('T2', isCompleted: true),
+                            _buildDayBubble('T3', isCompleted: true),
+                            _buildDayBubble(
+                              'T4',
+                              isCompleted: true,
+                              isActive: true,
+                            ),
+                            _buildDayBubble('T5', isCompleted: false),
+                            _buildDayBubble('T6', isCompleted: false),
+                            _buildDayBubble('T7', isCompleted: false),
+                            _buildDayBubble('CN', isCompleted: false),
+                          ],
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            const Text(
+                              'Chuỗi: 5 ngày',
                               style: TextStyle(
                                 color: MetaGymTheme.textPrimary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x262ECC71),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0x4D2ECC71),
-                                width: 0.6,
-                              ),
-                            ),
-                            child: const Text(
-                              '3/7 buổi',
-                              style: TextStyle(
-                                color: MetaGymTheme.progressGreen,
-                                fontSize: 8.5,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
+                                fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                               maxLines: 1,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildDayBubble('T2', isCompleted: true),
-                          _buildDayBubble('T3', isCompleted: true),
-                          _buildDayBubble(
-                            'T4',
-                            isCompleted: true,
-                            isActive: true,
-                          ),
-                          _buildDayBubble('T5', isCompleted: false),
-                          _buildDayBubble('T6', isCompleted: false),
-                          _buildDayBubble('T7', isCompleted: false),
-                          _buildDayBubble('CN', isCompleted: false),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          const Text(
-                            'Chuỗi: 5 ngày',
-                            style: TextStyle(
-                              color: MetaGymTheme.textPrimary,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              fontFeatures: MetaGymTheme.tabularFigures,
+                            const SizedBox(width: 3),
+                            const MetaGymSvgIcon(
+                              MetaGymIcons.streakFlame,
+                              size: 13,
+                              fallbackIcon: Icons.local_fire_department_rounded,
                             ),
-                            maxLines: 1,
-                          ),
-                          const SizedBox(width: 3),
-                          const MetaGymSvgIcon(
-                            MetaGymIcons.streakFlame,
-                            size: 13,
-                            fallbackIcon: Icons.local_fire_department_rounded,
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x242ECC71),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: const Text(
-                              'Tốt',
-                              style: TextStyle(
-                                color: MetaGymTheme.progressGreen,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x242ECC71),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: const Text(
+                                'Tốt',
+                                style: TextStyle(
+                                  color: MetaGymTheme.progressGreen,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: const LinearProgressIndicator(
-                          value: 3 / 7,
-                          minHeight: 3,
-                          backgroundColor: Color(0x26FFFFFF),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            MetaGymTheme.progressGreen,
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: const LinearProgressIndicator(
+                            value: 3 / 7,
+                            minHeight: 3,
+                            backgroundColor: Color(0x26FFFFFF),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              MetaGymTheme.progressGreen,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMascotActivityBanner(BuildContext context) {
+    final workoutCount = _progressSummary?.workoutCount ?? 0;
+    final headline = workoutCount > 0
+        ? 'Đã ghi $workoutCount buổi tập'
+        : 'Nhịp tập cùng Meta Kong';
+    return MetaGymGlassCard(
+      key: const Key('member-home-mascot-banner'),
+      solid: widget.useSolidGlassFallback,
+      borderColor: MetaGymTheme.brandOrange.withValues(alpha: 0.34),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      onTap: () => _pushAndReload('/member/features/workouts'),
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/images/mascot/meta_kong_streak.webp',
+            width: 44,
+            height: 44,
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const MetaGymSvgIcon(
+                MetaGymIcons.streakFlame,
+                size: 24,
+                fallbackIcon: Icons.local_fire_department_rounded,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        headline,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusFull,
+                        ),
+                      ),
+                      child: const Text(
+                        'Nhật ký ›',
+                        style: TextStyle(
+                          color: MetaGymTheme.brandOrange,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Lưu mức tạ & lịch sử buổi tập thực tế của bạn.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: MetaGymTheme.textSecondary,
+                    fontSize: 11.5,
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

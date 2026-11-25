@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/features/member/presentation/member_explore_articles.dart';
 import 'package:meta_gym_app/features/member/presentation/widgets/member_home_explore_and_news.dart';
 import 'package:meta_gym_app/features/member/presentation/widgets/member_home_fan_deck.dart';
 import 'package:meta_gym_app/features/member/presentation/widgets/member_home_qr_modal.dart';
@@ -48,6 +50,16 @@ void main() {
     expect(find.text('Tin tức & Bài viết'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    await tester.ensureVisible(find.byKey(const ValueKey<String>('fan-card-2')));
+    await tester.tap(find.byKey(const ValueKey<String>('fan-card-2')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(const ValueKey<String>('fan-card-3')));
+    await tester.pumpAndSettle();
+    expect(find.text('Thẻ Kim Cương — Elite'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
     await tester.ensureVisible(find.text('Xem gói tập ›'));
     await tester.tap(find.text('Xem gói tập ›'));
     await tester.pumpAndSettle();
@@ -90,4 +102,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('QR Check-in Phòng Tập'), findsNothing);
   });
+
+  testWidgets(
+    'MemberExploreArticleDetailPage bolds Nhật ký tập luyện and CTA routes to /member/features/workouts',
+    (tester) async {
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => MemberExploreArticleDetailPage(
+              article: kMemberExploreArticles.last,
+            ),
+          ),
+          GoRoute(
+            path: '/member/features/workouts',
+            builder: (_, _) => const Scaffold(body: Text('Workouts Target')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp.router(theme: AppTheme.dark, routerConfig: router),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Nhật ký tập luyện', findRichText: true),
+        findsWidgets,
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('article-detail-cta')),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.byKey(const Key('article-detail-cta')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('article-detail-cta')));
+      await tester.pumpAndSettle();
+      expect(find.text('Workouts Target'), findsOneWidget);
+    },
+  );
 }

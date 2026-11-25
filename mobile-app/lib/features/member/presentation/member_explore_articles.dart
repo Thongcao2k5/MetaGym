@@ -140,7 +140,7 @@ const List<ExploreArticleItem> kMemberExploreArticles = [
     practiceTipBody:
         'Mở Nhật ký tập luyện để lưu lại kỷ lục mức tạ (PR) buổi tập tối nay.',
     ctaLabel: 'Mở Nhật ký tập luyện →',
-    ctaRoute: '/member/features/journal',
+    ctaRoute: '/member/features/workouts',
     imageAsset: 'assets/images/gym_banner.png',
   ),
 ];
@@ -161,7 +161,7 @@ class MemberExploreListPage extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Row(
                     children: [
                       MetaGymCircleIconButton(
@@ -339,6 +339,42 @@ class _MemberExploreArticleDetailPageState
     Navigator.of(context).maybePop();
   }
 
+  Widget _buildBulletText(String text) {
+    const highlight = 'Nhật ký tập luyện';
+    final idx = text.indexOf(highlight);
+    if (idx < 0) {
+      return Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFFD5CCBF),
+          fontSize: 13,
+          height: 1.55,
+        ),
+      );
+    }
+    return Text.rich(
+      TextSpan(
+        style: const TextStyle(
+          color: Color(0xFFD5CCBF),
+          fontSize: 13,
+          height: 1.55,
+        ),
+        children: [
+          if (idx > 0) TextSpan(text: text.substring(0, idx)),
+          TextSpan(
+            text: highlight,
+            style: const TextStyle(
+              color: MetaGymTheme.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (idx + highlight.length < text.length)
+            TextSpan(text: text.substring(idx + highlight.length)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final article = widget.article;
@@ -354,7 +390,7 @@ class _MemberExploreArticleDetailPageState
               children: [
                 // Header chuẩn 1.5
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Row(
                     children: [
                       MetaGymCircleIconButton(
@@ -419,13 +455,13 @@ class _MemberExploreArticleDetailPageState
 
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 36),
+                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 40),
                     children: [
                       // 1. Thẻ Hero tiêu đề + Tác giả (Warm Smoked Glass)
                       MetaGymGlassCard(
                         solid: false,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -468,18 +504,18 @@ class _MemberExploreArticleDetailPageState
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             Text(
                               article.title,
                               style: const TextStyle(
                                 color: MetaGymTheme.textPrimary,
-                                fontSize: 18.5,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                height: 1.32,
+                                height: 1.3,
                                 letterSpacing: -0.2,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 9),
                             Row(
                               children: [
                                 Container(
@@ -531,37 +567,37 @@ class _MemberExploreArticleDetailPageState
                       // 2. Thẻ Nội dung chi tiết + Gợi ý thực hành + Nút CTA
                       MetaGymGlassCard(
                         solid: false,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             for (var i = 0; i < article.sections.length; i++) ...[
-                              if (i > 0) const SizedBox(height: 14),
+                              if (i > 0) const SizedBox(height: 11),
                               Text(
                                 article.sections[i].heading,
                                 style: const TextStyle(
                                   color: MetaGymTheme.textPrimary,
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w800,
-                                  height: 1.35,
+                                  height: 1.32,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 5),
                               for (final p in article.sections[i].paragraphs)
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.only(bottom: 5),
                                   child: Text(
                                     p,
                                     style: const TextStyle(
                                       color: Color(0xFFD5CCBF),
                                       fontSize: 13,
-                                      height: 1.6,
+                                      height: 1.55,
                                     ),
                                   ),
                                 ),
                               for (final b in article.sections[i].bullets)
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.only(bottom: 5),
                                   child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -572,30 +608,21 @@ class _MemberExploreArticleDetailPageState
                                           color: MetaGymTheme.brandOrange,
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w800,
-                                          height: 1.5,
+                                          height: 1.48,
                                         ),
                                       ),
-                                      Expanded(
-                                        child: Text(
-                                          b,
-                                          style: const TextStyle(
-                                            color: Color(0xFFD5CCBF),
-                                            fontSize: 13,
-                                            height: 1.55,
-                                          ),
-                                        ),
-                                      ),
+                                      Expanded(child: _buildBulletText(b)),
                                     ],
                                   ),
                                 ),
                             ],
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 9),
 
                             // Hộp Gợi ý thực hành ngay
                             MetaGymMetricPanel(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 13,
-                                vertical: 11,
+                                horizontal: 12,
+                                vertical: 9,
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,13 +648,13 @@ class _MemberExploreArticleDetailPageState
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
-                                        const SizedBox(height: 3),
+                                        const SizedBox(height: 2),
                                         Text(
                                           article.practiceTipBody,
                                           style: const TextStyle(
                                             color: Color(0xFFE0D9CE),
                                             fontSize: 12.2,
-                                            height: 1.45,
+                                            height: 1.42,
                                           ),
                                         ),
                                       ],
@@ -636,7 +663,7 @@ class _MemberExploreArticleDetailPageState
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 11),
 
                             // Nút CTA hành động chính
                             SizedBox(

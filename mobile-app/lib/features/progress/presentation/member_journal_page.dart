@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -772,9 +774,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xDA26221F),
+        color: const Color(0x991C1917),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0x938C7B6C)),
+        border: Border.all(color: const Color(0x55A79D92), width: 0.9),
       ),
       child: Row(
         children: [
@@ -810,29 +812,26 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               child: Text(
                 _dayHeaderTitle(_selectedDate),
                 style: const TextStyle(
-                  color: Color(0xFFC6BBB3),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFD5CCBF),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-            if (!_canWrite && _isSelectedToday)
-              const Text(
-                'Chỉ xem (hết hạn gói)',
-                style: TextStyle(
-                  color: MetaGymTheme.warningAmber,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+            if (_isSelectedToday && _canWrite)
+              _statusPill(
+                label: 'Hôm nay',
+                color: MetaGymTheme.progressGreen,
+              )
+            else if (!_canWrite && _isSelectedToday)
+              _statusPill(
+                label: 'Chỉ xem (hết hạn gói)',
+                color: MetaGymTheme.warningAmber,
               )
             else if (!_isSelectedToday && _selectedDate.isBefore(_today))
-              const Text(
-                'Ngày đã khóa',
-                style: TextStyle(
-                  color: Color(0xFF9E948C),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+              _statusPill(
+                label: 'Ngày đã khóa',
+                color: const Color(0xFFA99F98),
               ),
           ],
         ),
@@ -841,6 +840,23 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
       ],
     );
   }
+
+  Widget _statusPill({required String label, required Color color}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.16),
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: color.withValues(alpha: 0.44)),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: color,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
 
   Widget _buildCalendarCard() {
     final monthStart = DateTime(_selectedDate.year, _selectedDate.month, 1);
@@ -857,6 +873,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         : ((((monthStart.weekday - 1) + daysInMonth) / 7).ceil() * 7);
 
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
       child: Column(
         children: [
@@ -963,12 +980,31 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 child: AnimatedContainer(
                   duration: MetaGymTheme.stateDurationOf(context),
                   curve: Curves.easeOutCubic,
-                  margin: const EdgeInsets.all(1.5),
+                  margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: selected
                         ? MetaGymTheme.brandOrange
+                        : hasEntry
+                        ? const Color(0x1E2ECC71)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(11),
+                    border: selected
+                        ? null
+                        : hasEntry
+                        ? Border.all(
+                            color: const Color(0x552ECC71),
+                            width: 1,
+                          )
+                        : null,
+                    boxShadow: selected
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x40FF5E36),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Stack(
                     alignment: Alignment.center,
@@ -979,15 +1015,18 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         style: TextStyle(
                           color: selected
                               ? Colors.white
+                              : hasEntry
+                              ? MetaGymTheme.progressGreen
                               : outsideMonth
                               ? const Color(0xFF8D827B)
                               : const Color(0xFFDED7D1),
                           fontSize: 12,
                           height: 1.15,
                           fontWeight:
-                              selected || _calendarMode == _CalendarMode.week
+                              selected || hasEntry || _calendarMode == _CalendarMode.week
                               ? FontWeight.w700
                               : FontWeight.w500,
+                          fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                       if (hasEntry)
@@ -1001,7 +1040,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                             decoration: BoxDecoration(
                               color: selected
                                   ? Colors.white
-                                  : MetaGymTheme.brandOrange,
+                                  : MetaGymTheme.progressGreen,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -1064,6 +1103,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final measurement = _measurementForDate(_selectedDate);
     if (entry == null && measurement == null) {
       return MetaGymGlassCard(
+        solid: false,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Text(
           _selectedDate.isAfter(_today)
@@ -1118,6 +1158,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }) {
     final count = photoIds.length + pendingImages.length;
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
@@ -1130,17 +1171,18 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             Row(
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xCF231E1C),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(color: const Color(0xFFA99585)),
+                    color: const Color(0x20FF5E36),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0x55FF5E36)),
                   ),
-                  child: const Icon(
-                    Icons.photo_library_outlined,
-                    color: Color(0xFFFF9272),
-                    size: 22,
+                  alignment: Alignment.center,
+                  child: const MetaGymSvgIcon(
+                    MetaGymIcons.bodyProgressPhoto,
+                    size: 20,
+                    fallbackIcon: Icons.photo_library_outlined,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1213,6 +1255,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   Widget _buildEditablePhotoCard(_DayDraft draft) {
     final total = draft.totalPhotos;
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1223,14 +1266,15 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xCF231E1C),
+                  color: const Color(0x20FF5E36),
                   borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: const Color(0xFFA99585)),
+                  border: Border.all(color: const Color(0x55FF5E36)),
                 ),
-                child: const Icon(
-                  Icons.photo_library_outlined,
-                  color: Color(0xFFFF9272),
+                alignment: Alignment.center,
+                child: const MetaGymSvgIcon(
+                  MetaGymIcons.bodyProgressPhoto,
                   size: 19,
+                  fallbackIcon: Icons.photo_library_outlined,
                 ),
               ),
               const SizedBox(width: 10),
@@ -1382,6 +1426,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         raw.trim().isEmpty ? '—' : '${raw.trim()}$unit';
 
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
@@ -1404,12 +1449,22 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   ),
                 ),
                 if (interactive)
-                  const Text(
-                    'Chạm để nhập',
-                    style: TextStyle(
-                      color: Color(0xFFFF9A79),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'Chạm để nhập',
+                      style: TextStyle(
+                        color: Color(0xFFFF9A79),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
               ],
@@ -1439,6 +1494,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   child: _SecondaryMetricBox(
                     label: 'Vòng ngực',
                     value: fmt(chest, ' cm'),
+                    accentColor: MetaGymTheme.brandOrange,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1446,6 +1502,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   child: _SecondaryMetricBox(
                     label: 'Vòng eo',
                     value: fmt(waist, ' cm'),
+                    accentColor: MetaGymTheme.progressGreen,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1453,6 +1510,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   child: _SecondaryMetricBox(
                     label: 'Vòng hông',
                     value: fmt(hips, ' cm'),
+                    accentColor: MetaGymTheme.reflectionBlue,
                   ),
                 ),
               ],
@@ -1532,6 +1590,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     }
 
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1624,6 +1683,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         .where((item) => item.result.trim().isNotEmpty)
         .toList();
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
@@ -1635,6 +1695,12 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
           children: [
             Row(
               children: [
+                const MetaGymSvgIcon(
+                  MetaGymIcons.progressAchievementPr,
+                  size: 17,
+                  fallbackIcon: Icons.emoji_events_outlined,
+                ),
+                const SizedBox(width: 7),
                 const Expanded(
                   child: Text(
                     'Thành tích của bạn',
@@ -1646,12 +1712,22 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   ),
                 ),
                 if (interactive)
-                  const Text(
-                    'Chạm để ghi',
-                    style: TextStyle(
-                      color: Color(0xFFFF9A79),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'Chạm để ghi',
+                      style: TextStyle(
+                        color: Color(0xFFFF9A79),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
               ],
@@ -1672,7 +1748,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 (item) => Container(
                   padding: const EdgeInsets.symmetric(vertical: 7),
                   decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: Color(0x20FFFFFF))),
+                    border: Border(top: BorderSide(color: Color(0x24A79D92))),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1683,15 +1759,17 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                           style: const TextStyle(
                             color: Color(0xFFD7CDC5),
                             fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                       Text(
                         item.result,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
+                          color: MetaGymTheme.brandOrange,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                     ],
@@ -1723,6 +1801,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   Widget _buildEditableAchievementCard(_DayDraft draft) {
     return MetaGymGlassCard(
+      solid: false,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1898,13 +1977,20 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
           )
         : null;
 
-    JournalAchievement? highlight;
+    final highlights = <JournalAchievement>[];
+    final seenTitles = <String>{};
     for (final entry in _entries) {
-      if (entry.achievements.isNotEmpty) {
-        highlight = entry.achievements.first;
-        break;
+      for (final item in entry.achievements) {
+        if (seenTitles.add(item.title)) {
+          highlights.add(item);
+          if (highlights.length >= 3) break;
+        }
       }
+      if (highlights.length >= 3) break;
     }
+    final trendRange = _weightPoints.length >= 2
+        ? '${_weightPoints.first.weightKg.toStringAsFixed(1)} → ${_weightPoints.last.weightKg.toStringAsFixed(1)}'
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1913,6 +1999,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
           children: [
             Expanded(
               child: MetaGymGlassCard(
+                solid: false,
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1930,6 +2017,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         color: Color(0xFFF6F3F0),
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1938,8 +2026,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFF57D89F),
-                        fontSize: 10.5,
+                        color: MetaGymTheme.progressGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                   ],
@@ -1949,6 +2039,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             const SizedBox(width: 10),
             Expanded(
               child: MetaGymGlassCard(
+                solid: false,
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1961,9 +2052,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     Text(
                       workoutCount == null ? '—' : '$workoutCount buổi',
                       style: const TextStyle(
-                        color: Color(0xFFF6F3F0),
+                        color: MetaGymTheme.brandOrange,
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1972,8 +2064,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFF57D89F),
-                        fontSize: 10.5,
+                        color: MetaGymTheme.progressGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                   ],
@@ -1984,6 +2078,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         ),
         const SizedBox(height: 12),
         MetaGymGlassCard(
+          solid: false,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1991,35 +2086,63 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Biểu đồ cân nặng',
-                    style: TextStyle(
-                      color: Color(0xFFF6F3F0),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _chartRange,
-                      dropdownColor: const Color(0xFF2B2622),
-                      style: const TextStyle(
-                        color: Color(0xFFFF9A79),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                  const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MetaGymSvgIcon(
+                        MetaGymIcons.statsChartLine,
+                        size: 17,
+                        fallbackIcon: Icons.show_chart_rounded,
                       ),
-                      items: const ['8 tuần', '30 ngày', 'Toàn bộ']
-                          .map(
-                            (label) => DropdownMenuItem(
-                              value: label,
-                              child: Text(label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) _changeChartRange(value);
-                      },
-                    ),
+                      SizedBox(width: 7),
+                      Text(
+                        'Biểu đồ cân nặng',
+                        style: TextStyle(
+                          color: Color(0xFFF6F3F0),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (trendRange != null) ...[
+                        Text(
+                          trendRange,
+                          style: const TextStyle(
+                            color: MetaGymTheme.progressGreen,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _chartRange,
+                          dropdownColor: const Color(0xFF2B2622),
+                          style: const TextStyle(
+                            color: Color(0xFFFF9A79),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          items: const ['8 tuần', '30 ngày', 'Toàn bộ']
+                              .map(
+                                (label) => DropdownMenuItem(
+                                  value: label,
+                                  child: Text(label),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) _changeChartRange(value);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -2139,7 +2262,21 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                                 isCurved: true,
                                 color: MetaGymTheme.brandOrange,
                                 barWidth: 3,
-                                dotData: const FlDotData(show: true),
+                                dotData: FlDotData(
+                                  show: true,
+                                  getDotPainter: (_, _, _, index) {
+                                    final isLatest =
+                                        index == _weightPoints.length - 1;
+                                    return FlDotCirclePainter(
+                                      radius: isLatest ? 4.5 : 3.2,
+                                      color: isLatest
+                                          ? MetaGymTheme.progressGreen
+                                          : MetaGymTheme.brandOrange,
+                                      strokeWidth: isLatest ? 1.6 : 0,
+                                      strokeColor: Colors.white,
+                                    );
+                                  },
+                                ),
                                 belowBarData: BarAreaData(
                                   show: true,
                                   gradient: LinearGradient(
@@ -2168,6 +2305,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         ),
         const SizedBox(height: 12),
         MetaGymGlassCard(
+          solid: false,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2223,62 +2361,101 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               _MeasureRow(
                 label: 'Vòng ngực',
                 value: chest == null ? '—' : '${chest.toStringAsFixed(1)} cm',
+                dotColor: MetaGymTheme.brandOrange,
               ),
               _MeasureRow(
                 label: 'Vòng eo',
                 value: waist == null ? '—' : '${waist.toStringAsFixed(1)} cm',
+                dotColor: MetaGymTheme.progressGreen,
               ),
               _MeasureRow(
                 label: 'Vòng hông',
                 value: hips == null ? '—' : '${hips.toStringAsFixed(1)} cm',
+                dotColor: MetaGymTheme.reflectionBlue,
               ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         MetaGymGlassCard(
+          solid: false,
           padding: const EdgeInsets.all(14),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.trending_up_rounded,
-                  color: Color(0xFFFF8F6D),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.42),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: const MetaGymSvgIcon(
+                      MetaGymIcons.progressAchievementPr,
+                      size: 18,
+                      fallbackIcon: Icons.trending_up_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
                       'Thành tích tập luyện',
                       style: TextStyle(
                         color: Color(0xFFF6F3F0),
-                        fontSize: 12.5,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      highlight == null
-                          ? 'Ghi thành tích ở tab Nhật ký để theo dõi tiến bộ.'
-                          : '${highlight.title}: ${highlight.result}',
-                      style: const TextStyle(
-                        color: Color(0xFFBCB2AA),
-                        fontSize: 11.5,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              if (highlights.isEmpty)
+                const Text(
+                  'Ghi thành tích ở tab Nhật ký để theo dõi tiến bộ.',
+                  style: TextStyle(color: Color(0xFFBCB2AA), fontSize: 12),
+                )
+              else
+                for (final (idx, item) in highlights.indexed)
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 7),
+                    decoration: idx > 0
+                        ? const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Color(0x24A79D92)),
+                            ),
+                          )
+                        : null,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: Color(0xFFD7CDC5),
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          item.result,
+                          style: const TextStyle(
+                            color: MetaGymTheme.brandOrange,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
             ],
           ),
         ),
@@ -2308,6 +2485,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   );
 
   Widget _buildErrorCard() => MetaGymGlassCard(
+    solid: false,
     padding: const EdgeInsets.all(20),
     child: Column(
       children: [
@@ -2351,14 +2529,20 @@ class _SegmentButton extends StatelessWidget {
       height: 44,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: active ? const Color(0xFF544037) : Colors.transparent,
+        color: active ? const Color(0x2EFF5E36) : Colors.transparent,
         borderRadius: BorderRadius.circular(11),
+        border: active
+            ? Border.all(
+                color: MetaGymTheme.brandOrange.withValues(alpha: 0.78),
+                width: 1.1,
+              )
+            : null,
       ),
       child: Text(
         label,
         style: TextStyle(
           color: active ? Colors.white : const Color(0xFFBDB5AE),
-          fontSize: 12,
+          fontSize: 12.5,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -2408,8 +2592,14 @@ class _ViewModeChip extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFF5A4035) : Colors.transparent,
+        color: active ? const Color(0x2EFF5E36) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
+        border: active
+            ? Border.all(
+                color: MetaGymTheme.brandOrange.withValues(alpha: 0.72),
+                width: 1,
+              )
+            : null,
       ),
       child: Text(
         label,
@@ -2430,26 +2620,31 @@ class _PrimaryMetricBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: BoxDecoration(
       color: const Color(0x80211E1C),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: const Color(0x9A8C8176)),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0x55A79D92)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFFBDB3AD), fontSize: 10),
+          style: const TextStyle(
+            color: Color(0xFFBDB3AD),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         Text(
           value,
           style: const TextStyle(
             color: Color(0xFFF6F3F0),
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            fontFeatures: MetaGymTheme.tabularFigures,
           ),
         ),
       ],
@@ -2458,22 +2653,35 @@ class _PrimaryMetricBox extends StatelessWidget {
 }
 
 class _SecondaryMetricBox extends StatelessWidget {
-  const _SecondaryMetricBox({required this.label, required this.value});
+  const _SecondaryMetricBox({
+    required this.label,
+    required this.value,
+    required this.accentColor,
+  });
   final String label;
   final String value;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.only(top: 6),
-    decoration: const BoxDecoration(
-      border: Border(top: BorderSide(color: Color(0x25FFFFFF))),
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+    decoration: BoxDecoration(
+      color: accentColor.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(11),
+      border: Border.all(color: accentColor.withValues(alpha: 0.34), width: 1),
     ),
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFFBDB3AD), fontSize: 10),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFFD5CCBF),
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
@@ -2481,7 +2689,8 @@ class _SecondaryMetricBox extends StatelessWidget {
           style: const TextStyle(
             color: Color(0xFFF6F3F0),
             fontSize: 13,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            fontFeatures: MetaGymTheme.tabularFigures,
           ),
         ),
       ],
@@ -2490,29 +2699,49 @@ class _SecondaryMetricBox extends StatelessWidget {
 }
 
 class _MeasureRow extends StatelessWidget {
-  const _MeasureRow({required this.label, required this.value});
+  const _MeasureRow({
+    required this.label,
+    required this.value,
+    required this.dotColor,
+  });
   final String label;
   final String value;
+  final Color dotColor;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 10),
     decoration: const BoxDecoration(
-      border: Border(top: BorderSide(color: Color(0x20FFFFFF))),
+      border: Border(top: BorderSide(color: Color(0x24A79D92))),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: Color(0xFFBDB3AD), fontSize: 12.5),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(color: Color(0xFFD5CCBF), fontSize: 12.5),
+            ),
+          ],
         ),
         Text(
           value,
           style: const TextStyle(
             color: Color(0xFFF6F3F0),
-            fontSize: 12.5,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
+            fontFeatures: MetaGymTheme.tabularFigures,
           ),
         ),
       ],
