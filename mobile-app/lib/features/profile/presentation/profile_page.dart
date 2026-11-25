@@ -1,5 +1,4 @@
 import 'dart:io' show Directory, File;
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show MethodChannel, Uint8List;

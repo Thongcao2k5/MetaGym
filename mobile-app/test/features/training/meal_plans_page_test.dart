@@ -102,7 +102,7 @@ class _MealPlanAdapter implements HttpClientAdapter {
       savedCount++;
       return _json({'id': 'mp-1', 'title': 'Thực đơn tăng cơ', 'items': []});
     }
-    final Object? data = switch (options.path) {
+    final Object data = switch (options.path) {
       '/coach/meal-plans/member-1' => {
         'id': 'mp-1',
         'title': 'Thực đơn tăng cơ',

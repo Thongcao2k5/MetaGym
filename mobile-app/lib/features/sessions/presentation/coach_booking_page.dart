@@ -518,7 +518,6 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                             ),
                           )
                         : ListView(
-                            cacheExtent: 600,
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
                               16,
