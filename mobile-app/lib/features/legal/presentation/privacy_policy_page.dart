@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_auth_background.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình Chính sách bảo mật — đồng bộ 1:1 với `auth-privacy-policy` trong HTML Preview.
@@ -25,7 +26,7 @@ class PrivacyPolicyPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const Positioned.fill(child: MetaGymBackground()),
+          const Positioned.fill(child: MetaGymAuthBackground()),
           SafeArea(
             child: Column(
               children: [
@@ -120,7 +121,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                                   Text(
                                     'Cập nhật 01/11/2026 · Tuân thủ Nghị định 13/2023',
                                     style: TextStyle(
-                                      color: palette.textSecondary,
+                                      color: palette.textWarmMuted,
                                       fontSize: 12,
                                       fontFeatures: MetaGymTheme.tabularFigures,
                                     ),
@@ -188,7 +189,7 @@ class _PrivacySectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
-      solid: true,
+      solid: false,
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +207,7 @@ class _PrivacySectionCard extends StatelessWidget {
           Text(
             body,
             style: TextStyle(
-              color: palette.textSecondary,
+              color: palette.textWarmMuted,
               fontSize: 14,
               height: 1.6,
             ),

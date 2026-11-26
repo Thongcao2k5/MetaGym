@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_auth_background.dart';
 import 'package:meta_gym_app/core/widgets/system_state_modals.dart';
 
 /// Catalogue available from the debug login tools, using the product dialogs.
@@ -50,7 +51,7 @@ class SystemStatesPage extends StatelessWidget {
     backgroundColor: MetaGymTheme.darkCanvas,
     body: Stack(
       children: [
-        const Positioned.fill(child: MetaGymBackground()),
+        const Positioned.fill(child: MetaGymAuthBackground()),
         SafeArea(
           child: Column(
             children: [
@@ -109,7 +110,7 @@ class SystemStatesPage extends StatelessWidget {
                             semanticLabel: 'Meta Kong',
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -134,7 +135,8 @@ class SystemStatesPage extends StatelessWidget {
                                 Text(
                                   'Bấm từng trạng thái để xem trực tiếp.',
                                   style: TextStyle(
-                                    color: MetaGymTheme.textSecondary,
+                                    color: MetaGymTheme.paletteOf(context)
+                                        .textWarmMuted,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -147,7 +149,7 @@ class SystemStatesPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     for (final state in _states) ...[
                       MetaGymGlassCard(
-                        solid: true,
+                        solid: false,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 13,
                           vertical: 11,
@@ -183,8 +185,9 @@ class SystemStatesPage extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     state.subtitle,
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.textSecondary,
+                                    style: TextStyle(
+                                      color: MetaGymTheme.paletteOf(context)
+                                          .textWarmMuted,
                                       fontSize: 12,
                                       height: 1.35,
                                     ),
@@ -206,10 +209,10 @@ class SystemStatesPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    const Text(
+                    Text(
                       'Chế độ xem thử: các nút chỉ đóng hộp thoại, không tạo giao dịch, nhận thưởng hoặc thay đổi dữ liệu.',
                       style: TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                        color: MetaGymTheme.paletteOf(context).textWarmMuted,
                         fontSize: 12,
                         height: 1.4,
                       ),

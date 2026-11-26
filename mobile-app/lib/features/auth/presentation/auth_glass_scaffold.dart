@@ -3,7 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_auth_background.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Khung toàn màn hình đồng bộ DNA "Futuristic Performance Glass" của Member Home & Coach Home.
@@ -20,7 +20,7 @@ class AuthAtmosphereScaffold extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // 1. Nền phòng tập & ambient glow đồng bộ 1:1 với Member Home
-          const Positioned.fill(child: MetaGymBackground()),
+          const Positioned.fill(child: MetaGymAuthBackground()),
           // 2. Căn chính giữa màn hình (tự cuộn mượt khi màn hình nhỏ hoặc bật bàn phím)
           SafeArea(
             child: LayoutBuilder(
