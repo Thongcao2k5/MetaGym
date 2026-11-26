@@ -152,7 +152,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
+                    horizontal: 16,
                     vertical: 24,
                   ),
                   child: ConstrainedBox(
@@ -162,43 +162,51 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                         double.infinity,
                       ),
                     ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 380),
-                        child: disableAnimations
-                            ? _buildContent(
-                                morphProgress: 1.0,
-                                loadProgress: 1.0,
-                                pulse: 0.0,
-                                animatePulse: false,
-                              )
-                            : AnimatedBuilder(
-                                animation: Listenable.merge([
-                                  _morphController,
-                                  _pulseController,
-                                  _loadController,
-                                ]),
-                                builder: (context, _) {
-                                  final t =
-                                      widget.debugProgressOverride?.clamp(
-                                        0.0,
-                                        1.0,
-                                      ) ??
-                                      _morphController.value;
-                                  final loadT = widget.debugProgressOverride != null
-                                      ? (t >= 1.0 ? 1.0 : 0.0)
-                                      : _loadController.value;
-                                  return _buildContent(
-                                    morphProgress: t,
-                                    loadProgress: loadT,
-                                    pulse: _pulseController.value,
-                                    animatePulse:
-                                        widget.debugProgressOverride == null &&
-                                        !MetaGymTheme.isFlutterTestEnvironment,
-                                  );
-                                },
-                              ),
-                      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(height: 24),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 380),
+                          child: disableAnimations
+                              ? _buildContent(
+                                  morphProgress: 1.0,
+                                  loadProgress: 1.0,
+                                  pulse: 0.0,
+                                  animatePulse: false,
+                                )
+                              : AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _morphController,
+                                    _pulseController,
+                                    _loadController,
+                                  ]),
+                                  builder: (context, _) {
+                                    final t =
+                                        widget.debugProgressOverride?.clamp(
+                                          0.0,
+                                          1.0,
+                                        ) ??
+                                        _morphController.value;
+                                    final loadT =
+                                        widget.debugProgressOverride != null
+                                        ? (t >= 1.0 ? 1.0 : 0.0)
+                                        : _loadController.value;
+                                    return _buildContent(
+                                      morphProgress: t,
+                                      loadProgress: loadT,
+                                      pulse: _pulseController.value,
+                                      animatePulse:
+                                          widget.debugProgressOverride ==
+                                              null &&
+                                          !MetaGymTheme
+                                              .isFlutterTestEnvironment,
+                                    );
+                                  },
+                                ),
+                        ),
+                        const _SplashVersionFooter(),
+                      ],
                     ),
                   ),
                 );
@@ -237,13 +245,26 @@ class _AppLoadingPageState extends State<AppLoadingPage>
       children: [
         RepaintBoundary(
           child: SizedBox(
-            width: 310,
-            height: 204,
-            child: CustomPaint(
-              painter: _MetaGymMorphPainter(
-                progress: morphProgress,
-                pulse: breath,
-              ),
+            width: 280,
+            height: 210,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: 1 - _interval(morphProgress, 0.65, 0.78),
+                  child: CustomPaint(
+                    size: const Size(280, 210),
+                    painter: _MetaGymMorphPainter(
+                      progress: morphProgress,
+                      pulse: breath,
+                    ),
+                  ),
+                ),
+                Opacity(
+                  opacity: _interval(morphProgress, 0.78, 1.0),
+                  child: const _SplashBrandLockup(),
+                ),
+              ],
             ),
           ),
         ),
@@ -256,7 +277,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Color(0xFFC8C2BC),
-              fontSize: 13.5,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1.4,
             ),
@@ -267,40 +288,100 @@ class _AppLoadingPageState extends State<AppLoadingPage>
           progress: barFade,
           offsetY: 10,
           child: RepaintBoundary(
-            child: _WarmGlassProgressBar(
-              progress: barValue,
-            ),
+            child: _WarmGlassProgressBar(progress: barValue),
           ),
-        ),
-        const SizedBox(height: 36),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            MetaGymSvgIcon(
-              MetaGymIcons.settingVersion,
-              size: 14,
-              fallbackIcon: Icons.info_outline_rounded,
-            ),
-            SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                'Meta Gym v1.0.0 · Build 2026.11',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: MetaGymTheme.textSecondary,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                  fontFeatures: MetaGymTheme.tabularFigures,
-                ),
-              ),
-            ),
-          ],
         ),
       ],
     );
   }
+}
+
+class _SplashBrandLockup extends StatelessWidget {
+  const _SplashBrandLockup();
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x66000000),
+              blurRadius: 36,
+              offset: Offset(0, 14),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: const MetaGymSvgIcon(
+            MetaGymIcons.appIconMark,
+            size: 96,
+            semanticsLabel: 'Biểu tượng Meta Gym',
+          ),
+        ),
+      ),
+      const SizedBox(height: 14),
+      const Text.rich(
+        TextSpan(
+          style: TextStyle(
+            fontFamily: MetaGymTheme.fontFamily,
+            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+            fontSize: 40,
+            fontWeight: FontWeight.w800,
+            height: 1,
+            letterSpacing: -1.2,
+            color: MetaGymTheme.textPrimary,
+          ),
+          children: [
+            TextSpan(
+              text: 'M',
+              style: TextStyle(color: MetaGymTheme.brandOrange),
+            ),
+            TextSpan(text: 'eta'),
+            TextSpan(
+              text: 'G',
+              style: TextStyle(color: MetaGymTheme.brandOrange),
+            ),
+            TextSpan(text: 'ym'),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _SplashVersionFooter extends StatelessWidget {
+  const _SplashVersionFooter();
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    mainAxisSize: MainAxisSize.min,
+    children: const [
+      MetaGymSvgIcon(
+        MetaGymIcons.settingVersion,
+        size: 14,
+        fallbackIcon: Icons.info_outline_rounded,
+      ),
+      SizedBox(width: 6),
+      Flexible(
+        child: Text(
+          'Meta Gym v1.0.0 · Build 2026.11',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: MetaGymTheme.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            fontFeatures: MetaGymTheme.tabularFigures,
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class _StaggeredSlideFade extends StatelessWidget {
@@ -367,7 +448,7 @@ class _WarmGlassProgressBar extends StatelessWidget {
             textAlign: TextAlign.right,
             style: const TextStyle(
               color: MetaGymTheme.brandOrange,
-              fontSize: 12.5,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
               fontFeatures: [FontFeature.tabularFigures()],
             ),
@@ -547,10 +628,7 @@ class _MetaGymMorphPainter extends CustomPainter {
         mTp.paint(canvas, mPos);
 
         // Reveal the real typographic 'M' along the traced stroke using dstIn
-        canvas.saveLayer(
-          maskBounds,
-          Paint()..blendMode = BlendMode.dstIn,
-        );
+        canvas.saveLayer(maskBounds, Paint()..blendMode = BlendMode.dstIn);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(
@@ -584,7 +662,9 @@ class _MetaGymMorphPainter extends CustomPainter {
           final metrics = mStrokePath.computeMetrics().toList();
           if (metrics.isNotEmpty) {
             final metric = metrics.first;
-            final tangent = metric.getTangentForOffset(metric.length * mDrawProg);
+            final tangent = metric.getTangentForOffset(
+              metric.length * mDrawProg,
+            );
             if (tangent != null) {
               _paintDirectionalCometDroplet(
                 canvas: canvas,
@@ -692,12 +772,7 @@ class _MetaGymMorphPainter extends CustomPainter {
       }
 
       // Hiệu ứng sáng đường chéo lướt từ trái sang phải trên toàn bộ logo
-      final sheenT = _segment(
-        progress,
-        0.89,
-        1.0,
-        Curves.easeInOutCubic,
-      );
+      final sheenT = _segment(progress, 0.89, 1.0, Curves.easeInOutCubic);
       if (sheenT > 0.0 && sheenT < 1.0) {
         final sheenBounds = Rect.fromLTWH(
           wordStartX - 24.0,
@@ -723,10 +798,7 @@ class _MetaGymMorphPainter extends CustomPainter {
             ..layout()
             ..paint(canvas, charOffsets[i]);
         }
-        canvas.saveLayer(
-          sheenBounds,
-          Paint()..blendMode = BlendMode.srcIn,
-        );
+        canvas.saveLayer(sheenBounds, Paint()..blendMode = BlendMode.srcIn);
         final beamX = ui.lerpDouble(
           sheenBounds.left - 40.0,
           sheenBounds.right + 40.0,
@@ -771,7 +843,8 @@ class _MetaGymMorphPainter extends CustomPainter {
     late final double scaleX;
     late final double scaleY;
     late final double invertMorph; // 0 = upright falling drop, 0.5 = round ball, 1 = inverted shield drop
-    late final double warmColorMix; // 0 = luminous warm cream, 1 = golden orange
+    late final double
+    warmColorMix; // 0 = luminous warm cream, 1 = golden orange
 
     if (progress < 0.09) {
       final fallT = _segment(progress, 0.0, 0.09, Curves.easeInQuad);
@@ -807,18 +880,14 @@ class _MetaGymMorphPainter extends CustomPainter {
       Offset.zero,
       26.0,
       Paint()
-        ..shader = ui.Gradient.radial(
-          Offset.zero,
-          26.0,
-          [
-            Color.lerp(
-              const Color(0x66FFF6E0),
-              const Color(0x66FF8C3B),
-              warmColorMix,
-            )!,
-            Colors.transparent,
-          ],
-        ),
+        ..shader = ui.Gradient.radial(Offset.zero, 26.0, [
+          Color.lerp(
+            const Color(0x66FFF6E0),
+            const Color(0x66FF8C3B),
+            warmColorMix,
+          )!,
+          Colors.transparent,
+        ]),
     );
 
     final topColor = Color.lerp(
@@ -834,11 +903,10 @@ class _MetaGymMorphPainter extends CustomPainter {
 
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
-      ..shader = ui.Gradient.linear(
-        const Offset(0, -24),
-        const Offset(0, 24),
-        [topColor, botColor],
-      );
+      ..shader = ui.Gradient.linear(const Offset(0, -24), const Offset(0, 24), [
+        topColor,
+        botColor,
+      ]);
 
     // Nội suy mượt từ:
     // - Giọt nước rơi xuôi (đỉnh nhọn ở trên y=-24, bụng bầu ở dưới y=+20)
@@ -941,38 +1009,10 @@ class _MetaGymMorphPainter extends CustomPainter {
 
     final torsoPath = Path()
       ..moveTo(0, topY)
-      ..cubicTo(
-        topW * 0.58,
-        topY,
-        topW,
-        topY + 3.5,
-        topW * 0.96,
-        topY + 15.0,
-      )
-      ..cubicTo(
-        midW,
-        11.0,
-        10.5,
-        botY - 6.0,
-        0,
-        botY,
-      )
-      ..cubicTo(
-        -10.5,
-        botY - 6.0,
-        -midW,
-        11.0,
-        -topW * 0.96,
-        topY + 15.0,
-      )
-      ..cubicTo(
-        -topW,
-        topY + 3.5,
-        -topW * 0.58,
-        topY,
-        0,
-        topY,
-      )
+      ..cubicTo(topW * 0.58, topY, topW, topY + 3.5, topW * 0.96, topY + 15.0)
+      ..cubicTo(midW, 11.0, 10.5, botY - 6.0, 0, botY)
+      ..cubicTo(-10.5, botY - 6.0, -midW, 11.0, -topW * 0.96, topY + 15.0)
+      ..cubicTo(-topW, topY + 3.5, -topW * 0.58, topY, 0, topY)
       ..close();
 
     canvas.drawPath(torsoPath, fillPaint);
@@ -1249,11 +1289,7 @@ class _MetaGymMorphPainter extends CustomPainter {
       ..shader = ui.Gradient.linear(
         Offset(radius * 1.35, 0),
         Offset(-length, 0),
-        const [
-          Color(0xFFFFF3D1),
-          Color(0xFFFFB84D),
-          MetaGymTheme.brandOrange,
-        ],
+        const [Color(0xFFFFF3D1), Color(0xFFFFB84D), MetaGymTheme.brandOrange],
         const [0.0, 0.38, 1.0],
       );
 

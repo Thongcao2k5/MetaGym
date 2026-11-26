@@ -18,6 +18,22 @@ import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart'
 import 'package:provider/provider.dart';
 
 void main() {
+  testWidgets('Splash keeps its version footer at the bottom on a phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      const MaterialApp(home: AppLoadingPage(debugProgressOverride: 1)),
+    );
+    await tester.pumpAndSettle();
+    final version = find.text('Meta Gym v1.0.0 · Build 2026.11');
+    expect(tester.getBottomLeft(version).dy, greaterThan(740));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('AppLoadingPage renders lifting arm animation and brand title', (
     tester,
   ) async {
