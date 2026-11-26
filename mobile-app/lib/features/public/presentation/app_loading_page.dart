@@ -232,6 +232,12 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     final breath = animatePulse
         ? 0.5 - 0.5 * math.cos(pulse * 2 * math.pi)
         : 0.5;
+    final logoFade = _interval(
+      morphProgress,
+      0.58,
+      0.96,
+      Curves.easeOutCubic,
+    );
     final subtitleFade = _interval(
       morphProgress,
       0.74,
@@ -248,29 +254,28 @@ class _AppLoadingPageState extends State<AppLoadingPage>
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        Opacity(
+          opacity: logoFade,
+          child: Transform.translate(
+            offset: Offset(0, (1.0 - logoFade) * 10),
+            child: Transform.scale(
+              scale: 0.88 + 0.12 * logoFade,
+              child: const _SplashAppLogoMark(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
         RepaintBoundary(
           child: SizedBox(
             width: 280,
-            height: 210,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Opacity(
-                  opacity: 1 - _interval(morphProgress, 0.65, 0.78),
-                  child: CustomPaint(
-                    size: const Size(280, 210),
-                    painter: _MetaGymMorphPainter(
-                      progress: morphProgress,
-                      pulse: breath,
-                      wordTextColor: MetaGymTheme.paletteOf(context).textPrimary,
-                    ),
-                  ),
-                ),
-                Opacity(
-                  opacity: _interval(morphProgress, 0.78, 1.0),
-                  child: const _SplashBrandLockup(),
-                ),
-              ],
+            height: 170,
+            child: CustomPaint(
+              size: const Size(280, 170),
+              painter: _MetaGymMorphPainter(
+                progress: morphProgress,
+                pulse: breath,
+                wordTextColor: MetaGymTheme.paletteOf(context).textPrimary,
+              ),
             ),
           ),
         ),
@@ -302,62 +307,31 @@ class _AppLoadingPageState extends State<AppLoadingPage>
   }
 }
 
-class _SplashBrandLockup extends StatelessWidget {
-  const _SplashBrandLockup();
+class _SplashAppLogoMark extends StatelessWidget {
+  const _SplashAppLogoMark();
 
   @override
   Widget build(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x66000000),
-                blurRadius: 36,
-                offset: Offset(0, 14),
-              ),
-            ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x66000000),
+            blurRadius: 32,
+            offset: Offset(0, 12),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: const MetaGymSvgIcon(
-              MetaGymIcons.appIconMark,
-              size: 96,
-              semanticsLabel: 'Biểu tượng Meta Gym',
-            ),
-          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: const MetaGymSvgIcon(
+          MetaGymIcons.appIconMark,
+          size: 88,
+          adaptForLightMode: false,
+          semanticsLabel: 'Biểu tượng Meta Gym',
         ),
-        const SizedBox(height: 14),
-        Text.rich(
-          TextSpan(
-            style: TextStyle(
-              fontFamily: MetaGymTheme.fontFamily,
-              fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              height: 1,
-              letterSpacing: -1.2,
-              color: palette.textPrimary,
-            ),
-            children: const [
-              TextSpan(
-                text: 'M',
-                style: TextStyle(color: MetaGymTheme.brandOrange),
-              ),
-              TextSpan(text: 'eta'),
-              TextSpan(
-                text: 'G',
-                style: TextStyle(color: MetaGymTheme.brandOrange),
-              ),
-              TextSpan(text: 'ym'),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
