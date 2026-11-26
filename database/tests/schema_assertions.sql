@@ -66,7 +66,7 @@ DECLARE
     'ck_coach_package_code_format', 'ck_coach_entitlement_origin',
     'ex_coach_weekly_slot_overlap', 'uq_coach_hold_request',
     'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap',
-    'uq_member_self_training_day', 'ck_coach_outcome_different_pair',
+    'ck_coach_outcome_different_pair',
     'uq_member_membership_owner', 'fk_payment_renewed_membership',
     'ck_payments_vnpay_confirmation', 'ck_payments_momo_confirmation',
     'ck_payments_zalopay_confirmation', 'uq_simulated_refund_idempotency',
@@ -184,7 +184,8 @@ DECLARE
     'ix_simulated_refunds_created_at',
     'ix_payment_adjustments_created_at',
     'ix_termination_disputed_created',
-    'ix_nutrition_foods_name_lower'
+    'ix_nutrition_foods_name_lower',
+    'ix_member_self_training_days_member_date_time'
   ];
   missing_indexes text[];
 BEGIN

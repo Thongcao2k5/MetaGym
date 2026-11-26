@@ -739,6 +739,24 @@ class LocalDemoInterceptor extends Interceptor {
       final to = options.queryParameters['to'] as String?;
       return (store.selfTrainingRange(from: from, to: to), 200);
     }
+    if (path == '/member/self-training-days' && method == 'POST') {
+      final created = store.createSelfTrainingSession(body);
+      return (created, 201);
+    }
+    if (path.startsWith('/member/self-training-days/sessions/') &&
+        (method == 'PUT' || method == 'PATCH')) {
+      final id = Uri.decodeComponent(path.split('/').last);
+      final updated = store.updateSelfTrainingSession(id, body);
+      return updated != null
+          ? (updated, 200)
+          : (const {'message': 'Không tìm thấy buổi tập.'}, 404);
+    }
+    if (path.startsWith('/member/self-training-days/sessions/') &&
+        method == 'DELETE') {
+      final id = Uri.decodeComponent(path.split('/').last);
+      store.selfTrainingDays.removeWhere((d) => d['id'] == id);
+      return (const {'deleted': true}, 200);
+    }
     if (path.startsWith('/member/self-training-days/') &&
         (method == 'PUT' || method == 'PATCH')) {
       final dayKey = Uri.decodeComponent(path.split('/').last);
@@ -2734,7 +2752,7 @@ class _LocalDemoStore {
   }
 
   List<Map<String, dynamic>> selfTrainingRange({String? from, String? to}) {
-    return selfTrainingDays.where((d) {
+    final filtered = selfTrainingDays.where((d) {
       final dateStr = d['planDate'] as String? ?? '';
       if (dateStr.isEmpty) return false;
       if (from != null && from.isNotEmpty && dateStr.compareTo(from) < 0) {
@@ -2745,13 +2763,22 @@ class _LocalDemoStore {
       }
       return true;
     }).toList();
+    filtered.sort((a, b) {
+      final dateCmp = (a['planDate'] as String? ?? '').compareTo(
+        b['planDate'] as String? ?? '',
+      );
+      if (dateCmp != 0) return dateCmp;
+      return (a['startTime'] as String? ?? '99:99').compareTo(
+        b['startTime'] as String? ?? '99:99',
+      );
+    });
+    return filtered;
   }
 
-  Map<String, dynamic> upsertSelfTrainingDay(
+  List<Map<String, dynamic>> _mapSelfTrainingExercises(
     String planDate,
     Map<String, dynamic> body,
   ) {
-    final idx = selfTrainingDays.indexWhere((d) => d['planDate'] == planDate);
     final mappedExercises = <Map<String, dynamic>>[];
     if (body['exercises'] is List) {
       final rawList = body['exercises'] as List;
@@ -2785,6 +2812,56 @@ class _LocalDemoStore {
         });
       }
     }
+    return mappedExercises;
+  }
+
+  Map<String, dynamic> createSelfTrainingSession(Map<String, dynamic> body) {
+    final planDate = (body['planDate'] as String? ?? '').trim();
+    final mappedExercises = _mapSelfTrainingExercises(planDate, body);
+    final created = <String, dynamic>{
+      'id': 'self-$planDate-${DateTime.now().microsecondsSinceEpoch}',
+      'planDate': planDate,
+      'title': (body['title'] as String? ?? 'Buổi tự tập').trim(),
+      'startTime': body['startTime'] as String?,
+      'notes': (body['notes'] as String? ?? '').trim(),
+      if (body['iconKey'] != null) 'iconKey': body['iconKey'],
+      'exercises': mappedExercises,
+    };
+    selfTrainingDays.add(created);
+    return created;
+  }
+
+  Map<String, dynamic>? updateSelfTrainingSession(
+    String id,
+    Map<String, dynamic> body,
+  ) {
+    final idx = selfTrainingDays.indexWhere((d) => d['id'] == id);
+    if (idx < 0) return null;
+    final existing = selfTrainingDays[idx];
+    final planDate = existing['planDate'] as String? ?? '';
+    final mappedExercises = _mapSelfTrainingExercises(planDate, body);
+    final updated = <String, dynamic>{
+      'id': id,
+      'planDate': planDate,
+      'title': (body['title'] as String? ?? 'Buổi tự tập').trim(),
+      'startTime': body['startTime'] as String?,
+      'notes': (body['notes'] as String? ?? '').trim(),
+      if (body['iconKey'] != null || existing['iconKey'] != null)
+        'iconKey': body['iconKey'] ?? existing['iconKey'],
+      'exercises': mappedExercises.isNotEmpty
+          ? mappedExercises
+          : (existing['exercises'] ?? const <Object?>[]),
+    };
+    selfTrainingDays[idx] = updated;
+    return updated;
+  }
+
+  Map<String, dynamic> upsertSelfTrainingDay(
+    String planDate,
+    Map<String, dynamic> body,
+  ) {
+    final idx = selfTrainingDays.indexWhere((d) => d['planDate'] == planDate);
+    final mappedExercises = _mapSelfTrainingExercises(planDate, body);
     final existing = idx >= 0 ? selfTrainingDays[idx] : null;
     final updated = <String, dynamic>{
       'id': existing?['id'] ?? 'self-$planDate',

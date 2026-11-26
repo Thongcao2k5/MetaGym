@@ -69,16 +69,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   late DateTime _selected = _today;
   final _title = TextEditingController();
   final _notes = TextEditingController();
-  final Map<String, MemberSelfTrainingDay> _plans = {};
+  final Map<String, List<MemberSelfTrainingDay>> _plans = {};
   final Map<String, String> _iconKeys = {};
   final List<_ExerciseDraft> _exerciseDrafts = [];
+  final Set<String> _expandedSessionIds = {};
   String? _time;
   String? _selectedIconKey;
+  String? _editingSessionId;
   String? _error;
   bool _loading = true;
   bool _saving = false;
   bool _editing = false;
-  bool _expandedDetails = false;
   bool _ready = false;
   _CalendarMode _mode = _CalendarMode.week;
 
@@ -89,7 +90,15 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   bool get _canEdit => !_selected.isBefore(_today);
   String get _selectedKey => _key(_selected);
-  MemberSelfTrainingDay? get _plan => _plans[_selectedKey];
+  List<MemberSelfTrainingDay> get _dayPlans => _plans[_selectedKey] ?? const [];
+
+  void _sortDayPlans(List<MemberSelfTrainingDay> items) {
+    items.sort((a, b) {
+      final timeCmp = (a.startTime ?? '99:99').compareTo(b.startTime ?? '99:99');
+      if (timeCmp != 0) return timeCmp;
+      return a.id.compareTo(b.id);
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -173,10 +182,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       final plans = results[0] as List<MemberSelfTrainingDay>;
       final storedIcons = results[1] as Map<String, String>;
       if (!mounted) return;
+      final grouped = <String, List<MemberSelfTrainingDay>>{};
+      for (final plan in plans) {
+        grouped.putIfAbsent(plan.planDate, () => []).add(plan);
+      }
+      for (final entry in grouped.values) {
+        _sortDayPlans(entry);
+      }
       setState(() {
         _plans
           ..clear()
-          ..addEntries(plans.map((plan) => MapEntry(plan.planDate, plan)));
+          ..addAll(grouped);
         _iconKeys
           ..clear()
           ..addAll(storedIcons);
@@ -196,7 +212,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ? _selected.add(Duration(days: 7 * delta))
           : DateTime(_selected.year, _selected.month + delta);
       _editing = false;
-      _expandedDetails = false;
+      _editingSessionId = null;
+      _expandedSessionIds.clear();
     });
     _load();
   }
@@ -206,17 +223,20 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     setState(() {
       _mode = mode;
       _editing = false;
-      _expandedDetails = false;
+      _editingSessionId = null;
+      _expandedSessionIds.clear();
     });
     _load();
   }
 
-  void _startEditing() {
-    final plan = _plan;
+  void _startEditing([MemberSelfTrainingDay? plan]) {
     _title.text = plan?.title ?? '';
     _notes.text = plan?.notes ?? '';
     _time = plan?.startTime;
-    _selectedIconKey = _iconKeys[_selectedKey] ?? plan?.iconKey;
+    _editingSessionId = plan?.id;
+    _selectedIconKey = plan == null
+        ? null
+        : (_iconKeys[plan.id] ?? _iconKeys[plan.planDate] ?? plan.iconKey);
     _clearExerciseDrafts();
     if (plan != null && plan.exercises.isNotEmpty) {
       for (final exercise in plan.exercises) {
@@ -232,7 +252,6 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
     setState(() {
       _editing = true;
-      _expandedDetails = false;
     });
   }
 
@@ -373,32 +392,51 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
     setState(() => _saving = true);
     try {
-      final saved = await _api.save(
-        day: _selectedKey,
-        title: _title.text.trim(),
-        startTime: _time,
-        notes: _notes.text.trim(),
-        exercises: builtExercises,
-      );
-      await _iconStore.setIcon(_selectedKey, _selectedIconKey);
+      final saved = _editingSessionId == null
+          ? await _api.createSession(
+              day: _selectedKey,
+              title: _title.text.trim(),
+              startTime: _time,
+              notes: _notes.text.trim(),
+              exercises: builtExercises,
+            )
+          : await _api.updateSession(
+              id: _editingSessionId!,
+              title: _title.text.trim(),
+              startTime: _time,
+              notes: _notes.text.trim(),
+              exercises: builtExercises,
+            );
+      await _iconStore.setIcon(saved.id, _selectedIconKey);
       if (!mounted) return;
+      final normalized = MemberSelfTrainingDay(
+        id: saved.id,
+        planDate: saved.planDate,
+        title: saved.title,
+        startTime: saved.startTime,
+        notes: saved.notes,
+        iconKey: _selectedIconKey ?? saved.iconKey,
+        exercises: saved.exercises,
+      );
       setState(() {
-        _plans[_selectedKey] = MemberSelfTrainingDay(
-          id: saved.id,
-          planDate: saved.planDate,
-          title: saved.title,
-          startTime: saved.startTime,
-          notes: saved.notes,
-          iconKey: _selectedIconKey ?? saved.iconKey,
-          exercises: saved.exercises,
+        final dayList = List<MemberSelfTrainingDay>.from(
+          _plans[_selectedKey] ?? const [],
         );
-        if (_selectedIconKey == null || _selectedIconKey!.isEmpty) {
-          _iconKeys.remove(_selectedKey);
+        final existingIdx = dayList.indexWhere((item) => item.id == saved.id);
+        if (existingIdx >= 0) {
+          dayList[existingIdx] = normalized;
         } else {
-          _iconKeys[_selectedKey] = _selectedIconKey!;
+          dayList.add(normalized);
+        }
+        _sortDayPlans(dayList);
+        _plans[_selectedKey] = dayList;
+        if (_selectedIconKey == null || _selectedIconKey!.isEmpty) {
+          _iconKeys.remove(saved.id);
+        } else {
+          _iconKeys[saved.id] = _selectedIconKey!;
         }
         _editing = false;
-        _expandedDetails = false;
+        _editingSessionId = null;
       });
       _showWarmSnackBar('Đã lưu lịch tập.');
     } on ApiException catch (error) {
@@ -414,18 +452,26 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
   }
 
-  Future<void> _delete() async {
+  Future<void> _delete(MemberSelfTrainingDay plan) async {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      await _api.delete(_selectedKey);
-      await _iconStore.removeIcon(_selectedKey);
+      await _api.deleteSession(plan.id);
+      await _iconStore.removeIcon(plan.id);
       if (!mounted) return;
       setState(() {
-        _plans.remove(_selectedKey);
-        _iconKeys.remove(_selectedKey);
+        final dayList = List<MemberSelfTrainingDay>.from(
+          _plans[plan.planDate] ?? const [],
+        )..removeWhere((item) => item.id == plan.id);
+        if (dayList.isEmpty) {
+          _plans.remove(plan.planDate);
+        } else {
+          _plans[plan.planDate] = dayList;
+        }
+        _iconKeys.remove(plan.id);
+        _expandedSessionIds.remove(plan.id);
         _editing = false;
-        _expandedDetails = false;
+        _editingSessionId = null;
       });
     } catch (_) {
       if (mounted) {
@@ -470,6 +516,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ),
         ),
       ),
+      bottomNavigationBar: _bottomActionDock(),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -482,7 +529,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 16,
                 8,
                 16,
-                MediaQuery.paddingOf(context).bottom + 24,
+                MediaQuery.paddingOf(context).bottom + (_bottomActionDock() != null ? 104 : 24),
               ),
               children: [
                 _calendar(),
@@ -549,13 +596,44 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                     ),
                   )
                 else ...[
-                  Text(
-                    _displayDate(_selected),
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _displayDate(_selected),
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (!_editing && _dayPlans.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: palette.chipActiveBg,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: MetaGymTheme.brandOrange.withValues(
+                                alpha: 0.45,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            '${_dayPlans.length} buổi tập',
+                            style: TextStyle(
+                              color: palette.primaryText,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   if (_editing) _editPanel() else _summaryPanel(),
@@ -699,7 +777,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     final palette = _palette;
     final key = _key(day);
     final selected = key == _selectedKey;
-    final hasPlan = _plans.containsKey(key);
+    final hasPlan = _plans[key]?.isNotEmpty ?? false;
     final outside = showNumber && day.month != _selected.month;
     return MetaGymTap(
       onTap: () {
@@ -708,7 +786,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         setState(() {
           _selected = day;
           _editing = false;
-          _expandedDetails = false;
+          _editingSessionId = null;
+          _expandedSessionIds.clear();
         });
         if (_mode == _CalendarMode.month && monthChanged) _load();
       },
@@ -758,10 +837,55 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     );
   }
 
+  Widget? _bottomActionDock() {
+    if (_loading || _error != null || !_canEdit || _editing) return null;
+    final palette = _palette;
+    final colors = MetaGymColors.of(context);
+    final hasPlans = _dayPlans.isNotEmpty;
+    return Container(
+      decoration: BoxDecoration(
+        color: _isLight
+            ? colors.surface.withValues(alpha: 0.96)
+            : const Color(0xEC161920),
+        border: Border(
+          top: BorderSide(color: palette.borderSolid, width: 1),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      child: SafeArea(
+        top: false,
+        child: FilledButton.icon(
+          key: const Key('self-training-bottom-add-session'),
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.brandOrange,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          onPressed: _saving ? null : () => _startEditing(),
+          icon: const MetaGymSvgIcon(
+            MetaGymIcons.commonAdd,
+            size: 19,
+            color: Colors.white,
+            adaptForLightMode: false,
+            fallbackIcon: Icons.add_rounded,
+          ),
+          label: Text(hasPlans ? 'Thêm buổi tập mới' : 'Lên lịch tập'),
+        ),
+      ),
+    );
+  }
+
   Widget _summaryPanel() {
     final palette = _palette;
-    final plan = _plan;
-    if (plan == null) {
+    final dayPlans = _dayPlans;
+    if (dayPlans.isEmpty) {
       return _panel(
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,36 +900,34 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Chọn bài tập và thời gian cho ngày này.',
+              _canEdit
+                  ? 'Nhấn nút Lên lịch tập bên dưới để tạo buổi tập cho ngày này.'
+                  : 'Không có lịch tập cho ngày này.',
               style: TextStyle(color: palette.textSecondary),
             ),
-            if (_canEdit) ...[
-              const SizedBox(height: 14),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: MetaGymTheme.brandOrange,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(48, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      MetaGymTheme.radiusInput,
-                    ),
-                  ),
-                ),
-                onPressed: _startEditing,
-                icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
-                label: const Text('Lên lịch tập'),
-              ),
-            ],
           ],
         ),
       );
     }
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < dayPlans.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          _sessionSummaryCard(dayPlans[i]),
+        ],
+      ],
+    );
+  }
+
+  Widget _sessionSummaryCard(MemberSelfTrainingDay plan) {
+    final palette = _palette;
+    final expanded = _expandedSessionIds.contains(plan.id);
     final focuses = resolveMuscleFocusSet(
       plan.title,
       exerciseNames: plan.exercises.map((e) => e.name).toList(),
-      explicitKey: _iconKeys[plan.planDate] ?? plan.iconKey,
+      explicitKey: _iconKeys[plan.id] ?? _iconKeys[plan.planDate] ?? plan.iconKey,
     );
     final totalSets = plan.exercises.fold<int>(
       0,
@@ -818,12 +940,19 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     ];
 
     return CoachingGraphiteCard(
+      key: Key('self-training-session-card-${plan.id}'),
       padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           MetaGymTap(
-            onTap: () => setState(() => _expandedDetails = !_expandedDetails),
+            onTap: () => setState(() {
+              if (expanded) {
+                _expandedSessionIds.remove(plan.id);
+              } else {
+                _expandedSessionIds.add(plan.id);
+              }
+            }),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -887,9 +1016,13 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                               ),
                             ),
                           const Spacer(),
-                          MetaGymResolvedIcon(_expandedDetails
+                          MetaGymResolvedIcon(
+                            expanded
                                 ? Icons.keyboard_arrow_up_rounded
-                                : Icons.keyboard_arrow_down_rounded, size: 20, fallbackColor: palette.textSecondary),
+                                : Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            fallbackColor: palette.textSecondary,
+                          ),
                         ],
                       ),
                     ],
@@ -898,7 +1031,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               ],
             ),
           ),
-          if (_expandedDetails) ...[
+          if (expanded) ...[
             if (plan.exercises.isNotEmpty) ...[
               const SizedBox(height: 12),
               Divider(
@@ -934,6 +1067,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
+                    key: Key('self-training-edit-${plan.id}'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
                       backgroundColor: palette.metricPanelBg,
@@ -945,14 +1079,19 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                         borderRadius: BorderRadius.circular(11),
                       ),
                     ),
-                    onPressed: _startEditing,
-                    icon: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 16, fallbackIcon: Icons.edit_outlined),
+                    onPressed: () => _startEditing(plan),
+                    icon: MetaGymSvgIcon(
+                      MetaGymIcons.commonEdit,
+                      size: 16,
+                      fallbackIcon: Icons.edit_outlined,
+                    ),
                     label: const Text('Sửa lịch'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
+                    key: Key('self-training-delete-${plan.id}'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
                       backgroundColor: palette.metricPanelBg,
@@ -962,7 +1101,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                         borderRadius: BorderRadius.circular(11),
                       ),
                     ),
-                    onPressed: _saving ? null : _delete,
+                    onPressed: _saving ? null : () => _delete(plan),
                     child: const Text('Xóa lịch'),
                   ),
                 ),
@@ -1342,7 +1481,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 ),
                 onPressed: _saving
                     ? null
-                    : () => setState(() => _editing = false),
+                    : () => setState(() {
+                        _editing = false;
+                        _editingSessionId = null;
+                      }),
                 child: const Text('Hủy'),
               ),
             ],

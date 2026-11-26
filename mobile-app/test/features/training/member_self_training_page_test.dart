@@ -222,6 +222,187 @@ void main() {
     );
     expect(api.saveCalls, 0);
   });
+
+  testWidgets(
+    'allows scheduling multiple sessions on the same day via the bottom CTA',
+    (tester) async {
+      SelfTrainingIconStore.clearMemoryCache();
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        SelfTrainingIconStore.clearMemoryCache();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final api = _FakeSelfTrainingApi();
+      await tester.pumpWidget(
+        MaterialApp(home: MemberSelfTrainingPage(api: api)),
+      );
+      await tester.pumpAndSettle();
+
+      // Empty day shows bottom CTA 'Lên lịch tập'.
+      final bottomCta = find.byKey(
+        const Key('self-training-bottom-add-session'),
+      );
+      expect(bottomCta, findsOneWidget);
+      expect(find.text('Lên lịch tập'), findsOneWidget);
+
+      await tester.tap(bottomCta);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'Buổi sáng · Ngực');
+      await tester.tap(find.text('Ngực'));
+      await tester.pump();
+
+      await tester.scrollUntilVisible(
+        find.text('Chọn giờ tập'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Chọn giờ tập'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chọn giờ tập'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('self-training-exercise-name-0')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-name-0')),
+        'Bench Press',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-sets-0')),
+        '4',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-reps-0')),
+        '8-10',
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Lưu kế hoạch'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Lưu kế hoạch'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lưu kế hoạch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 buổi tập'), findsOneWidget);
+      expect(find.text('Buổi sáng · Ngực'), findsOneWidget);
+      // Bottom CTA switches to 'Thêm buổi tập mới'.
+      expect(find.text('Thêm buổi tập mới'), findsOneWidget);
+
+      // Add a second session on the exact same date.
+      await tester.tap(bottomCta);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Buổi chiều · Chân',
+      );
+      await tester.tap(find.text('Chân · Đùi'));
+      await tester.pump();
+
+      await tester.scrollUntilVisible(
+        find.text('Chọn giờ tập'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Chọn giờ tập'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chọn giờ tập'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('self-training-exercise-name-0')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-name-0')),
+        'Squat',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-sets-0')),
+        '5',
+      );
+      await tester.enterText(
+        find.byKey(const Key('self-training-exercise-reps-0')),
+        '5',
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Lưu kế hoạch'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Lưu kế hoạch'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lưu kế hoạch'));
+      await tester.pumpAndSettle();
+
+      // Both sessions coexist cleanly on the same day.
+      expect(find.text('2 buổi tập'), findsOneWidget);
+      expect(find.text('Buổi sáng · Ngực'), findsOneWidget);
+      expect(find.text('Buổi chiều · Chân'), findsOneWidget);
+      expect(find.byType(MuscleAnatomyTile), findsNWidgets(2));
+
+      // Edit session 2 without overwriting session 1.
+      final editSession2 = find.byKey(const Key('self-training-edit-self-2'));
+      await tester.scrollUntilVisible(
+        editSession2,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(editSession2);
+      await tester.pumpAndSettle();
+      await tester.tap(editSession2);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Buổi chiều · Đùi & Mông',
+      );
+      await tester.drag(find.byType(ListView).first, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Lưu kế hoạch'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lưu kế hoạch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 buổi tập'), findsOneWidget);
+      expect(find.text('Buổi sáng · Ngực'), findsOneWidget);
+      expect(find.text('Buổi chiều · Đùi & Mông'), findsOneWidget);
+
+      // Delete session 1 while keeping session 2.
+      final deleteSession1 = find.byKey(
+        const Key('self-training-delete-self-1'),
+      );
+      await tester.scrollUntilVisible(
+        deleteSession1,
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(deleteSession1);
+      await tester.pumpAndSettle();
+      await tester.tap(deleteSession1);
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 buổi tập'), findsOneWidget);
+      expect(find.text('Buổi sáng · Ngực'), findsNothing);
+      expect(find.text('Buổi chiều · Đùi & Mông'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _NoopAdapter implements HttpClientAdapter {
@@ -245,15 +426,16 @@ class _FakeSelfTrainingApi extends MemberSelfTrainingApi {
         ),
       );
 
-  final Map<String, MemberSelfTrainingDay> _items = {};
+  final List<MemberSelfTrainingDay> _items = [];
   int saveCalls = 0;
+  int _nextId = 1;
 
   @override
   Future<List<MemberSelfTrainingDay>> getRange(String from, String to) async =>
-      _items.values.toList();
+      List<MemberSelfTrainingDay>.unmodifiable(_items);
 
   @override
-  Future<MemberSelfTrainingDay> save({
+  Future<MemberSelfTrainingDay> createSession({
     required String day,
     required String title,
     required String? startTime,
@@ -262,20 +444,67 @@ class _FakeSelfTrainingApi extends MemberSelfTrainingApi {
   }) async {
     saveCalls++;
     final created = MemberSelfTrainingDay(
-      id: 'self-$day',
+      id: 'self-${_nextId++}',
       planDate: day,
       title: title,
       startTime: startTime,
       notes: notes,
       exercises: exercises,
     );
-    _items[day] = created;
+    _items.add(created);
     return created;
   }
 
   @override
+  Future<MemberSelfTrainingDay> updateSession({
+    required String id,
+    required String title,
+    required String? startTime,
+    required String notes,
+    required List<SelfTrainingExercise> exercises,
+  }) async {
+    saveCalls++;
+    final idx = _items.indexWhere((item) => item.id == id);
+    final planDate = idx >= 0 ? _items[idx].planDate : '2026-11-26';
+    final updated = MemberSelfTrainingDay(
+      id: id,
+      planDate: planDate,
+      title: title,
+      startTime: startTime,
+      notes: notes,
+      exercises: exercises,
+    );
+    if (idx >= 0) {
+      _items[idx] = updated;
+    } else {
+      _items.add(updated);
+    }
+    return updated;
+  }
+
+  @override
+  Future<void> deleteSession(String id) async {
+    _items.removeWhere((item) => item.id == id);
+  }
+
+  @override
+  Future<MemberSelfTrainingDay> save({
+    required String day,
+    required String title,
+    required String? startTime,
+    required String notes,
+    required List<SelfTrainingExercise> exercises,
+  }) async => createSession(
+    day: day,
+    title: title,
+    startTime: startTime,
+    notes: notes,
+    exercises: exercises,
+  );
+
+  @override
   Future<void> delete(String day) async {
-    _items.remove(day);
+    _items.removeWhere((item) => item.planDate == day);
   }
 }
 

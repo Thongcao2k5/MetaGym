@@ -115,7 +115,9 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
           todaySelfPlan = plans.firstOrNull;
           if (todaySelfPlan != null) {
             todaySelfIconKey =
-                icons[todaySelfPlan.planDate] ?? todaySelfPlan.iconKey;
+                icons[todaySelfPlan.id] ??
+                icons[todaySelfPlan.planDate] ??
+                todaySelfPlan.iconKey;
           }
         } catch (_) {
           // Optional summary enhancement; hub remains usable without self-plan API.
