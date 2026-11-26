@@ -13,6 +13,7 @@ const entrySchema = z.strictObject({
   unit: z.string().trim().min(1).max(30),
   imageMediaId: z.uuid().nullable().optional(),
   notes: z.string().trim().max(5000).nullable().optional(),
+  estimatedCalories: z.number().min(0).max(20000).nullable().optional(),
 });
 export function vietnamDate(value = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh',
@@ -87,7 +88,7 @@ export function createMemberNutritionRouter({ database, jwtSecret }) {
       const plan = await snapshot(database,member,day);
       const { rows } = await database.query(`SELECT id,meal_name AS "mealName",meal_type AS "mealType",
         image_media_id AS "imageMediaId",eaten_at AS "eatenAt",food_id AS "foodId",quantity::float8,unit,notes,
-        CASE WHEN unit='g' AND food_id IS NOT NULL THEN quantity*kcal_per_100g/100 END::float8 AS kcal
+        COALESCE(CASE WHEN unit='g' AND food_id IS NOT NULL THEN quantity*kcal_per_100g/100 END, estimated_calories)::float8 AS kcal
         FROM meal_logs WHERE member_id=$1
         AND (eaten_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=$2::date ORDER BY eaten_at,id`,[member,day]);
       const { rows: relationships } = await database.query(`SELECT status FROM coach_relationships
@@ -146,14 +147,15 @@ export function createMemberNutritionRouter({ database, jwtSecret }) {
       }
       await snapshot(client,req.authUser.id,day);
       const id=editing ? req.params.id : randomUUID();
-      const values=[id,req.authUser.id,item.eatenAt,item.mealType,name,item.foodId ?? null,item.quantity,item.unit,kcal,item.notes ?? null,item.imageMediaId ?? null];
+      const estimatedCalories = item.foodId ? null : (item.estimatedCalories != null ? Math.round(item.estimatedCalories) : null);
+      const values=[id,req.authUser.id,item.eatenAt,item.mealType,name,item.foodId ?? null,item.quantity,item.unit,kcal,item.notes ?? null,item.imageMediaId ?? null,estimatedCalories];
       const result = editing ? await client.query(`UPDATE meal_logs SET eaten_at=$3,meal_type=$4,meal_name=$5,
-        food_id=$6,quantity=$7,unit=$8,kcal_per_100g=$9,notes=$10,image_media_id=$11
+        food_id=$6,quantity=$7,unit=$8,kcal_per_100g=$9,notes=$10,image_media_id=$11,estimated_calories=$12
         WHERE id=$1 AND member_id=$2
         AND (eaten_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=(clock_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
         AND ($3::timestamptz AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=(clock_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date
-        RETURNING id`,values) : await client.query(`INSERT INTO meal_logs(id,member_id,eaten_at,meal_type,meal_name,food_id,quantity,unit,kcal_per_100g,notes,image_media_id)
-        SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+        RETURNING id`,values) : await client.query(`INSERT INTO meal_logs(id,member_id,eaten_at,meal_type,meal_name,food_id,quantity,unit,kcal_per_100g,notes,image_media_id,estimated_calories)
+        SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12
         WHERE ($3::timestamptz AT TIME ZONE 'Asia/Ho_Chi_Minh')::date=(clock_timestamp() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date RETURNING id`,
       values);
       if (!result.rows.length) {

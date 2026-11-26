@@ -51,6 +51,182 @@ String _encodeEntryNotes(String? customMealLabel, String notes) {
   return '$_customMealPrefix$cleanLabel]\n$cleanNotes';
 }
 
+const Map<String, ({double per100g, double perServing})>
+_kVietnameseFoodKcal = <String, ({double per100g, double perServing})>{
+  'com gao lut': (per100g: 112, perServing: 180),
+  'gao lut': (per100g: 112, perServing: 180),
+  'com trang': (per100g: 130, perServing: 200),
+  'com tam': (per100g: 165, perServing: 550),
+  'com ga': (per100g: 170, perServing: 520),
+  'com': (per100g: 130, perServing: 200),
+  'uc ga': (per100g: 165, perServing: 250),
+  'dui ga': (per100g: 195, perServing: 240),
+  'thit ga': (per100g: 180, perServing: 250),
+  'thit bo': (per100g: 250, perServing: 300),
+  'thit heo': (per100g: 242, perServing: 290),
+  'thit lon': (per100g: 242, perServing: 290),
+  'suon nuong': (per100g: 260, perServing: 320),
+  'ca hoi': (per100g: 208, perServing: 280),
+  'ca ngu': (per100g: 132, perServing: 180),
+  'ca basa': (per100g: 120, perServing: 180),
+  'ca thu': (per100g: 205, perServing: 260),
+  'tom': (per100g: 99, perServing: 140),
+  'muc': (per100g: 92, perServing: 140),
+  'trung ga': (per100g: 155, perServing: 78),
+  'trung vit': (per100g: 185, perServing: 130),
+  'trung': (per100g: 155, perServing: 78),
+  'pho bo': (per100g: 115, perServing: 450),
+  'pho ga': (per100g: 105, perServing: 400),
+  'pho': (per100g: 110, perServing: 430),
+  'bun bo': (per100g: 125, perServing: 520),
+  'bun cha': (per100g: 145, perServing: 500),
+  'bun rieu': (per100g: 105, perServing: 420),
+  'bun thit nuong': (per100g: 140, perServing: 480),
+  'bun': (per100g: 110, perServing: 220),
+  'hu tieu': (per100g: 115, perServing: 420),
+  'mien ga': (per100g: 95, perServing: 350),
+  'mi tom': (per100g: 450, perServing: 350),
+  'banh mi': (per100g: 265, perServing: 350),
+  'banh cuon': (per100g: 140, perServing: 320),
+  'xoi': (per100g: 210, perServing: 380),
+  'chao': (per100g: 70, perServing: 260),
+  'khoai lang': (per100g: 86, perServing: 130),
+  'yen mach': (per100g: 389, perServing: 155),
+  'chuoi': (per100g: 89, perServing: 105),
+  'tao': (per100g: 52, perServing: 95),
+  'qua bo': (per100g: 160, perServing: 240),
+  'trai bo': (per100g: 160, perServing: 240),
+  'sua tuoi': (per100g: 62, perServing: 150),
+  'sua dau nanh': (per100g: 54, perServing: 130),
+  'sua chua': (per100g: 65, perServing: 100),
+  'whey': (per100g: 400, perServing: 120),
+  'dau phu': (per100g: 76, perServing: 115),
+  'dau hu': (per100g: 76, perServing: 115),
+  'bong cai xanh': (per100g: 34, perServing: 50),
+  'salad': (per100g: 40, perServing: 120),
+  'rau xanh': (per100g: 25, perServing: 50),
+  'rau': (per100g: 25, perServing: 50),
+  'dau phong': (per100g: 567, perServing: 170),
+  'hanh nhan': (per100g: 579, perServing: 175),
+  'ca phe sua': (per100g: 110, perServing: 180),
+  'tra sua': (per100g: 95, perServing: 320),
+  'nuoc cam': (per100g: 45, perServing: 110),
+};
+
+const Set<String> _kServingUnits = <String>{
+  'phần',
+  'cái',
+  'quả',
+  'bát',
+  'tô',
+  'ly',
+  'muỗng',
+  'miếng',
+  'hộp',
+  'gói',
+  'chai',
+  'lon',
+  'ổ',
+  'dĩa',
+  'đĩa',
+  'chén',
+};
+
+String _normalizeFoodKey(String input) {
+  const accented =
+      'àáạảãâầấậẩẫăằắặẳẵ'
+      'ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ'
+      'èéẹẻẽêềếệểễ'
+      'ÈÉẸẺẼÊỀẾỆỂỄ'
+      'ìíịỉĩÌÍỊỈĨ'
+      'òóọỏõôồốộổỗơờớợởỡ'
+      'ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ'
+      'ùúụủũưừứựửữ'
+      'ÙÚỤỦŨƯỪỨỰỬỮ'
+      'ỳýỵỷỹỲÝỴỶỸ'
+      'đĐ';
+  const plain =
+      'aaaaaaaaaaaaaaaaa'
+      'aaaaaaaaaaaaaaaaa'
+      'eeeeeeeeeee'
+      'eeeeeeeeeee'
+      'iiiiiiiiii'
+      'ooooooooooooooooo'
+      'ooooooooooooooooo'
+      'uuuuuuuuuuu'
+      'uuuuuuuuuuu'
+      'yyyyyyyyyy'
+      'dd';
+  final buffer = StringBuffer();
+  for (final rune in input.trim().runes) {
+    final ch = String.fromCharCode(rune);
+    final idx = accented.indexOf(ch);
+    buffer.write(idx >= 0 ? plain[idx] : ch.toLowerCase());
+  }
+  return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+/// Ước tính lượng calo (kcal) cho món ăn người dùng tự nhập dựa trên danh mục
+/// hiện có và bảng thực phẩm phổ biến. Trả về `null` nếu chưa đủ dữ liệu khớp.
+double? estimateCustomFoodKcal({
+  required String name,
+  required double quantity,
+  required String unit,
+  List<NutritionRecord> catalogFoods = const [],
+}) {
+  if (!quantity.isFinite || quantity < 0.01 || quantity > 10000) return null;
+  final normName = _normalizeFoodKey(name);
+  if (normName.isEmpty) return null;
+  final normUnit = unit.trim().toLowerCase();
+
+  if (normUnit == 'g' || normUnit == 'ml') {
+    String? bestCatalogKey;
+    double? bestPer100g;
+    for (final food in catalogFoods) {
+      final rawFoodName = (food['name'] ?? '').toString();
+      final normFood = _normalizeFoodKey(rawFoodName);
+      final per100g = food['kcalPer100g'];
+      if (normFood.isEmpty || per100g is! num || per100g <= 0) continue;
+      final matches =
+          normName == normFood ||
+          ' $normName '.contains(' $normFood ') ||
+          (normName.length >= 4 && normFood.contains(normName));
+      if (matches &&
+          (bestCatalogKey == null || normFood.length > bestCatalogKey.length)) {
+        bestCatalogKey = normFood;
+        bestPer100g = per100g.toDouble();
+      }
+    }
+    if (bestPer100g != null) {
+      return (bestPer100g * quantity) / 100.0;
+    }
+  }
+
+  String? bestKey;
+  ({double per100g, double perServing})? bestMatch;
+  final padded = ' $normName ';
+  for (final entry in _kVietnameseFoodKcal.entries) {
+    final kw = entry.key;
+    final matches =
+        normName == kw ||
+        padded.contains(' $kw ') ||
+        (kw.length >= 4 && normName.contains(kw));
+    if (matches && (bestKey == null || kw.length > bestKey.length)) {
+      bestKey = kw;
+      bestMatch = entry.value;
+    }
+  }
+  if (bestMatch == null) return null;
+
+  if (normUnit == 'g' || normUnit == 'ml') {
+    return (bestMatch.per100g * quantity) / 100.0;
+  }
+  if (_kServingUnits.contains(normUnit)) {
+    return bestMatch.perServing * quantity;
+  }
+  return null;
+}
+
 ({String mealType, String? customLabel}) _resolveMealType(String rawInput) {
   final trimmed = rawInput.trim();
   final normalized = trimmed.toLowerCase();
@@ -264,11 +440,20 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     }
   }
 
-  Future<void> _openForm({String? meal, NutritionRecord? entry}) async {
+  Future<void> _openForm({
+    String? meal,
+    String? initialMealLabel,
+    NutritionRecord? entry,
+  }) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            _EntryForm(api: _api, date: _dateKey, meal: meal, entry: entry),
+        builder: (_) => _EntryForm(
+          api: _api,
+          date: _dateKey,
+          meal: meal,
+          initialMealLabel: initialMealLabel,
+          entry: entry,
+        ),
       ),
     );
     if (saved == true) await _load();
@@ -807,15 +992,19 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     required List<NutritionRecord> mealEntries,
   }) async {
     if (mealEntries.isEmpty) {
-      await _openForm(meal: mealType);
+      await _openForm(meal: mealType, initialMealLabel: title);
       return;
     }
     if (mealEntries.length == 1) {
-      await _openForm(meal: mealType, entry: mealEntries.first);
+      await _openForm(
+        meal: mealType,
+        initialMealLabel: title,
+        entry: mealEntries.first,
+      );
       return;
     }
     final t = _t;
-    final picked = await showModalBottomSheet<NutritionRecord>(
+    final picked = await showModalBottomSheet<Object?>(
       context: context,
       backgroundColor: t.dialogSurface,
       shape: RoundedRectangleBorder(
@@ -860,16 +1049,57 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    subtitle: Text(
+                      [
+                        if (entry['quantity'] != null)
+                          '${_formatAmount(entry['quantity'])} ${entry['unit'] ?? ''}'
+                              .trim(),
+                        if ((entry['kcal'] ?? entry['calories']) != null)
+                          '${_formatAmount(entry['kcal'] ?? entry['calories'])} kcal',
+                      ].join(' · '),
+                      style: TextStyle(
+                        color: st.textSecondary,
+                        fontSize: 12,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
                     onTap: () => Navigator.pop(sheetContext, entry),
                   ),
+                const SizedBox(height: 4),
+                Divider(height: 1, thickness: 1, color: st.divider),
+                const SizedBox(height: 4),
+                ListTile(
+                  key: Key('nutrition-sheet-add-$mealType'),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  leading: Icon(
+                    Icons.add_circle_outline_rounded,
+                    size: 20,
+                    color: st.orangeText,
+                  ),
+                  title: Text(
+                    'Thêm món mới vào $title',
+                    style: TextStyle(
+                      color: st.orangeText,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(sheetContext, 'ADD_NEW'),
+                ),
               ],
             ),
           ),
         );
       },
     );
-    if (picked != null && mounted) {
-      await _openForm(meal: mealType, entry: picked);
+    if (!mounted || picked == null) return;
+    if (picked == 'ADD_NEW') {
+      await _openForm(meal: mealType, initialMealLabel: title);
+    } else if (picked is NutritionRecord) {
+      await _openForm(meal: mealType, initialMealLabel: title, entry: picked);
     }
   }
 
@@ -967,7 +1197,45 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   ],
                 ),
               ),
-              if (editable)
+              if (editable) ...[
+                Tooltip(
+                  message: 'Thêm món vào $title',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: Key('nutrition-add-meal-$sectionKey'),
+                      onTap: () =>
+                          _openForm(meal: mealType, initialMealLabel: title),
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: t.palette.chipActiveBg,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: MetaGymTheme.brandOrange.withValues(
+                                  alpha: 0.45,
+                                ),
+                                width: 0.9,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.add_rounded,
+                              size: 19,
+                              color: t.orangeText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 Tooltip(
                   message: 'Sửa $title',
                   child: Material(
@@ -1007,6 +1275,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     ),
                   ),
                 ),
+              ],
             ],
           ),
           if (rows.isNotEmpty) ...[
@@ -1245,14 +1514,37 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
               ],
             ),
           ),
+          if (canWrite) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: t.recessedFill,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: t.recessedBorder, width: 0.8),
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                size: 15,
+                color: t.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
     );
     if (!canWrite) return content;
+    final parsedNotes = _parseEntryNotes(entry['notes'] as String?);
     return InkWell(
       key: Key('nutrition-entry-${entry['id']}'),
       borderRadius: BorderRadius.circular(12),
-      onTap: () => _openForm(meal: entry['mealType'] as String?, entry: entry),
+      onTap: () => _openForm(
+        meal: entry['mealType'] as String?,
+        initialMealLabel: parsedNotes.mealLabel,
+        entry: entry,
+      ),
       child: content,
     );
   }
@@ -1606,33 +1898,112 @@ class _EntryForm extends StatefulWidget {
     required this.api,
     required this.date,
     this.meal,
+    this.initialMealLabel,
     this.entry,
   });
 
   final NutritionTrackingApi api;
   final String date;
   final String? meal;
+  final String? initialMealLabel;
   final NutritionRecord? entry;
 
   @override
   State<_EntryForm> createState() => _EntryFormState();
 }
 
+class _DishDraft {
+  _DishDraft({
+    String name = '',
+    String quantity = '',
+    String customKcal = '',
+    this.foodId,
+    this.unit = 'g',
+  }) : name = TextEditingController(text: name),
+       quantity = TextEditingController(text: quantity),
+       customKcal = TextEditingController(text: customKcal);
+
+  final TextEditingController name;
+  final TextEditingController quantity;
+  final TextEditingController customKcal;
+  String? foodId;
+  String unit;
+  bool saved = false;
+
+  void dispose() {
+    name.dispose();
+    quantity.dispose();
+    customKcal.dispose();
+  }
+
+  double? parsedQuantity() {
+    final qty = double.tryParse(quantity.text.trim().replaceAll(',', '.'));
+    if (qty == null || !qty.isFinite || qty < 0.01 || qty > 10000) return null;
+    return qty;
+  }
+
+  double? parsedManualKcal() {
+    final raw = customKcal.text.trim().replaceAll(',', '.');
+    if (raw.isEmpty) return null;
+    final val = double.tryParse(raw);
+    if (val == null || !val.isFinite || val < 0 || val > 20000) return null;
+    return val;
+  }
+
+  double? autoEstimatedKcal(List<NutritionRecord> foods) {
+    final qty = parsedQuantity();
+    if (qty == null) return null;
+    if (foodId != null) {
+      if (unit != 'g') return null;
+      for (final item in foods) {
+        if (item['id'] == foodId) {
+          final per100g = item['kcalPer100g'];
+          if (per100g is num && per100g > 0) {
+            return (per100g.toDouble() * qty) / 100.0;
+          }
+          break;
+        }
+      }
+      return null;
+    }
+    return estimateCustomFoodKcal(
+      name: name.text,
+      quantity: qty,
+      unit: unit,
+      catalogFoods: foods,
+    );
+  }
+
+  double? resolvedKcal(List<NutritionRecord> foods) {
+    if (foodId != null) return autoEstimatedKcal(foods);
+    return parsedManualKcal() ?? autoEstimatedKcal(foods);
+  }
+
+  bool isAutoEstimated(List<NutritionRecord> foods) {
+    if (foodId != null) return false;
+    return parsedManualKcal() == null && autoEstimatedKcal(foods) != null;
+  }
+}
+
 class _EntryFormState extends State<_EntryForm> {
   final _form = GlobalKey<FormState>();
   final _mealLabel = TextEditingController();
-  final _name = TextEditingController();
-  final _quantity = TextEditingController();
   final _notes = TextEditingController();
+  final List<_DishDraft> _dishes = [];
   List<NutritionRecord> _foods = [];
-  String? _foodId;
-  String _unit = 'g';
   TimeOfDay _time = _vietnamNowTime();
   bool _saving = false;
   bool _foodError = false;
   SelectedProgressImage? _image;
   String? _uploadedImageId;
   String? _error;
+
+  static String _formatPlainNum(Object? value) {
+    if (value is! num) return '';
+    return value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
+  }
 
   @override
   void initState() {
@@ -1643,12 +2014,22 @@ class _EntryFormState extends State<_EntryForm> {
       final rawMealType = entry['mealType'] as String? ?? widget.meal ?? '';
       _mealLabel.text =
           parsedNotes.mealLabel ?? (_meals[rawMealType] ?? rawMealType);
-      _name.text = (entry['mealName'] ?? entry['foodName'] ?? '').toString();
-      _quantity.text = '${entry['quantity'] ?? ''}';
       _notes.text = parsedNotes.notes;
-      _foodId = entry['foodId'] as String?;
+      final foodId = entry['foodId'] as String?;
       final rawUnit = (entry['unit'] as String? ?? '').trim();
-      _unit = rawUnit.isEmpty ? 'g' : rawUnit;
+      final unit = rawUnit.isEmpty ? 'g' : rawUnit;
+      final existingKcal = entry['kcal'] ?? entry['calories'];
+      _dishes.add(
+        _DishDraft(
+          name: (entry['mealName'] ?? entry['foodName'] ?? '').toString(),
+          quantity: '${entry['quantity'] ?? ''}',
+          customKcal: (foodId == null && existingKcal != null)
+              ? _formatPlainNum(existingKcal)
+              : '',
+          foodId: foodId,
+          unit: unit,
+        ),
+      );
       _uploadedImageId = entry['imageMediaId'] as String?;
       final eaten = DateTime.tryParse(entry['eatenAt'] as String? ?? '')
           ?.toUtc()
@@ -1656,8 +2037,14 @@ class _EntryFormState extends State<_EntryForm> {
       if (eaten != null) {
         _time = TimeOfDay(hour: eaten.hour, minute: eaten.minute);
       }
-    } else if (widget.meal != null && widget.meal!.isNotEmpty) {
-      _mealLabel.text = _meals[widget.meal!] ?? widget.meal!;
+    } else {
+      final label = (widget.initialMealLabel ?? '').trim();
+      if (label.isNotEmpty) {
+        _mealLabel.text = label;
+      } else if (widget.meal != null && widget.meal!.isNotEmpty) {
+        _mealLabel.text = _meals[widget.meal!] ?? widget.meal!;
+      }
+      _dishes.add(_DishDraft());
     }
     _loadFoods();
   }
@@ -1679,26 +2066,38 @@ class _EntryFormState extends State<_EntryForm> {
   @override
   void dispose() {
     _mealLabel.dispose();
-    _name.dispose();
-    _quantity.dispose();
     _notes.dispose();
+    for (final dish in _dishes) {
+      dish.dispose();
+    }
     super.dispose();
   }
 
-  double? get _estimatedKcal {
-    if (_foodId == null || _unit != 'g') return null;
-    NutritionRecord? food;
-    for (final item in _foods) {
-      if (item['id'] == _foodId) {
-        food = item;
-        break;
+  double? get _totalEstimatedKcal {
+    double total = 0;
+    var hasAny = false;
+    for (final dish in _dishes) {
+      final k = dish.resolvedKcal(_foods);
+      if (k != null) {
+        total += k;
+        hasAny = true;
       }
     }
-    final per100g = food?['kcalPer100g'];
-    if (per100g is! num || per100g <= 0) return null;
-    final qty = double.tryParse(_quantity.text.trim().replaceAll(',', '.'));
-    if (qty == null || !qty.isFinite || qty < 0.01 || qty > 10000) return null;
-    return (per100g.toDouble() * qty) / 100.0;
+    return hasAny ? total : null;
+  }
+
+  void _addAnotherDish() {
+    setState(() {
+      _dishes.add(_DishDraft());
+    });
+  }
+
+  void _removeDish(int index) {
+    if (_dishes.length <= 1) return;
+    setState(() {
+      final removed = _dishes.removeAt(index);
+      removed.dispose();
+    });
   }
 
   Future<void> _pickTime() async {
@@ -1745,20 +2144,35 @@ class _EntryFormState extends State<_EntryForm> {
         resolvedMeal.customLabel,
         _notes.text,
       );
-      final payload = <String, dynamic>{
-        'eatenAt': '${widget.date}T$time:00+07:00',
-        'mealType': resolvedMeal.mealType,
-        'mealName': _name.text.trim(),
-        'foodId': _foodId,
-        'imageMediaId': _uploadedImageId,
-        'quantity': double.parse(_quantity.text.replaceAll(',', '.')),
-        'unit': _unit,
-        'notes': encodedNotes,
-      };
+
+      Map<String, dynamic> buildPayload(_DishDraft dish) {
+        final resolvedKcal = dish.resolvedKcal(_foods);
+        return <String, dynamic>{
+          'eatenAt': '${widget.date}T$time:00+07:00',
+          'mealType': resolvedMeal.mealType,
+          'mealName': dish.name.text.trim(),
+          'foodId': dish.foodId,
+          'imageMediaId': _uploadedImageId,
+          'quantity': double.parse(dish.quantity.text.replaceAll(',', '.')),
+          'unit': dish.unit,
+          'notes': encodedNotes,
+          if (dish.foodId == null &&
+              (resolvedKcal != null || widget.entry != null))
+            'estimatedCalories': resolvedKcal?.round(),
+        };
+      }
+
       if (widget.entry == null) {
-        await widget.api.add(payload);
+        for (final dish in _dishes) {
+          if (dish.saved) continue;
+          await widget.api.add(buildPayload(dish));
+          dish.saved = true;
+        }
       } else {
-        await widget.api.update(widget.entry!['id'] as String, payload);
+        await widget.api.update(
+          widget.entry!['id'] as String,
+          buildPayload(_dishes.first),
+        );
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
@@ -2004,20 +2418,370 @@ class _EntryFormState extends State<_EntryForm> {
     );
   }
 
+  Widget _buildDishCard(int index, _DishDraft dish, _NutritionTokens t) {
+    final hasMatchedFood = _foods.any((f) => f['id'] == dish.foodId);
+    const defaultUnits = ['g', 'ml', 'phần', 'cái', 'bát', 'ly'];
+    final unitOptions = <String>[
+      ...defaultUnits,
+      if (dish.unit.isNotEmpty && !defaultUnits.contains(dish.unit)) dish.unit,
+    ];
+    final autoKcal = dish.autoEstimatedKcal(_foods);
+    final resolvedKcal = dish.resolvedKcal(_foods);
+    final isAuto = dish.isAutoEstimated(_foods);
+    final showMultiHeader = widget.entry == null && _dishes.length > 1;
+
+    return MetaGymGlassCard(
+      key: Key('nutrition-dish-card-$index'),
+      solid: false,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _sectionHeader(
+                  showMultiHeader ? 'Món ${index + 1}' : 'Thông tin món ăn',
+                  MetaGymTheme.brandOrange,
+                ),
+              ),
+              if (showMultiHeader)
+                Tooltip(
+                  message: 'Xóa món ${index + 1}',
+                  child: IconButton(
+                    key: Key('nutrition-remove-dish-$index'),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    onPressed: _saving ? null : () => _removeDish(index),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: t.error,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            key: ValueKey('food-$index-${_foods.length}-${dish.foodId ?? ''}'),
+            initialValue: dish.foodId,
+            isExpanded: true,
+            dropdownColor: t.dropdownSurface,
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            iconEnabledColor: t.labelText,
+            iconDisabledColor: t.labelText.withValues(alpha: 0.4),
+            style: TextStyle(
+              fontFamily: MetaGymTheme.fontFamily,
+              fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+              color: t.textPrimary,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: _warmInputDecoration(
+              labelText: 'Món từ danh mục (tùy chọn)',
+            ),
+            items: [
+              const DropdownMenuItem(
+                value: '',
+                child: Text(
+                  'Nhập món tự do',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (dish.foodId != null && !hasMatchedFood)
+                DropdownMenuItem(
+                  value: dish.foodId,
+                  child: Text(
+                    dish.name.text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              for (final food in _foods)
+                DropdownMenuItem(
+                  value: food['id'] as String,
+                  child: Text(
+                    food['name'] as String,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            onChanged: _saving
+                ? null
+                : (value) => setState(() {
+                    dish.foodId = value == '' ? null : value;
+                    if (dish.foodId != null) {
+                      final matched = _foods
+                          .where((f) => f['id'] == value)
+                          .firstOrNull;
+                      if (matched != null) {
+                        dish.name.text = matched['name'] as String;
+                      }
+                      dish.unit = 'g';
+                      dish.customKcal.clear();
+                    }
+                  }),
+          ),
+          if (_foodError && index == 0) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _loadFoods,
+                style: TextButton.styleFrom(
+                  foregroundColor: t.warning,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  minimumSize: const Size(44, 44),
+                ),
+                icon: const Icon(Icons.refresh_rounded, size: 17),
+                label: const Text(
+                  'Danh mục tải lỗi · Thử lại; vẫn có thể nhập món tự do',
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          TextFormField(
+            key: Key('nutrition-dish-name-$index'),
+            controller: dish.name,
+            readOnly: dish.foodId != null || _saving,
+            maxLength: 150,
+            cursorColor: MetaGymTheme.brandOrange,
+            style: TextStyle(
+              color: t.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+            buildCounter: (
+              _, {
+              required currentLength,
+              required isFocused,
+              required maxLength,
+            }) => null,
+            onChanged: (_) => setState(() {}),
+            decoration: _warmInputDecoration(labelText: 'Tên món'),
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Nhập tên món' : null,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextFormField(
+                  key: Key('nutrition-dish-qty-$index'),
+                  controller: dish.quantity,
+                  enabled: !_saving,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  cursorColor: MetaGymTheme.brandOrange,
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  decoration: _warmInputDecoration(
+                    labelText: 'Lượng thực tế',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                  ),
+                  validator: (v) {
+                    final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                    return n == null || !n.isFinite || n < 0.01 || n > 10000
+                        ? 'Nhập lượng từ 0,01 đến 10000'
+                        : null;
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  key: ValueKey('unit-$index-${dish.unit}'),
+                  initialValue: dish.unit,
+                  isExpanded: true,
+                  dropdownColor: t.dropdownSurface,
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  iconEnabledColor: t.labelText,
+                  iconDisabledColor: t.labelText.withValues(alpha: 0.4),
+                  disabledHint: Text(
+                    dish.unit,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: MetaGymTheme.fontFamily,
+                      fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                      color: t.labelText,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextStyle(
+                    fontFamily: MetaGymTheme.fontFamily,
+                    fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                    color: t.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: _warmInputDecoration(
+                    labelText: 'Đơn vị',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                  ),
+                  selectedItemBuilder: (_) => [
+                    for (final unit in unitOptions)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          unit,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: MetaGymTheme.fontFamily,
+                            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                            color: (dish.foodId != null || _saving)
+                                ? t.labelText
+                                : t.textPrimary,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                  items: [
+                    for (final unit in unitOptions)
+                      DropdownMenuItem(
+                        value: unit,
+                        child: Text(
+                          unit,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: dish.foodId != null || _saving
+                      ? null
+                      : (v) => setState(() => dish.unit = v!),
+                ),
+              ),
+            ],
+          ),
+          if (dish.foodId == null) ...[
+            const SizedBox(height: 12),
+            TextFormField(
+              key: Key('nutrition-custom-kcal-$index'),
+              controller: dish.customKcal,
+              enabled: !_saving,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              cursorColor: MetaGymTheme.brandOrange,
+              style: TextStyle(
+                color: t.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
+              onChanged: (_) => setState(() {}),
+              decoration:
+                  _warmInputDecoration(
+                    labelText: 'Calo (kcal) · tùy chọn',
+                  ).copyWith(
+                    hintText: autoKcal != null
+                        ? 'Tự tính: ≈ ${autoKcal.round()} kcal (nhập để ghi đè)'
+                        : 'Nhập calo nếu biết (VD: 350)',
+                  ),
+              validator: (v) {
+                final trimmed = (v ?? '').trim();
+                if (trimmed.isEmpty) return null;
+                final n = double.tryParse(trimmed.replaceAll(',', '.'));
+                return n == null || !n.isFinite || n < 0 || n > 20000
+                    ? 'Nhập calo từ 0 đến 20000'
+                    : null;
+              },
+            ),
+          ],
+          if (resolvedKcal != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                key: index == 0
+                    ? const Key('nutrition-estimated-kcal')
+                    : Key('nutrition-estimated-kcal-$index'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: t.success.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: t.success.withValues(alpha: 0.38),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bolt_rounded, size: 16, color: t.success),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        isAuto
+                            ? 'Tự tính ≈ ${resolvedKcal.round()} kcal'
+                            : '≈ ${resolvedKcal.round()} kcal',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: t.success,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = _t;
     final pageTitle = widget.entry == null ? 'Ghi lại bữa ăn' : 'Sửa món ăn';
-    final estimatedKcal = _estimatedKcal;
-    final hasMatchedFood = _foods.any((f) => f['id'] == _foodId);
+    final totalEstimatedKcal = _totalEstimatedKcal;
     final hasPhoto =
         _image != null ||
         (_uploadedImageId != null && _uploadedImageId!.isNotEmpty);
-    const defaultUnits = ['g', 'ml', 'phần', 'cái'];
-    final unitOptions = <String>[
-      ...defaultUnits,
-      if (_unit.isNotEmpty && !defaultUnits.contains(_unit)) _unit,
-    ];
+    final saveButtonText = _saving
+        ? 'Đang lưu…'
+        : (widget.entry == null && _dishes.length > 1)
+        ? 'Lưu ${_dishes.length} món'
+        : 'Lưu món';
 
     return Scaffold(
       backgroundColor: t.palette.canvas,
@@ -2077,6 +2841,36 @@ class _EntryFormState extends State<_EntryForm> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (widget.entry == null && _dishes.length > 1) ...[
+                  Row(
+                    key: const Key('nutrition-meal-total-banner'),
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tổng bữa (${_dishes.length} món)',
+                        style: TextStyle(
+                          color: t.labelText,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        totalEstimatedKcal != null
+                            ? '≈ ${totalEstimatedKcal.round()} kcal'
+                            : 'Chưa đủ dữ liệu calo',
+                        style: TextStyle(
+                          color: totalEstimatedKcal != null
+                              ? t.success
+                              : t.textSecondary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 if (_error != null) ...[
                   _errorBanner(_error!),
                   const SizedBox(height: 10),
@@ -2101,7 +2895,7 @@ class _EntryFormState extends State<_EntryForm> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  child: Text(_saving ? 'Đang lưu…' : 'Lưu món'),
+                  child: Text(saveButtonText),
                 ),
               ],
             ),
@@ -2201,299 +2995,43 @@ class _EntryFormState extends State<_EntryForm> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  MetaGymGlassCard(
-                    solid: false,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _sectionHeader(
-                          'Thông tin món ăn',
-                          MetaGymTheme.brandOrange,
-                        ),
-                        const SizedBox(height: 14),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(
-                            'food-${_foods.length}-${_foodId ?? ''}',
+                  for (var i = 0; i < _dishes.length; i++) ...[
+                    _buildDishCard(i, _dishes[i], t),
+                    const SizedBox(height: 12),
+                  ],
+                  if (widget.entry == null) ...[
+                    OutlinedButton.icon(
+                      key: const Key('nutrition-add-another-dish'),
+                      onPressed: _saving ? null : _addAnotherDish,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: t.orangeText,
+                        backgroundColor: t.recessedFill,
+                        side: BorderSide(
+                          color: MetaGymTheme.brandOrange.withValues(
+                            alpha: 0.48,
                           ),
-                          initialValue: _foodId,
-                          isExpanded: true,
-                          dropdownColor: t.dropdownSurface,
+                        ),
+                        minimumSize: const Size.fromHeight(48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             MetaGymTheme.radiusInput,
                           ),
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          iconEnabledColor: t.labelText,
-                          iconDisabledColor: t.labelText.withValues(alpha: 0.4),
-                          style: TextStyle(
-                            fontFamily: MetaGymTheme.fontFamily,
-                            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-                            color: t.textPrimary,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          decoration: _warmInputDecoration(
-                            labelText: 'Món từ danh mục (tùy chọn)',
-                          ),
-                          items: [
-                            const DropdownMenuItem(
-                              value: '',
-                              child: Text(
-                                'Nhập món tự do',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (_foodId != null && !hasMatchedFood)
-                              DropdownMenuItem(
-                                value: _foodId,
-                                child: Text(
-                                  _name.text,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            for (final food in _foods)
-                              DropdownMenuItem(
-                                value: food['id'] as String,
-                                child: Text(
-                                  food['name'] as String,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: _saving
-                              ? null
-                              : (value) => setState(() {
-                                  _foodId = value == '' ? null : value;
-                                  if (_foodId != null) {
-                                    final matched = _foods
-                                        .where((f) => f['id'] == value)
-                                        .firstOrNull;
-                                    if (matched != null) {
-                                      _name.text = matched['name'] as String;
-                                    }
-                                    _unit = 'g';
-                                  }
-                                }),
                         ),
-                        if (_foodError) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: _loadFoods,
-                              style: TextButton.styleFrom(
-                                foregroundColor: t.warning,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                minimumSize: const Size(44, 44),
-                              ),
-                              icon: const Icon(Icons.refresh_rounded, size: 17),
-                              label: const Text(
-                                'Danh mục tải lỗi · Thử lại; vẫn có thể nhập món tự do',
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _name,
-                          readOnly: _foodId != null || _saving,
-                          maxLength: 150,
-                          cursorColor: MetaGymTheme.brandOrange,
-                          style: TextStyle(
-                            color: t.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          buildCounter: (
-                            _, {
-                            required currentLength,
-                            required isFocused,
-                            required maxLength,
-                          }) => null,
-                          decoration: _warmInputDecoration(
-                            labelText: 'Tên món',
-                          ),
-                          validator: (v) => v == null || v.trim().isEmpty
-                              ? 'Nhập tên món'
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: TextFormField(
-                                controller: _quantity,
-                                enabled: !_saving,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                cursorColor: MetaGymTheme.brandOrange,
-                                style: TextStyle(
-                                  color: t.textPrimary,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  fontFeatures: MetaGymTheme.tabularFigures,
-                                ),
-                                onChanged: (_) => setState(() {}),
-                                decoration: _warmInputDecoration(
-                                  labelText: 'Lượng thực tế',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 14,
-                                  ),
-                                ),
-                                validator: (v) {
-                                  final n = double.tryParse(
-                                    (v ?? '').replaceAll(',', '.'),
-                                  );
-                                  return n == null ||
-                                          !n.isFinite ||
-                                          n < 0.01 ||
-                                          n > 10000
-                                      ? 'Nhập lượng từ 0,01 đến 10000'
-                                      : null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              flex: 2,
-                              child: DropdownButtonFormField<String>(
-                                key: ValueKey('unit-$_unit'),
-                                initialValue: _unit,
-                                isExpanded: true,
-                                dropdownColor: t.dropdownSurface,
-                                borderRadius: BorderRadius.circular(
-                                  MetaGymTheme.radiusInput,
-                                ),
-                                icon: const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                ),
-                                iconEnabledColor: t.labelText,
-                                iconDisabledColor: t.labelText.withValues(
-                                  alpha: 0.4,
-                                ),
-                                disabledHint: Text(
-                                  _unit,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: MetaGymTheme.fontFamily,
-                                    fontFamilyFallback:
-                                        MetaGymTheme.fontFamilyFallback,
-                                    color: t.labelText,
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: TextStyle(
-                                  fontFamily: MetaGymTheme.fontFamily,
-                                  fontFamilyFallback:
-                                      MetaGymTheme.fontFamilyFallback,
-                                  color: t.textPrimary,
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: _warmInputDecoration(
-                                  labelText: 'Đơn vị',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 14,
-                                  ),
-                                ),
-                                selectedItemBuilder: (_) => [
-                                  for (final unit in unitOptions)
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        unit,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: MetaGymTheme.fontFamily,
-                                          fontFamilyFallback:
-                                              MetaGymTheme.fontFamilyFallback,
-                                          color: (_foodId != null || _saving)
-                                              ? t.labelText
-                                              : t.textPrimary,
-                                          fontSize: 14.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                                items: [
-                                  for (final unit in unitOptions)
-                                    DropdownMenuItem(
-                                      value: unit,
-                                      child: Text(
-                                        unit,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                ],
-                                onChanged: _foodId != null || _saving
-                                    ? null
-                                    : (v) => setState(() => _unit = v!),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (estimatedKcal != null) ...[
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              key: const Key('nutrition-estimated-kcal'),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: t.success.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: t.success.withValues(alpha: 0.38),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.bolt_rounded,
-                                    size: 16,
-                                    color: t.success,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    '≈ ${estimatedKcal.round()} kcal',
-                                    style: TextStyle(
-                                      color: t.success,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      fontFeatures: MetaGymTheme.tabularFigures,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 19),
+                      label: const Text(
+                        'Thêm món vào bữa này',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
+                    const SizedBox(height: 14),
+                  ] else
+                    const SizedBox(height: 2),
                   MetaGymGlassCard(
                     solid: false,
                     padding: const EdgeInsets.all(16),

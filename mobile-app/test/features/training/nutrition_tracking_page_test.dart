@@ -15,6 +15,9 @@ class Fixture implements NutritionTrackingApi {
   final dayCompleter = Completer<NutritionRecord>();
   int saveAttempts = 0;
   NutritionRecord? savedItem;
+  final List<NutritionRecord> addedItems = [];
+  String? updatedId;
+  NutritionRecord? updatedItem;
   final now = DateTime.now().toUtc().add(const Duration(hours: 7));
 
   @override
@@ -128,8 +131,20 @@ class Fixture implements NutritionTrackingApi {
   @override
   Future<void> add(NutritionRecord item) async {
     saveAttempts++;
-    if (saveAttempts == 1) throw Exception('save failed');
+    if (state == 'empty' && saveAttempts == 1 && !item.containsKey('_allowFirst')) {
+      // Keep original retry test behavior only when failOnFirstSave is true
+    }
+    if (failOnFirstSave && saveAttempts == 1) throw Exception('save failed');
     savedItem = item;
+    addedItems.add(item);
+  }
+
+  bool failOnFirstSave = false;
+
+  @override
+  Future<void> update(String id, NutritionRecord item) async {
+    updatedId = id;
+    updatedItem = item;
   }
 
   @override
@@ -287,8 +302,14 @@ void main() {
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1;
+      final prevOnError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        debugPrint('FULL_FLUTTER_ERROR:\n${details.exceptionAsString()}\n${details.context}\n${details.informationCollector?.call().map((e) => e.toDescription()).join('\n')}');
+        prevOnError?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = prevOnError);
       final formKey = GlobalKey();
-      final fixture = Fixture('empty');
+      final fixture = Fixture('empty')..failOnFirstSave = true;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetViewInsets);
@@ -346,6 +367,189 @@ void main() {
       expect(fixture.savedItem?['mealName'], 'Cơm nhà');
       expect(fixture.savedItem?['quantity'], 1);
       expect(find.text('Theo dõi dinh dưỡng'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  group('estimateCustomFoodKcal', () {
+    test('calculates Vietnamese dishes in grams, ml, and serving units', () {
+      expect(
+        estimateCustomFoodKcal(name: 'Ức gà áp chảo', quantity: 200, unit: 'g')
+            ?.round(),
+        330,
+      );
+      expect(
+        estimateCustomFoodKcal(name: 'Phở bò', quantity: 1, unit: 'tô')?.round(),
+        450,
+      );
+      expect(
+        estimateCustomFoodKcal(name: 'Trứng gà', quantity: 2, unit: 'cái')
+            ?.round(),
+        156,
+      );
+      expect(
+        estimateCustomFoodKcal(
+          name: 'Cơm gạo lứt hữu cơ',
+          quantity: 150,
+          unit: 'g',
+          catalogFoods: const [
+            {'id': 'f1', 'name': 'Cơm gạo lứt', 'kcalPer100g': 110},
+          ],
+        )?.round(),
+        165,
+      );
+      expect(
+        estimateCustomFoodKcal(
+          name: 'Món đặc biệt bí mật',
+          quantity: 100,
+          unit: 'g',
+        ),
+        isNull,
+      );
+    });
+  });
+
+  testWidgets(
+    'supports adding multiple dishes in 1 meal with auto & manual custom kcal',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fixture = Fixture('empty');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.light,
+          home: NutritionTrackingPage(api: fixture),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('nutrition-log-meal')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('nutrition-meal-label-field')),
+        'Bữa trưa',
+      );
+      await tester.enterText(
+        find.byKey(const Key('nutrition-dish-name-0')),
+        'Ức gà',
+      );
+      await tester.enterText(
+        find.byKey(const Key('nutrition-dish-qty-0')),
+        '200',
+      );
+      await tester.pumpAndSettle();
+
+      // Auto-estimated kcal badge renders for custom dish 0 (200g ức gà = 330 kcal)
+      expect(find.byKey(const Key('nutrition-estimated-kcal')), findsOneWidget);
+      expect(find.text('Tự tính ≈ 330 kcal'), findsOneWidget);
+
+      // Add second dish to the same meal
+      final addAnother = find.byKey(const Key('nutrition-add-another-dish'));
+      await tester.scrollUntilVisible(
+        addAnother,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(addAnother);
+      await tester.pumpAndSettle();
+
+      final dish1Name = find.byKey(const Key('nutrition-dish-name-1'));
+      await tester.scrollUntilVisible(
+        dish1Name,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(dish1Name, 'Món tự nấu');
+      final dish1Qty = find.byKey(const Key('nutrition-dish-qty-1'));
+      await tester.scrollUntilVisible(
+        dish1Qty,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(dish1Qty, '1');
+      final dish1Kcal = find.byKey(const Key('nutrition-custom-kcal-1'));
+      await tester.scrollUntilVisible(
+        dish1Kcal,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(dish1Kcal, '270');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('nutrition-meal-total-banner')),
+        findsOneWidget,
+      );
+      expect(find.text('Tổng bữa (2 món)'), findsOneWidget);
+      expect(find.text('≈ 600 kcal'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Lưu 2 món'));
+      await tester.pumpAndSettle();
+
+      expect(fixture.addedItems.length, 2);
+      expect(fixture.addedItems[0]['mealType'], 'LUNCH');
+      expect(fixture.addedItems[0]['mealName'], 'Ức gà');
+      expect(fixture.addedItems[0]['estimatedCalories'], 330);
+      expect(fixture.addedItems[1]['mealType'], 'LUNCH');
+      expect(fixture.addedItems[1]['mealName'], 'Món tự nấu');
+      expect(fixture.addedItems[1]['estimatedCalories'], 270);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'meal + button pre-fills meal and tapping an entry edits custom kcal',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fixture = Fixture('no-coach');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.light,
+          home: NutritionTrackingPage(api: fixture),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tapping + on BREAKFAST opens form pre-filled with 'Bữa sáng'
+      await tester.tap(find.byKey(const Key('nutrition-add-meal-BREAKFAST')));
+      await tester.pumpAndSettle();
+      final mealField = tester.widget<TextFormField>(
+        find.byKey(const Key('nutrition-meal-label-field')),
+      );
+      expect(mealField.controller?.text, 'Bữa sáng');
+      await tester.tap(find.byTooltip('Quay lại'));
+      await tester.pumpAndSettle();
+
+      // Tapping an existing entry opens edit form and saves via update()
+      await tester.tap(find.byKey(const Key('nutrition-entry-entry-rice')));
+      await tester.pumpAndSettle();
+      expect(find.text('Sửa món ăn'), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('nutrition-dish-qty-0')),
+        '200',
+      );
+      final customKcalField = find.byKey(const Key('nutrition-custom-kcal-0'));
+      await tester.scrollUntilVisible(
+        customKcalField,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(customKcalField, '260');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Lưu món'));
+      await tester.pumpAndSettle();
+
+      expect(fixture.updatedId, 'entry-rice');
+      expect(fixture.updatedItem?['quantity'], 200);
+      expect(fixture.updatedItem?['estimatedCalories'], 260);
       expect(tester.takeException(), isNull);
     },
   );

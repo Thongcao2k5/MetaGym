@@ -1096,6 +1096,8 @@ class _LocalDemoStore {
   final List<Map<String, dynamic>> coachNotifications;
   final List<Map<String, dynamic>> calls;
 
+  static int _nutritionEntrySeq = 0;
+
   static DateTime _vnNow() =>
       DateTime.now().toUtc().add(const Duration(hours: 7));
 
@@ -2349,7 +2351,9 @@ class _LocalDemoStore {
         }
       }
     }
-    if (explicitKcal is num) return explicitKcal.toDouble();
+    if (explicitKcal is num && explicitKcal.isFinite && explicitKcal >= 0) {
+      return explicitKcal.toDouble();
+    }
     return null;
   }
 
@@ -2435,10 +2439,12 @@ class _LocalDemoStore {
       foodId,
       quantity,
       unit,
-      explicitKcal: body['kcal'] ?? body['calories'],
+      explicitKcal:
+          body['estimatedCalories'] ?? body['kcal'] ?? body['calories'],
     );
     final entry = <String, dynamic>{
-      'id': 'entry-${DateTime.now().millisecondsSinceEpoch}',
+      'id':
+          'entry-${DateTime.now().millisecondsSinceEpoch}-${++_nutritionEntrySeq}',
       'mealType': body['mealType'] ?? 'SNACK',
       'mealName': mealName.isEmpty ? 'Món ăn tự nhập' : mealName,
       'foodId': (foodId != null && foodId.isNotEmpty) ? foodId : null,
@@ -2826,7 +2832,8 @@ class _LocalDemoStore {
       target['foodId'],
       target['quantity'],
       target['unit'],
-      explicitKcal: body['kcal'] ?? body['calories'],
+      explicitKcal:
+          body['estimatedCalories'] ?? body['kcal'] ?? body['calories'],
     );
     if (idx < 0) nutritionEntries.add(target);
     return target;
