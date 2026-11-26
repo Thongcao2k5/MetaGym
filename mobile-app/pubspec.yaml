@@ -86,6 +86,7 @@ flutter:
     - assets/svg/default/
     - assets/svg/membership/
     - assets/svg/muscles/
+    - assets/svg/muscles/focus/
     - assets/svg/navigation/
     - assets/svg/nutrition/
     - assets/svg/progress/

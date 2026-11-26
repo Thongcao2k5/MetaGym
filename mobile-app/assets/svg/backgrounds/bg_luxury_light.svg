@@ -1,100 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 393 852" width="393" height="852" preserveAspectRatio="xMidYMid slice">
   <defs>
-    <!-- Base Alabaster Titanium Pearl Canvas (harmonizes with #FFFFFF porcelain cards) -->
-    <linearGradient id="lightCanvas" x1="0" y1="0" x2="0.45" y2="1">
-      <stop offset="0%" stop-color="#EAF0F7"/>
-      <stop offset="50%" stop-color="#E1E8F2"/>
-      <stop offset="100%" stop-color="#DAE2EE"/>
+    <linearGradient id="mg-light-base" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#CFDCEB"/>
+      <stop offset="50%" stop-color="#DCE5F1"/>
+      <stop offset="100%" stop-color="#CBD7E7"/>
     </linearGradient>
-
-    <!-- Soft Diffused Luxury Silk Orbs -->
-    <radialGradient id="lightSilkTop" cx="88%" cy="10%" r="58%">
-      <stop offset="0%" stop-color="#B6D2F0" stop-opacity="0.58"/>
-      <stop offset="52%" stop-color="#D2E2F4" stop-opacity="0.24"/>
-      <stop offset="100%" stop-color="#E1E8F2" stop-opacity="0"/>
+    <radialGradient id="mg-light-cool" cx="90%" cy="10%" r="58%">
+      <stop offset="0%" stop-color="#8EB4DE" stop-opacity="0.46"/>
+      <stop offset="52%" stop-color="#B3CCE9" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#DCE5F1" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="lightSilkWarm" cx="12%" cy="84%" r="60%">
-      <stop offset="0%" stop-color="#F6C5B0" stop-opacity="0.52"/>
-      <stop offset="48%" stop-color="#E9CFA7" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#E1E8F2" stop-opacity="0"/>
+    <radialGradient id="mg-light-warm" cx="10%" cy="88%" r="60%">
+      <stop offset="0%" stop-color="#F0A586" stop-opacity="0.52"/>
+      <stop offset="48%" stop-color="#EFC5A8" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#CBD7E7" stop-opacity="0"/>
     </radialGradient>
-
-    <!-- Brushed Champagne Bronze & Cool Platinum Stroke Gradients -->
-    <linearGradient id="goldLineLight" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#9E7138" stop-opacity="0.44"/>
-      <stop offset="50%" stop-color="#607694" stop-opacity="0.30"/>
-      <stop offset="100%" stop-color="#BA5A3A" stop-opacity="0.36"/>
+    <linearGradient id="mg-light-ribbon1" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0%" stop-color="#90B1D8" stop-opacity="0.18"/>
+      <stop offset="55%" stop-color="#A6C4E6" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.32"/>
     </linearGradient>
-    <linearGradient id="archGoldLight" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#9E7138" stop-opacity="0.42"/>
-      <stop offset="65%" stop-color="#607694" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#9E7138" stop-opacity="0.04"/>
+    <linearGradient id="mg-light-line1" x1="0" y1="268" x2="393" y2="148" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5B7DA6" stop-opacity="0.06"/>
+      <stop offset="52%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="86%" stop-color="#5B7DA6" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#5B7DA6" stop-opacity="0.08"/>
     </linearGradient>
-
-    <!-- Aristocratic Embossed Diamond Filigree Pattern -->
-    <pattern id="royalLatticeLight" width="76" height="76" patternUnits="userSpaceOnUse">
-      <!-- Outer Embossed Diamond -->
-      <path d="M38 0 L76 38 L38 76 L0 38 Z" fill="none" stroke="#9B723B" stroke-opacity="0.24" stroke-width="1"/>
-      <!-- Subtle White Emboss Companion Line -->
-      <path d="M38 1.5 L74.5 38 L38 74.5 L1.5 38 Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="0.8"/>
-      <!-- Inner Platinum Diamond -->
-      <path d="M38 11 L65 38 L38 65 L11 38 Z" fill="none" stroke="#5A6F8A" stroke-opacity="0.18" stroke-width="0.85"/>
-      <!-- Royal 4-Point Filigree Star -->
-      <path d="M38 22 C40 32.5 43.5 36 54 38 C43.5 40 40 43.5 38 54 C36 43.5 32.5 40 22 38 C32.5 36 36 32.5 38 22 Z"
-            fill="#B38344" fill-opacity="0.06" stroke="#9E7138" stroke-opacity="0.28" stroke-width="0.95"/>
-      <circle cx="38" cy="38" r="1.8" fill="#A6763A" fill-opacity="0.42"/>
-      <!-- Corner Crest Diamonds -->
-      <circle cx="0" cy="0" r="1.6" fill="#647994" fill-opacity="0.30"/>
-      <circle cx="76" cy="0" r="1.6" fill="#647994" fill-opacity="0.30"/>
-      <circle cx="0" cy="76" r="1.6" fill="#647994" fill-opacity="0.30"/>
-      <circle cx="76" cy="76" r="1.6" fill="#647994" fill-opacity="0.30"/>
-    </pattern>
-
-    <!-- Soft Silk Blur for Ambient Orbs Only -->
-    <filter id="silkBlurLight" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="26"/>
-    </filter>
-
-    <!-- Gentle Center Softening Veil (keeps text calm while filigree shines around) -->
-    <radialGradient id="edgeFadeLight" cx="50%" cy="46%" r="66%">
-      <stop offset="0%" stop-color="#E5EBF4" stop-opacity="0.34"/>
-      <stop offset="65%" stop-color="#E1E8F2" stop-opacity="0.10"/>
-      <stop offset="100%" stop-color="#DAE2EE" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="mg-light-line2" x1="0" y1="720" x2="393" y2="734" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#D96840" stop-opacity="0.10"/>
+      <stop offset="28%" stop-color="#D96840" stop-opacity="0.44"/>
+      <stop offset="72%" stop-color="#D96840" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#D96840" stop-opacity="0"/>
+    </linearGradient>
   </defs>
-
-  <!-- Layer 1: Pearl Titanium Base -->
-  <rect width="393" height="852" fill="url(#lightCanvas)"/>
-
-  <!-- Layer 2: Soft Diffused Daylight Silk Glows -->
-  <g filter="url(#silkBlurLight)">
-    <rect width="393" height="852" fill="url(#lightSilkTop)"/>
-    <rect width="393" height="852" fill="url(#lightSilkWarm)"/>
-  </g>
-
-  <!-- Layer 3: Crisp Embossed Aristocratic Diamond Filigree -->
-  <rect width="393" height="852" fill="url(#royalLatticeLight)"/>
-
-  <!-- Layer 4: Watchmaker Guilloché Concentric Medallions -->
-  <g fill="none" stroke="url(#goldLineLight)">
-    <circle cx="348" cy="116" r="172" stroke-width="1.2"/>
-    <circle cx="348" cy="116" r="138" stroke-width="0.95" stroke-dasharray="3 5"/>
-    <circle cx="348" cy="116" r="102" stroke-width="1.1"/>
-    <circle cx="348" cy="116" r="64" stroke-width="0.85"/>
-
-    <circle cx="42" cy="738" r="188" stroke-width="1.2"/>
-    <circle cx="42" cy="738" r="150" stroke-width="0.95" stroke-dasharray="2 6"/>
-    <circle cx="42" cy="738" r="112" stroke-width="1.1"/>
-    <circle cx="42" cy="738" r="72" stroke-width="0.85"/>
-  </g>
-
-  <!-- Layer 5: Art-Deco Architectural Framing Arches -->
-  <g fill="none" stroke="url(#archGoldLight)">
-    <path d="M20 240 L20 106 C20 56 62 20 196.5 20 C331 20 373 56 373 106 L373 240" stroke-width="1.2"/>
-    <path d="M30 226 L30 112 C30 68 70 32 196.5 32 C323 32 363 68 363 112 L363 226" stroke-width="0.8" stroke-opacity="0.7"/>
-    <path d="M20 612 L20 746 C20 796 62 832 196.5 832 C331 832 373 796 373 746 L373 612" stroke-width="1.1" stroke-opacity="0.8"/>
-  </g>
-
-  <!-- Layer 6: Gentle Center Calm Veil -->
-  <rect width="393" height="852" fill="url(#edgeFadeLight)"/>
+  <rect width="393" height="852" fill="url(#mg-light-base)"/>
+  <rect width="393" height="852" fill="url(#mg-light-cool)"/>
+  <rect width="393" height="852" fill="url(#mg-light-warm)"/>
+  <path d="M-10 268 C105 235, 220 122, 405 148 L405 0 L-10 0 Z" fill="url(#mg-light-ribbon1)"/>
+  <path d="M-10 268 C105 235, 220 122, 405 148" stroke="url(#mg-light-line1)" stroke-width="1.5" fill="none"/>
+  <path d="M-10 722 C100 780, 240 770, 405 734" stroke="url(#mg-light-line2)" stroke-width="1.4" fill="none"/>
 </svg>
