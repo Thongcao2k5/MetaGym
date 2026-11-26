@@ -340,40 +340,6 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <!-- Sinh trắc học sau khi đăng nhập (Face ID / Vân tay) -->
-          <div class="card-solid" style="padding:14px 15px;">
-            <div class="row-between" style="margin-bottom:10px;">
-              <div class="row" style="gap:7px;">
-                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/auth_face_id.svg" alt="Sinh trắc học" />
-                <strong style="font-size:14px;">Sinh trắc học</strong>
-              </div>
-              <span class="pill pill-muted" data-bio-status>● Chưa bật</span>
-            </div>
-
-            <div class="row-between" style="padding:6px 0 10px;">
-              <div style="flex:1;padding-right:10px;">
-                <div class="txt-sm txt-bold">Đăng nhập Face ID / Vân tay</div>
-                <div class="txt-xs">Mở ứng dụng nhanh sau khi đăng nhập tài khoản</div>
-              </div>
-              <div class="toggle-pill" data-biometric-toggle><div class="toggle-knob"></div></div>
-            </div>
-
-            <div class="divider" style="margin:0;"></div>
-
-            <div class="row-between" style="padding:10px 0;">
-              <div style="flex:1;padding-right:10px;">
-                <div class="txt-sm txt-bold">Xác thực khi thanh toán</div>
-                <div class="txt-xs">Yêu cầu sinh trắc học khi mua hoặc nâng cấp gói</div>
-              </div>
-              <div class="toggle-pill on"><div class="toggle-knob"></div></div>
-            </div>
-
-            <button type="button" class="btn-secondary" style="width:100%;height:40px;margin-top:4px;gap:8px;" data-open-biometric="setup">
-              <img class="ico-xs" src="../../meta-gym/assets/svg/setting/auth_fingerprint.svg" alt="Thiết lập" style="background:transparent;padding:0;" />
-              <span>Thiết lập Face ID / Vân tay</span>
-            </button>
-          </div>
-
           <div class="card-solid" style="padding:15px;">
             <div class="row" style="gap:7px;margin-bottom:12px;">
               <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_password_key.svg" alt="Mật khẩu" />
@@ -416,145 +382,13 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
     `
   },
   {
-    id: 'member-privacy',
-    group: 'tab5-profile',
-    groupLabel: '5. Hồ sơ',
-    title: '5.12 Quyền riêng tư',
-    shortFile: 'profile_page.dart (Privacy)',
-    flutterFile: 'mobile-app/lib/features/profile/presentation/profile_page.dart',
-    tag: 'P2 • Dữ liệu',
-    tagClass: '',
-    status: 'Đang review',
-    html: `
-<div class="phone">
-        <div class="phone-bg-photo"></div>
-        <div class="phone-scrim"></div>
-        <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
-
-        <div class="phone-body no-nav">
-          <div class="mg-header">
-            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
-            <div class="mg-header-text">
-              <div class="mg-eyebrow">BẢO VỆ DỮ LIỆU</div>
-              <div class="mg-title">Quyền riêng tư &amp; Chia sẻ</div>
-            </div>
-          </div>
-
-          <div class="card-solid" style="padding:6px 14px;">
-            <div class="row-between" style="padding:12px 0;">
-              <div style="flex:1;padding-right:10px;">
-                <div class="txt-sm txt-bold">Chia sẻ chỉ số &amp; Ảnh tiến độ</div>
-                <div class="txt-xs">Cho phép Coach phụ trách xem biểu đồ cơ thể</div>
-              </div>
-              <div class="toggle-pill on"><div class="toggle-knob"></div></div>
-            </div>
-            <div class="divider" style="margin:0;"></div>
-            <div class="row-between" style="padding:12px 0;">
-              <div style="flex:1;padding-right:10px;">
-                <div class="txt-sm txt-bold">Chia sẻ nhật ký dinh dưỡng</div>
-                <div class="txt-xs">Coach đối chiếu khẩu phần ăn hàng ngày</div>
-              </div>
-              <div class="toggle-pill on"><div class="toggle-knob"></div></div>
-            </div>
-            <div class="divider" style="margin:0;"></div>
-            <div class="row-between" style="padding:12px 0;">
-              <div style="flex:1;padding-right:10px;">
-                <div class="txt-sm txt-bold">Cho phép hiển thị ảnh thành quả</div>
-                <div class="txt-xs">Chỉ khi bạn xác nhận trong mục Duyệt thành quả</div>
-              </div>
-              <div class="toggle-pill"><div class="toggle-knob"></div></div>
-            </div>
-          </div>
-
-          <div class="card-liquid" style="padding:14px;">
-            <div class="row" style="gap:10px;">
-              <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_photo_permission.svg" alt="Quyền ảnh" />
-              <div style="flex:1;">
-                <div class="txt-sm txt-bold">Quyền thư viện ảnh thiết bị</div>
-                <div class="txt-xs txt-green">Đang cho phép truy cập ảnh đã chọn</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `
-  },
-  {
-    id: 'member-app-settings',
-    group: 'tab5-profile',
-    groupLabel: '5. Hồ sơ',
-    title: '5.13 Cài đặt ứng dụng',
-    shortFile: 'profile_page.dart (AppSettings)',
-    flutterFile: 'mobile-app/lib/features/profile/presentation/profile_page.dart',
-    tag: 'P2 • Tùy chỉnh',
-    tagClass: '',
-    status: 'Đang review',
-    html: `
-<div class="phone">
-        <div class="phone-bg-photo"></div>
-        <div class="phone-scrim"></div>
-        <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
-
-        <div class="phone-body no-nav">
-          <div class="mg-header">
-            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
-            <div class="mg-header-text">
-              <div class="mg-eyebrow">TÙY CHỈNH TRẢI NGHIỆM</div>
-              <div class="mg-title">Cài đặt ứng dụng</div>
-            </div>
-          </div>
-
-          <div class="card-solid" style="padding:6px 14px;">
-            <div class="row-between" style="padding:12px 0;gap:8px;">
-              <div class="row" style="gap:10px;min-width:0;flex:1;">
-                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_theme_appearance.svg" alt="Giao diện" />
-                <div style="min-width:0;">
-                  <div class="txt-sm txt-bold">Giao diện hiển thị</div>
-                  <div class="txt-xs" data-theme-mode-desc>Tối · Futuristic Performance Glass</div>
-                </div>
-              </div>
-              <div class="row" data-app-theme-switch style="gap:4px;padding:3px;border-radius:999px;background:var(--surface-raised);border:1px solid var(--border-solid);cursor:pointer;flex-shrink:0;">
-                <span data-theme-opt="dark" style="padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;background:var(--primary);color:#FFF;transition:all 160ms ease;">Tối</span>
-                <span data-theme-opt="light" style="padding:4px 9px;border-radius:999px;font-size:11px;font-weight:600;color:var(--text-secondary);transition:all 160ms ease;">Sáng</span>
-              </div>
-            </div>
-            <div class="divider" style="margin:0;"></div>
-            <div class="row-between" style="padding:12px 0;">
-              <div class="row" style="gap:10px;">
-                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_unit_measurement.svg" alt="Đơn vị" />
-                <div><div class="txt-sm txt-bold">Đơn vị đo lường</div><div class="txt-xs">Hệ mét chuẩn quốc tế</div></div>
-              </div>
-              <span class="pill pill-muted tnum">kg · cm</span>
-            </div>
-            <div class="divider" style="margin:0;"></div>
-            <div class="row-between" style="padding:12px 0;">
-              <div class="row" style="gap:10px;">
-                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_notifications_bell.svg" alt="Nhắc lịch" />
-                <div><div class="txt-sm txt-bold">Nhắc lịch tập &amp; Dinh dưỡng</div><div class="txt-xs">Thông báo trước buổi tập 30 phút</div></div>
-              </div>
-              <div class="toggle-pill on"><div class="toggle-knob"></div></div>
-            </div>
-            <div class="divider" style="margin:0;"></div>
-            <div class="row-between" style="padding:12px 0;">
-              <div class="row" style="gap:10px;">
-                <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_accessibility.svg" alt="Giảm hiệu ứng" />
-                <div><div class="txt-sm txt-bold">Giảm hiệu ứng mờ (Pin yếu)</div><div class="txt-xs">Chuyển sang bề mặt đặc mượt hơn</div></div>
-              </div>
-              <div class="toggle-pill"><div class="toggle-knob"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `
-  },
-  {
     id: 'member-support',
     group: 'tab5-profile',
     groupLabel: '5. Hồ sơ',
-    title: '5.14 Phòng tập & Hỗ trợ',
-    shortFile: 'profile_page.dart (SupportInfo)',
+    title: '5.12 Thông tin phòng tập',
+    shortFile: 'catalog.routes.js (GET /gym-profile)',
     flutterFile: 'mobile-app/lib/features/profile/presentation/profile_page.dart',
-    tag: 'P2 • Hỗ trợ',
+    tag: 'P2 • Phòng tập',
     tagClass: '',
     status: 'Đang review',
     html: `
@@ -563,12 +397,12 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
         <div class="phone-scrim"></div>
         <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
 
-        <div class="phone-body" style="padding-bottom:92px;">
+        <div class="phone-body no-nav">
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">META GYM CENTER</div>
-              <div class="mg-title">Phòng tập &amp; Hỗ trợ</div>
+              <div class="mg-title">Thông tin phòng tập</div>
             </div>
           </div>
 
@@ -589,12 +423,12 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
             <div class="divider" style="margin:0;"></div>
             <div class="row-between" style="padding:11px 0;">
-              <span class="txt-xs">Hotline hỗ trợ</span>
+              <span class="txt-xs">Điện thoại</span>
               <strong class="txt-sm tnum txt-orange">1900 6868</strong>
             </div>
             <div class="divider" style="margin:0;"></div>
             <div class="row-between" style="padding:11px 0;">
-              <span class="txt-xs">Email CSKH</span>
+              <span class="txt-xs">Email</span>
               <strong class="txt-sm">cskh@metagym.vn</strong>
             </div>
             <div class="divider" style="margin:0;"></div>
@@ -602,19 +436,16 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <span class="txt-xs">Địa chỉ</span>
               <strong class="txt-sm" style="text-align:right;">128 Nguyễn Huệ, Q.1, TP.HCM</strong>
             </div>
-            <div class="divider" style="margin:0;"></div>
-            <div class="row-between" style="padding:11px 0;">
-              <span class="txt-xs">Phiên bản ứng dụng</span>
-              <strong class="txt-sm tnum">v1.0.0 · Build 2026.11</strong>
+          </div>
+
+          <div class="card-liquid" style="padding:14px;">
+            <div class="txt-sm txt-bold" style="margin-bottom:6px;">Nội quy phòng tập</div>
+            <div class="txt-xs" style="color:var(--text-warm-muted);line-height:1.5;">
+              • Mang giày thể thao sạch và khăn cá nhân khi vào khu tập luyện.<br />
+              • Đặt tạ đơn, bánh tạ về đúng giá kệ và lau sạch ghế sau khi dùng.<br />
+              • Tuân thủ hướng dẫn an toàn với máy cáp và tạ tự do.
             </div>
           </div>
-        </div>
-
-        <div class="bottom-cta-dock">
-          <button type="button" class="btn-primary" data-open-support-modal>
-            <img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_support_headset.svg" alt="Hỗ trợ" style="background:transparent;padding:0;" />
-            <span>Liên hệ hỗ trợ ngay</span>
-          </button>
         </div>
       </div>
     `

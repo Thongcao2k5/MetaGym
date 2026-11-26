@@ -3068,3 +3068,16 @@ body.mobile-app-fullscreen .screen-slot.proto-current .status-bar {
 body.mobile-app-fullscreen .screen-slot.proto-current .phone-body {
   padding-top: max(14px, env(safe-area-inset-top)) !important;
 }
+
+/* Coach Warm Smoked Liquid Glass Modals (Dark + Daylight Light Override) */
+.qr-overlay[data-coach-modal] .qr-sheet {
+  background: linear-gradient(155deg, rgba(48, 41, 36, 0.96), rgba(31, 27, 24, 0.96));
+  border: 1px solid rgba(179, 169, 157, 0.52);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+body.light-mode .qr-overlay[data-coach-modal] .qr-sheet {
+  background: #FFFFFF;
+  border: 1px solid rgba(25, 24, 24, 0.14);
+  box-shadow: 0 24px 48px rgba(25, 24, 24, 0.16);
+}

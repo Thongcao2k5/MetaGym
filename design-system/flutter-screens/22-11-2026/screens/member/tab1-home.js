@@ -238,26 +238,26 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
           </div>
 
-          <!-- 3. TIN TỨC & BÀI VIẾT -->
+          <!-- 3. PHÒNG TẬP & DINH DƯỠNG HÔM NAY (100% khớp backend GET /gym-profile & GET /member/nutrition/day) -->
           <div class="row-between" style="margin:4px 0 8px;">
-            <strong style="font-size:14px;">Tin tức &amp; Bài viết</strong>
-            <span class="txt-xs" style="color:var(--reflection);" data-go="member-article-detail">Xem thêm ›</span>
+            <strong style="font-size:14px;">Phòng tập &amp; Dinh dưỡng</strong>
+            <span class="txt-xs" style="color:var(--reflection);cursor:pointer;" data-go="member-support">Thông tin ›</span>
           </div>
-          <div class="card-solid" style="padding:12px 13px;margin-bottom:8px;" data-go="member-article-detail">
+          <div class="card-solid" style="padding:12px 13px;margin-bottom:8px;cursor:pointer;" data-go="member-support">
             <div class="row-between" style="margin-bottom:5px;">
-              <span class="pill pill-orange" style="font-size:11px;padding:2px 8px;">Kiến thức tập luyện</span>
-              <span class="txt-xs tnum">4 phút đọc</span>
+              <span class="pill pill-orange" style="font-size:11px;padding:2px 8px;">Phòng tập</span>
+              <span class="txt-xs tnum">05:30 – 22:00</span>
             </div>
-            <div class="txt-sm txt-bold">Nguyên tắc tăng tiến tải trọng (Progressive Overload)</div>
-            <div class="txt-xs" style="margin-top:3px;">Cách ghi tạ và phục hồi hiệu quả để tăng cơ bền vững...</div>
+            <div class="txt-sm txt-bold">Meta Gym Flagship Studio · Nội quy &amp; Liên hệ</div>
+            <div class="txt-xs" style="margin-top:3px;">128 Nguyễn Huệ, Q.1 · Hotline hỗ trợ 1900 6868</div>
           </div>
-          <div class="card-solid" style="padding:12px 13px;" data-go="member-article-detail">
+          <div class="card-solid" style="padding:12px 13px;cursor:pointer;" data-go="member-nutrition">
             <div class="row-between" style="margin-bottom:5px;">
               <span class="pill pill-success" style="font-size:11px;padding:2px 8px;">Dinh dưỡng</span>
-              <span class="txt-xs tnum">3 phút đọc</span>
+              <span class="txt-xs tnum">1.840 kcal</span>
             </div>
-            <div class="txt-sm txt-bold">Bữa ăn trước &amp; sau tập giúp tối ưu tổng hợp đạm</div>
-            <div class="txt-xs" style="margin-top:3px;">Khung giờ vàng nạp carb và protein cho buổi tập 90 phút...</div>
+            <div class="txt-sm txt-bold">Thực đơn 7 ngày &amp; Nhật ký bữa ăn hôm nay</div>
+            <div class="txt-xs" style="margin-top:3px;">4 món đã ghi hôm nay · Đối chiếu thực đơn từ Coach</div>
           </div>
         </div>
 
@@ -904,70 +904,6 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    `
-  },
-  {
-    id: 'member-article-detail',
-    group: 'tab1-home',
-    groupLabel: '1. Trang chủ',
-    title: '1.5 Chi tiết bài viết',
-    shortFile: 'member_explore_articles.dart',
-    flutterFile: 'mobile-app/lib/features/member/presentation/member_explore_articles.dart',
-    tag: 'P2 • Kiến thức',
-    tagClass: '',
-    status: 'Đang review',
-    html: `
-<div class="phone">
-        <div class="phone-bg-photo"></div>
-        <div class="phone-scrim"></div>
-        <div class="status-bar"><span class="tnum">18:02</span><div class="notch"></div><span class="tnum">5G 92%</span></div>
-
-        <div class="phone-body no-nav">
-          <div class="mg-header">
-            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
-            <div class="mg-header-text">
-              <div class="mg-eyebrow">KIẾN THỨC TẬP LUYỆN</div>
-              <div class="mg-title">Chi tiết bài viết</div>
-            </div>
-            <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/community/social_bookmark.svg" alt="Lưu bài" /></div>
-          </div>
-
-          <div class="card-warm-glass" style="padding:16px;">
-            <div class="row-between" style="margin-bottom:8px;">
-              <span class="pill pill-orange">Kiến thức tập luyện</span>
-              <span class="txt-xs tnum">4 phút đọc · 22/11/2026</span>
-            </div>
-            <div style="font-size:20px;font-weight:800;line-height:1.3;">
-              Nguyên tắc tăng tiến tải trọng (Progressive Overload)
-            </div>
-            <div class="row" style="gap:8px;margin-top:10px;">
-              <div class="avatar-ln" style="width:28px;height:28px;font-size:11px;">LN</div>
-              <span class="txt-xs">Biên soạn bởi <strong>HLV Lê Hoàng Nam</strong></span>
-            </div>
-          </div>
-
-          <div class="card-solid" style="padding:15px;">
-            <div style="font-size:14px;font-weight:700;margin-bottom:6px;">1. Progressive Overload là gì?</div>
-            <div class="txt-xs" style="line-height:1.6;margin-bottom:12px;">
-              Tăng tiến tải trọng là việc tăng dần áp lực lên cơ bắp theo thời gian — có thể tăng mức tạ (+2.5 kg), tăng số lần lặp (+1–2 reps) hoặc cải thiện tốc độ kiểm soát nhịp tạ (tempo).
-            </div>
-
-            <div style="font-size:14px;font-weight:700;margin-bottom:6px;">2. Cách áp dụng an toàn mỗi tuần</div>
-            <div class="txt-xs" style="line-height:1.6;margin-bottom:12px;">
-              • Ghi lại mức tạ &amp; số reps sau mỗi buổi trong <strong>Nhật ký tập luyện</strong>.<br />
-              • Khi hoàn thành đủ 4 hiệp × 10 reps đúng kỹ thuật, tăng thêm 2.5 kg ở tuần kế tiếp.<br />
-              • Đảm bảo ngủ đủ 7–8 tiếng và nạp đủ 1.8–2.0g đạm / kg cân nặng.
-            </div>
-
-            <div class="metric-box" style="padding:10px 12px;margin-bottom:12px;">
-              <div class="txt-xs txt-orange txt-bold" style="margin-bottom:2px;">Gợi ý thực hành ngay</div>
-              <div class="txt-xs">Mở Nhật ký tập luyện để lưu lại kỷ lục mức tạ (PR) buổi tập tối nay.</div>
-            </div>
-
-            <button class="btn-primary" data-go="member-journal">Mở Nhật ký tập luyện →</button>
           </div>
         </div>
       </div>

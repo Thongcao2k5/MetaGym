@@ -96,14 +96,16 @@
 
   <!-- Modular Screen Registries -->
   <script src="./screens/auth.screens.js?v=20261124l"></script>
-  <script src="./screens/member/tab1-home.js?v=20261124f"></script>
+  <script src="./screens/member/tab1-home.js?v=20261126c"></script>
   <script src="./screens/member/tab2-training.js?v=20261124d"></script>
   <script src="./screens/member/tab3-ai.js?v=20261124d"></script>
   <script src="./screens/member/tab4-messages.js?v=20261124c"></script>
-  <script src="./screens/member/tab5-profile.js?v=20261124d"></script>
-  <script src="./screens/member/tab5-profile-sub.js?v=20261124b"></script>
-  <script src="./screens/coach/core.js?v=20261124b"></script>
-  <script src="./screens/coach/detail.js?v=20261124b"></script>
+  <script src="./screens/member/tab5-profile.js?v=20261126c"></script>
+  <script src="./screens/member/tab5-profile-sub.js?v=20261126c"></script>
+  <script src="./screens/coach/core.js?v=20261126f"></script>
+  <script src="./screens/coach/detail.js?v=20261126f"></script>
+  <script src="./screens/coach/nutrition.js?v=20261126f"></script>
+  <script src="./screens/coach/workspace.js?v=20261126f"></script>
   <script src="./screens/notes.js?v=20261124g"></script>
 
   <script>
@@ -270,7 +272,6 @@
       'member-checkout': 'member-membership-empty',
       'member-coach-booking': 'member-home',
       'member-payments': 'member-membership',
-      'member-article-detail': 'member-home',
       'member-nutrition': 'member-training-hub',
       'member-journal': 'member-training-hub',
       'member-gym-visits': 'member-training-hub',
@@ -289,12 +290,21 @@
       'member-coach-offers': 'member-coach-detail',
       'member-notifications': 'member-home',
       'member-security': 'member-profile',
-      'member-privacy': 'member-profile',
-      'member-app-settings': 'member-profile',
       'member-support': 'member-profile',
       'coach-members': 'coach-home',
+      'coach-member-detail': 'coach-members',
+      'coach-notifications': 'coach-home',
+      'coach-workweek': 'coach-sessions',
+      'coach-blocked-slots': 'coach-sessions',
+      'coach-booking-history': 'coach-sessions',
       'coach-training': 'coach-home',
-      'coach-nutrition': 'coach-home'
+      'coach-member-plans': 'coach-training',
+      'coach-plan-detail': 'coach-member-plans',
+      'coach-plan-form': 'coach-member-plans',
+      'coach-meal-plan': 'coach-training',
+      'coach-calls': 'coach-conversations',
+      'coach-chat-detail': 'coach-conversations',
+      'coach-pro-profile': 'coach-profile'
     };
 
     function bindTextLink(slot, selector, textContains, targetId) {
@@ -310,26 +320,27 @@
         const id = slot.dataset.id;
         const role = slot.dataset.role;
 
+        const isCoach = role === 'coach';
+
         // Back buttons
         slot.querySelectorAll('.circle-btn').forEach(btn => {
           if (btn.querySelector('img[src*="common_back.svg"]')) btn.setAttribute('data-back', '1');
-          if (btn.querySelector('img[src*="setting_notifications_bell.svg"]')) btn.setAttribute('data-go', 'member-notifications');
+          if (btn.querySelector('img[src*="setting_notifications_bell.svg"]')) btn.setAttribute('data-go', isCoach ? 'coach-notifications' : 'member-notifications');
           if (btn.querySelector('img[src*="workout_history.svg"]')) btn.setAttribute('data-go', 'member-gym-visits');
           if (btn.querySelector('img[src*="equip_dumbbell.svg"]')) btn.setAttribute('data-go', 'member-gym-equipment');
         });
 
         // Bottom Nav bars
         slot.querySelectorAll('.bottom-nav').forEach(nav => {
-          const isCoach = role === 'coach';
           nav.querySelectorAll('.nav-item, .nav-ai-wrap').forEach(item => {
             const img = item.querySelector('img');
             const alt = img ? img.getAttribute('alt') : '';
             if (alt === 'Trang chủ') item.setAttribute('data-go', isCoach ? 'coach-home' : 'member-home');
             else if (alt === 'Tập luyện') item.setAttribute('data-go', 'member-training-hub');
             else if (alt === 'Lịch dạy') item.setAttribute('data-go', 'coach-sessions');
-            else if (alt === 'AI') item.setAttribute('data-go', 'member-ai-messages');
-            else if (alt === 'Tin nhắn') item.setAttribute('data-go', 'member-conversations');
-            else if (alt === 'Hồ sơ') item.setAttribute('data-go', 'member-profile');
+            else if (alt === 'AI') item.setAttribute('data-go', isCoach ? 'coach-ai' : 'member-ai-messages');
+            else if (alt === 'Tin nhắn') item.setAttribute('data-go', isCoach ? 'coach-conversations' : 'member-conversations');
+            else if (alt === 'Hồ sơ') item.setAttribute('data-go', isCoach ? 'coach-profile' : 'member-profile');
           });
         });
 
@@ -411,8 +422,8 @@
         } else if (id === 'coach-home') {
           bindTextLink(slot, '.quick-tile', 'Học viên', 'coach-members');
           bindTextLink(slot, '.quick-tile', 'Giáo trình', 'coach-training');
-          bindTextLink(slot, '.quick-tile', 'Dinh dưỡng', 'coach-nutrition');
-          bindTextLink(slot, '.quick-tile', 'Lịch tập', 'coach-sessions');
+          bindTextLink(slot, '.quick-tile', 'Dinh dưỡng', 'coach-meal-plan');
+          bindTextLink(slot, '.quick-tile', 'Lịch dạy', 'coach-sessions');
           bindTextLink(slot, '.row-between', 'Hội viên của tôi', 'coach-members');
         }
       });
@@ -589,6 +600,33 @@
         confirmLogout.closest('[data-logout-modal]')?.classList.remove('open');
         navigateToScreen('auth-login');
         showFlowToast('Đã đăng xuất tài khoản');
+        return;
+      }
+
+      // Coach Interactive Modals & Action Feedback (Outcome, Early Termination, Publish Plan)
+      const openCoachModal = e.target.closest('[data-open-coach-modal]');
+      if (openCoachModal) {
+        e.stopPropagation();
+        const modalKey = openCoachModal.dataset.openCoachModal;
+        openCoachModal.closest('.phone')?.querySelector('[data-coach-modal="' + modalKey + '"]')?.classList.add('open');
+        return;
+      }
+      const closeCoachModal = e.target.closest('[data-close-coach-modal]');
+      if (closeCoachModal) {
+        e.stopPropagation();
+        closeCoachModal.closest('[data-coach-modal]')?.classList.remove('open');
+        const msg = closeCoachModal.dataset.coachToast;
+        if (msg) showFlowToast(msg);
+        return;
+      }
+      if (e.target.matches('[data-coach-modal]')) {
+        e.target.classList.remove('open');
+        return;
+      }
+      const coachToast = e.target.closest('[data-coach-toast]');
+      if (coachToast) {
+        e.stopPropagation();
+        showFlowToast(coachToast.dataset.coachToast);
         return;
       }
 
@@ -841,6 +879,21 @@
       if (pill && pill.parentElement) {
         pill.parentElement.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
+        const stateKey = pill.getAttribute('data-state-btn');
+        if (stateKey) {
+          const body = pill.closest('.phone-body');
+          body?.querySelectorAll('[data-state-pane]').forEach(p => {
+            p.style.display = (stateKey === 'all' || p.getAttribute('data-state-pane') === stateKey) ? '' : 'none';
+          });
+        }
+        const filterCat = pill.getAttribute('data-filter-cat');
+        if (filterCat) {
+          const body = pill.closest('.phone-body');
+          body?.querySelectorAll('[data-filter-item]').forEach(item => {
+            const tags = (item.getAttribute('data-filter-item') || '').split(/\s+/);
+            item.style.display = (filterCat === 'all' || tags.includes(filterCat)) ? '' : 'none';
+          });
+        }
         return;
       }
       const toggle = e.target.closest('.toggle-pill');

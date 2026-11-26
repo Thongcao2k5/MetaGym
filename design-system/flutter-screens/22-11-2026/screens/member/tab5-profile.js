@@ -67,7 +67,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
             <div class="accordion-body">
               <div class="divider"></div>
-              <div class="accordion-row" data-go="member-measurement"><span>Nhật ký &amp; Số đo cơ thể</span><span class="txt-xs">›</span></div>
+              <div class="accordion-row" data-go="member-measurement"><span>Số đo cơ thể &amp; InBody</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="member-coaching"><span>Coach &amp; Lịch hẹn</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="member-membership"><span>Gói tập &amp; Ưu đãi</span><span class="txt-xs">›</span></div>
             </div>
@@ -75,16 +75,14 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <div class="card-liquid accordion-card is-open" style="padding:13px 14px;">
             <div class="accordion-head" data-accordion-toggle>
-              <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_security_shield.svg" alt="Tài khoản" /><strong class="txt-sm">Tài khoản &amp; hỗ trợ</strong></div>
-              <div class="row" style="gap:6px;"><span class="count-pill">5</span><span class="accordion-chev">›</span></div>
+              <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/setting_security_shield.svg" alt="Tài khoản" /><strong class="txt-sm">Tài khoản &amp; phòng tập</strong></div>
+              <div class="row" style="gap:6px;"><span class="count-pill">3</span><span class="accordion-chev">›</span></div>
             </div>
             <div class="accordion-body">
               <div class="divider"></div>
               <div class="accordion-row" data-go="member-notifications"><span>Thông báo</span><span class="txt-xs">›</span></div>
-              <div class="accordion-row" data-go="member-security"><span>Bảo mật &amp; Tài khoản</span><span class="txt-xs">›</span></div>
-              <div class="accordion-row" data-go="member-privacy"><span>Quyền riêng tư &amp; Chia sẻ</span><span class="txt-xs">›</span></div>
-              <div class="accordion-row" data-go="member-app-settings"><span>Cài đặt ứng dụng</span><span class="txt-xs">›</span></div>
-              <div class="accordion-row" data-go="member-support"><span>Phòng tập &amp; Hỗ trợ</span><span class="txt-xs">›</span></div>
+              <div class="accordion-row" data-go="member-security"><span>Bảo mật &amp; Đổi mật khẩu</span><span class="txt-xs">›</span></div>
+              <div class="accordion-row" data-go="member-support"><span>Thông tin phòng tập</span><span class="txt-xs">›</span></div>
             </div>
           </div>
 
@@ -423,7 +421,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
     id: 'member-measurement',
     group: 'tab5-profile',
     groupLabel: '5. Hồ sơ',
-    title: '5.5 Nhật ký tập luyện & Số đo',
+    title: '5.5 Số đo cơ thể &amp; InBody',
     shortFile: 'member_measurement_page.dart',
     flutterFile: 'mobile-app/lib/features/progress/presentation/member_measurement_page.dart',
     tag: 'P1 • Số đo cơ thể',
@@ -439,8 +437,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
-              <div class="mg-eyebrow">TIẾN ĐỘ &amp; SỐ ĐO</div>
-              <div class="mg-title">Nhật ký &amp; Số đo</div>
+              <div class="mg-eyebrow">BODY MEASUREMENTS</div>
+              <div class="mg-title">Số đo cơ thể</div>
             </div>
             <div class="circle-btn" data-open-add-measurement style="cursor:pointer;" title="Thêm chỉ số mới"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_add.svg?v=2" alt="Thêm" /></div>
           </div>
