@@ -18,6 +18,61 @@ import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart'
 import 'package:provider/provider.dart';
 
 void main() {
+  testWidgets('Login clears stale field errors when the user edits a field', (
+    tester,
+  ) async {
+    final session = SessionController(
+      _MemoryTokenStorage(),
+      (_) async => throw UnimplementedError(),
+      preferenceStorage: _MemoryPrefStorage(),
+    );
+    final auth = AuthController(_FakeAuthService(), session);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: auth,
+        child: const MaterialApp(home: LoginPage()),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(const Key('login-submit')));
+    await tester.tap(find.byKey(const Key('login-submit')));
+    await tester.pumpAndSettle();
+    expect(auth.fieldErrors, isNotEmpty);
+    await tester.enterText(
+      find.byKey(const Key('login-password')),
+      'Updated9!',
+    );
+    await tester.pump();
+    expect(auth.fieldErrors, isEmpty);
+  });
+
+  testWidgets('Login demo accounts stay available behind the demo disclosure', (
+    tester,
+  ) async {
+    final session = SessionController(
+      _MemoryTokenStorage(),
+      (_) async => throw UnimplementedError(),
+      preferenceStorage: _MemoryPrefStorage(),
+    );
+    final auth = AuthController(_FakeAuthService(), session);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: auth,
+        child: const MaterialApp(home: LoginPage()),
+      ),
+    );
+    expect(find.byKey(const Key('login-demo-member')), findsNothing);
+    final demo = find.text('Tài khoản demo');
+    await tester.ensureVisible(demo);
+    await tester.tap(demo);
+    await tester.pumpAndSettle();
+    final member = find.byKey(const Key('login-demo-member'));
+    await tester.ensureVisible(member);
+    await tester.tap(member);
+    await tester.pumpAndSettle();
+    expect(session.status, SessionStatus.authenticated);
+    expect(session.user?.email, 'minhquan@metagym.vn');
+  });
+
   testWidgets('Splash keeps its version footer at the bottom on a phone', (
     tester,
   ) async {
