@@ -1330,10 +1330,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               IconButton(
                 tooltip: 'Thu gọn ảnh thành quả',
                 onPressed: () => setState(() => _openCard = null),
-                icon: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: palette.primaryText,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonChevronUp, fallbackIcon: Icons.keyboard_arrow_up_rounded),
               ),
             ],
           ),
@@ -1365,11 +1362,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.add_rounded,
-                          color: palette.primaryText,
-                          size: 24,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 24, fallbackIcon: Icons.add_rounded),
                         const SizedBox(height: 2),
                         Text(
                           'Thêm ảnh',
@@ -1428,11 +1421,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                             color: Colors.white.withValues(alpha: 0.45),
                           ),
                         ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        child: const MetaGymSvgIcon(MetaGymIcons.commonClose, size: 16, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.close_rounded),
                       ),
                     ),
                   ),
@@ -1647,10 +1636,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               IconButton(
                 tooltip: 'Thu gọn chỉ số cơ thể',
                 onPressed: () => setState(() => _openCard = null),
-                icon: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: palette.primaryText,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonChevronUp, fallbackIcon: Icons.keyboard_arrow_up_rounded),
               ),
             ],
           ),
@@ -1868,10 +1854,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               IconButton(
                 tooltip: 'Thu gọn thành tích',
                 onPressed: () => setState(() => _openCard = null),
-                icon: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: palette.primaryText,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonChevronUp, fallbackIcon: Icons.keyboard_arrow_up_rounded),
               ),
             ],
           ),
@@ -1933,11 +1916,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       tooltip: 'Xóa bài',
                       onPressed: () =>
                           setState(() => draft.achievements.removeAt(index)),
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: palette.error,
-                        size: 18,
-                      ),
+                      icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
                     ),
                 ],
               ),
@@ -1961,7 +1940,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   _AchievementDraft(title: '', result: ''),
                 );
               }),
-              icon: const Icon(Icons.add_rounded, size: 17),
+              icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 17, fallbackIcon: Icons.add_rounded),
               label: const Text(
                 'Thêm bài khác',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
@@ -2646,7 +2625,7 @@ class _CalendarNavButton extends StatelessWidget {
       tooltip: tooltip,
       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       onPressed: onTap,
-      icon: Icon(icon, color: palette.textPrimary, size: 22),
+      icon: MetaGymResolvedIcon(icon, size: 22, fallbackColor: palette.textPrimary),
     );
   }
 }
@@ -2889,12 +2868,9 @@ class _JournalPhotoState extends State<_JournalPhoto> {
               ? Image.network(
                   snapshot.data.toString(),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.broken_image_outlined,
-                    color: palette.textSecondary,
-                  ),
+                  errorBuilder: (_, _, _) => MetaGymSvgIcon(MetaGymIcons.stateBrokenImage, fallbackIcon: Icons.broken_image_outlined),
                 )
-              : Icon(Icons.image_outlined, color: palette.textSecondary),
+              : MetaGymSvgIcon(MetaGymIcons.mediaGallery, fallbackIcon: Icons.image_outlined),
         ),
       ),
     );

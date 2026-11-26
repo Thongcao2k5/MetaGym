@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icon_mapper.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 
 /// Renders a Meta Gym custom SVG icon from `assets/svg/` with optional tint,
@@ -93,5 +94,47 @@ class MetaGymSvgIcon extends StatelessWidget {
       );
     }
     return svg;
+  }
+}
+
+/// Renders a Meta Gym SVG via [resolveMetaGymSvgAsset] when [icon] has a
+/// mapped preview asset, falling back to Material [Icon] otherwise.
+class MetaGymResolvedIcon extends StatelessWidget {
+  const MetaGymResolvedIcon(
+    this.icon, {
+    super.key,
+    this.size = 24,
+    this.color,
+    this.fallbackColor,
+    this.adaptForLightMode,
+    this.semanticsLabel,
+  });
+
+  final IconData icon;
+  final double size;
+  final Color? color;
+  final Color? fallbackColor;
+  final bool? adaptForLightMode;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = resolveMetaGymSvgAsset(icon);
+    if (asset != null) {
+      return MetaGymSvgIcon(
+        asset,
+        size: size,
+        color: color,
+        adaptForLightMode: adaptForLightMode,
+        semanticsLabel: semanticsLabel,
+        fallbackIcon: icon,
+      );
+    }
+    return Icon(
+      icon,
+      size: size,
+      color: fallbackColor ?? color ?? MetaGymTheme.paletteOf(context).textPrimary,
+      semanticLabel: semanticsLabel,
+    );
   }
 }

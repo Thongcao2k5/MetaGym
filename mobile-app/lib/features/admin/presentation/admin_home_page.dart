@@ -4,6 +4,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -112,11 +114,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.admin_panel_settings_outlined,
-                                      color: MetaGymTheme.onPrimary,
-                                      size: 24,
-                                    ),
+                                    child: const MetaGymSvgIcon(MetaGymIcons.adminBadge, size: 24, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.admin_panel_settings_outlined),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -184,11 +182,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.verified_user_outlined,
-                                        color: palette.reflection,
-                                        size: 20,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.settingSecurityShield, size: 20, fallbackIcon: Icons.verified_user_outlined),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
@@ -240,11 +234,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.error_outline_rounded,
-                                        color: palette.error,
-                                        size: 18,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.stateError, size: 18, fallbackIcon: Icons.error_outline_rounded),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -297,10 +287,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                           color: MetaGymTheme.onPrimary,
                                         ),
                                       )
-                                    : const Icon(
-                                        Icons.logout_rounded,
-                                        size: 20,
-                                      ),
+                                    : const MetaGymSvgIcon(MetaGymIcons.settingLogout, size: 20, fallbackIcon: Icons.logout_rounded),
                                 label: Text(
                                   _signingOut ? 'Đang đăng xuất…' : 'Đăng xuất',
                                 ),

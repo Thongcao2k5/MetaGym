@@ -9,6 +9,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum _NotificationFilter { all, unread, session, package }
 
@@ -788,11 +789,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.done_rounded,
-                          size: 13.5,
-                          color: colors.primaryText,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 13.5, fallbackIcon: Icons.done_rounded),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
@@ -1150,7 +1147,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
 }
 
 /// Nút quay lại hình tròn đồng bộ `.circle-btn` + `common_back.svg` (Dark & Light).
-/// Giữ `Icon(Icons.arrow_back_rounded)` trong suốt để các bài test hiện hữu tìm
+/// Giữ `MetaGymSvgIcon(MetaGymIcons.commonBack, fallbackIcon: Icons.arrow_back_rounded)` trong suốt để các bài test hiện hữu tìm
 /// `find.byIcon(Icons.arrow_back_rounded)` vẫn hoạt động không lỗi.
 class _NotificationsBackButton extends StatelessWidget {
   const _NotificationsBackButton({required this.onTap});
@@ -1217,11 +1214,7 @@ class _NotificationsBackButton extends StatelessWidget {
                         excludeFromSemantics: true,
                       ),
                       ExcludeSemantics(
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          size: 20,
-                          color: Colors.transparent,
-                        ),
+                        child: MetaGymSvgIcon(MetaGymIcons.commonBack, size: 20, fallbackIcon: Icons.arrow_back_rounded),
                       ),
                     ],
                   ),

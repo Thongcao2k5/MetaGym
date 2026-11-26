@@ -417,11 +417,7 @@ class _PendingCheckoutBanner extends StatelessWidget {
                   color: palette.warning.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(
-                  Icons.hourglass_top_rounded,
-                  color: palette.warning,
-                  size: 19,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.stateLoading, size: 19, fallbackIcon: Icons.hourglass_top_rounded),
               ),
               const SizedBox(width: 10),
               Expanded(

@@ -1403,11 +1403,7 @@ class _CoachBentoCard extends StatelessWidget {
                           color: palette.reflection.withValues(alpha: 0.38),
                         ),
                       ),
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        size: 16,
-                        color: palette.reflection,
-                      ),
+                      child: MetaGymSvgIcon(MetaGymIcons.settingPersonalInfo, size: 16, fallbackIcon: Icons.person_outline_rounded),
                     ),
                   const SizedBox(width: 7),
                   Expanded(
@@ -1560,11 +1556,7 @@ class _ServiceErrorPanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: palette.warning,
-              size: 20,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.stateWarning, size: 20, fallbackIcon: Icons.warning_amber_rounded),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1590,7 +1582,7 @@ class _ServiceErrorPanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          icon: const Icon(Icons.refresh_rounded, size: 18),
+          icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
           label: const Text(
             'Thử lại',
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
@@ -2065,11 +2057,7 @@ class _SvgIconWell extends StatelessWidget {
                   border: Border.all(color: MetaGymTheme.primary, width: 1),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.lock_rounded,
-                  size: 9,
-                  color: MetaGymTheme.primary,
-                ),
+                child: const MetaGymSvgIcon(MetaGymIcons.settingPrivacyLock, size: 9, fallbackIcon: Icons.lock_rounded),
               ),
             ),
         ],

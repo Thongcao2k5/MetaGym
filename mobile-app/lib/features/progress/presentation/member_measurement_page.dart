@@ -13,6 +13,7 @@ import 'package:meta_gym_app/features/progress/data/member_measurement_service.d
 import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_time.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.5 Nhật ký & Số đo** đồng bộ `tab5-profile.js` (`member-measurement`)
 /// và chuẩn Warm Smoked Liquid Glass:
@@ -280,11 +281,7 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 2),
-                                  Icon(
-                                    Icons.north_east_rounded,
-                                    size: 11,
-                                    color: colors.primaryText,
-                                  ),
+                                  MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 11, fallbackIcon: Icons.north_east_rounded),
                                 ],
                               )
                             : Text(
@@ -546,7 +543,7 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
                                 minimumSize: const Size(48, 48),
                               ),
                               onPressed: () => _load(more: false),
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                               label: const Text('Thử lại'),
                             ),
                           ),
@@ -1105,11 +1102,7 @@ class _MeasurementFormPageState extends State<_MeasurementFormPage> {
                                           ),
                                         ),
                                         const SizedBox(width: 2),
-                                        Icon(
-                                          Icons.north_east_rounded,
-                                          size: 12,
-                                          color: colors.primaryText,
-                                        ),
+                                        MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 12, fallbackIcon: Icons.north_east_rounded),
                                       ],
                                     ),
                                   ),

@@ -5,6 +5,8 @@ import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 DateTime _gymTime(DateTime time) => time.toUtc().add(const Duration(hours: 7));
 
@@ -195,11 +197,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.menu_book_rounded,
-                            size: 13,
-                            color: palette.primaryText,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.actionCurriculum, size: 13, fallbackIcon: Icons.menu_book_rounded),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
@@ -214,11 +212,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 14,
-                            color: palette.textSecondary,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 14, fallbackIcon: Icons.chevron_right_rounded),
                         ],
                       ),
                     ),
@@ -306,13 +300,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: Icon(
-                        Icons.fitness_center_rounded,
-                        color: isUpcoming
-                            ? palette.primaryText
-                            : palette.textSecondary,
-                        size: 10,
-                      ),
+                      child: MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 10, fallbackIcon: Icons.fitness_center_rounded),
                     ),
                   ),
                 ],
@@ -367,15 +355,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(
-                          Icons.schedule_rounded,
-                          size: 12.5,
-                          color: _isToday
-                              ? (isLight
-                                    ? palette.primaryText
-                                    : const Color(0xFFFF9B82))
-                              : palette.textSecondary,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.timeClock, size: 12.5, fallbackIcon: Icons.schedule_rounded),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
@@ -560,11 +540,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                                 ),
                               ),
                               onPressed: busy ? null : onReschedule,
-                              icon: Icon(
-                                Icons.schedule_rounded,
-                                size: 15,
-                                color: palette.primaryText,
-                              ),
+                              icon: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 15, fallbackIcon: Icons.schedule_rounded),
                               label: Text(
                                 'Đổi giờ',
                                 style: TextStyle(

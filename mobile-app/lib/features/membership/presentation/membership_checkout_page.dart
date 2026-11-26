@@ -417,10 +417,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                       style: TextButton.styleFrom(
                                         foregroundColor: palette.reflection,
                                       ),
-                                      icon: const Icon(
-                                        Icons.copy_rounded,
-                                        size: 16,
-                                      ),
+                                      icon: const MetaGymSvgIcon(MetaGymIcons.commonCopy, size: 16, fallbackIcon: Icons.copy_rounded),
                                       label: const Text('Sao chép mã giao dịch'),
                                     ),
                                   if (mock)
@@ -468,11 +465,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                   errorBuilder: (_, _, _) => Container(
                                     color: const Color(0xFF1F232C),
                                     alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.credit_card_rounded,
-                                      color: MetaGymTheme.textSecondary,
-                                      size: 20,
-                                    ),
+                                    child: const MetaGymSvgIcon(MetaGymIcons.premiumPaymentCard, size: 20, fallbackIcon: Icons.credit_card_rounded),
                                   ),
                                 ),
                               ),
@@ -544,11 +537,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                           padding: const EdgeInsets.only(
                                             top: 1.5,
                                           ),
-                                          child: Icon(
-                                            Icons.check_rounded,
-                                            size: 13,
-                                            color: palette.success,
-                                          ),
+                                          child: MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 13, fallbackIcon: Icons.check_rounded),
                                         ),
                                         const SizedBox(width: 4),
                                         Expanded(
@@ -857,11 +846,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                           child: SizedBox(
                                             width: 44,
                                             height: 44,
-                                            child: Icon(
-                                              Icons.copy_rounded,
-                                              size: 17,
-                                              color: palette.reflection,
-                                            ),
+                                            child: MetaGymSvgIcon(MetaGymIcons.commonCopy, size: 17, fallbackIcon: Icons.copy_rounded),
                                           ),
                                         ),
                                       ),
@@ -1178,11 +1163,7 @@ class _LuxuryPromoCodeCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.confirmation_number_outlined,
-                    size: 16,
-                    color: MetaGymTheme.brandOrange,
-                  ),
+                  const MetaGymSvgIcon(MetaGymIcons.paymentCouponVoucher, size: 16, fallbackIcon: Icons.confirmation_number_outlined),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
@@ -1369,7 +1350,7 @@ class _RefreshStatusButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         ),
         onPressed: busy ? null : onPressed,
-        icon: const Icon(Icons.sync_rounded, size: 18),
+        icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.sync_rounded),
         label: Text(
           busy ? 'Đang xử lý…' : 'Kiểm tra trạng thái',
           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -1598,11 +1579,7 @@ class _VnPaySandboxQrCard extends StatelessWidget {
                   IconButton(
                     tooltip: 'Sao chép mã',
                     onPressed: () => onCopy(payload),
-                    icon: Icon(
-                      Icons.copy_rounded,
-                      color: palette.reflection,
-                      size: 18,
-                    ),
+                    icon: MetaGymSvgIcon(MetaGymIcons.commonCopy, size: 18, fallbackIcon: Icons.copy_rounded),
                   ),
                 ],
               ),
@@ -1636,11 +1613,7 @@ class _CheckoutOutcomeHero extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: color.withValues(alpha: 0.5)),
             ),
-            child: Icon(
-              isSuccess ? Icons.check_rounded : Icons.receipt_long_rounded,
-              color: color,
-              size: 30,
-            ),
+            child: MetaGymResolvedIcon(isSuccess ? Icons.check_rounded : Icons.receipt_long_rounded, size: 30, fallbackColor: color),
           ),
           const SizedBox(height: 12),
           Text(

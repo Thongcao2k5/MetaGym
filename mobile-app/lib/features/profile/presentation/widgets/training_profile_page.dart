@@ -6,6 +6,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/body_metric_pickers.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/profile_shared_widgets.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.3 Thể trạng & Mục tiêu** đồng bộ `tab5-profile.js` (`member-training-profile`):
 /// - Card 1: Mục tiêu tập luyện (`setting_training_goal.svg`) + 4 chip gợi ý nhanh
@@ -470,11 +471,7 @@ class _BodyMetricTile extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 2),
-                        Icon(
-                          Icons.north_east_rounded,
-                          size: 11.5,
-                          color: actionColor,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 11.5, fallbackIcon: Icons.north_east_rounded),
                       ],
                     ),
                   ),

@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icon_mapper.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
@@ -550,9 +551,12 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
         widget.tooltip ??
         (widget.icon != null ? _iconActionName(widget.icon!) : 'Hành động');
 
-    final Widget iconWidget = widget.svgAsset != null
+    final resolvedSvg =
+        widget.svgAsset ??
+        (widget.icon != null ? resolveMetaGymSvgAsset(widget.icon!) : null);
+    final Widget iconWidget = resolvedSvg != null
         ? MetaGymSvgIcon(
-            widget.svgAsset!,
+            resolvedSvg,
             size: 20,
             fallbackIcon: widget.icon,
           )

@@ -7,6 +7,8 @@ import 'flow_action.dart';
 import 'flow_catalog.dart';
 import 'flow_action_page.dart';
 import 'flow_service.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class FlowWorkbenchPage extends StatelessWidget {
   const FlowWorkbenchPage({required this.role, super.key});
@@ -49,7 +51,7 @@ class FlowWorkbenchPage extends StatelessWidget {
                       ListTile(
                         title: Text(action.title),
                         subtitle: Text('${action.method} ${action.path}'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => FlowActionPage(

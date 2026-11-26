@@ -7,6 +7,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/membership/data/payment_history_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class PaymentDetailPage extends StatefulWidget {
   const PaymentDetailPage({
@@ -278,11 +280,7 @@ class _DetailRow extends StatelessWidget {
                       child: SizedBox(
                         width: 44,
                         height: 44,
-                        child: Icon(
-                          Icons.copy_rounded,
-                          size: 17,
-                          color: palette.reflection,
-                        ),
+                        child: MetaGymSvgIcon(MetaGymIcons.commonCopy, size: 17, fallbackIcon: Icons.copy_rounded),
                       ),
                     ),
                   ),

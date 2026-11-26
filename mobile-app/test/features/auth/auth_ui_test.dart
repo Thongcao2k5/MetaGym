@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
@@ -174,7 +176,12 @@ void main() {
       'StrongPass9',
     );
     await tester.pump();
-    expect(find.byIcon(Icons.check_circle_rounded), findsNWidgets(4));
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.stateSuccess,
+      ),
+      findsNWidgets(4),
+    );
   });
 
   testWidgets(

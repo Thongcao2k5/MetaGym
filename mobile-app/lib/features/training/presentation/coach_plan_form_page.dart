@@ -10,6 +10,8 @@ import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/training_plan_content.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachPlanFormPage extends StatefulWidget {
   const CoachPlanFormPage({
@@ -567,7 +569,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                               ),
                             ),
                           ),
-                          icon: const Icon(Icons.add_rounded),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
                           label: const Text('Thêm ngày tập'),
                         ),
                       ),
@@ -661,10 +663,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                       ? null
                       : () =>
                             setState(() => _days.removeAt(dayIndex).dispose()),
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    color: palette.textSecondary,
-                  ),
+                  icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, fallbackIcon: Icons.delete_outline_rounded),
                 ),
             ],
           ),
@@ -688,11 +687,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                 ),
               ),
-              icon: Icon(
-                Icons.event_outlined,
-                color: palette.primaryText,
-                size: 20,
-              ),
+              icon: MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 20, fallbackIcon: Icons.event_outlined),
               label: Text(
                 day.scheduledDate == null
                     ? 'Chọn ngày theo lịch'
@@ -752,7 +747,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
             ),
-            icon: const Icon(Icons.add_rounded, size: 18),
+            icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 18, fallbackIcon: Icons.add_rounded),
             label: const Text('Thêm bài tập'),
           ),
           const SizedBox(height: 16),
@@ -779,7 +774,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
             ),
-            icon: const Icon(Icons.add_rounded, size: 18),
+            icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 18, fallbackIcon: Icons.add_rounded),
             label: const Text('Thêm bữa ăn'),
           ),
         ],
@@ -830,11 +825,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                       : () => setState(() {
                           day.exercises.removeAt(exerciseIndex).dispose();
                         }),
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: palette.textSecondary,
-                    size: 20,
-                  ),
+                  icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 20, fallbackIcon: Icons.close_rounded),
                 ),
             ],
           ),
@@ -944,11 +935,7 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                     : () => setState(() {
                         _days[dayIndex].meals.removeAt(mealIndex).dispose();
                       }),
-                icon: Icon(
-                  Icons.close_rounded,
-                  color: palette.textSecondary,
-                  size: 20,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 20, fallbackIcon: Icons.close_rounded),
               ),
             ],
           ),
@@ -1024,7 +1011,7 @@ class _FormSectionHeader extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: iconColor ?? palette.primaryText, size: 18),
+        MetaGymResolvedIcon(icon, size: 18, fallbackColor: iconColor ?? palette.primaryText),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

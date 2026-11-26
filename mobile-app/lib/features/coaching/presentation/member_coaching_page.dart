@@ -27,6 +27,7 @@ import 'package:meta_gym_app/features/messaging/presentation/conversations_page.
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.6a Coach & Lịch hẹn (Đã có Coach)** & **5.6b (Chưa có Coach)**
 /// đồng bộ `tab5-profile.js` (`member-coaching`, `member-coaching-empty`)
@@ -544,7 +545,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                         ),
                       ),
                       SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
+                      MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.arrow_forward_rounded),
                     ],
                   ),
                 ),
@@ -683,10 +684,7 @@ class _MemberCoachingPageState extends State<MemberCoachingPage> {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                    ),
+                                    icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                                     label: const Text(
                                       'Thử lại',
                                       style: TextStyle(
@@ -1073,11 +1071,7 @@ class _CoachingActionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.textSecondary,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
             ],
           ),
         ),
@@ -1163,11 +1157,7 @@ class _OnboardingStepRow extends StatelessWidget {
             ),
             if (onTap != null) ...[
               const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.textSecondary,
-                size: 18,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.chevron_right_rounded),
             ],
           ],
         ),

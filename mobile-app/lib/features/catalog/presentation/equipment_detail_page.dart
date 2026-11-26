@@ -5,6 +5,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_video_player.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class EquipmentDetailPage extends StatefulWidget {
   const EquipmentDetailPage({
@@ -117,7 +119,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
                             foregroundColor: palette.primaryText,
                             minimumSize: const Size(48, 48),
                           ),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                           label: const Text('Thử lại'),
                         ),
                       ],
@@ -283,7 +285,7 @@ class _SectionTitle extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: color),
+        MetaGymResolvedIcon(icon, size: 20, fallbackColor: color),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

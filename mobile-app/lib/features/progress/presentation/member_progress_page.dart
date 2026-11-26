@@ -8,6 +8,8 @@ import 'package:meta_gym_app/features/progress/data/member_progress_service.dart
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class MemberProgressPage extends StatefulWidget {
   const MemberProgressPage({this.service, super.key});
@@ -200,11 +202,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                color: palette.error,
-                                size: 20,
-                              ),
+                              MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -249,11 +247,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.fitness_center,
-                                      color: palette.primaryText,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 18, fallbackIcon: Icons.fitness_center),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Buổi tập: ${summary.workoutCount}',
@@ -264,11 +258,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                       ),
                                     ),
                                     const Spacer(),
-                                    Icon(
-                                      Icons.restaurant,
-                                      color: palette.success,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 18, fallbackIcon: Icons.restaurant),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Bữa ăn: ${summary.mealCount}',
@@ -283,11 +273,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.photo_camera,
-                                      color: palette.reflection,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonCamera, size: 18, fallbackIcon: Icons.photo_camera),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Ảnh tiến trình: ${summary.progressPhotoCount}',
@@ -302,11 +288,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.monitor_weight,
-                                      color: palette.warning,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.bodyWeightScale, size: 18, fallbackIcon: Icons.monitor_weight),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -405,10 +387,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                           MetaGymGlassCard(
                             padding: const EdgeInsets.all(16),
                             child: ListTile(
-                              leading: Icon(
-                                Icons.query_stats,
-                                color: palette.textSecondary,
-                              ),
+                              leading: MetaGymSvgIcon(MetaGymIcons.statsChartLine, fallbackIcon: Icons.query_stats),
                               title: Text(
                                 'Chưa có số đo để vẽ biểu đồ.',
                                 style: TextStyle(color: palette.textSecondary),
@@ -502,11 +481,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 4,
                                     ),
-                                    leading: Icon(
-                                      Icons.scale,
-                                      color: palette.primaryText,
-                                      size: 18,
-                                    ),
+                                    leading: MetaGymSvgIcon(MetaGymIcons.bodyWeightScale, size: 18, fallbackIcon: Icons.scale),
                                     title: Text(
                                       '${point.weightKg} kg',
                                       style: TextStyle(
@@ -543,10 +518,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                             child: ExpansionTile(
                               iconColor: palette.primaryText,
                               collapsedIconColor: palette.textSecondary,
-                              leading: Icon(
-                                Icons.comment,
-                                color: palette.primaryText,
-                              ),
+                              leading: MetaGymSvgIcon(MetaGymIcons.commChat, fallbackIcon: Icons.comment),
                               title: Text(
                                 'Nhận xét của Coach',
                                 style: TextStyle(

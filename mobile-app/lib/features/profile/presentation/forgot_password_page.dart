@@ -5,6 +5,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_glass_scaffold.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -190,13 +192,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 () =>
                                     _obscureNewPassword = !_obscureNewPassword,
                               ),
-                              icon: Icon(
-                                _obscureNewPassword
+                              icon: MetaGymResolvedIcon(_obscureNewPassword
                                     ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                size: 20,
-                                color: palette.textWarmMuted,
-                              ),
+                                    : Icons.visibility_off_outlined, size: 20, fallbackColor: palette.textWarmMuted),
                             )
                           : null,
                     )
@@ -214,11 +212,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: palette.success,
-                            size: 20,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_rounded),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -319,11 +313,7 @@ class _ResetStepProgress extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isCompleted) ...[
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 12,
-                          color: palette.success,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 12, fallbackIcon: Icons.check_circle_rounded),
                         const SizedBox(width: 4),
                       ],
                       Flexible(

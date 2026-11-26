@@ -526,11 +526,7 @@ class _PerkLine extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(
-          Icons.check_rounded,
-          size: 14,
-          color: palette.success,
-        ),
+        MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 14, fallbackIcon: Icons.check_rounded),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -683,11 +679,7 @@ class _FlippableActiveMembershipCardState
   Widget _cardFallback() => Container(
     color: const Color(0xFF1F232C),
     alignment: Alignment.center,
-    child: const Icon(
-      Icons.credit_card_rounded,
-      color: MetaGymTheme.textSecondary,
-      size: 42,
-    ),
+    child: const MetaGymSvgIcon(MetaGymIcons.premiumPaymentCard, size: 42, fallbackIcon: Icons.credit_card_rounded),
   );
 
   @override
@@ -946,11 +938,7 @@ class _FlippableActiveMembershipCardState
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
-                                          Icons.flip_rounded,
-                                          size: 12.5,
-                                          color: MetaGymTheme.brandOrange,
-                                        ),
+                                        const MetaGymSvgIcon(MetaGymIcons.mediaRotate, size: 12.5, fallbackIcon: Icons.flip_rounded),
                                         const SizedBox(width: 4),
                                         Text(
                                           isFrontFace

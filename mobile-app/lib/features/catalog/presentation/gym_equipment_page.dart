@@ -8,6 +8,8 @@ import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/catalog/presentation/equipment_detail_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class GymEquipmentPage extends StatefulWidget {
   const GymEquipmentPage({this.service, super.key});
@@ -152,11 +154,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.error_outline_rounded,
-                              color: palette.error,
-                              size: 20,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -177,7 +175,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                             foregroundColor: palette.primaryText,
                             minimumSize: const Size(48, 48),
                           ),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                           label: const Text(
                             'Thử lại',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -303,11 +301,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                         horizontal: 16,
                         vertical: 14,
                       ),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: palette.primaryText,
-                        size: 20,
-                      ),
+                      prefixIcon: MetaGymSvgIcon(MetaGymIcons.commonSearch, size: 20, fallbackIcon: Icons.search_rounded),
                       suffixIcon: IconButton(
                         tooltip: 'Tìm máy',
                         constraints: const BoxConstraints(
@@ -315,11 +309,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           minHeight: 48,
                         ),
                         onPressed: _load,
-                        icon: Icon(
-                          Icons.arrow_forward_rounded,
-                          color: palette.textPrimary,
-                          size: 20,
-                        ),
+                        icon: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.arrow_forward_rounded),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
@@ -365,11 +355,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                     _surface(
                       Row(
                         children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            color: palette.textSecondary,
-                            size: 20,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.stateEmptySearch, size: 20, fallbackIcon: Icons.search_off_rounded),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -416,11 +402,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                     color: MetaGymTheme.primary.withValues(alpha: 0.36),
                   ),
                 ),
-                child: Icon(
-                  Icons.fitness_center_rounded,
-                  color: palette.primaryText,
-                  size: 20,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 20, fallbackIcon: Icons.fitness_center_rounded),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -440,11 +422,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.location_on_outlined,
-                size: 19,
-                color: palette.primaryText,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.locationPin, size: 19, fallbackIcon: Icons.location_on_outlined),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -500,7 +478,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: color ?? palette.primaryText),
+        MetaGymResolvedIcon(icon, size: 20, fallbackColor: color ?? palette.primaryText),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -573,11 +551,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                       color: MetaGymTheme.primary.withValues(alpha: 0.36),
                     ),
                   ),
-                  child: Icon(
-                    Icons.fitness_center_rounded,
-                    color: palette.primaryText,
-                    size: 20,
-                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 20, fallbackIcon: Icons.fitness_center_rounded),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -606,14 +580,10 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                   ),
                 ),
                 if (item.videoUrl?.isNotEmpty == true) ...[
-                  Icon(
-                    Icons.play_circle_outline_rounded,
-                    color: palette.reflection,
-                    size: 21,
-                  ),
+                  MetaGymSvgIcon(MetaGymIcons.exerciseVideoPlay, size: 21, fallbackIcon: Icons.play_circle_outline_rounded),
                   const SizedBox(width: 4),
                 ],
-                Icon(Icons.chevron_right_rounded, color: palette.textSecondary),
+                MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
               ],
             ),
           ),

@@ -555,13 +555,9 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       ? Border.all(color: t.recessedBorder, width: 1)
                       : null,
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: enabled
+                child: MetaGymResolvedIcon(icon, size: 20, fallbackColor: enabled
                       ? t.textPrimary
-                      : t.textSecondary.withValues(alpha: 0.4),
-                ),
+                      : t.textSecondary.withValues(alpha: 0.4)),
               ),
             ),
           ),
@@ -598,11 +594,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 16,
-                      color: t.reflection,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 16, fallbackIcon: Icons.calendar_today_rounded),
                     const SizedBox(width: 6),
                     Flexible(
                       child: FittedBox(
@@ -621,11 +613,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       ),
                     ),
                     const SizedBox(width: 2),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: t.textSecondary,
-                      size: 18,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.commonChevronDown, size: 18, fallbackIcon: Icons.keyboard_arrow_down_rounded),
                   ],
                 ),
               ),
@@ -709,13 +697,9 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    isExpired
+                  MetaGymResolvedIcon(isExpired
                         ? Icons.lock_outline_rounded
-                        : Icons.history_toggle_off_rounded,
-                    size: 16,
-                    color: isExpired ? t.warning : t.textSecondary,
-                  ),
+                        : Icons.history_toggle_off_rounded, size: 16, fallbackColor: isExpired ? t.warning : t.textSecondary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -762,7 +746,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 13.5, color: color),
+              MetaGymResolvedIcon(icon, size: 13.5, fallbackColor: color),
               const SizedBox(width: 5),
               Flexible(
                 child: Text(
@@ -930,11 +914,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     minHeight: 48,
                   ),
                   onPressed: _openMealPlans,
-                  icon: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 22,
-                    color: t.labelText,
-                  ),
+                  icon: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 22, fallbackIcon: Icons.chevron_right_rounded),
                 ),
             ],
           ),
@@ -964,11 +944,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
           const SizedBox(height: 7),
           Row(
             children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 15,
-                color: t.reflection,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 15, fallbackIcon: Icons.info_outline_rounded),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
@@ -1063,11 +1039,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    leading: Icon(
-                      Icons.edit_outlined,
-                      size: 18,
-                      color: st.labelText,
-                    ),
+                    leading: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 18, fallbackIcon: Icons.edit_outlined),
                     title: Text(
                       '${entry['mealName'] ?? entry['foodName'] ?? 'Món ăn'}',
                       style: TextStyle(
@@ -1101,11 +1073,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  leading: Icon(
-                    Icons.add_circle_outline_rounded,
-                    size: 20,
-                    color: st.orangeText,
-                  ),
+                  leading: MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 20, fallbackIcon: Icons.add_circle_outline_rounded),
                   title: Text(
                     'Thêm món mới vào $title',
                     style: TextStyle(
@@ -1252,11 +1220,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                                 width: 0.9,
                               ),
                             ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              size: 19,
-                              color: t.orangeText,
-                            ),
+                            child: MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 19, fallbackIcon: Icons.add_rounded),
                           ),
                         ),
                       ),
@@ -1552,11 +1516,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: t.recessedBorder, width: 0.8),
               ),
-              child: Icon(
-                Icons.edit_outlined,
-                size: 15,
-                color: t.textSecondary,
-              ),
+              child: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 15, fallbackIcon: Icons.edit_outlined),
             ),
           ],
         ],
@@ -1622,11 +1582,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       color: t.error.withValues(alpha: 0.40),
                     ),
                   ),
-                  child: Icon(
-                    Icons.cloud_off_rounded,
-                    size: 20,
-                    color: t.error,
-                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.stateOffline, size: 20, fallbackIcon: Icons.cloud_off_rounded),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1665,7 +1621,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                 ),
               ),
-              icon: const Icon(Icons.refresh_rounded, size: 18),
+              icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
               label: const Text('Thử lại'),
             ),
           ],
@@ -1836,7 +1792,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  icon: const Icon(Icons.add_rounded, size: 20),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 20, fallbackIcon: Icons.add_rounded),
                   label: const Text('Ghi lại bữa ăn'),
                 ),
               ),
@@ -2422,11 +2378,7 @@ class _EntryFormState extends State<_EntryForm> {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 1),
-            child: Icon(
-              Icons.error_outline_rounded,
-              color: t.error,
-              size: 17,
-            ),
+            child: MetaGymSvgIcon(MetaGymIcons.stateError, size: 17, fallbackIcon: Icons.error_outline_rounded),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -2493,11 +2445,7 @@ class _EntryFormState extends State<_EntryForm> {
                       minHeight: 44,
                     ),
                     onPressed: _saving ? null : () => _removeDish(index),
-                    icon: Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: t.error,
-                    ),
+                    icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 20, fallbackIcon: Icons.close_rounded),
                   ),
                 ),
             ],
@@ -2533,11 +2481,7 @@ class _EntryFormState extends State<_EntryForm> {
             },
             decoration: _warmInputDecoration(labelText: 'Tên món').copyWith(
               hintText: 'Tìm trong danh mục hoặc nhập món tự do...',
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                size: 19,
-                color: t.textSecondary,
-              ),
+              prefixIcon: MetaGymSvgIcon(MetaGymIcons.commonSearch, size: 19, fallbackIcon: Icons.search_rounded),
               suffixIcon: dish.name.text.isNotEmpty && !_saving
                   ? IconButton(
                       tooltip: 'Xóa tên món',
@@ -2547,11 +2491,7 @@ class _EntryFormState extends State<_EntryForm> {
                           dish.foodId = null;
                         });
                       },
-                      icon: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: t.textSecondary,
-                      ),
+                      icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
                     )
                   : null,
             ),
@@ -2573,7 +2513,7 @@ class _EntryFormState extends State<_EntryForm> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.verified_rounded, size: 16, color: t.success),
+                  MetaGymSvgIcon(MetaGymIcons.authVerified, size: 16, fallbackIcon: Icons.verified_rounded),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -2657,11 +2597,7 @@ class _EntryFormState extends State<_EntryForm> {
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.restaurant_menu_rounded,
-                                  size: 16,
-                                  color: t.orangeText,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 16, fallbackIcon: Icons.restaurant_menu_rounded),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -2712,7 +2648,7 @@ class _EntryFormState extends State<_EntryForm> {
                   ),
                   minimumSize: const Size(44, 44),
                 ),
-                icon: const Icon(Icons.refresh_rounded, size: 17),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 17, fallbackIcon: Icons.refresh_rounded),
                 label: const Text(
                   'Danh mục tải lỗi · Thử lại; vẫn có thể nhập món tự do',
                 ),
@@ -2764,7 +2700,7 @@ class _EntryFormState extends State<_EntryForm> {
                   isExpanded: true,
                   dropdownColor: t.dropdownSurface,
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronDown, fallbackIcon: Icons.keyboard_arrow_down_rounded),
                   iconEnabledColor: t.labelText,
                   iconDisabledColor: t.labelText.withValues(alpha: 0.4),
                   disabledHint: Text(
@@ -2889,7 +2825,7 @@ class _EntryFormState extends State<_EntryForm> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.bolt_rounded, size: 16, color: t.success),
+                    MetaGymSvgIcon(MetaGymIcons.streakFlame, size: 16, fallbackIcon: Icons.bolt_rounded),
                     const SizedBox(width: 5),
                     Flexible(
                       child: Text(
@@ -2964,10 +2900,7 @@ class _EntryFormState extends State<_EntryForm> {
                 tooltip: 'Xóa món',
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 onPressed: _saving ? null : _deleteEntry,
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  color: t.error,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, fallbackIcon: Icons.delete_outline_rounded),
               ),
             ),
         ],
@@ -3169,7 +3102,7 @@ class _EntryFormState extends State<_EntryForm> {
                           ),
                         ),
                       ),
-                      icon: const Icon(Icons.add_rounded, size: 19),
+                      icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 19, fallbackIcon: Icons.add_rounded),
                       label: const Text(
                         'Thêm món vào bữa này',
                         maxLines: 1,
@@ -3218,11 +3151,7 @@ class _EntryFormState extends State<_EntryForm> {
                                         color: t.palette.chipActiveBg,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: Icon(
-                                        Icons.schedule_rounded,
-                                        size: 18,
-                                        color: t.orangeText,
-                                      ),
+                                      child: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 18, fallbackIcon: Icons.schedule_rounded),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -3256,11 +3185,7 @@ class _EntryFormState extends State<_EntryForm> {
                                         ],
                                       ),
                                     ),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 20,
-                                      color: t.textSecondary,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
                                   ],
                                 ),
                               ),
@@ -3322,11 +3247,7 @@ class _EntryFormState extends State<_EntryForm> {
                                         color: t.palette.chipActiveBg,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: Icon(
-                                        Icons.photo_outlined,
-                                        size: 18,
-                                        color: t.orangeText,
-                                      ),
+                                      child: MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 18, fallbackIcon: Icons.photo_outlined),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -3352,26 +3273,14 @@ class _EntryFormState extends State<_EntryForm> {
                                           width: 38,
                                           height: 38,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => Icon(
-                                            Icons.image_rounded,
-                                            size: 20,
-                                            color: t.success,
-                                          ),
+                                          errorBuilder: (_, _, _) => MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.image_rounded),
                                         ),
                                       ),
                                     ] else if (hasPhoto) ...[
                                       const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.check_circle_outline_rounded,
-                                        size: 20,
-                                        color: t.success,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_outline_rounded),
                                     ] else
-                                      Icon(
-                                        Icons.add_photo_alternate_outlined,
-                                        size: 20,
-                                        color: t.textSecondary,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.add_photo_alternate_outlined),
                                   ],
                                 ),
                               ),

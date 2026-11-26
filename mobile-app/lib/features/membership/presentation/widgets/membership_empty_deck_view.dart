@@ -8,6 +8,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
 import 'package:meta_gym_app/features/membership/presentation/widgets/membership_tier_widgets.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class _EmptyWalletTierSpec {
   const _EmptyWalletTierSpec({
@@ -263,11 +265,7 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                         width: 40,
                         height: 40,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.workspace_premium_rounded,
-                          color: Color(0xFFF5B041),
-                          size: 26,
-                        ),
+                        errorBuilder: (_, _, _) => const MetaGymSvgIcon(MetaGymIcons.premiumCrown, size: 26, fallbackIcon: Icons.workspace_premium_rounded),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -481,13 +479,7 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.flip_rounded,
-                                  size: 12.5,
-                                  color: _centerFlipped
-                                      ? palette.primaryText
-                                      : palette.textSecondary,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.mediaRotate, size: 12.5, fallbackIcon: Icons.flip_rounded),
                                 const SizedBox(width: 4),
                                 Text(
                                   _centerFlipped
@@ -708,9 +700,6 @@ class _WalletTabButton extends StatelessWidget {
     final textColor = active
         ? (isLight ? palette.primaryText : MetaGymTheme.textPrimary)
         : palette.textSecondary;
-    final starColor = showStar
-        ? (isLight ? palette.warning : const Color(0xFFF5B041))
-        : textColor;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -750,7 +739,7 @@ class _WalletTabButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 2),
-                  Icon(Icons.star_rounded, size: 12, color: starColor),
+                  MetaGymSvgIcon(MetaGymIcons.socialStarRating, size: 12, fallbackIcon: Icons.star_rounded),
                 ],
               )
             : Text(
@@ -805,11 +794,7 @@ class _EmptyFanStage extends StatelessWidget {
   Widget _cardErrorFallback() => Container(
     color: const Color(0xFF1F232C),
     alignment: Alignment.center,
-    child: const Icon(
-      Icons.credit_card_rounded,
-      color: MetaGymTheme.textSecondary,
-      size: 38,
-    ),
+    child: const MetaGymSvgIcon(MetaGymIcons.premiumPaymentCard, size: 38, fallbackIcon: Icons.credit_card_rounded),
   );
 
   @override
@@ -1028,11 +1013,7 @@ class _EmptyPerkRow extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(
-          Icons.check_rounded,
-          size: 14,
-          color: palette.success,
-        ),
+        MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 14, fallbackIcon: Icons.check_rounded),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -1139,11 +1120,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                     width: 36,
                     height: 36,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Icon(
-                      Icons.workspace_premium_rounded,
-                      color: Color(0xFFF5B041),
-                      size: 24,
-                    ),
+                    errorBuilder: (_, _, _) => const MetaGymSvgIcon(MetaGymIcons.premiumCrown, size: 24, fallbackIcon: Icons.workspace_premium_rounded),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1200,11 +1177,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: palette.textPrimary,
-                      ),
+                      child: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
                     ),
                   ),
                 ),
@@ -1226,11 +1199,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 1.5),
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 14,
-                      color: palette.textSecondary,
-                    ),
+                    child: MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 14, fallbackIcon: Icons.info_outline_rounded),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -1452,11 +1421,7 @@ class _VipPromotionsSheet extends StatelessWidget {
               // Row 3: Bonus highlight + Single-primary CTA
               Row(
                 children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 14,
-                    color: palette.warning,
-                  ),
+                  MetaGymSvgIcon(MetaGymIcons.navAiEmblem, size: 14, fallbackIcon: Icons.auto_awesome_rounded),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -1594,7 +1559,7 @@ class _PromoPerkChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12.5, color: color),
+          MetaGymResolvedIcon(icon, size: 12.5, fallbackColor: color),
           const SizedBox(width: 4.5),
           Text(
             label,

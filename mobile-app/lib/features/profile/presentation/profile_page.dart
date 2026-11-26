@@ -27,6 +27,7 @@ import 'package:meta_gym_app/features/profile/presentation/widgets/training_prof
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.1 Hồ sơ** đồng bộ bản preview `tab5-profile.js` (`member-profile`),
 /// `DESIGN.md` và Lõi Design System Dark + Light:
@@ -818,11 +819,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.textSecondary,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
             ],
           ),
         ),
@@ -982,11 +979,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.science_rounded,
-                    color: MetaGymTheme.brandOrange,
-                    size: 18,
-                  ),
+                  const MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 18, fallbackIcon: Icons.science_rounded),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1075,7 +1068,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     await _reloadProfile();
                     _showToast('Đã đặt lại toàn bộ dữ liệu mẫu offline.');
                   },
-                  icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.restart_alt_rounded),
                   label: const Text('Đặt lại dữ liệu mẫu gốc'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colors.textPrimary,

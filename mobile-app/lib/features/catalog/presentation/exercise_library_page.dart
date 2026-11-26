@@ -8,6 +8,8 @@ import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_video_player.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class ExerciseLibraryPage extends StatefulWidget {
   const ExerciseLibraryPage({this.service, super.key});
@@ -113,10 +115,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                   decoration: InputDecoration(
                     hintText: 'Tìm tên bài tập',
                     hintStyle: TextStyle(color: palette.textSecondary),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: palette.primaryText,
-                    ),
+                    prefixIcon: MetaGymSvgIcon(MetaGymIcons.commonSearch, fallbackIcon: Icons.search_rounded),
                     filled: true,
                     fillColor: colors.surface,
                     border: OutlineInputBorder(
@@ -147,10 +146,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                         minHeight: 48,
                       ),
                       onPressed: _searchExercises,
-                      icon: Icon(
-                        Icons.arrow_forward_rounded,
-                        color: palette.textPrimary,
-                      ),
+                      icon: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.arrow_forward_rounded),
                     ),
                   ),
                 ),
@@ -221,7 +217,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                             foregroundColor: palette.primaryText,
                             minimumSize: const Size(48, 48),
                           ),
-                          icon: const Icon(Icons.refresh_rounded),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, fallbackIcon: Icons.refresh_rounded),
                           label: const Text('Thử lại'),
                         ),
                       ],
@@ -311,11 +307,7 @@ class _ExerciseItem extends StatelessWidget {
                       color: MetaGymTheme.primary.withValues(alpha: 0.36),
                     ),
                   ),
-                  child: Icon(
-                    Icons.sports_gymnastics_rounded,
-                    color: palette.primaryText,
-                    size: 24,
-                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.equipBodyweight, size: 24, fallbackIcon: Icons.sports_gymnastics_rounded),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -345,7 +337,7 @@ class _ExerciseItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: palette.textSecondary),
+                MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
               ],
             ),
           ),
@@ -542,7 +534,7 @@ class _DetailSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, color: palette.primaryText, size: 20),
+            MetaGymResolvedIcon(icon, size: 20, fallbackColor: palette.primaryText),
             const SizedBox(width: 8),
             Expanded(
               child: Text(

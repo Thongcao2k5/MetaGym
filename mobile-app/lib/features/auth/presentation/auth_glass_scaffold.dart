@@ -311,7 +311,6 @@ class _WarmCircleBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     return Semantics(
       button: true,
@@ -347,13 +346,7 @@ class _WarmCircleBackButton extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  child: Icon(
-                    Icons.arrow_back_rounded,
-                    size: 20,
-                    color: onPressed == null
-                        ? palette.textPrimary.withValues(alpha: 0.45)
-                        : palette.textPrimary,
-                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.commonBack, size: 20, fallbackIcon: Icons.arrow_back_rounded),
                 ),
               ),
             ),
@@ -771,13 +764,9 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
                           fallbackIcon: widget.icon,
                         ),
                       )
-                    : Icon(
-                        widget.icon,
-                        size: 20,
-                        color: _focused
+                    : MetaGymResolvedIcon(widget.icon, size: 20, fallbackColor: _focused
                             ? palette.primaryText
-                            : palette.textSecondary,
-                      ),
+                            : palette.textSecondary),
                 suffixIcon: widget.suffixIcon,
                 filled: true,
                 fillColor: isLight
@@ -859,11 +848,7 @@ class AuthErrorBanner extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 1),
-            child: Icon(
-              Icons.error_outline_rounded,
-              color: palette.error,
-              size: 18,
-            ),
+            child: MetaGymSvgIcon(MetaGymIcons.stateError, size: 18, fallbackIcon: Icons.error_outline_rounded),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -996,7 +981,12 @@ class _AuthPrimaryButtonState extends State<AuthPrimaryButton> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(widget.trailingIcon, size: 18),
+                      MetaGymResolvedIcon(
+                        widget.trailingIcon!,
+                        size: 18,
+                        color: Colors.white,
+                        adaptForLightMode: false,
+                      ),
                     ],
                   )
                 : Text(

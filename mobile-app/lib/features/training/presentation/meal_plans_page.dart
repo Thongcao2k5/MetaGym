@@ -6,6 +6,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 const _meals = {'BREAKFAST': 'Sáng', 'LUNCH': 'Trưa', 'DINNER': 'Tối'};
 
@@ -356,11 +358,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          color: palette.error,
-                          size: 20,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -381,11 +379,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.restaurant_menu_rounded,
-                              color: palette.success,
-                              size: 19,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 19, fallbackIcon: Icons.restaurant_menu_rounded),
                             const SizedBox(width: 8),
                             Text(
                               'Thiết lập thực đơn 7 ngày',
@@ -445,10 +439,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                             ),
                             trailing: IconButton(
                               tooltip: 'Bỏ món',
-                              icon: Icon(
-                                Icons.delete_outline_rounded,
-                                color: palette.error,
-                              ),
+                              icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, fallbackIcon: Icons.delete_outline_rounded),
                               onPressed: _busy
                                   ? null
                                   : () => setState(() => _items.removeAt(index)),
@@ -470,10 +461,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          icon: Icon(
-                            Icons.add_rounded,
-                            color: palette.success,
-                          ),
+                          icon: MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
                           label: const Text(
                             'Thêm món',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -490,7 +478,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          icon: const Icon(Icons.check_rounded, size: 19),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 19, fallbackIcon: Icons.check_rounded),
                           label: const Text(
                             'Lưu thực đơn',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -505,11 +493,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.restaurant_menu_outlined,
-                            color: palette.reflection,
-                            size: 26,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 26, fallbackIcon: Icons.restaurant_menu_outlined),
                           const SizedBox(height: 10),
                           Text(
                             'Chưa có thực đơn từ Coach.',

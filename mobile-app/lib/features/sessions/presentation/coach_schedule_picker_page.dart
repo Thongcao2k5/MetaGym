@@ -5,6 +5,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum _PickerCalMode { week, month }
 
@@ -728,11 +730,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 16,
-                  color: palette.warning,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 16, fallbackIcon: Icons.info_outline_rounded),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(
@@ -1114,11 +1112,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.schedule_rounded,
-                            color: palette.primaryText,
-                            size: 18,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.timeClock, size: 18, fallbackIcon: Icons.schedule_rounded),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Wrap(
@@ -1178,11 +1172,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              size: 16,
-                              color: palette.warning,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 16, fallbackIcon: Icons.info_outline_rounded),
                             const SizedBox(width: 9),
                             Expanded(
                               child: Text(
@@ -1244,7 +1234,7 @@ class _CalendarArrowButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: palette.metricPanelBorder),
                 ),
-                child: Icon(icon, size: 18, color: palette.textPrimary),
+                child: MetaGymResolvedIcon(icon, size: 18, fallbackColor: palette.textPrimary),
               ),
             ),
           ),

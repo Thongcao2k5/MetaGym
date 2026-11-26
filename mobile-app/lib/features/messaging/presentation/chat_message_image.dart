@@ -6,6 +6,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class ChatMessageImage extends StatefulWidget {
   const ChatMessageImage({
@@ -105,11 +107,7 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.broken_image_outlined,
-            color: palette.textSecondary,
-            size: 26,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.stateBrokenImage, size: 26, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.broken_image_outlined),
           const SizedBox(height: 6),
           Text(
             message,
@@ -209,11 +207,7 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
                           color: Colors.white.withValues(alpha: 0.2),
                         ),
                       ),
-                      child: const Icon(
-                        Icons.zoom_out_map_rounded,
-                        size: 15,
-                        color: Colors.white,
-                      ),
+                      child: const MetaGymSvgIcon(MetaGymIcons.commonExpandCollapse, size: 15, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.zoom_out_map_rounded),
                     ),
                   ),
                 ),
@@ -323,11 +317,7 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
-                                    Icons.broken_image_outlined,
-                                    color: Colors.white70,
-                                    size: 40,
-                                  ),
+                                  const MetaGymSvgIcon(MetaGymIcons.stateBrokenImage, size: 40, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.broken_image_outlined),
                                   const SizedBox(height: 10),
                                   const Text(
                                     'Không thể tải ảnh phóng to.',
@@ -407,10 +397,7 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
                                 tooltip: 'Đóng',
                                 onPressed: () =>
                                     Navigator.of(context).maybePop(),
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  color: Colors.white,
-                                ),
+                                icon: const MetaGymSvgIcon(MetaGymIcons.commonClose, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.close_rounded),
                               ),
                             ),
                           ),

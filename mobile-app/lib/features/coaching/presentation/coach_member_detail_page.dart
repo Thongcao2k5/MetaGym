@@ -11,6 +11,8 @@ import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart'
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/coaching/presentation/early_termination_widgets.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachMemberDetailPage extends StatefulWidget {
   const CoachMemberDetailPage({
@@ -394,10 +396,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.add_rounded,
-                                      size: 18,
-                                    ),
+                                    icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 18, fallbackIcon: Icons.add_rounded),
                                     label: const Text('Gửi thành quả'),
                                   ),
                                 ],
@@ -409,11 +408,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.emoji_events_outlined,
-                                      color: palette.textWarmMuted,
-                                      size: 20,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.rewardTrophy, size: 20, fallbackIcon: Icons.emoji_events_outlined),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
@@ -455,10 +450,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                           horizontal: 12,
                                         ),
                                       ),
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 18,
-                                      ),
+                                      icon: const MetaGymSvgIcon(MetaGymIcons.commonDelete, size: 18, fallbackIcon: Icons.delete_outline_rounded),
                                       label: const Text('Xóa thành quả'),
                                     ),
                                   ),
@@ -571,11 +563,7 @@ class _HealthDeclarationCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.monitor_heart_outlined,
-                color: palette.primaryText,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.statsHeartRate, size: 20, fallbackIcon: Icons.monitor_heart_outlined),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

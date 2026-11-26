@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
@@ -195,7 +197,14 @@ void main() {
     expect(find.byType(CoachSelectionPage), findsOneWidget);
     expect(find.byType(MetaGymBottomNav), findsNothing);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
+    await tester.tap(
+      find
+          .byWidgetPredicate(
+            (w) =>
+                w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.commonBack,
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
@@ -345,7 +354,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
+    await tester.tap(
+      find
+          .byWidgetPredicate(
+            (w) =>
+                w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.commonBack,
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));

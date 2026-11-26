@@ -8,6 +8,7 @@ import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// One Coach-authored calendar day of the active curriculum.
 /// Synchronized with Futuristic Performance Glass / Warm Smoked Glass.
@@ -466,7 +467,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, size: 19, color: color),
+        MetaGymResolvedIcon(icon, size: 19, fallbackColor: color),
         const SizedBox(width: 8),
         Text(
           label,

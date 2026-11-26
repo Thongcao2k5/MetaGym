@@ -12,6 +12,8 @@ import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_plan_detail_page.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_plan_form_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachTrainingPage extends StatefulWidget {
   const CoachTrainingPage({this.service, super.key});
@@ -163,10 +165,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: palette.textSecondary,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                                   ],
                                 ),
                               ),
@@ -488,11 +487,7 @@ class _PlanSummaryCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: 13,
-                          color: palette.reflection,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 13, fallbackIcon: Icons.calendar_today_outlined),
                         const SizedBox(width: 4),
                         Text(
                           '${plan.days.length} ngày tập',
@@ -508,11 +503,7 @@ class _PlanSummaryCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.accessibility_new_rounded,
-                            size: 13,
-                            color: palette.primaryText,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.settingAccessibility, size: 13, fallbackIcon: Icons.accessibility_new_rounded),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -536,10 +527,7 @@ class _PlanSummaryCard extends StatelessWidget {
           const SizedBox(width: 6),
           Padding(
             padding: const EdgeInsets.only(top: 18),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: palette.textSecondary,
-            ),
+            child: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
           ),
         ],
       ),
@@ -627,7 +615,7 @@ class _SectionHeaderRow extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: palette.primaryText, size: 19),
+        MetaGymResolvedIcon(icon, size: 19, fallbackColor: palette.primaryText),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -673,7 +661,7 @@ class _EmptyStateCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: palette.textSecondary, size: 24),
+            child: MetaGymResolvedIcon(icon, size: 24, fallbackColor: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           Text(

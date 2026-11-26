@@ -434,11 +434,7 @@ class _RuleBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          met ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-          size: 14,
-          color: color,
-        ),
+        MetaGymResolvedIcon(met ? Icons.check_circle_rounded : Icons.radio_button_unchecked, size: 14, fallbackColor: color),
         const SizedBox(width: 6),
         Flexible(
           child: Text(

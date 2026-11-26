@@ -415,7 +415,7 @@ class _LoginPageState extends State<LoginPage> {
                                 LocalDemoAccounts.demoPassword;
                             _submit(auth);
                           },
-                    icon: const Icon(Icons.person_rounded, size: 16),
+                    icon: const MetaGymSvgIcon(MetaGymIcons.settingPersonalInfo, size: 16, fallbackIcon: Icons.person_rounded),
                     label: const Text(
                       'Demo Hội viên',
                       maxLines: 1,
@@ -450,7 +450,7 @@ class _LoginPageState extends State<LoginPage> {
                                 LocalDemoAccounts.demoPassword;
                             _submit(auth);
                           },
-                    icon: const Icon(Icons.sports_gymnastics_rounded, size: 16),
+                    icon: const MetaGymSvgIcon(MetaGymIcons.equipBodyweight, size: 16, fallbackIcon: Icons.sports_gymnastics_rounded),
                     label: const Text(
                       'Demo HLV',
                       maxLines: 1,
@@ -485,7 +485,7 @@ class _LoginPageState extends State<LoginPage> {
                         builder: (_) => const SystemStatesPage(),
                       ),
                     ),
-                icon: const Icon(Icons.info_outline_rounded, size: 18),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 18, fallbackIcon: Icons.info_outline_rounded),
                 label: const Text('Xem trạng thái hệ thống'),
                 style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
               ),

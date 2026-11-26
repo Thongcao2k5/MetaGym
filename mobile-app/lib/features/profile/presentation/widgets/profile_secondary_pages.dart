@@ -9,6 +9,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/profile_shared_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Trang Hồ sơ chuyên môn dành cho Huấn luyện viên (đồng bộ Core Design System).
 class CoachProfileDetailPage extends StatefulWidget {
@@ -638,11 +639,7 @@ class _SecurityAccountDetailPageState extends State<SecurityAccountDetailPage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          color: colors.error,
-                          size: 18,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateError, size: 18, fallbackIcon: Icons.error_outline_rounded),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -930,15 +927,11 @@ class _PrivacySettingsDetailPageState extends State<PrivacySettingsDetailPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                _mode == option
+                              MetaGymResolvedIcon(_mode == option
                                     ? Icons.radio_button_checked_rounded
-                                    : Icons.radio_button_off_rounded,
-                                size: 20,
-                                color: _mode == option
+                                    : Icons.radio_button_off_rounded, size: 20, fallbackColor: _mode == option
                                     ? MetaGymTheme.brandOrange
-                                    : colors.textSecondary,
-                              ),
+                                    : colors.textSecondary),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -1971,11 +1964,7 @@ class _BiometricSetupDialogState extends State<_BiometricSetupDialog> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_verified) ...[
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: colors.success,
-                  size: 20,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_rounded),
                 const SizedBox(width: 6),
               ],
               Flexible(
@@ -2263,11 +2252,7 @@ class _SupportChannelOptionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: highlighted ? colors.primaryText : colors.textSecondary,
-              size: 20,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
           ],
         ),
       ),

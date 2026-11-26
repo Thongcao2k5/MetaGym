@@ -3,6 +3,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class TrainingPlanContent extends StatelessWidget {
   const TrainingPlanContent({required this.plan, super.key});
@@ -64,11 +66,7 @@ class TrainingPlanContent extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.calendar_view_week_rounded,
-                            size: 14,
-                            color: palette.reflection,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.actionCoachWorkweek, size: 14, fallbackIcon: Icons.calendar_view_week_rounded),
                           const SizedBox(width: 4),
                           Text(
                             '${plan.days.length} ngày tập',
@@ -100,11 +98,7 @@ class TrainingPlanContent extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.track_changes_rounded,
-                        size: 16,
-                        color: palette.reflection,
-                      ),
+                      MetaGymSvgIcon(MetaGymIcons.settingTrainingGoal, size: 16, fallbackIcon: Icons.track_changes_rounded),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -293,11 +287,7 @@ class TrainingPlanContent extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.restaurant_outlined,
-                                size: 18,
-                                color: palette.success,
-                              ),
+                              MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 18, fallbackIcon: Icons.restaurant_outlined),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
@@ -354,7 +344,7 @@ class _MetaInfoPill extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: palette.textSecondary),
+        MetaGymResolvedIcon(icon, size: 14, fallbackColor: palette.textSecondary),
         const SizedBox(width: 4),
         Text(
           text,
@@ -423,11 +413,7 @@ class _ExerciseCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                Icons.fitness_center_rounded,
-                size: 16,
-                color: palette.primaryText,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 16, fallbackIcon: Icons.fitness_center_rounded),
             ],
           ),
 
@@ -459,11 +445,7 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  Icons.scale_rounded,
-                  size: 14,
-                  color: palette.reflection,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.bodyWeightScale, size: 14, fallbackIcon: Icons.scale_rounded),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -506,11 +488,7 @@ class _ExerciseCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.security_rounded,
-                    size: 15,
-                    color: palette.warning,
-                  ),
+                  MetaGymSvgIcon(MetaGymIcons.settingSecurityShield, size: 15, fallbackIcon: Icons.security_rounded),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

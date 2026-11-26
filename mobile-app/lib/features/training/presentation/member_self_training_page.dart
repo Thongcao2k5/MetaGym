@@ -12,6 +12,8 @@ import 'package:meta_gym_app/features/training/data/member_self_training_api.dar
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum _CalendarMode { week, month }
 
@@ -508,11 +510,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                                   color: palette.error.withValues(alpha: 0.40),
                                 ),
                               ),
-                              child: Icon(
-                                Icons.cloud_off_rounded,
-                                size: 20,
-                                color: palette.error,
-                              ),
+                              child: MetaGymSvgIcon(MetaGymIcons.stateOffline, size: 20, fallbackIcon: Icons.cloud_off_rounded),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -541,7 +539,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                             ),
                           ),
                           onPressed: _load,
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                           label: const Text(
                             'Thử lại',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -587,7 +585,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 onPressed: () => _changePeriod(-1),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 color: palette.textPrimary,
-                icon: const Icon(Icons.chevron_left_rounded),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronLeft, fallbackIcon: Icons.chevron_left_rounded),
                 tooltip: 'Kỳ trước',
               ),
               Expanded(
@@ -604,7 +602,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 onPressed: () => _changePeriod(1),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 color: palette.textPrimary,
-                icon: const Icon(Icons.chevron_right_rounded),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                 tooltip: 'Kỳ sau',
               ),
             ],
@@ -795,7 +793,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                   ),
                 ),
                 onPressed: _startEditing,
-                icon: const Icon(Icons.add_rounded),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
                 label: const Text('Lên lịch tập'),
               ),
             ],
@@ -889,13 +887,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                               ),
                             ),
                           const Spacer(),
-                          Icon(
-                            _expandedDetails
+                          MetaGymResolvedIcon(_expandedDetails
                                 ? Icons.keyboard_arrow_up_rounded
-                                : Icons.keyboard_arrow_down_rounded,
-                            color: palette.textSecondary,
-                            size: 20,
-                          ),
+                                : Icons.keyboard_arrow_down_rounded, size: 20, fallbackColor: palette.textSecondary),
                         ],
                       ),
                     ],
@@ -952,11 +946,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                       ),
                     ),
                     onPressed: _startEditing,
-                    icon: Icon(
-                      Icons.edit_outlined,
-                      size: 16,
-                      color: palette.primaryText,
-                    ),
+                    icon: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 16, fallbackIcon: Icons.edit_outlined),
                     label: const Text('Sửa lịch'),
                   ),
                 ),
@@ -1146,11 +1136,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 onPressed: _saving
                     ? null
                     : () => _removeExerciseDraftRow(index),
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  size: 19,
-                  color: palette.error,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, size: 19, fallbackIcon: Icons.delete_outline_rounded),
               ),
             ],
           ),
@@ -1282,10 +1268,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 ),
               ),
               onPressed: _chooseTime,
-              icon: Icon(
-                Icons.schedule_rounded,
-                color: palette.primaryText,
-              ),
+              icon: MetaGymSvgIcon(MetaGymIcons.timeClock, fallbackIcon: Icons.schedule_rounded),
               label: Text(_time == null ? 'Chọn giờ tập' : 'Bắt đầu $_time'),
             ),
           ),
@@ -1317,7 +1300,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               ),
             ),
             onPressed: _saving ? null : _addExerciseDraftRow,
-            icon: Icon(Icons.add_rounded, color: palette.primaryText),
+            icon: MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
             label: const Text(
               'Thêm bài tập',
               style: TextStyle(fontWeight: FontWeight.w600),

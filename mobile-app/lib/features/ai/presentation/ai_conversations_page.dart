@@ -9,6 +9,8 @@ import 'package:meta_gym_app/features/ai/presentation/ai_messages_page.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class AiConversationsPage extends StatefulWidget {
   const AiConversationsPage({
@@ -396,7 +398,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+                      icon: const MetaGymSvgIcon(MetaGymIcons.navAiEmblem, size: 20, fallbackIcon: Icons.auto_awesome_rounded),
                       onPressed: _saving ? null : _create,
                       label: Text(_saving ? 'Đang xử lý…' : 'Tạo hội thoại'),
                     ),
@@ -417,11 +419,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.error_outline_rounded,
-                              color: palette.error,
-                              size: 20,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -464,11 +462,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                                   color: palette.metricPanelBorder,
                                 ),
                               ),
-                              child: Icon(
-                                Icons.auto_awesome_rounded,
-                                color: palette.primaryText,
-                                size: 22,
-                              ),
+                              child: MetaGymSvgIcon(MetaGymIcons.navAiEmblem, size: 22, fallbackIcon: Icons.auto_awesome_rounded),
                             ),
                             const SizedBox(height: 12),
                             Text(
@@ -514,11 +508,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                                 color: palette.metricPanelBorder,
                               ),
                             ),
-                            child: Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              color: palette.reflection,
-                              size: 20,
-                            ),
+                            child: MetaGymSvgIcon(MetaGymIcons.commChat, size: 20, fallbackIcon: Icons.chat_bubble_outline_rounded),
                           ),
                           title: Text(
                             item.title,
@@ -552,11 +542,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                                   minWidth: 48,
                                   minHeight: 48,
                                 ),
-                                icon: Icon(
-                                  Icons.edit_outlined,
-                                  color: palette.textWarmMuted,
-                                  size: 20,
-                                ),
+                                icon: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 20, fallbackIcon: Icons.edit_outlined),
                                 onPressed: _saving ? null : () => _rename(item),
                               ),
                               IconButton(
@@ -565,11 +551,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                                   minWidth: 48,
                                   minHeight: 48,
                                 ),
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: palette.textWarmMuted,
-                                  size: 20,
-                                ),
+                                icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, size: 20, fallbackIcon: Icons.delete_outline),
                                 onPressed: _saving ? null : () => _delete(item),
                               ),
                             ],

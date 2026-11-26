@@ -12,6 +12,8 @@ import 'package:meta_gym_app/features/training/presentation/coach_nutrition_edit
 import 'package:provider/provider.dart';
 
 import 'meal_plans_page.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachNutritionPage extends StatefulWidget {
   const CoachNutritionPage({this.service, this.structured = false, super.key});
@@ -168,10 +170,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: palette.textSecondary,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                                   ],
                                 ),
                               ),
@@ -387,14 +386,10 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                           ).withValues(alpha: 0.35),
                                         ),
                                       ),
-                                      child: Icon(
-                                        _guideIcon(guide.status),
-                                        color: _guideAccent(
+                                      child: MetaGymResolvedIcon(_guideIcon(guide.status), size: 22, fallbackColor: _guideAccent(
                                           guide.status,
                                           palette,
-                                        ),
-                                        size: 22,
-                                      ),
+                                        )),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -434,10 +429,7 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                     const SizedBox(width: 6),
                                     Padding(
                                       padding: const EdgeInsets.only(top: 10),
-                                      child: Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: palette.textSecondary,
-                                      ),
+                                      child: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                                     ),
                                   ],
                                 ),
@@ -533,7 +525,7 @@ class _NutritionSectionHeader extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: palette.success, size: 19),
+        MetaGymResolvedIcon(icon, size: 19, fallbackColor: palette.success),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -579,7 +571,7 @@ class _NutritionEmptyCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: palette.textSecondary, size: 24),
+            child: MetaGymResolvedIcon(icon, size: 24, fallbackColor: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           Text(

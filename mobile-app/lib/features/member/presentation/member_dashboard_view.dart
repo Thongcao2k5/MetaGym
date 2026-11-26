@@ -477,11 +477,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: palette.warning,
-            size: 19,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.stateWarning, size: 19, fallbackIcon: Icons.warning_amber_rounded),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -495,11 +491,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           IconButton(
             onPressed: _loadFrame3Data,
             tooltip: 'Thử lại',
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: palette.warning,
-              size: 19,
-            ),
+            icon: MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 19, fallbackIcon: Icons.refresh_rounded),
           ),
         ],
       ),
@@ -941,11 +933,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: palette.textSecondary,
-                        size: 18,
-                      ),
+                      MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.chevron_right_rounded),
                     ],
                   ),
                   const SizedBox(height: 7),
@@ -1333,11 +1321,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.fitness_center_rounded,
-                      color: MetaGymTheme.brandOrange,
-                      size: 18,
-                    ),
+                    const MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 18, fallbackIcon: Icons.fitness_center_rounded),
                     const SizedBox(width: 9),
                     Expanded(
                       child: Text(
@@ -1349,10 +1333,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         ),
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: palette.textSecondary,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1412,11 +1393,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.fitness_center_rounded,
-                  color: MetaGymTheme.brandOrange,
-                  size: 18,
-                ),
+                const MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 18, fallbackIcon: Icons.fitness_center_rounded),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1442,7 +1419,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 );
                 final action = FilledButton.icon(
                   onPressed: () => _pushAndReload('/member/features/workouts'),
-                  icon: const Icon(Icons.calendar_month_rounded, size: 17),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 17, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.calendar_month_rounded),
                   label: const Text('Mở nhật ký'),
                   style: FilledButton.styleFrom(
                     backgroundColor: MetaGymTheme.brandOrange,

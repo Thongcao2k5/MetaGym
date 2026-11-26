@@ -7,6 +7,7 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Quyền truy cập thư viện ảnh thiết bị cho ảnh đại diện.
 enum PhotoAccessMode { unset, full, selectedOnly, denied }
@@ -29,6 +30,7 @@ void showProfileToast(
   bool isError = false,
 }) {
   final colors = MetaGymColors.of(context);
+  final isLightSurface = colors.overlayGlass.computeLuminance() > 0.5;
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
@@ -45,12 +47,13 @@ void showProfileToast(
         ),
         content: Row(
           children: [
-            Icon(
+            MetaGymResolvedIcon(
               isError
                   ? Icons.error_outline_rounded
                   : Icons.check_circle_rounded,
-              color: isError ? colors.error : colors.success,
               size: 18,
+              adaptForLightMode: isLightSurface,
+              fallbackColor: isError ? colors.error : colors.success,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -291,13 +294,7 @@ class ProfileAccordionCard extends StatelessWidget {
                       turns: expanded ? 0.25 : 0.0,
                       duration: duration,
                       curve: Curves.easeOutCubic,
-                      child: Icon(
-                        Icons.chevron_right_rounded,
-                        color: expanded
-                            ? colors.primaryText
-                            : colors.textWarmMuted,
-                        size: 20,
-                      ),
+                      child: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
                     ),
                   ],
                 ),
@@ -409,11 +406,7 @@ class ProfileAccordionRow extends StatelessWidget {
                 ),
               ],
               const SizedBox(width: 6),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.textSecondary,
-                size: 18,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.chevron_right_rounded),
             ],
           ),
         ),
@@ -875,11 +868,7 @@ class _AvatarActionOption extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: colors.textSecondary,
-              size: 18,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.chevron_right_rounded),
           ],
         ),
       ),

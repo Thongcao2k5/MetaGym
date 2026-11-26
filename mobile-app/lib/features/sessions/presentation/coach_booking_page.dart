@@ -17,6 +17,7 @@ import 'package:meta_gym_app/features/training/data/member_training_service.dart
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/member_day_plan_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 DateTime _gymTime(DateTime time) => time.toUtc().add(const Duration(hours: 7));
 String _date(DateTime time) => time.toIso8601String().substring(0, 10);
@@ -441,11 +442,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 18,
-                        color: palette.primaryText,
-                      ),
+                      MetaGymSvgIcon(MetaGymIcons.timeClock, size: 18, fallbackIcon: Icons.schedule_rounded),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -457,11 +454,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18,
-                        color: palette.textWarmMuted,
-                      ),
+                      MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.chevron_right_rounded),
                     ],
                   ),
                 ),
@@ -610,11 +603,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(
-                                          Icons.error_outline_rounded,
-                                          color: palette.error,
-                                          size: 20,
-                                        ),
+                                        MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
@@ -770,10 +759,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                               onPressed: _busy
                                                   ? null
                                                   : _editSchedule,
-                                              icon: const Icon(
-                                                Icons.edit_calendar_rounded,
-                                                size: 18,
-                                              ),
+                                              icon: const MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 18, fallbackIcon: Icons.edit_calendar_rounded),
                                               label: const Text(
                                                 'Cấu hình lịch tuần',
                                                 maxLines: 2,
@@ -812,11 +798,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                   _busy || _days.isEmpty
                                                       ? null
                                                       : _block,
-                                              icon: Icon(
-                                                Icons.block_rounded,
-                                                size: 18,
-                                                color: palette.warning,
-                                              ),
+                                              icon: MetaGymSvgIcon(MetaGymIcons.commBlock, size: 18, fallbackIcon: Icons.block_rounded),
                                               label: Text(
                                                 'Khóa giờ',
                                                 maxLines: 2,
@@ -889,11 +871,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                                     : const Color(0xFF815423),
                                               ),
                                             ),
-                                            child: Icon(
-                                              Icons.lock_clock_rounded,
-                                              color: palette.warning,
-                                              size: 18,
-                                            ),
+                                            child: MetaGymSvgIcon(MetaGymIcons.settingPrivacyLock, size: 18, fallbackIcon: Icons.lock_clock_rounded),
                                           ),
                                           const SizedBox(width: 12),
                                           Expanded(
@@ -1018,11 +996,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        Icons.info_outline_rounded,
-                                        size: 16,
-                                        color: palette.warning,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 16, fallbackIcon: Icons.info_outline_rounded),
                                       const SizedBox(width: 9),
                                       Expanded(
                                         child: Text(
@@ -1114,11 +1088,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                     color: MetaGymTheme.brandOrange.withValues(alpha: 0.35),
                   ),
                 ),
-                child: Icon(
-                  Icons.groups_outlined,
-                  color: palette.primaryText,
-                  size: 22,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.socialGroup, size: 22, fallbackIcon: Icons.groups_outlined),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1692,15 +1662,11 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    registeredCount >= minForCurriculum
+                  MetaGymResolvedIcon(registeredCount >= minForCurriculum
                         ? Icons.check_circle_outline_rounded
-                        : Icons.info_outline_rounded,
-                    size: 15,
-                    color: registeredCount >= minForCurriculum
+                        : Icons.info_outline_rounded, size: 15, fallbackColor: registeredCount >= minForCurriculum
                         ? (isLight ? palette.success : const Color(0xFF59E59A))
-                        : (isLight ? palette.warning : const Color(0xFFFFC573)),
-                  ),
+                        : (isLight ? palette.warning : const Color(0xFFFFC573))),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1891,11 +1857,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       borderRadius: BorderRadius.circular(13),
                       border: Border.all(color: palette.metricPanelBorder),
                     ),
-                    child: Icon(
-                      Icons.fitness_center_rounded,
-                      color: palette.textWarmMuted,
-                      size: 19,
-                    ),
+                    child: MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 19, fallbackIcon: Icons.fitness_center_rounded),
                   ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2073,11 +2035,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                       : palette.metricPanelBorder,
                 ),
               ),
-              child: Icon(
-                Icons.fitness_center_rounded,
-                color: isUpcoming ? palette.primaryText : palette.textWarmMuted,
-                size: 20,
-              ),
+              child: MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 20, fallbackIcon: Icons.fitness_center_rounded),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -2414,11 +2372,7 @@ class _CoachScheduleBuilderDialogState
                     color: palette.chipActiveBg,
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: Icon(
-                    Icons.tune_rounded,
-                    color: palette.primaryText,
-                    size: 20,
-                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.commonFilter, size: 20, fallbackIcon: Icons.tune_rounded),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -2440,10 +2394,7 @@ class _CoachScheduleBuilderDialogState
                     minHeight: 48,
                   ),
                   onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: palette.textWarmMuted,
-                  ),
+                  icon: MetaGymSvgIcon(MetaGymIcons.commonClose, fallbackIcon: Icons.close_rounded),
                 ),
               ],
             ),
@@ -2590,11 +2541,7 @@ class _CoachScheduleBuilderDialogState
                               minWidth: 48,
                               minHeight: 48,
                             ),
-                            icon: Icon(
-                              Icons.more_vert_rounded,
-                              color: palette.textWarmMuted,
-                              size: 19,
-                            ),
+                            icon: MetaGymSvgIcon(MetaGymIcons.commonMore, size: 19, fallbackIcon: Icons.more_vert_rounded),
                             color: isLight
                                 ? palette.surfaceSolid
                                 : const Color(0xF0241F1B),

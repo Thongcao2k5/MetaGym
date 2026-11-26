@@ -147,7 +147,7 @@ class MembershipStatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12.5, color: color),
+            MetaGymResolvedIcon(icon!, size: 12.5, fallbackColor: color),
             const SizedBox(width: 5),
           ] else ...[
             Container(
@@ -208,7 +208,7 @@ class MembershipSectionHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: iconColor.withValues(alpha: 0.35)),
               ),
-              child: Icon(icon, color: iconColor, size: 15),
+              child: MetaGymResolvedIcon(icon!, size: 15, fallbackColor: iconColor),
             ),
             const SizedBox(width: 8),
           ],
@@ -257,11 +257,7 @@ class MembershipErrorCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.error_outline_rounded,
-                color: palette.error,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -284,7 +280,7 @@ class MembershipErrorCard extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: palette.primaryText,
                 ),
-                icon: const Icon(Icons.refresh_rounded, size: 17),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 17, fallbackIcon: Icons.refresh_rounded),
                 label: const Text(
                   'Thử lại',
                   style: TextStyle(fontWeight: FontWeight.w700),
@@ -335,7 +331,12 @@ class MembershipPrimaryButton extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Icon(icon, size: 18),
+              MetaGymResolvedIcon(
+                icon!,
+                size: 18,
+                color: Colors.white,
+                adaptForLightMode: false,
+              ),
             ],
           );
 

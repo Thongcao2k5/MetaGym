@@ -7,6 +7,8 @@ import 'package:meta_gym_app/features/coaching/data/coach_outcome_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class MemberOutcomeConsentPage extends StatefulWidget {
   const MemberOutcomeConsentPage({super.key});
@@ -219,11 +221,7 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
                                             color: palette.metricPanelBorder,
                                           ),
                                         ),
-                                        child: Icon(
-                                          Icons.verified_outlined,
-                                          color: palette.textWarmMuted,
-                                          size: 20,
-                                        ),
+                                        child: MetaGymSvgIcon(MetaGymIcons.authVerified, size: 20, fallbackIcon: Icons.verified_outlined),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(

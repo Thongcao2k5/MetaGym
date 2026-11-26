@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_history_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_muscle_anatomy_tile.dart';
@@ -189,7 +191,13 @@ void main() {
       // Linked cards (Ngực & Vai, Lưng & Tay trước) hide Coach name;
       // unlinked card 3 (b-later) falls back to default card showing Coach name.
       expect(find.textContaining('Lê Hoàng Nam'), findsOneWidget);
-      expect(find.byIcon(Icons.fitness_center_rounded), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.equipDumbbell,
+        ),
+        findsOneWidget,
+      );
 
       await tester.ensureVisible(find.text('Ngực & Vai'));
       await tester.pumpAndSettle();
@@ -230,7 +238,13 @@ void main() {
       expect(find.byType(CoachMuscleAnatomyTile), findsNothing);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.fitness_center_rounded), findsNWidgets(2));
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.equipDumbbell,
+        ),
+        findsNWidgets(2),
+      );
       expect(find.text('Lê Hoàng Nam'), findsNWidgets(2));
       expect(tester.takeException(), isNull);
     },

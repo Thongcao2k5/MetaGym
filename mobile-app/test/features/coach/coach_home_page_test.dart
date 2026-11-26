@@ -10,8 +10,10 @@ import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
@@ -152,7 +154,11 @@ void main() {
       await tester.tap(find.byTooltip('Thông báo Coach'));
       await tester.pumpAndSettle();
       expect(find.byType(CoachNotificationsPage), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.tap(
+        find.byWidgetPredicate(
+          (w) => w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.commonBack,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Open CoachOffersPage from PT package Bento card

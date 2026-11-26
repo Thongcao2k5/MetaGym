@@ -15,6 +15,8 @@ import 'package:meta_gym_app/features/membership/presentation/membership_page.da
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Read-only Member view of the Coach's training and seven-day meal plan.
 /// Synchronized with Member Home's Futuristic Performance Glass / Warm Smoked Glass system.
@@ -194,7 +196,7 @@ class _MemberCurriculumDetailPageState
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                         label: const Text(
                           'Thử lại',
                           style: TextStyle(fontWeight: FontWeight.w700),
@@ -308,7 +310,7 @@ class _MemberCurriculumDetailPageState
     required VoidCallback onPressed,
   }) => OutlinedButton.icon(
     onPressed: onPressed,
-    icon: Icon(icon, size: 17, color: _palette.textPrimary),
+    icon: MetaGymResolvedIcon(icon, size: 17, fallbackColor: _palette.textPrimary),
     label: Text(label),
     style: OutlinedButton.styleFrom(
       minimumSize: const Size(48, 48),
@@ -400,11 +402,7 @@ class _MemberCurriculumDetailPageState
                                 ),
                               ),
                               alignment: Alignment.center,
-                              child: Icon(
-                                Icons.menu_book_rounded,
-                                color: _palette.primaryText,
-                                size: 20,
-                              ),
+                              child: MetaGymSvgIcon(MetaGymIcons.actionCurriculum, size: 20, fallbackIcon: Icons.menu_book_rounded),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -420,13 +418,9 @@ class _MemberCurriculumDetailPageState
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Icon(
-                              _heroExpanded
+                            MetaGymResolvedIcon(_heroExpanded
                                   ? Icons.keyboard_arrow_up_rounded
-                                  : Icons.keyboard_arrow_down_rounded,
-                              color: _palette.textPrimary,
-                              size: 24,
-                            ),
+                                  : Icons.keyboard_arrow_down_rounded, size: 24, fallbackColor: _palette.textPrimary),
                           ],
                         ),
                       ),
@@ -561,11 +555,7 @@ class _MemberCurriculumDetailPageState
       children: [
         Row(
           children: [
-            Icon(
-              Icons.history_rounded,
-              color: _palette.reflection,
-              size: 18,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.workoutHistory, size: 18, fallbackIcon: Icons.history_rounded),
             const SizedBox(width: 8),
             Text(
               'Giáo trình đã lưu trữ',
@@ -590,10 +580,7 @@ class _MemberCurriculumDetailPageState
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              trailing: Icon(
-                Icons.chevron_right_rounded,
-                color: _palette.textWarmMuted,
-              ),
+              trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
               onTap: () => MetaGymNavigation.pushOnce(
                 context,
                 MetaGymPageRoute(
@@ -699,7 +686,7 @@ class _MemberCurriculumDetailPageState
       children: [
         Row(
           children: [
-            Icon(Icons.lock_clock_outlined, color: _palette.warning),
+            MetaGymSvgIcon(MetaGymIcons.settingPrivacyLock, fallbackIcon: Icons.lock_clock_outlined),
             const SizedBox(width: 8),
             Text(
               'Giáo trình đang tạm khóa',
@@ -1058,7 +1045,7 @@ class _MemberCurriculumDetailPageState
         children: [
           Row(
             children: [
-              Icon(icon, color: _palette.success, size: 19),
+              MetaGymResolvedIcon(icon, size: 19, fallbackColor: _palette.success),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
@@ -1190,7 +1177,7 @@ class _MemberCurriculumDetailPageState
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: _palette.reflection, size: 24),
+        MetaGymResolvedIcon(icon, size: 24, fallbackColor: _palette.reflection),
         const SizedBox(height: 10),
         Text(
           title,

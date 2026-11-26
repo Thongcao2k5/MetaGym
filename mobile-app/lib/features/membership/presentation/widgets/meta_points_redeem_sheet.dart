@@ -155,10 +155,7 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
               IconButton(
                 tooltip: 'Đóng',
                 onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(
-                  Icons.close_rounded,
-                  color: palette.textSecondary,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonClose, fallbackIcon: Icons.close_rounded),
               ),
             ],
           ),

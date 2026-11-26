@@ -7,6 +7,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachNutritionEditorPage extends StatefulWidget {
   const CoachNutritionEditorPage({
@@ -293,11 +295,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                               ).withValues(alpha: 0.35),
                             ),
                           ),
-                          child: Icon(
-                            _guideIcon(_guide!.status),
-                            color: _guideAccent(_guide!.status, palette),
-                            size: 22,
-                          ),
+                          child: MetaGymResolvedIcon(_guideIcon(_guide!.status), size: 22, fallbackColor: _guideAccent(_guide!.status, palette)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -333,11 +331,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.restaurant_menu_rounded,
-                            color: palette.success,
-                            size: 18,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 18, fallbackIcon: Icons.restaurant_menu_rounded),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(

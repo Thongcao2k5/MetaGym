@@ -10,6 +10,8 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/domain/call_log.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class LiveCallPage extends StatefulWidget {
   const LiveCallPage({
@@ -477,10 +479,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                                 IconButton(
                                   tooltip: 'Đóng',
                                   onPressed: () => Navigator.of(context).pop(),
-                                  icon: Icon(
-                                    Icons.arrow_back_rounded,
-                                    color: palette.textPrimary,
-                                  ),
+                                  icon: MetaGymSvgIcon(MetaGymIcons.commonBack, fallbackIcon: Icons.arrow_back_rounded),
                                 )
                               else
                                 const SizedBox(width: 48, height: 48),
@@ -830,11 +829,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.videocam_off_rounded,
-                            color: MetaGymTheme.textSecondary,
-                            size: 24,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.commMute, size: 24, fallbackIcon: Icons.videocam_off_rounded),
                           SizedBox(height: 6),
                           Text(
                             'Cam tắt',
@@ -1048,7 +1043,7 @@ class _CallModeChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: palette.reflection),
+          MetaGymResolvedIcon(icon, size: 14, fallbackColor: palette.reflection),
           const SizedBox(width: 6),
           Text(
             label,
@@ -1155,7 +1150,7 @@ class _AudioGridButton extends StatelessWidget {
                             : const Color(0xA3A79D92)),
                 ),
               ),
-              child: Icon(icon, size: 26, color: fgColor),
+              child: MetaGymResolvedIcon(icon, size: 26, color: fgColor, adaptForLightMode: false),
             ),
           ),
         ),
@@ -1216,7 +1211,7 @@ class _CallActionCircle extends StatelessWidget {
                 ? Border.all(color: borderColor!, width: 1)
                 : null,
           ),
-          child: Icon(icon, size: iconSize, color: foregroundColor),
+          child: MetaGymResolvedIcon(icon, size: iconSize, color: foregroundColor, adaptForLightMode: false),
         ),
       ),
     );
@@ -1272,7 +1267,7 @@ class _TopGlassIconButton extends StatelessWidget {
               color: const Color(0x9E2F2924),
               border: Border.all(color: const Color(0x95ADA295)),
             ),
-            child: Icon(icon, size: 22, color: MetaGymTheme.textPrimary),
+            child: MetaGymResolvedIcon(icon, size: 22, color: MetaGymTheme.textPrimary, adaptForLightMode: false),
           ),
         ),
       ),
@@ -1299,11 +1294,7 @@ class _CallErrorPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 16,
-            color: palette.error,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.stateError, size: 16, fallbackIcon: Icons.error_outline_rounded),
           const SizedBox(width: 8),
           Flexible(
             child: Text(

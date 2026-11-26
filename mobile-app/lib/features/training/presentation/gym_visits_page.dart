@@ -8,6 +8,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/training/data/gym_visits_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình Điểm danh QR (Lịch sử đến gym) đồng bộ bảng màu & định dạng thẻ
 /// với Trang chủ Hội viên (`member_dashboard_view.dart`) và Hồ sơ (`profile_page.dart`).
@@ -150,11 +152,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.calendar_month_rounded,
-                                    color: palette.primaryText,
-                                    size: 18,
-                                  ),
+                                  MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 18, fallbackIcon: Icons.calendar_month_rounded),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -190,11 +188,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                           padding: EdgeInsets.zero,
                                           onPressed: () => _moveMonth(-1),
                                           tooltip: 'Tháng trước',
-                                          icon: Icon(
-                                            Icons.chevron_left_rounded,
-                                            color: palette.textPrimary,
-                                            size: 20,
-                                          ),
+                                          icon: MetaGymSvgIcon(MetaGymIcons.commonChevronLeft, size: 20, fallbackIcon: Icons.chevron_left_rounded),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.symmetric(
@@ -223,14 +217,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                               ? () => _moveMonth(1)
                                               : null,
                                           tooltip: 'Tháng sau',
-                                          icon: Icon(
-                                            Icons.chevron_right_rounded,
-                                            color: canGoForward
-                                                ? palette.textPrimary
-                                                : palette.textSecondary
-                                                      .withValues(alpha: 0.4),
-                                            size: 20,
-                                          ),
+                                          icon: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
                                         ),
                                       ],
                                     ),
@@ -253,11 +240,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                     onTap: _load,
                                     child: Row(
                                       children: [
-                                        Icon(
-                                          Icons.refresh_rounded,
-                                          color: palette.primaryText,
-                                          size: 20,
-                                        ),
+                                        MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 20, fallbackIcon: Icons.refresh_rounded),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
@@ -313,11 +296,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                         const SizedBox(height: 18),
                         Row(
                           children: [
-                            Icon(
-                              Icons.history_rounded,
-                              color: palette.primaryText,
-                              size: 18,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.workoutHistory, size: 18, fallbackIcon: Icons.history_rounded),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -377,11 +356,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.info_outline_rounded,
-                                  color: palette.textSecondary,
-                                  size: 20,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 20, fallbackIcon: Icons.info_outline_rounded),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
@@ -415,11 +390,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         ),
                                       ),
                                     ),
-                                    child: Icon(
-                                      Icons.place_outlined,
-                                      color: palette.primaryText,
-                                      size: 20,
-                                    ),
+                                    child: MetaGymSvgIcon(MetaGymIcons.locationPin, size: 20, fallbackIcon: Icons.place_outlined),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -475,7 +446,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: FilledButton.icon(
           onPressed: _scan,
-          icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+          icon: const MetaGymSvgIcon(MetaGymIcons.qrScanFrame, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.qr_code_scanner_rounded),
           label: const Text(
             'Quét QR tại phòng gym',
             style: TextStyle(
@@ -601,7 +572,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 15, color: accent),
+              MetaGymResolvedIcon(icon, size: 15, fallbackColor: accent),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(

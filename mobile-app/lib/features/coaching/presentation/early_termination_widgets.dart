@@ -3,6 +3,8 @@ import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 typedef EarlyTerminationRespondCallback = Future<void> Function(
   String decision,
@@ -117,7 +119,7 @@ class EarlyTerminationCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.schedule_rounded, size: 15, color: colors.warning),
+                MetaGymSvgIcon(MetaGymIcons.timeClock, size: 15, fallbackIcon: Icons.schedule_rounded),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

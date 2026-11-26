@@ -17,6 +17,8 @@ import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/presentation/chat_message_image.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Thẻ Kính Smoked Dark (Dark Mode) / Porcelain Card (Light Mode) đồng bộ với Member Home.
 Widget _buildLiquidGlassCard({
@@ -146,11 +148,7 @@ class _CircleGlassIconButton extends StatelessWidget {
                       width: 1.0,
                     ),
                   ),
-                  child: Icon(
-                    icon,
-                    color: isActive ? palette.primaryText : palette.textPrimary,
-                    size: 19,
-                  ),
+                  child: MetaGymResolvedIcon(icon, size: 19, fallbackColor: isActive ? palette.primaryText : palette.textPrimary),
                 ),
               ),
             ),
@@ -1072,11 +1070,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         child: Row(
           children: [
-            Icon(
-              Icons.search_rounded,
-              color: palette.reflection,
-              size: 19,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.commonSearch, size: 19, fallbackIcon: Icons.search_rounded),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -1109,11 +1103,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   _searchController.clear();
                   setState(() => _searchQuery = '');
                 },
-                icon: Icon(
-                  Icons.clear_rounded,
-                  color: palette.textSecondary,
-                  size: 18,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.clear_rounded),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               ),
@@ -1214,11 +1204,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: palette.primaryText,
-                  size: 12,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.commChat, size: 12, fallbackIcon: Icons.chat_bubble_outline_rounded),
                 const SizedBox(width: 5),
                 Text(
                   'COACH CÁ NHÂN',
@@ -1367,11 +1353,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(
-          Icons.history_rounded,
-          color: palette.reflection,
-          size: 16,
-        ),
+        MetaGymSvgIcon(MetaGymIcons.workoutHistory, size: 16, fallbackIcon: Icons.history_rounded),
         const SizedBox(width: 6),
         Text(
           title,
@@ -1576,13 +1558,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   ),
                 ),
                 child: Center(
-                  child: Icon(
-                    item.memberId == userId
+                  child: MetaGymResolvedIcon(item.memberId == userId
                         ? Icons.sports_gymnastics_rounded
-                        : Icons.person_rounded,
-                    color: palette.reflection,
-                    size: 20,
-                  ),
+                        : Icons.person_rounded, size: 20, fallbackColor: palette.reflection),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1681,11 +1659,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       ),
                     )
                   else if (timeLabel.isEmpty)
-                    Icon(
-                      Icons.chevron_right,
-                      color: palette.textSecondary,
-                      size: 20,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right),
                 ],
               ),
             ],
@@ -1706,11 +1680,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: palette.error,
-                  size: 20,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1727,11 +1697,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: _load,
-              icon: Icon(
-                Icons.replay_rounded,
-                size: 16,
-                color: palette.primaryText,
-              ),
+              icon: MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 16, fallbackIcon: Icons.replay_rounded),
               label: Text(
                 'Thử lại',
                 style: TextStyle(
@@ -1763,11 +1729,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   shape: BoxShape.circle,
                   border: Border.all(color: palette.metricPanelBorder),
                 ),
-                child: Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: palette.reflection,
-                  size: 26,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.commChat, size: 26, fallbackIcon: Icons.chat_bubble_outline_rounded),
               ),
               const SizedBox(height: 14),
               Text(
@@ -2769,11 +2731,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.block_rounded,
-                      color: palette.error,
-                      size: 20,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.commBlock, size: 20, fallbackIcon: Icons.block_rounded),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -2901,11 +2859,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      Icons.image_outlined,
-                                      size: 14,
-                                      color: palette.reflection,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 14, fallbackIcon: Icons.image_outlined),
                                     const SizedBox(width: 5),
                                     Text(
                                       _imageSending
@@ -3018,13 +2972,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                       color: palette.textPrimary,
                     ),
                   )
-                : Icon(
-                    Icons.image_outlined,
-                    color: _recipientDisabled
-                        ? palette.textSecondary
-                        : palette.textPrimary,
-                    size: 21,
-                  ),
+                : MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 21, fallbackIcon: Icons.image_outlined),
           ),
           Expanded(
             child: TextField(

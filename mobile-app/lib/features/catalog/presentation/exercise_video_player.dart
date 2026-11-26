@@ -3,6 +3,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Plays the catalog's YouTube links or direct video files inside the detail page.
 class ExerciseVideoPlayer extends StatefulWidget {
@@ -128,7 +130,7 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
                           foregroundColor: palette.primaryText,
                           minimumSize: const Size(48, 48),
                         ),
-                        icon: const Icon(Icons.refresh_rounded),
+                        icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, fallbackIcon: Icons.refresh_rounded),
                         label: const Text('Thử lại'),
                       ),
                     )
@@ -145,11 +147,7 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(
-                  Icons.ondemand_video_rounded,
-                  size: 19,
-                  color: palette.primaryText,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.exerciseVideoPlay, size: 19, fallbackIcon: Icons.ondemand_video_rounded),
                 const SizedBox(width: 8),
                 Text(
                   'Video hướng dẫn',
@@ -190,7 +188,7 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
               child: IconButton.filled(
                 tooltip: 'Phát video',
                 onPressed: controller.play,
-                icon: const Icon(Icons.play_arrow_rounded, size: 32),
+                icon: const MetaGymSvgIcon(MetaGymIcons.exerciseVideoPlay, size: 32, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.play_arrow_rounded),
                 style: IconButton.styleFrom(
                   backgroundColor: MetaGymTheme.primary,
                   foregroundColor: Colors.white,
@@ -214,12 +212,9 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
                     onPressed: value.isPlaying
                         ? controller.pause
                         : controller.play,
-                    icon: Icon(
-                      value.isPlaying
+                    icon: MetaGymResolvedIcon(value.isPlaying
                           ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      color: Colors.white,
-                    ),
+                          : Icons.play_arrow_rounded, color: Colors.white, adaptForLightMode: false),
                   ),
                   Expanded(
                     child: VideoProgressIndicator(
@@ -253,11 +248,7 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.videocam_off_outlined,
-            color: palette.textSecondary,
-            size: 30,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.commMute, size: 30, fallbackIcon: Icons.videocam_off_outlined),
           const SizedBox(height: 8),
           Text(text, style: TextStyle(color: palette.textPrimary)),
           ?action,

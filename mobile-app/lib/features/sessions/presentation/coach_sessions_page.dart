@@ -8,6 +8,8 @@ import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum _CoachSessionTab { all, scheduled, history }
 
@@ -339,11 +341,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                   color: MetaGymTheme.primary.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.calendar_month_rounded,
-                  color: palette.primaryText,
-                  size: 22,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 22, fallbackIcon: Icons.calendar_month_rounded),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -591,7 +589,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
               onPressed: () => _edit(),
-              icon: const Icon(Icons.add_rounded),
+              icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.add_rounded),
               label: const Text(
                 'Tạo buổi tập',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -662,11 +660,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                             color: palette.metricPanelBorder,
                                           ),
                                         ),
-                                        child: Icon(
-                                          Icons.event_busy_rounded,
-                                          color: palette.textWarmMuted,
-                                          size: 26,
-                                        ),
+                                        child: MetaGymSvgIcon(MetaGymIcons.actionCoachBlockSlot, size: 26, fallbackIcon: Icons.event_busy_rounded),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
@@ -700,11 +694,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.fitness_center_rounded,
-                                        color: palette.primaryText,
-                                        size: 17,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 17, fallbackIcon: Icons.fitness_center_rounded),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -963,7 +953,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
       hintStyle: TextStyle(color: palette.textSecondary),
       prefixIcon: icon == null
           ? null
-          : Icon(icon, size: 19, color: palette.textWarmMuted),
+          : MetaGymResolvedIcon(icon, size: 19, fallbackColor: palette.textWarmMuted),
       filled: true,
       fillColor: palette.metricPanelBg,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),

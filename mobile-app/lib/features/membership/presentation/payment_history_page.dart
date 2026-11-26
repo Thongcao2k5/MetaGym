@@ -745,11 +745,7 @@ class _ScheduledPeriodTile extends StatelessWidget {
               color: palette.reflection.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(
-              Icons.schedule_rounded,
-              color: palette.reflection,
-              size: 19,
-            ),
+            child: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 19, fallbackIcon: Icons.schedule_rounded),
           ),
           const SizedBox(width: 12),
           Expanded(

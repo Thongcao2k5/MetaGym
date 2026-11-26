@@ -7,6 +7,8 @@ import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_time.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 AppBar _buildPhotoAppBar(BuildContext context, String title) {
   final palette = MetaGymTheme.paletteOf(context);
@@ -144,7 +146,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
         backgroundColor: MetaGymTheme.brandOrange,
         foregroundColor: Colors.white,
         onPressed: _add,
-        icon: const Icon(Icons.add_a_photo_outlined),
+        icon: const MetaGymSvgIcon(MetaGymIcons.commonCamera, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.add_a_photo_outlined),
         label: const Text(
           'Thêm ảnh',
           style: TextStyle(fontWeight: FontWeight.w700),
@@ -183,11 +185,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          color: palette.error,
-                          size: 20,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -212,10 +210,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                   MetaGymGlassCard(
                     padding: const EdgeInsets.all(20),
                     child: ListTile(
-                      leading: Icon(
-                        Icons.photo_camera_outlined,
-                        color: palette.primaryText,
-                      ),
+                      leading: MetaGymSvgIcon(MetaGymIcons.commonCamera, fallbackIcon: Icons.photo_camera_outlined),
                       title: Text(
                         'Bạn chưa có ảnh tiến trình.',
                         style: TextStyle(
@@ -242,11 +237,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                           shape: BoxShape.circle,
                           border: Border.all(color: palette.metricPanelBorder),
                         ),
-                        child: Icon(
-                          Icons.image_outlined,
-                          color: palette.primaryText,
-                          size: 20,
-                        ),
+                        child: MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.image_outlined),
                       ),
                       title: Text(
                         photo.poseLabel,
@@ -263,10 +254,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
-                      trailing: Icon(
-                        Icons.chevron_right,
-                        color: palette.textSecondary,
-                      ),
+                      trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right),
                       onTap: () => MetaGymNavigation.pushOnce(
                         context,
                         MetaGymPageRoute<void>(
@@ -414,10 +402,7 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
                         ),
                       ),
                       onPressed: _saving ? null : _pick,
-                      icon: Icon(
-                        Icons.photo_library_outlined,
-                        color: palette.primaryText,
-                      ),
+                      icon: MetaGymSvgIcon(MetaGymIcons.mediaGallery, fallbackIcon: Icons.photo_library_outlined),
                       label: const Text(
                         'Chọn ảnh',
                         style: TextStyle(fontWeight: FontWeight.w600),

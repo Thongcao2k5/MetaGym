@@ -6,6 +6,8 @@ import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_message.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class AiMessagesPage extends StatefulWidget {
   const AiMessagesPage({
@@ -240,11 +242,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            color: palette.reflection,
-                            size: 18,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 18, fallbackIcon: Icons.info_outline_rounded),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -282,11 +280,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                color: palette.error,
-                                size: 18,
-                              ),
+                              MetaGymSvgIcon(MetaGymIcons.stateError, size: 18, fallbackIcon: Icons.error_outline_rounded),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -352,15 +346,11 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(
-                                    message.role == 'ASSISTANT'
+                                  MetaGymResolvedIcon(message.role == 'ASSISTANT'
                                         ? Icons.auto_awesome_rounded
-                                        : Icons.person_rounded,
-                                    size: 16,
-                                    color: message.role == 'ASSISTANT'
+                                        : Icons.person_rounded, size: 16, fallbackColor: message.role == 'ASSISTANT'
                                         ? palette.primaryText
-                                        : palette.reflection,
-                                  ),
+                                        : palette.reflection),
                                   const SizedBox(width: 6),
                                   Text(
                                     message.role == 'ASSISTANT'

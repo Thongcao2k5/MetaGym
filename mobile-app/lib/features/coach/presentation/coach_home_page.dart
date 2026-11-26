@@ -24,6 +24,8 @@ import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 const int _coachHardMemberCap = 8;
 
@@ -1206,7 +1208,7 @@ class _CoachDashboardView extends StatelessWidget {
                       ),
                     ),
                     onPressed: onSignOut,
-                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    icon: const MetaGymSvgIcon(MetaGymIcons.settingLogout, size: 18, fallbackIcon: Icons.logout_rounded),
                     label: const Text(
                       'Đăng xuất',
                       style: TextStyle(fontWeight: FontWeight.w700),
@@ -1329,11 +1331,7 @@ class _CoachDashboardView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: palette.warning,
-            size: 19,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.stateWarning, size: 19, fallbackIcon: Icons.warning_amber_rounded),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -1345,11 +1343,7 @@ class _CoachDashboardView extends StatelessWidget {
             onPressed: onRefresh,
             tooltip: 'Thử lại',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: palette.warning,
-              size: 19,
-            ),
+            icon: MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 19, fallbackIcon: Icons.refresh_rounded),
           ),
         ],
       ),
@@ -1413,11 +1407,7 @@ class _CoachDashboardView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.workspace_premium_rounded,
-                    color: MetaGymTheme.brandOrange,
-                    size: 18,
-                  ),
+                  const MetaGymSvgIcon(MetaGymIcons.premiumCrown, size: 18, fallbackIcon: Icons.workspace_premium_rounded),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1433,11 +1423,7 @@ class _CoachDashboardView extends StatelessWidget {
                   ),
                   CoachingPill(label: statusLabel, tone: statusTone),
                   const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: palette.textWarmMuted,
-                    size: 20,
-                  ),
+                  MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
                 ],
               ),
             ),
@@ -1488,11 +1474,7 @@ class _CoachDashboardView extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
-                            Icons.event_available_rounded,
-                            color: MetaGymTheme.brandOrange,
-                            size: 13.5,
-                          ),
+                          const MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 13.5, fallbackIcon: Icons.event_available_rounded),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -1622,11 +1604,7 @@ class _CoachDashboardView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.schedule_rounded,
-                size: 18,
-                color: MetaGymTheme.brandOrange,
-              ),
+              const MetaGymSvgIcon(MetaGymIcons.timeClock, size: 18, fallbackIcon: Icons.schedule_rounded),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1805,11 +1783,7 @@ class _CoachDashboardView extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(
-                              Icons.calendar_view_week_rounded,
-                              color: MetaGymTheme.brandOrange,
-                              size: 14,
-                            ),
+                            const MetaGymSvgIcon(MetaGymIcons.actionCoachWorkweek, size: 14, fallbackIcon: Icons.calendar_view_week_rounded),
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
@@ -1907,11 +1881,7 @@ class _CoachDashboardView extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(
-                              Icons.local_offer_outlined,
-                              color: MetaGymTheme.brandOrange,
-                              size: 14,
-                            ),
+                            const MetaGymSvgIcon(MetaGymIcons.paymentCouponVoucher, size: 14, fallbackIcon: Icons.local_offer_outlined),
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
@@ -2124,11 +2094,7 @@ class _CoachDashboardView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: palette.metricPanelBorder),
                   ),
-                  child: Icon(
-                    Icons.event_available_rounded,
-                    color: palette.textWarmMuted,
-                    size: 20,
-                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 20, fallbackIcon: Icons.event_available_rounded),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2203,10 +2169,7 @@ class _CoachDashboardView extends StatelessWidget {
                         fontSize: 11.5,
                       ),
                     ),
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      color: palette.textWarmMuted,
-                    ),
+                    trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                     onTap: () => onPushRoute(coachDestinations[i].path),
                   ),
                 ],
@@ -2228,10 +2191,7 @@ class _CoachDashboardView extends StatelessWidget {
                       fontSize: 11.5,
                     ),
                   ),
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color: palette.textWarmMuted,
-                  ),
+                  trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                   onTap: onOpenNotifications,
                 ),
                 Divider(height: 1, color: dividerColor),
@@ -2252,10 +2212,7 @@ class _CoachDashboardView extends StatelessWidget {
                       fontSize: 11.5,
                     ),
                   ),
-                  trailing: Icon(
-                    Icons.chevron_right_rounded,
-                    color: palette.textWarmMuted,
-                  ),
+                  trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                   onTap: onOpenOffers,
                 ),
               ],
@@ -2989,11 +2946,7 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
             tooltip: 'Nhắn tin',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: widget.onOpenMessages,
-            icon: Icon(
-              Icons.chat_bubble_outline_rounded,
-              color: palette.primaryText,
-              size: 20,
-            ),
+            icon: MetaGymSvgIcon(MetaGymIcons.commChat, size: 20, fallbackIcon: Icons.chat_bubble_outline_rounded),
           ),
         ],
       ),
@@ -3091,7 +3044,7 @@ class _CoachQuickActionTile extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 22, color: palette.primaryText),
+                    MetaGymResolvedIcon(icon, size: 22, fallbackColor: palette.primaryText),
                     const SizedBox(height: 6),
                     Text(
                       label,
@@ -3198,7 +3151,7 @@ class _CoachSectionHeader extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: palette.reflection, size: 16),
+        MetaGymResolvedIcon(icon, size: 16, fallbackColor: palette.reflection),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -3250,7 +3203,7 @@ class _CoachMenuRow extends StatelessWidget {
                   color: accent.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: accent, size: 18),
+                child: MetaGymResolvedIcon(icon, size: 18, fallbackColor: accent),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -3280,11 +3233,7 @@ class _CoachMenuRow extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: palette.textWarmMuted,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
             ],
           ),
         ),

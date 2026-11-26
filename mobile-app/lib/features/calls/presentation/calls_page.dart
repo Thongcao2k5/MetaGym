@@ -7,6 +7,8 @@ import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/domain/call_log.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 AppBar _buildCallsAppBar(BuildContext context, String title) {
   final palette = MetaGymTheme.paletteOf(context);
@@ -216,11 +218,7 @@ class _CallsPageState extends State<CallsPage> {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: palette.reflection,
-                              size: 20,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 20, fallbackIcon: Icons.info_outline_rounded),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -253,11 +251,7 @@ class _CallsPageState extends State<CallsPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                color: palette.error,
-                                size: 20,
-                              ),
+                              MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -286,10 +280,7 @@ class _CallsPageState extends State<CallsPage> {
                         MetaGymGlassCard(
                           padding: const EdgeInsets.all(16),
                           child: ListTile(
-                            leading: Icon(
-                              Icons.link_off_rounded,
-                              color: palette.textWarmMuted,
-                            ),
+                            leading: MetaGymSvgIcon(MetaGymIcons.stateOffline, fallbackIcon: Icons.link_off_rounded),
                             title: Text(
                               'Chưa có quan hệ hoạt động để tạo cuộc gọi.',
                               style: TextStyle(color: palette.textWarmMuted),
@@ -384,10 +375,7 @@ class _CallsPageState extends State<CallsPage> {
                         MetaGymGlassCard(
                           padding: const EdgeInsets.all(16),
                           child: ListTile(
-                            leading: Icon(
-                              Icons.call_outlined,
-                              color: palette.primaryText,
-                            ),
+                            leading: MetaGymSvgIcon(MetaGymIcons.callAudioBadge, fallbackIcon: Icons.call_outlined),
                             title: Text(
                               'Chưa có cuộc gọi nào.',
                               style: TextStyle(
@@ -416,13 +404,9 @@ class _CallsPageState extends State<CallsPage> {
                                   color: palette.metricPanelBorder,
                                 ),
                               ),
-                              child: Icon(
-                                call.callType == 'VIDEO'
+                              child: MetaGymResolvedIcon(call.callType == 'VIDEO'
                                     ? Icons.videocam_outlined
-                                    : Icons.call_outlined,
-                                color: palette.primaryText,
-                                size: 20,
-                              ),
+                                    : Icons.call_outlined, size: 20, fallbackColor: palette.primaryText),
                             ),
                             title: Text(
                               '${call.typeLabel} · ${call.statusLabel}',
@@ -439,10 +423,7 @@ class _CallsPageState extends State<CallsPage> {
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                             ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                              color: palette.textWarmMuted,
-                            ),
+                            trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right),
                             onTap: () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute<void>(
