@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
@@ -8,6 +9,7 @@ import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_glass_scaffold.dart';
+import 'package:meta_gym_app/features/public/presentation/system_states_page.dart';
 import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -467,6 +469,19 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
+            if (kDebugMode)
+              TextButton.icon(
+                key: const Key('login-system-states'),
+                onPressed: () =>
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SystemStatesPage(),
+                      ),
+                    ),
+                icon: const Icon(Icons.info_outline_rounded, size: 18),
+                label: const Text('Xem trạng thái hệ thống'),
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              ),
           ],
         ),
         const SizedBox(height: 12),
