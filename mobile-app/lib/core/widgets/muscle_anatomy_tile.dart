@@ -235,6 +235,8 @@ class MuscleAnatomyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
     final targets = _resolvedTargets;
     final hasFocus = targets.isNotEmpty;
     final radius = width <= 48 ? 11.0 : 14.0;
@@ -245,10 +247,12 @@ class MuscleAnatomyTile extends StatelessWidget {
         height: height,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1B2230), Color(0xFF12161F)],
+            colors: isLight
+                ? const [Color(0xFFF3F6FB), Color(0xFFE5ECF5)]
+                : const [Color(0xFF1B2230), Color(0xFF12161F)],
           ),
           borderRadius: BorderRadius.circular(radius),
           border: Border.all(
@@ -257,23 +261,29 @@ class MuscleAnatomyTile extends StatelessWidget {
                 ? MetaGymTheme.brandOrange
                 : hasFocus && isUpcoming
                 ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+                : isLight
+                ? palette.metricPanelBorder
                 : const Color(0xFF2B3547),
           ),
           boxShadow: (selected || isUpcoming)
               ? [
                   BoxShadow(
                     color: selected
-                        ? MetaGymTheme.brandOrange.withValues(alpha: 0.24)
+                        ? MetaGymTheme.brandOrange.withValues(
+                            alpha: isLight ? 0.20 : 0.24,
+                          )
+                        : isLight
+                        ? const Color(0x140F172A)
                         : const Color(0x59000000),
-                    blurRadius: selected ? 14 : 12,
-                    offset: const Offset(0, 5),
+                    blurRadius: selected ? 14 : (isLight ? 10 : 12),
+                    offset: Offset(0, isLight && !selected ? 3 : 5),
                   ),
                 ]
               : null,
         ),
         child: CustomPaint(
           size: Size(width - 6, height - 6),
-          painter: _UnifiedAnatomyPainter(targets),
+          painter: _UnifiedAnatomyPainter(targets, isLight: isLight),
         ),
       ),
     );
@@ -318,6 +328,7 @@ class MuscleFocusPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final explicitTargets = parseMuscleFocusSet(selectedKey);
     final previewTargets = explicitTargets.isNotEmpty
         ? explicitTargets
@@ -342,10 +353,10 @@ class MuscleFocusPicker extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Biểu tượng card tập',
                     style: TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                      color: palette.textPrimary,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                     ),
@@ -357,8 +368,8 @@ class MuscleFocusPicker extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: previewTargets.isNotEmpty
-                          ? MetaGymTheme.brandOrange
-                          : MetaGymTheme.textSecondary,
+                          ? palette.primaryText
+                          : palette.textSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -369,10 +380,10 @@ class MuscleFocusPicker extends StatelessWidget {
             if (explicitTargets.isNotEmpty)
               TextButton(
                 onPressed: () => onSelected(null),
-                child: const Text(
+                child: Text(
                   'Mặc định',
                   style: TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                    color: palette.textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -414,6 +425,8 @@ class _MuscleChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = MetaGymTheme.paletteOf(context);
     final active = selected || inferred;
     return Material(
       color: Colors.transparent,
@@ -425,27 +438,29 @@ class _MuscleChoiceChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
           decoration: BoxDecoration(
             color: selected
-                ? MetaGymTheme.brandOrange.withValues(alpha: 0.20)
+                ? palette.chipActiveBg
                 : inferred
-                ? MetaGymTheme.brandOrange.withValues(alpha: 0.10)
-                : MetaGymTheme.elevatedSurface,
+                ? MetaGymTheme.brandOrange.withValues(
+                    alpha: isLight ? 0.08 : 0.10,
+                  )
+                : palette.surfaceRaised,
             borderRadius: BorderRadius.circular(11),
             border: Border.all(
               color: selected
                   ? MetaGymTheme.brandOrange
                   : active
                   ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
-                  : MetaGymTheme.cardBorder,
+                  : palette.borderSolid,
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
               color: selected
-                  ? MetaGymTheme.textPrimary
+                  ? palette.chipActiveText
                   : active
-                  ? const Color(0xFFFFB099)
-                  : MetaGymTheme.textSecondary,
+                  ? (isLight ? palette.primaryText : const Color(0xFFFFB099))
+                  : palette.textSecondary,
               fontSize: 12,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             ),
@@ -458,12 +473,18 @@ class _MuscleChoiceChip extends StatelessWidget {
 
 /// Renders 1 detailed, sculpted head-to-toe anatomical athlete (front or back).
 class _UnifiedAnatomyPainter extends CustomPainter {
-  const _UnifiedAnatomyPainter(this.targets);
+  const _UnifiedAnatomyPainter(this.targets, {this.isLight = false});
 
   final Set<MuscleFocus> targets;
+  final bool isLight;
 
-  static const _lineColor = Color(0xFF536685);
-  static const _hotStroke = Color(0xFFFFA58A);
+  static const _lineColorDark = Color(0xFF536685);
+  static const _lineColorLight = Color(0xFF475569);
+  static const _hotStrokeDark = Color(0xFFFFA58A);
+  static const _hotStrokeLight = Color(0xFFC93B16);
+
+  Color get _lineColor => isLight ? _lineColorLight : _lineColorDark;
+  Color get _hotStroke => isLight ? _hotStrokeLight : _hotStrokeDark;
 
   bool _has(MuscleFocus focus) => targets.contains(focus);
 
@@ -487,7 +508,9 @@ class _UnifiedAnatomyPainter extends CustomPainter {
       ..shader = ui.Gradient.linear(
         const Offset(20, 8),
         const Offset(60, 86),
-        const [Color(0xFF394861), Color(0xFF2B374B)],
+        isLight
+            ? const [Color(0xFF94A3B8), Color(0xFF64748B)]
+            : const [Color(0xFF394861), Color(0xFF2B374B)],
       )
       ..style = PaintingStyle.fill;
     final baseStroke = Paint()
@@ -509,7 +532,7 @@ class _UnifiedAnatomyPainter extends CustomPainter {
       ..strokeWidth = 1.0
       ..strokeJoin = StrokeJoin.round;
     final subtleFiber = Paint()
-      ..color = const Color(0x4D12161F)
+      ..color = isLight ? const Color(0x4D7C2D12) : const Color(0x4D12161F)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.85
       ..strokeCap = StrokeCap.round;
@@ -956,6 +979,7 @@ class _UnifiedAnatomyPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_UnifiedAnatomyPainter oldDelegate) =>
+      oldDelegate.isLight != isLight ||
       oldDelegate.targets.length != targets.length ||
       !oldDelegate.targets.containsAll(targets);
 }

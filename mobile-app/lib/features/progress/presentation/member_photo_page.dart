@@ -8,56 +8,62 @@ import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_time.dart';
 import 'package:provider/provider.dart';
 
-AppBar _buildPhotoAppBar(BuildContext context, String title) => AppBar(
-  automaticallyImplyLeading: false,
-  leadingWidth: 72,
-  leading: Navigator.of(context).canPop()
-      ? Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: MetaGymCircleIconButton(
-              icon: Icons.arrow_back_rounded,
-              tooltip: 'Quay lại',
-              onTap: () => Navigator.of(context).maybePop(),
+AppBar _buildPhotoAppBar(BuildContext context, String title) {
+  final palette = MetaGymTheme.paletteOf(context);
+  return AppBar(
+    automaticallyImplyLeading: false,
+    leadingWidth: 72,
+    leading: Navigator.of(context).canPop()
+        ? Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: MetaGymCircleIconButton(
+                icon: Icons.arrow_back_rounded,
+                tooltip: 'Quay lại',
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
             ),
-          ),
-        )
-      : null,
-  titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
-  title: Text(
-    title,
-    style: const TextStyle(
-      color: MetaGymTheme.textPrimary,
-      fontSize: 20,
-      fontWeight: FontWeight.w700,
+          )
+        : null,
+    titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
+    title: Text(
+      title,
+      style: TextStyle(
+        color: palette.textPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+      ),
     ),
-  ),
-  backgroundColor: Colors.transparent,
-  surfaceTintColor: Colors.transparent,
-  elevation: 0,
-);
+    backgroundColor: Colors.transparent,
+    surfaceTintColor: Colors.transparent,
+    elevation: 0,
+  );
+}
 
-InputDecoration _warmPhotoInputDecoration(String label) => InputDecoration(
-  labelText: label,
-  labelStyle: const TextStyle(color: Color(0xFFB8B0A8)),
-  counterStyle: const TextStyle(color: Color(0xFFB8B0A8)),
-  filled: true,
-  fillColor: const Color(0x80211E1C),
-  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-  border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-    borderSide: const BorderSide(color: Color(0x9A8C8176)),
-  ),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-    borderSide: const BorderSide(color: Color(0x9A8C8176)),
-  ),
-  focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-    borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.4),
-  ),
-);
+InputDecoration _warmPhotoInputDecoration(BuildContext context, String label) {
+  final palette = MetaGymTheme.paletteOf(context);
+  return InputDecoration(
+    labelText: label,
+    labelStyle: TextStyle(color: palette.textSecondary),
+    counterStyle: TextStyle(color: palette.textSecondary),
+    filled: true,
+    fillColor: palette.metricPanelBg,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.4),
+    ),
+  );
+}
 
 class MemberPhotoPage extends StatefulWidget {
   const MemberPhotoPage({this.service, this.picker, super.key});
@@ -127,9 +133,11 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildPhotoAppBar(context, 'Ảnh tiến trình'),
       floatingActionButton: FloatingActionButton.extended(
@@ -148,7 +156,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
           const MetaGymBackground(),
           RefreshIndicator(
             color: MetaGymTheme.brandOrange,
-            backgroundColor: const Color(0xFF282320),
+            backgroundColor: colors.surface,
             onRefresh: _load,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -167,27 +175,29 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF24161A),
+                      color: palette.error.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF642B32)),
+                      border: Border.all(
+                        color: palette.error.withValues(alpha: 0.42),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline_rounded,
-                          color: MetaGymTheme.dangerCoral,
+                          color: palette.error,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(color: Color(0xFFFFB2B6)),
+                            style: TextStyle(color: palette.error),
                           ),
                         ),
                         TextButton(
                           style: TextButton.styleFrom(
-                            foregroundColor: MetaGymTheme.brandOrange,
+                            foregroundColor: palette.primaryText,
                             minimumSize: const Size(48, 48),
                           ),
                           onPressed: () => _load(more: _photos.isNotEmpty),
@@ -199,17 +209,17 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                   const SizedBox(height: 12),
                 ],
                 if (!_loading && _error == null && _photos.isEmpty)
-                  const MetaGymGlassCard(
-                    padding: EdgeInsets.all(20),
+                  MetaGymGlassCard(
+                    padding: const EdgeInsets.all(20),
                     child: ListTile(
                       leading: Icon(
                         Icons.photo_camera_outlined,
-                        color: MetaGymTheme.brandOrange,
+                        color: palette.primaryText,
                       ),
                       title: Text(
                         'Bạn chưa có ảnh tiến trình.',
                         style: TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                          color: palette.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -228,34 +238,34 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0x80211E1C),
+                          color: palette.metricPanelBg,
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0x9A8C8176)),
+                          border: Border.all(color: palette.metricPanelBorder),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.image_outlined,
-                          color: MetaGymTheme.brandOrange,
+                          color: palette.primaryText,
                           size: 20,
                         ),
                       ),
                       title: Text(
                         photo.poseLabel,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       subtitle: Text(
                         formatProgressTime(photo.takenAt),
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
+                        style: TextStyle(
+                          color: palette.textSecondary,
                           fontSize: 12.5,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
-                      trailing: const Icon(
+                      trailing: Icon(
                         Icons.chevron_right,
-                        color: Color(0xFFC8C2BC),
+                        color: palette.textSecondary,
                       ),
                       onTap: () => MetaGymNavigation.pushOnce(
                         context,
@@ -280,7 +290,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
                 if (_hasMore && !_loading)
                   TextButton(
                     style: TextButton.styleFrom(
-                      foregroundColor: MetaGymTheme.brandOrange,
+                      foregroundColor: palette.primaryText,
                       minimumSize: const Size(48, 48),
                     ),
                     onPressed: () => _load(more: true),
@@ -372,9 +382,11 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildPhotoAppBar(context, 'Thêm ảnh tiến trình'),
       body: Stack(
@@ -391,10 +403,10 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
                   children: [
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: MetaGymTheme.textPrimary,
-                        backgroundColor: const Color(0x80211E1C),
+                        foregroundColor: palette.textPrimary,
+                        backgroundColor: palette.metricPanelBg,
                         minimumSize: const Size.fromHeight(48),
-                        side: const BorderSide(color: Color(0x9A8C8176)),
+                        side: BorderSide(color: palette.metricPanelBorder),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             MetaGymTheme.radiusInput,
@@ -402,9 +414,9 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
                         ),
                       ),
                       onPressed: _saving ? null : _pick,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.photo_library_outlined,
-                        color: MetaGymTheme.brandOrange,
+                        color: palette.primaryText,
                       ),
                       label: const Text(
                         'Chọn ảnh',
@@ -415,8 +427,8 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
                       const SizedBox(height: 10),
                       Text(
                         '${_image!.name} · ${(_image!.bytes.length / 1024).toStringAsFixed(0)} KB',
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
+                        style: TextStyle(
+                          color: palette.textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -425,21 +437,22 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
                     TextField(
                       key: const Key('photo-date'),
                       controller: _date,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                       keyboardType: TextInputType.datetime,
                       decoration: _warmPhotoInputDecoration(
+                        context,
                         'Ngày chụp (dd/MM/yyyy HH:mm)',
                       ),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _pose,
-                      dropdownColor: const Color(0xFF2B2622),
-                      style: const TextStyle(color: MetaGymTheme.textPrimary),
-                      decoration: _warmPhotoInputDecoration('Góc chụp'),
+                      dropdownColor: colors.surface,
+                      style: TextStyle(color: palette.textPrimary),
+                      decoration: _warmPhotoInputDecoration(context, 'Góc chụp'),
                       items: const [
                         DropdownMenuItem(
                           value: 'FRONT',
@@ -456,21 +469,23 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
                       controller: _notes,
                       maxLength: 5000,
                       maxLines: 3,
-                      style: const TextStyle(color: MetaGymTheme.textPrimary),
-                      decoration: _warmPhotoInputDecoration('Ghi chú'),
+                      style: TextStyle(color: palette.textPrimary),
+                      decoration: _warmPhotoInputDecoration(context, 'Ghi chú'),
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF24161A),
+                          color: palette.error.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF642B32)),
+                          border: Border.all(
+                            color: palette.error.withValues(alpha: 0.42),
+                          ),
                         ),
                         child: Text(
                           _error!,
-                          style: const TextStyle(color: Color(0xFFFFB2B6)),
+                          style: TextStyle(color: palette.error),
                         ),
                       ),
                     ],
@@ -544,9 +559,10 @@ class _PhotoDetailPageState extends State<_PhotoDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildPhotoAppBar(context, 'Xem ảnh tiến trình'),
       body: Stack(
@@ -563,8 +579,8 @@ class _PhotoDetailPageState extends State<_PhotoDetailPage> {
                   children: [
                     Text(
                       '${widget.photo.poseLabel} · ${formatProgressTime(widget.photo.takenAt)}',
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -573,8 +589,8 @@ class _PhotoDetailPageState extends State<_PhotoDetailPage> {
                       const SizedBox(height: 6),
                       Text(
                         widget.photo.notes!,
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
+                        style: TextStyle(
+                          color: palette.textSecondary,
                           fontSize: 13.5,
                         ),
                       ),
@@ -593,19 +609,21 @@ class _PhotoDetailPageState extends State<_PhotoDetailPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF24161A),
+                          color: palette.error.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF642B32)),
+                          border: Border.all(
+                            color: palette.error.withValues(alpha: 0.42),
+                          ),
                         ),
                         child: Column(
                           children: [
                             Text(
                               _error!,
-                              style: const TextStyle(color: Color(0xFFFFB2B6)),
+                              style: TextStyle(color: palette.error),
                             ),
                             TextButton(
                               style: TextButton.styleFrom(
-                                foregroundColor: MetaGymTheme.brandOrange,
+                                foregroundColor: palette.primaryText,
                                 minimumSize: const Size(48, 48),
                               ),
                               onPressed: _load,
@@ -623,13 +641,13 @@ class _PhotoDetailPageState extends State<_PhotoDetailPage> {
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => Column(
                             children: [
-                              const Text(
+                              Text(
                                 'Ảnh lỗi hoặc URL đã hết hạn.',
-                                style: TextStyle(color: Color(0xFFC8C2BC)),
+                                style: TextStyle(color: palette.textSecondary),
                               ),
                               TextButton(
                                 style: TextButton.styleFrom(
-                                  foregroundColor: MetaGymTheme.brandOrange,
+                                  foregroundColor: palette.primaryText,
                                   minimumSize: const Size(48, 48),
                                 ),
                                 onPressed: _load,

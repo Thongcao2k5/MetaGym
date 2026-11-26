@@ -146,6 +146,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final tier = resolveMembershipTierInfo(planName: membership.planName);
     final remaining = membership.remainingDays(now);
     final dateRange =
@@ -176,8 +178,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                           membership.planName ?? membership.label,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textPrimary,
+                          style: TextStyle(
+                            color: palette.textPrimary,
                             fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.2,
@@ -190,8 +192,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                               : dateRange,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textSecondary,
+                          style: TextStyle(
+                            color: palette.textSecondary,
                             fontSize: 11.5,
                             height: 1.25,
                             fontWeight: FontWeight.w500,
@@ -209,7 +211,7 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                         vertical: 3.5,
                       ),
                       decoration: BoxDecoration(
-                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
                           color: MetaGymTheme.brandOrange.withValues(
@@ -219,8 +221,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                       ),
                       child: Text(
                         'Còn $remaining ngày',
-                        style: const TextStyle(
-                          color: MetaGymTheme.brandOrange,
+                        style: TextStyle(
+                          color: palette.primaryText,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           fontFeatures: MetaGymTheme.tabularFigures,
@@ -233,8 +235,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 tier.summaryPerks,
-                style: const TextStyle(
-                  color: Color(0xFFD5CCBF),
+                style: TextStyle(
+                  color: palette.textWarmMuted,
                   fontSize: 11.5,
                   height: 1.3,
                 ),
@@ -277,10 +279,14 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: onRedeemPoints,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: MetaGymTheme.textPrimary,
-                          backgroundColor: const Color(0x18FFFFFF),
-                          side: const BorderSide(
-                            color: Color(0x45FFF6EA),
+                          foregroundColor: palette.textPrimary,
+                          backgroundColor: isLight
+                              ? palette.surfaceRaised
+                              : const Color(0x18FFFFFF),
+                          side: BorderSide(
+                            color: isLight
+                                ? palette.borderSolid
+                                : const Color(0x45FFF6EA),
                             width: 1,
                           ),
                           tapTargetSize: MaterialTapTargetSize.padded,
@@ -326,6 +332,8 @@ class MetaPointsWalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final target = tier.nextTierTargetPoints;
     final progress = (points / target).clamp(0.06, 1.0);
     final remainingToNext = (target - points).clamp(0, target);
@@ -349,11 +357,11 @@ class MetaPointsWalletCard extends StatelessWidget {
                 size: 17,
               ),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Meta Points',
                   style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                    color: palette.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -361,8 +369,8 @@ class MetaPointsWalletCard extends StatelessWidget {
               ),
               Text(
                 '${_formatPts(points)} điểm',
-                style: const TextStyle(
-                  color: MetaGymTheme.brandOrange,
+                style: TextStyle(
+                  color: palette.primaryText,
                   fontSize: 15.5,
                   fontWeight: FontWeight.w800,
                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -376,7 +384,9 @@ class MetaPointsWalletCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 4,
-              backgroundColor: const Color(0x28FFFFFF),
+              backgroundColor: isLight
+                  ? const Color(0xFFDCE4EE)
+                  : const Color(0x28FFFFFF),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 MetaGymTheme.brandOrange,
               ),
@@ -390,8 +400,8 @@ class MetaPointsWalletCard extends StatelessWidget {
                   progressText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -402,12 +412,15 @@ class MetaPointsWalletCard extends StatelessWidget {
               InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: onRedeemTap,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   child: Text(
                     'Đổi quà ›',
                     style: TextStyle(
-                      color: MetaGymTheme.brandOrange,
+                      color: palette.primaryText,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -430,6 +443,7 @@ class ActiveTierPerksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
       solid: false,
       margin: const EdgeInsets.only(bottom: 8),
@@ -444,8 +458,8 @@ class ActiveTierPerksCard extends StatelessWidget {
                   'Ưu đãi ${tier.tierLabel} đang áp dụng',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                   ),
@@ -455,16 +469,16 @@ class ActiveTierPerksCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.progressGreen.withValues(alpha: 0.16),
+                  color: palette.success.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: MetaGymTheme.progressGreen.withValues(alpha: 0.42),
+                    color: palette.success.withValues(alpha: 0.42),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   '3 đặc quyền',
                   style: TextStyle(
-                    color: MetaGymTheme.progressGreen,
+                    color: palette.success,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -476,19 +490,19 @@ class ActiveTierPerksCard extends StatelessWidget {
           _PerkLine(
             label: 'Giảm tự động phí Gói Coach 1:1',
             value: tier.coachDiscountLabel,
-            valueColor: MetaGymTheme.brandOrange,
+            valueColor: palette.primaryText,
           ),
           const SizedBox(height: 4),
           _PerkLine(
             label: 'Đo chỉ số InBody chuyên sâu',
             value: tier.inBodyLabel,
-            valueColor: MetaGymTheme.progressGreen,
+            valueColor: palette.success,
           ),
           const SizedBox(height: 4),
           _PerkLine(
             label: 'Tích điểm Check-in & Gia hạn',
             value: tier.pointsMultiplierLabel,
-            valueColor: MetaGymTheme.textPrimary,
+            valueColor: palette.textPrimary,
           ),
         ],
       ),
@@ -509,12 +523,13 @@ class _PerkLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.check_rounded,
           size: 14,
-          color: MetaGymTheme.progressGreen,
+          color: palette.success,
         ),
         const SizedBox(width: 6),
         Expanded(
@@ -522,8 +537,8 @@ class _PerkLine extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFE0D9CE),
+            style: TextStyle(
+              color: palette.textWarmMuted,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),

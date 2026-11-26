@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Warm smoked-glass token set aligned with `design-system/meta-gym/pages/member-home.md`
 /// and `design-system/flutter-screens/22-11-2026/tokens.css`.
@@ -440,7 +441,7 @@ abstract final class MetaGymTheme {
     final colors = isDark ? MetaGymColors.dark : MetaGymColors.light;
     final surface = isDark ? darkSurface : _lightSurface;
     final onSurface = isDark ? darkTextPrimary : _lightText;
-    final outline = isDark ? cardBorder : const Color(0xFFCBD4DF);
+    final outline = isDark ? cardBorder : palette.borderSolid;
 
     final colorScheme =
         ColorScheme.fromSeed(
@@ -449,7 +450,7 @@ abstract final class MetaGymTheme {
           primary: brandOrange,
           onPrimary: onBrandOrange,
           secondary: palette.reflection,
-          onSecondary: onInfo,
+          onSecondary: isDark ? onInfo : Colors.white,
           surface: surface,
           onSurface: onSurface,
           error: palette.error,
@@ -457,7 +458,7 @@ abstract final class MetaGymTheme {
         ).copyWith(
           outline: outline,
           tertiary: palette.success,
-          onTertiary: onSuccess,
+          onTertiary: isDark ? onSuccess : Colors.white,
           surfaceContainerLow: isDark ? darkSurface : const Color(0xFFFFFFFF),
           surfaceContainer: isDark ? darkSurfaceMid : const Color(0xFFF5F7FA),
           surfaceContainerHigh: isDark
@@ -552,6 +553,9 @@ abstract final class MetaGymTheme {
         backgroundColor: isDark ? darkCanvas : _lightBackground,
         foregroundColor: onSurface,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle:
+            (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+                .copyWith(statusBarColor: Colors.transparent),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
@@ -588,6 +592,7 @@ abstract final class MetaGymTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style:
             OutlinedButton.styleFrom(
+              foregroundColor: palette.primaryText,
               minimumSize: const Size(48, 48),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: roundedRectangle,
@@ -600,6 +605,7 @@ abstract final class MetaGymTheme {
       textButtonTheme: TextButtonThemeData(
         style:
             TextButton.styleFrom(
+              foregroundColor: palette.primaryText,
               minimumSize: const Size(48, 48),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               shape: roundedRectangle,
@@ -622,6 +628,8 @@ abstract final class MetaGymTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
+        hintStyle: TextStyle(color: palette.textSecondary),
+        labelStyle: TextStyle(color: palette.textSecondary),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -636,7 +644,7 @@ abstract final class MetaGymTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusInput),
-          borderSide: const BorderSide(color: focusBlue, width: 2),
+          borderSide: BorderSide(color: colors.focus, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusInput),

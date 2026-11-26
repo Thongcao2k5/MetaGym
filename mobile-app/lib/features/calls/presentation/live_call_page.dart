@@ -448,6 +448,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 
   Widget _buildAudioLayout(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final waiting = _call.status == 'RINGING';
     final errors = _activeErrors;
 
@@ -476,9 +477,9 @@ class _LiveCallPageState extends State<LiveCallPage> {
                                 IconButton(
                                   tooltip: 'Đóng',
                                   onPressed: () => Navigator.of(context).pop(),
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.arrow_back_rounded,
-                                    color: MetaGymTheme.textPrimary,
+                                    color: palette.textPrimary,
                                   ),
                                 )
                               else
@@ -506,7 +507,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.headlineMedium
                                 ?.copyWith(
-                                  color: MetaGymTheme.textPrimary,
+                                  color: palette.textPrimary,
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
@@ -516,7 +517,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                  color: MetaGymTheme.textSecondary,
+                                  color: palette.textSecondary,
                                   fontWeight: FontWeight.w500,
                                   fontFeatures: MetaGymTheme.tabularFigures,
                                 ),
@@ -641,6 +642,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 
   Widget _buildVideoLayout(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final remote = _cameraTrack(_room.remoteParticipants.values.firstOrNull);
     final local = _cameraTrack(_room.localParticipant);
     final waiting = _call.status == 'RINGING';
@@ -676,7 +678,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
-                              color: MetaGymTheme.textPrimary,
+                              color: palette.textPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                       ),
@@ -687,7 +689,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                             : _statusLine,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: MetaGymTheme.textSecondary,
+                          color: palette.textSecondary,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
@@ -873,6 +875,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                       child: _CallActionCircle(
                         icon: Icons.call_end_rounded,
                         label: 'Hủy',
+                        labelColor: const Color(0xFFEAE6E2),
                         backgroundColor: MetaGymTheme.dangerCoral,
                         foregroundColor: Colors.white,
                         size: 66,
@@ -973,12 +976,14 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 
   Widget _buildIncomingActions({required bool isVideo}) {
+    final labelColor = isVideo ? const Color(0xFFEAE6E2) : null;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _CallActionCircle(
           icon: Icons.call_end_rounded,
           label: 'Từ chối',
+          labelColor: labelColor,
           backgroundColor: MetaGymTheme.dangerCoral,
           foregroundColor: Colors.white,
           size: 68,
@@ -989,6 +994,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
         _CallActionCircle(
           icon: isVideo ? Icons.videocam_rounded : Icons.call_rounded,
           label: 'Chấp nhận',
+          labelColor: labelColor,
           backgroundColor: MetaGymTheme.progressGreen,
           foregroundColor: const Color(0xFF06261D),
           size: 68,
@@ -1028,22 +1034,26 @@ class _CallModeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
+        color: isLight ? palette.surfaceSolid : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xA3A79D92)),
+        border: Border.all(
+          color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: MetaGymTheme.reflectionBlue),
+          Icon(icon, size: 14, color: palette.reflection),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1067,16 +1077,18 @@ class _PeerAvatarRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xC42B2622),
+        color: isLight ? palette.surfaceSolid : const Color(0xC42B2622),
         border: Border.all(
           color: pulseActive
               ? const Color(0x99FF5E36)
-              : const Color(0xA3A79D92),
+              : (isLight ? palette.borderSolid : const Color(0xA3A79D92)),
           width: 1.5,
         ),
       ),
@@ -1084,7 +1096,7 @@ class _PeerAvatarRing extends StatelessWidget {
       child: Text(
         initials,
         style: TextStyle(
-          color: MetaGymTheme.textPrimary,
+          color: palette.textPrimary,
           fontSize: size * 0.34,
           fontWeight: FontWeight.w700,
         ),
@@ -1110,12 +1122,16 @@ class _AudioGridButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = active ? MetaGymTheme.textPrimary : const Color(0xC42B2622);
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final bgColor = active
+        ? (isLight ? palette.textPrimary : MetaGymTheme.textPrimary)
+        : (isLight ? palette.surfaceSolid : const Color(0xC42B2622));
     final fgColor = active
-        ? const Color(0xFF090B0E)
+        ? (isLight ? palette.surfaceSolid : const Color(0xFF090B0E))
         : enabled
-        ? MetaGymTheme.textPrimary
-        : const Color(0xFF9C948D);
+        ? palette.textPrimary
+        : palette.textWarmMuted;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1132,7 +1148,11 @@ class _AudioGridButton extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: bgColor,
                 border: Border.all(
-                  color: active ? Colors.transparent : const Color(0xA3A79D92),
+                  color: active
+                      ? Colors.transparent
+                      : (isLight
+                            ? palette.borderSolid
+                            : const Color(0xA3A79D92)),
                 ),
               ),
               child: Icon(icon, size: 26, color: fgColor),
@@ -1143,7 +1163,7 @@ class _AudioGridButton extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: enabled ? const Color(0xFFC8C2BC) : const Color(0xFF9C948D),
+            color: enabled ? palette.textSecondary : palette.textWarmMuted,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1162,6 +1182,7 @@ class _CallActionCircle extends StatelessWidget {
     required this.iconSize,
     required this.onTap,
     this.label,
+    this.labelColor,
     this.tooltip,
     this.borderColor,
   });
@@ -1173,11 +1194,13 @@ class _CallActionCircle extends StatelessWidget {
   final double iconSize;
   final VoidCallback? onTap;
   final String? label;
+  final Color? labelColor;
   final String? tooltip;
   final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final button = Material(
       color: Colors.transparent,
       child: MetaGymTap(
@@ -1210,8 +1233,8 @@ class _CallActionCircle extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label!,
-          style: const TextStyle(
-            color: MetaGymTheme.textSecondary,
+          style: TextStyle(
+            color: labelColor ?? palette.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1264,27 +1287,29 @@ class _CallErrorPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xF0241F1B),
+        color: isLight ? palette.surfaceSolid : const Color(0xF0241F1B),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x80F15B64)),
+        border: Border.all(color: palette.error.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             size: 16,
-            color: MetaGymTheme.dangerCoral,
+            color: palette.error,
           ),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
               message,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),

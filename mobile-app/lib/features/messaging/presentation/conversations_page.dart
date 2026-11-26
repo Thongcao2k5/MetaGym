@@ -18,60 +18,83 @@ import 'package:meta_gym_app/features/messaging/presentation/chat_message_image.
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
 
-/// Thẻ Kính Smoked Dark đồng bộ với Member Home (tránh bóng nhựa).
+/// Thẻ Kính Smoked Dark (Dark Mode) / Porcelain Card (Light Mode) đồng bộ với Member Home.
 Widget _buildLiquidGlassCard({
   required Widget child,
   BorderRadius? borderRadius,
   EdgeInsetsGeometry? margin,
   bool isHighlighted = false,
 }) {
-  final radius = borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-  final enableBlur = isHighlighted && !MetaGymTheme.isFlutterTestEnvironment;
+  return Builder(
+    builder: (context) {
+      final palette = MetaGymTheme.paletteOf(context);
+      final isLight = MetaGymTheme.isLightPalette(context);
+      final radius =
+          borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
+      final enableBlur =
+          isHighlighted && !isLight && !MetaGymTheme.isFlutterTestEnvironment;
 
-  final cardBody = Container(
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      color: isHighlighted ? const Color(0xB82D2824) : const Color(0xC42B2622),
-      borderRadius: radius,
-      border: Border.all(
-        color: isHighlighted
-            ? const Color(0x8CA79D92)
-            : const Color(0x529C9084),
-        width: 1.0,
-      ),
-    ),
-    child: isHighlighted
-        ? Stack(
-            children: [
-              const Positioned(
-                top: 0,
-                left: 18,
-                right: 18,
-                height: 1,
-                child: ColoredBox(color: Color(0x45FFF6EA)),
-              ),
-              child,
-            ],
-          )
-        : child,
-  );
-
-  final result = enableBlur
-      ? RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: cardBody,
-            ),
+      final cardBody = Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: isLight
+              ? palette.surfaceSolid
+              : isHighlighted
+              ? const Color(0xB82D2824)
+              : const Color(0xC42B2622),
+          borderRadius: radius,
+          border: Border.all(
+            color: isLight
+                ? palette.borderSolid
+                : isHighlighted
+                ? const Color(0x8CA79D92)
+                : const Color(0x529C9084),
+            width: 1.0,
           ),
-        )
-      : cardBody;
+          boxShadow: isLight
+              ? const [
+                  BoxShadow(
+                    color: Color(0x0F0F172A),
+                    blurRadius: 10,
+                    offset: Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: isHighlighted && !isLight
+            ? Stack(
+                children: [
+                  const Positioned(
+                    top: 0,
+                    left: 18,
+                    right: 18,
+                    height: 1,
+                    child: ColoredBox(color: Color(0x45FFF6EA)),
+                  ),
+                  child,
+                ],
+              )
+            : child,
+      );
 
-  if (margin != null) {
-    return Padding(padding: margin, child: result);
-  }
-  return result;
+      final result = enableBlur
+          ? RepaintBoundary(
+              child: ClipRRect(
+                borderRadius: radius,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: cardBody,
+                ),
+              ),
+            )
+          : cardBody;
+
+      if (margin != null) {
+        return Padding(padding: margin, child: result);
+      }
+      return result;
+    },
+  );
 }
 
 class _CircleGlassIconButton extends StatelessWidget {
@@ -89,6 +112,8 @@ class _CircleGlassIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Semantics(
       button: true,
       label: tooltip,
@@ -107,21 +132,23 @@ class _CircleGlassIconButton extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0x2EFF5A36)
+                        ? palette.chipActiveBg
+                        : isLight
+                        ? palette.surfaceSolid
                         : const Color(0x9E2F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isActive
                           ? MetaGymTheme.brandOrange
+                          : isLight
+                          ? palette.borderSolid
                           : const Color(0x95ADA295),
                       width: 1.0,
                     ),
                   ),
                   child: Icon(
                     icon,
-                    color: isActive
-                        ? MetaGymTheme.brandOrange
-                        : const Color(0xFFF7F9FC),
+                    color: isActive ? palette.primaryText : palette.textPrimary,
                     size: 19,
                   ),
                 ),
@@ -810,13 +837,15 @@ class _ConversationsPageState extends State<ConversationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final effectiveBottomPadding =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
     final initials = _userInitials(context);
     final useCoachHeader = _resolveCoachHeader(context);
 
     return Material(
-      color: MetaGymTheme.darkCanvas,
+      color: palette.canvas,
       child: Stack(
         children: [
           const Positioned.fill(child: MetaGymBackground()),
@@ -824,7 +853,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
             bottom: false,
             child: RefreshIndicator(
               color: MetaGymTheme.brandOrange,
-              backgroundColor: const Color(0xFF282320),
+              backgroundColor: isLight
+                  ? palette.surfaceSolid
+                  : const Color(0xFF282320),
               onRefresh: _load,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -898,8 +929,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             onPressed: _loadingMore ? null : _loadMore,
                             child: Text(
                               _loadingMore ? 'Đang tải…' : 'Tải thêm',
-                              style: const TextStyle(
-                                color: MetaGymTheme.brandOrange,
+                              style: TextStyle(
+                                color: palette.primaryText,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -918,6 +949,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildHeader(BuildContext context, String initials) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return MetaGymBrandHeader(
       eyebrow: 'META GYM',
       title: 'Tin nhắn',
@@ -942,15 +975,18 @@ class _ConversationsPageState extends State<ConversationsPage> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: const Color(0x9E2F2924),
+            color: isLight ? palette.surfaceSolid : const Color(0x9E2F2924),
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0x95ADA295), width: 1.0),
+            border: Border.all(
+              color: isLight ? palette.borderSolid : const Color(0x95ADA295),
+              width: 1.0,
+            ),
           ),
           alignment: Alignment.center,
           child: Text(
             initials,
-            style: const TextStyle(
-              color: Color(0xFFF7F9FC),
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
@@ -1029,15 +1065,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildSearchBar({bool useCoachHeader = false}) {
+    final palette = MetaGymTheme.paletteOf(context);
     return _buildLiquidGlassCard(
       borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.search_rounded,
-              color: MetaGymTheme.reflectionBlue,
+              color: palette.reflection,
               size: 19,
             ),
             const SizedBox(width: 8),
@@ -1045,19 +1082,22 @@ class _ConversationsPageState extends State<ConversationsPage> {
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) => setState(() => _searchQuery = value),
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 13.5,
                 ),
                 decoration: InputDecoration(
                   hintText: useCoachHeader
                       ? 'Tìm học viên hoặc nội dung tin nhắn...'
                       : 'Tìm Coach hoặc nội dung tin nhắn...',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF8E9AA8),
+                  hintStyle: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 13,
                   ),
+                  filled: false,
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
@@ -1069,9 +1109,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   _searchController.clear();
                   setState(() => _searchQuery = '');
                 },
-                icon: const Icon(
+                icon: Icon(
                   Icons.clear_rounded,
-                  color: Color(0xFF8E9AA8),
+                  color: palette.textSecondary,
                   size: 18,
                 ),
                 padding: EdgeInsets.zero,
@@ -1110,15 +1150,21 @@ class _ConversationsPageState extends State<ConversationsPage> {
     required String label,
     required _MessageFilter filter,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final isActive = _filter == filter;
     final body = Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF493025) : const Color(0xC42B2622),
+        color: isActive
+            ? (isLight ? palette.chipActiveBg : const Color(0xFF493025))
+            : (isLight ? palette.surfaceSolid : const Color(0xC42B2622)),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive ? MetaGymTheme.brandOrange : const Color(0xA3A79D92),
+          color: isActive
+              ? MetaGymTheme.brandOrange
+              : (isLight ? palette.borderSolid : const Color(0xA3A79D92)),
           width: isActive ? 1.2 : 1.0,
         ),
       ),
@@ -1126,7 +1172,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? const Color(0xFFF7F9FC) : const Color(0xFFC8C2BC),
+          color: isActive
+              ? palette.chipActiveText
+              : (isLight ? palette.textSecondary : palette.textWarmMuted),
           fontSize: 12,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
         ),
@@ -1153,6 +1201,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildFeaturedCoachCard() {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final coachThread = _mockThreads.first;
     return _buildLiquidGlassCard(
       isHighlighted: true,
@@ -1164,16 +1214,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: MetaGymTheme.brandOrange,
+                  color: palette.primaryText,
                   size: 12,
                 ),
                 const SizedBox(width: 5),
-                const Text(
+                Text(
                   'COACH CÁ NHÂN',
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
+                    color: palette.textPrimary,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
@@ -1186,10 +1236,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     vertical: 1.5,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0x2623C997),
+                    color: palette.success.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: const Color(0x4D23C997),
+                      color: palette.success.withValues(alpha: 0.30),
                       width: 0.5,
                     ),
                   ),
@@ -1199,16 +1249,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       Container(
                         width: 4.5,
                         height: 4.5,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF23C997),
+                        decoration: BoxDecoration(
+                          color: palette.success,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         'Đang hoạt động',
                         style: TextStyle(
-                          color: Color(0xFF23C997),
+                          color: palette.success,
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1225,7 +1275,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0x332A1510),
+                    color: isLight
+                        ? palette.chipActiveBg
+                        : const Color(0x332A1510),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: MetaGymTheme.brandOrange,
@@ -1235,8 +1287,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   alignment: Alignment.center,
                   child: Text(
                     coachThread.initials,
-                    style: const TextStyle(
-                      color: MetaGymTheme.brandOrange,
+                    style: TextStyle(
+                      color: palette.primaryText,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1249,8 +1301,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     children: [
                       Text(
                         coachThread.displayName,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -1258,10 +1310,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 1),
-                      const Text(
+                      Text(
                         'Huấn luyện viên 1-1 · Sẵn sàng hỗ trợ',
                         style: TextStyle(
-                          color: Color(0xFF8E9AA8),
+                          color: palette.textSecondary,
                           fontSize: 11,
                         ),
                         maxLines: 1,
@@ -1312,18 +1364,19 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.history_rounded,
-          color: MetaGymTheme.reflectionBlue,
+          color: palette.reflection,
           size: 16,
         ),
         const SizedBox(width: 6),
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
+          style: TextStyle(
+            color: palette.textPrimary,
             fontSize: 13.5,
             fontWeight: FontWeight.w700,
           ),
@@ -1333,6 +1386,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildMockConversationCard(_MockThread thread) {
+    final palette = MetaGymTheme.paletteOf(context);
     final unread = thread.conversation.unreadCount;
     return _buildLiquidGlassCard(
       borderRadius: BorderRadius.circular(14),
@@ -1351,12 +1405,12 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0x80211E1C),
+                      color: palette.metricPanelBg,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: thread.category == _MessageFilter.coach
                             ? const Color(0x66FF5A36)
-                            : const Color(0x4D9C9084),
+                            : palette.metricPanelBorder,
                         width: 1.0,
                       ),
                     ),
@@ -1365,8 +1419,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       thread.initials,
                       style: TextStyle(
                         color: thread.category == _MessageFilter.coach
-                            ? MetaGymTheme.brandOrange
-                            : const Color(0xFFD5DEE8),
+                            ? palette.primaryText
+                            : palette.textPrimary,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1380,10 +1434,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         width: 10,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: MetaGymTheme.progressGreen,
+                          color: palette.success,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: MetaGymTheme.darkCanvas,
+                            color: palette.surfaceSolid,
                             width: 1.5,
                           ),
                         ),
@@ -1401,8 +1455,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         Flexible(
                           child: Text(
                             thread.displayName,
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
+                            style: TextStyle(
+                              color: palette.textPrimary,
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
                             ),
@@ -1417,13 +1471,13 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0x26A79D92),
+                            color: palette.metricPanelBg,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             thread.roleLabel,
-                            style: const TextStyle(
-                              color: Color(0xFFB8C2D0),
+                            style: TextStyle(
+                              color: palette.textSecondary,
                               fontSize: 8.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1436,8 +1490,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       thread.lastMessage,
                       style: TextStyle(
                         color: unread > 0
-                            ? const Color(0xFFD5DEE8)
-                            : const Color(0xFF8E9AA8),
+                            ? palette.textPrimary
+                            : palette.textSecondary,
                         fontSize: 11.5,
                         fontWeight: unread > 0
                             ? FontWeight.w500
@@ -1458,8 +1512,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     thread.timeLabel,
                     style: TextStyle(
                       color: unread > 0
-                          ? MetaGymTheme.brandOrange
-                          : const Color(0xFF8E9AA8),
+                          ? palette.primaryText
+                          : palette.textSecondary,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -1497,6 +1551,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildRealConversationCard(Conversation item) {
+    final palette = MetaGymTheme.paletteOf(context);
     final userId = _effectiveUserId;
     final timeLabel = item.formatLastMessageTime();
     return _buildLiquidGlassCard(
@@ -1513,10 +1568,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0x80211E1C),
+                  color: palette.metricPanelBg,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0x9A8C8176),
+                    color: palette.metricPanelBorder,
                     width: 1.0,
                   ),
                 ),
@@ -1525,7 +1580,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     item.memberId == userId
                         ? Icons.sports_gymnastics_rounded
                         : Icons.person_rounded,
-                    color: MetaGymTheme.reflectionBlue,
+                    color: palette.reflection,
                     size: 20,
                   ),
                 ),
@@ -1537,8 +1592,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   children: [
                     Text(
                       item.displayNameFor(userId),
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1554,8 +1609,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: item.canSend
-                                ? MetaGymTheme.progressGreen
-                                : const Color(0xFFB8B0A8),
+                                ? palette.success
+                                : palette.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 5),
@@ -1564,8 +1619,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             item.lastMessagePreview,
                             style: TextStyle(
                               color: item.unreadCount > 0
-                                  ? const Color(0xFFF7F9FC)
-                                  : const Color(0xFFC8C2BC),
+                                  ? palette.textPrimary
+                                  : palette.textWarmMuted,
                               fontSize: 11.5,
                               fontWeight: item.unreadCount > 0
                                   ? FontWeight.w600
@@ -1590,8 +1645,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       timeLabel,
                       style: TextStyle(
                         color: item.unreadCount > 0
-                            ? MetaGymTheme.brandOrange
-                            : const Color(0xFFB8B0A8),
+                            ? palette.primaryText
+                            : palette.textSecondary,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -1626,9 +1681,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       ),
                     )
                   else if (timeLabel.isEmpty)
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
-                      color: Color(0xFFB8B0A8),
+                      color: palette.textSecondary,
                       size: 20,
                     ),
                 ],
@@ -1641,6 +1696,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildErrorCard() {
+    final palette = MetaGymTheme.paletteOf(context);
     return _buildLiquidGlassCard(
       margin: const EdgeInsets.only(bottom: 14),
       child: Padding(
@@ -1650,9 +1706,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline_rounded,
-                  color: MetaGymTheme.dangerCoral,
+                  color: palette.error,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -1660,7 +1716,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   child: Text(
                     _error!,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                      color: palette.error,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1671,15 +1727,15 @@ class _ConversationsPageState extends State<ConversationsPage> {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: _load,
-              icon: const Icon(
+              icon: Icon(
                 Icons.replay_rounded,
                 size: 16,
-                color: MetaGymTheme.brandOrange,
+                color: palette.primaryText,
               ),
-              label: const Text(
+              label: Text(
                 'Thử lại',
                 style: TextStyle(
-                  color: MetaGymTheme.brandOrange,
+                  color: palette.primaryText,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1691,6 +1747,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   Widget _buildEmptyCard({required String title, required String subtitle}) {
+    final palette = MetaGymTheme.paletteOf(context);
     return _buildLiquidGlassCard(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -1702,13 +1759,13 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: const Color(0x80211E1C),
+                  color: palette.metricPanelBg,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0x9A8C8176)),
+                  border: Border.all(color: palette.metricPanelBorder),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: MetaGymTheme.reflectionBlue,
+                  color: palette.reflection,
                   size: 26,
                 ),
               ),
@@ -1716,8 +1773,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: MetaGymTheme.darkTextPrimary,
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1726,8 +1783,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFC8C2BC),
+                style: TextStyle(
+                  color: palette.textWarmMuted,
                   fontSize: 12.5,
                 ),
               ),
@@ -2355,6 +2412,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final title =
         widget.mockTitle ??
         widget.conversation.displayNameFor(widget.currentUserId);
@@ -2363,7 +2421,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         widget.conversation.initialsFor(widget.currentUserId);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         children: [
           const Positioned.fill(child: MetaGymBackground()),
@@ -2397,8 +2455,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                               children: [
                                 Text(
                                   _error!,
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.dangerCoral,
+                                  style: TextStyle(
+                                    color: palette.error,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -2408,10 +2466,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                   onPressed: _messages.isEmpty
                                       ? _load
                                       : _loadMore,
-                                  child: const Text(
+                                  child: Text(
                                     'Thử lại',
                                     style: TextStyle(
-                                      color: MetaGymTheme.brandOrange,
+                                      color: palette.primaryText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -2421,13 +2479,13 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                           ),
                         ),
                       if (_messages.isEmpty && _error == null)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
                           child: Center(
                             child: Text(
                               'Chưa có tin nhắn.',
                               style: TextStyle(
-                                color: Color(0xFFC8C2BC),
+                                color: palette.textWarmMuted,
                                 fontSize: 14,
                               ),
                             ),
@@ -2448,8 +2506,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                               onPressed: _loadingMore ? null : _loadMore,
                               child: Text(
                                 _loadingMore ? 'Đang tải…' : 'Tải tin cũ',
-                                style: const TextStyle(
-                                  color: MetaGymTheme.brandOrange,
+                                style: TextStyle(
+                                  color: palette.primaryText,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -2463,17 +2521,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x99211E1C),
+                              color: palette.metricPanelBg,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0x9A8C8176),
+                                color: palette.metricPanelBorder,
                                 width: 0.8,
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Hôm nay',
                               style: TextStyle(
-                                color: Color(0xFFC8C2BC),
+                                color: palette.textWarmMuted,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2497,8 +2555,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: widget.conversation.canSend
-                                        ? MetaGymTheme.progressGreen
-                                        : const Color(0xFFB8B0A8),
+                                        ? palette.success
+                                        : palette.textSecondary,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -2506,8 +2564,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                   child: Text(
                                     widget.mockContextTitle ??
                                         'Trò chuyện riêng tư',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.darkTextPrimary,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -2524,8 +2582,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                               ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
                                               : 'Có thể nhắn tin.'))
                                   : 'Không thể gửi tin nhắn.',
-                              style: const TextStyle(
-                                color: Color(0xFFC8C2BC),
+                              style: TextStyle(
+                                color: palette.textWarmMuted,
                                 fontSize: 12,
                               ),
                             ),
@@ -2549,12 +2607,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     String title,
     String initials,
   ) {
-    final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final enableBlur = !isLight && !MetaGymTheme.isFlutterTestEnvironment;
     final bar = Container(
-      decoration: const BoxDecoration(
-        color: Color(0xC8241F1B),
+      decoration: BoxDecoration(
+        color: isLight ? const Color(0xEBFFFFFF) : const Color(0xC8241F1B),
         border: Border(
-          bottom: BorderSide(color: Color(0x52A79D92), width: 0.9),
+          bottom: BorderSide(
+            color: isLight ? palette.borderSolid : const Color(0x52A79D92),
+            width: 0.9,
+          ),
         ),
       ),
       child: SafeArea(
@@ -2573,7 +2636,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0x332A1510),
+                  color: isLight
+                      ? palette.chipActiveBg
+                      : const Color(0x332A1510),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: MetaGymTheme.brandOrange,
@@ -2583,8 +2648,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 alignment: Alignment.center,
                 child: Text(
                   initials,
-                  style: const TextStyle(
-                    color: MetaGymTheme.brandOrange,
+                  style: TextStyle(
+                    color: palette.primaryText,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2598,8 +2663,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 15.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -2616,10 +2681,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _recipientDisabled
-                                ? MetaGymTheme.dangerCoral
+                                ? palette.error
                                 : widget.conversation.canSend
-                                ? MetaGymTheme.progressGreen
-                                : MetaGymTheme.darkTextTertiary,
+                                ? palette.success
+                                : palette.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 5),
@@ -2634,10 +2699,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: _recipientDisabled
-                                  ? MetaGymTheme.dangerCoral
+                                  ? palette.error
                                   : widget.conversation.canSend
-                                  ? MetaGymTheme.progressGreen
-                                  : const Color(0xFF8E9AA8),
+                                  ? palette.success
+                                  : palette.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -2675,7 +2740,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   Widget _buildComposerArea() {
-    final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final enableBlur = !isLight && !MetaGymTheme.isFlutterTestEnvironment;
     return SafeArea(
       top: false,
       child: Padding(
@@ -2690,22 +2757,24 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF24161A),
+                  color: isLight
+                      ? palette.error.withValues(alpha: 0.10)
+                      : const Color(0xFF24161A),
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                   border: Border.all(
-                    color: MetaGymTheme.dangerCoral.withValues(alpha: 0.55),
+                    color: palette.error.withValues(alpha: 0.55),
                     width: 1,
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.block_rounded,
-                      color: MetaGymTheme.dangerCoral,
+                      color: palette.error,
                       size: 20,
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2713,17 +2782,19 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                           Text(
                             _recipientDisabledMessage,
                             style: TextStyle(
-                              color: Color(0xFFFFB2B6),
+                              color: isLight
+                                  ? palette.error
+                                  : const Color(0xFFFFB2B6),
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               height: 1.4,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'Bạn vẫn có thể xem lại toàn bộ lịch sử tin nhắn.',
                             style: TextStyle(
-                              color: Color(0xFFC8C2BC),
+                              color: palette.textWarmMuted,
                               fontSize: 11.5,
                               height: 1.35,
                             ),
@@ -2742,8 +2813,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     Expanded(
                       child: Text(
                         _sendError!,
-                        style: const TextStyle(
-                          color: MetaGymTheme.dangerCoral,
+                        style: TextStyle(
+                          color: palette.error,
                           fontSize: 12,
                         ),
                       ),
@@ -2751,10 +2822,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     if (_draftMessageId != null)
                       TextButton(
                         onPressed: _sending ? null : _send,
-                        child: const Text(
+                        child: Text(
                           'Thử gửi lại',
                           style: TextStyle(
-                            color: MetaGymTheme.brandOrange,
+                            color: palette.primaryText,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
@@ -2771,8 +2842,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     Expanded(
                       child: Text(
                         _imageError!,
-                        style: const TextStyle(
-                          color: MetaGymTheme.dangerCoral,
+                        style: TextStyle(
+                          color: palette.error,
                           fontSize: 12,
                         ),
                       ),
@@ -2780,10 +2851,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     if (_pendingImage != null)
                       TextButton(
                         onPressed: _imageSending ? null : _sendImage,
-                        child: const Text(
+                        child: Text(
                           'Thử lại gửi ảnh',
                           style: TextStyle(
-                            color: MetaGymTheme.brandOrange,
+                            color: palette.primaryText,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
@@ -2816,28 +2887,32 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0x26A9C7E8),
+                                  color: palette.reflection.withValues(
+                                    alpha: 0.14,
+                                  ),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: const Color(0x4DA9C7E8),
+                                    color: palette.reflection.withValues(
+                                      alpha: 0.35,
+                                    ),
                                     width: 0.8,
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.image_outlined,
                                       size: 14,
-                                      color: MetaGymTheme.reflectionBlue,
+                                      color: palette.reflection,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
                                       _imageSending
                                           ? 'Đang gửi ảnh…'
                                           : 'Gửi ảnh',
-                                      style: const TextStyle(
-                                        color: MetaGymTheme.reflectionBlue,
+                                      style: TextStyle(
+                                        color: palette.reflection,
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -2868,18 +2943,22 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xA6231F1C),
+                                    color: isLight
+                                        ? palette.surfaceSolid
+                                        : const Color(0xA6231F1C),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: const Color(0x52A79D92),
+                                      color: isLight
+                                          ? palette.borderSolid
+                                          : const Color(0x52A79D92),
                                       width: 0.9,
                                     ),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
                                     reply,
-                                    style: const TextStyle(
-                                      color: Color(0xFFE6E0DA),
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -2911,12 +2990,17 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   Widget _buildCapsuleComposerBody() {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
       decoration: BoxDecoration(
-        color: const Color(0xCC1E1A17),
+        color: isLight ? const Color(0xF5FFFFFF) : const Color(0xCC1E1A17),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0x529C9084), width: 1.0),
+        border: Border.all(
+          color: isLight ? palette.borderSolid : const Color(0x529C9084),
+          width: 1.0,
+        ),
       ),
       child: Row(
         children: [
@@ -2926,19 +3010,19 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 : _pickImage,
             tooltip: 'Gửi ảnh',
             icon: _imageSending
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFD5DEE8),
+                      color: palette.textPrimary,
                     ),
                   )
                 : Icon(
                     Icons.image_outlined,
                     color: _recipientDisabled
-                        ? MetaGymTheme.textSecondary
-                        : const Color(0xFFD5DEE8),
+                        ? palette.textSecondary
+                        : palette.textPrimary,
                     size: 21,
                   ),
           ),
@@ -2949,16 +3033,16 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               maxLength: 5000,
               minLines: 1,
               maxLines: 4,
-              style: const TextStyle(
-                color: MetaGymTheme.darkTextPrimary,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 14,
               ),
               decoration: InputDecoration(
                 hintText: _recipientDisabled
                     ? 'Không thể gửi tin nhắn lúc này'
                     : 'Nhắn tin cho Coach...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF8E9AA8),
+                hintStyle: TextStyle(
+                  color: palette.textSecondary,
                   fontSize: 13.5,
                 ),
                 filled: false,
@@ -2986,7 +3070,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: _recipientDisabled
-                      ? MetaGymTheme.cardBorder
+                      ? palette.borderSolid
                       : MetaGymTheme.brandOrange,
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -2995,7 +3079,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     'Gửi',
                     style: TextStyle(
                       color: _recipientDisabled
-                          ? MetaGymTheme.textSecondary
+                          ? palette.textSecondary
                           : Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -3011,6 +3095,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   Widget _buildChatMessageBubble(ChatMessage message) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final isMe = message.senderId == widget.currentUserId;
 
     final bubbleRadius = BorderRadius.only(
@@ -3030,11 +3116,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           ? const EdgeInsets.all(6)
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? MetaGymTheme.brandOrange : const Color(0xCC2B2622),
+        color: isMe
+            ? MetaGymTheme.brandOrange
+            : isLight
+            ? palette.surfaceSolid
+            : const Color(0xCC2B2622),
         borderRadius: bubbleRadius,
         border: isMe
             ? null
-            : Border.all(color: const Color(0x529C9084), width: 1.0),
+            : Border.all(
+                color: isLight ? palette.borderSolid : const Color(0x529C9084),
+                width: 1.0,
+              ),
       ),
       child: Column(
         crossAxisAlignment: isMe
@@ -3050,7 +3143,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             Text(
               message.content ?? '',
               style: TextStyle(
-                color: isMe ? Colors.white : MetaGymTheme.darkTextPrimary,
+                color: isMe ? Colors.white : palette.textPrimary,
                 fontSize: 14,
                 height: 1.35,
               ),
@@ -3068,7 +3161,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   style: TextStyle(
                     color: isMe
                         ? Colors.white.withValues(alpha: 0.78)
-                        : const Color(0xFFB8B0A8),
+                        : palette.textSecondary,
                     fontSize: 10,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),

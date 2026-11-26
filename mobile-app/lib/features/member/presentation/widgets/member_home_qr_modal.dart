@@ -100,7 +100,9 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: MetaGymTheme.success.withValues(alpha: 0.16),
+                    color: palette.success.withValues(
+                      alpha: isLight ? 0.12 : 0.16,
+                    ),
                     borderRadius: BorderRadius.circular(
                       MetaGymTheme.radiusFull,
                     ),
@@ -109,8 +111,8 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
                     '● Hôm nay · $_todayLabel',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: MetaGymTheme.success,
+                    style: TextStyle(
+                      color: palette.success,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       fontFeatures: MetaGymTheme.tabularFigures,
@@ -157,6 +159,7 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
+              border: isLight ? Border.all(color: palette.borderSolid) : null,
             ),
             child: QrImageView(
               data: 'METAGYM:CHECKIN:${widget.memberCode}:$_sessionToken',
@@ -204,8 +207,8 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          color: MetaGymTheme.brandOrange,
+                        style: TextStyle(
+                          color: palette.primaryText,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.4,

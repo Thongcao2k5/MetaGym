@@ -84,16 +84,20 @@ class _MembershipPageState extends State<MembershipPage> {
     setState(() {
       _metaPoints = (_metaPoints - reward.costPoints).clamp(0, 999999);
     });
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF1F232C),
+          backgroundColor: isLight
+              ? palette.surfaceSolid
+              : const Color(0xFF1F232C),
           content: Text(
             'Đã đổi "${reward.title}" (-${reward.costPoints} điểm) · Mã: ${reward.voucherPrefix}26',
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -133,6 +137,7 @@ class _MembershipPageState extends State<MembershipPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final controller = context.watch<MembershipController>();
     final memberName = _resolveMemberName(context);
     final now = DateTime.now();
@@ -154,7 +159,7 @@ class _MembershipPageState extends State<MembershipPage> {
         controller.plans.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -168,10 +173,10 @@ class _MembershipPageState extends State<MembershipPage> {
                       : 'HỘI VIÊN & ƯU ĐÃI',
                   title: isEmptySelectionMode ? 'Chọn gói tập' : 'Gói tập',
                   actions: isEmptySelectionMode
-                      ? const [
+                      ? [
                           MembershipStatusPill(
                             label: 'Chưa có gói',
-                            color: Color(0xFFA8B1C2),
+                            color: palette.textSecondary,
                           ),
                         ]
                       : const [],
@@ -201,7 +206,7 @@ class _MembershipPageState extends State<MembershipPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
-                          backgroundColor: const Color(0xFF2B2622),
+                          backgroundColor: palette.surfaceSolid,
                           onRefresh: () => controller.load(),
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(16, 2, 16, 36),
@@ -283,8 +288,8 @@ class _MembershipPageState extends State<MembershipPage> {
                                   trailing: controller.plans.isNotEmpty
                                       ? Text(
                                           'Vuốt ngang · ${controller.plans.length} hạng',
-                                          style: const TextStyle(
-                                            color: MetaGymTheme.textSecondary,
+                                          style: TextStyle(
+                                            color: palette.textSecondary,
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
                                             fontFeatures:
@@ -295,13 +300,13 @@ class _MembershipPageState extends State<MembershipPage> {
                                 ),
                                 if (controller.plans.isEmpty &&
                                     controller.errorMessage == null)
-                                  const MetaGymGlassCard(
+                                  MetaGymGlassCard(
                                     solid: false,
-                                    padding: EdgeInsets.all(18),
+                                    padding: const EdgeInsets.all(18),
                                     child: Text(
                                       'Chưa có gói tập đang bán.',
                                       style: TextStyle(
-                                        color: MetaGymTheme.textSecondary,
+                                        color: palette.textSecondary,
                                       ),
                                     ),
                                   )
@@ -322,23 +327,23 @@ class _MembershipPageState extends State<MembershipPage> {
                                 trailing: InkWell(
                                   borderRadius: BorderRadius.circular(10),
                                   onTap: _openHistory,
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
                                       horizontal: 6,
                                       vertical: 6,
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        MetaGymSvgIcon(
+                                        const MetaGymSvgIcon(
                                           MetaGymIcons.paymentReceiptInvoice,
                                           size: 14,
                                         ),
-                                        SizedBox(width: 5),
+                                        const SizedBox(width: 5),
                                         Text(
                                           'Giao dịch',
                                           style: TextStyle(
-                                            color: MetaGymTheme.brandOrange,
+                                            color: palette.primaryText,
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -350,13 +355,13 @@ class _MembershipPageState extends State<MembershipPage> {
                               ),
                               if (controller.history.isEmpty &&
                                   controller.errorMessage == null)
-                                const MetaGymGlassCard(
+                                MetaGymGlassCard(
                                   solid: false,
-                                  padding: EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(16),
                                   child: Text(
                                     'Chưa có lịch sử gói tập nào.',
                                     style: TextStyle(
-                                      color: MetaGymTheme.textSecondary,
+                                      color: palette.textSecondary,
                                       fontSize: 13,
                                     ),
                                   ),
@@ -390,13 +395,15 @@ class _PendingCheckoutBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x2CF39C12),
+        color: palette.warning.withValues(alpha: isLight ? 0.10 : 0.18),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x75F39C12)),
+        border: Border.all(color: palette.warning.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -407,29 +414,29 @@ class _PendingCheckoutBanner extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0x33F39C12),
+                  color: palette.warning.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.hourglass_top_rounded,
-                  color: MetaGymTheme.warningAmber,
+                  color: palette.warning,
                   size: 19,
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Giao dịch chờ thanh toán',
                   style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                    color: palette.textPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 14.5,
                   ),
                 ),
               ),
-              const MembershipStatusPill(
+              MembershipStatusPill(
                 label: 'Đang chờ',
-                color: MetaGymTheme.warningAmber,
+                color: palette.warning,
               ),
             ],
           ),
@@ -437,8 +444,8 @@ class _PendingCheckoutBanner extends StatelessWidget {
           Text(
             'Bạn đang có giao dịch ${payment.planName ?? 'gói tập'} '
             'chưa hoàn tất qua ${formatPaymentMethodLabel(payment.method)}.',
-            style: const TextStyle(
-              color: Color(0xFFFDE3B2),
+            style: TextStyle(
+              color: isLight ? palette.textSecondary : const Color(0xFFFDE3B2),
               fontSize: 12.5,
               height: 1.4,
             ),
@@ -463,6 +470,7 @@ class _ScheduledMembershipBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
       solid: false,
       margin: const EdgeInsets.only(bottom: 10),
@@ -475,8 +483,8 @@ class _ScheduledMembershipBanner extends StatelessWidget {
               children: [
                 Text(
                   membership.planName ?? membership.label,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -485,8 +493,8 @@ class _ScheduledMembershipBanner extends StatelessWidget {
                 Text(
                   '${formatMembershipDate(membership.startDate)} → '
                   '${formatMembershipDate(membership.endDate)}',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 12,
                     fontFeatures: MetaGymTheme.tabularFigures,
                   ),
@@ -510,6 +518,7 @@ class _EmptyMembershipHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
       solid: false,
       margin: const EdgeInsets.only(bottom: 14),
@@ -536,23 +545,23 @@ class _EmptyMembershipHeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Chưa có gói tập hiệu lực',
                       style: TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                        color: palette.textPrimary,
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Kích hoạt thẻ để mở khóa check-in QR/NFC và thuê Coach',
                       style: TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                        color: palette.textSecondary,
                         fontSize: 12.5,
                       ),
                     ),
@@ -814,6 +823,8 @@ class _MembershipPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final description = (plan.description ?? '').trim().isNotEmpty
         ? plan.description!.trim()
         : resolveMembershipTierInfo(
@@ -824,14 +835,19 @@ class _MembershipPlanCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
+        color: isLight ? palette.surfaceSolid : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: meta.borderColor, width: 1.15),
-        boxShadow: const [
+        border: Border.all(
+          color: isLight ? palette.warmGlassBorder : meta.borderColor,
+          width: 1.15,
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x45000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: isLight
+                ? const Color(0x140F172A)
+                : const Color(0x45000000),
+            blurRadius: isLight ? 14 : 18,
+            offset: Offset(0, isLight ? 4 : 8),
           ),
         ],
       ),
@@ -851,8 +867,8 @@ class _MembershipPlanCard extends StatelessWidget {
                         plan.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontSize: 14.5,
                           fontWeight: FontWeight.w800,
                         ),
@@ -865,7 +881,7 @@ class _MembershipPlanCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: meta.badgeColor.withValues(alpha: 0.18),
+                        color: meta.badgeColor.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
                           color: meta.badgeColor.withValues(alpha: 0.42),
@@ -874,7 +890,9 @@ class _MembershipPlanCard extends StatelessWidget {
                       child: Text(
                         meta.badgeLabel,
                         style: TextStyle(
-                          color: meta.badgeColor,
+                          color: isLight
+                              ? palette.textPrimary
+                              : meta.badgeColor,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -889,8 +907,8 @@ class _MembershipPlanCard extends StatelessWidget {
                   children: [
                     Text(
                       formatMembershipMoney(plan.price),
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
@@ -899,8 +917,8 @@ class _MembershipPlanCard extends StatelessWidget {
                     ),
                     Text(
                       meta.periodSuffix,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                      style: TextStyle(
+                        color: palette.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -912,8 +930,8 @@ class _MembershipPlanCard extends StatelessWidget {
                   description,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFD5CCBF),
+                  style: TextStyle(
+                    color: palette.textWarmMuted,
                     fontSize: 12,
                     height: 1.45,
                   ),
@@ -946,10 +964,14 @@ class _MembershipPlanCard extends StatelessWidget {
                   : OutlinedButton(
                       onPressed: busy ? null : onBuy,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: MetaGymTheme.textPrimary,
-                        backgroundColor: const Color(0x16FFFFFF),
-                        side: const BorderSide(
-                          color: Color(0x45FFF6EA),
+                        foregroundColor: palette.textPrimary,
+                        backgroundColor: isLight
+                            ? palette.surfaceRaised
+                            : const Color(0x16FFFFFF),
+                        side: BorderSide(
+                          color: isLight
+                              ? palette.borderSolid
+                              : const Color(0x45FFF6EA),
                           width: 1,
                         ),
                         shape: RoundedRectangleBorder(
@@ -979,6 +1001,7 @@ class _HistoryMembershipTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final color = membershipStatusColor(membership.status);
     final label = membership.status == 'EXPIRED'
         ? 'Đã hết hạn'
@@ -997,8 +1020,8 @@ class _HistoryMembershipTile extends StatelessWidget {
                   membership.planName ?? membership.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13.5,
                   ),
@@ -1007,8 +1030,8 @@ class _HistoryMembershipTile extends StatelessWidget {
                 Text(
                   '${formatMembershipDate(membership.startDate)} → '
                   '${formatMembershipDate(membership.endDate)}',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 12,
                     fontFeatures: MetaGymTheme.tabularFigures,
                   ),

@@ -107,62 +107,65 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
   }
 
   @override
-  Widget build(BuildContext context) => MetaGymGlassCard(
-    padding: EdgeInsets.zero,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_youtubeController != null)
-          YoutubePlayer(controller: _youtubeController!, aspectRatio: 16 / 9)
-        else
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: _error != null
-                ? _videoMessage(
-                    _error!,
-                    action: TextButton.icon(
-                      onPressed: () => setState(_openVideo),
-                      style: TextButton.styleFrom(
-                        foregroundColor: MetaGymTheme.brandOrange,
-                        minimumSize: const Size(48, 48),
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return MetaGymGlassCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_youtubeController != null)
+            YoutubePlayer(controller: _youtubeController!, aspectRatio: 16 / 9)
+          else
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: _error != null
+                  ? _videoMessage(
+                      _error!,
+                      action: TextButton.icon(
+                        onPressed: () => setState(_openVideo),
+                        style: TextButton.styleFrom(
+                          foregroundColor: palette.primaryText,
+                          minimumSize: const Size(48, 48),
+                        ),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Thử lại'),
                       ),
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Thử lại'),
-                    ),
-                  )
-                : _loading
-                ? _videoMessage(
-                    'Đang tải video…',
-                    action: const CircularProgressIndicator(
-                      color: MetaGymTheme.primary,
-                    ),
-                  )
-                : _filePlayer(),
-          ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                Icons.ondemand_video_rounded,
-                size: 19,
-                color: MetaGymTheme.primary,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Video hướng dẫn',
-                style: TextStyle(
-                  color: MetaGymTheme.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                    )
+                  : _loading
+                  ? _videoMessage(
+                      'Đang tải video…',
+                      action: const CircularProgressIndicator(
+                        color: MetaGymTheme.primary,
+                      ),
+                    )
+                  : _filePlayer(),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.ondemand_video_rounded,
+                  size: 19,
+                  color: palette.primaryText,
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Text(
+                  'Video hướng dẫn',
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   Widget _filePlayer() {
     final controller = _fileController;
@@ -243,22 +246,25 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
     );
   }
 
-  Widget _videoMessage(String text, {Widget? action}) => Container(
-    color: const Color(0xFF1C1816),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.videocam_off_outlined,
-          color: Color(0xFFB8B0A8),
-          size: 30,
-        ),
-        const SizedBox(height: 8),
-        Text(text, style: const TextStyle(color: Colors.white)),
-        ?action,
-      ],
-    ),
-  );
+  Widget _videoMessage(String text, {Widget? action}) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Container(
+      color: palette.surfaceRaised,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.videocam_off_outlined,
+            color: palette.textSecondary,
+            size: 30,
+          ),
+          const SizedBox(height: 8),
+          Text(text, style: TextStyle(color: palette.textPrimary)),
+          ?action,
+        ],
+      ),
+    );
+  }
 
   String _formatDuration(Duration value) {
     final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');

@@ -70,6 +70,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
+    final palette = MetaGymTheme.paletteOf(context);
     void clearErrorsOnEdit(String _) {
       if (auth.fieldErrors.isNotEmpty || auth.errorMessage != null) {
         auth.clearErrors();
@@ -80,11 +81,11 @@ class _RegisterPageState extends State<RegisterPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Tạo tài khoản hội viên',
           textAlign: TextAlign.left,
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: palette.textPrimary,
             fontSize: 22,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.3,
@@ -92,11 +93,11 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
         const SizedBox(height: 5),
-        const Text(
+        Text(
           'Khởi tạo hồ sơ cá nhân để đặt lịch PT 1:1 và theo dõi chỉ số cơ thể.',
           textAlign: TextAlign.left,
           style: TextStyle(
-            color: MetaGymWarmGlassTokens.subtitleMuted,
+            color: palette.textSecondary,
             fontSize: 14,
             height: 1.35,
           ),
@@ -185,12 +186,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: BoxDecoration(
                       color: _acceptedTerms
                           ? MetaGymTheme.brandOrange
-                          : const Color(0x88181513),
+                          : palette.metricPanelBg,
                       borderRadius: BorderRadius.circular(5),
                       border: Border.all(
                         color: _acceptedTerms
                             ? MetaGymTheme.brandOrange
-                            : MetaGymWarmGlassTokens.cardBorder,
+                            : palette.borderSolid,
                       ),
                     ),
                     child: _acceptedTerms
@@ -205,8 +206,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   Expanded(
                     child: Text.rich(
                       TextSpan(
-                        style: const TextStyle(
-                          color: MetaGymTheme.textSecondary,
+                        style: TextStyle(
+                          color: palette.textSecondary,
                           fontSize: 12,
                           height: 1.45,
                         ),
@@ -215,8 +216,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           TextSpan(
                             text: 'Điều khoản sử dụng',
                             recognizer: _termsTap,
-                            style: const TextStyle(
-                              color: MetaGymTheme.reflectionBlue,
+                            style: TextStyle(
+                              color: palette.reflection,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline,
                             ),
@@ -225,8 +226,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           TextSpan(
                             text: 'Chính sách bảo mật',
                             recognizer: _privacyTap,
-                            style: const TextStyle(
-                              color: MetaGymTheme.reflectionBlue,
+                            style: TextStyle(
+                              color: palette.reflection,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline,
                             ),
@@ -294,6 +295,11 @@ class _PasswordStrengthMeter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final inactiveBar = isLight
+        ? const Color(0xFFDCE4EE)
+        : Colors.white.withValues(alpha: 0.14);
     final hasLength = password.length >= 8;
     final hasUpper = RegExp('[A-Z]').hasMatch(password);
     final hasLower = RegExp('[a-z]').hasMatch(password);
@@ -307,17 +313,17 @@ class _PasswordStrengthMeter extends StatelessWidget {
     ].where((met) => met).length;
 
     final Color barColor = switch (score) {
-      4 => MetaGymTheme.success,
-      3 => MetaGymTheme.warning,
+      4 => palette.success,
+      3 => palette.warning,
       >= 1 => MetaGymTheme.brandOrange,
-      _ => Colors.white.withValues(alpha: 0.14),
+      _ => inactiveBar,
     };
 
     final (statusLabel, statusColor) = switch (score) {
-      4 => ('Đạt chuẩn', MetaGymTheme.success),
-      3 => ('Khá tốt', MetaGymTheme.warning),
-      >= 1 => ('Cần bổ sung', MetaGymTheme.brandOrange),
-      _ => ('4 điều kiện', MetaGymWarmGlassTokens.subtitleMuted),
+      4 => ('Đạt chuẩn', palette.success),
+      3 => ('Khá tốt', palette.warning),
+      >= 1 => ('Cần bổ sung', palette.primaryText),
+      _ => ('4 điều kiện', palette.textSecondary),
     };
 
     final barDuration =
@@ -330,10 +336,10 @@ class _PasswordStrengthMeter extends StatelessWidget {
       key: const Key('register-password-strength'),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
       decoration: BoxDecoration(
-        color: MetaGymWarmGlassTokens.metricPanelFill,
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: MetaGymWarmGlassTokens.metricPanelBorder,
+          color: palette.metricPanelBorder,
           width: 1.0,
         ),
       ),
@@ -342,13 +348,13 @@ class _PasswordStrengthMeter extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Độ mạnh mật khẩu',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: MetaGymWarmGlassTokens.mutedText,
+                    color: palette.textWarmMuted,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -378,9 +384,7 @@ class _PasswordStrengthMeter extends StatelessWidget {
                   height: 4,
                   margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
                   decoration: BoxDecoration(
-                    color: active
-                        ? barColor
-                        : Colors.white.withValues(alpha: 0.14),
+                    color: active ? barColor : inactiveBar,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -425,7 +429,8 @@ class _RuleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = met ? MetaGymTheme.success : MetaGymWarmGlassTokens.mutedText;
+    final palette = MetaGymTheme.paletteOf(context);
+    final color = met ? palette.success : palette.textWarmMuted;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

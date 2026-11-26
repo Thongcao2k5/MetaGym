@@ -234,23 +234,28 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     });
   }
 
+  MetaGymPalette get _palette => MetaGymTheme.paletteOf(context);
+  bool get _isLight => MetaGymTheme.isLightPalette(context);
+
   void _showWarmSnackBar(String message) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(
             message,
-            style: const TextStyle(
-              color: Color(0xFFF7F9FC),
+            style: TextStyle(
+              color: palette.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
-          backgroundColor: const Color(0xF0241F1B),
+          backgroundColor: colors.overlayGlass,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-            side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+            side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
           ),
         ),
       );
@@ -258,6 +263,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   Future<void> _chooseTime() async {
     final parts = _time?.split(':');
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final palette = MetaGymTheme.paletteOf(context);
     final picked = await showTimePicker(
       context: context,
       initialTime: parts == null
@@ -265,17 +273,24 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           : TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: MetaGymTheme.brandOrange,
-            onPrimary: Colors.white,
-            surface: Color(0xFF2B2622),
-            onSurface: Color(0xFFF7F9FC),
-          ),
+          colorScheme: isLight
+              ? ColorScheme.light(
+                  primary: MetaGymTheme.brandOrange,
+                  onPrimary: Colors.white,
+                  surface: colors.surface,
+                  onSurface: palette.textPrimary,
+                )
+              : ColorScheme.dark(
+                  primary: MetaGymTheme.brandOrange,
+                  onPrimary: Colors.white,
+                  surface: const Color(0xFF2B2622),
+                  onSurface: palette.textPrimary,
+                ),
           dialogTheme: DialogThemeData(
-            backgroundColor: const Color(0xF0241F1B),
+            backgroundColor: colors.overlayGlass,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
-              side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+              side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
             ),
           ),
         ),
@@ -420,137 +435,143 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.paletteOf(context).canvas,
-    extendBodyBehindAppBar: true,
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      foregroundColor: Colors.white,
-      leadingWidth: 72,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 16),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: MetaGymCircleIconButton(
-            icon: Icons.arrow_back_rounded,
-            tooltip: 'Quay lại',
-            onTap: () => Navigator.of(context).maybePop(),
+  Widget build(BuildContext context) {
+    final palette = _palette;
+    return Scaffold(
+      backgroundColor: palette.canvas,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: palette.textPrimary,
+        leadingWidth: 72,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MetaGymCircleIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+        ),
+        titleSpacing: 8,
+        title: Text(
+          'Lịch tập của tôi',
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
-      titleSpacing: 8,
-      title: const Text(
-        'Lịch tập của tôi',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-      ),
-    ),
-    body: Stack(
-      fit: StackFit.expand,
-      children: [
-        const MetaGymBackground(),
-        SafeArea(
-          bottom: false,
-          child: ListView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              MediaQuery.paddingOf(context).bottom + 24,
-            ),
-            children: [
-            _calendar(),
-            const SizedBox(height: 20),
-            if (_loading)
-              const Center(
-                child: CircularProgressIndicator(color: MetaGymTheme.primary),
-              )
-            else if (_error != null)
-              _panel(
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          SafeArea(
+            bottom: false,
+            child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                MediaQuery.paddingOf(context).bottom + 24,
+              ),
+              children: [
+                _calendar(),
+                const SizedBox(height: 20),
+                if (_loading)
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: MetaGymTheme.primary,
+                    ),
+                  )
+                else if (_error != null)
+                  _panel(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: MetaGymTheme.dangerCoral.withValues(
-                              alpha: 0.16,
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: palette.error.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: palette.error.withValues(alpha: 0.40),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.cloud_off_rounded,
+                                size: 20,
+                                color: palette.error,
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: MetaGymTheme.dangerCoral.withValues(
-                                alpha: 0.42,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _error!,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: MetaGymTheme.brandOrange,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                MetaGymTheme.radiusInput,
                               ),
                             ),
                           ),
-                          child: const Icon(
-                            Icons.cloud_off_rounded,
-                            size: 20,
-                            color: MetaGymTheme.dangerCoral,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w600,
-                              height: 1.4,
-                            ),
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text(
+                            'Thử lại',
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: MetaGymTheme.brandOrange,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            MetaGymTheme.radiusInput,
-                          ),
-                        ),
-                      ),
-                      onPressed: _load,
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: const Text(
-                        'Thử lại',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
+                  )
+                else ...[
+                  Text(
+                    _displayDate(_selected),
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                ),
-              )
-            else ...[
-              Text(
-                _displayDate(_selected),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (_editing) _editPanel() else _summaryPanel(),
-            ],
-          ],
-        ),
-        ),
-      ],
-    ),
-  );
+                  ),
+                  const SizedBox(height: 10),
+                  if (_editing) _editPanel() else _summaryPanel(),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _calendar() {
+    final palette = _palette;
     final days = _visibleDays;
     final period = _mode == _CalendarMode.week
         ? '${days.first.day.toString().padLeft(2, '0')}–'
@@ -565,7 +586,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               IconButton(
                 onPressed: () => _changePeriod(-1),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                color: const Color(0xFFF7F9FC),
+                color: palette.textPrimary,
                 icon: const Icon(Icons.chevron_left_rounded),
                 tooltip: 'Kỳ trước',
               ),
@@ -573,8 +594,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 child: Text(
                   period,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -582,7 +603,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               IconButton(
                 onPressed: () => _changePeriod(1),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                color: const Color(0xFFF7F9FC),
+                color: palette.textPrimary,
                 icon: const Icon(Icons.chevron_right_rounded),
                 tooltip: 'Kỳ sau',
               ),
@@ -605,8 +626,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                     child: Text(
                       day,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFFB8B0A8),
+                      style: TextStyle(
+                        color: palette.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -655,24 +676,29 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     );
   }
 
-  Widget _modeButton(String label, _CalendarMode mode) => Expanded(
-    child: OutlinedButton(
-      onPressed: () => _switchMode(mode),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(48, 48),
-        backgroundColor: _mode == mode
-            ? const Color(0xFF493025)
-            : const Color(0x80211E1C),
-        foregroundColor: _mode == mode ? Colors.white : const Color(0xFFC8C2BC),
-        side: BorderSide(
-          color: _mode == mode ? MetaGymTheme.primary : const Color(0x9A8C8176),
+  Widget _modeButton(String label, _CalendarMode mode) {
+    final palette = _palette;
+    final active = _mode == mode;
+    return Expanded(
+      child: OutlinedButton(
+        onPressed: () => _switchMode(mode),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          backgroundColor: active
+              ? (_isLight ? MetaGymTheme.primary : const Color(0xFF493025))
+              : palette.metricPanelBg,
+          foregroundColor: active ? Colors.white : palette.textSecondary,
+          side: BorderSide(
+            color: active ? MetaGymTheme.primary : palette.metricPanelBorder,
+          ),
         ),
+        child: Text(label),
       ),
-      child: Text(label),
-    ),
-  );
+    );
+  }
 
   Widget _dayCell(DateTime day, {required bool showNumber}) {
+    final palette = _palette;
     final key = _key(day);
     final selected = key == _selectedKey;
     final hasPlan = _plans.containsKey(key);
@@ -695,10 +721,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         margin: const EdgeInsets.all(2),
         padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? MetaGymTheme.primary : const Color(0x80211E1C),
+          color: selected ? MetaGymTheme.primary : palette.metricPanelBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? MetaGymTheme.primary : const Color(0x9A8C8176),
+            color: selected ? MetaGymTheme.primary : palette.metricPanelBorder,
           ),
         ),
         child: Column(
@@ -707,7 +733,11 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             Text(
               showNumber ? '${day.day}' : _weekdays[day.weekday - 1],
               style: TextStyle(
-                color: outside ? const Color(0xFF8E95A5) : Colors.white,
+                color: selected
+                    ? Colors.white
+                    : outside
+                    ? palette.textSecondary.withValues(alpha: 0.6)
+                    : palette.textPrimary,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -720,7 +750,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 height: 5,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: selected ? Colors.white : const Color(0xFF2ECC71),
+                  color: selected ? Colors.white : palette.success,
                 ),
               ),
             ],
@@ -731,24 +761,25 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _summaryPanel() {
+    final palette = _palette;
     final plan = _plan;
     if (plan == null) {
       return _panel(
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Chưa có kế hoạch',
               style: TextStyle(
-                color: Colors.white,
+                color: palette.textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Chọn bài tập và thời gian cho ngày này.',
-              style: TextStyle(color: Color(0xFFB8B0A8)),
+              style: TextStyle(color: palette.textSecondary),
             ),
             if (_canEdit) ...[
               const SizedBox(height: 14),
@@ -809,8 +840,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                         metaParts.join(' · '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: MetaGymTheme.brandOrange,
+                        style: TextStyle(
+                          color: palette.primaryText,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           fontFeatures: MetaGymTheme.tabularFigures,
@@ -821,8 +852,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                         plan.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontSize: 16.5,
                           fontWeight: FontWeight.w700,
                           height: 1.25,
@@ -839,18 +870,18 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
+                                  color: palette.metricPanelBg,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.08),
+                                    color: palette.metricPanelBorder,
                                   ),
                                 ),
                                 child: Text(
                                   summarizeMuscleFocuses(focuses),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFFC9D0DB),
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -862,7 +893,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                             _expandedDetails
                                 ? Icons.keyboard_arrow_up_rounded
                                 : Icons.keyboard_arrow_down_rounded,
-                            color: MetaGymTheme.textSecondary,
+                            color: palette.textSecondary,
                             size: 20,
                           ),
                         ],
@@ -876,7 +907,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           if (_expandedDetails) ...[
             if (plan.exercises.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Divider(color: Color(0x14FFFFFF), height: 1),
+              Divider(
+                color: palette.borderSolid.withValues(alpha: 0.7),
+                height: 1,
+              ),
               const SizedBox(height: 10),
               for (var index = 0; index < plan.exercises.length; index++) ...[
                 if (index > 0) const SizedBox(height: 8),
@@ -887,8 +921,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               const SizedBox(height: 8),
               Text(
                 plan.notes,
-                style: const TextStyle(
-                  color: Color(0xFFE4DAD1),
+                style: TextStyle(
+                  color: palette.textSecondary,
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -897,7 +931,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ],
           if (_canEdit) ...[
             const SizedBox(height: 12),
-            const Divider(color: Color(0x14FFFFFF), height: 1),
+            Divider(
+              color: palette.borderSolid.withValues(alpha: 0.7),
+              height: 1,
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -905,8 +942,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
-                      backgroundColor: const Color(0x80211E1C),
-                      foregroundColor: MetaGymTheme.textPrimary,
+                      backgroundColor: palette.metricPanelBg,
+                      foregroundColor: palette.textPrimary,
                       side: BorderSide(
                         color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
                       ),
@@ -915,10 +952,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                       ),
                     ),
                     onPressed: _startEditing,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.edit_outlined,
                       size: 16,
-                      color: MetaGymTheme.brandOrange,
+                      color: palette.primaryText,
                     ),
                     label: const Text('Sửa lịch'),
                   ),
@@ -928,9 +965,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
-                      backgroundColor: const Color(0x80211E1C),
-                      foregroundColor: const Color(0xFFE08C87),
-                      side: const BorderSide(color: Color(0x9A8C8176)),
+                      backgroundColor: palette.metricPanelBg,
+                      foregroundColor: palette.error,
+                      side: BorderSide(color: palette.metricPanelBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(11),
                       ),
@@ -948,13 +985,14 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _exerciseSummaryRow(int order, SelfTrainingExercise exercise) {
+    final palette = _palette;
     final volume = exercise.volumeLabel;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
       decoration: BoxDecoration(
-        color: const Color(0x5A211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x45A79D92), width: 0.9),
+        border: Border.all(color: palette.metricPanelBorder, width: 0.9),
       ),
       child: Row(
         children: [
@@ -963,7 +1001,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             height: 24,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+              color: palette.chipActiveBg,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
@@ -971,8 +1009,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             ),
             child: Text(
               '$order',
-              style: const TextStyle(
-                color: Color(0xFFFF9676),
+              style: TextStyle(
+                color: palette.primaryText,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 fontFeatures: MetaGymTheme.tabularFigures,
@@ -985,8 +1023,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               exercise.name,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -997,14 +1035,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0x20FF5E36),
+                color: palette.chipActiveBg,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: const Color(0x52FF5E36), width: 0.9),
+                border: Border.all(
+                  color: MetaGymTheme.primary.withValues(alpha: 0.36),
+                  width: 0.9,
+                ),
               ),
               child: Text(
                 volume,
-                style: const TextStyle(
-                  color: Color(0xFFFFB29B),
+                style: TextStyle(
+                  color: palette.primaryText,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -1030,23 +1071,27 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     String? hintText,
     EdgeInsetsGeometry? contentPadding,
   }) {
+    final palette = _palette;
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
     );
     return InputDecoration(
       labelText: label,
       hintText: hintText,
       filled: true,
-      fillColor: const Color(0x80211E1C),
+      fillColor: palette.metricPanelBg,
       contentPadding: contentPadding,
-      labelStyle: const TextStyle(color: Color(0xFFC8C2BC)),
-      hintStyle: const TextStyle(color: Color(0x8AC8C2BC), fontSize: 13.5),
-      floatingLabelStyle: const TextStyle(
-        color: MetaGymTheme.brandOrange,
+      labelStyle: TextStyle(color: palette.textSecondary),
+      hintStyle: TextStyle(
+        color: palette.textSecondary.withValues(alpha: 0.7),
+        fontSize: 13.5,
+      ),
+      floatingLabelStyle: TextStyle(
+        color: palette.primaryText,
         fontWeight: FontWeight.w600,
       ),
-      counterStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 11),
+      counterStyle: TextStyle(color: palette.textSecondary, fontSize: 11),
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
@@ -1059,262 +1104,270 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     );
   }
 
-  Widget _exerciseDraftCard(int index, _ExerciseDraft draft) => Container(
-    key: ValueKey(draft.id),
-    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-    decoration: BoxDecoration(
-      color: const Color(0x66211E1C),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: const Color(0x55A79D92), width: 1),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
+  Widget _exerciseDraftCard(int index, _ExerciseDraft draft) {
+    final palette = _palette;
+    return Container(
+      key: ValueKey(draft.id),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      decoration: BoxDecoration(
+        color: palette.metricPanelBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: palette.metricPanelBorder, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: palette.chipActiveBg,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
+                  ),
                 ),
-              ),
-              child: Text(
-                'Bài #${index + 1}',
-                style: const TextStyle(
-                  color: Color(0xFFFF9676),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  fontFeatures: MetaGymTheme.tabularFigures,
-                ),
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              key: Key('self-training-remove-exercise-$index'),
-              tooltip: 'Xóa bài tập',
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              onPressed: _saving ? null : () => _removeExerciseDraftRow(index),
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                size: 19,
-                color: Color(0xFFE08C87),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        TextField(
-          key: Key('self-training-exercise-name-$index'),
-          controller: draft.nameController,
-          enabled: !_saving,
-          maxLength: 120,
-          textCapitalization: TextCapitalization.sentences,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
-            fontSize: 14.5,
-            fontWeight: FontWeight.w600,
-          ),
-          buildCounter: (
-            _, {
-            required currentLength,
-            required isFocused,
-            required maxLength,
-          }) => null,
-          decoration: _warmInputDecoration(
-            'Tên bài tập',
-            hintText: 'VD: Đẩy ngực ngang, Squat...',
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                key: Key('self-training-exercise-sets-$index'),
-                controller: draft.setsController,
-                enabled: !_saving,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(2),
-                ],
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: MetaGymTheme.tabularFigures,
-                ),
-                decoration: _warmInputDecoration(
-                  'Số set',
-                  hintText: 'VD: 4',
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
+                child: Text(
+                  'Bài #${index + 1}',
+                  style: TextStyle(
+                    color: palette.primaryText,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                key: Key('self-training-exercise-reps-$index'),
-                controller: draft.repsController,
-                enabled: !_saving,
-                maxLength: 20,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: MetaGymTheme.tabularFigures,
+              const Spacer(),
+              IconButton(
+                key: Key('self-training-remove-exercise-$index'),
+                tooltip: 'Xóa bài tập',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                onPressed: _saving
+                    ? null
+                    : () => _removeExerciseDraftRow(index),
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  size: 19,
+                  color: palette.error,
                 ),
-                buildCounter: (
-                  _, {
-                  required currentLength,
-                  required isFocused,
-                  required maxLength,
-                }) => null,
-                decoration: _warmInputDecoration(
-                  'Số rep',
-                  hintText: 'VD: 10 hoặc 8-12',
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          TextField(
+            key: Key('self-training-exercise-name-$index'),
+            controller: draft.nameController,
+            enabled: !_saving,
+            maxLength: 120,
+            textCapitalization: TextCapitalization.sentences,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w600,
+            ),
+            buildCounter: (
+              _, {
+              required currentLength,
+              required isFocused,
+              required maxLength,
+            }) => null,
+            decoration: _warmInputDecoration(
+              'Tên bài tập',
+              hintText: 'VD: Đẩy ngực ngang, Squat...',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: Key('self-training-exercise-sets-$index'),
+                  controller: draft.setsController,
+                  enabled: !_saving,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                  decoration: _warmInputDecoration(
+                    'Số set',
+                    hintText: 'VD: 4',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  key: Key('self-training-exercise-reps-$index'),
+                  controller: draft.repsController,
+                  enabled: !_saving,
+                  maxLength: 20,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                  buildCounter: (
+                    _, {
+                    required currentLength,
+                    required isFocused,
+                    required maxLength,
+                  }) => null,
+                  decoration: _warmInputDecoration(
+                    'Số rep',
+                    hintText: 'VD: 10 hoặc 8-12',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _editPanel() => _panel(
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: _title,
-          enabled: !_saving,
-          maxLength: 120,
-          style: const TextStyle(color: Color(0xFFF7F9FC)),
-          decoration: _warmInputDecoration('Tên buổi tập'),
-        ),
-        const SizedBox(height: 10),
-        CoachingGraphiteCard(
-          padding: const EdgeInsets.all(12),
-          child: MuscleFocusPicker(
-            selectedKey: _selectedIconKey,
-            inferredTargets: _draftInferredFocuses,
-            onSelected: (value) => setState(() => _selectedIconKey = value),
+  Widget _editPanel() {
+    final palette = _palette;
+    return _panel(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _title,
+            enabled: !_saving,
+            maxLength: 120,
+            style: TextStyle(color: palette.textPrimary),
+            decoration: _warmInputDecoration('Tên buổi tập'),
           ),
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
+          const SizedBox(height: 10),
+          CoachingGraphiteCard(
+            padding: const EdgeInsets.all(12),
+            child: MuscleFocusPicker(
+              selectedKey: _selectedIconKey,
+              inferredTargets: _draftInferredFocuses,
+              onSelected: (value) => setState(() => _selectedIconKey = value),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: palette.metricPanelBg,
+                foregroundColor: palette.textPrimary,
+                side: BorderSide(color: palette.metricPanelBorder),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              onPressed: _chooseTime,
+              icon: Icon(
+                Icons.schedule_rounded,
+                color: palette.primaryText,
+              ),
+              label: Text(_time == null ? 'Chọn giờ tập' : 'Bắt đầu $_time'),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Bài tập (${_exerciseDrafts.length})',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (var i = 0; i < _exerciseDrafts.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _exerciseDraftCard(i, _exerciseDrafts[i]),
+          ],
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            key: const Key('self-training-add-exercise'),
             style: OutlinedButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              backgroundColor: const Color(0x80211E1C),
-              foregroundColor: const Color(0xFFF7F9FC),
-              side: const BorderSide(color: Color(0x9A8C8176)),
+              minimumSize: const Size.fromHeight(48),
+              backgroundColor: palette.metricPanelBg,
+              foregroundColor: palette.textPrimary,
+              side: BorderSide(color: palette.metricPanelBorder),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
             ),
-            onPressed: _chooseTime,
-            icon: const Icon(
-              Icons.schedule_rounded,
-              color: MetaGymTheme.brandOrange,
-            ),
-            label: Text(_time == null ? 'Chọn giờ tập' : 'Bắt đầu $_time'),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          'Bài tập (${_exerciseDrafts.length})',
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            fontFeatures: MetaGymTheme.tabularFigures,
-          ),
-        ),
-        const SizedBox(height: 8),
-        for (var i = 0; i < _exerciseDrafts.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          _exerciseDraftCard(i, _exerciseDrafts[i]),
-        ],
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          key: const Key('self-training-add-exercise'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            backgroundColor: const Color(0x80211E1C),
-            foregroundColor: const Color(0xFFF7F9FC),
-            side: const BorderSide(color: Color(0x9A8C8176)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            onPressed: _saving ? null : _addExerciseDraftRow,
+            icon: Icon(Icons.add_rounded, color: palette.primaryText),
+            label: const Text(
+              'Thêm bài tập',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          onPressed: _saving ? null : _addExerciseDraftRow,
-          icon: const Icon(Icons.add_rounded, color: MetaGymTheme.brandOrange),
-          label: const Text(
-            'Thêm bài tập',
-            style: TextStyle(fontWeight: FontWeight.w600),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notes,
+            enabled: !_saving,
+            maxLines: 3,
+            maxLength: 2000,
+            style: TextStyle(color: palette.textPrimary),
+            decoration: _warmInputDecoration('Ghi chú (tùy chọn)'),
           ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _notes,
-          enabled: !_saving,
-          maxLines: 3,
-          maxLength: 2000,
-          style: const TextStyle(color: Color(0xFFF7F9FC)),
-          decoration: _warmInputDecoration('Ghi chú (tùy chọn)'),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: MetaGymTheme.brandOrange,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(48, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      MetaGymTheme.radiusInput,
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.brandOrange,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(48, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        MetaGymTheme.radiusInput,
+                      ),
                     ),
                   ),
+                  onPressed: _saving ? null : _save,
+                  child: Text(_saving ? 'Đang lưu…' : 'Lưu kế hoạch'),
                 ),
-                onPressed: _saving ? null : _save,
-                child: Text(_saving ? 'Đang lưu…' : 'Lưu kế hoạch'),
               ),
-            ),
-            const SizedBox(width: 8),
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFC8C2BC),
-                minimumSize: const Size(48, 48),
+              const SizedBox(width: 8),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: palette.textSecondary,
+                  minimumSize: const Size(48, 48),
+                ),
+                onPressed: _saving
+                    ? null
+                    : () => setState(() => _editing = false),
+                child: const Text('Hủy'),
               ),
-              onPressed: _saving
-                  ? null
-                  : () => setState(() => _editing = false),
-              child: const Text('Hủy'),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _panel(Widget child) => MetaGymGlassCard(
     solid: false,

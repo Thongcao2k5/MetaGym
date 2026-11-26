@@ -87,34 +87,40 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
     );
   }
 
-  Widget _buildErrorBox(String message) {
+  Widget _buildErrorBox(BuildContext context, String message) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       width: 210,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0x44000000),
+        color: isLight ? palette.metricPanelBg : const Color(0x44000000),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        border: Border.all(
+          color: isLight
+              ? palette.borderSolid
+              : Colors.white.withValues(alpha: 0.14),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.broken_image_outlined,
-            color: Colors.white.withValues(alpha: 0.72),
+            color: palette.textSecondary,
             size: 26,
           ),
           const SizedBox(height: 6),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: TextStyle(color: palette.textPrimary, fontSize: 12),
           ),
           const SizedBox(height: 6),
           TextButton(
             onPressed: _load,
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFE6FE48),
+              foregroundColor: palette.primaryText,
               minimumSize: const Size(0, 48),
               padding: const EdgeInsets.symmetric(horizontal: 10),
             ),
@@ -127,12 +133,14 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     if (_loading) {
       return Container(
         width: 210,
         height: 180,
         decoration: BoxDecoration(
-          color: const Color(0x33000000),
+          color: isLight ? palette.metricPanelBg : const Color(0x33000000),
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
@@ -141,13 +149,13 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.2,
-            color: Color(0xFFE6FE48),
+            color: MetaGymTheme.primary,
           ),
         ),
       );
     }
     if (_error != null) {
-      return _buildErrorBox(_error!);
+      return _buildErrorBox(context, _error!);
     }
     if (_url case final url?) {
       return GestureDetector(
@@ -168,20 +176,22 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
                   return Container(
                     width: 220,
                     height: 190,
-                    color: const Color(0x33000000),
+                    color: isLight
+                        ? palette.metricPanelBg
+                        : const Color(0x33000000),
                     alignment: Alignment.center,
                     child: const SizedBox(
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.2,
-                        color: Color(0xFFE6FE48),
+                        color: MetaGymTheme.primary,
                       ),
                     ),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) =>
-                    _buildErrorBox('Ảnh lỗi hoặc URL đã hết hạn.'),
+                    _buildErrorBox(context, 'Ảnh lỗi hoặc URL đã hết hạn.'),
               ),
               Positioned(
                 right: 8,
@@ -301,7 +311,7 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
                                 height: 32,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: Color(0xFFE6FE48),
+                                  color: MetaGymTheme.primary,
                                 ),
                               ),
                             );

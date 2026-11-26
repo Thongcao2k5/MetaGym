@@ -46,183 +46,184 @@ class SystemStatesPage extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.paletteOf(context).canvas,
-    body: Stack(
-      children: [
-        const Positioned.fill(child: MetaGymBackground()),
-        SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                child: Row(
-                  children: [
-                    MetaGymCircleIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      tooltip: 'Quay lại',
-                      onTap: () => Navigator.of(context).pop(),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SYSTEM STATES & ALERTS',
-                            style: TextStyle(
-                              color: MetaGymTheme.brandOrange,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Modal Hệ thống',
-                            style: TextStyle(
-                              color: MetaGymTheme.textPrimary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Scaffold(
+      backgroundColor: palette.canvas,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: MetaGymBackground()),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Row(
+                    children: [
+                      MetaGymCircleIconButton(
+                        icon: Icons.arrow_back_rounded,
+                        tooltip: 'Quay lại',
+                        onTap: () => Navigator.of(context).pop(),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                  children: [
-                    MetaGymHeroGlassCard(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Image.asset(
-                            'assets/images/mascot/meta_kong_hero.webp',
-                            width: 78,
-                            height: 78,
-                            fit: BoxFit.contain,
-                            semanticLabel: 'Meta Kong',
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'LINH VẬT META KONG',
-                                  style: TextStyle(
-                                    color: MetaGymTheme.brandOrange,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Trạng thái Hệ thống & Thành tựu',
-                                  style: TextStyle(
-                                    color: MetaGymTheme.textPrimary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Bấm từng trạng thái để xem trực tiếp.',
-                                  style: TextStyle(
-                                    color: MetaGymTheme.paletteOf(context)
-                                        .textWarmMuted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    for (final state in _states) ...[
-                      MetaGymGlassCard(
-                        solid: false,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 13,
-                          vertical: 11,
-                        ),
-                        onTap: () => showMetaGymSystemModal(
-                          context,
-                          kind: state.kind,
-                          primaryActionLabel: 'Đã hiểu',
-                          secondaryActionLabel: 'Đóng',
-                        ),
-                        child: Row(
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Image.asset(
-                              metaGymSystemMascotAsset(state.kind)!,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.contain,
-                              excludeFromSemantics: true,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    state.title,
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    state.subtitle,
-                                    style: TextStyle(
-                                      color: MetaGymTheme.paletteOf(context)
-                                          .textWarmMuted,
-                                      fontSize: 12,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ],
+                            Text(
+                              'SYSTEM STATES & ALERTS',
+                              style: TextStyle(
+                                color: palette.primaryText,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Xem ›',
+                            Text(
+                              'Modal Hệ thống',
                               style: TextStyle(
-                                color: MetaGymTheme.brandOrange,
-                                fontSize: 12,
+                                color: palette.textPrimary,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
                     ],
-                    Text(
-                      'Chế độ xem thử: các nút chỉ đóng hộp thoại, không tạo giao dịch, nhận thưởng hoặc thay đổi dữ liệu.',
-                      style: TextStyle(
-                        color: MetaGymTheme.paletteOf(context).textWarmMuted,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                    children: [
+                      MetaGymHeroGlassCard(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Image.asset(
+                              'assets/images/mascot/meta_kong_hero.webp',
+                              width: 78,
+                              height: 78,
+                              fit: BoxFit.contain,
+                              semanticLabel: 'Meta Kong',
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'LINH VẬT META KONG',
+                                    style: TextStyle(
+                                      color: palette.primaryText,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Trạng thái Hệ thống & Thành tựu',
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Bấm từng trạng thái để xem trực tiếp.',
+                                    style: TextStyle(
+                                      color: palette.textWarmMuted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      for (final state in _states) ...[
+                        MetaGymGlassCard(
+                          solid: false,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 13,
+                            vertical: 11,
+                          ),
+                          onTap: () => showMetaGymSystemModal(
+                            context,
+                            kind: state.kind,
+                            primaryActionLabel: 'Đã hiểu',
+                            secondaryActionLabel: 'Đóng',
+                          ),
+                          child: Row(
+                            children: [
+                              Image.asset(
+                                metaGymSystemMascotAsset(state.kind)!,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.contain,
+                                excludeFromSemantics: true,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      state.title,
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      state.subtitle,
+                                      style: TextStyle(
+                                        color: palette.textWarmMuted,
+                                        fontSize: 12,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Xem ›',
+                                style: TextStyle(
+                                  color: palette.primaryText,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      Text(
+                        'Chế độ xem thử: các nút chỉ đóng hộp thoại, không tạo giao dịch, nhận thưởng hoặc thay đổi dữ liệu.',
+                        style: TextStyle(
+                          color: palette.textWarmMuted,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

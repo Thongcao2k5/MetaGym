@@ -391,6 +391,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
   }
 
   Widget _buildCalendarCard() {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     final monthStart = DateTime.utc(_selectedDate.year, _selectedDate.month, 1);
     final gridStart = _calMode == _PickerCalMode.week
@@ -425,9 +427,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
       return Container(
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: const Color(0x80211E1C),
+          color: palette.metricPanelBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0x9A8C8176)),
+          border: Border.all(color: palette.metricPanelBorder),
         ),
         child: Row(
           mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -472,8 +474,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                           child: Text(
                             _calendarTitleText(),
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: MetaGymTheme.textPrimary,
+                            style: TextStyle(
+                              color: palette.textPrimary,
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
                             ),
@@ -495,8 +497,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                   Expanded(
                     child: Text(
                       _calendarTitleText(),
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -519,8 +521,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       child: Center(
                         child: Text(
                           label,
-                          style: const TextStyle(
-                            color: Color(0xFFB8B0A8),
+                          style: TextStyle(
+                            color: palette.textSecondary,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -568,14 +570,12 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         color: selected
                             ? MetaGymTheme.brandOrange
                             : isPickedDay
-                            ? MetaGymTheme.progressGreen.withValues(alpha: 0.16)
+                            ? palette.success.withValues(alpha: 0.16)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(11),
                         border: !selected && isPickedDay
                             ? Border.all(
-                                color: MetaGymTheme.progressGreen.withValues(
-                                  alpha: 0.65,
-                                ),
+                                color: palette.success.withValues(alpha: 0.65),
                               )
                             : (!selected && isToday
                                   ? Border.all(
@@ -598,8 +598,10 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                                     color: selected
                                         ? MetaGymTheme.onPrimary
                                         : disabled
-                                        ? const Color(0xFF7D756F)
-                                        : const Color(0xFFB8B0A8),
+                                        ? palette.textSecondary.withValues(
+                                            alpha: 0.45,
+                                          )
+                                        : palette.textSecondary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w500,
                                     height: 1.05,
@@ -611,10 +613,14 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                                   color: selected
                                       ? MetaGymTheme.onPrimary
                                       : disabled
-                                      ? const Color(0xFF7D756F)
+                                      ? palette.textSecondary.withValues(
+                                          alpha: 0.45,
+                                        )
                                       : outsideMonth
-                                      ? const Color(0xFF9B9188)
-                                      : const Color(0xFFF7F9FC),
+                                      ? palette.textSecondary.withValues(
+                                          alpha: 0.60,
+                                        )
+                                      : palette.textPrimary,
                                   fontSize: 12.5,
                                   fontWeight: selected
                                       ? FontWeight.w700
@@ -637,7 +643,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                                   color: selected
                                       ? Colors.white
                                       : isPickedDay
-                                      ? const Color(0xFF59E59A)
+                                      ? (isLight
+                                            ? palette.success
+                                            : const Color(0xFF59E59A))
                                       : MetaGymTheme.brandOrange,
                                   shape: BoxShape.circle,
                                 ),
@@ -659,6 +667,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     List<_ShiftDisplayItem> shifts,
     bool alreadyHasDayBooking,
   ) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final morning = shifts
         .where((s) => int.parse(s.startLabel.substring(0, 2)) < 12)
         .toList();
@@ -686,13 +696,13 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     }
 
     if (groups.isEmpty) {
-      return const MetaGymGlassCard(
-        padding: EdgeInsets.all(18),
+      return MetaGymGlassCard(
+        padding: const EdgeInsets.all(18),
         child: Center(
           child: Text(
             'Coach không có ca trống trong ngày này. Hãy chọn ngày khác trên lịch.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
+            style: TextStyle(color: palette.textWarmMuted, fontSize: 13),
           ),
         ),
       );
@@ -706,27 +716,29 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xC42B2622),
+              color: isLight
+                  ? palette.warning.withValues(alpha: 0.10)
+                  : const Color(0xC42B2622),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: MetaGymTheme.brandOrange.withValues(alpha: 0.55),
                 width: 1.1,
               ),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   Icons.info_outline_rounded,
                   size: 16,
-                  color: MetaGymTheme.warningAmber,
+                  color: palette.warning,
                 ),
-                SizedBox(width: 9),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Text(
                     'Bạn đã có 1 buổi tập trong ngày này. Mỗi ngày chỉ được đặt tối đa 1 buổi.',
                     style: TextStyle(
-                      color: Color(0xFFE4DAD1),
+                      color: palette.textPrimary,
                       fontSize: 12,
                       height: 1.4,
                     ),
@@ -741,8 +753,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
             padding: const EdgeInsets.only(top: 10, bottom: 7),
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFFC8C2BC),
+              style: TextStyle(
+                color: palette.textWarmMuted,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -786,6 +798,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     _ShiftDisplayItem item,
     bool alreadyHasDayBooking,
   ) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final picked =
         _pickedByDate[dateKey]?.startsAt == item.startsAt &&
         item.startsAt != null;
@@ -799,29 +813,35 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     final Color metaColor;
 
     if (picked) {
-      bgColor = const Color(0xFF472C22);
+      bgColor = isLight ? palette.chipActiveBg : const Color(0xFF472C22);
       borderColor = MetaGymTheme.brandOrange;
       borderWidth = 1.5;
-      timeColor = const Color(0xFFFFFFFF);
-      metaColor = const Color(0xFFFF987E);
+      timeColor = isLight ? palette.primaryText : const Color(0xFFFFFFFF);
+      metaColor = isLight ? palette.primaryText : const Color(0xFFFF987E);
     } else if (item.isMine) {
-      bgColor = const Color(0xD4352620);
+      bgColor = isLight ? palette.chipActiveBg : const Color(0xD4352620);
       borderColor = const Color(0x88FF5E36);
       borderWidth = 1.2;
-      timeColor = const Color(0xFFF7F9FC);
-      metaColor = MetaGymTheme.brandOrange;
+      timeColor = palette.textPrimary;
+      metaColor = palette.primaryText;
     } else if (enabled) {
-      bgColor = const Color(0xC42B2622);
-      borderColor = const Color(0xA3A79D92);
+      bgColor = isLight ? palette.surfaceSolid : const Color(0xC42B2622);
+      borderColor = isLight ? palette.borderSolid : const Color(0xA3A79D92);
       borderWidth = 1.1;
-      timeColor = const Color(0xFFF7F9FC);
-      metaColor = const Color(0xFF59E59A);
+      timeColor = palette.textPrimary;
+      metaColor = isLight ? palette.success : const Color(0xFF59E59A);
     } else {
-      bgColor = const Color(0x7A211E1C);
-      borderColor = const Color(0x528C8176);
+      bgColor = isLight ? palette.surfaceRaised : const Color(0x7A211E1C);
+      borderColor = isLight
+          ? palette.borderSolid.withValues(alpha: 0.65)
+          : const Color(0x528C8176);
       borderWidth = 1.0;
-      timeColor = const Color(0xFFACA39B);
-      metaColor = const Color(0xFF9C948D);
+      timeColor = isLight
+          ? palette.textSecondary.withValues(alpha: 0.70)
+          : const Color(0xFFACA39B);
+      metaColor = isLight
+          ? palette.textSecondary.withValues(alpha: 0.70)
+          : const Color(0xFF9C948D);
     }
 
     final metaText = picked
@@ -879,13 +899,15 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
   }
 
   Widget _buildPickedTray() {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final sorted = _pickedByDate.values.toList()
       ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
     return Container(
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
+        color: isLight ? palette.surfaceSolid : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: MetaGymTheme.brandOrange.withValues(alpha: 0.55),
@@ -902,8 +924,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                   _isReschedule
                       ? 'Ca tập mới đã chọn'
                       : 'Đã chọn ${sorted.length}/${widget.availableToBook} buổi tập',
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -919,10 +941,10 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                 onPressed: _submitting
                     ? null
                     : () => setState(() => _pickedByDate.clear()),
-                child: const Text(
+                child: Text(
                   'Xóa hết',
                   style: TextStyle(
-                    color: Color(0xFFC8C2BC),
+                    color: palette.textWarmMuted,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -948,7 +970,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF472C22),
+                    color: isLight
+                        ? palette.chipActiveBg
+                        : const Color(0xFF472C22),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
                       color: MetaGymTheme.brandOrange.withValues(alpha: 0.7),
@@ -959,18 +983,20 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                     children: [
                       Text(
                         '$ddmm · ${pick.startLabel}–${pick.endLabel}',
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
+                        style: TextStyle(
+                          color: isLight
+                              ? palette.primaryText
+                              : const Color(0xFFF7F9FC),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Text(
+                      Text(
                         '×',
                         style: TextStyle(
-                          color: MetaGymTheme.brandOrange,
+                          color: palette.primaryText,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -987,6 +1013,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final dateKey = _ymd(_selectedDate);
     final shifts = _buildDayShifts(dateKey);
     final alreadyHasDayBooking =
@@ -996,7 +1024,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
         : shifts.where((s) => s.isOpen).length;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -1023,8 +1051,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                               _isReschedule
                                   ? 'Đổi khung giờ tập'
                                   : 'Đặt lịch với Coach',
-                              style: const TextStyle(
-                                color: Color(0xFFF6F3F0),
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.3,
@@ -1035,8 +1063,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                               _isReschedule
                                   ? 'Chọn 1 ca mới khả dụng'
                                   : 'Chọn nhiều ngày, tối đa 1 buổi/ngày',
-                              style: const TextStyle(
-                                color: Color(0xFFBCB5AE),
+                              style: TextStyle(
+                                color: palette.textSecondary,
                                 fontSize: 11.5,
                               ),
                             ),
@@ -1060,14 +1088,22 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xD4331E1E),
+                            color: isLight
+                                ? palette.error.withValues(alpha: 0.10)
+                                : const Color(0xD4331E1E),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0x99F15B64)),
+                            border: Border.all(
+                              color: palette.error.withValues(
+                                alpha: isLight ? 0.45 : 0.60,
+                              ),
+                            ),
                           ),
                           child: Text(
                             _error!,
-                            style: const TextStyle(
-                              color: Color(0xFFFFB2B6),
+                            style: TextStyle(
+                              color: isLight
+                                  ? palette.error
+                                  : const Color(0xFFFFB2B6),
                               fontSize: 13,
                             ),
                           ),
@@ -1078,9 +1114,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.schedule_rounded,
-                            color: MetaGymTheme.brandOrange,
+                            color: palette.primaryText,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -1093,8 +1129,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                               children: [
                                 Text(
                                   _selectedDayHeading(),
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textPrimary,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1105,8 +1141,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                                       : openCount > 0
                                       ? '$openCount ca trống · 1h30/ca'
                                       : 'Nghỉ / Kín lịch',
-                                  style: const TextStyle(
-                                    color: Color(0xFFC8C2BC),
+                                  style: TextStyle(
+                                    color: palette.textWarmMuted,
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
                                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -1134,8 +1170,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         ),
                       ],
                       const SizedBox(height: 14),
-                      const MetaGymGlassCard(
-                        padding: EdgeInsets.symmetric(
+                      MetaGymGlassCard(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 13,
                           vertical: 11,
                         ),
@@ -1145,14 +1181,14 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                             Icon(
                               Icons.info_outline_rounded,
                               size: 16,
-                              color: MetaGymTheme.warningAmber,
+                              color: palette.warning,
                             ),
-                            SizedBox(width: 9),
+                            const SizedBox(width: 9),
                             Expanded(
                               child: Text(
                                 'Lưu ý: Có thể chọn nhiều ngày để đặt cùng lúc (tối đa 1 buổi/ngày). Hủy hoặc đổi giờ dưới 12 giờ sẽ bị trừ 1 lượt.',
                                 style: TextStyle(
-                                  color: Color(0xFFC8C2BC),
+                                  color: palette.textWarmMuted,
                                   fontSize: 12,
                                   height: 1.45,
                                 ),
@@ -1186,6 +1222,7 @@ class _CalendarArrowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -1203,11 +1240,11 @@ class _CalendarArrowButton extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0x80211E1C),
+                  color: palette.metricPanelBg,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0x9A8C8176)),
+                  border: Border.all(color: palette.metricPanelBorder),
                 ),
-                child: Icon(icon, size: 18, color: const Color(0xFFF7F9FC)),
+                child: Icon(icon, size: 18, color: palette.textPrimary),
               ),
             ),
           ),
@@ -1230,6 +1267,7 @@ class _CalModeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(9),
@@ -1252,9 +1290,7 @@ class _CalModeChip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: active
-                    ? MetaGymTheme.onPrimary
-                    : const Color(0xFFC8C2BC),
+                color: active ? MetaGymTheme.onPrimary : palette.textWarmMuted,
                 fontSize: 11.5,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w600,
               ),

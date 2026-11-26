@@ -103,53 +103,62 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
     } else {
       final submitted = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          backgroundColor: const Color(0xF0241F1B),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-          ),
-          title: const Text(
-            'Đổi trạng thái',
-            style: TextStyle(
-              color: Color(0xFFF7F9FC),
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          content: Text(
-            status == 'COMPLETED'
-                ? 'Đánh dấu hoàn thành?'
-                : 'Đánh dấu hội viên vắng?',
-            style: const TextStyle(
-              color: Color(0xFFE4DAD1),
-              fontSize: 14,
-              height: 1.45,
-            ),
-          ),
-          actions: [
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size(64, 48),
-                foregroundColor: const Color(0xFFC8C2BC),
+        builder: (dialogContext) {
+          final palette = MetaGymTheme.paletteOf(dialogContext);
+          final isLight = MetaGymTheme.isLightPalette(dialogContext);
+          return AlertDialog(
+            backgroundColor: isLight
+                ? palette.surfaceSolid
+                : const Color(0xF0241F1B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(
+                color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
+                width: 1.1,
               ),
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Đóng'),
             ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: MetaGymTheme.primary,
-                foregroundColor: MetaGymTheme.onPrimary,
-                minimumSize: const Size(96, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+            title: Text(
+              'Đổi trạng thái',
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            content: Text(
+              status == 'COMPLETED'
+                  ? 'Đánh dấu hoàn thành?'
+                  : 'Đánh dấu hội viên vắng?',
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(64, 48),
+                  foregroundColor: palette.textWarmMuted,
                 ),
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Đóng'),
               ),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Xác nhận'),
-            ),
-          ],
-        ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: MetaGymTheme.primary,
+                  foregroundColor: MetaGymTheme.onPrimary,
+                  minimumSize: const Size(96, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Xác nhận'),
+              ),
+            ],
+          );
+        },
       );
       if (submitted != true || !mounted) return;
     }
@@ -211,6 +220,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Row(
@@ -223,7 +233,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
             ),
             const SizedBox(width: 10),
           ],
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -232,20 +242,20 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
+                    color: palette.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                     letterSpacing: -0.3,
                     height: 1.15,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Buổi tập 1:1 & điểm danh',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Color(0xFFC8C2BC),
+                    color: palette.textWarmMuted,
                     fontSize: 11.5,
                     height: 1.25,
                   ),
@@ -273,12 +283,13 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   }
 
   Widget _buildSegmentedTabs() {
+    final palette = MetaGymTheme.paletteOf(context);
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xB8211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x9A8C8176), width: 1.1),
+        border: Border.all(color: palette.metricPanelBorder, width: 1.1),
       ),
       child: Row(
         children: [
@@ -313,6 +324,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   }
 
   Widget _buildBookingHeroCard() {
+    final palette = MetaGymTheme.paletteOf(context);
     return MetaGymHeroGlassCard(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(16),
@@ -324,17 +336,17 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.primary.withValues(alpha: 0.18),
+                  color: MetaGymTheme.primary.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.calendar_month_rounded,
-                  color: MetaGymTheme.primary,
+                  color: palette.primaryText,
                   size: 22,
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -343,18 +355,18 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFF7F9FC),
+                        color: palette.textPrimary,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Cấu hình lịch làm việc tuần, khóa giờ và xem buổi hẹn',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFC8C2BC),
+                        color: palette.textWarmMuted,
                         fontSize: 12,
                         height: 1.35,
                       ),
@@ -376,6 +388,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   }
 
   Widget _buildSessionCard(TrainingSession session) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final memberName = _memberName(session.memberId);
     final canEdit =
         widget.coachBooking == null && session.status == 'SCHEDULED';
@@ -400,8 +414,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                       session.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontWeight: FontWeight.w700,
                         fontSize: 15.5,
                         height: 1.25,
@@ -412,8 +426,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                       '$memberName · ${formatSessionLocalTime(session.scheduledStartAt)}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFC8C2BC),
+                      style: TextStyle(
+                        color: palette.textWarmMuted,
                         fontSize: 12.5,
                         fontFeatures: MetaGymTheme.tabularFigures,
                       ),
@@ -430,14 +444,14 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0x80211E1C),
+                color: palette.metricPanelBg,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0x9A8C8176)),
+                border: Border.all(color: palette.metricPanelBorder),
               ),
               child: Text(
                 notes,
-                style: const TextStyle(
-                  color: Color(0xFFE4DAD1),
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 12.5,
                   height: 1.4,
                 ),
@@ -448,8 +462,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
             const SizedBox(height: 8),
             Text(
               'Lý do hủy: $reason',
-              style: const TextStyle(
-                color: Color(0xFFFFB2B6),
+              style: TextStyle(
+                color: isLight ? palette.error : const Color(0xFFFFB2B6),
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
               ),
@@ -457,7 +471,10 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
           ],
           if (canEdit) ...[
             const SizedBox(height: 12),
-            const Divider(color: Color(0x26FFF5E9), height: 1),
+            Divider(
+              color: isLight ? palette.borderSolid : const Color(0x26FFF5E9),
+              height: 1,
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -465,13 +482,21 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               children: [
                 FilledButton.tonal(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF173B2C),
-                    foregroundColor: const Color(0xFF59E59A),
+                    backgroundColor: isLight
+                        ? palette.success.withValues(alpha: 0.12)
+                        : const Color(0xFF173B2C),
+                    foregroundColor: isLight
+                        ? palette.success
+                        : const Color(0xFF59E59A),
                     minimumSize: const Size(48, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFF216F4B)),
+                      side: BorderSide(
+                        color: isLight
+                            ? palette.success.withValues(alpha: 0.40)
+                            : const Color(0xFF216F4B),
+                      ),
                     ),
                   ),
                   onPressed: () => _changeStatus(session, 'COMPLETED'),
@@ -482,13 +507,21 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                 ),
                 FilledButton.tonal(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF45311D),
-                    foregroundColor: const Color(0xFFFFC573),
+                    backgroundColor: isLight
+                        ? palette.warning.withValues(alpha: 0.12)
+                        : const Color(0xFF45311D),
+                    foregroundColor: isLight
+                        ? palette.warning
+                        : const Color(0xFFFFC573),
                     minimumSize: const Size(48, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: Color(0xFF815423)),
+                      side: BorderSide(
+                        color: isLight
+                            ? palette.warning.withValues(alpha: 0.40)
+                            : const Color(0xFF815423),
+                      ),
                     ),
                   ),
                   onPressed: () => _changeStatus(session, 'MEMBER_ABSENT'),
@@ -499,12 +532,14 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                 ),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: const Color(0x80211E1C),
-                    foregroundColor: MetaGymTheme.dangerCoral,
+                    backgroundColor: isLight
+                        ? palette.error.withValues(alpha: 0.08)
+                        : const Color(0x80211E1C),
+                    foregroundColor: palette.error,
                     minimumSize: const Size(48, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     side: BorderSide(
-                      color: MetaGymTheme.dangerCoral.withValues(alpha: 0.55),
+                      color: palette.error.withValues(alpha: 0.55),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -537,6 +572,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final visibleSessions = _filteredSessions();
     final canCreate =
         widget.coachBooking == null &&
@@ -544,7 +581,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
         _members.any((m) => m.status == 'ACTIVE');
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       floatingActionButton: !canCreate
           ? null
           : FloatingActionButton.extended(
@@ -582,7 +619,9 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.primary,
-                          backgroundColor: const Color(0xFF2B2622),
+                          backgroundColor: isLight
+                              ? palette.surfaceSolid
+                              : const Color(0xFF2B2622),
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -617,15 +656,15 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                         width: 52,
                                         height: 52,
                                         decoration: BoxDecoration(
-                                          color: const Color(0x80211E1C),
+                                          color: palette.metricPanelBg,
                                           shape: BoxShape.circle,
                                           border: Border.all(
-                                            color: const Color(0x9A8C8176),
+                                            color: palette.metricPanelBorder,
                                           ),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.event_busy_rounded,
-                                          color: Color(0xFFC8C2BC),
+                                          color: palette.textWarmMuted,
                                           size: 26,
                                         ),
                                       ),
@@ -634,8 +673,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                         _sessions.isEmpty
                                             ? 'Chưa có buổi tập nào.'
                                             : 'Không có buổi tập ở mục này.',
-                                        style: const TextStyle(
-                                          color: Color(0xFFF7F9FC),
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
                                           fontWeight: FontWeight.w700,
                                           fontSize: 15,
                                         ),
@@ -646,8 +685,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                         _sessions.isEmpty
                                             ? 'Các buổi tập mới với học viên sẽ hiển thị tại đây.'
                                             : 'Chuyển sang tab Tất cả để xem toàn bộ lịch buổi tập.',
-                                        style: const TextStyle(
-                                          color: Color(0xFFC8C2BC),
+                                        style: TextStyle(
+                                          color: palette.textWarmMuted,
                                           fontSize: 12.5,
                                           height: 1.4,
                                         ),
@@ -661,19 +700,19 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.fitness_center_rounded,
-                                        color: MetaGymTheme.primary,
+                                        color: palette.primaryText,
                                         size: 17,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Expanded(
+                                      Expanded(
                                         child: Text(
                                           'Danh sách buổi tập',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
-                                            color: Color(0xFFF7F9FC),
+                                            color: palette.textPrimary,
                                             fontSize: 13.5,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -681,8 +720,8 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                       ),
                                       Text(
                                         '${visibleSessions.length} buổi',
-                                        style: const TextStyle(
-                                          color: Color(0xFFC8C2BC),
+                                        style: TextStyle(
+                                          color: palette.textWarmMuted,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                           fontFeatures:
@@ -721,8 +760,12 @@ class _SessionTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Material(
-      color: active ? const Color(0xFF472C22) : Colors.transparent,
+      color: active
+          ? (isLight ? MetaGymTheme.brandOrange : const Color(0xFF472C22))
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -735,7 +778,7 @@ class _SessionTabButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: active
+              border: active && !isLight
                   ? Border.all(color: MetaGymTheme.brandOrange, width: 1.2)
                   : null,
             ),
@@ -744,7 +787,7 @@ class _SessionTabButton extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: active ? Colors.white : const Color(0xFFC8C2BC),
+                color: active ? Colors.white : palette.textWarmMuted,
                 fontSize: 12.5,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -774,79 +817,86 @@ class _CancellationDialogState extends State<_CancellationDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    backgroundColor: const Color(0xF0241F1B),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(24),
-      side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-    ),
-    title: const Text(
-      'Hủy buổi tập',
-      style: TextStyle(
-        color: Color(0xFFF7F9FC),
-        fontWeight: FontWeight.w700,
-        fontSize: 18,
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return AlertDialog(
+      backgroundColor: isLight ? palette.surfaceSolid : const Color(0xF0241F1B),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(
+          color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
+          width: 1.1,
+        ),
       ),
-    ),
-    content: TextField(
-      controller: _reason,
-      key: const Key('session-cancellation-reason'),
-      maxLength: 2000,
-      maxLines: 3,
-      style: const TextStyle(color: Color(0xFFF7F9FC)),
-      decoration: InputDecoration(
-        labelText: 'Lý do hủy',
-        labelStyle: const TextStyle(color: Color(0xFFC8C2BC)),
-        filled: true,
-        fillColor: const Color(0x99211E1C),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      title: Text(
+        'Hủy buổi tập',
+        style: TextStyle(
+          color: palette.textPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          borderSide: const BorderSide(color: Color(0x9A8C8176)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          borderSide: const BorderSide(
-            color: MetaGymTheme.brandOrange,
-            width: 1.5,
+      ),
+      content: TextField(
+        controller: _reason,
+        key: const Key('session-cancellation-reason'),
+        maxLength: 2000,
+        maxLines: 3,
+        style: TextStyle(color: palette.textPrimary),
+        decoration: InputDecoration(
+          labelText: 'Lý do hủy',
+          labelStyle: TextStyle(color: palette.textWarmMuted),
+          filled: true,
+          fillColor: palette.metricPanelBg,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            borderSide: BorderSide(color: palette.metricPanelBorder),
           ),
-        ),
-        errorText: _invalid ? 'Vui lòng nhập lý do hủy.' : null,
-      ),
-    ),
-    actions: [
-      TextButton(
-        style: TextButton.styleFrom(
-          minimumSize: const Size(64, 48),
-          foregroundColor: const Color(0xFFC8C2BC),
-        ),
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Đóng'),
-      ),
-      FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: MetaGymTheme.primary,
-          foregroundColor: MetaGymTheme.onPrimary,
-          minimumSize: const Size(112, 48),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            borderSide: BorderSide(color: palette.metricPanelBorder),
           ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            borderSide: const BorderSide(
+              color: MetaGymTheme.brandOrange,
+              width: 1.5,
+            ),
+          ),
+          errorText: _invalid ? 'Vui lòng nhập lý do hủy.' : null,
         ),
-        onPressed: () {
-          final reason = _reason.text.trim();
-          if (reason.isEmpty) {
-            setState(() => _invalid = true);
-            return;
-          }
-          Navigator.pop(context, reason);
-        },
-        child: const Text('Xác nhận hủy'),
       ),
-    ],
-  );
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            minimumSize: const Size(64, 48),
+            foregroundColor: palette.textWarmMuted,
+          ),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Đóng'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.primary,
+            foregroundColor: MetaGymTheme.onPrimary,
+            minimumSize: const Size(112, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          onPressed: () {
+            final reason = _reason.text.trim();
+            if (reason.isEmpty) {
+              setState(() => _invalid = true);
+              return;
+            }
+            Navigator.pop(context, reason);
+          },
+          child: const Text('Xác nhận hủy'),
+        ),
+      ],
+    );
+  }
 }
 
 class _SessionFormPage extends StatefulWidget {
@@ -899,29 +949,31 @@ class _SessionFormPageState extends State<_SessionFormPage> {
     super.dispose();
   }
 
-  InputDecoration _fieldDecoration({
+  InputDecoration _fieldDecoration(
+    BuildContext context, {
     required String label,
     String? hint,
     IconData? icon,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: const TextStyle(color: Color(0xFFC8C2BC)),
-      hintStyle: const TextStyle(color: Color(0xFF9C948D)),
+      labelStyle: TextStyle(color: palette.textWarmMuted),
+      hintStyle: TextStyle(color: palette.textSecondary),
       prefixIcon: icon == null
           ? null
-          : Icon(icon, size: 19, color: const Color(0xFFC8C2BC)),
+          : Icon(icon, size: 19, color: palette.textWarmMuted),
       filled: true,
-      fillColor: const Color(0x99211E1C),
+      fillColor: palette.metricPanelBg,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: Color(0x9A8C8176)),
+        borderSide: BorderSide(color: palette.metricPanelBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: Color(0x9A8C8176)),
+        borderSide: BorderSide(color: palette.metricPanelBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -932,7 +984,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+        borderSide: BorderSide(color: palette.error),
       ),
     );
   }
@@ -984,9 +1036,11 @@ class _SessionFormPageState extends State<_SessionFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final isCreate = widget.session == null;
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -1012,20 +1066,20 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                               isCreate ? 'Tạo buổi tập' : 'Sửa buổi tập',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFFF7F9FC),
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.3,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
+                            Text(
                               'Thiết lập lịch tập & ghi chú cho học viên',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Color(0xFFC8C2BC),
+                                color: palette.textWarmMuted,
                                 fontSize: 11.5,
                               ),
                             ),
@@ -1054,12 +1108,15 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                             if (isCreate) ...[
                               DropdownButtonFormField<String>(
                                 initialValue: _memberId,
-                                dropdownColor: const Color(0xF0241F1B),
-                                style: const TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                dropdownColor: isLight
+                                    ? palette.surfaceSolid
+                                    : const Color(0xF0241F1B),
+                                style: TextStyle(
+                                  color: palette.textPrimary,
                                   fontSize: 14,
                                 ),
                                 decoration: _fieldDecoration(
+                                  context,
                                   label: 'Hội viên',
                                   icon: Icons.person_outline_rounded,
                                 ),
@@ -1083,10 +1140,11 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                               key: const Key('session-title'),
                               controller: _title,
                               maxLength: 150,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Tên buổi tập',
                                 hint: 'VD: Tập chân & Core',
                                 icon: Icons.fitness_center_rounded,
@@ -1097,11 +1155,12 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                               key: const Key('session-start'),
                               controller: _start,
                               keyboardType: TextInputType.datetime,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Bắt đầu (dd/MM/yyyy HH:mm)',
                                 hint: '24/10/2026 08:00',
                                 icon: Icons.schedule_rounded,
@@ -1112,11 +1171,12 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                               key: const Key('session-end'),
                               controller: _end,
                               keyboardType: TextInputType.datetime,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Kết thúc (tùy chọn)',
                                 hint: '24/10/2026 09:00',
                                 icon: Icons.timer_off_outlined,
@@ -1127,10 +1187,11 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                               controller: _notes,
                               maxLength: 5000,
                               maxLines: 3,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Ghi chú',
                                 hint:
                                     'Yêu cầu khởi động hoặc lưu ý chấn thương…',

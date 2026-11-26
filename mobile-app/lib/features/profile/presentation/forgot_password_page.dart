@@ -39,6 +39,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final reset = context.watch<PasswordResetController>();
     final (
       title,
@@ -129,8 +130,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   Text(
                     title,
                     textAlign: TextAlign.left,
-                    style: const TextStyle(
-                      color: Color(0xFFF7F9FC),
+                    style: TextStyle(
+                      color: palette.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
@@ -141,8 +142,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   Text(
                     subtitle,
                     textAlign: TextAlign.left,
-                    style: const TextStyle(
-                      color: Color(0xFFB7B2AF),
+                    style: TextStyle(
+                      color: palette.textSecondary,
                       fontSize: 13,
                       height: 1.45,
                     ),
@@ -194,7 +195,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                     ? Icons.visibility_outlined
                                     : Icons.visibility_off_outlined,
                                 size: 20,
-                                color: const Color(0xFFD9CFC1),
+                                color: palette.textWarmMuted,
                               ),
                             )
                           : null,
@@ -203,27 +204,27 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0x80211E1C),
+                        color: palette.metricPanelBg,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: MetaGymTheme.success.withValues(alpha: 0.45),
+                          color: palette.success.withValues(alpha: 0.45),
                           width: 1,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
                             Icons.check_circle_rounded,
-                            color: MetaGymTheme.success,
+                            color: palette.success,
                             size: 20,
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Mật khẩu đã được cập nhật. Hãy đăng nhập lại.',
                               style: TextStyle(
-                                color: Color(0xFFF7F9FC),
+                                color: palette.textPrimary,
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
@@ -265,6 +266,8 @@ class _ResetStepProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final duration =
         MetaGymTheme.isFlutterTestEnvironment ||
             MediaQuery.disableAnimationsOf(context)
@@ -274,22 +277,24 @@ class _ResetStepProgress extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x9A8C8176), width: 1),
+        border: Border.all(color: palette.metricPanelBorder, width: 1),
       ),
       child: Row(
         children: List.generate(_labels.length, (index) {
           final isCompleted = index < currentStepIndex;
           final isActive = index == currentStepIndex;
           final barColor = isCompleted
-              ? MetaGymTheme.success
+              ? palette.success
               : isActive
               ? MetaGymTheme.brandOrange
+              : isLight
+              ? palette.borderSolid
               : Colors.white.withValues(alpha: 0.14);
           final labelColor = isCompleted || isActive
-              ? const Color(0xFFF7F9FC)
-              : const Color(0xFF9E958C);
+              ? palette.textPrimary
+              : palette.textSecondary;
 
           return Expanded(
             child: Padding(
@@ -314,10 +319,10 @@ class _ResetStepProgress extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isCompleted) ...[
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
                           size: 12,
-                          color: MetaGymTheme.success,
+                          color: palette.success,
                         ),
                         const SizedBox(width: 4),
                       ],

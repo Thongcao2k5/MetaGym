@@ -158,12 +158,12 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
             InkWell(
               onTap: widget.onOpenMembership,
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 child: Text(
                   'Xem tất cả ›',
                   style: TextStyle(
-                    color: MetaGymTheme.brandOrange,
+                    color: palette.primaryText,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -261,10 +261,10 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.star_rounded,
                           size: 13,
-                          color: MetaGymTheme.brandOrange,
+                          color: palette.primaryText,
                         ),
                         const SizedBox(width: 4),
                         Flexible(
@@ -273,8 +273,8 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
+                            style: TextStyle(
+                              color: palette.primaryText,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.2,
@@ -380,11 +380,11 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
                             width: 1.0,
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'Xem gói tập ›',
                             style: TextStyle(
-                              color: MetaGymTheme.brandOrange,
+                              color: palette.primaryText,
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               height: 1.0,

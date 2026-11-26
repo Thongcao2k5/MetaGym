@@ -109,12 +109,15 @@ class WarmSmokeGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final radius = borderRadius ?? BorderRadius.circular(24);
     final inner = padding != null
         ? Padding(padding: padding!, child: child)
         : child;
     final routeAnimation = ModalRoute.of(context)?.animation;
     final canBlur =
+        !isLight &&
         featured &&
         !MediaQuery.disableAnimationsOf(context) &&
         !MetaGymTheme.isFlutterTestEnvironment;
@@ -123,33 +126,44 @@ class WarmSmokeGlass extends StatelessWidget {
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: featured ? null : MetaGymWarmGlassTokens.cardFill,
+        color: featured
+            ? null
+            : (isLight ? palette.surfaceSolid : MetaGymWarmGlassTokens.cardFill),
         gradient: featured
-            ? const LinearGradient(
+            ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  MetaGymWarmGlassTokens.heroTop,
-                  MetaGymWarmGlassTokens.heroBottom,
+                  palette.warmGlassTop,
+                  palette.warmGlassBottom,
                 ],
               )
             : null,
         borderRadius: radius,
         border: Border.all(
-          color: MetaGymWarmGlassTokens.heroBorder,
+          color: palette.warmGlassBorder,
           width: 1.2,
         ),
+        boxShadow: isLight
+            ? const [
+                BoxShadow(
+                  color: Color(0x140F172A),
+                  blurRadius: 16,
+                  offset: Offset(0, 5),
+                ),
+              ]
+            : null,
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          const Positioned(
+          Positioned(
             top: 0,
             left: 20,
             right: 20,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: MetaGymWarmGlassTokens.heroHighlight),
+              child: ColoredBox(color: palette.glassHighlight),
             ),
           ),
           SizedBox(width: double.infinity, child: inner),
@@ -215,6 +229,7 @@ class AuthTopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final duration =
         MetaGymTheme.isFlutterTestEnvironment ||
             MediaQuery.disableAnimationsOf(context)
@@ -233,23 +248,23 @@ class AuthTopHeader extends StatelessWidget {
             ),
           ),
         ),
-        const Expanded(
+        Expanded(
           child: Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    MetaGymBrandBadge(
+                    const MetaGymBrandBadge(
                       size: 38,
                       borderRadius: 12,
                       fontSize: 13,
                       enableHero: false,
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -257,18 +272,18 @@ class AuthTopHeader extends StatelessWidget {
                         Text(
                           'META GYM',
                           style: TextStyle(
-                            color: MetaGymTheme.brandOrange,
+                            color: palette.primaryText,
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.6,
                             height: 1.1,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           'Performance Studio',
                           style: TextStyle(
-                            color: MetaGymTheme.textPrimary,
+                            color: palette.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
@@ -296,6 +311,8 @@ class _WarmCircleBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Semantics(
       button: true,
       enabled: onPressed != null,
@@ -314,10 +331,19 @@ class _WarmCircleBackButton extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0x9E2F2924),
+                    color: isLight ? null : const Color(0x9E2F2924),
+                    gradient: isLight
+                        ? const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFFFFFFFF), Color(0xFFE5ECF5)],
+                          )
+                        : null,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0x95ADA295),
+                      color: isLight
+                          ? const Color(0xFFB4C2D4)
+                          : const Color(0x95ADA295),
                       width: 1,
                     ),
                   ),
@@ -325,8 +351,8 @@ class _WarmCircleBackButton extends StatelessWidget {
                     Icons.arrow_back_rounded,
                     size: 20,
                     color: onPressed == null
-                        ? const Color(0x88F7F9FC)
-                        : const Color(0xFFF7F9FC),
+                        ? palette.textPrimary.withValues(alpha: 0.45)
+                        : palette.textPrimary,
                   ),
                 ),
               ),
@@ -472,6 +498,7 @@ class AuthModeSegmentSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final duration =
         MetaGymTheme.isFlutterTestEnvironment ||
             MediaQuery.disableAnimationsOf(context)
@@ -482,10 +509,10 @@ class AuthModeSegmentSwitch extends StatelessWidget {
       height: 56,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: MetaGymWarmGlassTokens.metricPanelFill,
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: MetaGymWarmGlassTokens.metricPanelBorder,
+          color: palette.metricPanelBorder,
           width: 1,
         ),
       ),
@@ -553,6 +580,7 @@ class _AuthModeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final duration =
         MetaGymTheme.isFlutterTestEnvironment ||
             MediaQuery.disableAnimationsOf(context)
@@ -582,8 +610,8 @@ class _AuthModeTab extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: MetaGymTheme.fontFamily,
                         color: selected
-                            ? MetaGymTheme.textPrimary
-                            : MetaGymWarmGlassTokens.subtitleMuted,
+                            ? Colors.white
+                            : palette.textSecondary,
                         fontSize: 13,
                         fontWeight: selected
                             ? FontWeight.w700
@@ -671,6 +699,11 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final idleBorderColor = isLight
+        ? palette.borderSolid
+        : const Color(0x9A8C8176);
     return Focus(
       canRequestFocus: false,
       skipTraversal: true,
@@ -685,8 +718,8 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
           ExcludeSemantics(
             child: Text(
               widget.label,
-              style: const TextStyle(
-                color: MetaGymTheme.textSecondary,
+              style: TextStyle(
+                color: palette.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -704,8 +737,8 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
               autofillHints: widget.autofillHints,
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -714,17 +747,17 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
                 hintText: widget.hintText,
                 helperText: widget.helperText,
                 errorText: widget.errorText,
-                labelStyle: const TextStyle(
-                  color: Color(0xFFD5CCBF),
+                labelStyle: TextStyle(
+                  color: palette.textWarmMuted,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
-                hintStyle: const TextStyle(
-                  color: Color(0xA6C4BAAE),
+                hintStyle: TextStyle(
+                  color: palette.textSecondary.withValues(alpha: 0.72),
                   fontSize: 14,
                 ),
-                helperStyle: const TextStyle(
-                  color: Color(0xFFC4BAAE),
+                helperStyle: TextStyle(
+                  color: palette.textSecondary,
                   fontSize: 12,
                 ),
                 helperMaxLines: 2,
@@ -742,14 +775,16 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
                         widget.icon,
                         size: 20,
                         color: _focused
-                            ? MetaGymTheme.brandOrange
-                            : const Color(0xFFD9CFC1),
+                            ? palette.primaryText
+                            : palette.textSecondary,
                       ),
                 suffixIcon: widget.suffixIcon,
                 filled: true,
-                fillColor: _focused
-                    ? const Color(0x9E28231F)
-                    : const Color(0x80211E1C),
+                fillColor: isLight
+                    ? (_focused ? palette.surfaceSolid : palette.surfaceRaised)
+                    : (_focused
+                          ? const Color(0x9E28231F)
+                          : const Color(0x80211E1C)),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -757,15 +792,15 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: Color(0x9A8C8176),
+                  borderSide: BorderSide(
+                    color: idleBorderColor,
                     width: 1.0,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: Color(0x9A8C8176),
+                  borderSide: BorderSide(
+                    color: idleBorderColor,
                     width: 1.0,
                   ),
                 ),
@@ -778,15 +813,15 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: MetaGymTheme.dangerCoral,
+                  borderSide: BorderSide(
+                    color: palette.error,
                     width: 1.2,
                   ),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: MetaGymTheme.dangerCoral,
+                  borderSide: BorderSide(
+                    color: palette.error,
                     width: 1.5,
                   ),
                 ),
@@ -799,7 +834,7 @@ class _AuthGlassFieldState extends State<AuthGlassField> {
   }
 }
 
-/// Thẻ báo lỗi kính đỏ nổi bật trên nền tối.
+/// Thẻ báo lỗi kính đỏ nổi bật trên nền tối/sáng.
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({required this.message, this.bannerKey, super.key});
 
@@ -808,23 +843,25 @@ class AuthErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: MetaGymTheme.dangerCoral.withValues(alpha: 0.16),
+        color: palette.error.withValues(alpha: isLight ? 0.10 : 0.16),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: MetaGymTheme.dangerCoral.withValues(alpha: 0.52),
+          color: palette.error.withValues(alpha: 0.48),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 1),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
             child: Icon(
               Icons.error_outline_rounded,
-              color: MetaGymTheme.dangerCoral,
+              color: palette.error,
               size: 18,
             ),
           ),
@@ -833,8 +870,8 @@ class AuthErrorBanner extends StatelessWidget {
             child: Text(
               message,
               key: bannerKey,
-              style: const TextStyle(
-                color: Color(0xFFFFD8DB),
+              style: TextStyle(
+                color: isLight ? palette.error : const Color(0xFFFFD8DB),
                 fontSize: 13,
                 height: 1.35,
                 fontWeight: FontWeight.w500,
@@ -1017,9 +1054,14 @@ class _AuthSecondaryGlassButtonState extends State<AuthSecondaryGlassButton> {
             key: widget.buttonKey,
             onPressed: widget.onPressed,
             style: OutlinedButton.styleFrom(
-              foregroundColor: MetaGymTheme.textPrimary,
-              backgroundColor: const Color(0xC42B2622),
-              side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+              foregroundColor: MetaGymTheme.paletteOf(context).textPrimary,
+              backgroundColor: MetaGymTheme.isLightPalette(context)
+                  ? MetaGymTheme.paletteOf(context).surfaceSolid
+                  : const Color(0xC42B2622),
+              side: BorderSide(
+                color: MetaGymTheme.paletteOf(context).warmGlassBorder,
+                width: 1.1,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

@@ -203,6 +203,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final now = DateTime.now();
     final active = _memberships
         .where((item) => item.status == 'ACTIVE')
@@ -217,7 +218,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     final coachBento = _resolveCoachBentoState(now, latestCoachInvoice);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -246,7 +247,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
-                          backgroundColor: const Color(0xFF2B2622),
+                          backgroundColor: palette.surfaceSolid,
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -280,8 +281,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                             ? primaryActive.label
                                             : 'Chưa kích hoạt',
                                         pillColor: primaryActive != null
-                                            ? MetaGymTheme.progressGreen
-                                            : const Color(0xFFA8B1C2),
+                                            ? palette.success
+                                            : palette.textSecondary,
                                         accentBorder: primaryActive != null,
                                         onTap: () => _openRouteIfAvailable(
                                           '/member/features/membership',
@@ -307,9 +308,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
                               if (scheduled.isNotEmpty) ...[
                                 const SizedBox(height: 10),
-                                const MembershipSectionHeader(
+                                MembershipSectionHeader(
                                   icon: Icons.schedule_rounded,
-                                  iconColor: MetaGymTheme.reflectionBlue,
+                                  iconColor: palette.reflection,
                                   title: 'Gói sắp tới',
                                 ),
                                 for (final item in scheduled)
@@ -326,10 +327,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                 padding: const EdgeInsets.all(3),
                                 margin: const EdgeInsets.only(bottom: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xB8211E1C),
+                                  color: palette.metricPanelBg,
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: const Color(0x9A8C8176),
+                                    color: palette.metricPanelBorder,
                                     width: 1.0,
                                   ),
                                 ),
@@ -381,8 +382,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                 title: 'Lịch sử giao dịch',
                                 trailing: Text(
                                   '${filtered.length} hóa đơn',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textSecondary,
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -390,14 +391,14 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                 ),
                               ),
                               if (filtered.isEmpty)
-                                const MetaGymGlassCard(
+                                MetaGymGlassCard(
                                   solid: false,
-                                  padding: EdgeInsets.all(18),
+                                  padding: const EdgeInsets.all(18),
                                   child: Text(
                                     'Chưa có giao dịch.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Color(0xFFD5CCBF),
+                                      color: palette.textWarmMuted,
                                       fontSize: 13,
                                     ),
                                   ),
@@ -448,21 +449,27 @@ class _ActiveServiceBentoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
+        color: isLight ? palette.surfaceSolid : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: accentBorder
-              ? const Color(0x88FF8A5B)
-              : const Color(0xA3A79D92),
+              ? (isLight
+                    ? MetaGymTheme.brandOrange.withValues(alpha: 0.55)
+                    : const Color(0x88FF8A5B))
+              : palette.warmGlassBorder,
           width: 1.1,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x40000000),
-            blurRadius: 16,
-            offset: Offset(0, 8),
+            color: isLight
+                ? const Color(0x120F172A)
+                : const Color(0x40000000),
+            blurRadius: isLight ? 12 : 16,
+            offset: Offset(0, isLight ? 4 : 8),
           ),
         ],
       ),
@@ -478,8 +485,8 @@ class _ActiveServiceBentoCard extends StatelessWidget {
                 eyebrow,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: MetaGymTheme.textSecondary,
+                style: TextStyle(
+                  color: palette.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -489,8 +496,8 @@ class _ActiveServiceBentoCard extends StatelessWidget {
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: MetaGymTheme.textPrimary,
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w800,
                   height: 1.22,
@@ -502,7 +509,7 @@ class _ActiveServiceBentoCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: pillColor.withValues(alpha: 0.16),
+                  color: pillColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: pillColor.withValues(alpha: 0.42)),
                 ),
@@ -539,6 +546,7 @@ class _FilterPillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -555,7 +563,7 @@ class _FilterPillButton extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: selected ? Colors.white : MetaGymTheme.textSecondary,
+            color: selected ? Colors.white : palette.textSecondary,
             fontSize: 12.2,
             fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
           ),
@@ -580,6 +588,8 @@ class _PaymentInvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final statusColor = membershipStatusColor(payment.status);
     final dateText = payment.createdAt != null
         ? formatMembershipDate(payment.createdAt!)
@@ -602,9 +612,9 @@ class _PaymentInvoiceCard extends StatelessWidget {
         ? 'Đã hoàn tất'
         : payment.statusLabel;
     final badgeColor = rewardPoints != null
-        ? MetaGymTheme.progressGreen
+        ? palette.success
         : payment.status == 'SUCCESS'
-        ? const Color(0xFFA8B1C2)
+        ? palette.textSecondary
         : statusColor;
 
     return MetaGymGlassCard(
@@ -621,9 +631,15 @@ class _PaymentInvoiceCard extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0x70181513),
+                  color: isLight
+                      ? palette.metricPanelBg
+                      : const Color(0x70181513),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0x45FFF6EA)),
+                  border: Border.all(
+                    color: isLight
+                        ? palette.metricPanelBorder
+                        : const Color(0x45FFF6EA),
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: MetaGymSvgIcon(_methodSvg(payment.method), size: 18),
@@ -637,8 +653,8 @@ class _PaymentInvoiceCard extends StatelessWidget {
                       payment.planName ?? 'Giao dịch',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontWeight: FontWeight.w800,
                         fontSize: 13.5,
                         height: 1.22,
@@ -651,8 +667,8 @@ class _PaymentInvoiceCard extends StatelessWidget {
                           : formatPaymentMethodLabel(payment.method),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                      style: TextStyle(
+                        color: palette.textSecondary,
                         fontSize: 11.5,
                         fontFeatures: MetaGymTheme.tabularFigures,
                       ),
@@ -667,8 +683,8 @@ class _PaymentInvoiceCard extends StatelessWidget {
                   if (payment.amount != null)
                     Text(
                       formatMembershipMoney(payment.amount!),
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         fontFeatures: MetaGymTheme.tabularFigures,
@@ -681,7 +697,7 @@ class _PaymentInvoiceCard extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.16),
+                      color: badgeColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
                         color: badgeColor.withValues(alpha: 0.42),
@@ -715,6 +731,7 @@ class _ScheduledPeriodTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
       solid: false,
       margin: const EdgeInsets.only(bottom: 10),
@@ -725,12 +742,12 @@ class _ScheduledPeriodTile extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: MetaGymTheme.reflectionBlue.withValues(alpha: 0.16),
+              color: palette.reflection.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.schedule_rounded,
-              color: MetaGymTheme.reflectionBlue,
+              color: palette.reflection,
               size: 19,
             ),
           ),
@@ -743,8 +760,8 @@ class _ScheduledPeriodTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -753,8 +770,8 @@ class _ScheduledPeriodTile extends StatelessWidget {
                 Text(
                   '${formatMembershipDate(membership.startDate)} → '
                   '${formatMembershipDate(membership.endDate)}',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 12,
                     fontFeatures: MetaGymTheme.tabularFigures,
                   ),
@@ -764,7 +781,7 @@ class _ScheduledPeriodTile extends StatelessWidget {
           ),
           MembershipStatusPill(
             label: membership.label,
-            color: MetaGymTheme.reflectionBlue,
+            color: palette.reflection,
           ),
         ],
       ),

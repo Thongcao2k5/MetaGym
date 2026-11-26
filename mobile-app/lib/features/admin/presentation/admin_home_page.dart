@@ -59,9 +59,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget build(BuildContext context) {
     final AuthUser? user = _watchSession(context)?.user;
     final theme = Theme.of(context);
+    final palette = MetaGymTheme.paletteOf(context);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -88,12 +89,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: MetaGymTheme.cardSurface,
+                            color: palette.surfaceSolid,
                             borderRadius: BorderRadius.circular(
                               MetaGymTheme.radiusCard,
                             ),
                             border: Border.all(
-                              color: MetaGymTheme.cardBorder,
+                              color: palette.borderSolid,
                               width: 1,
                             ),
                           ),
@@ -129,7 +130,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                           overflow: TextOverflow.ellipsis,
                                           style: theme.textTheme.labelMedium
                                               ?.copyWith(
-                                                color: MetaGymTheme.primary,
+                                                color: palette.primaryText,
                                                 fontWeight: FontWeight.w700,
                                                 letterSpacing: 0.8,
                                               ),
@@ -141,8 +142,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                           overflow: TextOverflow.ellipsis,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
-                                                color:
-                                                    MetaGymTheme.textSecondary,
+                                                color: palette.textSecondary,
                                               ),
                                         ),
                                       ],
@@ -154,7 +154,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                               Text(
                                 'Tài khoản Quản trị viên chỉ sử dụng trên Web Admin',
                                 style: theme.textTheme.titleLarge?.copyWith(
-                                  color: const Color(0xFFF7F9FC),
+                                  color: palette.textPrimary,
                                   fontWeight: FontWeight.w700,
                                   height: 1.3,
                                 ),
@@ -163,7 +163,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                               Text(
                                 'Ứng dụng di động Meta Gym chỉ phục vụ Hội viên và Huấn luyện viên. Vui lòng đăng nhập Meta Gym Web Admin trên trình duyệt để quản lý tài khoản, gói Gym/Coach, thanh toán tại quầy, sự cố và nhật ký hệ thống.',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: MetaGymTheme.textSecondary,
+                                  color: palette.textSecondary,
                                   fontSize: 15,
                                   height: 1.55,
                                 ),
@@ -173,20 +173,20 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                 Container(
                                   padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
-                                    color: MetaGymTheme.elevatedSurface,
+                                    color: palette.surfaceRaised,
                                     borderRadius: BorderRadius.circular(
                                       MetaGymTheme.radiusInput,
                                     ),
                                     border: Border.all(
-                                      color: MetaGymTheme.cardBorder,
+                                      color: palette.borderSolid,
                                       width: 1,
                                     ),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.verified_user_outlined,
-                                        color: MetaGymTheme.reflectionBlue,
+                                        color: palette.reflection,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 12),
@@ -201,9 +201,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                               overflow: TextOverflow.ellipsis,
                                               style: theme.textTheme.labelLarge
                                                   ?.copyWith(
-                                                    color: const Color(
-                                                      0xFFF7F9FC,
-                                                    ),
+                                                    color: palette.textPrimary,
                                                   ),
                                             ),
                                             const SizedBox(height: 2),
@@ -213,8 +211,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                               overflow: TextOverflow.ellipsis,
                                               style: theme.textTheme.bodyMedium
                                                   ?.copyWith(
-                                                    color: MetaGymTheme
-                                                        .textSecondary,
+                                                    color:
+                                                        palette.textSecondary,
                                                     fontSize: 13,
                                                   ),
                                             ),
@@ -230,18 +228,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF24161A),
+                                    color: palette.error.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: MetaGymTheme.dangerCoral
-                                          .withValues(alpha: 0.45),
+                                      color: palette.error.withValues(
+                                        alpha: 0.45,
+                                      ),
                                     ),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.error_outline_rounded,
-                                        color: MetaGymTheme.dangerCoral,
+                                        color: palette.error,
                                         size: 18,
                                       ),
                                       const SizedBox(width: 8),
@@ -250,7 +251,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                           _signOutError!,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
-                                                color: const Color(0xFFFFB2B6),
+                                                color: palette.error,
                                                 fontSize: 13,
                                               ),
                                         ),

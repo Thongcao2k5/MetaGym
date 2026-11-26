@@ -52,12 +52,12 @@ class MemberHomeExploreGrid extends StatelessWidget {
             InkWell(
               onTap: onOpenAll,
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 child: Text(
                   'Tất cả ›',
                   style: TextStyle(
-                    color: MetaGymTheme.reflectionBlue,
+                    color: palette.reflection,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -196,12 +196,12 @@ class MemberHomeArticlesSection extends StatelessWidget {
             InkWell(
               onTap: onOpenBeginnerGuide,
               borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 child: Text(
                   'Xem thêm ›',
                   style: TextStyle(
-                    color: MetaGymTheme.reflectionBlue,
+                    color: palette.reflection,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -213,7 +213,7 @@ class MemberHomeArticlesSection extends StatelessWidget {
         const SizedBox(height: 8),
         _ArticleCard(
           category: 'Kiến thức tập luyện',
-          categoryColor: MetaGymTheme.brandOrange,
+          categoryColor: palette.primaryText,
           readTime: '4 phút đọc',
           title: 'Nguyên tắc tăng tiến tải trọng (Progressive Overload)',
           excerpt:
@@ -223,7 +223,7 @@ class MemberHomeArticlesSection extends StatelessWidget {
         const SizedBox(height: 8),
         _ArticleCard(
           category: 'Dinh dưỡng',
-          categoryColor: MetaGymTheme.success,
+          categoryColor: palette.success,
           readTime: '3 phút đọc',
           title: 'Bữa ăn trước & sau tập giúp tối ưu tổng hợp đạm',
           excerpt:

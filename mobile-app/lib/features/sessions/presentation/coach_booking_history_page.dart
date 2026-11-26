@@ -20,6 +20,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final now = DateTime.now();
     final completedCount = bookings
         .where((b) => b['status'] == 'COMPLETED')
@@ -27,7 +28,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
     final cancelledCount = bookings.length - completedCount;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -46,24 +47,24 @@ class CoachBookingHistoryPage extends StatelessWidget {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Lịch sử buổi tập',
                               style: TextStyle(
-                                color: Color(0xFFF7F9FC),
+                                color: palette.textPrimary,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.3,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'Các buổi đã tập & đã hủy với Coach',
                               style: TextStyle(
-                                color: Color(0xFFC8C2BC),
+                                color: palette.textWarmMuted,
                                 fontSize: 11.5,
                               ),
                             ),
@@ -92,18 +93,18 @@ class CoachBookingHistoryPage extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Đã hoàn thành',
                                       style: TextStyle(
-                                        color: Color(0xFFB8B0A8),
+                                        color: palette.textSecondary,
                                         fontSize: 11.5,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '$completedCount buổi',
-                                      style: const TextStyle(
-                                        color: MetaGymTheme.progressGreen,
+                                      style: TextStyle(
+                                        color: palette.success,
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,
                                         fontFeatures:
@@ -120,18 +121,18 @@ class CoachBookingHistoryPage extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Đã hủy / Khác',
                                       style: TextStyle(
-                                        color: Color(0xFFB8B0A8),
+                                        color: palette.textSecondary,
                                         fontSize: 11.5,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '$cancelledCount buổi',
-                                      style: const TextStyle(
-                                        color: Color(0xFFF7F9FC),
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,
                                         fontFeatures:
@@ -149,19 +150,19 @@ class CoachBookingHistoryPage extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.history_rounded,
-                              color: MetaGymTheme.brandOrange,
+                              color: palette.primaryText,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Các buổi đã tập & đã hủy',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: MetaGymTheme.textPrimary,
+                                  color: palette.textPrimary,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -169,8 +170,8 @@ class CoachBookingHistoryPage extends StatelessWidget {
                             ),
                             Text(
                               '${bookings.length} buổi',
-                              style: const TextStyle(
-                                color: Color(0xFFC8C2BC),
+                              style: TextStyle(
+                                color: palette.textWarmMuted,
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w500,
                                 fontFeatures: MetaGymTheme.tabularFigures,
@@ -181,13 +182,13 @@ class CoachBookingHistoryPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       if (bookings.isEmpty)
-                        const MetaGymGlassCard(
-                          padding: EdgeInsets.all(20),
+                        MetaGymGlassCard(
+                          padding: const EdgeInsets.all(20),
                           child: Center(
                             child: Text(
                               'Chưa có lịch sử buổi tập với Coach.',
                               style: TextStyle(
-                                color: Color(0xFFC8C2BC),
+                                color: palette.textWarmMuted,
                                 fontSize: 13,
                               ),
                             ),

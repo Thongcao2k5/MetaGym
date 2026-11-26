@@ -36,16 +36,23 @@ Future<void> showMetaGymSystemModal(
   final mascot = metaGymSystemMascotAsset(kind);
   return showDialog<void>(
     context: context,
-    barrierColor: MetaGymTheme.scrim,
+    barrierColor: MetaGymColors.of(context).scrim,
     builder: (dialogContext) {
       final isLight = MetaGymTheme.isLightPalette(dialogContext);
       final palette = MetaGymTheme.paletteOf(dialogContext);
+      final badgeTint = _badgeTintForKind(kind, palette);
       final disableAnimations = MediaQuery.disableAnimationsOf(dialogContext);
       final enableBlur =
           !isLight &&
           !disableAnimations &&
           !MetaGymTheme.isFlutterTestEnvironment;
       final radius = BorderRadius.circular(MetaGymTheme.radiusGlassDock);
+
+      final modalSvg = MetaGymSvgIcon(
+        spec.svgAsset,
+        size: 36,
+        fallbackIcon: spec.fallbackIcon,
+      );
 
       final content = Container(
         constraints: const BoxConstraints(maxWidth: 360),
@@ -59,6 +66,15 @@ Future<void> showMetaGymSystemModal(
                 : MetaGymTheme.overlayGlassBorder,
             width: 1,
           ),
+          boxShadow: isLight
+              ? const [
+                  BoxShadow(
+                    color: Color(0x3811151A),
+                    blurRadius: 50,
+                    offset: Offset(0, 20),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -76,30 +92,26 @@ Future<void> showMetaGymSystemModal(
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: spec.badgeTint.withValues(alpha: 0.16),
+                  color: badgeTint.withValues(alpha: isLight ? 0.12 : 0.16),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: spec.badgeTint.withValues(alpha: 0.35),
+                    color: badgeTint.withValues(alpha: 0.35),
                   ),
                 ),
                 alignment: Alignment.center,
-                child: MetaGymSvgIcon(
-                  spec.svgAsset,
-                  size: 36,
-                  fallbackIcon: spec.fallbackIcon,
-                ),
+                child: modalSvg,
               ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: spec.badgeTint.withValues(alpha: 0.14),
+                color: badgeTint.withValues(alpha: isLight ? 0.12 : 0.14),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 metaGymSystemStateLabel(kind),
                 style: TextStyle(
-                  color: spec.badgeTint,
+                  color: badgeTint,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -248,6 +260,22 @@ class _SystemModalSpec {
   final String primaryLabel;
   final String? secondaryLabel;
 }
+
+Color _badgeTintForKind(
+  MetaGymSystemModalKind kind,
+  MetaGymPalette palette,
+) => switch (kind) {
+  MetaGymSystemModalKind.empty ||
+  MetaGymSystemModalKind.offline => palette.reflection,
+  MetaGymSystemModalKind.loading ||
+  MetaGymSystemModalKind.membershipPromo => palette.primaryText,
+  MetaGymSystemModalKind.streak ||
+  MetaGymSystemModalKind.updateAvailable => palette.success,
+  MetaGymSystemModalKind.maintenance ||
+  MetaGymSystemModalKind.sessionExpired => palette.warning,
+  MetaGymSystemModalKind.comingSoon => palette.info,
+  MetaGymSystemModalKind.serverError => palette.error,
+};
 
 _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   MetaGymSystemModalKind.empty => const _SystemModalSpec(

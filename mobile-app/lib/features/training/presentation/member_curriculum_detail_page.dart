@@ -145,20 +145,25 @@ class _MemberCurriculumDetailPageState
         : const [];
   }
 
+  MetaGymPalette get _palette => MetaGymTheme.paletteOf(context);
+  MetaGymColors get _colors => MetaGymColors.of(context);
+  bool get _isLight => MetaGymTheme.isLightPalette(context);
+
   @override
   Widget build(BuildContext context) {
     final plan = _plan;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
+        backgroundColor: _palette.canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [
             const MetaGymBackground(),
             RefreshIndicator(
               color: MetaGymTheme.primary,
-              backgroundColor: const Color(0xFF282320),
+              backgroundColor: _colors.surface,
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -245,7 +250,7 @@ class _MemberCurriculumDetailPageState
                   ),
                   const SizedBox(width: 12),
                 ],
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -254,17 +259,17 @@ class _MemberCurriculumDetailPageState
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: MetaGymTheme.primary,
+                          color: _palette.primaryText,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.3,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         'Giáo trình',
                         style: TextStyle(
-                          color: Color(0xFFF7F9FC),
+                          color: _palette.textPrimary,
                           fontSize: 21,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.3,
@@ -303,14 +308,14 @@ class _MemberCurriculumDetailPageState
     required VoidCallback onPressed,
   }) => OutlinedButton.icon(
     onPressed: onPressed,
-    icon: Icon(icon, size: 17, color: const Color(0xFFF7F9FC)),
+    icon: Icon(icon, size: 17, color: _palette.textPrimary),
     label: Text(label),
     style: OutlinedButton.styleFrom(
       minimumSize: const Size(48, 48),
       padding: const EdgeInsets.symmetric(horizontal: 13),
-      foregroundColor: const Color(0xFFF7F9FC),
-      backgroundColor: const Color(0x9E2F2924),
-      side: const BorderSide(color: Color(0x95ADA295), width: 1),
+      foregroundColor: _palette.textPrimary,
+      backgroundColor: _colors.circleButtonBg,
+      side: BorderSide(color: _colors.circleButtonBorder, width: 1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       textStyle: const TextStyle(
         fontSize: 12.5,
@@ -327,10 +332,10 @@ class _MemberCurriculumDetailPageState
         ? 'Đã lưu trữ'
         : 'Đang áp dụng';
     final statusColor = _paused
-        ? MetaGymTheme.warning
+        ? _palette.warning
         : plan.status == 'ARCHIVED'
-        ? MetaGymTheme.reflectionBlue
-        : MetaGymTheme.success;
+        ? _palette.reflection
+        : _palette.success;
     final coach = _coachName;
     final disableBlur =
         MediaQuery.disableAnimationsOf(context) ||
@@ -339,26 +344,26 @@ class _MemberCurriculumDetailPageState
     final card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: disableBlur ? const Color(0xFF282320) : null,
+        color: disableBlur ? _colors.surface : null,
         gradient: disableBlur
             ? null
-            : const LinearGradient(
+            : LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xCD342D28), Color(0xC829241F)],
+                colors: [_colors.warmGlassTop, _colors.warmGlassBottom],
               ),
         borderRadius: radius,
-        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
+        border: Border.all(color: _colors.warmGlassBorder, width: 1.2),
       ),
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             left: 20,
             right: 20,
             top: 0,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: Color(0x75FFF5E9)),
+              child: ColoredBox(color: _colors.warmGlassHighlight),
             ),
           ),
           Padding(
@@ -395,9 +400,9 @@ class _MemberCurriculumDetailPageState
                                 ),
                               ),
                               alignment: Alignment.center,
-                              child: const Icon(
+                              child: Icon(
                                 Icons.menu_book_rounded,
-                                color: MetaGymTheme.primary,
+                                color: _palette.primaryText,
                                 size: 20,
                               ),
                             ),
@@ -405,8 +410,8 @@ class _MemberCurriculumDetailPageState
                             Expanded(
                               child: Text(
                                 plan.title,
-                                style: const TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                style: TextStyle(
+                                  color: _palette.textPrimary,
                                   fontSize: 17,
                                   height: 1.3,
                                   fontWeight: FontWeight.w700,
@@ -419,7 +424,7 @@ class _MemberCurriculumDetailPageState
                               _heroExpanded
                                   ? Icons.keyboard_arrow_up_rounded
                                   : Icons.keyboard_arrow_down_rounded,
-                              color: const Color(0xFFF7F9FC),
+                              color: _palette.textPrimary,
                               size: 24,
                             ),
                           ],
@@ -434,8 +439,8 @@ class _MemberCurriculumDetailPageState
                             if (plan.publishedAt != null)
                               Text(
                                 _date(plan.publishedAt!),
-                                style: const TextStyle(
-                                  color: Color(0xFFC8C2BC),
+                                style: TextStyle(
+                                  color: _palette.textWarmMuted,
                                   fontSize: 11.5,
                                   fontFeatures: MetaGymTheme.tabularFigures,
                                   fontFamily: MetaGymTheme.fontFamily,
@@ -447,8 +452,8 @@ class _MemberCurriculumDetailPageState
                           const SizedBox(height: 8),
                           Text(
                             plan.goal!,
-                            style: const TextStyle(
-                              color: Color(0xFFE4DAD1),
+                            style: TextStyle(
+                              color: _palette.textSecondary,
                               fontSize: 13.5,
                               height: 1.45,
                               fontFamily: MetaGymTheme.fontFamily,
@@ -456,7 +461,10 @@ class _MemberCurriculumDetailPageState
                           ),
                         ],
                         const SizedBox(height: 10),
-                        const Divider(color: Color(0x40A79D92), height: 1),
+                        Divider(
+                          color: _palette.borderSolid.withValues(alpha: 0.7),
+                          height: 1,
+                        ),
                         const SizedBox(height: 10),
                         Row(
                           children: [
@@ -483,8 +491,8 @@ class _MemberCurriculumDetailPageState
                                 child: Text(
                                   coach,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFFF7F9FC),
+                                  style: TextStyle(
+                                    color: _palette.textPrimary,
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w600,
                                     fontFamily: MetaGymTheme.fontFamily,
@@ -523,21 +531,25 @@ class _MemberCurriculumDetailPageState
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _status('Chờ Coach', MetaGymTheme.warning),
+        _status('Chờ Coach', _palette.warning),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Chưa có giáo trình',
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: _palette.textPrimary,
             fontSize: 19,
             fontWeight: FontWeight.w700,
             fontFamily: MetaGymTheme.fontFamily,
           ),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Coach sẽ gửi kế hoạch tập luyện và dinh dưỡng phù hợp cho bạn.',
-          style: TextStyle(color: Color(0xFFE4DAD1), fontSize: 13.5, height: 1.45),
+          style: TextStyle(
+            color: _palette.textSecondary,
+            fontSize: 13.5,
+            height: 1.45,
+          ),
         ),
       ],
     ),
@@ -547,18 +559,18 @@ class _MemberCurriculumDetailPageState
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.history_rounded,
-              color: MetaGymTheme.reflectionBlue,
+              color: _palette.reflection,
               size: 18,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               'Giáo trình đã lưu trữ',
               style: TextStyle(
-                color: Color(0xFFF7F9FC),
+                color: _palette.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
@@ -573,14 +585,14 @@ class _MemberCurriculumDetailPageState
               contentPadding: EdgeInsets.zero,
               title: Text(
                 old.title,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: _palette.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              trailing: const Icon(
+              trailing: Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFC8C2BC),
+                color: _palette.textWarmMuted,
               ),
               onTap: () => MetaGymNavigation.pushOnce(
                 context,
@@ -603,8 +615,8 @@ class _MemberCurriculumDetailPageState
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(5),
       decoration: _box(
-        fill: const Color(0xD826221F),
-        border: const Color(0xA3A79D92),
+        fill: _isLight ? _palette.surfaceRaised : const Color(0xD826221F),
+        border: _colors.liquidGlassBorder,
         radius: 16,
       ),
       child: Row(
@@ -626,7 +638,9 @@ class _MemberCurriculumDetailPageState
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: _tab == index
-                        ? MetaGymTheme.primary.withValues(alpha: 0.20)
+                        ? (_isLight
+                              ? MetaGymTheme.primary
+                              : MetaGymTheme.primary.withValues(alpha: 0.20))
                         : null,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -644,8 +658,8 @@ class _MemberCurriculumDetailPageState
                           label,
                           style: TextStyle(
                             color: _tab == index
-                                ? const Color(0xFFF7F9FC)
-                                : const Color(0xFFC8C2BC),
+                                ? const Color(0xFFFFFFFF)
+                                : _palette.textSecondary,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             fontFamily: MetaGymTheme.fontFamily,
@@ -656,8 +670,10 @@ class _MemberCurriculumDetailPageState
                           badge,
                           style: TextStyle(
                             color: _tab == index
-                                ? const Color(0xFFFF987E)
-                                : MetaGymTheme.textSecondary,
+                                ? (_isLight
+                                      ? const Color(0xE6FFFFFF)
+                                      : const Color(0xFFFF987E))
+                                : _palette.textSecondary,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             fontFeatures: MetaGymTheme.tabularFigures,
@@ -677,18 +693,18 @@ class _MemberCurriculumDetailPageState
   Widget _pausedNotice() => Container(
     margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     padding: const EdgeInsets.all(16),
-    decoration: _box(border: const Color(0xFF815423)),
+    decoration: _box(border: _palette.warning.withValues(alpha: 0.55)),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.lock_clock_outlined, color: MetaGymTheme.warning),
-            SizedBox(width: 8),
+            Icon(Icons.lock_clock_outlined, color: _palette.warning),
+            const SizedBox(width: 8),
             Text(
               'Giáo trình đang tạm khóa',
               style: TextStyle(
-                color: Color(0xFFF7F9FC),
+                color: _palette.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
@@ -696,10 +712,10 @@ class _MemberCurriculumDetailPageState
           ],
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Kế hoạch Coach đã tạo được giữ lại. Gia hạn gói Gym để tiếp tục sử dụng khi quan hệ Coach có hiệu lực.',
           style: TextStyle(
-            color: Color(0xFFE4DAD1),
+            color: _palette.textSecondary,
             fontSize: 13,
             height: 1.45,
           ),
@@ -782,8 +798,8 @@ class _MemberCurriculumDetailPageState
                         children: [
                           Text(
                             'Ngày ${day.dayNumber} trong giáo án',
-                            style: const TextStyle(
-                              color: MetaGymTheme.primary,
+                            style: TextStyle(
+                              color: _palette.primaryText,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               fontFeatures: MetaGymTheme.tabularFigures,
@@ -792,8 +808,8 @@ class _MemberCurriculumDetailPageState
                           const SizedBox(height: 4),
                           Text(
                             day.title,
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
+                            style: TextStyle(
+                              color: _palette.textPrimary,
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                             ),
@@ -802,8 +818,8 @@ class _MemberCurriculumDetailPageState
                             const SizedBox(height: 4),
                             Text(
                               'Lịch: ${_date(day.scheduledDate!)}',
-                              style: const TextStyle(
-                                color: Color(0xFFC8C2BC),
+                              style: TextStyle(
+                                color: _palette.textWarmMuted,
                                 fontSize: 12,
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
@@ -849,8 +865,8 @@ class _MemberCurriculumDetailPageState
             Expanded(
               child: Text(
                 exercise.exerciseName,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: _palette.textPrimary,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   height: 1.35,
@@ -864,7 +880,7 @@ class _MemberCurriculumDetailPageState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: MetaGymTheme.primary.withValues(alpha: 0.16),
+              color: _palette.chipActiveBg,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: MetaGymTheme.primary.withValues(alpha: 0.35),
@@ -872,8 +888,8 @@ class _MemberCurriculumDetailPageState
             ),
             child: Text(
               exercise.prescription,
-              style: const TextStyle(
-                color: MetaGymTheme.primary,
+              style: TextStyle(
+                color: _palette.primaryText,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 fontFeatures: MetaGymTheme.tabularFigures,
@@ -891,8 +907,8 @@ class _MemberCurriculumDetailPageState
               if (exercise.weightGuidance?.isNotEmpty == true)
                 'Mức tạ ${exercise.weightGuidance}',
             ].join(' · '),
-            style: const TextStyle(
-              color: Color(0xFFC8C2BC),
+            style: TextStyle(
+              color: _palette.textWarmMuted,
               fontSize: 12.5,
               fontFeatures: MetaGymTheme.tabularFigures,
             ),
@@ -945,7 +961,7 @@ class _MemberCurriculumDetailPageState
             itemBuilder: (context, index) => _choice(
               title: index == 6 ? 'CN' : 'T${index + 2}',
               selected: _weekday == index + 1,
-              color: MetaGymTheme.success,
+              color: _palette.success,
               onTap: () => setState(() => _weekday = index + 1),
             ),
           ),
@@ -960,22 +976,22 @@ class _MemberCurriculumDetailPageState
                   Expanded(
                     child: Text(
                       '${_weekday == 7 ? 'Chủ nhật' : 'Thứ ${_weekday + 1}'} · Lặp lại mỗi tuần',
-                      style: const TextStyle(
-                        color: MetaGymTheme.success,
+                      style: TextStyle(
+                        color: _palette.success,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   if (items.isNotEmpty)
-                    _status('${total.round()} kcal', MetaGymTheme.success),
+                    _status('${total.round()} kcal', _palette.success),
                 ],
               ),
               const SizedBox(height: 5),
               Text(
                 plan['title'] as String? ?? 'Thực đơn của Coach',
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: _palette.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1003,10 +1019,10 @@ class _MemberCurriculumDetailPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Lưu ý từ Coach',
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
+                    color: _palette.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1014,8 +1030,8 @@ class _MemberCurriculumDetailPageState
                 const SizedBox(height: 8),
                 Text(
                   plan['content'] as String,
-                  style: const TextStyle(
-                    color: Color(0xFFE4DAD1),
+                  style: TextStyle(
+                    color: _palette.textSecondary,
                     fontSize: 13,
                     height: 1.45,
                   ),
@@ -1042,13 +1058,13 @@ class _MemberCurriculumDetailPageState
         children: [
           Row(
             children: [
-              Icon(icon, color: MetaGymTheme.success, size: 19),
+              Icon(icon, color: _palette.success, size: 19),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: _palette.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1057,8 +1073,8 @@ class _MemberCurriculumDetailPageState
               if (foods.isNotEmpty)
                 Text(
                   '${total.round()} kcal',
-                  style: const TextStyle(
-                    color: MetaGymTheme.success,
+                  style: TextStyle(
+                    color: _palette.success,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -1068,20 +1084,23 @@ class _MemberCurriculumDetailPageState
           ),
           const SizedBox(height: 10),
           if (foods.isEmpty)
-            const Text(
+            Text(
               'Chưa có món',
-              style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
+              style: TextStyle(color: _palette.textWarmMuted, fontSize: 13),
             )
           else
             for (final food in foods) ...[
-              const Divider(color: Color(0x40A79D92), height: 16),
+              Divider(
+                color: _palette.borderSolid.withValues(alpha: 0.7),
+                height: 16,
+              ),
               Row(
                 children: [
                   Expanded(
                     child: Text(
                       food['foodName'] as String? ?? 'Thực phẩm',
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                      style: TextStyle(
+                        color: _palette.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1090,8 +1109,8 @@ class _MemberCurriculumDetailPageState
                   const SizedBox(width: 8),
                   Text(
                     '${food['grams']} g · ${_kcal(food).round()} kcal',
-                    style: const TextStyle(
-                      color: Color(0xFFC8C2BC),
+                    style: TextStyle(
+                      color: _palette.textWarmMuted,
                       fontSize: 12.5,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
@@ -1109,50 +1128,51 @@ class _MemberCurriculumDetailPageState
     String? subtitle,
     required bool selected,
     required VoidCallback? onTap,
-    Color color = MetaGymTheme.primary,
-  }) => MetaGymTap(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(14),
-    child: AnimatedContainer(
-      duration: MetaGymTheme.stateDurationOf(context),
-      curve: Curves.easeOutCubic,
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 46),
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-      decoration: _box(
-        fill: selected
-            ? color.withValues(alpha: 0.18)
-            : const Color(0xC42B2622),
-        border: selected ? color : const Color(0xA3A79D92),
-        radius: 14,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: selected
-                  ? const Color(0xFFF7F9FC)
-                  : const Color(0xFFC8C2BC),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              fontFeatures: MetaGymTheme.tabularFigures,
-            ),
-          ),
-          if (subtitle != null)
+    Color? color,
+  }) {
+    final activeColor = color ?? _palette.primaryText;
+    return MetaGymTap(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: MetaGymTheme.stateDurationOf(context),
+        curve: Curves.easeOutCubic,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 46),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+        decoration: _box(
+          fill: selected
+              ? activeColor.withValues(alpha: 0.14)
+              : _colors.liquidGlass,
+          border: selected ? activeColor : _colors.liquidGlassBorder,
+          radius: 14,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Text(
-              subtitle,
-              style: const TextStyle(
-                color: Color(0xFFB8B0A8),
-                fontSize: 11,
+              title,
+              style: TextStyle(
+                color: selected ? activeColor : _palette.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
                 fontFeatures: MetaGymTheme.tabularFigures,
               ),
             ),
-        ],
+            if (subtitle != null)
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: _palette.textSecondary,
+                  fontSize: 11,
+                  fontFeatures: MetaGymTheme.tabularFigures,
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _surface({required Widget child, double bottom = 0}) => Container(
     margin: EdgeInsets.fromLTRB(16, 0, 16, bottom),
@@ -1170,12 +1190,12 @@ class _MemberCurriculumDetailPageState
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: MetaGymTheme.reflectionBlue, size: 24),
+        Icon(icon, color: _palette.reflection, size: 24),
         const SizedBox(height: 10),
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
+          style: TextStyle(
+            color: _palette.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -1183,8 +1203,8 @@ class _MemberCurriculumDetailPageState
         const SizedBox(height: 5),
         Text(
           body,
-          style: const TextStyle(
-            color: Color(0xFFE4DAD1),
+          style: TextStyle(
+            color: _palette.textSecondary,
             fontSize: 13.5,
             height: 1.45,
           ),
@@ -1198,14 +1218,14 @@ class _MemberCurriculumDetailPageState
     width: double.infinity,
     padding: const EdgeInsets.all(12),
     decoration: _box(
-      fill: const Color(0x80211E1C),
-      border: const Color(0x9A8C8176),
+      fill: _palette.metricPanelBg,
+      border: _palette.metricPanelBorder,
       radius: 14,
     ),
     child: Text(
       value,
-      style: const TextStyle(
-        color: Color(0xFFE4DAD1),
+      style: TextStyle(
+        color: _palette.textSecondary,
         fontSize: 12.5,
         height: 1.45,
       ),
@@ -1215,8 +1235,8 @@ class _MemberCurriculumDetailPageState
   Widget _status(String label, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.16),
-      border: Border.all(color: color.withValues(alpha: 0.45)),
+      color: color.withValues(alpha: 0.14),
+      border: Border.all(color: color.withValues(alpha: 0.42)),
       borderRadius: BorderRadius.circular(99),
     ),
     child: Text(
@@ -1234,14 +1254,14 @@ class _MemberCurriculumDetailPageState
   Widget _smallChip(String label) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
     decoration: BoxDecoration(
-      color: const Color(0x80211E1C),
-      border: Border.all(color: const Color(0x9A8C8176)),
+      color: _palette.metricPanelBg,
+      border: Border.all(color: _palette.metricPanelBorder),
       borderRadius: BorderRadius.circular(8),
     ),
     child: Text(
       label,
-      style: const TextStyle(
-        color: Color(0xFFF7F9FC),
+      style: TextStyle(
+        color: _palette.textPrimary,
         fontSize: 11,
         fontWeight: FontWeight.w700,
         fontFeatures: MetaGymTheme.tabularFigures,
@@ -1250,12 +1270,12 @@ class _MemberCurriculumDetailPageState
   );
 
   BoxDecoration _box({
-    Color fill = const Color(0xC42B2622),
-    Color border = const Color(0xA3A79D92),
+    Color? fill,
+    Color? border,
     double radius = 20,
   }) => BoxDecoration(
-    color: fill,
-    border: Border.all(color: border, width: 1.1),
+    color: fill ?? _colors.liquidGlass,
+    border: Border.all(color: border ?? _colors.liquidGlassBorder, width: 1.1),
     borderRadius: BorderRadius.circular(radius),
   );
 

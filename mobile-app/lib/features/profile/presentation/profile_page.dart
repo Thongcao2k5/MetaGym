@@ -712,10 +712,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           alignment: Alignment.center,
-                          child: const MetaGymIcon(
+                          child: MetaGymIcon(
                             MetaGymIcons.commonCamera,
                             size: 13,
-                            color: MetaGymTheme.onPrimary,
+                            color: colors.textPrimary,
                             adaptForLightMode: false,
                             excludeFromSemantics: true,
                           ),

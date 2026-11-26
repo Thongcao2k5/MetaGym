@@ -337,7 +337,16 @@ class MetaGymMetricPanel extends StatelessWidget {
         splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
         highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
         focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.16),
-        child: Padding(padding: padding, child: child),
+        child: Padding(
+          padding: padding,
+          child: DefaultTextStyle.merge(
+            style: TextStyle(color: palette.textPrimary),
+            child: IconTheme.merge(
+              data: IconThemeData(color: palette.textPrimary),
+              child: child,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -536,9 +545,23 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
   Widget build(BuildContext context) {
     final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     final label =
         widget.tooltip ??
         (widget.icon != null ? _iconActionName(widget.icon!) : 'Hành động');
+
+    final Widget iconWidget = widget.svgAsset != null
+        ? MetaGymSvgIcon(
+            widget.svgAsset!,
+            size: 20,
+            fallbackIcon: widget.icon,
+          )
+        : Icon(
+            widget.icon ?? Icons.circle_outlined,
+            size: 20,
+            color: widget.isActive ? palette.primaryText : palette.textPrimary,
+          );
+
     final button = Semantics(
       button: true,
       enabled: widget.onTap != null && !_tapLocked,
@@ -565,30 +588,34 @@ class _MetaGymCircleIconButtonState extends State<MetaGymCircleIconButton> {
                   color: widget.isActive
                       ? palette.chipActiveBg
                       : isLight
-                      ? palette.surfaceSolid
+                      ? null
                       : MetaGymWarmGlassTokens.circleButtonFill,
+                  gradient: !widget.isActive && isLight
+                      ? const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFFFFFF), Color(0xFFE5ECF5)],
+                        )
+                      : null,
                   border: Border.all(
                     color: widget.isActive
                         ? MetaGymTheme.brandOrange
                         : isLight
-                        ? palette.borderSolid
+                        ? colors.circleButtonBorder
                         : MetaGymWarmGlassTokens.circleButtonBorder,
                     width: widget.isActive ? 1.1 : 1,
                   ),
+                  boxShadow: isLight
+                      ? const [
+                          BoxShadow(
+                            color: Color(0x1A0F172A),
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
+                          ),
+                        ]
+                      : null,
                 ),
-                child: Center(
-                  child: widget.svgAsset != null
-                      ? MetaGymSvgIcon(
-                          widget.svgAsset!,
-                          size: 20,
-                          fallbackIcon: widget.icon,
-                        )
-                      : Icon(
-                          widget.icon ?? Icons.circle_outlined,
-                          size: 20,
-                          color: palette.textPrimary,
-                        ),
-                ),
+                child: Center(child: iconWidget),
               ),
             ),
           ),

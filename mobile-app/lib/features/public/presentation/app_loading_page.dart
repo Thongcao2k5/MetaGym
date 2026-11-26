@@ -262,6 +262,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
                     painter: _MetaGymMorphPainter(
                       progress: morphProgress,
                       pulse: breath,
+                      wordTextColor: MetaGymTheme.paletteOf(context).textPrimary,
                     ),
                   ),
                 ),
@@ -277,11 +278,11 @@ class _AppLoadingPageState extends State<AppLoadingPage>
         _StaggeredSlideFade(
           progress: subtitleFade,
           offsetY: 12,
-          child: const Text(
+          child: Text(
             'Đang khởi động không gian tập luyện...',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFFC8C2BC),
+              color: MetaGymTheme.paletteOf(context).textWarmMuted,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1.4,
@@ -305,88 +306,94 @@ class _SplashBrandLockup extends StatelessWidget {
   const _SplashBrandLockup();
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x66000000),
-              blurRadius: 36,
-              offset: Offset(0, 14),
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x66000000),
+                blurRadius: 36,
+                offset: Offset(0, 14),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: const MetaGymSvgIcon(
+              MetaGymIcons.appIconMark,
+              size: 96,
+              semanticsLabel: 'Biểu tượng Meta Gym',
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: const MetaGymSvgIcon(
-            MetaGymIcons.appIconMark,
-            size: 96,
-            semanticsLabel: 'Biểu tượng Meta Gym',
           ),
         ),
-      ),
-      const SizedBox(height: 14),
-      const Text.rich(
-        TextSpan(
-          style: TextStyle(
-            fontFamily: MetaGymTheme.fontFamily,
-            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-            fontSize: 40,
-            fontWeight: FontWeight.w800,
-            height: 1,
-            letterSpacing: -1.2,
-            color: MetaGymTheme.textPrimary,
+        const SizedBox(height: 14),
+        Text.rich(
+          TextSpan(
+            style: TextStyle(
+              fontFamily: MetaGymTheme.fontFamily,
+              fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+              fontSize: 40,
+              fontWeight: FontWeight.w800,
+              height: 1,
+              letterSpacing: -1.2,
+              color: palette.textPrimary,
+            ),
+            children: const [
+              TextSpan(
+                text: 'M',
+                style: TextStyle(color: MetaGymTheme.brandOrange),
+              ),
+              TextSpan(text: 'eta'),
+              TextSpan(
+                text: 'G',
+                style: TextStyle(color: MetaGymTheme.brandOrange),
+              ),
+              TextSpan(text: 'ym'),
+            ],
           ),
-          children: [
-            TextSpan(
-              text: 'M',
-              style: TextStyle(color: MetaGymTheme.brandOrange),
-            ),
-            TextSpan(text: 'eta'),
-            TextSpan(
-              text: 'G',
-              style: TextStyle(color: MetaGymTheme.brandOrange),
-            ),
-            TextSpan(text: 'ym'),
-          ],
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class _SplashVersionFooter extends StatelessWidget {
   const _SplashVersionFooter();
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    mainAxisSize: MainAxisSize.min,
-    children: const [
-      MetaGymSvgIcon(
-        MetaGymIcons.settingVersion,
-        size: 14,
-        fallbackIcon: Icons.info_outline_rounded,
-      ),
-      SizedBox(width: 6),
-      Flexible(
-        child: Text(
-          'Meta Gym v1.0.0 · Build 2026.11',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: MetaGymTheme.textSecondary,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            fontFeatures: MetaGymTheme.tabularFigures,
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const MetaGymSvgIcon(
+          MetaGymIcons.settingVersion,
+          size: 14,
+          fallbackIcon: Icons.info_outline_rounded,
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            'Meta Gym v1.0.0 · Build 2026.11',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class _StaggeredSlideFade extends StatelessWidget {
@@ -419,6 +426,7 @@ class _WarmGlassProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final pct = (progress * 100).round().clamp(0, 100);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -428,9 +436,9 @@ class _WarmGlassProgressBar extends StatelessWidget {
           height: 5,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: const Color(0x80211E1C),
+            color: palette.metricPanelBg,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0x66A79D92), width: 1),
+            border: Border.all(color: palette.metricPanelBorder, width: 1),
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
@@ -451,11 +459,11 @@ class _WarmGlassProgressBar extends StatelessWidget {
           child: Text(
             '$pct%',
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: MetaGymTheme.brandOrange,
+            style: TextStyle(
+              color: palette.primaryText,
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ),
@@ -465,10 +473,15 @@ class _WarmGlassProgressBar extends StatelessWidget {
 }
 
 class _MetaGymMorphPainter extends CustomPainter {
-  const _MetaGymMorphPainter({required this.progress, required this.pulse});
+  const _MetaGymMorphPainter({
+    required this.progress,
+    required this.pulse,
+    required this.wordTextColor,
+  });
 
   final double progress;
   final double pulse;
+  final Color wordTextColor;
 
   static const _wordChars = <String>['M', 'e', 't', 'a', 'G', 'y', 'm'];
 
@@ -518,9 +531,7 @@ class _MetaGymMorphPainter extends CustomPainter {
             fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
             height: 1.0,
-            color: isOrangeCap
-                ? MetaGymTheme.brandOrange
-                : const Color(0xFFF7F9FC),
+            color: isOrangeCap ? MetaGymTheme.brandOrange : wordTextColor,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -702,7 +713,7 @@ class _MetaGymMorphPainter extends CustomPainter {
         final isOrangeCap = ch == 'G';
         final baseColor = isOrangeCap
             ? MetaGymTheme.brandOrange
-            : const Color(0xFFF7F9FC);
+            : wordTextColor;
 
         final tp = charPainters[i];
         final baseOffset = charOffsets[i];
