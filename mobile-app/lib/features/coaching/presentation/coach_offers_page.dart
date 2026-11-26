@@ -6,6 +6,8 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
@@ -368,12 +370,22 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
     return parts.join(' · ');
   }
 
+  bool get _isCoachViewer {
+    try {
+      return optionalProvider<SessionController>(context)?.user?.role ==
+          UserRole.coach;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Widget _buildHeader(
     BuildContext context,
     MetaGymColors colors, {
     required String? resolvedCoachName,
   }) {
     final canPop = Navigator.of(context).canPop();
+    final isCoachViewer = _isCoachViewer;
     final title = resolvedCoachName != null && resolvedCoachName.isNotEmpty
         ? 'Gói của $resolvedCoachName'
         : 'Xem gói Coach';
@@ -423,12 +435,14 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          MetaGymCircleIconButton(
-            svgAsset: MetaGymIcons.commonRefresh,
-            tooltip: 'Tải lại',
-            onTap: _busy ? null : _load,
-          ),
+          if (!isCoachViewer) ...[
+            const SizedBox(width: 8),
+            MetaGymCircleIconButton(
+              svgAsset: MetaGymIcons.commonRefresh,
+              tooltip: 'Tải lại',
+              onTap: _busy ? null : _load,
+            ),
+          ],
         ],
       ),
     );

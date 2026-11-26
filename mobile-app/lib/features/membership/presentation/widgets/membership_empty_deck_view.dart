@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -518,106 +520,108 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                       key: ValueKey<int>(_activeIndex),
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              displayTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                displayTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: MetaGymTheme.textPrimary,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: spec.badgeColor.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: spec.badgeColor.withValues(alpha: 0.45),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: spec.badgeColor.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: spec.badgeColor.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                spec.badgeLabel,
+                                style: TextStyle(
+                                  color: spec.badgeColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              spec.badgeLabel,
-                              style: TextStyle(
-                                color: spec.badgeColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6,
-                        children: [
-                          Text(
-                            formattedPrice,
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.3,
-                              fontFeatures: MetaGymTheme.tabularFigures,
-                            ),
-                          ),
-                          Text(
-                            displayPeriod,
-                            style: const TextStyle(
-                              color: MetaGymTheme.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        spec.subtitle,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          fontFeatures: MetaGymTheme.tabularFigures,
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Divider(height: 1, color: Color(0x28FFF6EA)),
-                      const SizedBox(height: 10),
-                      const _EmptyPerkRow(
-                        label: 'Quẹt thẻ kim loại NFC & QR Check-in',
-                        value: 'Full giờ',
-                        valueColor: MetaGymTheme.progressGreen,
-                      ),
-                      const SizedBox(height: 6),
-                      _EmptyPerkRow(
-                        label: 'Giảm trực tiếp phí Gói Coach 1:1',
-                        value: spec.coachDiscount,
-                        valueColor: MetaGymTheme.brandOrange,
-                      ),
-                      const SizedBox(height: 6),
-                      _EmptyPerkRow(
-                        label: 'Đo chỉ số cơ thể InBody',
-                        value: spec.inBodyText,
-                        valueColor: MetaGymTheme.textPrimary,
-                      ),
-                      const SizedBox(height: 6),
-                      _EmptyPerkRow(
-                        label: 'Hệ số tích điểm Meta Points',
-                        value: spec.pointsText,
-                        valueColor: MetaGymTheme.textPrimary,
-                      ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          children: [
+                            Text(
+                              formattedPrice,
+                              style: const TextStyle(
+                                color: MetaGymTheme.brandOrange,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                                fontFeatures: MetaGymTheme.tabularFigures,
+                              ),
+                            ),
+                            Text(
+                              displayPeriod,
+                              style: const TextStyle(
+                                color: MetaGymTheme.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          spec.subtitle,
+                          style: const TextStyle(
+                            color: MetaGymTheme.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(height: 1, color: Color(0x28FFF6EA)),
+                        const SizedBox(height: 10),
+                        const _EmptyPerkRow(
+                          label: 'Quẹt thẻ kim loại NFC & QR Check-in',
+                          value: 'Full giờ',
+                          valueColor: MetaGymTheme.progressGreen,
+                        ),
+                        const SizedBox(height: 6),
+                        _EmptyPerkRow(
+                          label: 'Giảm trực tiếp phí Gói Coach 1:1',
+                          value: spec.coachDiscount,
+                          valueColor: MetaGymTheme.brandOrange,
+                        ),
+                        const SizedBox(height: 6),
+                        _EmptyPerkRow(
+                          label: 'Đo chỉ số cơ thể InBody',
+                          value: spec.inBodyText,
+                          valueColor: MetaGymTheme.textPrimary,
+                        ),
+                        const SizedBox(height: 6),
+                        _EmptyPerkRow(
+                          label: 'Hệ số tích điểm Meta Points',
+                          value: spec.pointsText,
+                          valueColor: MetaGymTheme.textPrimary,
+                        ),
                       ],
                     ),
                   ),
@@ -688,9 +692,7 @@ class _WalletTabButton extends StatelessWidget {
     final textColor = active
         ? MetaGymTheme.textPrimary
         : MetaGymTheme.textSecondary;
-    final starColor = showStar
-        ? const Color(0xFFF5B041)
-        : textColor;
+    final starColor = showStar ? const Color(0xFFF5B041) : textColor;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -1176,11 +1178,7 @@ class _VipPromotionsSheet extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             for (final idx in _highlightedIndices) ...[
-              _buildPromoTierCard(
-                context,
-                idx,
-                isFeatured: idx == featuredIdx,
-              ),
+              _buildPromoTierCard(context, idx, isFeatured: idx == featuredIdx),
               const SizedBox(height: 10),
             ],
             const Padding(
@@ -1225,6 +1223,7 @@ class _VipPromotionsSheet extends StatelessWidget {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
       child: BackdropFilter(
+        enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
         filter: ImageFilter.blur(
           sigmaX: MetaGymTheme.overlayGlassBlur,
           sigmaY: MetaGymTheme.overlayGlassBlur,
@@ -1301,9 +1300,8 @@ class _VipPromotionsSheet extends StatelessWidget {
                     child: Image.asset(
                       spec.backCardAsset,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => ColoredBox(
-                        color: accent.withValues(alpha: 0.25),
-                      ),
+                      errorBuilder: (_, _, _) =>
+                          ColoredBox(color: accent.withValues(alpha: 0.25)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1507,9 +1505,7 @@ class _VipPromotionsSheet extends StatelessWidget {
         minimumSize: const Size(0, 40),
         tapTargetSize: MaterialTapTargetSize.padded,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(11),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       ),
       child: const Text(
         'Chọn hạng',

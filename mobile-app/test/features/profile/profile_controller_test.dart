@@ -156,9 +156,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Cá nhân & thể trạng'));
+    await tester.tap(find.text('Cá nhân & chuyên môn'));
     await tester.pumpAndSettle();
-    expect(find.text('Hồ sơ chuyên môn'), findsOneWidget);
+    expect(find.text('Chuyên môn, Bằng cấp & Liên hệ'), findsOneWidget);
+    expect(find.text('Thông tin cá nhân'), findsNothing);
     expect(find.text('Khai báo thể trạng cho Coach'), findsNothing);
     expect(tester.takeException(), isNull);
   });

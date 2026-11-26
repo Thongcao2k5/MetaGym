@@ -21,19 +21,28 @@
       <div class="studio-brand">
         <a href="../../index.html" class="ctrl-btn"
           style="text-decoration:none;display:inline-flex;align-items:center;">← Hub</a>
-        <div class="mg-logo" style="width:36px;height:36px;border-radius:10px;"><img src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
+        <div class="mg-logo" style="width:36px;height:36px;border-radius:10px;"><img
+            src="../../meta-gym/assets/svg/brand/app_icon_mark.svg" alt="Meta Gym" /></div>
       </div>
 
       <div class="studio-controls">
         <button class="ctrl-btn ctrl-icon-btn" id="btn-proto" title="Chế độ Luồng UX" aria-label="Chế độ Luồng UX">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v14l11-7-11-7z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5.14v14l11-7-11-7z" />
+          </svg>
         </button>
         <span class="ctrl-divider desktop-only-ctrl"></span>
         <button class="ctrl-btn desktop-only-ctrl" id="btn-430" title="iPhone 14 Pro Max — 430×932pt">14PRM</button>
         <button class="ctrl-btn active desktop-only-ctrl" id="btn-393" title="iPhone 14 Pro — 393×852pt">14PR</button>
         <span class="ctrl-divider"></span>
-        <button class="ctrl-btn ctrl-icon-btn" id="btn-theme" title="Chuyển Chế độ Sáng / Tối" aria-label="Chuyển Chế độ Sáng / Tối">
-          <svg id="theme-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <button class="ctrl-btn ctrl-icon-btn" id="btn-theme" title="Chuyển Chế độ Sáng / Tối"
+          aria-label="Chuyển Chế độ Sáng / Tối">
+          <svg id="theme-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
         </button>
         <button class="ctrl-btn" id="btn-solid" title="Tắt Blur / Ảnh nền">Blur</button>
       </div>
@@ -81,7 +90,9 @@
   <div class="mobile-proto-assist" id="mobile-proto-assist" aria-label="Điều khiển chế độ toàn màn hình">
     <div class="mobile-assist-menu">
       <button type="button" class="mobile-assist-btn danger" id="assist-exit">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+        </svg>
         <span>Thoát App</span>
       </button>
       <button type="button" class="mobile-assist-btn" id="assist-theme">☀ / ☾ Sáng · Tối</button>
@@ -89,8 +100,11 @@
       <button type="button" class="mobile-assist-btn" id="assist-coach">Trang chủ Coach</button>
       <button type="button" class="mobile-assist-btn" id="assist-auth">Từ Splash</button>
     </div>
-    <button type="button" class="mobile-assist-fab" id="assist-toggle" title="Mở điều khiển / Thoát toàn màn hình" aria-label="Điều khiển toàn màn hình">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+    <button type="button" class="mobile-assist-fab" id="assist-toggle" title="Mở điều khiển / Thoát toàn màn hình"
+      aria-label="Điều khiển toàn màn hình">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="6" y="6" width="12" height="12" rx="2.5" />
+      </svg>
     </button>
   </div>
 
@@ -201,8 +215,8 @@
                     <div class="notes-section-label">Gợi ý công nghệ triển khai (Flutter)</div>
                     <div class="notes-tech-grid">
                       ${techStack.map(t => {
-                        const isReady = t.status && (t.status.includes('Đã có') || t.status.includes('Có sẵn'));
-                        return `
+          const isReady = t.status && (t.status.includes('Đã có') || t.status.includes('Có sẵn'));
+          return `
                           <div class="notes-tech-card">
                             <div class="notes-tech-head">
                               <span class="notes-tech-name">${esc(t.name || '')}</span>
@@ -211,7 +225,7 @@
                             ${t.note ? `<p class="notes-tech-note">${esc(t.note)}</p>` : ''}
                           </div>
                         `;
-                      }).join('')}
+        }).join('')}
                     </div>
                   </div>
                 ` : ''}
@@ -1039,13 +1053,13 @@
         flowHistory = [startId];
         navigateToScreen(startId, true);
         if (isMobileVw) {
-          try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch (_) {}
-          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) {}
+          try { document.documentElement.requestFullscreen?.().catch(() => { }); } catch (_) { }
+          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) { }
           showFlowToast('Chế độ App toàn màn hình · Bấm nút tròn cạnh phải để thoát');
         }
       } else {
         if (document.fullscreenElement) {
-          try { document.exitFullscreen?.().catch(() => {}); } catch (_) {}
+          try { document.exitFullscreen?.().catch(() => { }); } catch (_) { }
         }
         updateMobilePhoneZoom();
       }
@@ -1080,7 +1094,7 @@
         if (flowHistory.length > 1) {
           flowHistory.pop();
           navigateToScreen(flowHistory[flowHistory.length - 1], true);
-          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) {}
+          try { history.pushState({ mgMobileProto: true }, ''); } catch (_) { }
         } else {
           setProtoMode(false);
         }

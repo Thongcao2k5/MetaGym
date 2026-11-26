@@ -1,198 +1,27 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
-import 'package:meta_gym_app/features/calls/data/calls_service.dart';
-import 'package:meta_gym_app/features/calls/presentation/live_call_page.dart';
+import 'package:meta_gym_app/features/calls/presentation/calls_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
-import 'package:meta_gym_app/features/messaging/presentation/chat_message_image.dart';
+import 'package:meta_gym_app/features/messaging/presentation/chat_detail_page.dart';
+import 'package:meta_gym_app/features/messaging/presentation/messaging_session_cache.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
 
-const AssetImage _messagingGymBgAsset = AssetImage(
-  'assets/images/gym_banner.png',
-);
-
-/// Nền ảnh phòng gym + dual ambient glow + scrim nhẹ đồng bộ với Trang chủ.
-class _MessagingGymBackground extends StatelessWidget {
-  const _MessagingGymBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image(
-              image: _messagingGymBgAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) =>
-                  const ColoredBox(color: MetaGymTheme.darkCanvas),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.85, -0.75),
-                  radius: 0.9,
-                  colors: [Color(0x2E8EB9E5), Colors.transparent],
-                ),
-              ),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.85, 0.75),
-                  radius: 0.8,
-                  colors: [Color(0x24FF5A36), Colors.transparent],
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x73080A0D),
-                    Color(0x38080A0D),
-                    Color(0x8C080A0D),
-                  ],
-                  stops: [0.0, 0.48, 1.0],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Thẻ Kính Smoked Dark đồng bộ với Member Home (tránh bóng nhựa).
-Widget _buildLiquidGlassCard({
-  required Widget child,
-  BorderRadius? borderRadius,
-  EdgeInsetsGeometry? margin,
-  bool isHighlighted = false,
-}) {
-  final radius = borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-  final enableBlur = isHighlighted && !MetaGymTheme.isFlutterTestEnvironment;
-
-  final cardBody = Container(
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      color: isHighlighted ? const Color(0xB82D2824) : const Color(0xC42B2622),
-      borderRadius: radius,
-      border: Border.all(
-        color: isHighlighted
-            ? const Color(0x8CA79D92)
-            : const Color(0x529C9084),
-        width: 1.0,
-      ),
-    ),
-    child: isHighlighted
-        ? Stack(
-            children: [
-              const Positioned(
-                top: 0,
-                left: 18,
-                right: 18,
-                height: 1,
-                child: ColoredBox(color: Color(0x45FFF6EA)),
-              ),
-              child,
-            ],
-          )
-        : child,
-  );
-
-  final result = enableBlur
-      ? RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: cardBody,
-            ),
-          ),
-        )
-      : cardBody;
-
-  if (margin != null) {
-    return Padding(padding: margin, child: result);
-  }
-  return result;
-}
-
-class _CircleGlassIconButton extends StatelessWidget {
-  const _CircleGlassIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-    this.isActive = false,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: Tooltip(
-        message: tooltip,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              child: Center(
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? const Color(0x2EFF5A36)
-                        : const Color(0x9E2F2924),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isActive
-                          ? MetaGymTheme.brandOrange
-                          : const Color(0x95ADA295),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isActive
-                        ? MetaGymTheme.brandOrange
-                        : const Color(0xFFF7F9FC),
-                    size: 19,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+export 'package:meta_gym_app/features/messaging/presentation/chat_detail_page.dart';
 
 enum _MessageFilter { all, coach, unread, support }
 
@@ -222,85 +51,7 @@ class _MockThread {
   final List<ChatMessage> messages;
 }
 
-class _ConversationThreadCacheEntry {
-  const _ConversationThreadCacheEntry({
-    required this.messages,
-    required this.hasMore,
-    this.lastReadId,
-  });
-
-  final List<ChatMessage> messages;
-  final bool hasMore;
-  final String? lastReadId;
-}
-
-class _MessagingSessionCache {
-  static const int _maxConversationsPerAccount = 24;
-  static const int _maxMessagesPerConversation = 100;
-
-  static String? _activeAccountId;
-  static final Map<String, Map<String, _ConversationThreadCacheEntry>>
-  _threadsByAccount = {};
-
-  static String _accountBucketKey(String userId, MessagingService service) =>
-      '$userId:${identityHashCode(service)}';
-
-  static void ensureAccount(String userId) {
-    final normalized = userId.trim();
-    if (normalized.isEmpty) {
-      clearAll();
-      return;
-    }
-    if (_activeAccountId != null && _activeAccountId != normalized) {
-      clearAll();
-    }
-    _activeAccountId = normalized;
-  }
-
-  static void clearAll() {
-    _activeAccountId = null;
-    _threadsByAccount.clear();
-  }
-
-  static _ConversationThreadCacheEntry? readThread(
-    String userId,
-    MessagingService? service,
-    String conversationKey,
-  ) {
-    if (service == null || userId.trim().isEmpty) return null;
-    ensureAccount(userId);
-    final bucket = _threadsByAccount[_accountBucketKey(userId.trim(), service)];
-    return bucket?[conversationKey];
-  }
-
-  static void writeThread(
-    String userId,
-    MessagingService? service,
-    String conversationKey, {
-    required List<ChatMessage> messages,
-    bool? hasMore,
-    String? lastReadId,
-  }) {
-    if (service == null || userId.trim().isEmpty) return;
-    final cleanUser = userId.trim();
-    ensureAccount(cleanUser);
-    final bucketKey = _accountBucketKey(cleanUser, service);
-    final bucket = _threadsByAccount.putIfAbsent(bucketKey, () => {});
-    final previous = bucket.remove(conversationKey);
-    final bounded = messages.length > _maxMessagesPerConversation
-        ? messages.sublist(0, _maxMessagesPerConversation)
-        : messages;
-    bucket[conversationKey] = _ConversationThreadCacheEntry(
-      messages: List<ChatMessage>.unmodifiable(bounded),
-      hasMore: hasMore ?? previous?.hasMore ?? false,
-      lastReadId: lastReadId ?? previous?.lastReadId,
-    );
-    while (bucket.length > _maxConversationsPerAccount) {
-      bucket.remove(bucket.keys.first);
-    }
-  }
-}
-
+/// Màn hình **5.1 Tin nhắn học viên** (Coach) & Tin nhắn 1:1 (Member).
 class ConversationsPage extends StatefulWidget {
   const ConversationsPage({
     this.service,
@@ -321,7 +72,7 @@ class ConversationsPage extends StatefulWidget {
   final bool? coachMode;
   final VoidCallback? onAvatarTap;
 
-  static void clearSessionCache() => _MessagingSessionCache.clearAll();
+  static void clearSessionCache() => MessagingSessionCache.clearAll();
 
   @override
   State<ConversationsPage> createState() => _ConversationsPageState();
@@ -347,6 +98,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
   String _searchQuery = '';
   bool _usingMockShowcase = false;
   late List<_MockThread> _mockThreads;
+  bool? _lastShowcaseCoachMode;
 
   String get _effectiveUserId {
     final sessionUser = _sessionController?.user?.id;
@@ -360,12 +112,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
     _loading = widget.isActive;
     _activeUserId = widget.currentUserId;
     if (_activeUserId.isNotEmpty) {
-      _MessagingSessionCache.ensureAccount(_activeUserId);
+      MessagingSessionCache.ensureAccount(_activeUserId);
     }
-    _mockThreads = _createInitialMockThreads();
-    _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((_) {
-      if (mounted && widget.isActive) unawaited(_load());
-    });
+    _mockThreads = _createInitialMockThreads(
+      isCoach: widget.coachMode ?? false,
+    );
+    _lastShowcaseCoachMode = widget.coachMode ?? false;
+    _realtimeMessages = optionalProvider<MetaGymRealtime>(context)?.messages
+        .listen((_) {
+          if (mounted && widget.isActive) unawaited(_load());
+        });
   }
 
   @override
@@ -376,10 +132,116 @@ class _ConversationsPageState extends State<ConversationsPage> {
     super.dispose();
   }
 
-  List<_MockThread> _createInitialMockThreads() {
+  List<_MockThread> _createInitialMockThreads({required bool isCoach}) {
     final me = widget.currentUserId.isNotEmpty
         ? widget.currentUserId
-        : 'member-demo';
+        : (isCoach ? 'coach-demo' : 'member-demo');
+
+    if (isCoach) {
+      return [
+        _MockThread(
+          conversation: Conversation(
+            id: 'mock-coach-conv-1',
+            relationshipId: 'rel-demo-001',
+            memberId: 'member-mq',
+            coachId: me,
+            memberName: 'Nguyễn Minh Quân',
+            status: 'ACTIVE',
+            unreadCount: 1,
+            lastMessageAt: '14:20',
+          ),
+          displayName: 'Nguyễn Minh Quân',
+          initials: 'NQ',
+          roleLabel: 'PT 1:1 · Hypertrophy',
+          category: _MessageFilter.coach,
+          isOnline: true,
+          lastMessage:
+              'Chiều nay 18:00 mình tập Ngực & Tay sau đúng không anh?',
+          timeLabel: '14:20',
+          contextTitle: 'Gói PT 24 buổi · Còn 14 buổi · 18:00 hôm nay',
+          messages: [
+            ChatMessage(
+              id: 'mc-1',
+              senderId: me,
+              messageType: 'TEXT',
+              content: 'Chào Quân! Anh đã cập nhật giáo trình 8 tuần mới nhất cho em nhé.',
+              mediaId: null,
+              sentAt: '14:12',
+            ),
+            const ChatMessage(
+              id: 'mc-2',
+              senderId: 'member-mq',
+              messageType: 'TEXT',
+              content: 'Dạ em cảm ơn Coach Nam! Chiều nay 18:00 mình tập Ngực & Tay sau đúng không anh?',
+              mediaId: null,
+              sentAt: '14:20',
+            ),
+          ],
+        ),
+        _MockThread(
+          conversation: Conversation(
+            id: 'mock-coach-conv-2',
+            relationshipId: 'rel-demo-002',
+            memberId: 'member-bn',
+            coachId: me,
+            memberName: 'Trần Bảo Ngọc',
+            status: 'ACTIVE',
+            unreadCount: 2,
+            lastMessageAt: '11:35',
+          ),
+          displayName: 'Trần Bảo Ngọc',
+          initials: 'BN',
+          roleLabel: 'PT 1:1 · Giảm mỡ',
+          category: _MessageFilter.coach,
+          isOnline: true,
+          lastMessage: 'Em đã hoàn thành 3 hiệp Glute Bridge, mai mình tăng thêm 5kg được không anh?',
+          timeLabel: '11:35',
+          contextTitle: 'Giáo trình Săn chắc Thân dưới · Thực đơn 1.650 kcal',
+          messages: [
+            const ChatMessage(
+              id: 'mc-2-1',
+              senderId: 'member-bn',
+              messageType: 'TEXT',
+              content: 'Em đã hoàn thành 3 hiệp Glute Bridge, mai mình tăng thêm 5kg được không anh?',
+              mediaId: null,
+              sentAt: '11:35',
+            ),
+          ],
+        ),
+        _MockThread(
+          conversation: Conversation(
+            id: 'mock-coach-conv-3',
+            relationshipId: 'rel-admin-mg',
+            memberId: 'admin-mg',
+            coachId: me,
+            memberName: 'Quản trị Meta Gym',
+            status: 'ACTIVE',
+            unreadCount: 0,
+            lastMessageAt: 'Hôm qua',
+          ),
+          displayName: 'Quản trị Meta Gym',
+          initials: 'MG',
+          roleLabel: 'Quản trị',
+          category: _MessageFilter.support,
+          isOnline: false,
+          lastMessage:
+              'Lịch ca PT tháng 11 và bảng tổng hợp giờ dạy đã được cập nhật.',
+          timeLabel: 'Hôm qua',
+          contextTitle: 'Kênh hỗ trợ & điều phối HLV Meta Gym',
+          messages: [
+            const ChatMessage(
+              id: 'mc-3-1',
+              senderId: 'admin-mg',
+              messageType: 'TEXT',
+              content: 'Lịch ca PT tháng 11 và bảng tổng hợp giờ dạy đã được cập nhật.',
+              mediaId: null,
+              sentAt: 'Hôm qua',
+            ),
+          ],
+        ),
+      ];
+    }
+
     return [
       _MockThread(
         conversation: const Conversation(
@@ -493,16 +355,19 @@ class _ConversationsPageState extends State<ConversationsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    SessionController? session;
-    try {
-      session = context.read<SessionController?>();
-    } catch (_) {}
+    final session = optionalProvider<SessionController>(context);
     if (!identical(_sessionController, session)) {
       _sessionController?.removeListener(_handleSessionChanged);
       _sessionController = session;
       _sessionController?.addListener(_handleSessionChanged);
     }
-    final nextService = widget.service ?? context.read<MessagingService?>();
+    final isCoach = _resolveCoachHeader(context);
+    if (_lastShowcaseCoachMode != isCoach) {
+      _lastShowcaseCoachMode = isCoach;
+      _mockThreads = _createInitialMockThreads(isCoach: isCoach);
+    }
+    final nextService =
+        widget.service ?? optionalProvider<MessagingService>(context);
     final initialBind = _service == null;
     if (!identical(_service, nextService)) {
       _service = nextService;
@@ -540,7 +405,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
         session.user == null) {
       _sessionEpoch++;
       _activeUserId = '';
-      _MessagingSessionCache.clearAll();
+      MessagingSessionCache.clearAll();
       setState(() {
         _items = const [];
         _page = 1;
@@ -561,9 +426,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
   void _resetForUserChange(String nextUser) {
     _sessionEpoch++;
     _activeUserId = nextUser;
-    _MessagingSessionCache.clearAll();
+    MessagingSessionCache.clearAll();
     if (nextUser.isNotEmpty) {
-      _MessagingSessionCache.ensureAccount(nextUser);
+      MessagingSessionCache.ensureAccount(nextUser);
     }
     setState(() {
       _items = const [];
@@ -593,7 +458,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
   Conversation _enrichFromCache(Conversation item, String userId) {
     final service = _service;
     if (service == null) return item;
-    final cached = _MessagingSessionCache.readThread(
+    final cached = MessagingSessionCache.readThread(
       userId,
       service,
       item.messageKey,
@@ -667,7 +532,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
     final requestEpoch = _sessionEpoch;
     final requestUserId = _effectiveUserId;
     if (requestUserId.isNotEmpty) {
-      _MessagingSessionCache.ensureAccount(requestUserId);
+      MessagingSessionCache.ensureAccount(requestUserId);
     }
 
     _refreshing = true;
@@ -732,24 +597,14 @@ class _ConversationsPageState extends State<ConversationsPage> {
     }
   }
 
-  String _userInitials(BuildContext context) {
-    try {
-      final user = context.watch<SessionController?>()?.user;
-      final cleanName = (user?.fullName ?? '').trim();
-      if (cleanName.isNotEmpty) {
-        final parts = cleanName
-            .split(RegExp(r'\s+'))
-            .where((e) => e.isNotEmpty)
-            .toList();
-        if (parts.length >= 2) {
-          return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-        }
-        return cleanName
-            .substring(0, cleanName.length >= 2 ? 2 : 1)
-            .toUpperCase();
-      }
-    } catch (_) {}
-    return 'MQ';
+  String _userInitials(BuildContext context, {required bool isCoach}) {
+    final cleanName =
+        (optionalProvider<SessionController>(context)?.user?.fullName ?? '')
+            .trim();
+    if (cleanName.isNotEmpty) {
+      return coachInitials(cleanName);
+    }
+    return isCoach ? 'LN' : 'MQ';
   }
 
   List<_MockThread> get _filteredMockThreads {
@@ -801,28 +656,25 @@ class _ConversationsPageState extends State<ConversationsPage> {
     }).toList();
   }
 
-  Future<void> _openMockThread(_MockThread thread) async {
+  Future<void> _openMockThread(
+    _MockThread thread, {
+    required bool isCoach,
+  }) async {
     setState(() {
-      thread.conversation = Conversation(
-        id: thread.conversation.id,
-        relationshipId: thread.conversation.relationshipId,
-        memberId: thread.conversation.memberId,
-        coachId: thread.conversation.coachId,
-        status: thread.conversation.status,
-        unreadCount: 0,
-        lastMessageAt: thread.conversation.lastMessageAt,
-      );
+      thread.conversation = thread.conversation.copyWith(unreadCount: 0);
     });
 
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => ConversationDetailPage(
           conversation: thread.conversation,
           service: _service,
           currentUserId: widget.currentUserId.isNotEmpty
               ? widget.currentUserId
-              : 'member-demo',
+              : (isCoach ? 'coach-demo' : 'member-demo'),
           picker: widget.picker ?? DeviceProgressPhotoPicker(),
+          coachMode: isCoach,
           mockTitle: thread.displayName,
           mockInitials: thread.initials,
           mockContextTitle: thread.contextTitle,
@@ -840,15 +692,20 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Future<void> _openRealConversation(Conversation item) async {
+  Future<void> _openRealConversation(
+    Conversation item, {
+    required bool isCoach,
+  }) async {
     final userId = _effectiveUserId;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
         builder: (_) => ConversationDetailPage(
           conversation: item,
           service: _service,
           currentUserId: userId,
           picker: widget.picker ?? DeviceProgressPhotoPicker(),
+          coachMode: isCoach,
         ),
       ),
     );
@@ -857,6 +714,20 @@ class _ConversationsPageState extends State<ConversationsPage> {
       _items = _sortAndDedupeConversations(_items, userId);
     });
     await _load();
+  }
+
+  void _openCallsHub({required bool isCoach}) {
+    MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute(
+        builder: (_) => CallsPage(
+          currentUserId: _effectiveUserId.isNotEmpty
+              ? _effectiveUserId
+              : (isCoach ? 'coach-demo' : 'member-demo'),
+          coachMode: isCoach,
+        ),
+      ),
+    );
   }
 
   bool _resolveCoachHeader(BuildContext context) {
@@ -870,121 +741,169 @@ class _ConversationsPageState extends State<ConversationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final effectiveBottomPadding =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
-    final initials = _userInitials(context);
     final useCoachHeader = _resolveCoachHeader(context);
+    final initials = _userInitials(context, isCoach: useCoachHeader);
+    final gutter = MediaQuery.sizeOf(context).width >= 600
+        ? MetaGymTheme.tabletGutter
+        : MetaGymTheme.pageGutter;
 
-    return Material(
-      color: MetaGymTheme.darkCanvas,
-      child: Stack(
-        children: [
-          const _MessagingGymBackground(),
-          SafeArea(
-            bottom: false,
-            child: RefreshIndicator(
-              color: MetaGymTheme.brandOrange,
-              backgroundColor: const Color(0xFF282320),
-              onRefresh: _load,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  MetaGymTheme.pageGutter,
-                  0,
-                  MetaGymTheme.pageGutter,
-                  effectiveBottomPadding,
-                ),
-                children: [
-                  const SizedBox(height: 6),
-                  useCoachHeader
-                      ? _buildCoachHeader(context, initials)
-                      : _buildHeader(context, initials),
-                  if (_showSearch) ...[
-                    const SizedBox(height: 10),
-                    _buildSearchBar(useCoachHeader: useCoachHeader),
-                  ],
-                  const SizedBox(height: 12),
-                  _buildQuickFilterDock(),
-                  const SizedBox(height: 10),
-                  if (_loading && widget.isActive)
-                    _buildLiquidGlassCard(
-                      child: const SizedBox(
-                        height: 140,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: MetaGymTheme.brandOrange,
-                            strokeWidth: 2.4,
-                          ),
-                        ),
-                      ),
-                    )
-                  else if (_error != null && !_usingMockShowcase)
-                    _buildErrorCard()
-                  else if (_usingMockShowcase) ...[
-                    if (_filter == _MessageFilter.all ||
-                        _filter == _MessageFilter.coach) ...[
-                      _buildFeaturedCoachCard(),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      child: Material(
+        color: colors.canvas,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const MetaGymBackground(),
+            SafeArea(
+              bottom: false,
+              child: RefreshIndicator(
+                color: MetaGymTheme.primary,
+                backgroundColor: colors.overlayGlass,
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    gutter,
+                    0,
+                    gutter,
+                    effectiveBottomPadding,
+                  ),
+                  children: [
+                    const SizedBox(height: 6),
+                    useCoachHeader
+                        ? _buildCoachHeader(context, colors, initials)
+                        : _buildHeader(context, colors, initials),
+                    if (_showSearch) ...[
                       const SizedBox(height: 10),
+                      _buildSearchBar(
+                        colors,
+                        isLight: isLight,
+                        useCoachHeader: useCoachHeader,
+                      ),
                     ],
-                    _buildSectionTitle('Cuộc trò chuyện gần đây'),
-                    const SizedBox(height: 8),
-                    if (_filteredMockThreads.isEmpty)
-                      _buildEmptyCard(
-                        title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
-                        subtitle:
-                            'Thử đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.',
-                      )
-                    else
-                      for (final thread in _filteredMockThreads)
-                        _buildMockConversationCard(thread),
-                  ] else ...[
-                    if (_items.isEmpty)
-                      _buildEmptyCard(
-                        title: 'Bạn chưa có cuộc trò chuyện nào.',
-                        subtitle: 'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
-                      )
-                    else ...[
-                      if (_filteredRealItems.isEmpty)
-                        _buildEmptyCard(
-                          title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
-                          subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
-                        )
-                      else
-                        for (final item in _filteredRealItems)
-                          _buildRealConversationCard(item),
-                      if (_hasMore)
-                        Center(
-                          child: TextButton(
-                            onPressed: _loadingMore ? null : _loadMore,
-                            child: Text(
-                              _loadingMore ? 'Đang tải…' : 'Tải thêm',
-                              style: const TextStyle(
-                                color: MetaGymTheme.brandOrange,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    const SizedBox(height: 12),
+                    _buildQuickFilterDock(
+                      colors,
+                      isLight: isLight,
+                      useCoachHeader: useCoachHeader,
+                    ),
+                    const SizedBox(height: 10),
+                    if (_loading && widget.isActive)
+                      MetaGymGlassCard(
+                        solid: !_resolveCoachHeader(context),
+                        child: SizedBox(
+                          height: 140,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: MetaGymTheme.primary,
+                              strokeWidth: 2.4,
                             ),
                           ),
                         ),
+                      )
+                    else if (_error != null && !_usingMockShowcase)
+                      _buildErrorCard(colors)
+                    else if (_usingMockShowcase) ...[
+                      if (_filter == _MessageFilter.all ||
+                          _filter == _MessageFilter.coach) ...[
+                        _buildFeaturedCard(
+                          colors,
+                          useCoachHeader: useCoachHeader,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      _buildSectionTitle(
+                        colors,
+                        useCoachHeader
+                            ? 'Cuộc trò chuyện học viên'
+                            : 'Cuộc trò chuyện gần đây',
+                      ),
+                      const SizedBox(height: 8),
+                      if (_filteredMockThreads.isEmpty)
+                        _buildEmptyCard(
+                          colors,
+                          title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                          subtitle:
+                              'Thử đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.',
+                        )
+                      else
+                        for (var i = 0; i < _filteredMockThreads.length; i++)
+                          _buildMockConversationCard(
+                            colors,
+                            _filteredMockThreads[i],
+                            paletteIndex: i + 1,
+                            useCoachHeader: useCoachHeader,
+                          ),
+                    ] else ...[
+                      if (_items.isEmpty)
+                        _buildEmptyCard(
+                          colors,
+                          title: 'Bạn chưa có cuộc trò chuyện nào.',
+                          subtitle: useCoachHeader
+                              ? 'Khi có học viên kết nối PT 1:1, tin nhắn sẽ hiển thị tại đây.'
+                              : 'Khi bạn kết nối với Huấn luyện viên, tin nhắn sẽ hiển thị tại đây.',
+                        )
+                      else ...[
+                        if (_filteredRealItems.isEmpty)
+                          _buildEmptyCard(
+                            colors,
+                            title: 'Không tìm thấy cuộc trò chuyện phù hợp.',
+                            subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
+                          )
+                        else
+                          for (var i = 0; i < _filteredRealItems.length; i++)
+                            _buildRealConversationCard(
+                              colors,
+                              _filteredRealItems[i],
+                              paletteIndex: i + 1,
+                              useCoachHeader: useCoachHeader,
+                            ),
+                        if (_hasMore)
+                          Center(
+                            child: TextButton(
+                              onPressed: _loadingMore ? null : _loadMore,
+                              child: Text(
+                                _loadingMore ? 'Đang tải…' : 'Tải thêm',
+                                style: TextStyle(
+                                  color: colors.primaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ],
+                    const SizedBox(height: 16),
                   ],
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, String initials) {
+  Widget _buildHeader(
+    BuildContext context,
+    MetaGymColors colors,
+    String initials,
+  ) {
     return MetaGymBrandHeader(
       eyebrow: 'META GYM',
       title: 'Tin nhắn',
       subtitle: 'Trao đổi cùng Coach & hỗ trợ',
       inlineSubtitle: true,
       actions: [
-        _CircleGlassIconButton(
+        MetaGymCircleIconButton(
+          svgAsset: _showSearch
+              ? MetaGymIcons.commonClose
+              : MetaGymIcons.commonSearch,
           icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
           tooltip: 'Tìm kiếm cuộc trò chuyện',
           isActive: _showSearch,
@@ -999,18 +918,18 @@ class _ConversationsPageState extends State<ConversationsPage> {
           },
         ),
         Container(
-          width: 40,
-          height: 40,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            color: const Color(0x9E2F2924),
+            color: colors.circleButtonBg,
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0x95ADA295), width: 1.0),
+            border: Border.all(color: colors.circleButtonBorder, width: 1.0),
           ),
           alignment: Alignment.center,
           child: Text(
             initials,
-            style: const TextStyle(
-              color: Color(0xFFF7F9FC),
+            style: TextStyle(
+              color: colors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
@@ -1021,8 +940,14 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget _buildCoachHeader(BuildContext context, String initials) {
-    final canPop = widget.onAvatarTap == null && Navigator.of(context).canPop();
+  Widget _buildCoachHeader(
+    BuildContext context,
+    MetaGymColors colors,
+    String initials,
+  ) {
+    final canPop =
+        widget.onAvatarTap == null &&
+        (ModalRoute.of(context)?.canPop ?? Navigator.of(context).canPop());
     final avatarCircle = Container(
       width: 42,
       height: 42,
@@ -1047,13 +972,23 @@ class _ConversationsPageState extends State<ConversationsPage> {
       subtitle: 'Trao đổi cùng học viên & hỗ trợ',
       leading: canPop
           ? MetaGymCircleIconButton(
-              icon: Icons.arrow_back_rounded,
+              svgAsset: MetaGymIcons.commonBack,
+              icon: Icons.arrow_back_ios_new_rounded,
               tooltip: 'Quay lại',
               onTap: () => Navigator.of(context).maybePop(),
             )
           : null,
       actions: [
-        _CircleGlassIconButton(
+        MetaGymCircleIconButton(
+          svgAsset: MetaGymIcons.callAudioBadge,
+          icon: Icons.call_outlined,
+          tooltip: 'Cuộc gọi 1:1',
+          onTap: () => _openCallsHub(isCoach: true),
+        ),
+        MetaGymCircleIconButton(
+          svgAsset: _showSearch
+              ? MetaGymIcons.commonClose
+              : MetaGymIcons.commonSearch,
           icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
           tooltip: 'Tìm kiếm cuộc trò chuyện',
           isActive: _showSearch,
@@ -1088,85 +1023,117 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget _buildSearchBar({bool useCoachHeader = false}) {
-    return _buildLiquidGlassCard(
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.search_rounded,
-              color: MetaGymTheme.reflectionBlue,
-              size: 19,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() => _searchQuery = value),
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 13.5,
-                ),
-                decoration: InputDecoration(
-                  hintText: useCoachHeader
-                      ? 'Tìm học viên hoặc nội dung tin nhắn...'
-                      : 'Tìm Coach hoặc nội dung tin nhắn...',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF8E9AA8),
-                    fontSize: 13,
-                  ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                ),
+  Widget _buildSearchBar(
+    MetaGymColors colors, {
+    required bool isLight,
+    required bool useCoachHeader,
+  }) {
+    return MetaGymGlassCard(
+      solid: !_resolveCoachHeader(context),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Row(
+        children: [
+          Icon(Icons.search_rounded, color: colors.reflection, size: 19),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchQuery = value),
+              style: TextStyle(color: colors.textPrimary, fontSize: 13.5),
+              decoration: InputDecoration(
+                hintText: useCoachHeader
+                    ? 'Tìm học viên hoặc nội dung tin nhắn...'
+                    : 'Tìm Coach hoặc nội dung tin nhắn...',
+                hintStyle: TextStyle(color: colors.textSecondary, fontSize: 13),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
               ),
             ),
-            if (_searchQuery.isNotEmpty)
-              IconButton(
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = '');
-                },
-                icon: const Icon(
-                  Icons.clear_rounded,
-                  color: Color(0xFF8E9AA8),
-                  size: 18,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          ),
+          if (_searchQuery.isNotEmpty)
+            IconButton(
+              onPressed: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+              icon: Icon(
+                Icons.clear_rounded,
+                color: colors.textSecondary,
+                size: 18,
               ),
-          ],
-        ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildQuickFilterDock() {
+  Widget _buildQuickFilterDock(
+    MetaGymColors colors, {
+    required bool isLight,
+    required bool useCoachHeader,
+  }) {
+    final studentCount = _usingMockShowcase
+        ? _mockThreads.where((t) => t.category == _MessageFilter.coach).length
+        : _items.length;
+    final unreadCount = _usingMockShowcase
+        ? _mockThreads.where((t) => t.conversation.unreadCount > 0).length
+        : _items.where((i) => i.unreadCount > 0).length;
+
+    final coachStudentsLabel = studentCount > 0
+        ? 'Học viên ($studentCount)'
+        : 'Học viên';
+    final unreadLabel = useCoachHeader && unreadCount > 0
+        ? 'Chưa đọc ($unreadCount)'
+        : 'Chưa đọc';
+
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 48),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterButton(label: 'Tất cả', filter: _MessageFilter.all),
-            const SizedBox(width: 8),
-            _buildFilterButton(label: 'Coach', filter: _MessageFilter.coach),
+            _buildFilterButton(
+              colors,
+              isLight: isLight,
+              label: 'Tất cả',
+              filter: _MessageFilter.all,
+            ),
             const SizedBox(width: 8),
             _buildFilterButton(
-              label: 'Chưa đọc',
+              colors,
+              isLight: isLight,
+              label: useCoachHeader ? coachStudentsLabel : 'Coach',
+              filter: _MessageFilter.coach,
+            ),
+            const SizedBox(width: 8),
+            _buildFilterButton(
+              colors,
+              isLight: isLight,
+              label: unreadLabel,
               filter: _MessageFilter.unread,
             ),
             const SizedBox(width: 8),
-            _buildFilterButton(label: 'Hỗ trợ', filter: _MessageFilter.support),
+            _buildFilterButton(
+              colors,
+              isLight: isLight,
+              label: useCoachHeader ? 'Quản trị' : 'Hỗ trợ',
+              filter: _MessageFilter.support,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterButton({
+  Widget _buildFilterButton(
+    MetaGymColors colors, {
+    required bool isLight,
     required String label,
     required _MessageFilter filter,
   }) {
@@ -1175,10 +1142,14 @@ class _ConversationsPageState extends State<ConversationsPage> {
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF493025) : const Color(0xC42B2622),
+        color: isActive
+            ? colors.chipActiveBg
+            : (isLight ? colors.surface : colors.liquidGlass),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive ? MetaGymTheme.brandOrange : const Color(0xA3A79D92),
+          color: isActive
+              ? MetaGymTheme.primary
+              : (isLight ? colors.border : colors.liquidGlassBorder),
           width: isActive ? 1.2 : 1.0,
         ),
       ),
@@ -1186,8 +1157,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? const Color(0xFFF7F9FC) : const Color(0xFFC8C2BC),
-          fontSize: 12,
+          color: isActive
+              ? (isLight ? colors.chipActiveText : Colors.white)
+              : colors.textSecondary,
+          fontSize: 12.5,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
         ),
         maxLines: 1,
@@ -1212,179 +1185,115 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget _buildFeaturedCoachCard() {
-    final coachThread = _mockThreads.first;
-    return _buildLiquidGlassCard(
-      isHighlighted: true,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: MetaGymTheme.brandOrange,
-                  size: 12,
+  Widget _buildFeaturedCard(
+    MetaGymColors colors, {
+    required bool useCoachHeader,
+  }) {
+    final topThread = _mockThreads.first;
+    return MetaGymHeroGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: colors.primaryText,
+                size: 13,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                useCoachHeader ? 'HỌC VIÊN NỔI BẬT' : 'COACH CÁ NHÂN',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
                 ),
-                const SizedBox(width: 5),
-                const Text(
-                  'COACH CÁ NHÂN',
-                  style: TextStyle(
-                    color: Color(0xFFF7F9FC),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
+              ),
+              const SizedBox(width: 8),
+              const CoachingPill(
+                label: 'Đang hoạt động',
+                tone: CoachingPillTone.green,
+                icon: Icons.circle,
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              CoachingAvatar(
+                fullName: topThread.displayName,
+                size: 40,
+                round: true,
+                paletteIndex: useCoachHeader ? 1 : 0,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      topThread.displayName,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      topThread.contextTitle,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 7),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1.5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x2623C997),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0x4D23C997),
-                      width: 0.5,
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 38,
+                child: FilledButton(
+                  onPressed: () =>
+                      _openMockThread(topThread, isCoach: useCoachHeader),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.primary,
+                    foregroundColor: MetaGymTheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 4.5,
-                        height: 4.5,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF23C997),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Đang hoạt động',
-                        style: TextStyle(
-                          color: Color(0xFF23C997),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  child: const Text(
+                    'Nhắn ngay',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 7),
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0x332A1510),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: MetaGymTheme.brandOrange,
-                      width: 1.2,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    coachThread.initials,
-                    style: const TextStyle(
-                      color: MetaGymTheme.brandOrange,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        coachThread.displayName,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 1),
-                      const Text(
-                        'Huấn luyện viên 1-1 · Sẵn sàng hỗ trợ',
-                        style: TextStyle(
-                          color: Color(0xFF8E9AA8),
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _openMockThread(coachThread),
-                    borderRadius: BorderRadius.circular(16),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 48,
-                        minHeight: 48,
-                      ),
-                      child: Center(
-                        child: Container(
-                          height: 32,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: MetaGymTheme.brandOrange,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          alignment: Alignment.center,
-                          child: const Text(
-                            'Nhắn ngay ▶',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(MetaGymColors colors, String title) {
     return Row(
       children: [
-        const Icon(
-          Icons.history_rounded,
-          color: MetaGymTheme.reflectionBlue,
-          size: 16,
-        ),
+        Icon(Icons.history_rounded, color: colors.reflection, size: 16),
         const SizedBox(width: 6),
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
-            fontSize: 13.5,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1392,1211 +1301,139 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget _buildMockConversationCard(_MockThread thread) {
+  Widget _buildMockConversationCard(
+    MetaGymColors colors,
+    _MockThread thread, {
+    required int paletteIndex,
+    required bool useCoachHeader,
+  }) {
     final unread = thread.conversation.unreadCount;
-    return _buildLiquidGlassCard(
-      borderRadius: BorderRadius.circular(14),
-      margin: const EdgeInsets.only(bottom: 7),
-      child: InkWell(
-        onTap: () => _openMockThread(thread),
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
+    return MetaGymGlassCard(
+      solid: !_resolveCoachHeader(context),
+      margin: const EdgeInsets.only(bottom: 8),
+      onTap: () => _openMockThread(thread, isCoach: useCoachHeader),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
+              CoachingAvatar(
+                fullName: thread.displayName,
+                size: 42,
+                round: true,
+                paletteIndex: thread.category == _MessageFilter.support
+                    ? 2
+                    : paletteIndex,
+              ),
+              if (thread.isOnline)
+                Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: Container(
+                    width: 11,
+                    height: 11,
                     decoration: BoxDecoration(
-                      color: const Color(0x80211E1C),
+                      color: colors.success,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: thread.category == _MessageFilter.coach
-                            ? const Color(0x66FF5A36)
-                            : const Color(0x4D9C9084),
-                        width: 1.0,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      thread.initials,
-                      style: TextStyle(
-                        color: thread.category == _MessageFilter.coach
-                            ? MetaGymTheme.brandOrange
-                            : const Color(0xFFD5DEE8),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      border: Border.all(color: colors.surface, width: 1.5),
                     ),
                   ),
-                  if (thread.isOnline)
-                    Positioned(
-                      right: -1,
-                      bottom: -1,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: MetaGymTheme.progressGreen,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: MetaGymTheme.darkCanvas,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            thread.displayName,
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0x26A79D92),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            thread.roleLabel,
-                            style: const TextStyle(
-                              color: Color(0xFFB8C2D0),
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      thread.lastMessage,
-                      style: TextStyle(
-                        color: unread > 0
-                            ? const Color(0xFFD5DEE8)
-                            : const Color(0xFF8E9AA8),
-                        fontSize: 11.5,
-                        fontWeight: unread > 0
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    thread.timeLabel,
-                    style: TextStyle(
-                      color: unread > 0
-                          ? MetaGymTheme.brandOrange
-                          : const Color(0xFF8E9AA8),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+            ],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        thread.displayName,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  if (unread > 0) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
-                        vertical: 1.5,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: MetaGymTheme.brandOrange,
-                        borderRadius: BorderRadius.circular(12),
+                        color: colors.metricPanelBg,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        '$unread',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRealConversationCard(Conversation item) {
-    final userId = _effectiveUserId;
-    final timeLabel = item.formatLastMessageTime();
-    return _buildLiquidGlassCard(
-      borderRadius: BorderRadius.circular(14),
-      margin: const EdgeInsets.only(bottom: 7),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => _openRealConversation(item),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0x80211E1C),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0x9A8C8176),
-                    width: 1.0,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(
-                    item.memberId == userId
-                        ? Icons.sports_gymnastics_rounded
-                        : Icons.person_rounded,
-                    color: MetaGymTheme.reflectionBlue,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.displayNameFor(userId),
-                      style: const TextStyle(
-                        color: MetaGymTheme.darkTextPrimary,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: item.canSend
-                                ? MetaGymTheme.progressGreen
-                                : const Color(0xFFB8B0A8),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            item.lastMessagePreview,
-                            style: TextStyle(
-                              color: item.unreadCount > 0
-                                  ? const Color(0xFFF7F9FC)
-                                  : const Color(0xFFC8C2BC),
-                              fontSize: 11.5,
-                              fontWeight: item.unreadCount > 0
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (timeLabel.isNotEmpty)
-                    Text(
-                      timeLabel,
-                      style: TextStyle(
-                        color: item.unreadCount > 0
-                            ? MetaGymTheme.brandOrange
-                            : const Color(0xFFB8B0A8),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  if (timeLabel.isNotEmpty && item.unreadCount > 0)
-                    const SizedBox(height: 4),
-                  if (item.unreadCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: MetaGymTheme.brandOrange,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x4DFF5A36),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        '${item.unreadCount} tin chưa đọc',
-                        style: const TextStyle(
-                          color: MetaGymTheme.onBrandOrange,
+                        thread.roleLabel,
+                        style: TextStyle(
+                          color: colors.textSecondary,
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
-                  else if (timeLabel.isEmpty)
-                    const Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFFB8B0A8),
-                      size: 20,
                     ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorCard() {
-    return _buildLiquidGlassCard(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.error_outline_rounded,
-                  color: MetaGymTheme.dangerCoral,
-                  size: 20,
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
+                const SizedBox(height: 3),
+                Text(
+                  thread.lastMessage,
+                  style: TextStyle(
+                    color: unread > 0
+                        ? colors.textPrimary
+                        : colors.textSecondary,
+                    fontSize: 12.5,
+                    fontWeight: unread > 0 ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                thread.timeLabel,
+                style: TextStyle(
+                  color: unread > 0 ? colors.primaryText : colors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: MetaGymTheme.tabularFigures,
+                ),
+              ),
+              if (unread > 0) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                    '$unread',
+                    style: const TextStyle(
+                      color: MetaGymTheme.onPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: _load,
-              icon: const Icon(
-                Icons.replay_rounded,
-                size: 16,
-                color: MetaGymTheme.brandOrange,
-              ),
-              label: const Text(
-                'Thử lại',
-                style: TextStyle(
-                  color: MetaGymTheme.brandOrange,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyCard({required String title, required String subtitle}) {
-    return _buildLiquidGlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: const Color(0x80211E1C),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0x9A8C8176)),
-                ),
-                child: const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: MetaGymTheme.reflectionBlue,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: MetaGymTheme.darkTextPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFC8C2BC),
-                  fontSize: 12.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ConversationDetailPage extends StatefulWidget {
-  const ConversationDetailPage({
-    required this.conversation,
-    this.service,
-    required this.currentUserId,
-    required this.picker,
-    this.mockTitle,
-    this.mockInitials,
-    this.mockContextTitle,
-    this.initialMockMessages,
-    this.onMockMessageAdded,
-    super.key,
-  });
-
-  final Conversation conversation;
-  final MessagingService? service;
-  final String currentUserId;
-  final ProgressPhotoPicker picker;
-  final String? mockTitle;
-  final String? mockInitials;
-  final String? mockContextTitle;
-  final List<ChatMessage>? initialMockMessages;
-  final ValueChanged<ChatMessage>? onMockMessageAdded;
-
-  @override
-  State<ConversationDetailPage> createState() => _ConversationDetailPageState();
-}
-
-class _ConversationDetailPageState extends State<ConversationDetailPage> {
-  static const String _recipientDisabledMessage =
-      'Không thể gửi tin nhắn vì tài khoản người nhận đang bị khóa';
-
-  StreamSubscription<String>? _realtimeMessages;
-  final _textController = TextEditingController();
-  final _scrollController = ScrollController();
-  List<ChatMessage> _messages = const [];
-  bool _loading = true;
-  bool _loadingMore = false;
-  bool _sending = false;
-  bool _imageSending = false;
-  bool _creatingCall = false;
-  bool _recipientDisabled = false;
-  String? _error;
-  String? _sendError;
-  String? _draftMessageId;
-  String? _draftContent;
-  String? _imageError;
-  SelectedProgressImage? _pendingImage;
-  String? _pendingMediaId;
-  String? _pendingImageMessageId;
-  String? _lastReadId;
-  String? _markingReadId;
-  SessionController? _sessionController;
-  int _sessionEpoch = 0;
-  Timer? _pollTimer;
-  bool _polling = false;
-  int _page = 1;
-  bool _hasMore = false;
-
-  bool get _isMockMode => widget.initialMockMessages != null;
-
-  static const _quickReplies = [
-    'Lịch tập hôm nay',
-    'Đổi giờ tập',
-    'Hỏi thực đơn',
-    'Cảm ơn Coach!',
-  ];
-
-  void _storeCache(
-    List<ChatMessage> messages, {
-    bool? hasMore,
-    String? lastReadId,
-  }) {
-    _MessagingSessionCache.writeThread(
-      widget.currentUserId,
-      widget.service,
-      widget.conversation.messageKey,
-      messages: messages,
-      hasMore: hasMore,
-      lastReadId: lastReadId ?? _lastReadId,
-    );
-  }
-
-  List<ChatMessage> _mergeMessages({
-    List<ChatMessage> newer = const [],
-    List<ChatMessage> current = const [],
-    List<ChatMessage> older = const [],
-  }) {
-    final combined = <ChatMessage>[...newer, ...current, ...older];
-    final byId = <String, ChatMessage>{};
-    final orderIndex = <String, int>{};
-    for (var i = 0; i < combined.length; i++) {
-      final item = combined[i];
-      orderIndex.putIfAbsent(item.id, () => i);
-      byId.putIfAbsent(item.id, () => item);
-    }
-    final unique = byId.values.toList();
-    unique.sort((a, b) {
-      final aTime = DateTime.tryParse(a.sentAt);
-      final bTime = DateTime.tryParse(b.sentAt);
-      if (aTime != null && bTime != null) {
-        final cmp = bTime.compareTo(aTime);
-        if (cmp != 0) return cmp;
-      }
-      return orderIndex[a.id]!.compareTo(orderIndex[b.id]!);
-    });
-    return unique;
-  }
-
-  bool _isActiveRequest(int epoch, String userId, String messageKey) {
-    if (!mounted) return false;
-    if (epoch != _sessionEpoch ||
-        userId != widget.currentUserId ||
-        messageKey != widget.conversation.messageKey) {
-      return false;
-    }
-    final session = _sessionController;
-    if (session != null) {
-      if (session.status == SessionStatus.unauthenticated) return false;
-      if (session.user != null && session.user!.id != userId) return false;
-    }
-    return true;
-  }
-
-  void _handleSessionChanged() {
-    if (!mounted) return;
-    final session = _sessionController;
-    if (session == null) return;
-    if (session.status == SessionStatus.unauthenticated ||
-        session.user == null ||
-        session.user!.id != widget.currentUserId) {
-      _sessionEpoch++;
-      _pollTimer?.cancel();
-      _MessagingSessionCache.clearAll();
-      setState(() {
-        _messages = const [];
-        _loading = false;
-        _loadingMore = false;
-        _sending = false;
-        _imageSending = false;
-        _polling = false;
-        _recipientDisabled = false;
-        _error = null;
-        _sendError = null;
-        _imageError = null;
-        _draftMessageId = null;
-        _draftContent = null;
-        _pendingImage = null;
-        _pendingMediaId = null;
-        _pendingImageMessageId = null;
-        _lastReadId = null;
-        _markingReadId = null;
-      });
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    SessionController? session;
-    try {
-      session = context.read<SessionController?>();
-    } catch (_) {}
-    if (!identical(_sessionController, session)) {
-      _sessionController?.removeListener(_handleSessionChanged);
-      _sessionController = session;
-      _sessionController?.addListener(_handleSessionChanged);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant ConversationDetailPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentUserId != widget.currentUserId ||
-        oldWidget.conversation.messageKey != widget.conversation.messageKey ||
-        !identical(oldWidget.service, widget.service)) {
-      _sessionEpoch++;
-      if (oldWidget.currentUserId != widget.currentUserId) {
-        _MessagingSessionCache.clearAll();
-      }
-      final cached = _MessagingSessionCache.readThread(
-        widget.currentUserId,
-        widget.service,
-        widget.conversation.messageKey,
-      );
-      setState(() {
-        _messages = cached != null
-            ? List<ChatMessage>.from(cached.messages)
-            : const [];
-        _hasMore = cached?.hasMore ?? false;
-        _lastReadId = cached?.lastReadId;
-        _markingReadId = null;
-        _loading = cached == null;
-        _loadingMore = false;
-        _sending = false;
-        _imageSending = false;
-        _polling = false;
-        _recipientDisabled = false;
-        _page = 1;
-        _error = null;
-        _sendError = null;
-        _imageError = null;
-        _draftMessageId = null;
-        _draftContent = null;
-        _pendingImage = null;
-        _pendingMediaId = null;
-        _pendingImageMessageId = null;
-      });
-      if (!_isMockMode) {
-        _load();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _sessionController?.removeListener(_handleSessionChanged);
-    _pollTimer?.cancel();
-    unawaited(_realtimeMessages?.cancel());
-    _textController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (_isMockMode) {
-      _messages = widget.initialMockMessages!.reversed.toList();
-      _loading = false;
-    } else {
-      _realtimeMessages = context.read<MetaGymRealtime?>()?.messages.listen((
-        id,
-      ) {
-        if (mounted && id == widget.conversation.id) {
-          unawaited(_refreshLatest());
-        }
-      });
-      final cached = _MessagingSessionCache.readThread(
-        widget.currentUserId,
-        widget.service,
-        widget.conversation.messageKey,
-      );
-      if (cached != null) {
-        _messages = List<ChatMessage>.from(cached.messages);
-        _hasMore = cached.hasMore;
-        _lastReadId = cached.lastReadId;
-        _loading = false;
-      }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _load();
-      });
-      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-        if (mounted) _refreshLatest();
-      });
-    }
-  }
-
-  Future<void> _load() async {
-    if (widget.service == null) {
-      if (mounted) setState(() => _loading = false);
-      return;
-    }
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    final showLoader = _messages.isEmpty;
-    setState(() {
-      if (showLoader) _loading = true;
-      _error = null;
-    });
-    try {
-      final messages = await widget.service!.getMessages(requestKey, 1);
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      final hasMore = messages.length == 20;
-      final merged = _mergeMessages(newer: messages, current: _messages);
-      setState(() {
-        _messages = merged;
-        if (_page <= 1) {
-          _page = 1;
-          _hasMore = hasMore;
-        }
-        _loading = false;
-      });
-      _storeCache(merged, hasMore: _hasMore);
-      unawaited(_markLatestReceived(merged).catchError((_) {}));
-    } on ApiException catch (error) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      if (_messages.isEmpty) {
-        setState(() => _error = error.message);
-      }
-    } catch (_) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      if (_messages.isEmpty) {
-        setState(() => _error = 'Không tải được tin nhắn.');
-      }
-    } finally {
-      if (_isActiveRequest(requestEpoch, requestUserId, requestKey) &&
-          _loading) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  Future<void> _refreshLatest() async {
-    if (_polling || _loading || widget.service == null) return;
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    _polling = true;
-    try {
-      final latest = await widget.service!.getMessages(requestKey, 1);
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      final merged = _mergeMessages(newer: latest, current: _messages);
-      setState(() => _messages = merged);
-      _storeCache(merged);
-      unawaited(_markLatestReceived(merged).catchError((_) {}));
-    } catch (_) {
-      // Keep the visible message list intact when background refresh fails.
-    } finally {
-      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
-        _polling = false;
-      }
-    }
-  }
-
-  Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore || widget.service == null) return;
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    final targetPage = _page + 1;
-    setState(() {
-      _loadingMore = true;
-      _error = null;
-    });
-    try {
-      final messages = await widget.service!.getMessages(
-        requestKey,
-        targetPage,
-      );
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      final merged = _mergeMessages(current: _messages, older: messages);
-      setState(() {
-        _messages = merged;
-        _page = targetPage;
-        _hasMore = messages.length == 20;
-      });
-      _storeCache(merged, hasMore: _hasMore);
-      unawaited(_markLatestReceived(merged).catchError((_) {}));
-    } on ApiException catch (error) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      setState(() => _error = error.message);
-    } catch (_) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      setState(() => _error = 'Không tải thêm được tin nhắn.');
-    } finally {
-      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
-        setState(() => _loadingMore = false);
-      }
-    }
-  }
-
-  Future<void> _markLatestReceived(List<ChatMessage> messages) async {
-    final service = widget.service;
-    if (service == null) return;
-    final latest = messages
-        .where((message) => message.senderId != widget.currentUserId)
-        .firstOrNull;
-    if (latest == null ||
-        latest.id == _lastReadId ||
-        latest.id == _markingReadId) {
-      return;
-    }
-
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    _markingReadId = latest.id;
-    try {
-      await service.markRead(requestKey, latest.id);
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      _lastReadId = latest.id;
-      _storeCache(_messages, lastReadId: latest.id);
-    } catch (_) {
-      // Leave _lastReadId unchanged so the next sync retries markRead.
-    } finally {
-      if (_markingReadId == latest.id) {
-        _markingReadId = null;
-      }
-    }
-  }
-
-  String _nowHHmm() {
-    final now = DateTime.now();
-    final hh = now.hour.toString().padLeft(2, '0');
-    final mm = now.minute.toString().padLeft(2, '0');
-    return '$hh:$mm';
-  }
-
-  void _sendMockMessage(String rawText) {
-    final text = rawText.trim();
-    if (text.isEmpty) return;
-    final msg = ChatMessage(
-      id: 'local-${DateTime.now().microsecondsSinceEpoch}',
-      senderId: widget.currentUserId,
-      messageType: 'TEXT',
-      content: text,
-      mediaId: null,
-      sentAt: _nowHHmm(),
-    );
-    _textController.clear();
-    setState(() {
-      _messages = [msg, ..._messages];
-    });
-    widget.onMockMessageAdded?.call(msg);
-  }
-
-  Future<void> _send([String? overrideText]) async {
-    if (_sending || _recipientDisabled) return;
-    final candidate = overrideText ?? _textController.text;
-    final text = candidate.trim().isNotEmpty
-        ? candidate.trim()
-        : (_draftContent ?? '').trim();
-    if (text.isEmpty) return;
-
-    if (_isMockMode) {
-      _sendMockMessage(text);
-      return;
-    }
-    final service = widget.service;
-    if (service == null) return;
-
-    if (_draftContent != text || _draftMessageId == null) {
-      _draftContent = text;
-      _draftMessageId = newClientMessageId();
-    }
-    final clientMessageId = _draftMessageId!;
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    setState(() {
-      _sending = true;
-      _sendError = null;
-    });
-    try {
-      final created = await service.sendText(requestKey, text, clientMessageId);
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      _textController.clear();
-      _draftMessageId = null;
-      _draftContent = null;
-      setState(() {
-        _saveMessage(created);
-      });
-    } on ApiException catch (error) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      if (error.code == 'RECIPIENT_ACCOUNT_DISABLED') {
-        _draftMessageId = null;
-        _draftContent = null;
-        setState(() {
-          _recipientDisabled = true;
-          _sendError = null;
-          _imageError = null;
-        });
-      } else {
-        setState(() => _sendError = error.message);
-      }
-    } catch (_) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      setState(() => _sendError = 'Không gửi được tin nhắn.');
-    } finally {
-      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
-        setState(() => _sending = false);
-      }
-    }
-  }
-
-  Future<void> _pickImage() async {
-    if (_isMockMode || widget.service == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Chế độ xem trước giao diện — chưa kết nối upload ảnh.',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    if (_imageSending || _recipientDisabled) return;
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    final image = await widget.picker.pick();
-    if (image == null ||
-        !_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
-      return;
-    }
-    setState(() {
-      _pendingImage = image;
-      _pendingMediaId = null;
-      _pendingImageMessageId = newClientMessageId();
-      _imageError = null;
-    });
-    await _sendImage();
-  }
-
-  Future<void> _sendImage() async {
-    final image = _pendingImage;
-    if (image == null || _imageSending || widget.service == null) return;
-    final requestEpoch = _sessionEpoch;
-    final requestUserId = widget.currentUserId;
-    final requestKey = widget.conversation.messageKey;
-    final clientMessageId = _pendingImageMessageId ??= newClientMessageId();
-    setState(() {
-      _imageSending = true;
-      _imageError = null;
-    });
-    try {
-      final mediaId =
-          _pendingMediaId ?? await widget.service!.uploadImage(image);
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      _pendingMediaId = mediaId;
-      final created = await widget.service!.sendImage(
-        requestKey,
-        mediaId,
-        clientMessageId,
-      );
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      _pendingImage = null;
-      _pendingMediaId = null;
-      _pendingImageMessageId = null;
-      setState(() => _saveMessage(created));
-    } on ApiException catch (error) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      if (error.code == 'RECIPIENT_ACCOUNT_DISABLED') {
-        _pendingImage = null;
-        _pendingMediaId = null;
-        _pendingImageMessageId = null;
-        setState(() {
-          _recipientDisabled = true;
-          _sendError = null;
-          _imageError = null;
-        });
-      } else {
-        setState(() => _imageError = error.message);
-      }
-    } catch (_) {
-      if (!_isActiveRequest(requestEpoch, requestUserId, requestKey)) return;
-      setState(() => _imageError = 'Không gửi được hình ảnh.');
-    } finally {
-      if (_isActiveRequest(requestEpoch, requestUserId, requestKey)) {
-        setState(() => _imageSending = false);
-      }
-    }
-  }
-
-  void _saveMessage(ChatMessage message) {
-    final updated = _mergeMessages(newer: [message], current: _messages);
-    _messages = updated;
-    _storeCache(updated);
-    if (_scrollController.hasClients && _scrollController.offset > 0) {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-      );
-    }
-  }
-
-  void _showCallNotice(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
-  }
-
-  Future<void> _startCall(String callType) async {
-    if (_creatingCall) return;
-    final service = context.read<CallsService?>();
-    if (_isMockMode || service is! CallsApi) {
-      _showCallNotice('Dịch vụ cuộc gọi chưa khả dụng.');
-      return;
-    }
-    final conversation = widget.conversation;
-    final relationshipId = conversation.relationshipId;
-    if (relationshipId == null || conversation.status != 'ACTIVE') {
-      _showCallNotice('Chỉ có thể gọi khi quan hệ huấn luyện đang hoạt động.');
-      return;
-    }
-
-    final navigator = Navigator.of(context, rootNavigator: true);
-    if (LiveCallPage.isOpen(navigator)) return;
-    _creatingCall = true;
-    try {
-      final call = await service.createLiveCall(relationshipId, callType);
-      if (!mounted) return;
-      final peerName =
-          widget.mockTitle ?? conversation.displayNameFor(widget.currentUserId);
-      await LiveCallPage.show(
-        navigator,
-        api: service,
-        call: call,
-        currentUserId: widget.currentUserId,
-        peerName: peerName,
-      );
-    } on ApiException catch (error) {
-      if (mounted) _showCallNotice(error.message);
-    } catch (_) {
-      if (mounted) _showCallNotice('Không tạo được cuộc gọi.');
-    } finally {
-      _creatingCall = false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final title =
-        widget.mockTitle ??
-        widget.conversation.displayNameFor(widget.currentUserId);
-    final initials =
-        widget.mockInitials ??
-        widget.conversation.initialsFor(widget.currentUserId);
-
-    return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
-      body: Stack(
-        children: [
-          const _MessagingGymBackground(),
-          Column(
-            children: [
-              _buildGlassAppBar(context, title, initials),
-              Expanded(
-                child: ListView(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  children: [
-                    if (_loading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 32),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: MetaGymTheme.brandOrange,
-                            strokeWidth: 2.5,
-                          ),
-                        ),
-                      )
-                    else ...[
-                      if (_error != null)
-                        _buildLiquidGlassCard(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _error!,
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.dangerCoral,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                TextButton(
-                                  onPressed: _messages.isEmpty
-                                      ? _load
-                                      : _loadMore,
-                                  child: const Text(
-                                    'Thử lại',
-                                    style: TextStyle(
-                                      color: MetaGymTheme.brandOrange,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (_messages.isEmpty && _error == null)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Center(
-                            child: Text(
-                              'Chưa có tin nhắn.',
-                              style: TextStyle(
-                                color: Color(0xFFC8C2BC),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        )
-                      else ...[
-                        for (final message in _messages)
-                          KeyedSubtree(
-                            key: ValueKey('chat-msg-${message.id}'),
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: _buildChatMessageBubble(message),
-                            ),
-                          ),
-                        if (_hasMore)
-                          Center(
-                            child: TextButton(
-                              onPressed: _loadingMore ? null : _loadMore,
-                              child: Text(
-                                _loadingMore ? 'Đang tải…' : 'Tải tin cũ',
-                                style: const TextStyle(
-                                  color: MetaGymTheme.brandOrange,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        Center(
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x99211E1C),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0x9A8C8176),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: const Text(
-                              'Hôm nay',
-                              style: TextStyle(
-                                color: Color(0xFFC8C2BC),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                    _buildLiquidGlassCard(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: widget.conversation.canSend
-                                        ? MetaGymTheme.progressGreen
-                                        : const Color(0xFFB8B0A8),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    widget.mockContextTitle ??
-                                        'Trò chuyện riêng tư',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.darkTextPrimary,
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.conversation.canSend
-                                  ? (_isMockMode
-                                        ? 'Kết nối trực tiếp với huấn luyện viên'
-                                        : (widget.conversation.status == 'ENDED'
-                                              ? 'Bạn vẫn có thể tiếp tục nhắn tin.'
-                                              : 'Có thể nhắn tin.'))
-                                  : 'Không thể gửi tin nhắn.',
-                              style: const TextStyle(
-                                color: Color(0xFFC8C2BC),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (widget.conversation.canSend) _buildComposerArea(),
             ],
           ),
         ],
@@ -2604,464 +1441,174 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     );
   }
 
-  Widget _buildGlassAppBar(
-    BuildContext context,
-    String title,
-    String initials,
-  ) {
-    final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
-    final bar = Container(
-      decoration: const BoxDecoration(
-        color: Color(0xC8241F1B),
-        border: Border(
-          bottom: BorderSide(color: Color(0x52A79D92), width: 0.9),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 12, 10),
-          child: Row(
-            children: [
-              _CircleGlassIconButton(
-                icon: Icons.arrow_back_rounded,
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onTap: () => Navigator.of(context).maybePop(),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0x332A1510),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: MetaGymTheme.brandOrange,
-                    width: 1.2,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    color: MetaGymTheme.brandOrange,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 1),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _recipientDisabled
-                                ? MetaGymTheme.dangerCoral
-                                : widget.conversation.canSend
-                                ? MetaGymTheme.progressGreen
-                                : MetaGymTheme.darkTextTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            _recipientDisabled
-                                ? 'Tài khoản bị khóa'
-                                : widget.conversation.canSend
-                                ? 'Đang hoạt động'
-                                : 'Chỉ đọc',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: _recipientDisabled
-                                  ? MetaGymTheme.dangerCoral
-                                  : widget.conversation.canSend
-                                  ? MetaGymTheme.progressGreen
-                                  : const Color(0xFF8E9AA8),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              _CircleGlassIconButton(
-                icon: Icons.call_outlined,
-                tooltip: 'Gọi thoại',
-                onTap: () => _startCall('VOICE'),
-              ),
-              const SizedBox(width: 4),
-              _CircleGlassIconButton(
-                icon: Icons.videocam_outlined,
-                tooltip: 'Gọi video',
-                onTap: () => _startCall('VIDEO'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Widget _buildRealConversationCard(
+    MetaGymColors colors,
+    Conversation item, {
+    required int paletteIndex,
+    required bool useCoachHeader,
+  }) {
+    final userId = _effectiveUserId;
+    final peerName = item.displayNameFor(userId);
+    final timeLabel = item.formatLastMessageTime();
 
-    if (!enableBlur) return bar;
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: bar,
-      ),
-    );
-  }
-
-  Widget _buildComposerArea() {
-    final enableBlur = !MetaGymTheme.isFlutterTestEnvironment;
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_recipientDisabled)
-              Container(
-                key: const Key('chat-recipient-disabled-banner'),
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF24161A),
-                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  border: Border.all(
-                    color: MetaGymTheme.dangerCoral.withValues(alpha: 0.55),
-                    width: 1,
-                  ),
-                ),
-                child: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.block_rounded,
-                      color: MetaGymTheme.dangerCoral,
-                      size: 20,
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _recipientDisabledMessage,
-                            style: TextStyle(
-                              color: Color(0xFFFFB2B6),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              height: 1.4,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Bạn vẫn có thể xem lại toàn bộ lịch sử tin nhắn.',
-                            style: TextStyle(
-                              color: Color(0xFFC8C2BC),
-                              fontSize: 11.5,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (_sendError != null && !_recipientDisabled)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _sendError!,
-                        style: const TextStyle(
-                          color: MetaGymTheme.dangerCoral,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    if (_draftMessageId != null)
-                      TextButton(
-                        onPressed: _sending ? null : _send,
-                        child: const Text(
-                          'Thử gửi lại',
-                          style: TextStyle(
-                            color: MetaGymTheme.brandOrange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            if (_imageError != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _imageError!,
-                        style: const TextStyle(
-                          color: MetaGymTheme.dangerCoral,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    if (_pendingImage != null)
-                      TextButton(
-                        onPressed: _imageSending ? null : _sendImage,
-                        child: const Text(
-                          'Thử lại gửi ảnh',
-                          style: TextStyle(
-                            color: MetaGymTheme.brandOrange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            if (!_recipientDisabled)
-              ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: _imageSending ? null : _pickImage,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              minWidth: 48,
-                              minHeight: 48,
-                            ),
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 11,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x26A9C7E8),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0x4DA9C7E8),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.image_outlined,
-                                      size: 14,
-                                      color: MetaGymTheme.reflectionBlue,
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      _imageSending
-                                          ? 'Đang gửi ảnh…'
-                                          : 'Gửi ảnh',
-                                      style: const TextStyle(
-                                        color: MetaGymTheme.reflectionBlue,
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      for (final reply in _quickReplies) ...[
-                        const SizedBox(width: 8),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () => _send(reply),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minWidth: 48,
-                                minHeight: 48,
-                              ),
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xA6231F1C),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: const Color(0x52A79D92),
-                                      width: 0.9,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    reply,
-                                    style: const TextStyle(
-                                      color: Color(0xFFE6E0DA),
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: enableBlur
-                  ? BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                      child: _buildCapsuleComposerBody(),
-                    )
-                  : _buildCapsuleComposerBody(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCapsuleComposerBody() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
-      decoration: BoxDecoration(
-        color: const Color(0xCC1E1A17),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0x529C9084), width: 1.0),
-      ),
+    return MetaGymGlassCard(
+      solid: !_resolveCoachHeader(context),
+      margin: const EdgeInsets.only(bottom: 8),
+      onTap: () => _openRealConversation(item, isCoach: useCoachHeader),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
-          IconButton(
-            onPressed: (_imageSending || _recipientDisabled)
-                ? null
-                : _pickImage,
-            tooltip: 'Gửi ảnh',
-            icon: _imageSending
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFFD5DEE8),
-                    ),
-                  )
-                : Icon(
-                    Icons.image_outlined,
-                    color: _recipientDisabled
-                        ? MetaGymTheme.textSecondary
-                        : const Color(0xFFD5DEE8),
-                    size: 21,
-                  ),
+          CoachingAvatar(
+            fullName: peerName,
+            size: 42,
+            round: true,
+            paletteIndex: useCoachHeader ? paletteIndex : 0,
           ),
+          const SizedBox(width: 10),
           Expanded(
-            child: TextField(
-              controller: _textController,
-              enabled: !_recipientDisabled,
-              maxLength: 5000,
-              minLines: 1,
-              maxLines: 4,
-              style: const TextStyle(
-                color: MetaGymTheme.darkTextPrimary,
-                fontSize: 14,
-              ),
-              decoration: InputDecoration(
-                hintText: _recipientDisabled
-                    ? 'Không thể gửi tin nhắn lúc này'
-                    : 'Nhắn tin cho Coach...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF8E9AA8),
-                  fontSize: 13.5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  peerName,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                filled: false,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                counterText: '',
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 8,
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: item.canSend
+                            ? colors.success
+                            : colors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        item.lastMessagePreview,
+                        style: TextStyle(
+                          color: item.unreadCount > 0
+                              ? colors.textPrimary
+                              : colors.textSecondary,
+                          fontSize: 12.5,
+                          fontWeight: item.unreadCount > 0
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+              ],
             ),
           ),
-          const SizedBox(width: 6),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: (_sending || _recipientDisabled) ? null : _send,
-              borderRadius: BorderRadius.circular(20),
-              child: Ink(
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: _recipientDisabled
-                      ? MetaGymTheme.cardBorder
-                      : MetaGymTheme.brandOrange,
-                  borderRadius: BorderRadius.circular(20),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (timeLabel.isNotEmpty)
+                Text(
+                  timeLabel,
+                  style: TextStyle(
+                    color: item.unreadCount > 0
+                        ? colors.primaryText
+                        : colors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
                 ),
-                child: Center(
+              if (timeLabel.isNotEmpty && item.unreadCount > 0)
+                const SizedBox(height: 4),
+              if (item.unreadCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x4DFF5A36),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Text(
-                    'Gửi',
-                    style: TextStyle(
-                      color: _recipientDisabled
-                          ? MetaGymTheme.textSecondary
-                          : Colors.white,
-                      fontSize: 13,
+                    '${item.unreadCount} tin chưa đọc',
+                    style: const TextStyle(
+                      color: MetaGymTheme.onPrimary,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                )
+              else if (timeLabel.isEmpty)
+                Icon(
+                  Icons.chevron_right,
+                  color: colors.textSecondary,
+                  size: 20,
                 ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(MetaGymColors colors) {
+    return MetaGymGlassCard(
+      solid: !_resolveCoachHeader(context),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.error_outline_rounded, color: colors.error, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _error!,
+                  style: TextStyle(
+                    color: colors.error,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _load,
+            icon: Icon(
+              Icons.replay_rounded,
+              size: 16,
+              color: colors.primaryText,
+            ),
+            label: Text(
+              'Thử lại',
+              style: TextStyle(
+                color: colors.primaryText,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -3070,91 +1617,50 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     );
   }
 
-  Widget _buildChatMessageBubble(ChatMessage message) {
-    final isMe = message.senderId == widget.currentUserId;
-
-    final bubbleRadius = BorderRadius.only(
-      topLeft: const Radius.circular(18),
-      topRight: const Radius.circular(18),
-      bottomLeft: isMe ? const Radius.circular(18) : const Radius.circular(4),
-      bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(18),
-    );
-
-    final isImageMessage =
-        message.messageType == 'IMAGE' &&
-        message.mediaId != null &&
-        widget.service != null;
-
-    final bubbleBody = Container(
-      padding: isImageMessage
-          ? const EdgeInsets.all(6)
-          : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: isMe ? MetaGymTheme.brandOrange : const Color(0xCC2B2622),
-        borderRadius: bubbleRadius,
-        border: isMe
-            ? null
-            : Border.all(color: const Color(0x529C9084), width: 1.0),
-      ),
-      child: Column(
-        crossAxisAlignment: isMe
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
-        children: [
-          if (isImageMessage)
-            ChatMessageImage(
-              service: widget.service!,
-              mediaId: message.mediaId!,
-            )
-          else
-            Text(
-              message.content ?? '',
-              style: TextStyle(
-                color: isMe ? Colors.white : MetaGymTheme.darkTextPrimary,
-                fontSize: 14,
-                height: 1.35,
+  Widget _buildEmptyCard(
+    MetaGymColors colors, {
+    required String title,
+    required String subtitle,
+  }) {
+    return MetaGymGlassCard(
+      solid: !_resolveCoachHeader(context),
+      padding: const EdgeInsets.all(28),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: colors.metricPanelBg,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.metricPanelBorder),
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: colors.reflection,
+                size: 26,
               ),
             ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: isImageMessage
-                ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
-                : EdgeInsets.zero,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  message.sentAt,
-                  style: TextStyle(
-                    color: isMe
-                        ? Colors.white.withValues(alpha: 0.78)
-                        : const Color(0xFFB8B0A8),
-                    fontSize: 10,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.done_all_rounded,
-                    size: 13,
-                    color: Colors.white.withValues(alpha: 0.85),
-                  ),
-                ],
-              ],
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
+            ),
+          ],
         ),
-        child: bubbleBody,
       ),
     );
   }

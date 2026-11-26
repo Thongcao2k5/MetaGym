@@ -87,12 +87,12 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
         .where((item) => _category == null || item.category == _category)
         .toList();
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymColors.of(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: const Color(0xFFF7F9FC),
+        foregroundColor: MetaGymColors.of(context).textPrimary,
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
@@ -106,12 +106,12 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           ),
         ),
         titleSpacing: 8,
-        title: const Text(
+        title: Text(
           'Phòng gym & thiết bị',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: MetaGymColors.of(context).textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
           ),
@@ -123,8 +123,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           const MetaGymBackground(),
           RefreshIndicator(
             onRefresh: _load,
-            color: MetaGymTheme.brandOrange,
-            backgroundColor: MetaGymTheme.cardSurface,
+            color: MetaGymColors.of(context).primaryText,
+            backgroundColor: MetaGymColors.of(context).surface,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
@@ -135,11 +135,11 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
               ),
               children: [
                 if (_loading && _gym == null)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.only(top: 80),
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: MetaGymTheme.brandOrange,
+                        color: MetaGymColors.of(context).primaryText,
                       ),
                     ),
                   )
@@ -150,7 +150,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.error_outline_rounded,
                               color: MetaGymTheme.dangerCoral,
                               size: 20,
@@ -159,8 +159,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                             Expanded(
                               child: Text(
                                 _error!,
-                                style: const TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                style: TextStyle(
+                                  color: MetaGymColors.of(context).textPrimary,
                                   fontSize: 14,
                                   height: 1.45,
                                 ),
@@ -172,11 +172,12 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                         TextButton.icon(
                           onPressed: _load,
                           style: TextButton.styleFrom(
-                            foregroundColor: MetaGymTheme.brandOrange,
+                            foregroundColor: MetaGymColors.of(context)
+                                .primaryText,
                             minimumSize: const Size(48, 48),
                           ),
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text(
+                          icon: Icon(Icons.refresh_rounded, size: 18),
+                          label: Text(
                             'Thử lại',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
@@ -195,7 +196,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           _heading(
                             Icons.schedule_rounded,
                             'Giờ mở cửa',
-                            color: MetaGymTheme.reflectionBlue,
+                            color: MetaGymColors.of(context).info,
                           ),
                           const SizedBox(height: 10),
                           for (final entry in _gym!.openingHours.entries)
@@ -203,8 +204,9 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                               padding: const EdgeInsets.only(bottom: 6),
                               child: Text(
                                 '${entry.key}: ${entry.value}',
-                                style: const TextStyle(
-                                  color: Color(0xFFC8C2BC),
+                                style: TextStyle(
+                                  color: MetaGymColors.of(context)
+                                      .textSecondary,
                                   fontSize: 14,
                                   height: 1.45,
                                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -224,13 +226,13 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           _heading(
                             Icons.verified_user_outlined,
                             'Nội quy',
-                            color: MetaGymTheme.coachAvatarBackground,
+                            color: MetaGymColors.of(context).warning,
                           ),
                           const SizedBox(height: 10),
                           Text(
                             _gym!.rules!,
-                            style: const TextStyle(
-                              color: Color(0xFFC8C2BC),
+                            style: TextStyle(
+                              color: MetaGymColors.of(context).textSecondary,
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -242,13 +244,13 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                   const SizedBox(height: 22),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Máy tại phòng gym',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Color(0xFFF7F9FC),
+                            color: MetaGymColors.of(context).textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                           ),
@@ -261,14 +263,16 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0x80211E1C),
+                          color: MetaGymColors.of(context).metricPanelBg,
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: const Color(0x9A8C8176)),
+                          border: Border.all(
+                            color: MetaGymColors.of(context).metricPanelBorder,
+                          ),
                         ),
                         child: Text(
                           '${visible.length} máy',
-                          style: const TextStyle(
-                            color: Color(0xFFC8C2BC),
+                          style: TextStyle(
+                            color: MetaGymColors.of(context).textSecondary,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             fontFeatures: MetaGymTheme.tabularFigures,
@@ -284,26 +288,26 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _load(),
                     cursorColor: MetaGymTheme.brandOrange,
-                    style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                    style: TextStyle(
+                      color: MetaGymColors.of(context).textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Tìm tên máy',
-                      hintStyle: const TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                      hintStyle: TextStyle(
+                        color: MetaGymColors.of(context).textSecondary,
                         fontSize: 13.5,
                       ),
                       filled: true,
-                      fillColor: MetaGymTheme.cardSurface,
+                      fillColor: MetaGymColors.of(context).surface,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 14,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search_rounded,
-                        color: MetaGymTheme.brandOrange,
+                        color: MetaGymColors.of(context).primaryText,
                         size: 20,
                       ),
                       suffixIcon: IconButton(
@@ -313,9 +317,9 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                           minHeight: 48,
                         ),
                         onPressed: _load,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_forward_rounded,
-                          color: MetaGymTheme.textPrimary,
+                          color: MetaGymColors.of(context).textPrimary,
                           size: 20,
                         ),
                       ),
@@ -323,24 +327,24 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                         borderRadius: BorderRadius.circular(
                           MetaGymTheme.radiusInput,
                         ),
-                        borderSide: const BorderSide(
-                          color: MetaGymTheme.cardBorder,
+                        borderSide: BorderSide(
+                          color: MetaGymColors.of(context).borderStrong,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
                           MetaGymTheme.radiusInput,
                         ),
-                        borderSide: const BorderSide(
-                          color: MetaGymTheme.cardBorder,
+                        borderSide: BorderSide(
+                          color: MetaGymColors.of(context).borderStrong,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
                           MetaGymTheme.radiusInput,
                         ),
-                        borderSide: const BorderSide(
-                          color: MetaGymTheme.brandOrange,
+                        borderSide: BorderSide(
+                          color: MetaGymColors.of(context).primaryText,
                           width: 1.5,
                         ),
                       ),
@@ -365,11 +369,11 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                   const SizedBox(height: 14),
                   if (visible.isEmpty)
                     _surface(
-                      const Row(
+                      Row(
                         children: [
                           Icon(
                             Icons.search_off_rounded,
-                            color: Color(0xFFC8C2BC),
+                            color: MetaGymColors.of(context).textSecondary,
                             size: 20,
                           ),
                           SizedBox(width: 10),
@@ -377,7 +381,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                             child: Text(
                               'Không có máy phù hợp.',
                               style: TextStyle(
-                                color: Color(0xFFF7F9FC),
+                                color: MetaGymColors.of(context).textPrimary,
                                 fontSize: 14,
                               ),
                             ),
@@ -414,9 +418,9 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0x4DFF5E36)),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.fitness_center_rounded,
-                color: MetaGymTheme.brandOrange,
+                color: MetaGymColors.of(context).primaryText,
                 size: 20,
               ),
             ),
@@ -424,8 +428,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
             Expanded(
               child: Text(
                 gym.name,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: MetaGymColors.of(context).textPrimary,
                   fontSize: 21,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
@@ -438,17 +442,17 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
+            Icon(
               Icons.location_on_outlined,
               size: 19,
-              color: MetaGymTheme.brandOrange,
+              color: MetaGymColors.of(context).primaryText,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 gym.address,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: MetaGymColors.of(context).textPrimary,
                   fontSize: 14,
                   height: 1.45,
                 ),
@@ -460,8 +464,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           const SizedBox(height: 10),
           Text(
             gym.description!,
-            style: const TextStyle(
-              color: Color(0xFFC8C2BC),
+            style: TextStyle(
+              color: MetaGymColors.of(context).textSecondary,
               fontSize: 13.5,
               height: 1.5,
             ),
@@ -471,8 +475,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           const SizedBox(height: 10),
           Text(
             'Điện thoại: ${gym.phone}',
-            style: const TextStyle(
-              color: Color(0xFFC8C2BC),
+            style: TextStyle(
+              color: MetaGymColors.of(context).textSecondary,
               fontSize: 13,
               fontFeatures: MetaGymTheme.tabularFigures,
             ),
@@ -482,7 +486,10 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           const SizedBox(height: 4),
           Text(
             'Email: ${gym.email}',
-            style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
+            style: TextStyle(
+              color: MetaGymColors.of(context).textSecondary,
+              fontSize: 13,
+            ),
           ),
         ],
       ],
@@ -500,8 +507,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
       Expanded(
         child: Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
+          style: TextStyle(
+            color: MetaGymColors.of(context).textPrimary,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
@@ -518,18 +525,18 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
       onSelected: (_) => setState(() => _category = value),
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      selectedColor: const Color(0xFF493025),
-      backgroundColor: MetaGymTheme.cardSurface,
+      selectedColor: MetaGymColors.of(context).chipActiveBg,
+      backgroundColor: MetaGymColors.of(context).surface,
       showCheckmark: false,
       side: BorderSide(
         color: _category == value
             ? MetaGymTheme.brandOrange
-            : MetaGymTheme.cardBorder,
+            : MetaGymColors.of(context).borderStrong,
       ),
       labelStyle: TextStyle(
         color: _category == value
-            ? const Color(0xFFF7F9FC)
-            : const Color(0xFFC8C2BC),
+            ? MetaGymColors.of(context).textPrimary
+            : MetaGymColors.of(context).textSecondary,
         fontWeight: _category == value ? FontWeight.w700 : FontWeight.w500,
       ),
     ),
@@ -561,9 +568,9 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0x4DFF5E36)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.fitness_center_rounded,
-                  color: MetaGymTheme.brandOrange,
+                  color: MetaGymColors.of(context).primaryText,
                   size: 20,
                 ),
               ),
@@ -574,8 +581,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                   children: [
                     Text(
                       item.name,
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                      style: TextStyle(
+                        color: MetaGymColors.of(context).textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -584,8 +591,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                       const SizedBox(height: 2),
                       Text(
                         item.category!,
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
+                        style: TextStyle(
+                          color: MetaGymColors.of(context).textSecondary,
                           fontSize: 12.5,
                         ),
                       ),
@@ -594,14 +601,17 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                 ),
               ),
               if (item.videoUrl?.isNotEmpty == true) ...[
-                const Icon(
+                Icon(
                   Icons.play_circle_outline_rounded,
-                  color: MetaGymTheme.reflectionBlue,
+                  color: MetaGymColors.of(context).info,
                   size: 21,
                 ),
                 const SizedBox(width: 4),
               ],
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFFC8C2BC)),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: MetaGymColors.of(context).textSecondary,
+              ),
             ],
           ),
         ),

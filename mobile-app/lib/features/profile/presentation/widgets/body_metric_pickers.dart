@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' show FontFeature, ImageFilter;
 
@@ -463,7 +465,9 @@ class _HeightStadiometerDialogState extends State<_HeightStadiometerDialog> {
     final child = Center(
       child: Padding(padding: const EdgeInsets.all(16), child: sheet),
     );
-    if (disableAnimations || MetaGymTheme.isFlutterTestEnvironment) {
+    if (disableAnimations ||
+        MetaGymSurfacePreferences.reduceBlurOf(context) ||
+        MetaGymTheme.isFlutterTestEnvironment) {
       return child;
     }
     return BackdropFilter(
@@ -1216,7 +1220,9 @@ class _WeightBarbellDialDialogState extends State<_WeightBarbellDialDialog> {
     final child = Center(
       child: Padding(padding: const EdgeInsets.all(16), child: sheet),
     );
-    if (disableAnimations || MetaGymTheme.isFlutterTestEnvironment) {
+    if (disableAnimations ||
+        MetaGymSurfacePreferences.reduceBlurOf(context) ||
+        MetaGymTheme.isFlutterTestEnvironment) {
       return child;
     }
     return BackdropFilter(

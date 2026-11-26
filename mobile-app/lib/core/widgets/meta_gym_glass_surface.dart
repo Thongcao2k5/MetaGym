@@ -3,39 +3,74 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
-/// Nền hình ảnh phòng gym kết hợp ánh sáng môi trường (Ambient Depth Lights)
-/// và lớp phủ scrim đồng bộ với DESIGN.md và tokens.css (hỗ trợ cả Dark & Light).
+/// Nền Spatial Light Ribbons đồng bộ bản preview (`tokens.css` & `backgrounds/README.md`)
+/// thích ứng Dark (`bg_app_dark.webp`) & Light (`bg_app_light.webp`).
 class MetaGymBackground extends StatelessWidget {
   const MetaGymBackground({this.useSolidFallback = false, super.key});
 
   final bool useSolidFallback;
 
-  static const AssetImage bannerAsset = AssetImage(
-    'assets/images/gym_banner.png',
+  static const AssetImage darkAppBackgroundAsset = AssetImage(
+    'assets/images/backgrounds/bg_app_dark.webp',
   );
+  static const AssetImage lightAppBackgroundAsset = AssetImage(
+    'assets/images/backgrounds/bg_app_light.webp',
+  );
+  static const AssetImage bannerAsset = darkAppBackgroundAsset;
 
   @override
   Widget build(BuildContext context) {
     final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
 
-    if (useSolidFallback) {
+    if (useSolidFallback || MetaGymSurfacePreferences.reduceBlurOf(context)) {
       return IgnorePointer(child: ColoredBox(color: palette.canvas));
     }
 
     if (isLight) {
-      return IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: palette.canvas,
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFEAF0F7), Color(0xFFE1E8F2), Color(0xFFDCE4EE)],
-            ),
+      return RepaintBoundary(
+        child: IgnorePointer(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: palette.canvas,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFEAF0F7),
+                      Color(0xFFE1E8F2),
+                      Color(0xFFDCE4EE),
+                    ],
+                  ),
+                ),
+              ),
+              Image(
+                image: lightAppBackgroundAsset,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x0AECF1F8),
+                      Color(0x05E4EBF4),
+                      Color(0x0FDCE4EF),
+                    ],
+                    stops: [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -46,44 +81,24 @@ class MetaGymBackground extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
+            const ColoredBox(color: MetaGymTheme.darkCanvas),
             Image(
-              image: bannerAsset,
+              image: darkAppBackgroundAsset,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) =>
-                  const ColoredBox(color: MetaGymTheme.darkCanvas),
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
             ),
-            // Ambient glow: Cool blue ở góc trên bên phải
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.85, -0.75),
-                  radius: 0.9,
-                  colors: [Color(0x2E8EB9E5), Colors.transparent],
-                ),
-              ),
-            ),
-            // Ambient glow: Warm orange ở góc dưới bên trái
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.85, 0.75),
-                  radius: 0.8,
-                  colors: [Color(0x24FF5A36), Colors.transparent],
-                ),
-              ),
-            ),
-            // Lớp phủ scrim đồng bộ (72–84% tương phản đọc chữ)
+            // Lớp phủ scrim nhẹ đồng bộ .phone-scrim trong tokens.css
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0x9E0F1115),
-                    Color(0x900F1115),
-                    Color(0xAA0F1115),
+                    Color(0x140F1115),
+                    Color(0x0A0F1115),
+                    Color(0x240B0D12),
                   ],
-                  stops: [0.0, 0.48, 1.0],
+                  stops: [0.0, 0.5, 1.0],
                 ),
               ),
             ),
@@ -117,7 +132,11 @@ class MetaGymHeroGlassCard extends StatelessWidget {
     final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
-    final useGlass = !useSolidFallback && !disableAnimations && !isLight;
+    final useGlass =
+        !useSolidFallback &&
+        !MetaGymSurfacePreferences.reduceBlurOf(context) &&
+        !disableAnimations &&
+        !isLight;
     final enableBlur = useGlass && !MetaGymTheme.isFlutterTestEnvironment;
 
     final cardSurface = Container(
@@ -232,7 +251,8 @@ class MetaGymGlassCard extends StatelessWidget {
     final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
-    final isSolidSurface = solid && !featured;
+    final isSolidSurface =
+        MetaGymSurfacePreferences.reduceBlurOf(context) || (solid && !featured);
     final enableBlur =
         !isSolidSurface &&
         featured &&

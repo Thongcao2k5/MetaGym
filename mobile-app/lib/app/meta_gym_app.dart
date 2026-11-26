@@ -6,6 +6,7 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
@@ -99,6 +100,7 @@ class MetaGymApp extends StatefulWidget {
 }
 
 class _MetaGymAppState extends State<MetaGymApp> {
+  final ThemeController _themeController = ThemeController();
   late final SessionController _sessionController;
   late final ApiClient _apiClient;
   late final AuthService _authService;
@@ -134,6 +136,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   @override
   void initState() {
     super.initState();
+    _themeController.restore();
     if (widget.sessionController case final injected?) {
       _sessionController = injected;
       _apiClient =
@@ -213,6 +216,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
 
   @override
   void dispose() {
+    _themeController.dispose();
     _realtime?.dispose();
     _router.dispose();
     _authController.dispose();
@@ -226,6 +230,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<ThemeController>.value(value: _themeController),
         Provider<ApiClient>.value(value: _apiClient),
         Provider<MetaGymRealtime?>.value(value: _realtime),
         Provider<AuthService>.value(value: _authService),
@@ -266,26 +271,32 @@ class _MetaGymAppState extends State<MetaGymApp> {
           value: _sessionController,
         ),
       ],
-      child: MaterialApp.router(
-        title: 'Meta Gym',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.dark,
-        routerConfig: _router,
-        builder: (context, child) {
-          final api = _callsService;
-          if (child == null || api is! CallsApi) {
-            return child ?? const SizedBox.shrink();
-          }
-          return IncomingCallListener(
-            navigatorKey: _navigatorKey,
-            session: _sessionController,
-            api: api,
-            realtime: _realtime,
-            child: child,
-          );
-        },
+      child: ListenableBuilder(
+        listenable: _themeController,
+        builder: (context, _) => MetaGymSurfacePreferences(
+          reduceBlur: _themeController.reduceBlur,
+          child: MaterialApp.router(
+            title: 'Meta Gym',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: _themeController.mode,
+            routerConfig: _router,
+            builder: (context, child) {
+              final api = _callsService;
+              if (child == null || api is! CallsApi) {
+                return child ?? const SizedBox.shrink();
+              }
+              return IncomingCallListener(
+                navigatorKey: _navigatorKey,
+                session: _sessionController,
+                api: api,
+                realtime: _realtime,
+                child: child,
+              );
+            },
+          ),
+        ),
       ),
     );
   }

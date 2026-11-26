@@ -9,10 +9,21 @@ class CoachMemberSummary {
 
   factory CoachMemberSummary.fromJson(Object? value) {
     final json = Map<String, dynamic>.from(value as Map);
+    final nestedMember = json['member'] is Map
+        ? Map<String, dynamic>.from(json['member'] as Map)
+        : null;
+    final relationshipId =
+        (json['id'] as String?) ?? (json['relationshipId'] as String);
+    final memberId =
+        (json['memberId'] as String?) ?? (nestedMember?['id'] as String);
+    final memberFullName =
+        (json['memberFullName'] as String?) ??
+        (json['memberName'] as String?) ??
+        (nestedMember?['fullName'] as String);
     return CoachMemberSummary(
-      relationshipId: json['id'] as String,
-      memberId: json['memberId'] as String,
-      memberFullName: json['memberFullName'] as String,
+      relationshipId: relationshipId,
+      memberId: memberId,
+      memberFullName: memberFullName,
       status: json['status'] as String,
       pauseReason: json['pauseReason'] as String?,
     );
@@ -54,9 +65,17 @@ class CoachMemberDetail extends CoachMemberSummary {
 
   factory CoachMemberDetail.fromJson(Object? value) {
     final json = Map<String, dynamic>.from(value as Map);
-    final member = Map<String, dynamic>.from(json['member'] as Map);
+    final member = json['member'] is Map
+        ? Map<String, dynamic>.from(json['member'] as Map)
+        : <String, dynamic>{
+            'id': json['memberId'],
+            'fullName': json['memberFullName'] ?? json['memberName'] ?? '',
+            'email': json['memberEmail'] ?? '',
+          };
+    final relationshipId =
+        (json['id'] as String?) ?? (json['relationshipId'] as String);
     return CoachMemberDetail(
-      relationshipId: json['id'] as String,
+      relationshipId: relationshipId,
       memberId: member['id'] as String,
       memberFullName: member['fullName'] as String,
       status: json['status'] as String,

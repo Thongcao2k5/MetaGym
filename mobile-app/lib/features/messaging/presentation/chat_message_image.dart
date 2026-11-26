@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:ui' show ImageFilter;
 
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
@@ -188,6 +190,7 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(999),
                   child: BackdropFilter(
+                    enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
                     filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                     child: Container(
                       padding: const EdgeInsets.all(6),
@@ -350,6 +353,9 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(999),
                         child: BackdropFilter(
+                          enabled: !MetaGymSurfacePreferences.reduceBlurOf(
+                            context,
+                          ),
                           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -378,6 +384,9 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
                     const Spacer(),
                     ClipOval(
                       child: BackdropFilter(
+                        enabled: !MetaGymSurfacePreferences.reduceBlurOf(
+                          context,
+                        ),
                         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                         child: Container(
                           decoration: BoxDecoration(

@@ -13,6 +13,50 @@ import 'package:meta_gym_app/features/calls/domain/call_log.dart';
 import 'package:meta_gym_app/features/calls/presentation/live_call_page.dart';
 
 void main() {
+  testWidgets('VOICE call uses light theme surfaces and readable text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final room = await tester.runAsync(() async => rtc.Room());
+    addTearDown(() async => tester.runAsync(() async => room?.dispose()));
+    final api = CallsApi(
+      ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: _StubCallsAdapter(callType: 'VOICE', status: 'RINGING'),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: MetaGymTheme.light,
+        home: LiveCallPage(
+          api: api,
+          room: room,
+          currentUserId: 'member-1',
+          peerName: 'Coach Demo',
+          call: const CallLog(
+            id: 'call-1',
+            relationshipId: 'rel-1',
+            callerId: 'member-1',
+            receiverId: 'coach-1',
+            callType: 'VOICE',
+            status: 'RINGING',
+            initiatedAt: '2026-11-14T07:00:00Z',
+            durationSeconds: 0,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    final name = tester.widget<Text>(find.text('Coach Demo'));
+    expect(scaffold.backgroundColor, MetaGymColors.light.canvas);
+    expect(name.style!.color, MetaGymColors.light.textPrimary);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('renders VOICE call layout cleanly at 375px width', (
     tester,
   ) async {
@@ -205,47 +249,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('displays callerName on incoming call without explicit peerName', (
-    tester,
-  ) async {
-    final room = await tester.runAsync(() async => rtc.Room());
-    addTearDown(() async => tester.runAsync(() async => room?.dispose()));
+  testWidgets(
+    'displays callerName on incoming call without explicit peerName',
+    (tester) async {
+      final room = await tester.runAsync(() async => rtc.Room());
+      addTearDown(() async => tester.runAsync(() async => room?.dispose()));
 
-    final api = CallsApi(
-      ApiClient.withAdapter(
-        config: ApiConfig.fromValues(environment: 'local'),
-        adapter: _StubCallsAdapter(callType: 'VOICE', status: 'RINGING'),
-      ),
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: MetaGymTheme.dark,
-        home: LiveCallPage(
-          api: api,
-          room: room,
-          currentUserId: 'coach-1',
-          call: CallLog.fromJson({
-            'id': 'call-5',
-            'relationshipId': 'rel-1',
-            'callerId': 'member-1',
-            'receiverId': 'coach-1',
-            'callerName': 'Hội viên Tuấn',
-            'receiverName': 'Coach Lan',
-            'callType': 'VOICE',
-            'status': 'RINGING',
-            'initiatedAt': '2026-11-14T07:00:00Z',
-            'durationSeconds': 0,
-          }),
+      final api = CallsApi(
+        ApiClient.withAdapter(
+          config: ApiConfig.fromValues(environment: 'local'),
+          adapter: _StubCallsAdapter(callType: 'VOICE', status: 'RINGING'),
         ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 50));
+      );
 
-    expect(find.text('Hội viên Tuấn'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 50));
-  });
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.dark,
+          home: LiveCallPage(
+            api: api,
+            room: room,
+            currentUserId: 'coach-1',
+            call: CallLog.fromJson({
+              'id': 'call-5',
+              'relationshipId': 'rel-1',
+              'callerId': 'member-1',
+              'receiverId': 'coach-1',
+              'callerName': 'Hội viên Tuấn',
+              'receiverName': 'Coach Lan',
+              'callType': 'VOICE',
+              'status': 'RINGING',
+              'initiatedAt': '2026-11-14T07:00:00Z',
+              'durationSeconds': 0,
+            }),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Hội viên Tuấn'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+    },
+  );
 }
 
 class _StubCallsAdapter implements HttpClientAdapter {

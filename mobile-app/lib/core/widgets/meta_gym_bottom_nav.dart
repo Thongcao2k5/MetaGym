@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
@@ -80,7 +81,10 @@ class MetaGymBottomNav extends StatelessWidget {
     final duration = disableAnimations
         ? Duration.zero
         : MetaGymTheme.localStateDuration;
-    final useGlassSurface = !useSolidFallback && !disableAnimations;
+    final useGlassSurface =
+        !useSolidFallback &&
+        !MetaGymSurfacePreferences.reduceBlurOf(context) &&
+        !disableAnimations;
     final enableBlur =
         useGlassSurface && !MetaGymTheme.isFlutterTestEnvironment;
 

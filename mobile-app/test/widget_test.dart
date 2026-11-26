@@ -2,6 +2,7 @@ import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
@@ -15,8 +16,8 @@ import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
-import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -59,6 +60,87 @@ import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_photo_page.dart';
 
 void main() {
+  testWidgets('appearance selection changes the app and survives restart', (
+    tester,
+  ) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    tester.view.physicalSize = const Size(393, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SessionController session() => SessionController(
+      _MemoryTokenStorage('valid-token'),
+      (_) async => const AuthUser(
+        id: 'member-1',
+        email: 'member@metagym.test',
+        fullName: 'Member Demo',
+        role: UserRole.member,
+        status: 'ACTIVE',
+      ),
+    );
+    Widget app(SessionController controller) => MetaGymApp(
+      sessionController: controller,
+      membershipService: _EmptyMembershipService(),
+      coachSelectionService: _EmptyCoachSelectionService(),
+      memberTrainingService: _EmptyMemberTrainingService(),
+      memberNutritionService: _EmptyMemberNutritionService(),
+      memberSessionsService: _EmptyMemberSessionsService(),
+      memberProgressService: _EmptyMemberProgressService(),
+      memberWorkoutService: _EmptyMemberWorkoutService(),
+      memberJournalService: _EmptyMemberJournalService(),
+      memberMeasurementService: _EmptyMemberMeasurementService(),
+      memberPhotoService: _EmptyMemberPhotoService(),
+    );
+    await tester.pumpWidget(app(session()));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(MetaGymBottomNav),
+        matching: find.text('Hồ sơ'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Tài khoản & hỗ trợ'));
+    await tester.tap(find.text('Tài khoản & hỗ trợ'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Cài đặt ứng dụng'));
+    await tester.tap(find.text('Cài đặt ứng dụng'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('app-settings-theme-light')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.light,
+    );
+    await tester.tap(find.byKey(const Key('app-settings-reduce-blur-toggle')));
+    await tester.pumpAndSettle();
+    expect(
+      MetaGymSurfacePreferences.reduceBlurOf(
+        tester.element(find.byType(MaterialApp)),
+      ),
+      isTrue,
+    );
+    await tester.tap(find.byTooltip('Quay lại').last);
+    await tester.pumpAndSettle();
+    expect(
+      Theme.of(tester.element(find.byType(ProfilePage))).brightness,
+      Brightness.light,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(app(session()));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.light,
+    );
+    expect(
+      MetaGymSurfacePreferences.reduceBlurOf(
+        tester.element(find.byType(MemberHomePage)),
+      ),
+      isTrue,
+    );
+    FlutterSecureStorage.setMockInitialValues({});
+  });
+
   for (final width in [375.0, 768.0]) {
     testWidgets(
       'Member tabs preserve state and avoid duplicate routes at $width',
@@ -188,14 +270,13 @@ void main() {
     expect(find.byKey(const Key('member-today-plan-card')), findsNothing);
     expect(find.text('Tiến độ'), findsNothing);
 
-    // Quick access Coach opens CoachSelectionPage
-    await tester.tap(find.text('Coach'));
+    // The demo member has an active Coach, so quick access opens their relationship.
+    await tester.tap(find.text('Coach').last);
     await tester.pumpAndSettle();
-    expect(find.text('Khám phá Coach', findRichText: true), findsWidgets);
-    expect(find.byType(CoachSelectionPage), findsOneWidget);
+    expect(find.text('Coach & Lịch hẹn'), findsOneWidget);
     expect(find.byType(MetaGymBottomNav), findsNothing);
-    expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
+    await tester.tap(find.byTooltip('Quay lại').first);
+
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
@@ -203,30 +284,29 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(MetaGymBottomNav),
-        matching: find.byIcon(Icons.fitness_center_outlined),
+        matching: find.text('Tập luyện'),
       ),
     );
     await tester.pumpAndSettle();
     expect(find.byType(MemberTrainingHubPage), findsOneWidget);
-    expect(find.text('Lịch tập của tôi'), findsOneWidget);
 
     // Tapping bottom nav tab 2: AI -> AiConversationsPage
-    await tester.tap(find.byIcon(Icons.auto_awesome_rounded));
+    await tester.tap(find.text('AI'));
     await tester.pumpAndSettle();
     expect(find.byType(AiConversationsPage), findsOneWidget);
 
     // Tapping bottom nav tab 3: Tin nhắn -> ConversationsPage
-    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
+    await tester.tap(find.text('Tin nhắn'));
     await tester.pumpAndSettle();
     expect(find.byType(ConversationsPage), findsOneWidget);
 
     // Tapping bottom nav tab 4: Hồ sơ -> ProfilePage
-    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    await tester.tap(find.text('Hồ sơ'));
     await tester.pumpAndSettle();
     expect(find.byType(ProfilePage), findsOneWidget);
 
     // Tapping bottom nav tab 0: Trang chủ -> Return to MemberDashboardView
-    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.tap(find.text('Trang chủ'));
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
@@ -341,7 +421,7 @@ void main() {
         .go('/coach/features/requests');
     await tester.pumpAndSettle();
     expect(find.byType(CoachHomePage), findsOneWidget);
-    await tester.tap(find.text('Hội viên của tôi'));
+    await tester.tap(find.text('Học viên').first);
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
@@ -352,14 +432,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CoachNutritionPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Quay lại').first);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Giáo trình'), -250);
     await tester.tap(find.text('Giáo trình'));
     await tester.pumpAndSettle();
     expect(find.byType(CoachTrainingPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Quay lại').first);
     await tester.pumpAndSettle();
     GoRouter.of(tester.element(find.byType(CoachHomePage)))
         .go('/coach/features/sessions');
@@ -368,7 +448,6 @@ void main() {
     expect(find.text('Chưa có buổi tập nào.'), findsOneWidget);
     GoRouter.of(tester.element(find.byType(CoachSessionsPage))).go('/coach');
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Danh mục tính năng Coach'), 300);
     expect(find.text('Kiểm thử các luồng Coach'), findsNothing);
     GoRouter.of(tester.element(find.byType(CoachHomePage)))
         .push<void>(AppRoutes.coachWorkbench);

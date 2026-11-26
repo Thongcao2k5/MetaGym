@@ -1,8 +1,9 @@
-import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
@@ -15,12 +16,16 @@ class CoachPlanDetailPage extends StatefulWidget {
     required this.id,
     required this.service,
     this.memberId,
+    this.memberName,
+    this.useSolidGlassFallback = false,
     super.key,
   });
 
   final String id;
   final CoachTrainingService service;
   final String? memberId;
+  final String? memberName;
+  final bool useSolidGlassFallback;
 
   @override
   State<CoachPlanDetailPage> createState() => _CoachPlanDetailPageState();
@@ -66,6 +71,8 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
       MetaGymPageRoute(
         builder: (_) => CoachPlanFormPage(
           memberId: widget.memberId ?? '',
+          memberName: widget.memberName,
+          useSolidGlassFallback: widget.useSolidGlassFallback,
           plan: plan,
           service: widget.service,
         ),
@@ -76,28 +83,30 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
 
   Future<void> _publish() async {
     if (_busy || _plan?.status != 'DRAFT') return;
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
-      barrierColor: const Color(0xB8040609),
+      barrierColor: colors.scrim,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xF0241F1B),
+        backgroundColor: isLight ? colors.surface : colors.overlayGlass,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+          side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
         ),
-        title: const Text(
+        title: Text(
           'Công bố giáo trình?',
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: colors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
         ),
-        content: const Text(
+        content: Text(
           'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
           style: TextStyle(
-            color: Color(0xFFC8C2BC),
+            color: colors.textWarmMuted,
             fontSize: 14,
             height: 1.45,
           ),
@@ -106,7 +115,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFC8C2BC),
+              foregroundColor: colors.textSecondary,
               minimumSize: const Size(48, 48),
             ),
             child: const Text('Quay lại'),
@@ -151,8 +160,84 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
     }
   }
 
+  Widget _buildHeader(
+    BuildContext context,
+    MetaGymColors colors, {
+    required bool canEdit,
+  }) {
+    final canPop = Navigator.of(context).canPop();
+    final gutter = MediaQuery.sizeOf(context).width >= 600
+        ? MetaGymTheme.tabletGutter
+        : MetaGymTheme.pageGutter;
+    final memberTag = widget.memberName?.trim();
+    final eyebrow = memberTag != null && memberTag.isNotEmpty
+        ? 'GIÁO ÁN TẬP · ${memberTag.toUpperCase()}'
+        : 'GIÁO ÁN TẬP LUYỆN';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 10),
+      child: Row(
+        children: [
+          if (canPop) ...[
+            MetaGymCircleIconButton(
+              svgAsset: MetaGymIcons.commonBack,
+              icon: Icons.arrow_back_ios_new_rounded,
+              tooltip: 'Quay lại',
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+            const SizedBox(width: 11),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  eyebrow,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.primaryText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Chi tiết giáo trình',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (canEdit) ...[
+            const SizedBox(width: 8),
+            MetaGymCircleIconButton(
+              key: const Key('plan-detail-header-edit'),
+              svgAsset: MetaGymIcons.commonEdit,
+              icon: Icons.edit_outlined,
+              tooltip: 'Chỉnh sửa',
+              onTap: _busy ? null : _edit,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final plan = _plan;
     final canEditActive =
         plan != null &&
@@ -162,148 +247,140 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
         plan != null &&
         widget.service is! CoachTrainingApi &&
         plan.status == 'DRAFT';
-    final showBottomBar =
-        canEditActive || canEditOrPublishDraft || _actionError != null;
+    final canEdit = canEditActive || canEditOrPublishDraft;
+    final showBottomBar = canEdit || _actionError != null;
     final media = MediaQuery.paddingOf(context);
-    final canPop = Navigator.of(context).canPop();
+    final gutter = MediaQuery.sizeOf(context).width >= 600
+        ? MetaGymTheme.tabletGutter
+        : MetaGymTheme.pageGutter;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          leadingWidth: 72,
-          leading: canPop
-              ? Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: MetaGymCircleIconButton(
-                      icon: Icons.arrow_back_ios_new_rounded,
-                      tooltip: 'Back',
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
-                  ),
-                )
-              : null,
-          titleSpacing: canPop ? 8 : 16,
-          title: const Text(
-            'Chi tiết giáo trình',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: MetaGymTheme.textPrimary,
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: MetaGymCircleIconButton(
-                  icon: Icons.refresh_rounded,
-                  tooltip: 'Tải lại',
-                  onTap: _busy ? null : _load,
-                ),
-              ),
-            ),
-          ],
-          backgroundColor: Colors.transparent,
-          foregroundColor: MetaGymTheme.textPrimary,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          surfaceTintColor: Colors.transparent,
-        ),
+        backgroundColor: colors.canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [
-            const MetaGymBackground(),
-            if (plan == null && _error == null)
-              const Center(
-                child: CircularProgressIndicator(color: MetaGymTheme.primary),
-              )
-            else
-              Column(
+            MetaGymBackground(useSolidFallback: widget.useSolidGlassFallback),
+            SafeArea(
+              bottom: false,
+              child: Column(
                 children: [
+                  _buildHeader(context, colors, canEdit: canEdit),
                   Expanded(
-                    child: RefreshIndicator(
-                      color: MetaGymTheme.primary,
-                      backgroundColor: const Color(0xFF282320),
-                      onRefresh: _load,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          media.top + kToolbarHeight + 12,
-                          16,
-                          showBottomBar ? 16 : media.bottom + 24,
-                        ),
-                        children: [
-                          if (_error != null) ...[
-                            CoachingErrorBanner(message: _error!),
-                            CoachingSecondaryButton(
-                              label: 'Thử lại',
-                              onPressed: _load,
-                              expand: true,
+                    child: plan == null && _error == null
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: MetaGymTheme.primary,
                             ),
-                          ],
-                          if (plan != null) TrainingPlanContent(plan: plan),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (showBottomBar)
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xF0241F1B),
-                        border: Border(
-                          top: BorderSide(color: Color(0xA3A79D92)),
-                        ),
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                          )
+                        : Column(
                             children: [
-                              if (_actionError != null)
-                                CoachingErrorBanner(message: _actionError!),
-                              if (canEditActive)
-                                CoachingPrimaryButton(
-                                  label: 'Sửa giáo trình',
-                                  icon: Icons.edit_outlined,
-                                  onPressed: _busy ? null : _edit,
+                              Expanded(
+                                child: RefreshIndicator(
+                                  color: MetaGymTheme.primary,
+                                  backgroundColor: colors.overlayGlass,
+                                  onRefresh: _load,
+                                  child: ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: EdgeInsets.fromLTRB(
+                                      gutter,
+                                      4,
+                                      gutter,
+                                      showBottomBar ? 18 : media.bottom + 36,
+                                    ),
+                                    children: [
+                                      if (_error != null) ...[
+                                        CoachingErrorBanner(message: _error!),
+                                        CoachingSecondaryButton(
+                                          label: 'Thử lại',
+                                          onPressed: _load,
+                                          expand: true,
+                                        ),
+                                      ],
+                                      if (plan != null)
+                                        TrainingPlanContent(
+                                          plan: plan,
+                                          useSolidGlassFallback:
+                                              widget.useSolidGlassFallback,
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              if (canEditOrPublishDraft)
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: CoachingSecondaryButton(
-                                        label: 'Sửa bản nháp',
-                                        onPressed: _busy ? null : _edit,
+                              ),
+                              if (showBottomBar)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: isLight
+                                        ? colors.surface
+                                        : colors.overlayGlass,
+                                    border: Border(
+                                      top: BorderSide(
+                                        color: colors.overlayGlassBorder,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: CoachingPrimaryButton(
-                                        label: 'Công bố',
-                                        loading: _busy,
-                                        onPressed: _busy ? null : _publish,
+                                  ),
+                                  child: SafeArea(
+                                    top: false,
+                                    child: Padding(
+                                      padding: EdgeInsets.fromLTRB(
+                                        gutter,
+                                        12,
+                                        gutter,
+                                        16,
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (_actionError != null)
+                                            CoachingErrorBanner(
+                                              message: _actionError!,
+                                            ),
+                                          if (canEditActive)
+                                            CoachingPrimaryButton(
+                                              key: const Key(
+                                                'plan-detail-edit-active-btn',
+                                              ),
+                                              label: 'Chỉnh sửa giáo trình',
+                                              icon: Icons.edit_outlined,
+                                              onPressed: _busy ? null : _edit,
+                                            ),
+                                          if (canEditOrPublishDraft)
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child:
+                                                      CoachingSecondaryButton(
+                                                        label: 'Sửa bản nháp',
+                                                        onPressed: _busy
+                                                            ? null
+                                                            : _edit,
+                                                      ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: CoachingPrimaryButton(
+                                                    label: 'Công bố',
+                                                    loading: _busy,
+                                                    onPressed: _busy
+                                                        ? null
+                                                        : _publish,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
+                  ),
                 ],
               ),
+            ),
           ],
         ),
       ),

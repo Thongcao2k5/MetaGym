@@ -8,6 +8,37 @@ import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 
 void main() {
+  testWidgets('light theme keeps gym and equipment text readable', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: MetaGymTheme.light,
+        home: GymEquipmentPage(service: _GymFixture()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    Color textColor(String text) =>
+        tester.widget<Text>(find.text(text)).style!.color!;
+    double contrastOnWhite(Color color) =>
+        1.05 / (color.computeLuminance() + 0.05);
+    expect(contrastOnWhite(textColor('Meta Gym')), greaterThanOrEqualTo(4.5));
+    expect(
+      contrastOnWhite(textColor('Mang khăn tập.')),
+      greaterThanOrEqualTo(4.5),
+    );
+    await tester.ensureVisible(find.text('Máy chạy bộ'));
+    await tester.tap(find.text('Máy chạy bộ'));
+    await tester.pumpAndSettle();
+    expect(
+      contrastOnWhite(textColor('Khởi động trước khi chạy')),
+      greaterThanOrEqualTo(4.5),
+    );
+  });
+
   for (final state in ['data', 'empty', 'error']) {
     testWidgets('exercise library at 375px: $state', (tester) async {
       tester.view.physicalSize = const Size(375, 812);

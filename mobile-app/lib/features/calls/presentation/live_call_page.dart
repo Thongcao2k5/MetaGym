@@ -86,7 +86,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
   bool get _video => _call.callType == 'VIDEO';
   bool get _incoming => _call.receiverId == widget.currentUserId;
   bool get _connected =>
-      _simulatedConnected || _room.connectionState == rtc.ConnectionState.connected;
+      _simulatedConnected ||
+      _room.connectionState == rtc.ConnectionState.connected;
   bool get _reconnecting =>
       _room.connectionState == rtc.ConnectionState.reconnecting;
 
@@ -439,7 +440,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
     return PopScope(
       canPop: _call.isFinished,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: MetaGymColors.of(context).canvas,
         body: _video ? _buildVideoLayout(context) : _buildAudioLayout(context),
       ),
     );
@@ -463,7 +464,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                   child: IntrinsicHeight(
                     child: Padding(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 24,
+                        horizontal: 16,
                         vertical: compact ? 12 : 20,
                       ),
                       child: Column(
@@ -474,19 +475,24 @@ class _LiveCallPageState extends State<LiveCallPage> {
                                 IconButton(
                                   tooltip: 'Đóng',
                                   onPressed: () => Navigator.of(context).pop(),
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.arrow_back_rounded,
-                                    color: MetaGymTheme.textPrimary,
+                                    color: MetaGymColors.of(context)
+                                        .textPrimary,
                                   ),
                                 )
                               else
                                 const SizedBox(width: 48, height: 48),
-                              const Spacer(),
-                              const _CallModeChip(
-                                icon: Icons.call_rounded,
-                                label: 'Cuộc gọi thoại',
+                              const SizedBox(width: 4),
+                              const Expanded(
+                                child: Center(
+                                  child: _CallModeChip(
+                                    icon: Icons.call_rounded,
+                                    label: 'Cuộc gọi thoại',
+                                  ),
+                                ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 4),
                               const SizedBox(width: 48, height: 48),
                             ],
                           ),
@@ -504,7 +510,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.headlineMedium
                                 ?.copyWith(
-                                  color: MetaGymTheme.textPrimary,
+                                  color: MetaGymColors.of(context).textPrimary,
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
@@ -514,7 +520,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                  color: MetaGymTheme.textSecondary,
+                                  color: MetaGymColors.of(context)
+                                      .textSecondary,
                                   fontWeight: FontWeight.w500,
                                   fontFeatures: MetaGymTheme.tabularFigures,
                                 ),
@@ -674,7 +681,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
-                              color: MetaGymTheme.textPrimary,
+                              color: MetaGymColors.of(context).textPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                       ),
@@ -685,7 +692,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                             : _statusLine,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: MetaGymTheme.textSecondary,
+                          color: MetaGymColors.of(context).textSecondary,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
@@ -871,6 +878,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                       child: _CallActionCircle(
                         icon: Icons.call_end_rounded,
                         label: 'Hủy',
+                        onDarkOverlay: true,
                         backgroundColor: MetaGymTheme.dangerCoral,
                         foregroundColor: Colors.white,
                         size: 66,
@@ -977,6 +985,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
         _CallActionCircle(
           icon: Icons.call_end_rounded,
           label: 'Từ chối',
+          onDarkOverlay: isVideo,
           backgroundColor: MetaGymTheme.dangerCoral,
           foregroundColor: Colors.white,
           size: 68,
@@ -987,6 +996,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
         _CallActionCircle(
           icon: isVideo ? Icons.videocam_rounded : Icons.call_rounded,
           label: 'Chấp nhận',
+          onDarkOverlay: isVideo,
           backgroundColor: MetaGymTheme.progressGreen,
           foregroundColor: const Color(0xFF06261D),
           size: 68,
@@ -1023,6 +1033,10 @@ class _CallBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    if (MetaGymTheme.isLightPalette(context)) {
+      return ColoredBox(color: colors.canvas);
+    }
     return const DecoratedBox(
       decoration: BoxDecoration(
         color: MetaGymTheme.darkCanvas,
@@ -1053,24 +1067,29 @@ class _CallModeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
+        color: colors.metricPanelBg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xA3A79D92)),
+        border: Border.all(color: colors.metricPanelBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: MetaGymTheme.reflectionBlue),
+          Icon(icon, size: 14, color: colors.info),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: MetaGymTheme.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -1092,16 +1111,17 @@ class _PeerAvatarRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xC42B2622),
+        color: colors.metricPanelBg,
         border: Border.all(
           color: pulseActive
               ? const Color(0x99FF5E36)
-              : const Color(0xA3A79D92),
+              : colors.metricPanelBorder,
           width: 1.5,
         ),
       ),
@@ -1109,7 +1129,7 @@ class _PeerAvatarRing extends StatelessWidget {
       child: Text(
         initials,
         style: TextStyle(
-          color: MetaGymTheme.textPrimary,
+          color: colors.textPrimary,
           fontSize: size * 0.34,
           fontWeight: FontWeight.w700,
         ),
@@ -1135,14 +1155,13 @@ class _AudioGridButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = active
-        ? MetaGymTheme.textPrimary
-        : const Color(0xC42B2622);
+    final colors = MetaGymColors.of(context);
+    final bgColor = active ? colors.textPrimary : colors.metricPanelBg;
     final fgColor = active
-        ? const Color(0xFF090B0E)
+        ? colors.surface
         : enabled
-        ? MetaGymTheme.textPrimary
-        : const Color(0xFF9C948D);
+        ? colors.textPrimary
+        : colors.textSecondary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1159,9 +1178,7 @@ class _AudioGridButton extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: bgColor,
                 border: Border.all(
-                  color: active
-                      ? Colors.transparent
-                      : const Color(0xA3A79D92),
+                  color: active ? Colors.transparent : colors.metricPanelBorder,
                 ),
               ),
               child: Icon(icon, size: 26, color: fgColor),
@@ -1172,9 +1189,7 @@ class _AudioGridButton extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: enabled
-                ? const Color(0xFFC8C2BC)
-                : const Color(0xFF9C948D),
+            color: colors.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1195,6 +1210,7 @@ class _CallActionCircle extends StatelessWidget {
     this.label,
     this.tooltip,
     this.borderColor,
+    this.onDarkOverlay = false,
   });
 
   final IconData icon;
@@ -1206,6 +1222,7 @@ class _CallActionCircle extends StatelessWidget {
   final String? label;
   final String? tooltip;
   final Color? borderColor;
+  final bool onDarkOverlay;
 
   @override
   Widget build(BuildContext context) {
@@ -1241,8 +1258,10 @@ class _CallActionCircle extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label!,
-          style: const TextStyle(
-            color: MetaGymTheme.textSecondary,
+          style: TextStyle(
+            color: onDarkOverlay
+                ? MetaGymTheme.textSecondary
+                : MetaGymColors.of(context).textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1295,10 +1314,11 @@ class _CallErrorPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xF0241F1B),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0x80F15B64)),
       ),
@@ -1314,8 +1334,8 @@ class _CallErrorPill extends StatelessWidget {
           Flexible(
             child: Text(
               message,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
               ),

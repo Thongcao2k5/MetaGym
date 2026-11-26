@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -37,6 +39,7 @@ Future<void> showMetaGymSystemModal(
       final disableAnimations = MediaQuery.disableAnimationsOf(dialogContext);
       final enableBlur =
           !isLight &&
+          !MetaGymSurfacePreferences.reduceBlurOf(dialogContext) &&
           !disableAnimations &&
           !MetaGymTheme.isFlutterTestEnvironment;
       final radius = BorderRadius.circular(MetaGymTheme.radiusGlassDock);
@@ -175,8 +178,7 @@ class _SystemModalSpec {
 _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   MetaGymSystemModalKind.maintenance => const _SystemModalSpec(
     title: 'Hệ thống đang bảo trì',
-    message:
-        'Meta Gym đang nâng cấp máy chủ để mang lại trải nghiệm mượt mà hơn. Vui lòng quay lại sau ít phút.',
+    message: 'Meta Gym đang nâng cấp máy chủ để mang lại trải nghiệm mượt mà hơn. Vui lòng quay lại sau ít phút.',
     svgAsset: MetaGymIcons.stateMaintenance,
     fallbackIcon: Icons.engineering_outlined,
     badgeTint: MetaGymTheme.warning,
@@ -184,8 +186,7 @@ _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   ),
   MetaGymSystemModalKind.comingSoon => const _SystemModalSpec(
     title: 'Tính năng sắp ra mắt',
-    message:
-        'Tính năng này đang được đội ngũ Meta Gym hoàn thiện và sẽ mở sớm trong bản cập nhật tới.',
+    message: 'Tính năng này đang được đội ngũ Meta Gym hoàn thiện và sẽ mở sớm trong bản cập nhật tới.',
     svgAsset: MetaGymIcons.stateComingSoon,
     fallbackIcon: Icons.rocket_launch_outlined,
     badgeTint: MetaGymTheme.infoSteelBlue,
@@ -194,8 +195,7 @@ _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   ),
   MetaGymSystemModalKind.serverError => const _SystemModalSpec(
     title: 'Lỗi kết nối hệ thống',
-    message:
-        'Không thể xử lý yêu cầu lúc này (500 / 503). Bạn vui lòng thử lại hoặc liên hệ hỗ trợ.',
+    message: 'Không thể xử lý yêu cầu lúc này (500 / 503). Bạn vui lòng thử lại hoặc liên hệ hỗ trợ.',
     svgAsset: MetaGymIcons.stateError,
     fallbackIcon: Icons.error_outline_rounded,
     badgeTint: MetaGymTheme.dangerCoral,
@@ -204,8 +204,7 @@ _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   ),
   MetaGymSystemModalKind.updateAvailable => const _SystemModalSpec(
     title: 'Có bản cập nhật mới',
-    message:
-        'Meta Gym v1.1.0 đã sẵn sàng với nhiều cải tiến hiệu năng và trải nghiệm tập luyện.',
+    message: 'Meta Gym v1.1.0 đã sẵn sàng với nhiều cải tiến hiệu năng và trải nghiệm tập luyện.',
     svgAsset: MetaGymIcons.stateUpdate,
     fallbackIcon: Icons.system_update_outlined,
     badgeTint: MetaGymTheme.success,
@@ -214,8 +213,7 @@ _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   ),
   MetaGymSystemModalKind.offline => const _SystemModalSpec(
     title: 'Mất kết nối mạng',
-    message:
-        'Thiết bị hiện không có kết nối Wi-Fi hoặc 4G. Vui lòng kiểm tra lại kết nối và thử lại.',
+    message: 'Thiết bị hiện không có kết nối Wi-Fi hoặc 4G. Vui lòng kiểm tra lại kết nối và thử lại.',
     svgAsset: MetaGymIcons.stateNoNetwork,
     fallbackIcon: Icons.wifi_off_rounded,
     badgeTint: MetaGymTheme.reflectionBlue,
@@ -223,8 +221,7 @@ _SystemModalSpec _specForKind(MetaGymSystemModalKind kind) => switch (kind) {
   ),
   MetaGymSystemModalKind.sessionExpired => const _SystemModalSpec(
     title: 'Phiên đăng nhập hết hạn',
-    message:
-        'Vì lý do bảo mật tài khoản, phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.',
+    message: 'Vì lý do bảo mật tài khoản, phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.',
     svgAsset: MetaGymIcons.stateWarning,
     fallbackIcon: Icons.lock_clock_outlined,
     badgeTint: MetaGymTheme.warning,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
@@ -7,24 +8,42 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 
 enum _NotificationFilter { all, unread, session, package }
 
-/// Màn hình **5.10 Thông báo** đồng bộ `tab5-profile-sub.js` (`member-notifications`)
-/// và chuẩn Warm Smoked Liquid Glass (Dark + Light Daylight Studio).
+/// Màn hình **5.10 Thông báo** (Member) & **1.4 Thông báo Coach** (`core.js`)
+/// đồng bộ Warm Smoked Liquid Glass (Dark + Daylight Light Studio).
 class CoachNotificationsPage extends StatefulWidget {
-  const CoachNotificationsPage({this.apiClient, this.now, super.key});
+  const CoachNotificationsPage({
+    this.apiClient,
+    this.now,
+    this.coachMode,
+    super.key,
+  });
 
   final ApiClient? apiClient;
   final DateTime Function()? now;
+  final bool? coachMode;
 
   @override
   State<CoachNotificationsPage> createState() => _CoachNotificationsPageState();
 }
 
 class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
+  bool get _isCoachMode {
+    if (widget.coachMode != null) return widget.coachMode!;
+    return optionalProvider<SessionController>(context)?.user?.role ==
+        UserRole.coach;
+  }
+
   ApiClient? _client;
   CoachV2Api? _api;
   bool _initialized = false;
@@ -101,6 +120,14 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     return parsed.year == now.year &&
         parsed.month == now.month &&
         parsed.day == now.day;
+  }
+
+  bool _isThisWeek(CoachRecord item) {
+    final parsed = _parseVietnamDateTime(_timestampRaw(item));
+    if (parsed == null) return _isUnread(item);
+    final now = _nowVietnam();
+    final diffDays = now.difference(parsed).inDays;
+    return diffDays >= -1 && diffDays <= 7;
   }
 
   String _formatTimestamp(CoachRecord item) {
@@ -247,46 +274,119 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     }
   }
 
-  String _titleForRecord(CoachRecord item) {
+  String _titleForKind(Object? kind, {required bool isCoach}) {
+    if (isCoach) {
+      return switch (kind) {
+        'BOOKED' => 'Lịch tập 1:1 mới được đặt',
+        'COMPLETED' => 'Đã hoàn thành buổi dạy',
+        'CANCELLED' => 'Buổi dạy đã bị hủy hoặc đổi giờ',
+        'NO_SHOW' => 'Ghi nhận học viên vắng mặt',
+        'RESCHEDULED' => 'Khung giờ buổi dạy đã thay đổi',
+        'NUTRITION_UPDATED' ||
+        'MEAL_PLAN_UPDATED' => 'Đã cập nhật thực đơn học viên',
+        'PACKAGE_ACTIVE' => 'Gói PT mới của học viên đã kích hoạt',
+        'PACKAGE_QUEUED' => 'Học viên có gói PT chờ kích hoạt',
+        'PACKAGE_EXTENDED' => 'Gói PT của học viên được gia hạn',
+        'PACKAGE_LAST_SESSION' => 'Gói PT học viên còn 1 buổi',
+        'PACKAGE_ENDED' => 'Gói PT của học viên đã kết thúc',
+        'PACKAGE_EXPIRING' => 'Gói PT học viên sắp hết hạn',
+        'COACH_LOCKED' => 'Tài khoản Coach đang tạm khóa',
+        'COACH_UNLOCKED_RESTORED' => 'Tài khoản Coach đã mở khóa',
+        'MEMBER_LOCKED' => 'Tài khoản học viên tạm khóa',
+        'MEMBER_UNLOCKED_RESTORED' => 'Học viên đã được mở khóa',
+        'TERMINATION_REQUESTED' => 'Yêu cầu ngừng phụ trách (72h)',
+        'TERMINATION_ACCEPTED' => 'Đã đồng ý kết thúc sớm',
+        'TERMINATION_WITHDRAWN' => 'Yêu cầu kết thúc sớm đã rút',
+        'TERMINATION_DISPUTED' => 'Yêu cầu đang chờ Admin phân xử',
+        'TERMINATION_ADMIN_APPROVED' => 'Admin đã duyệt kết thúc sớm',
+        'TERMINATION_ADMIN_REJECTED' => 'Admin từ chối yêu cầu kết thúc sớm',
+        'OUTCOME_APPROVED' => 'Học viên đã duyệt thành quả',
+        'OUTCOME_DECLINED' => 'Học viên từ chối công khai thành quả',
+        'COACH_TRANSFERRED' => 'Quan hệ phụ trách đã chuyển đổi',
+        'SIMULATED_REFUND_COMPLETED' => 'Hoàn tiền gói tập hoàn tất',
+        _ => 'Cập nhật hoạt động Coach',
+      };
+    }
+    return switch (kind) {
+      'BOOKED' => 'Có lịch tập mới với Coach',
+      'COMPLETED' => 'Coach đã xác nhận buổi tập',
+      'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
+      'NO_SHOW' => 'Buổi tập ghi nhận vắng mặt',
+      'RESCHEDULED' => 'Lịch tập đã được dời giờ',
+      'NUTRITION_UPDATED' ||
+      'MEAL_PLAN_UPDATED' => 'Coach đã cập nhật thực đơn',
+      'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
+      'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
+      'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
+      'PACKAGE_LAST_SESSION' => 'Gói Coach còn 1 buổi',
+      'PACKAGE_ENDED' => 'Gói Coach đã kết thúc',
+      'PACKAGE_EXPIRING' => 'Gói Coach còn tối đa 7 ngày',
+      'COACH_LOCKED' => 'Tài khoản Coach đang tạm khóa',
+      'COACH_UNLOCKED_RESTORED' => 'Coach đã hoạt động trở lại',
+      'MEMBER_LOCKED' => 'Tài khoản hội viên đang tạm khóa',
+      'MEMBER_UNLOCKED_RESTORED' => 'Tài khoản đã được mở khóa',
+      'TERMINATION_REQUESTED' => 'Có yêu cầu kết thúc sớm',
+      'TERMINATION_ACCEPTED' => 'Đã đồng ý kết thúc sớm',
+      'TERMINATION_WITHDRAWN' => 'Yêu cầu kết thúc sớm đã rút',
+      'TERMINATION_DISPUTED' => 'Yêu cầu đang chờ Admin phân xử',
+      'TERMINATION_ADMIN_APPROVED' => 'Admin đã duyệt kết thúc sớm',
+      'TERMINATION_ADMIN_REJECTED' => 'Admin từ chối yêu cầu kết thúc sớm',
+      'COACH_TRANSFERRED' => 'Đã chuyển đổi Coach đồng hành',
+      'SIMULATED_REFUND_COMPLETED' => 'Hoàn tiền mô phỏng hoàn tất',
+      _ => 'Có cập nhật về Coach',
+    };
+  }
+
+  String _titleForRecord(CoachRecord item, {required bool isCoach}) {
     final customTitle = item['title'] as String?;
     if (customTitle != null && customTitle.trim().isNotEmpty) {
       return customTitle.trim();
     }
-    return _titleForKind(item['kind']);
+    return _titleForKind(item['kind'], isCoach: isCoach);
   }
 
-  String _titleForKind(Object? kind) => switch (kind) {
-    'BOOKED' => 'Có lịch tập mới với Coach',
-    'COMPLETED' => 'Coach đã xác nhận buổi tập',
-    'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
-    'NO_SHOW' => 'Buổi tập ghi nhận vắng mặt',
-    'RESCHEDULED' => 'Lịch tập đã được dời giờ',
-    'NUTRITION_UPDATED' || 'MEAL_PLAN_UPDATED' => 'Coach đã cập nhật thực đơn',
-    'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
-    'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
-    'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
-    'PACKAGE_LAST_SESSION' => 'Gói Coach còn 1 buổi',
-    'PACKAGE_ENDED' => 'Gói Coach đã kết thúc',
-    'PACKAGE_EXPIRING' => 'Gói Coach còn tối đa 7 ngày',
-    'COACH_LOCKED' => 'Tài khoản Coach đang tạm khóa',
-    'COACH_UNLOCKED_RESTORED' => 'Coach đã hoạt động trở lại',
-    'MEMBER_LOCKED' => 'Tài khoản hội viên đang tạm khóa',
-    'MEMBER_UNLOCKED_RESTORED' => 'Tài khoản đã được mở khóa',
-    'TERMINATION_REQUESTED' => 'Có yêu cầu kết thúc sớm',
-    'TERMINATION_ACCEPTED' => 'Đã đồng ý kết thúc sớm',
-    'TERMINATION_WITHDRAWN' => 'Yêu cầu kết thúc sớm đã rút',
-    'TERMINATION_DISPUTED' => 'Yêu cầu đang chờ Admin phân xử',
-    'TERMINATION_ADMIN_APPROVED' => 'Admin đã duyệt kết thúc sớm',
-    'TERMINATION_ADMIN_REJECTED' => 'Admin từ chối yêu cầu kết thúc sớm',
-    'COACH_TRANSFERRED' => 'Đã chuyển đổi Coach đồng hành',
-    'SIMULATED_REFUND_COMPLETED' => 'Hoàn tiền mô phỏng hoàn tất',
-    _ => 'Có cập nhật về Coach',
-  };
-
-  String _descriptionForRecord(CoachRecord item) {
+  String _descriptionForRecord(CoachRecord item, {required bool isCoach}) {
     for (final key in const ['body', 'message', 'description']) {
       final raw = item[key] as String?;
       if (raw != null && raw.trim().isNotEmpty) return raw.trim();
+    }
+    if (isCoach) {
+      return switch (item['kind']) {
+        'BOOKED' => 'Học viên vừa đặt buổi tập 1:1 mới. Kiểm tra khung giờ trong mục Lịch dạy.',
+        'COMPLETED' => 'Buổi dạy 1:1 đã hoàn tất và cập nhật vào số buổi còn lại của học viên.',
+        'CANCELLED' =>
+          'Một buổi dạy 1:1 với học viên đã bị hủy hoặc thay đổi khung giờ.',
+        'NO_SHOW' => 'Buổi dạy đã qua giờ hẹn và ghi nhận học viên vắng mặt.',
+        'RESCHEDULED' => 'Khung giờ buổi dạy 1:1 vừa được cập nhật. Xem chi tiết trong mục Lịch dạy.',
+        'NUTRITION_UPDATED' || 'MEAL_PLAN_UPDATED' =>
+          'Thực đơn dinh dưỡng mới đã được lưu cho học viên.',
+        'PACKAGE_ACTIVE' =>
+          'Học viên đã thanh toán và kích hoạt gói huấn luyện 1:1 thành công.',
+        'PACKAGE_QUEUED' => 'Học viên đã đăng ký gói tiếp nối và sẽ tự kích hoạt khi gói cũ kết thúc.',
+        'PACKAGE_EXTENDED' =>
+          'Thời hạn sử dụng gói Coach của học viên vừa được cộng thêm 7 ngày.',
+        'PACKAGE_LAST_SESSION' => 'Gói tập của học viên chỉ còn 1 buổi. Hãy nhắc học viên cân nhắc gia hạn.',
+        'PACKAGE_ENDED' => 'Gói huấn luyện 1:1 của học viên đã hết số buổi hoặc kết thúc thời hạn.',
+        'PACKAGE_EXPIRING' =>
+          'Gói PT của học viên sắp hết hạn trong 7 ngày tới.',
+        'TERMINATION_REQUESTED' => 'Học viên gửi yêu cầu kết thúc sớm quan hệ phụ trách · Cần phản hồi trong vòng 72 giờ.',
+        'TERMINATION_ACCEPTED' =>
+          'Hai bên đã xác nhận kết thúc sớm quan hệ phụ trách.',
+        'TERMINATION_WITHDRAWN' => 'Yêu cầu kết thúc sớm đã được rút lại; quan hệ phụ trách tiếp tục bình thường.',
+        'TERMINATION_DISPUTED' =>
+          'Yêu cầu kết thúc sớm đang được Admin xem xét và phân xử.',
+        'TERMINATION_ADMIN_APPROVED' =>
+          'Admin đã phê duyệt kết thúc sớm quan hệ phụ trách.',
+        'TERMINATION_ADMIN_REJECTED' => 'Admin không chấp thuận kết thúc sớm; quan hệ phụ trách được giữ nguyên.',
+        'OUTCOME_APPROVED' => 'Học viên đã đồng ý công khai kết quả chuyển biến trên hồ sơ Coach của bạn.',
+        'OUTCOME_DECLINED' =>
+          'Học viên chưa đồng ý chia sẻ công khai bản ghi thành quả vừa gửi.',
+        'MEMBER_LOCKED' =>
+          'Tài khoản học viên đang tạm khóa nên quan hệ phụ trách tạm ngưng.',
+        'MEMBER_UNLOCKED_RESTORED' =>
+          'Học viên đã mở khóa và có thể tiếp tục đặt lịch 1:1.',
+        _ => 'Kiểm tra mục Lịch dạy hoặc Hội viên của tôi để xem chi tiết mới nhất.',
+      };
     }
     return switch (item['kind']) {
       'BOOKED' => 'Buổi tập 1:1 với Coach đã được ghi nhận. Kiểm tra khung giờ trong mục Lịch hẹn.',
@@ -331,23 +431,28 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   String _svgAssetForKind(
     Object? kind, {
     required bool unread,
+    required bool isCoach,
   }) => switch (kind) {
     'BOOKED' =>
       unread
           ? MetaGymIcons.commNotificationUnread
-          : MetaGymIcons.actionSchedule,
+          : MetaGymIcons.actionCoachSessions,
     'RESCHEDULED' => MetaGymIcons.actionSchedule,
     'COMPLETED' ||
     'COACH_UNLOCKED_RESTORED' ||
     'MEMBER_UNLOCKED_RESTORED' ||
     'TERMINATION_ADMIN_APPROVED' => MetaGymIcons.stateSuccess,
+    'OUTCOME_APPROVED' => MetaGymIcons.outcomeConsentBadge,
     'NUTRITION_UPDATED' || 'MEAL_PLAN_UPDATED' => MetaGymIcons.actionNutrition,
-    'PACKAGE_ACTIVE' => MetaGymIcons.paymentSuccess,
+    'PACKAGE_ACTIVE' =>
+      isCoach ? MetaGymIcons.coachPkgIntensive : MetaGymIcons.paymentSuccess,
     'PACKAGE_QUEUED' => MetaGymIcons.membershipScheduled,
     'PACKAGE_EXTENDED' => MetaGymIcons.stateUpdate,
     'PACKAGE_LAST_SESSION' || 'PACKAGE_EXPIRING' => MetaGymIcons.timeAlarm,
     'PACKAGE_ENDED' => MetaGymIcons.coachPkg1on1,
-    'CANCELLED' || 'TERMINATION_REQUESTED' => MetaGymIcons.coachingTermination,
+    'CANCELLED' ||
+    'TERMINATION_REQUESTED' ||
+    'OUTCOME_DECLINED' => MetaGymIcons.coachingTermination,
     'NO_SHOW' || 'TERMINATION_DISPUTED' => MetaGymIcons.stateWarning,
     'COACH_LOCKED' => MetaGymIcons.coachingFreeze,
     'MEMBER_LOCKED' => MetaGymIcons.settingPrivacyLock,
@@ -362,6 +467,32 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
           : MetaGymIcons.settingNotificationsBell,
   };
 
+  String? _routeForCoachKind(Object? kind) {
+    final normalized = (kind as String? ?? '').toUpperCase();
+    if (normalized == 'BOOKED' ||
+        normalized == 'COMPLETED' ||
+        normalized == 'CANCELLED' ||
+        normalized == 'NO_SHOW' ||
+        normalized == 'RESCHEDULED') {
+      return '/coach/features/sessions';
+    }
+    if (normalized == 'TRAINING_PLAN_UPDATED') {
+      return '/coach/features/training';
+    }
+    if (normalized == 'NUTRITION_UPDATED' ||
+        normalized == 'MEAL_PLAN_UPDATED') {
+      return '/coach/features/nutrition';
+    }
+    if (normalized.startsWith('PACKAGE_') ||
+        normalized.startsWith('TERMINATION_') ||
+        normalized.startsWith('OUTCOME_') ||
+        normalized.startsWith('MEMBER_') ||
+        normalized == 'COACH_TRANSFERRED') {
+      return '/coach/features/members';
+    }
+    return null;
+  }
+
   Color _accentForKind(
     Object? kind,
     MetaGymColors colors, {
@@ -370,13 +501,14 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     if (!unread) {
       return switch (kind) {
         'COMPLETED' ||
+        'OUTCOME_APPROVED' ||
         'PACKAGE_ACTIVE' ||
         'NUTRITION_UPDATED' ||
         'MEAL_PLAN_UPDATED' ||
         'COACH_UNLOCKED_RESTORED' ||
         'MEMBER_UNLOCKED_RESTORED' ||
         'SIMULATED_REFUND_COMPLETED' => colors.success,
-        'CANCELLED' || 'NO_SHOW' => colors.error,
+        'CANCELLED' || 'NO_SHOW' || 'OUTCOME_DECLINED' => colors.error,
         'PACKAGE_LAST_SESSION' ||
         'PACKAGE_EXPIRING' ||
         'COACH_LOCKED' ||
@@ -386,6 +518,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     }
     return switch (kind) {
       'COMPLETED' ||
+      'OUTCOME_APPROVED' ||
       'PACKAGE_ACTIVE' ||
       'NUTRITION_UPDATED' ||
       'MEAL_PLAN_UPDATED' ||
@@ -394,6 +527,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       'SIMULATED_REFUND_COMPLETED' => colors.success,
       'CANCELLED' ||
       'NO_SHOW' ||
+      'OUTCOME_DECLINED' ||
       'MEMBER_LOCKED' ||
       'TERMINATION_REQUESTED' => colors.error,
       'PACKAGE_LAST_SESSION' ||
@@ -420,6 +554,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
             kind.startsWith('COACH_') ||
             kind.startsWith('MEMBER_') ||
             kind.startsWith('TERMINATION_') ||
+            kind.startsWith('OUTCOME_') ||
             kind == 'SIMULATED_REFUND_COMPLETED' ||
             kind == 'NUTRITION_UPDATED' ||
             kind == 'MEAL_PLAN_UPDATED',
@@ -431,6 +566,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     MetaGymColors colors, {
     required int unreadCount,
     required bool hasItems,
+    required bool isCoach,
   }) {
     final canPop = Navigator.of(context).canPop();
     final gutter = MediaQuery.sizeOf(context).width >= 600
@@ -453,7 +589,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'META GYM',
+                  isCoach ? 'META GYM · COACH' : 'META GYM',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -471,7 +607,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: colors.textPrimary,
-                    fontSize: 19,
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
                     height: 1.2,
@@ -479,7 +615,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Thông báo Coach',
+                  isCoach
+                      ? 'Lịch dạy, yêu cầu & hoạt động học viên'
+                      : 'Thông báo Coach',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -509,10 +647,10 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   Widget _buildSummaryStrip(
     MetaGymColors colors, {
     required int unreadCount,
-    required int totalCount,
+    required int secondaryCount,
+    required bool isCoach,
   }) {
-    return MetaGymGlassCard(
-      solid: false,
+    return MetaGymHeroGlassCard(
       key: const Key('notifications-summary-card'),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -533,8 +671,8 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
             child: MetaGymMetricPanel(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: _NotificationMetric(
-                label: 'Tổng thông báo',
-                value: '$totalCount',
+                label: isCoach ? 'Tổng tuần này' : 'Tổng thông báo',
+                value: '$secondaryCount',
               ),
             ),
           ),
@@ -543,7 +681,11 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     );
   }
 
-  Widget _buildFilterRow(MetaGymColors colors, {required int unreadCount}) {
+  Widget _buildFilterRow(
+    MetaGymColors colors, {
+    required int unreadCount,
+    required bool isCoach,
+  }) {
     final filters = <(_NotificationFilter, String, Key)>[
       (_NotificationFilter.all, 'Tất cả', const Key('notif-filter-all')),
       (
@@ -553,12 +695,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       ),
       (
         _NotificationFilter.session,
-        'Lịch tập',
+        isCoach ? 'Lịch dạy' : 'Lịch tập',
         const Key('notif-filter-session'),
       ),
       (
         _NotificationFilter.package,
-        'Gói Coach',
+        isCoach ? 'Học viên' : 'Gói Coach',
         const Key('notif-filter-package'),
       ),
     ];
@@ -643,20 +785,44 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     );
   }
 
+  void _openCoachRoute(String route) {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.push<void>(route);
+      return;
+    }
+    final coachId = optionalProvider<SessionController>(context)?.user?.id;
+    final Widget? page = switch (route) {
+      '/coach/features/sessions' => CoachSessionsPage(
+        coachId: coachId,
+        apiClient: _client,
+      ),
+      '/coach/features/training' => const CoachTrainingPage(),
+      '/coach/features/nutrition' => const CoachNutritionPage(structured: true),
+      '/coach/features/members' => const CoachMembersPage(),
+      _ => null,
+    };
+    if (page == null) return;
+    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => page));
+  }
+
   Widget _buildNotificationCard(
     BuildContext context,
     MetaGymColors colors,
-    CoachRecord item,
-  ) {
+    CoachRecord item, {
+    required bool isCoach,
+  }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final unread = _isUnread(item);
     final kind = item['kind'];
     final accent = _accentForKind(kind, colors, unread: unread);
     final timeLabel = _formatTimestamp(item);
-    final title = _titleForRecord(item);
-    final description = _descriptionForRecord(item);
-    final svgAsset = _svgAssetForKind(kind, unread: unread);
+    final title = _titleForRecord(item, isCoach: isCoach);
+    final description = _descriptionForRecord(item, isCoach: isCoach);
+    final svgAsset = _svgAssetForKind(kind, unread: unread, isCoach: isCoach);
     final itemId = item['id'];
+    final coachRoute = isCoach && !unread ? _routeForCoachKind(kind) : null;
+    final canGoToRoute = coachRoute != null;
 
     final iconWellDecoration = isLight
         ? BoxDecoration(
@@ -688,7 +854,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       borderColor: unread
           ? MetaGymTheme.brandOrange.withValues(alpha: isLight ? 0.50 : 0.48)
           : null,
-      onTap: unread && !_saving ? () => _read(item) : null,
+      onTap: unread && !_saving
+          ? () => _read(item)
+          : (canGoToRoute ? () => _openCoachRoute(coachRoute) : null),
       child: Opacity(
         opacity: unread ? 1.0 : (isLight ? 0.88 : 0.84),
         child: Row(
@@ -921,8 +1089,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   Widget _buildEmptyBody(
     BuildContext context,
     MetaGymColors colors,
-    double gutter,
-  ) {
+    double gutter, {
+    required bool isCoach,
+  }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return RefreshIndicator(
       color: MetaGymTheme.brandOrange,
@@ -983,7 +1152,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Các cập nhật lịch tập, thực đơn và gói Coach sẽ xuất hiện tại đây.',
+                            isCoach
+                                ? 'Các cập nhật lịch dạy, yêu cầu ngừng phụ trách và gói PT học viên sẽ xuất hiện tại đây.'
+                                : 'Các cập nhật lịch tập, thực đơn và gói Coach sẽ xuất hiện tại đây.',
                             style: TextStyle(
                               color: colors.textWarmMuted,
                               fontSize: 12.5,
@@ -1057,10 +1228,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   @override
   Widget build(BuildContext context) {
     final colors = MetaGymColors.of(context);
+    final isCoach = _isCoachMode;
     final gutter = MediaQuery.sizeOf(context).width >= 600
         ? MetaGymTheme.tabletGutter
         : MetaGymTheme.pageGutter;
     final unreadCount = _records.where(_isUnread).length;
+    final weeklyCount = _records.where(_isThisWeek).length;
     final filtered = _records.where(_matchesFilter).toList();
     final todayItems = filtered.where(_isToday).toList();
     final earlierItems = filtered.where((item) => !_isToday(item)).toList();
@@ -1071,7 +1244,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     } else if (_loadError != null && _records.isEmpty) {
       content = _buildErrorBody(context, colors, gutter);
     } else if (_records.isEmpty) {
-      content = _buildEmptyBody(context, colors, gutter);
+      content = _buildEmptyBody(context, colors, gutter, isCoach: isCoach);
     } else {
       content = RefreshIndicator(
         color: MetaGymTheme.brandOrange,
@@ -1091,9 +1264,10 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
             _buildSummaryStrip(
               colors,
               unreadCount: unreadCount,
-              totalCount: _records.length,
+              secondaryCount: isCoach ? weeklyCount : _records.length,
+              isCoach: isCoach,
             ),
-            _buildFilterRow(colors, unreadCount: unreadCount),
+            _buildFilterRow(colors, unreadCount: unreadCount, isCoach: isCoach),
             if (filtered.isEmpty)
               _buildFilteredEmptyCard(colors)
             else ...[
@@ -1105,7 +1279,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                   topTight: true,
                 ),
                 for (final item in todayItems)
-                  _buildNotificationCard(context, colors, item),
+                  _buildNotificationCard(
+                    context,
+                    colors,
+                    item,
+                    isCoach: isCoach,
+                  ),
               ],
               if (earlierItems.isNotEmpty) ...[
                 _buildSectionHeader(
@@ -1115,7 +1294,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                   topTight: todayItems.isEmpty,
                 ),
                 for (final item in earlierItems)
-                  _buildNotificationCard(context, colors, item),
+                  _buildNotificationCard(
+                    context,
+                    colors,
+                    item,
+                    isCoach: isCoach,
+                  ),
               ],
             ],
           ],
@@ -1138,6 +1322,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                   colors,
                   unreadCount: unreadCount,
                   hasItems: _records.isNotEmpty,
+                  isCoach: isCoach,
                 ),
                 Expanded(child: content),
               ],
@@ -1323,7 +1508,7 @@ class _NotificationFilterPill extends StatelessWidget {
     final colors = MetaGymColors.of(context);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final bg = selected
-        ? (isLight ? colors.chipActiveBg : const Color(0xFF493025))
+        ? colors.chipActiveBg
         : (isLight ? colors.surface : colors.liquidGlass);
     final border = selected
         ? MetaGymTheme.brandOrange

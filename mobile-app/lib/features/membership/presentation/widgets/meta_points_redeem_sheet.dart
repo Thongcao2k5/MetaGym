@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -90,80 +92,80 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0x52FFFFFF),
-                borderRadius: BorderRadius.circular(999),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0x52FFFFFF),
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.42),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.42),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: const MetaGymSvgIcon(
+                    MetaGymIcons.streakFlame,
+                    size: 20,
                   ),
                 ),
-                alignment: Alignment.center,
-                child: const MetaGymSvgIcon(
-                  MetaGymIcons.streakFlame,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Đổi điểm Meta Points',
-                      style: TextStyle(
-                        color: MetaGymTheme.textPrimary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Đổi điểm Meta Points',
+                        style: TextStyle(
+                          color: MetaGymTheme.textPrimary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Số dư khả dụng: ${_formatPoints(currentPoints)} điểm',
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: MetaGymTheme.tabularFigures,
+                      const SizedBox(height: 2),
+                      Text(
+                        'Số dư khả dụng: ${_formatPoints(currentPoints)} điểm',
+                        style: const TextStyle(
+                          color: MetaGymTheme.brandOrange,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Đóng',
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(
-                  Icons.close_rounded,
-                  color: MetaGymTheme.textSecondary,
+                IconButton(
+                  tooltip: 'Đóng',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: MetaGymTheme.textSecondary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          for (final reward in kMetaPointsRewards) ...[
-            _RewardTile(
-              reward: reward,
-              canAfford: currentPoints >= reward.costPoints,
-              onRedeem: () => Navigator.of(context).pop(reward),
+              ],
             ),
-            const SizedBox(height: 10),
-          ],
+            const SizedBox(height: 14),
+            for (final reward in kMetaPointsRewards) ...[
+              _RewardTile(
+                reward: reward,
+                canAfford: currentPoints >= reward.costPoints,
+                onRedeem: () => Navigator.of(context).pop(reward),
+              ),
+              const SizedBox(height: 10),
+            ],
           ],
         ),
       ),
@@ -179,6 +181,7 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
       child: BackdropFilter(
+        enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
         filter: ImageFilter.blur(
           sigmaX: MetaGymTheme.overlayGlassBlur,
           sigmaY: MetaGymTheme.overlayGlassBlur,
@@ -208,9 +211,7 @@ class _RewardTile extends StatelessWidget {
         color: const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: canAfford
-              ? const Color(0xA3A79D92)
-              : const Color(0x40A79D92),
+          color: canAfford ? const Color(0xA3A79D92) : const Color(0x40A79D92),
         ),
       ),
       child: Row(
@@ -224,10 +225,7 @@ class _RewardTile extends StatelessWidget {
               border: Border.all(color: const Color(0x45FF5E36)),
             ),
             alignment: Alignment.center,
-            child: MetaGymSvgIcon(
-              reward.svgAsset,
-              size: 20,
-            ),
+            child: MetaGymSvgIcon(reward.svgAsset, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

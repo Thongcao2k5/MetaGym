@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:ui';
 
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
@@ -205,8 +207,7 @@ class _MemberCurriculumDetailPageState
                       title: _tab == 0
                           ? 'Chưa có kế hoạch tập luyện'
                           : 'Chưa có kế hoạch dinh dưỡng',
-                      body:
-                          'Coach chưa gửi giáo trình cho bạn. Khi Coach công bố, nội dung sẽ xuất hiện tại đây.',
+                      body: 'Coach chưa gửi giáo trình cho bạn. Khi Coach công bố, nội dung sẽ xuất hiện tại đây.',
                     ),
                   ] else ...[
                     _tabSelector(plan),
@@ -283,10 +284,7 @@ class _MemberCurriculumDetailPageState
                 ),
               ],
             ),
-            if (plan != null) ...[
-              const SizedBox(height: 14),
-              _hero(plan),
-            ],
+            if (plan != null) ...[const SizedBox(height: 14), _hero(plan)],
             if (plan == null && !_loading && _error == null) ...[
               const SizedBox(height: 14),
               _emptyHero(),
@@ -511,6 +509,7 @@ class _MemberCurriculumDetailPageState
       child: ClipRRect(
         borderRadius: radius,
         child: BackdropFilter(
+          enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: card,
         ),
@@ -537,7 +536,11 @@ class _MemberCurriculumDetailPageState
         const SizedBox(height: 6),
         const Text(
           'Coach sẽ gửi kế hoạch tập luyện và dinh dưỡng phù hợp cho bạn.',
-          style: TextStyle(color: Color(0xFFE4DAD1), fontSize: 13.5, height: 1.45),
+          style: TextStyle(
+            color: Color(0xFFE4DAD1),
+            fontSize: 13.5,
+            height: 1.45,
+          ),
         ),
       ],
     ),

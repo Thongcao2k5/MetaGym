@@ -291,9 +291,7 @@ GoRouter createAppRouter({
                 ? const CoachNutritionPage(structured: true)
                 : destination.path == '/coach/features/sessions'
                 ? CoachSessionsPage(
-                    coachBooking: CoachBookingPage(
-                      coachId: sessionController.user!.id,
-                    ),
+                    coachId: sessionController.user!.id,
                   )
                 : destination.path == '/coach/features/messages'
                 ? ConversationsPage(
@@ -301,7 +299,10 @@ GoRouter createAppRouter({
                     coachMode: true,
                   )
                 : destination.path == '/coach/features/calls'
-                ? CallsPage(currentUserId: sessionController.user!.id)
+                ? CallsPage(
+                    currentUserId: sessionController.user!.id,
+                    coachMode: true,
+                  )
                 : destination.path == '/coach/features/ai'
                 ? const AiConversationsPage(coachMode: true)
                 : throw StateError('Thiếu trang Coach: ${destination.path}'),

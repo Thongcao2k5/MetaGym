@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
@@ -17,10 +19,8 @@ Future<void> showMemberQrCheckinModal(
   return showDialog<void>(
     context: context,
     barrierColor: MetaGymTheme.scrim,
-    builder: (dialogContext) => _MemberQrCheckinDialog(
-      memberName: memberName,
-      memberCode: memberCode,
-    ),
+    builder: (dialogContext) =>
+        _MemberQrCheckinDialog(memberName: memberName, memberCode: memberCode),
   );
 }
 
@@ -73,7 +73,9 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
     final isLight = MetaGymTheme.isLightPalette(context);
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
     final enableBlur =
-        !isLight && !disableAnimations && !MetaGymTheme.isFlutterTestEnvironment;
+        !isLight &&
+        !disableAnimations &&
+        !MetaGymTheme.isFlutterTestEnvironment;
     final radius = BorderRadius.circular(MetaGymTheme.radiusGlassDock);
 
     final content = Container(
@@ -296,6 +298,7 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
               child: ClipRRect(
                 borderRadius: radius,
                 child: BackdropFilter(
+                  enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
                   filter: ImageFilter.blur(
                     sigmaX: MetaGymTheme.overlayGlassBlur,
                     sigmaY: MetaGymTheme.overlayGlassBlur,

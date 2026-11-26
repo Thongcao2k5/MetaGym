@@ -7,8 +7,43 @@ import 'package:meta_gym_app/features/training/data/member_nutrition_service.dar
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_nutrition_page.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_nutrition_editor_page.dart';
 
 void main() {
+  testWidgets(
+    'nutrition editor uses readable light theme input and heading colors',
+    (tester) async {
+      final service = _CoachNutritionFixture();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.light,
+          home: CoachNutritionEditorPage(
+            memberId: 'member-1',
+            service: service,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final heading = tester.widget<Text>(find.text('Nội dung hướng dẫn'));
+      final field = tester.widget<TextField>(
+        find.byKey(const Key('guide-title')),
+      );
+      final headingColor = heading.style!.color!;
+      final inputColor = field.style!.color!;
+      expect(
+        1.05 / (headingColor.computeLuminance() + 0.05),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        1.05 / (inputColor.computeLuminance() + 0.05),
+        greaterThanOrEqualTo(4.5),
+      );
+      await tester.enterText(find.byKey(const Key('guide-title')), 'Thực đơn');
+      expect(find.text('Thực đơn'), findsOneWidget);
+    },
+  );
+
   testWidgets('Coach creates, edits and publishes a guide visible to Member', (
     tester,
   ) async {

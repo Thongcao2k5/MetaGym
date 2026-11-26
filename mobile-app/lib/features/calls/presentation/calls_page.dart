@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/domain/call_log.dart';
+import 'package:meta_gym_app/features/calls/presentation/coach_calls_view.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:provider/provider.dart';
 
@@ -59,9 +63,15 @@ InputDecoration _warmCallsInputDecoration(String label) => InputDecoration(
 );
 
 class CallsPage extends StatefulWidget {
-  const CallsPage({this.service, required this.currentUserId, super.key});
+  const CallsPage({
+    this.service,
+    required this.currentUserId,
+    this.coachMode,
+    super.key,
+  });
   final CallsService? service;
   final String currentUserId;
+  final bool? coachMode;
 
   @override
   State<CallsPage> createState() => _CallsPageState();
@@ -176,6 +186,15 @@ class _CallsPageState extends State<CallsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isCoach = widget.coachMode ??
+        (optionalProvider<SessionController>(context)?.user?.role ==
+            UserRole.coach);
+    if (isCoach) {
+      return CoachCallsView(
+        currentUserId: widget.currentUserId,
+        service: _service,
+      );
+    }
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
       backgroundColor: MetaGymTheme.darkCanvas,

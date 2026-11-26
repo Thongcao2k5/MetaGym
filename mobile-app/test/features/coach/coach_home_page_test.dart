@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
@@ -17,6 +16,7 @@ import 'package:meta_gym_app/features/auth/presentation/session_controller.dart'
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 
 void main() {
   for (final width in [375.0, 768.0]) {
@@ -52,12 +52,12 @@ void main() {
         }
 
         await tab('Lịch dạy');
-        await tester.tap(find.text('Học viên (2)'));
+        await tester.tap(find.text('Sắp tới'));
         await tester.pumpAndSettle();
         await tab('Trang chủ');
         await tab('Lịch dạy');
         await tab('Lịch dạy');
-        expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
+        expect(find.text('Phạm Quốc Bảo'), findsOneWidget);
         expect(
           Navigator.of(tester.element(find.byType(CoachHomePage))).canPop(),
           isFalse,
@@ -77,7 +77,7 @@ void main() {
   );
 
   testWidgets(
-    'loads live Coach API data, renders at 375x812 without overflow, and reaches notifications, offers, and all coachDestinations',
+    'loads live Coach API data, renders at 375x812 without overflow, reaches notifications, offers, and omits feature directory and sign-out',
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1.0;
@@ -117,7 +117,7 @@ void main() {
       expect(find.text('Học viên'), findsOneWidget);
       expect(find.text('Giáo trình'), findsOneWidget);
       expect(find.text('Dinh dưỡng'), findsOneWidget);
-      expect(find.text('Lịch tập'), findsOneWidget);
+      expect(find.text('Lịch dạy'), findsNWidgets(2));
       expect(find.text('Yêu cầu chọn Coach'), findsNothing);
       expect(find.textContaining('yêu cầu chờ duyệt'), findsNothing);
 
@@ -131,18 +131,11 @@ void main() {
       expect(find.text('Gói PT Cơ bản'), findsOneWidget);
       expect(find.text('1 gói'), findsOneWidget);
 
-      // Expand directory and verify every coachDestination + Offers + Notifications
-      await tester.scrollUntilVisible(
-        find.text('Danh mục tính năng Coach'),
-        250,
-      );
-      await tester.tap(find.text('Danh mục tính năng Coach'));
-      await tester.pumpAndSettle();
-
-      for (final destination in coachDestinations) {
-        await tester.scrollUntilVisible(find.text(destination.title).last, 150);
-        expect(find.text(destination.title), findsWidgets);
-      }
+      // Scroll to bottom section and verify removed directory & sign-out widgets are absent
+      await tester.scrollUntilVisible(find.text('Lịch dạy hôm nay'), 250);
+      expect(find.text('Lịch dạy hôm nay'), findsOneWidget);
+      expect(find.text('Danh mục tính năng Coach'), findsNothing);
+      expect(find.text('Đăng xuất'), findsNothing);
 
       // Scroll back to top and open CoachNotificationsPage from header bell
       await tester.scrollUntilVisible(
@@ -165,7 +158,7 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      // Switch to Lịch dạy tab (WorkHub) and verify schedule + members/requests
+      // Switch to Lịch dạy tab (CoachSessionsPage) and verify schedule UI + actions
       await tester.tap(
         find.descendant(
           of: find.byType(MetaGymBottomNav),
@@ -173,22 +166,23 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Lịch dạy & Học viên'), findsOneWidget);
-      expect(find.text('Lịch dạy (90p)'), findsOneWidget);
-      expect(find.text('Nhắn tin'), findsOneWidget);
-      expect(find.text('Hủy ca'), findsOneWidget);
-      expect(find.text('Hoàn tất'), findsOneWidget);
-      // Ensure the 3 booking action labels stay on a single line at 375x812
-      expect(tester.getSize(find.text('Nhắn tin')).height, lessThan(26));
-      expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
-      expect(tester.getSize(find.text('Hoàn tất')).height, lessThan(26));
-      expect(find.text('Học viên (1)'), findsOneWidget);
-
-      await tester.tap(find.text('Học viên (1)'));
-      await tester.pumpAndSettle();
+      expect(find.byType(CoachSessionsPage), findsOneWidget);
+      expect(find.text('Lịch dạy & Học viên'), findsNothing);
+      expect(find.text('Lịch dạy (90p)'), findsNothing);
+      expect(find.text('Quản lý ca 1:1 & điểm danh'), findsOneWidget);
+      expect(find.text('Hôm nay'), findsOneWidget);
+      expect(find.text('Sắp tới'), findsOneWidget);
+      expect(find.text('Đã xong'), findsOneWidget);
+      expect(find.text('Đã hủy'), findsOneWidget);
+      expect(find.text('Lịch làm việc hằng tuần'), findsOneWidget);
       expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
-      expect(find.text('Chấp nhận'), findsNothing);
-      expect(find.text('Từ chối'), findsNothing);
+      expect(find.text('Hủy ca'), findsOneWidget);
+      expect(find.text('HV vắng'), findsOneWidget);
+      expect(find.text('Hoàn thành'), findsOneWidget);
+      // Ensure the 3 booking action labels stay on a single line at 375x812
+      expect(tester.getSize(find.text('Hủy ca')).height, lessThan(26));
+      expect(tester.getSize(find.text('HV vắng')).height, lessThan(26));
+      expect(tester.getSize(find.text('Hoàn thành')).height, lessThan(26));
 
       expect(tester.takeException(), isNull);
     },
@@ -230,7 +224,7 @@ void main() {
       expect(find.text('Không gian dành cho huấn luyện viên'), findsOneWidget);
       final tab0Top = tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy;
 
-      // Tab 1: Lịch dạy
+      // Tab 1: Lịch dạy (CoachSessionsPage)
       await tester.tap(
         find.descendant(
           of: find.byType(MetaGymBottomNav),
@@ -241,8 +235,14 @@ void main() {
       expect(find.byType(MetaGymBrandHeader), findsOneWidget);
       expect(find.text('META GYM · COACH'), findsOneWidget);
       expect(tester.getTopLeft(find.byType(MetaGymBrandHeader)).dy, tab0Top);
-      expect(find.text('Lịch dạy & Học viên'), findsOneWidget);
-      expect(find.text('Quản lý ca dạy, yêu cầu & học viên'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MetaGymBrandHeader),
+          matching: find.text('Lịch dạy'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Quản lý ca 1:1 & điểm danh'), findsOneWidget);
 
       // Tab 2: AI
       await tester.tap(

@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' show FontFeature, ImageFilter;
 
@@ -793,7 +795,9 @@ Future<ProfileAvatarAction?> showProfileAvatarPickerSheet(
       final child = Center(
         child: Padding(padding: const EdgeInsets.all(20), child: sheet),
       );
-      if (disableAnimations || MetaGymTheme.isFlutterTestEnvironment) {
+      if (disableAnimations ||
+          MetaGymSurfacePreferences.reduceBlurOf(ctx) ||
+          MetaGymTheme.isFlutterTestEnvironment) {
         return child;
       }
       return BackdropFilter(
@@ -887,12 +891,13 @@ class _AvatarActionOption extends StatelessWidget {
   }
 }
 
-/// Modal xác nhận đăng xuất (Level 3 Overlay Glass khớp preview `5.1` trong `tab5-profile.js`).
+/// Modal xác nhận đăng xuất (Level 3 Overlay Glass khớp preview `5.1` / `6.1`).
 Future<bool?> showProfileSignOutDialog(
   BuildContext context, {
   required String fullName,
   required String email,
   required String roleLabel,
+  bool isCoach = false,
 }) {
   return showDialog<bool>(
     context: context,
@@ -940,7 +945,9 @@ Future<bool?> showProfileSignOutDialog(
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Đăng xuất tài khoản?',
+                  isCoach
+                      ? 'Đăng xuất tài khoản Coach?'
+                      : 'Đăng xuất tài khoản?',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: colors.textPrimary,
@@ -960,7 +967,9 @@ Future<bool?> showProfileSignOutDialog(
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Bạn sẽ cần đăng nhập lại để quẹt thẻ NFC, xem lịch Coach và đồng bộ nhật ký tập luyện.',
+                  isCoach
+                      ? 'Bạn sẽ cần đăng nhập lại để điểm danh ca dạy, cập nhật giáo án và nhận thông báo từ học viên.'
+                      : 'Bạn sẽ cần đăng nhập lại để quẹt thẻ NFC, xem lịch Coach và đồng bộ nhật ký tập luyện.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: colors.textSecondary,
@@ -1060,7 +1069,9 @@ Future<bool?> showProfileSignOutDialog(
       final child = Center(
         child: Padding(padding: const EdgeInsets.all(20), child: sheet),
       );
-      if (disableAnimations || MetaGymTheme.isFlutterTestEnvironment) {
+      if (disableAnimations ||
+          MetaGymSurfacePreferences.reduceBlurOf(ctx) ||
+          MetaGymTheme.isFlutterTestEnvironment) {
         return child;
       }
       return BackdropFilter(

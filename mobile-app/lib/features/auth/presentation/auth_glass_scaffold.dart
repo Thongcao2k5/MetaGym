@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -198,6 +200,7 @@ class WarmSmokeGlass extends StatelessWidget {
             child: ClipRRect(
               borderRadius: radius,
               child: BackdropFilter(
+                enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
                 filter: ImageFilter.blur(
                   sigmaX: MetaGymTheme.performanceGlassBlur,
                   sigmaY: MetaGymTheme.performanceGlassBlur,
@@ -214,6 +217,7 @@ class WarmSmokeGlass extends StatelessWidget {
       child: ClipRRect(
         borderRadius: radius,
         child: BackdropFilter(
+          enabled: !MetaGymSurfacePreferences.reduceBlurOf(context),
           filter: ImageFilter.blur(
             sigmaX: MetaGymTheme.performanceGlassBlur,
             sigmaY: MetaGymTheme.performanceGlassBlur,
@@ -529,10 +533,7 @@ class AuthModeSegmentSwitch extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF38302A),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: const Color(0xC8C0B4A6),
-                    width: 1,
-                  ),
+                  border: Border.all(color: const Color(0xC8C0B4A6), width: 1),
                 ),
               ),
             ),

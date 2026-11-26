@@ -1,15 +1,23 @@
-import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_messages_page.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
-import 'package:provider/provider.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 
+/// Màn hình Trợ lý AI:
+/// - **Coach (`coachMode: true`)**: Mở trực tiếp trải nghiệm **4.1 Trợ lý AI Coach**
+///   (Meta Kong + chat + nút `+` tạo mới + bấm tiêu đề để đổi/sửa/xóa hội thoại).
+/// - **Member**: Hiển thị danh sách hội thoại AI + CRUD & mở `AiMessagesPage`.
 class AiConversationsPage extends StatefulWidget {
   const AiConversationsPage({
     this.service,
@@ -29,6 +37,7 @@ class AiConversationsPage extends StatefulWidget {
 class _AiConversationsPageState extends State<AiConversationsPage> {
   AiService? _service;
   List<AiConversation> _items = const [];
+  AiConversation? _activeConversation;
   bool _loading = true;
   bool _saving = false;
   bool _loadingMore = false;
@@ -36,30 +45,61 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
   bool _hasMore = false;
   String? _error;
 
+  bool _resolveCoachHeader(BuildContext context) {
+    if (widget.coachMode != null) return widget.coachMode!;
+    return optionalProvider<SessionController>(context)?.user?.role ==
+        UserRole.coach;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_service != null) return;
-    _service = widget.service ?? context.read<AiService>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _load();
-    });
+    final nextService = widget.service ?? optionalProvider<AiService>(context);
+    if (!identical(_service, nextService)) {
+      _service = nextService;
+      if (_service != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _load();
+        });
+      } else {
+        setState(() {
+          _loading = false;
+          _error = 'Chưa kết nối dịch vụ AI.';
+        });
+      }
+    }
   }
 
   Future<void> _load() async {
+    final service = _service;
+    if (service == null) return;
+    final isCoach = _resolveCoachHeader(context);
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final items = await _service!.getConversations(1);
-      if (mounted) {
-        setState(() {
-          _items = items;
-          _page = 1;
-          _hasMore = items.length == 20;
-        });
+      var items = await service.getConversations(1);
+      if (isCoach && items.isEmpty) {
+        final created = await service.create();
+        items = [created];
       }
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _page = 1;
+        _hasMore = items.length == 20;
+        if (items.isEmpty) {
+          _activeConversation = null;
+        } else if (_activeConversation == null ||
+            !items.any((c) => c.id == _activeConversation!.id)) {
+          _activeConversation = items.first;
+        } else {
+          _activeConversation = items.firstWhere(
+            (c) => c.id == _activeConversation!.id,
+          );
+        }
+      });
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
@@ -70,6 +110,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
   }
 
   Future<void> _loadMore() async {
+    if (_service == null || _loadingMore) return;
     setState(() {
       _loadingMore = true;
       _error = null;
@@ -93,41 +134,52 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
   }
 
   Future<void> _create() async {
-    if (_saving) return;
+    if (_saving || _service == null) return;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
       final created = await _service!.create();
-      if (mounted) setState(() => _items = [created, ..._items]);
+      if (mounted) {
+        setState(() {
+          _items = [created, ..._items];
+          _activeConversation = created;
+        });
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!mounted) return;
+      setState(() => _error = error.message);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tạo được hội thoại AI.');
+      if (!mounted) return;
+      setState(() => _error = 'Không tạo được hội thoại AI.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _rename(AiConversation item) async {
-    if (_saving) return;
+    if (_saving || _service == null) return;
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final form = GlobalKey<FormState>();
     var title = item.title;
     final newTitle = await MetaGymNavigation.showDialogOnce<String>(
       context: context,
-      barrierColor: const Color(0xB8040609),
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xF0241F1B),
+      barrierColor: colors.scrim,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isLight ? colors.surface : colors.overlayGlass,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+          side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
         ),
-        title: const Text(
+        title: Text(
           'Đổi tên hội thoại',
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: colors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
@@ -137,28 +189,28 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
           child: TextFormField(
             initialValue: title,
             maxLength: 150,
-            style: const TextStyle(color: Color(0xFFF7F9FC)),
+            style: TextStyle(color: colors.textPrimary),
             decoration: InputDecoration(
               labelText: 'Tên hội thoại',
-              labelStyle: const TextStyle(color: Color(0xFFC8C2BC)),
+              labelStyle: TextStyle(color: colors.textWarmMuted),
               filled: true,
-              fillColor: const Color(0x80211E1C),
-              counterStyle: const TextStyle(
-                color: Color(0xFFB8B0A8),
+              fillColor: colors.metricPanelBg,
+              counterStyle: TextStyle(
+                color: colors.textSecondary,
                 fontSize: 11,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                borderSide: const BorderSide(color: Color(0x9A8C8176)),
+                borderSide: BorderSide(color: colors.metricPanelBorder),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                borderSide: const BorderSide(color: Color(0x9A8C8176)),
+                borderSide: BorderSide(color: colors.metricPanelBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                 borderSide: const BorderSide(
-                  color: MetaGymTheme.brandOrange,
+                  color: MetaGymTheme.primary,
                   width: 1.5,
                 ),
               ),
@@ -171,16 +223,16 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
         actions: [
           TextButton(
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFC8C2BC),
+              foregroundColor: colors.textSecondary,
               minimumSize: const Size(48, 48),
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Hủy'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.brandOrange,
-              foregroundColor: Colors.white,
+              backgroundColor: MetaGymTheme.primary,
+              foregroundColor: MetaGymTheme.onPrimary,
               minimumSize: const Size(48, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -188,7 +240,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
             ),
             onPressed: () {
               if (form.currentState!.validate()) {
-                Navigator.pop(context, title.trim());
+                Navigator.pop(dialogContext, title.trim());
               }
             },
             child: const Text('Lưu'),
@@ -204,12 +256,15 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
     try {
       final updated = await _service!.rename(item.id, newTitle);
       if (mounted) {
-        setState(
-          () => _items = [
+        setState(() {
+          _items = [
             for (final existing in _items)
               existing.id == item.id ? updated : existing,
-          ],
-        );
+          ];
+          if (_activeConversation?.id == item.id) {
+            _activeConversation = updated;
+          }
+        });
       }
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -221,36 +276,38 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
   }
 
   Future<void> _delete(AiConversation item) async {
-    if (_saving) return;
+    if (_saving || _service == null) return;
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
-      barrierColor: const Color(0xB8040609),
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xF0241F1B),
+      barrierColor: colors.scrim,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isLight ? colors.surface : colors.overlayGlass,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+          side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
         ),
-        title: const Text(
+        title: Text(
           'Xóa hội thoại AI?',
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: colors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
         ),
         content: Text(
           'Hội thoại “${item.title}” sẽ không còn trong danh sách.',
-          style: const TextStyle(color: Color(0xFFC8C2BC), height: 1.45),
+          style: TextStyle(color: colors.textWarmMuted, height: 1.45),
         ),
         actions: [
           TextButton(
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFC8C2BC),
+              foregroundColor: colors.textSecondary,
               minimumSize: const Size(48, 48),
             ),
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Hủy'),
           ),
           FilledButton(
@@ -262,7 +319,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
             ),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Xóa'),
           ),
         ],
@@ -276,12 +333,15 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
     try {
       await _service!.delete(item.id);
       if (mounted) {
-        setState(
-          () => _items = [
+        setState(() {
+          _items = [
             for (final existing in _items)
               if (existing.id != item.id) existing,
-          ],
-        );
+          ];
+          if (_activeConversation?.id == item.id) {
+            _activeConversation = _items.firstOrNull;
+          }
+        });
       }
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -292,273 +352,539 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
     }
   }
 
-  bool _resolveCoachHeader(BuildContext context) {
-    if (widget.coachMode != null) return widget.coachMode!;
-    try {
-      return context.watch<SessionController?>()?.user?.role == UserRole.coach;
-    } catch (_) {
-      return false;
-    }
+  Future<void> _openCoachThreadsSheet() async {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isLight ? colors.surface : colors.overlayGlass,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Hội thoại AI Coach',
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetCtx);
+                      unawaited(_create());
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MetaGymTheme.primary,
+                      foregroundColor: MetaGymTheme.onPrimary,
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Tạo mới'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final item in _items)
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                        ),
+                        leading: Icon(
+                          item.id == _activeConversation?.id
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.chat_bubble_outline_rounded,
+                          color: item.id == _activeConversation?.id
+                              ? colors.primaryText
+                              : colors.textSecondary,
+                        ),
+                        title: Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onTap: () {
+                          setState(() => _activeConversation = item);
+                          Navigator.pop(sheetCtx);
+                        },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Đổi tên',
+                              onPressed: () {
+                                Navigator.pop(sheetCtx);
+                                unawaited(_rename(item));
+                              },
+                              icon: Icon(
+                                Icons.edit_outlined,
+                                color: colors.textSecondary,
+                                size: 20,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Xóa hội thoại',
+                              onPressed: () {
+                                Navigator.pop(sheetCtx);
+                                unawaited(_delete(item));
+                              },
+                              icon: Icon(
+                                Icons.delete_outline_rounded,
+                                color: colors.error,
+                                size: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = (widget.bottomPadding ?? 100.0) + 16.0;
-    final canPop = Navigator.of(context).canPop();
     final isCoachHeader = _resolveCoachHeader(context);
+    if (isCoachHeader) {
+      return _buildCoachDirectWorkspace(context);
+    }
+    return _buildMemberConversationsList(context);
+  }
 
-    return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const MetaGymBackground(),
-          SafeArea(
-            bottom: false,
-            child: RefreshIndicator(
-              color: MetaGymTheme.primary,
-              backgroundColor: const Color(0xFF282320),
-              onRefresh: _load,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
+  Widget _buildCoachDirectWorkspace(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final active = _activeConversation;
+
+    if (!_loading && active != null && _service != null) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: colors.canvas,
+          resizeToAvoidBottomInset: true,
+          body: AiMessagesView(
+            service: _service!,
+            conversation: active,
+            coachMode: true,
+            bottomPadding: widget.bottomPadding,
+            creatingConversation: _saving,
+            onCreateConversation: _create,
+            onOpenHistory: _openCoachThreadsSheet,
+          ),
+        ),
+      );
+    }
+
+    final gutter = MediaQuery.sizeOf(context).width >= 600
+        ? MetaGymTheme.tabletGutter
+        : MetaGymTheme.pageGutter;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: colors.canvas,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const MetaGymBackground(),
+            SafeArea(
+              bottom: false,
+              child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                  MetaGymTheme.pageGutter,
+                  gutter,
                   0,
-                  MetaGymTheme.pageGutter,
-                  bottomInset,
+                  gutter,
+                  widget.bottomPadding ?? 24,
                 ),
-                children: [
-                  const SizedBox(height: 6),
-                  MetaGymBrandHeader(
-                    eyebrow: isCoachHeader ? 'META GYM · COACH' : 'META GYM',
-                    title: 'Trợ lý AI',
-                    subtitle: isCoachHeader
-                        ? 'Hỏi đáp giáo trình, dinh dưỡng & lịch tập'
-                        : null,
-                    leading: canPop
-                        ? MetaGymCircleIconButton(
-                            icon: Icons.arrow_back_rounded,
-                            tooltip: 'Quay lại',
-                            onTap: () => Navigator.of(context).maybePop(),
-                          )
-                        : null,
-                    actions: [
-                      MetaGymCircleIconButton(
-                        icon: Icons.refresh_rounded,
-                        tooltip: 'Tải lại',
-                        onTap: _loading ? null : _load,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 64),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: MetaGymTheme.primary,
-                        ),
-                      ),
-                    )
-                  else ...[
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: MetaGymTheme.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      icon: const Icon(Icons.auto_awesome_rounded, size: 20),
-                      onPressed: _saving ? null : _create,
-                      label: Text(_saving ? 'Đang xử lý…' : 'Tạo hội thoại'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 6),
+                    MetaGymBrandHeader(
+                      eyebrow: 'META GYM · COACH',
+                      title: 'Trợ lý AI',
+                      subtitle: 'Hỏi đáp giáo trình, dinh dưỡng & lịch tập',
+                      leading: (ModalRoute.of(context)?.canPop ?? false)
+                          ? MetaGymCircleIconButton(
+                              svgAsset: MetaGymIcons.commonBack,
+                              icon: Icons.arrow_back_ios_new_rounded,
+                              tooltip: 'Quay lại',
+                              onTap: () => Navigator.of(context).maybePop(),
+                            )
+                          : null,
+                      actions: _service == null
+                          ? const []
+                          : [
+                              MetaGymCircleIconButton(
+                                svgAsset: MetaGymIcons.commonAdd,
+                                icon: Icons.add_rounded,
+                                tooltip: 'Hội thoại AI mới',
+                                onTap: _saving ? null : _create,
+                              ),
+                            ],
                     ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xD4331E1E),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0x99F15B64)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: MetaGymTheme.dangerCoral,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _error!,
-                                style: const TextStyle(
-                                  color: Color(0xFFFFB2B6),
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                minimumSize: const Size(48, 48),
-                              ),
-                              onPressed: _items.isEmpty ? _load : _loadMore,
-                              child: const Text(
-                                'Thử lại',
-                                style: TextStyle(color: MetaGymTheme.primary),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (_items.isEmpty && _error == null)
-                      MetaGymGlassCard(
-                        margin: const EdgeInsets.only(top: 16),
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: const Color(0x80211E1C),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color(0x9A8C8176),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.auto_awesome_rounded,
+                    Expanded(
+                      child: _loading
+                          ? const Center(
+                              child: CircularProgressIndicator(
                                 color: MetaGymTheme.primary,
-                                size: 22,
+                              ),
+                            )
+                          : Center(
+                              child: MetaGymHeroGlassCard(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_error != null) ...[
+                                      Text(
+                                        _error!,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: colors.error,
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      CoachingSecondaryButton(
+                                        label: 'Thử lại',
+                                        onPressed: _load,
+                                        expand: true,
+                                      ),
+                                    ] else ...[
+                                      Text(
+                                        'Bắt đầu cùng Meta Kong AI',
+                                        style: TextStyle(
+                                          color: colors.textPrimary,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      FilledButton.icon(
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: MetaGymTheme.primary,
+                                          foregroundColor:
+                                              MetaGymTheme.onPrimary,
+                                          minimumSize: const Size(
+                                            double.infinity,
+                                            48,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                        ),
+                                        onPressed: _saving ? null : _create,
+                                        icon: const Icon(
+                                          Icons.auto_awesome_rounded,
+                                        ),
+                                        label: const Text('Tạo hội thoại'),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Bạn chưa có hội thoại AI nào.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Nhấn “Tạo hội thoại” bên trên để bắt đầu hỏi đáp cùng trợ lý AI của Meta Gym.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFFC8C2BC),
-                                fontSize: 12.5,
-                              ),
-                            ),
-                          ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberConversationsList(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final bottomInset = (widget.bottomPadding ?? 100.0) + 16.0;
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final gutter = MediaQuery.sizeOf(context).width >= 600
+        ? MetaGymTheme.tabletGutter
+        : MetaGymTheme.pageGutter;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: colors.canvas,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const MetaGymBackground(),
+            SafeArea(
+              bottom: false,
+              child: RefreshIndicator(
+                color: MetaGymTheme.primary,
+                backgroundColor: colors.overlayGlass,
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(gutter, 0, gutter, bottomInset),
+                  children: [
+                    const SizedBox(height: 6),
+                    MetaGymBrandHeader(
+                      eyebrow: 'META GYM',
+                      title: 'Trợ lý AI',
+                      leading: canPop
+                          ? MetaGymCircleIconButton(
+                              svgAsset: MetaGymIcons.commonBack,
+                              icon: Icons.arrow_back_ios_new_rounded,
+                              tooltip: 'Quay lại',
+                              onTap: () => Navigator.of(context).maybePop(),
+                            )
+                          : null,
+                      actions: [
+                        MetaGymCircleIconButton(
+                          svgAsset: MetaGymIcons.commonRefresh,
+                          icon: Icons.refresh_rounded,
+                          tooltip: 'Tải lại',
+                          onTap: _loading ? null : _load,
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 64),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.primary,
+                          ),
+                        ),
+                      )
+                    else ...[
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: MetaGymTheme.primary,
+                          foregroundColor: MetaGymTheme.onPrimary,
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+                        onPressed: _saving ? null : _create,
+                        label: Text(_saving ? 'Đang xử lý…' : 'Tạo hội thoại'),
                       ),
-                    const SizedBox(height: 12),
-                    for (final item in _items)
-                      MetaGymGlassCard(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: EdgeInsets.zero,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.fromLTRB(
-                            14,
-                            4,
-                            6,
-                            4,
-                          ),
-                          leading: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0x80211E1C),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0x9A8C8176),
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              color: MetaGymTheme.reflectionBlue,
-                              size: 20,
+                      if (_error != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colors.error.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: colors.error.withValues(alpha: 0.45),
                             ),
                           ),
-                          title: Text(
-                            item.title,
-                            style: const TextStyle(
-                              color: MetaGymTheme.textPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                          subtitle: Text(
-                            item.updatedAt,
-                            style: const TextStyle(
-                              color: Color(0xFFB8B0A8),
-                              fontSize: 12,
-                            ),
-                          ),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => AiMessagesPage(
-                                service: _service!,
-                                conversation: item,
-                              ),
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Row(
                             children: [
-                              IconButton(
-                                tooltip: 'Đổi tên',
-                                constraints: const BoxConstraints(
-                                  minWidth: 48,
-                                  minHeight: 48,
-                                ),
-                                icon: const Icon(
-                                  Icons.edit_outlined,
-                                  color: Color(0xFFC8C2BC),
-                                  size: 20,
-                                ),
-                                onPressed: _saving ? null : () => _rename(item),
+                              Icon(
+                                Icons.error_outline_rounded,
+                                color: colors.error,
+                                size: 20,
                               ),
-                              IconButton(
-                                tooltip: 'Xóa hội thoại',
-                                constraints: const BoxConstraints(
-                                  minWidth: 48,
-                                  minHeight: 48,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(color: colors.error),
                                 ),
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Color(0xFFC8C2BC),
-                                  size: 20,
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
                                 ),
-                                onPressed: _saving ? null : () => _delete(item),
+                                onPressed: _items.isEmpty ? _load : _loadMore,
+                                child: Text(
+                                  'Thử lại',
+                                  style: TextStyle(color: colors.primaryText),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    if (_hasMore)
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(48, 48),
+                      ],
+                      if (_items.isEmpty && _error == null)
+                        MetaGymGlassCard(
+                          margin: const EdgeInsets.only(top: 16),
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: colors.metricPanelBg,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.metricPanelBorder,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.auto_awesome_rounded,
+                                  color: colors.primaryText,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Bạn chưa có hội thoại AI nào.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Nhấn “Tạo hội thoại” bên trên để bắt đầu hỏi đáp cùng trợ lý AI của Meta Gym.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: colors.textWarmMuted,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        onPressed: _loadingMore ? null : _loadMore,
-                        child: Text(
-                          _loadingMore ? 'Đang tải…' : 'Tải thêm',
-                          style: const TextStyle(color: MetaGymTheme.primary),
+                      const SizedBox(height: 12),
+                      for (final item in _items)
+                        MetaGymGlassCard(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: EdgeInsets.zero,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.fromLTRB(
+                              14,
+                              4,
+                              6,
+                              4,
+                            ),
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: colors.metricPanelBg,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: colors.metricPanelBorder,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                color: colors.reflection,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(
+                              item.title,
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            subtitle: Text(
+                              item.updatedAt,
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            onTap: () => MetaGymNavigation.pushOnce<void>(
+                              context,
+                              MetaGymPageRoute(
+                                builder: (_) => AiMessagesPage(
+                                  service: _service!,
+                                  conversation: item,
+                                  coachMode: false,
+                                ),
+                              ),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Đổi tên',
+                                  constraints: const BoxConstraints(
+                                    minWidth: 48,
+                                    minHeight: 48,
+                                  ),
+                                  icon: Icon(
+                                    Icons.edit_outlined,
+                                    color: colors.textWarmMuted,
+                                    size: 20,
+                                  ),
+                                  onPressed: _saving
+                                      ? null
+                                      : () => _rename(item),
+                                ),
+                                IconButton(
+                                  tooltip: 'Xóa hội thoại',
+                                  constraints: const BoxConstraints(
+                                    minWidth: 48,
+                                    minHeight: 48,
+                                  ),
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: colors.textWarmMuted,
+                                    size: 20,
+                                  ),
+                                  onPressed: _saving
+                                      ? null
+                                      : () => _delete(item),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
+                      if (_hasMore)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                          ),
+                          onPressed: _loadingMore ? null : _loadMore,
+                          child: Text(
+                            _loadingMore ? 'Đang tải…' : 'Tải thêm',
+                            style: TextStyle(color: colors.primaryText),
+                          ),
+                        ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

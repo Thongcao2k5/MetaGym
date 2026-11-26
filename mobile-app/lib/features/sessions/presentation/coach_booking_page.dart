@@ -1204,7 +1204,8 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                   onTap: () async {
                     await Navigator.of(context).push<void>(
                       MaterialPageRoute(
-                        builder: (_) => const CoachNotificationsPage(),
+                        builder: (_) =>
+                            CoachNotificationsPage(coachMode: _isCoach),
                       ),
                     );
                     if (mounted) _reload();

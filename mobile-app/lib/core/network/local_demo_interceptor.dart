@@ -27,7 +27,7 @@ abstract final class OfflineDemoControl {
 
   static _LocalDemoStore? _sharedStore;
   static const _storage = FlutterSecureStorage();
-  static const _storageKey = 'meta_gym_local_demo_state_v7';
+  static const _storageKey = 'meta_gym_local_demo_state_v8';
 
   static String modeLabel(DemoUiStateMode value) => switch (value) {
     DemoUiStateMode.normal => 'Bình thường',
@@ -608,6 +608,12 @@ class LocalDemoInterceptor extends Interceptor {
       }
       return (store.coachWorkSlots, 200);
     }
+    if (path == '/coach-packages' && method == 'GET') {
+      return (store.coachPackages, 200);
+    }
+    if (path == '/coach-payment-holds' && method == 'GET') {
+      return (const <Object?>[], 200);
+    }
     if (path == '/coach-bookings' && method == 'GET') {
       return (store.coachBookings, 200);
     }
@@ -615,13 +621,36 @@ class LocalDemoInterceptor extends Interceptor {
       return (store.coachEntitlements, 200);
     }
     if (path == '/coach-bookings/blocks' && method == 'GET') {
-      return (const <Object?>[], 200);
+      return (store.coachBlockedSlots, 200);
     }
     if (path == '/coach-bookings' && method == 'POST') {
       return (store.createCoachBooking(body, currentUser), 201);
     }
     if (path == '/coach-bookings/blocks' && method == 'PUT') {
-      return (const {'saved': true}, 200);
+      final rawBlocks = body['blocks'];
+      if (rawBlocks is List) {
+        store.coachBlockedSlots
+          ..clear()
+          ..addAll(
+            rawBlocks
+                .whereType<Map>()
+                .map((row) => Map<String, dynamic>.from(row)),
+          );
+      } else if (body['startsAt'] is String) {
+        final startsAt = (body['startsAt'] as String).trim();
+        final blocked = body['blocked'] == true;
+        final reason = (body['reason'] as String? ?? '').trim();
+        store.coachBlockedSlots.removeWhere(
+          (row) => (row['startsAt'] as String? ?? '').trim() == startsAt,
+        );
+        if (blocked && startsAt.isNotEmpty) {
+          store.coachBlockedSlots.insert(0, {
+            'startsAt': startsAt,
+            'reason': reason.isNotEmpty ? reason : 'Lịch bận cá nhân',
+          });
+        }
+      }
+      return ({'updated': true, 'blocks': store.coachBlockedSlots}, 200);
     }
     if (path.startsWith('/coach-bookings/') && method == 'PATCH') {
       final id = path.split('/')[2];
@@ -634,8 +663,12 @@ class LocalDemoInterceptor extends Interceptor {
         path.endsWith('/read') &&
         method == 'PATCH') {
       final id = path.split('/')[2];
+      final readAt = DateTime.now().toUtc().toIso8601String();
       for (final n in store.coachNotifications) {
-        if (n['id'] == id) n['isRead'] = true;
+        if (n['id'] == id) {
+          n['isRead'] = true;
+          n['readAt'] ??= readAt;
+        }
       }
       return (const {'read': true}, 200);
     }
@@ -643,12 +676,12 @@ class LocalDemoInterceptor extends Interceptor {
       return (store.coachMembers, 200);
     }
     if (path.startsWith('/coach/members/') && method == 'GET') {
-      final memberId = path.split('/')[3];
+      final memberId = Uri.decodeComponent(path.split('/')[3]);
       if (path.endsWith('/training-plans/current')) {
-        return (store.activeTrainingPlan, 200);
+        return (store.activeTrainingPlanFor(memberId), 200);
       }
       if (path.endsWith('/training-plans')) {
-        return (<Object?>[store.activeTrainingPlan], 200);
+        return (store.trainingPlansFor(memberId), 200);
       }
       if (path.endsWith('/nutrition-guides')) {
         return (<Object?>[store.activeNutritionGuide], 200);
@@ -663,13 +696,16 @@ class LocalDemoInterceptor extends Interceptor {
       return (member, 200);
     }
     if (path.startsWith('/coach/members/') &&
+        path.endsWith('/training-plans/current') &&
+        method == 'PUT') {
+      final memberId = Uri.decodeComponent(path.split('/')[3]);
+      return (store.upsertCurrentTrainingPlan(memberId, body), 200);
+    }
+    if (path.startsWith('/coach/members/') &&
         path.endsWith('/training-plans') &&
         method == 'POST') {
-      store.activeTrainingPlan['title'] =
-          body['title'] ?? store.activeTrainingPlan['title'];
-      store.activeTrainingPlan['notes'] =
-          body['notes'] ?? store.activeTrainingPlan['notes'];
-      return (store.activeTrainingPlan, 201);
+      final memberId = Uri.decodeComponent(path.split('/')[3]);
+      return (store.createTrainingPlan(memberId, body), 201);
     }
     if (path.startsWith('/coach/members/') &&
         path.endsWith('/nutrition-guides') &&
@@ -679,6 +715,14 @@ class LocalDemoInterceptor extends Interceptor {
       store.activeNutritionGuide['content'] =
           body['content'] ?? store.activeNutritionGuide['content'];
       return (store.activeNutritionGuide, 201);
+    }
+    if (path.startsWith('/coach/meal-plans/') && method == 'GET') {
+      final memberId = Uri.decodeComponent(path.split('/')[3]);
+      return (store.mealPlanForMember(memberId), 200);
+    }
+    if (path.startsWith('/coach/meal-plans/') && method == 'PUT') {
+      final memberId = Uri.decodeComponent(path.split('/')[3]);
+      return (store.saveMealPlanForMember(memberId, body), 200);
     }
     if (path == '/coach/requests' && method == 'GET') {
       return (store.coachRequests, 200);
@@ -722,17 +766,19 @@ class LocalDemoInterceptor extends Interceptor {
       return (<Object?>[store.activeTrainingPlan], 200);
     }
     if (path.startsWith('/training-plans/') && method == 'GET') {
-      return (store.activeTrainingPlan, 200);
+      final id = Uri.decodeComponent(path.split('/').last);
+      return (store.findTrainingPlanById(id), 200);
+    }
+    if (path.startsWith('/coach/training-plans/') &&
+        path.endsWith('/publications') &&
+        method == 'POST') {
+      final id = Uri.decodeComponent(path.split('/')[3]);
+      return (store.publishTrainingPlan(id), 200);
     }
     if (path.startsWith('/coach/training-plans/') &&
         (method == 'PATCH' || method == 'PUT' || method == 'POST')) {
-      if (body['title'] is String) {
-        store.activeTrainingPlan['title'] = body['title'];
-      }
-      if (body['notes'] is String) {
-        store.activeTrainingPlan['notes'] = body['notes'];
-      }
-      return (store.activeTrainingPlan, 200);
+      final id = Uri.decodeComponent(path.split('/')[3]);
+      return (store.updateTrainingPlan(id, body), 200);
     }
     if (path == '/member/self-training-days' && method == 'GET') {
       final from = options.queryParameters['from'] as String?;
@@ -766,6 +812,11 @@ class LocalDemoInterceptor extends Interceptor {
       return (<Object?>[store.activeNutritionGuide], 200);
     }
     if (path == '/meal-plans/me' && method == 'GET') {
+      final memberId = currentUser['id'] as String?;
+      final existing = memberId == null ? null : store.coachMealPlans[memberId];
+      if (existing != null && existing['id'] != null) {
+        return (<Object?>[existing], 200);
+      }
       return (<Object?>[store.coachMealPlan()], 200);
     }
     if (path.startsWith('/coach/nutrition-guides/') &&
@@ -927,11 +978,27 @@ class LocalDemoInterceptor extends Interceptor {
 
     // --- AI Conversations (CRUD + phản hồi mô phỏng theo chuẩn AiAnswerResult) ---
     if (path == '/ai-conversations' && method == 'GET') {
-      return (store.aiConversations, 200);
+      final filtered = store.aiConversations
+          .where(
+            (c) => isCoach
+                ? c['ownerRole'] == 'COACH'
+                : c['ownerRole'] != 'COACH',
+          )
+          .toList();
+      return (filtered, 200);
     }
     if (path == '/ai-conversations' && method == 'POST') {
-      final title = (body['title'] as String? ?? 'Tư vấn cùng Meta AI').trim();
-      return (store.createAiConversation(title), 201);
+      final defaultTitle = isCoach
+          ? 'Tư vấn giáo án Coach'
+          : 'Tư vấn cùng Meta AI';
+      final title = (body['title'] as String? ?? defaultTitle).trim();
+      return (
+        store.createAiConversation(
+          title,
+          ownerRole: isCoach ? 'COACH' : 'MEMBER',
+        ),
+        201,
+      );
     }
     if (path.startsWith('/ai-conversations/') && path.endsWith('/messages')) {
       final convId = path.split('/')[2];
@@ -941,7 +1008,15 @@ class LocalDemoInterceptor extends Interceptor {
       if (method == 'POST') {
         final content = (body['content'] as String? ?? '').trim();
         final reqId = body['clientRequestId'] as String?;
-        return (store.sendAiMessage(convId, content, requestId: reqId), 201);
+        return (
+          store.sendAiMessage(
+            convId,
+            content,
+            requestId: reqId,
+            isCoach: isCoach,
+          ),
+          201,
+        );
       }
     }
     if (path.startsWith('/ai-conversations/') && method == 'PATCH') {
@@ -958,10 +1033,27 @@ class LocalDemoInterceptor extends Interceptor {
 
     // --- Messaging (Chat 2 chiều giữa Hội viên & HLV) ---
     if (path == '/conversations' && method == 'GET') {
-      return (store.conversations, 200);
+      final userId = currentUser['id'] as String?;
+      final visible = userId == null
+          ? store.conversations
+          : store.conversations
+              .where(
+                (c) => c['memberId'] == userId || c['coachId'] == userId,
+              )
+              .toList();
+      return (visible, 200);
     }
     if (path == '/conversations' && method == 'POST') {
-      return (store.conversations.first, 200);
+      final targetMemberId = body['memberId'] as String?;
+      final targetCoachId = body['coachId'] as String?;
+      final userId = currentUser['id'] as String?;
+      final conv = store.findOrCreateConversation(
+        currentUser: currentUser,
+        targetMemberId: targetMemberId,
+        targetCoachId: targetCoachId,
+        userId: userId,
+      );
+      return (conv, 200);
     }
     if (path.startsWith('/conversations/') && path.endsWith('/read-state')) {
       final key = path.split('/')[2];
@@ -995,7 +1087,15 @@ class LocalDemoInterceptor extends Interceptor {
 
     // --- Calls (Cuộc gọi thoại / video mô phỏng offline) ---
     if (path == '/calls' && method == 'GET') {
-      return (store.calls, 200);
+      final userId = currentUser['id'] as String?;
+      final visible = userId == null
+          ? store.calls
+          : store.calls
+              .where(
+                (c) => c['callerId'] == userId || c['receiverId'] == userId,
+              )
+              .toList();
+      return (visible, 200);
     }
     if (path == '/calls/incoming' && method == 'GET') {
       return (const <Object?>[], 200);
@@ -1058,8 +1158,12 @@ class _LocalDemoStore {
     required this.earlyTerminationRequests,
     required this.coachWorkSlots,
     required this.coachEntitlements,
+    required this.coachPackages,
+    required this.coachBlockedSlots,
     required this.coachBookings,
     required this.coachNotifications,
+    required this.coachTrainingPlans,
+    required this.coachMealPlans,
     required this.calls,
   });
 
@@ -1092,8 +1196,12 @@ class _LocalDemoStore {
   final List<Map<String, dynamic>> earlyTerminationRequests;
   final Map<String, dynamic> coachWorkSlots;
   final List<Map<String, dynamic>> coachEntitlements;
+  final List<Map<String, dynamic>> coachPackages;
+  final List<Map<String, dynamic>> coachBlockedSlots;
   final List<Map<String, dynamic>> coachBookings;
   final List<Map<String, dynamic>> coachNotifications;
+  final Map<String, List<Map<String, dynamic>>> coachTrainingPlans;
+  final Map<String, Map<String, dynamic>> coachMealPlans;
   final List<Map<String, dynamic>> calls;
 
   static DateTime _vnNow() =>
@@ -1146,7 +1254,12 @@ class _LocalDemoStore {
           'avatarUrl': null,
           'profile': {
             'specialization': 'Hypertrophy & Body Recomposition',
+            'specialties': ['Hypertrophy', 'Sức mạnh', 'Giảm mỡ'],
+            'qualifications': 'CPT NASM · Chứng chỉ Dinh dưỡng Thể thao',
             'experienceYears': 6,
+            'availabilityNote': 'Thứ 2 – Thứ 7 · 06:00 – 20:00',
+            'biography':
+                'Chuyên gia huấn luyện tăng cơ nạc, chỉnh form compound và dinh dưỡng thể hình.',
             'bio':
                 'Chuyên gia huấn luyện tăng cơ nạc, chỉnh form compound và dinh dưỡng thể hình.',
           },
@@ -1261,10 +1374,18 @@ class _LocalDemoStore {
           'fullName': 'Lê Hoàng Nam',
           'email': LocalDemoAccounts.coachEmail,
           'specialization': 'Hypertrophy & Body Recomposition',
+          'specialties': ['Hypertrophy', 'Sức mạnh', 'Giảm mỡ'],
+          'qualifications': 'CPT NASM · Chứng chỉ Dinh dưỡng Thể thao',
           'experienceYears': 6,
+          'availabilityNote': 'Thứ 2 – Thứ 7 · 06:00 – 20:00',
+          'biography':
+              'Chuyên gia huấn luyện tăng cơ nạc, chỉnh form compound và dinh dưỡng thể hình.',
           'rating': 4.9,
-          'activeMemberCount': 12,
-          'maxMemberCapacity': 20,
+          'memberLimit': 8,
+          'usedSlots': 2,
+          'availableSlots': 6,
+          'activeMemberCount': 2,
+          'maxMemberCapacity': 8,
           'bio':
               'Chuyên gia huấn luyện tăng cơ nạc, chỉnh form compound và dinh dưỡng thể hình.',
         },
@@ -1273,10 +1394,18 @@ class _LocalDemoStore {
           'fullName': 'Trần Thu Hà',
           'email': 'coach.ha@metagym.vn',
           'specialization': 'Fat Loss, Mobility & Pilates Core',
+          'specialties': ['Giảm mỡ', 'Mobility', 'Pilates'],
+          'qualifications': 'ACE CPT · Pilates Instructor',
           'experienceYears': 5,
+          'availabilityNote': 'Thứ 2 – Thứ 7 · 08:00 – 19:00',
+          'biography':
+              'Đồng hành siết mỡ an toàn, phục hồi tư thế cột sống và tối ưu thực đơn văn phòng.',
           'rating': 4.8,
-          'activeMemberCount': 10,
-          'maxMemberCapacity': 18,
+          'memberLimit': 8,
+          'usedSlots': 5,
+          'availableSlots': 3,
+          'activeMemberCount': 5,
+          'maxMemberCapacity': 8,
           'bio':
               'Đồng hành siết mỡ an toàn, phục hồi tư thế cột sống và tối ưu thực đơn văn phòng.',
         },
@@ -1285,30 +1414,72 @@ class _LocalDemoStore {
           'fullName': 'Phạm Đức Minh',
           'email': 'coach.minh@metagym.vn',
           'specialization': 'Strength & Powerlifting',
+          'specialties': ['Powerlifting', 'Sức mạnh', 'Compound'],
+          'qualifications': 'CSCS · IPF Certified Coach',
           'experienceYears': 8,
+          'availabilityNote': 'Thứ 2 – Thứ 7 · 06:00 – 21:00',
+          'biography':
+              'Huấn luyện viên sức mạnh Squat – Bench – Deadlift, tối ưu chu kỳ tăng tạ.',
           'rating': 5.0,
-          'activeMemberCount': 9,
-          'maxMemberCapacity': 15,
+          'memberLimit': 8,
+          'usedSlots': 4,
+          'availableSlots': 4,
+          'activeMemberCount': 4,
+          'maxMemberCapacity': 8,
           'bio':
               'Huấn luyện viên sức mạnh Squat – Bench – Deadlift, tối ưu chu kỳ tăng tạ.',
         },
       ],
       coachMembers: [
         {
+          'id': relationshipId,
           'relationshipId': relationshipId,
           'memberId': memberId,
+          'coachId': coachId,
+          'memberFullName': 'Nguyễn Minh Quân',
           'memberName': 'Nguyễn Minh Quân',
           'memberEmail': LocalDemoAccounts.memberEmail,
           'status': 'ACTIVE',
+          'pauseReason': null,
           'startedAt': now.subtract(const Duration(days: 45)).toIso8601String(),
+          'member': {
+            'id': memberId,
+            'fullName': 'Nguyễn Minh Quân',
+            'email': LocalDemoAccounts.memberEmail,
+            'fitnessGoal': 'Tăng cơ nạc & Siết mỡ bụng (6 tuần tập trung Upper Body)',
+            'healthNotes': 'Huyết áp ổn định, ngủ đủ 7 giờ/đêm.',
+            'injuryNotes': 'Tránh đẩy vai góc > 90° (Impingement nhẹ vai phải).',
+            'heightCm': 176.0,
+            'weightKg': 72.1,
+            'bodyFatPercent': 17.5,
+            'healthDeclarationCompletedAt':
+                now.subtract(const Duration(days: 40)).toIso8601String(),
+          },
         },
         {
+          'id': 'rel-demo-002',
           'relationshipId': 'rel-demo-002',
           'memberId': '10000000-0000-4000-8000-000000000004',
+          'coachId': coachId,
+          'memberFullName': 'Trần Bảo Ngọc',
           'memberName': 'Trần Bảo Ngọc',
           'memberEmail': 'baongoc@metagym.vn',
           'status': 'ACTIVE',
+          'pauseReason': null,
           'startedAt': now.subtract(const Duration(days: 20)).toIso8601String(),
+          'member': {
+            'id': '10000000-0000-4000-8000-000000000004',
+            'fullName': 'Trần Bảo Ngọc',
+            'email': 'baongoc@metagym.vn',
+            'fitnessGoal': 'Giảm mỡ vòng eo, săn chắc thân dưới & cải thiện sức bền',
+            'healthNotes': 'Không có tiền sử tim mạch.',
+            'injuryNotes': null,
+            'heightCm': 163.0,
+            'weightKg': 55.4,
+            'bodyFatPercent': 22.8,
+            'healthDeclarationCompletedAt':
+                now.subtract(const Duration(days: 19)).toIso8601String(),
+          },
         },
       ],
       sessions: [
@@ -1927,6 +2098,7 @@ class _LocalDemoStore {
           'id': '90000000-0000-4000-8000-000000000021',
           'equipmentId': '90000000-0000-4000-8000-000000000011',
           'name': 'Barbell Bench Press',
+          'category': 'Ngực · Đẩy',
           'description':
               'Bài tập nền tảng xây dựng cơ ngực vạm vỡ và sức mạnh thân trên.',
           'targetMuscles': ['Ngực', 'Tay sau'],
@@ -1937,9 +2109,22 @@ class _LocalDemoStore {
           'status': 'ACTIVE',
         },
         {
+          'id': '90000000-0000-4000-8000-000000000022',
+          'equipmentId': '90000000-0000-4000-8000-000000000011',
+          'name': 'Incline Dumbbell Press',
+          'category': 'Ngực trên · Vai',
+          'description': 'Đẩy tạ đơn trên ghế dốc 30 độ phát triển ngực trên.',
+          'targetMuscles': ['Ngực trên', 'Vai trước', 'Tay sau'],
+          'instructions': 'Ghế dốc 30 độ, ép chặt cơ ngực trên ở đỉnh.',
+          'safetyNotes': 'Kiểm soát đường đi của tạ, không khóa cứng khớp khuỷu.',
+          'difficulty': 'INTERMEDIATE',
+          'status': 'ACTIVE',
+        },
+        {
           'id': '90000000-0000-4000-8000-000000000023',
           'equipmentId': '90000000-0000-4000-8000-000000000012',
           'name': 'Barbell Back Squat',
+          'category': 'Chân · Compound',
           'description':
               'Vua của các bài tập chân đùi, phát triển toàn diện thân dưới.',
           'targetMuscles': ['Đùi trước', 'Mông', 'Lưng dưới'],
@@ -1952,10 +2137,35 @@ class _LocalDemoStore {
           'id': '90000000-0000-4000-8000-000000000024',
           'equipmentId': '90000000-0000-4000-8000-000000000013',
           'name': 'Lat Pulldown Kéo Xô Mặt Trước',
+          'category': 'Lưng xô',
           'description': 'Bài tập tạo hình lưng chữ V (V-taper) sắc nét.',
           'targetMuscles': ['Lưng xô', 'Tay trước'],
           'instructions': 'Kéo thanh đòn về phía ức ngực, ép chặt 2 bả vai.',
           'safetyNotes': 'Giữ thân người cố định.',
+          'difficulty': 'BEGINNER',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000000025',
+          'equipmentId': '90000000-0000-4000-8000-000000000011',
+          'name': 'Dumbbell Bicep Curl',
+          'category': 'Tay trước',
+          'description': 'Cuốn tạ đơn cô lập bắp tay trước cân đối hai bên.',
+          'targetMuscles': ['Tay trước'],
+          'instructions': 'Cuốn tạ cô lập bắp tay trước, hạ tạ chậm 2 giây.',
+          'safetyNotes': 'Khép sát cùi chỏ vào thân, không lắc lưng.',
+          'difficulty': 'BEGINNER',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000000026',
+          'equipmentId': '90000000-0000-4000-8000-000000000012',
+          'name': 'Plank Siết Cơ Bụng & Core',
+          'category': 'Bụng · Core',
+          'description': 'Bài tập ổn định cơ trung tâm và thắt lưng.',
+          'targetMuscles': ['Bụng', 'Core'],
+          'instructions': 'Giữ thân người thẳng tắp, gồng chặt cơ bụng.',
+          'safetyNotes': 'Không võng thắt lưng hoặc nhô hông quá cao.',
           'difficulty': 'BEGINNER',
           'status': 'ACTIVE',
         },
@@ -1970,8 +2180,18 @@ class _LocalDemoStore {
         {
           'id': aiConvId,
           'title': 'Tối ưu lịch tập Tăng Cơ 8 Tuần',
+          'ownerRole': 'MEMBER',
           'createdAt': now.subtract(const Duration(days: 2)).toIso8601String(),
           'updatedAt': now.subtract(const Duration(hours: 4)).toIso8601String(),
+        },
+        {
+          'id': 'ai-conv-coach-001',
+          'title': 'Tối ưu giáo án bảo vệ vai',
+          'ownerRole': 'COACH',
+          'createdAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+          'updatedAt': now
+              .subtract(const Duration(minutes: 25))
+              .toIso8601String(),
         },
       ],
       aiMessages: {
@@ -1998,6 +2218,52 @@ class _LocalDemoStore {
                 .toIso8601String(),
           },
         ],
+        'ai-conv-coach-001': [
+          {
+            'id': 'ai-coach-msg-001',
+            'conversationId': 'ai-conv-coach-001',
+            'role': 'USER',
+            'status': 'COMPLETED',
+            'content':
+                'Học viên 72kg đau nhẹ khớp vai phải khi đẩy Barbell Bench Press trên 80kg. Gợi ý giúp anh bài thay thế cùng nhóm cơ ngực trên nhé!',
+            'createdAt': now
+                .subtract(const Duration(minutes: 32))
+                .toIso8601String(),
+          },
+          {
+            'id': 'ai-coach-msg-002',
+            'conversationId': 'ai-conv-coach-001',
+            'role': 'ASSISTANT',
+            'status': 'COMPLETED',
+            'content':
+                'Với học viên đau vai phải mức nhẹ, anh nên giảm biên độ mở vai & chuyển sang góc trung tính:\n• **Neutral-Grip Incline DB Press** (30°): 4×8–10, khuỷu tay khép 45°.\n• **Machine Chest Press**: ổn định khớp vai, tăng tải an toàn.\n• Khởi động **5 phút**: Band Pull-Apart 2×15 + External Rotation 2×12.',
+            'createdAt': now
+                .subtract(const Duration(minutes: 31))
+                .toIso8601String(),
+          },
+          {
+            'id': 'ai-coach-msg-003',
+            'conversationId': 'ai-conv-coach-001',
+            'role': 'USER',
+            'status': 'COMPLETED',
+            'content':
+                'Gợi ý thực đơn khoảng 2.200 kcal/ngày cho học viên tập 4 buổi/tuần.',
+            'createdAt': now
+                .subtract(const Duration(minutes: 26))
+                .toIso8601String(),
+          },
+          {
+            'id': 'ai-coach-msg-004',
+            'conversationId': 'ai-conv-coach-001',
+            'role': 'ASSISTANT',
+            'status': 'COMPLETED',
+            'content':
+                'Đề xuất định lượng ngày **~2.200 kcal**: **Bữa sáng** Yến mạch 70g + Trứng gà 180g (540 kcal) · **Bữa trưa** Ức gà 200g + Cơm gạo lứt 250g (795 kcal) · **Bữa tối** Cá hồi 180g + Khoai lang 200g (850 kcal).',
+            'createdAt': now
+                .subtract(const Duration(minutes: 25))
+                .toIso8601String(),
+          },
+        ],
       },
       conversations: [
         {
@@ -2016,6 +2282,23 @@ class _LocalDemoStore {
               .subtract(const Duration(hours: 2))
               .toIso8601String(),
           'unreadCount': 1,
+        },
+        {
+          'id': 'conv-demo-002',
+          'relationshipId': 'rel-demo-002',
+          'memberId': '10000000-0000-4000-8000-000000000004',
+          'coachId': coachId,
+          'memberName': 'Trần Bảo Ngọc',
+          'coachName': 'Lê Hoàng Nam',
+          'status': 'ACTIVE',
+          'lastMessageType': 'TEXT',
+          'lastMessageContent':
+              'Em đã hoàn thành 3 hiệp Glute Bridge, mai mình tăng thêm 5kg được không anh?',
+          'lastMessageSenderId': '10000000-0000-4000-8000-000000000004',
+          'lastMessageAt': now
+              .subtract(const Duration(minutes: 42))
+              .toIso8601String(),
+          'unreadCount': 2,
         },
       ],
       directMessages: {
@@ -2045,6 +2328,28 @@ class _LocalDemoStore {
             'messageType': 'TEXT',
             'content': 'Hẹn gặp em lúc 18:00 chiều nay tại khu tạ tự do nhé!',
             'sentAt': now.subtract(const Duration(hours: 2)).toIso8601String(),
+          },
+        ],
+        'rel-demo-002': [
+          {
+            'id': 'dm-bn-001',
+            'conversationId': 'conv-demo-002',
+            'senderId': coachId,
+            'messageType': 'TEXT',
+            'content':
+                'Chào Bảo Ngọc! Tuần này giữ tạ RDL 35kg chậm 3 giây pha hạ để siết cơ mông đùi sau nhé.',
+            'sentAt': now.subtract(const Duration(hours: 5)).toIso8601String(),
+          },
+          {
+            'id': 'dm-bn-002',
+            'conversationId': 'conv-demo-002',
+            'senderId': '10000000-0000-4000-8000-000000000004',
+            'messageType': 'TEXT',
+            'content':
+                'Em đã hoàn thành 3 hiệp Glute Bridge, mai mình tăng thêm 5kg được không anh?',
+            'sentAt': now
+                .subtract(const Duration(minutes: 42))
+                .toIso8601String(),
           },
         ],
       },
@@ -2086,7 +2391,62 @@ class _LocalDemoStore {
           'endsOn': _isoDate(now.add(const Duration(days: 41))),
         },
       ],
+      coachPackages: [
+        {
+          'code': 'PT-12',
+          'name': 'Gói PT 1:1 Khởi động 12 buổi',
+          'description': 'Làm quen kỹ thuật nền tảng · Theo dõi giáo trình & thực đơn 4 tuần.',
+          'sessionCount': 12,
+          'durationDays': 45,
+          'price': 4800000,
+          'status': 'ACTIVE',
+        },
+        {
+          'code': 'PT-24',
+          'name': 'Gói PT 1:1 Chuyên sâu 24 buổi',
+          'description': 'Tăng cơ giảm mỡ bài bản · Kèm giáo án cá nhân hóa & thực đơn 7 ngày.',
+          'sessionCount': 24,
+          'durationDays': 90,
+          'price': 8455000,
+          'status': 'ACTIVE',
+          'isPopular': true,
+        },
+        {
+          'code': 'PT-36',
+          'name': 'Gói PT 1:1 VIP 36 buổi',
+          'description': 'Đồng hành toàn diện 4 tháng · Điều chỉnh form, InBody & dinh dưỡng sát sao.',
+          'sessionCount': 36,
+          'durationDays': 120,
+          'price': 11900000,
+          'status': 'ACTIVE',
+        },
+      ],
+      coachBlockedSlots: [
+        {
+          'id': 'blk-demo-001',
+          'startsAt': '${_isoDate(now.add(const Duration(days: 1)))}T14:00:00+07:00',
+          'endsAt': '${_isoDate(now.add(const Duration(days: 1)))}T15:30:00+07:00',
+          'reason': 'Họp chuyên môn cùng đội ngũ HLV',
+        },
+      ],
       coachBookings: [
+        {
+          'id': 'bk-demo-today-001',
+          'entitlementId': 'ent-demo-001',
+          'relationshipId': relationshipId,
+          'memberId': memberId,
+          'memberName': 'Nguyễn Minh Quân',
+          'coachId': coachId,
+          'coachName': 'Lê Hoàng Nam',
+          'startsAt': DateTime(now.year, now.month, now.day, 19, 30)
+              .toUtc()
+              .toIso8601String(),
+          'endsAt': DateTime(now.year, now.month, now.day, 21, 0)
+              .toUtc()
+              .toIso8601String(),
+          'status': 'BOOKED',
+          'title': 'Upper Body & Core · Chỉnh form Bench Press',
+        },
         {
           'id': 'bk-demo-001',
           'entitlementId': 'ent-demo-001',
@@ -2109,9 +2469,9 @@ class _LocalDemoStore {
         {
           'id': 'bk-demo-002',
           'entitlementId': 'ent-demo-001',
-          'relationshipId': relationshipId,
-          'memberId': memberId,
-          'memberName': 'Nguyễn Minh Quân',
+          'relationshipId': 'rel-demo-002',
+          'memberId': '10000000-0000-4000-8000-000000000004',
+          'memberName': 'Trần Bảo Ngọc',
           'coachId': coachId,
           'coachName': 'Lê Hoàng Nam',
           'startsAt': DateTime(now.year, now.month, now.day, 18, 0)
@@ -2123,7 +2483,7 @@ class _LocalDemoStore {
               .toUtc()
               .toIso8601String(),
           'status': 'BOOKED',
-          'title': 'Lưng Xô & Tay trước',
+          'title': 'Thân dưới · Squat & Mobility hông',
         },
         {
           'id': 'bk-demo-past-001',
@@ -2167,20 +2527,174 @@ class _LocalDemoStore {
       coachNotifications: [
         {
           'id': 'cnoti-001',
-          'title': 'Buổi tập 18:00 hôm nay',
-          'message': 'Hội viên Nguyễn Minh Quân đã xác nhận lịch tập Ngực & Tay sau.',
+          'kind': 'BOOKED',
+          'title': 'Lịch tập 1:1 hôm nay lúc 19:30',
+          'message': 'Hội viên Nguyễn Minh Quân đã đặt khung giờ 19:30 – 21:00 hôm nay.',
           'isRead': false,
+          'readAt': null,
           'createdAt': now.subtract(const Duration(hours: 1)).toIso8601String(),
         },
         {
           'id': 'cnoti-002',
-          'title': 'Yêu cầu Coach mới',
-          'message': 'Hoàng Gia Huy vừa gửi yêu cầu tập 1:1 cùng bạn.',
+          'kind': 'PACKAGE_ACTIVE',
+          'title': 'Học viên Trần Bảo Ngọc đã kích hoạt gói PT 24 buổi',
+          'message': 'Quan hệ phụ trách 1:1 đang hoạt động. Bạn có thể thiết lập giáo trình và thực đơn ngay.',
           'isRead': false,
+          'readAt': null,
           'createdAt': now.subtract(const Duration(hours: 5)).toIso8601String(),
         },
+        {
+          'id': 'cnoti-003',
+          'kind': 'COMPLETED',
+          'title': 'Hoàn thành buổi dạy Upper Body & Core',
+          'message': 'Đã ghi nhận buổi tập hoàn thành của Nguyễn Minh Quân.',
+          'isRead': true,
+          'readAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+        },
       ],
+      coachTrainingPlans: {
+        memberId: [
+          {
+            'id': '90000000-0000-4000-8000-000000000070',
+            'relationshipId': relationshipId,
+            'memberId': memberId,
+            'coachId': coachId,
+            'title': 'Làm quen kỹ thuật cơ bản (Nền tảng)',
+            'goal': 'Chuẩn hóa tư thế khớp vai, cột sống và kiểm soát nhịp thở.',
+            'status': 'ARCHIVED',
+            'version': 1,
+            'startDate': _isoDate(now.subtract(const Duration(days: 45))),
+            'endDate': _isoDate(now.subtract(const Duration(days: 15))),
+            'days': [
+              {
+                'dayNumber': 1,
+                'title': 'Toàn thân Nền tảng',
+                'scheduledDate': _isoDate(now.subtract(const Duration(days: 45))),
+                'exercises': [
+                  {
+                    'exerciseId': '90000000-0000-4000-8000-000000000021',
+                    'exerciseName': 'Barbell Bench Press',
+                    'displayOrder': 1,
+                    'sets': 3,
+                    'reps': '12',
+                    'restSeconds': 60,
+                  },
+                ],
+                'meals': const <Object?>[],
+              },
+            ],
+          },
+        ],
+        '10000000-0000-4000-8000-000000000004': [
+          {
+            'id': '90000000-0000-4000-8000-000000000072',
+            'relationshipId': 'rel-demo-002',
+            'memberId': '10000000-0000-4000-8000-000000000004',
+            'coachId': coachId,
+            'title': 'Giảm mỡ & Săn chắc Thân dưới 4 tuần',
+            'goal': 'Đốt mỡ an toàn · Cải thiện Mobility vùng hông và Core.',
+            'status': 'ACTIVE',
+            'version': 1,
+            'startDate': todayStr,
+            'endDate': _isoDate(now.add(const Duration(days: 28))),
+            'publishedAt': now.subtract(const Duration(days: 3)).toIso8601String(),
+            'days': [
+              {
+                'dayNumber': 1,
+                'title': 'Lower Body · Chân & Mông',
+                'scheduledDate': todayStr,
+                'notes': 'Kiểm soát nhịp hạ 3 giây.',
+                'exercises': [
+                  {
+                    'exerciseId': '90000000-0000-4000-8000-000000000023',
+                    'exerciseName': 'Barbell Back Squat',
+                    'displayOrder': 1,
+                    'sets': 4,
+                    'reps': '10-12',
+                    'restSeconds': 90,
+                    'weightGuidance': '35kg - 45kg',
+                  },
+                  {
+                    'exerciseId': '90000000-0000-4000-8000-000000000026',
+                    'exerciseName': 'Plank Siết Cơ Bụng & Core',
+                    'displayOrder': 2,
+                    'sets': 3,
+                    'durationSeconds': 45,
+                    'restSeconds': 45,
+                  },
+                ],
+                'meals': const <Object?>[],
+              },
+            ],
+          },
+        ],
+      },
+      coachMealPlans: {
+        memberId: {
+          'id': 'meal-plan-demo-001',
+          'title': 'Thực đơn Tăng Cơ Nạc 2.400 kcal',
+          'status': 'ACTIVE',
+          'items': [
+            for (var day = 1; day <= 7; day++) ...[
+              {
+                'day': day,
+                'meal': 'BREAKFAST',
+                'foodId': 'food-oats',
+                'foodName': 'Yến mạch nguyên cám',
+                'kcalPer100g': 380,
+                'grams': 100,
+              },
+              {
+                'day': day,
+                'meal': 'LUNCH',
+                'foodId': 'food-001',
+                'foodName': 'Ức gà áp chảo',
+                'kcalPer100g': 165,
+                'grams': 200,
+              },
+              {
+                'day': day,
+                'meal': 'LUNCH',
+                'foodId': 'food-002',
+                'foodName': 'Cơm gạo lứt',
+                'kcalPer100g': 123,
+                'grams': 150,
+              },
+              {
+                'day': day,
+                'meal': 'DINNER',
+                'foodId': 'food-003',
+                'foodName': 'Cá hồi phi lê áp chảo',
+                'kcalPer100g': 208,
+                'grams': 180,
+              },
+            ],
+          ],
+        },
+        '10000000-0000-4000-8000-000000000004': {'items': <Object?>[]},
+      },
       calls: [
+        {
+          'id': 'call-demo-002',
+          'relationshipId': 'rel-demo-002',
+          'callerId': coachId,
+          'receiverId': '10000000-0000-4000-8000-000000000004',
+          'callerName': 'Lê Hoàng Nam',
+          'receiverName': 'Trần Bảo Ngọc',
+          'callType': 'VOICE',
+          'status': 'ENDED',
+          'initiatedAt': now.subtract(const Duration(hours: 4)).toIso8601String(),
+          'answeredAt': now
+              .subtract(const Duration(hours: 4))
+              .add(const Duration(seconds: 4))
+              .toIso8601String(),
+          'endedAt': now
+              .subtract(const Duration(hours: 4))
+              .add(const Duration(minutes: 7))
+              .toIso8601String(),
+          'durationSeconds': 416,
+        },
         {
           'id': 'call-demo-001',
           'relationshipId': relationshipId,
@@ -2200,6 +2714,19 @@ class _LocalDemoStore {
               .add(const Duration(minutes: 12))
               .toIso8601String(),
           'durationSeconds': 715,
+        },
+        {
+          'id': 'call-demo-003',
+          'relationshipId': relationshipId,
+          'callerId': memberId,
+          'receiverId': coachId,
+          'callerName': 'Nguyễn Minh Quân',
+          'receiverName': 'Lê Hoàng Nam',
+          'callType': 'VOICE',
+          'status': 'MISSED',
+          'initiatedAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+          'durationSeconds': 0,
+          'failureReason': 'Không bắt máy',
         },
       ],
     );
@@ -2265,6 +2792,224 @@ class _LocalDemoStore {
       existingProfile.addAll(Map<String, dynamic>.from(patch['profile'] as Map));
       account['profile'] = existingProfile;
     }
+    if (account['role'] == 'COACH') {
+      final coachIdx = coaches.indexWhere((c) => c['id'] == account['id']);
+      if (coachIdx >= 0) {
+        final coachProfile = Map<String, dynamic>.from(
+          account['profile'] as Map? ?? const {},
+        );
+        coaches[coachIdx]['fullName'] = account['fullName'];
+        if (coachProfile['biography'] != null) {
+          coaches[coachIdx]['biography'] = coachProfile['biography'];
+          coaches[coachIdx]['bio'] = coachProfile['biography'];
+        }
+        if (coachProfile['specialties'] is List) {
+          coaches[coachIdx]['specialties'] = coachProfile['specialties'];
+        }
+        if (coachProfile['qualifications'] != null) {
+          coaches[coachIdx]['qualifications'] = coachProfile['qualifications'];
+        }
+        if (coachProfile['experienceYears'] != null) {
+          coaches[coachIdx]['experienceYears'] =
+              coachProfile['experienceYears'];
+        }
+        if (coachProfile['availabilityNote'] != null) {
+          coaches[coachIdx]['availabilityNote'] =
+              coachProfile['availabilityNote'];
+        }
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> trainingPlansFor(String memberId) {
+    final primaryMemberId = coachMembers.isEmpty
+        ? null
+        : coachMembers.first['memberId'] as String?;
+    final list = <Map<String, dynamic>>[
+      if (memberId == primaryMemberId) activeTrainingPlan,
+      ...(coachTrainingPlans[memberId] ?? const []),
+    ];
+    return list;
+  }
+
+  Map<String, dynamic> activeTrainingPlanFor(String memberId) {
+    final plans = trainingPlansFor(memberId);
+    final active = plans.where((p) => p['status'] == 'ACTIVE').firstOrNull;
+    if (active != null) return active;
+    if (plans.isNotEmpty) return plans.first;
+    return activeTrainingPlan;
+  }
+
+  Map<String, dynamic> findTrainingPlanById(String planId) {
+    if (activeTrainingPlan['id'] == planId) return activeTrainingPlan;
+    for (final list in coachTrainingPlans.values) {
+      for (final plan in list) {
+        if (plan['id'] == planId) return plan;
+      }
+    }
+    return activeTrainingPlan;
+  }
+
+  List<Map<String, dynamic>> _normalizeDays(Object? rawDays) {
+    if (rawDays is! List) return const [];
+    final exerciseMap = <String, Map<String, dynamic>>{
+      for (final e in exercises) e['id'].toString(): e,
+    };
+    return rawDays.whereType<Map>().map((rawDay) {
+      final d = Map<String, dynamic>.from(rawDay);
+      final rawEx = (d['exercises'] as List? ?? const []);
+      final normalizedEx = rawEx.whereType<Map>().map((rawItem) {
+        final item = Map<String, dynamic>.from(rawItem);
+        final cat = exerciseMap[item['exerciseId']?.toString() ?? ''];
+        return {
+          ...item,
+          'exerciseName':
+              item['exerciseName'] ?? cat?['name'] ?? 'Bài tập Meta Gym',
+          'instructions': item['instructions'] ?? cat?['instructions'],
+          'safetyNotes': item['safetyNotes'] ?? cat?['safetyNotes'],
+        };
+      }).toList();
+      final rawMeals = (d['meals'] as List? ?? const []);
+      return {
+        ...d,
+        'exercises': normalizedEx,
+        'meals': rawMeals
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .toList(),
+      };
+    }).toList();
+  }
+
+  Map<String, dynamic> upsertCurrentTrainingPlan(
+    String memberId,
+    Map<String, dynamic> body,
+  ) {
+    final primaryMemberId = coachMembers.isEmpty
+        ? null
+        : coachMembers.first['memberId'] as String?;
+    final days = _normalizeDays(body['days']);
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    final targetList = coachTrainingPlans.putIfAbsent(memberId, () => []);
+
+    if (memberId == primaryMemberId) {
+      activeTrainingPlan['title'] =
+          body['title'] ?? activeTrainingPlan['title'];
+      activeTrainingPlan['goal'] = body['goal'] ?? activeTrainingPlan['goal'];
+      activeTrainingPlan['startDate'] =
+          body['startDate'] ?? activeTrainingPlan['startDate'];
+      activeTrainingPlan['endDate'] =
+          body['endDate'] ?? activeTrainingPlan['endDate'];
+      activeTrainingPlan['status'] = 'ACTIVE';
+      activeTrainingPlan['version'] =
+          ((activeTrainingPlan['version'] as num?)?.toInt() ?? 1) + 1;
+      activeTrainingPlan['publishedAt'] = nowIso;
+      if (days.isNotEmpty) {
+        activeTrainingPlan['days'] = days;
+      }
+      return activeTrainingPlan;
+    }
+
+    final existingIdx = targetList.indexWhere((p) => p['status'] == 'ACTIVE');
+    if (existingIdx >= 0) {
+      final existing = targetList[existingIdx];
+      existing['title'] = body['title'] ?? existing['title'];
+      existing['goal'] = body['goal'] ?? existing['goal'];
+      existing['version'] = ((existing['version'] as num?)?.toInt() ?? 1) + 1;
+      existing['publishedAt'] = nowIso;
+      if (days.isNotEmpty) existing['days'] = days;
+      return existing;
+    }
+
+    final created = <String, dynamic>{
+      'id': 'plan-demo-${DateTime.now().millisecondsSinceEpoch}',
+      'memberId': memberId,
+      'title': body['title'] ?? 'Giáo trình mới',
+      'goal': body['goal'],
+      'status': 'ACTIVE',
+      'version': 1,
+      'startDate': body['startDate'] ?? _vnTodayStr(),
+      'endDate': body['endDate'],
+      'publishedAt': nowIso,
+      'days': days,
+    };
+    targetList.insert(0, created);
+    return created;
+  }
+
+  Map<String, dynamic> createTrainingPlan(
+    String memberId,
+    Map<String, dynamic> body,
+  ) {
+    final days = _normalizeDays(body['days']);
+    final created = <String, dynamic>{
+      'id': 'plan-demo-${DateTime.now().millisecondsSinceEpoch}',
+      'memberId': memberId,
+      'title': body['title'] ?? 'Bản nháp giáo trình',
+      'goal': body['goal'],
+      'status': 'DRAFT',
+      'version': 1,
+      'startDate': body['startDate'] ?? _vnTodayStr(),
+      'endDate': body['endDate'],
+      'days': days,
+    };
+    coachTrainingPlans.putIfAbsent(memberId, () => []).insert(0, created);
+    return created;
+  }
+
+  Map<String, dynamic> updateTrainingPlan(
+    String planId,
+    Map<String, dynamic> body,
+  ) {
+    final plan = findTrainingPlanById(planId);
+    if (body['title'] is String) plan['title'] = body['title'];
+    if (body.containsKey('goal')) plan['goal'] = body['goal'];
+    if (body.containsKey('notes')) plan['notes'] = body['notes'];
+    if (body['days'] is List) {
+      plan['days'] = _normalizeDays(body['days']);
+    }
+    return plan;
+  }
+
+  Map<String, dynamic> publishTrainingPlan(String planId) {
+    final plan = findTrainingPlanById(planId);
+    plan['status'] = 'ACTIVE';
+    plan['publishedAt'] = DateTime.now().toUtc().toIso8601String();
+    return plan;
+  }
+
+  Map<String, dynamic> mealPlanForMember(String memberId) {
+    final existing = coachMealPlans[memberId];
+    if (existing != null) return existing;
+    return {'items': <Object?>[]};
+  }
+
+  Map<String, dynamic> saveMealPlanForMember(
+    String memberId,
+    Map<String, dynamic> body,
+  ) {
+    final foodMap = <String, Map<String, dynamic>>{
+      for (final f in nutritionFoods) f['id'].toString(): f,
+    };
+    final rawItems = (body['items'] as List? ?? const []);
+    final savedItems = rawItems.whereType<Map>().map((raw) {
+      final item = Map<String, dynamic>.from(raw);
+      final food = foodMap[item['foodId']?.toString() ?? ''];
+      return {
+        ...item,
+        'foodName': item['foodName'] ?? food?['name'] ?? 'Thực phẩm',
+        'kcalPer100g': item['kcalPer100g'] ?? food?['kcalPer100g'] ?? 100,
+      };
+    }).toList();
+    final existingId = coachMealPlans[memberId]?['id'] as String?;
+    final saved = <String, dynamic>{
+      'id': existingId ?? 'mp-demo-${DateTime.now().millisecondsSinceEpoch}',
+      'title': body['title'] ?? 'Thực đơn 7 ngày Coach thiết kế',
+      'status': 'ACTIVE',
+      'items': savedItems,
+    };
+    coachMealPlans[memberId] = saved;
+    return saved;
   }
 
   Map<String, dynamic> gymVisitMonth() => {
@@ -2870,11 +3615,19 @@ class _LocalDemoStore {
     return createAiConversation(title);
   }
 
-  Map<String, dynamic> createAiConversation(String title) {
+  Map<String, dynamic> createAiConversation(
+    String title, {
+    String ownerRole = 'MEMBER',
+  }) {
     final nowIso = DateTime.now().toIso8601String();
     final conv = <String, dynamic>{
       'id': 'ai-conv-${DateTime.now().millisecondsSinceEpoch}',
-      'title': title.isEmpty ? 'Hội thoại mới với Meta AI' : title,
+      'title': title.isEmpty
+          ? (ownerRole == 'COACH'
+                ? 'Tư vấn giáo án mới'
+                : 'Hội thoại mới với Meta AI')
+          : title,
+      'ownerRole': ownerRole,
       'createdAt': nowIso,
       'updatedAt': nowIso,
     };
@@ -2887,6 +3640,7 @@ class _LocalDemoStore {
     String convId,
     String content, {
     String? requestId,
+    bool isCoach = false,
   }) {
     final nowIso = DateTime.now().toIso8601String();
     final list = aiMessages.putIfAbsent(convId, () => []);
@@ -2899,11 +3653,37 @@ class _LocalDemoStore {
       'createdAt': nowIso,
     };
     final lower = content.toLowerCase();
-    final replyContent = lower.contains('ăn') || lower.contains('dinh dưỡng') || lower.contains('calo')
-        ? 'Gợi ý dinh dưỡng từ Meta AI (chế độ Demo Offline):\n• Mục tiêu hôm nay: 2.400 kcal · 180g Protein.\n• Trước tập 60 phút: 150g khoai lang + 120g ức gà hoặc 1 muỗng Whey + chuối.\n• Sau tập 45 phút: bổ sung ngay 30g đạm nhanh và 500ml nước lọc.'
-        : lower.contains('lịch') || lower.contains('tập') || lower.contains('ngực') || lower.contains('chân')
-        ? 'Gợi ý tập luyện từ Meta AI (chế độ Demo Offline):\n• Khởi động khớp vai & hông 8 phút.\n• Tập trung 4 hiệp chính ở mức RPE 8, nghỉ 90 giây giữa hiệp.\n• Ghi lại mức tạ sau buổi tập để theo dõi tiến độ tăng sức mạnh nhé!'
-        : 'Meta AI đã nhận câu hỏi "$content". Dựa trên hồ sơ hiện tại của bạn (72.1kg · 17.5% mỡ · mục tiêu tăng cơ nạc), hãy duy trì đều 4 buổi/tuần, giữ kỹ thuật chuẩn và đạt đủ 180g protein hôm nay nhé!';
+    final String replyContent;
+    if (isCoach) {
+      if (lower.contains('vai') || lower.contains('thay thế')) {
+        replyContent =
+            'Gợi ý thay thế bảo vệ khớp vai cho học viên:\n• **Incline Neutral-Grip DB Press**: 4×8–10 (giảm áp lực đầu xương cánh tay).\n• **Landmine Single-Arm Press**: 3×10/tay theo quỹ đạo chéo tự nhiên.\n• Lưu ý kết thúc buổi với **Face Pull** 3×15 để cân bằng vai sau.';
+      } else if (lower.contains('deload')) {
+        replyContent =
+            'Khung **Lịch Deload Tuần 5** (4 buổi/tuần):\n• Giảm **35% tổng số hiệp** (giữ 2 hiệp chính/bài), giữ tạ ở mức **70–75% 1RM**.\n• Dừng mỗi hiệp trước ngưỡng mỏi (**RIR 3–4**) để phục hồi khớp & hệ thần kinh trung ương.';
+      } else if (lower.contains('thực đơn') ||
+          lower.contains('kcal') ||
+          lower.contains('ăn') ||
+          lower.contains('dinh dưỡng')) {
+        replyContent =
+            'Gợi ý chia macro **~2.200 kcal/ngày** (175g Đạm · 230g Carb · 64g Béo):\n• **Sáng**: Yến mạch 70g + 3 quả trứng (540 kcal).\n• **Trưa**: Ức gà 200g + Cơm gạo lứt 250g + Bông cải (795 kcal).\n• **Tối**: Cá hồi 180g + Khoai lang 200g + Salad (850 kcal).';
+      } else {
+        replyContent =
+            'Trợ lý AI Coach đã ghi nhận yêu cầu "$content". Anh có thể điều chỉnh khối lượng tập ở mức **RPE 7.5–8**, ưu tiên kỹ thuật kiểm soát pha hạ 2–3 giây và theo dõi phản hồi khớp sau 48h cho học viên.';
+      }
+    } else {
+      replyContent =
+          lower.contains('ăn') ||
+              lower.contains('dinh dưỡng') ||
+              lower.contains('calo')
+          ? 'Gợi ý dinh dưỡng từ Meta AI (chế độ Demo Offline):\n• Mục tiêu hôm nay: 2.400 kcal · 180g Protein.\n• Trước tập 60 phút: 150g khoai lang + 100g ức gà hoặc 1 muỗng Whey + chuối.\n• Sau tập 45 phút: bổ sung ngay 30g đạm nhanh và 500ml nước lọc.'
+          : lower.contains('lịch') ||
+                lower.contains('tập') ||
+                lower.contains('ngực') ||
+                lower.contains('chân')
+          ? 'Gợi ý tập luyện từ Meta AI (chế độ Demo Offline):\n• Khởi động khớp vai & hông 8 phút.\n• Tập trung 4 hiệp chính ở mức RPE 8, nghỉ 90 giây giữa hiệp.\n• Ghi lại mức tạ sau buổi tập để theo dõi tiến độ tăng sức mạnh nhé!'
+          : 'Meta AI đã nhận câu hỏi "$content". Dựa trên hồ sơ hiện tại của bạn (72.1kg · 17.5% mỡ · mục tiêu tăng cơ nạc), hãy duy trì đều 4 buổi/tuần, giữ kỹ thuật chuẩn và đạt đủ 180g protein hôm nay nhé!';
+    }
     final replyId = 'ai-a-${DateTime.now().millisecondsSinceEpoch + 1}';
     final replyAt = DateTime.now()
         .add(const Duration(milliseconds: 200))
@@ -2926,6 +3706,52 @@ class _LocalDemoStore {
         'createdAt': replyAt,
       },
     };
+  }
+
+  Map<String, dynamic> findOrCreateConversation({
+    required Map<String, dynamic> currentUser,
+    String? targetMemberId,
+    String? targetCoachId,
+    String? userId,
+  }) {
+    for (final c in conversations) {
+      if (targetMemberId != null && c['memberId'] == targetMemberId) {
+        return c;
+      }
+      if (targetCoachId != null && c['coachId'] == targetCoachId) {
+        return c;
+      }
+    }
+    if (targetMemberId != null) {
+      final matchedMember = coachMembers.where(
+        (m) => m['memberId'] == targetMemberId,
+      ).firstOrNull;
+      final relId = (matchedMember?['relationshipId'] as String?) ??
+          'rel-$targetMemberId';
+      final created = <String, dynamic>{
+        'id': 'conv-$targetMemberId',
+        'relationshipId': relId,
+        'memberId': targetMemberId,
+        'coachId': currentUser['id'] ?? relationship['coachId'],
+        'memberName': matchedMember?['memberFullName'] ??
+            matchedMember?['memberName'] ??
+            'Hội viên',
+        'coachName': currentUser['fullName'] ?? 'Lê Hoàng Nam',
+        'status': 'ACTIVE',
+        'lastMessageType': null,
+        'lastMessageContent': null,
+        'lastMessageSenderId': null,
+        'lastMessageAt': null,
+        'unreadCount': 0,
+      };
+      conversations.insert(0, created);
+      directMessages.putIfAbsent(relId, () => []);
+      return created;
+    }
+    return conversations.firstWhere(
+      (c) => userId == null || c['memberId'] == userId || c['coachId'] == userId,
+      orElse: () => conversations.first,
+    );
   }
 
   List<Map<String, dynamic>> messagesForConversation(String key) {
@@ -2973,9 +3799,10 @@ class _LocalDemoStore {
     final peerId = senderId == targetConv['memberId']
         ? targetConv['coachId'] as String
         : targetConv['memberId'] as String;
+    final memberName = (targetConv['memberName'] as String?)?.trim() ?? 'Em';
     final autoReplyText = senderId == targetConv['memberId']
         ? 'Coach Nam đã nhận tin nhắn "$content". Hẹn gặp bạn đúng giờ tại Meta Gym nhé!'
-        : 'Dạ em đã nhận thông tin từ Coach Nam ạ!';
+        : 'Dạ $memberName đã nhận thông tin từ Coach Nam ạ!';
     final replyAt = DateTime.now()
         .add(const Duration(milliseconds: 300))
         .toIso8601String();
@@ -3000,17 +3827,40 @@ class _LocalDemoStore {
     final now = DateTime.now();
     final callerId = currentUser['id'] as String;
     final isCoachCaller = currentUser['role'] == 'COACH';
+    final relId = (body['relationshipId'] as String?) ??
+        (relationship['id'] as String);
+    final matchedConv = conversations.where(
+      (c) => c['relationshipId'] == relId || c['id'] == relId,
+    ).firstOrNull;
+    final matchedCoachMember = coachMembers.where(
+      (m) => m['relationshipId'] == relId || m['id'] == relId,
+    ).firstOrNull;
+
     final memberAcc = findAccount(LocalDemoAccounts.memberEmail)!;
     final coachAcc = findAccount(LocalDemoAccounts.coachEmail)!;
-    final receiver = isCoachCaller ? memberAcc : coachAcc;
+    final String receiverId;
+    final String receiverName;
+    if (isCoachCaller) {
+      receiverId = (matchedConv?['memberId'] as String?) ??
+          (matchedCoachMember?['memberId'] as String?) ??
+          (memberAcc['id'] as String);
+      receiverName = (matchedConv?['memberName'] as String?) ??
+          (matchedCoachMember?['memberFullName'] as String?) ??
+          (memberAcc['fullName'] as String);
+    } else {
+      receiverId = (matchedConv?['coachId'] as String?) ??
+          (coachAcc['id'] as String);
+      receiverName = (matchedConv?['coachName'] as String?) ??
+          (coachAcc['fullName'] as String);
+    }
     final call = <String, dynamic>{
       'id': 'call-${now.millisecondsSinceEpoch}',
-      'relationshipId': body['relationshipId'] ?? relationship['id'],
+      'relationshipId': relId,
       'callerId': callerId,
-      'receiverId': receiver['id'],
+      'receiverId': receiverId,
       'callerName': currentUser['fullName'],
-      'receiverName': receiver['fullName'],
-      'callType': body['callType'] ?? 'AUDIO',
+      'receiverName': receiverName,
+      'callType': body['callType'] ?? 'VOICE',
       'status': 'RINGING',
       'initiatedAt': now.toIso8601String(),
       'durationSeconds': 0,
@@ -3081,8 +3931,12 @@ class _LocalDemoStore {
     'earlyTerminationRequests': earlyTerminationRequests,
     'coachWorkSlots': coachWorkSlots,
     'coachEntitlements': coachEntitlements,
+    'coachPackages': coachPackages,
+    'coachBlockedSlots': coachBlockedSlots,
     'coachBookings': coachBookings,
     'coachNotifications': coachNotifications,
+    'coachTrainingPlans': coachTrainingPlans,
+    'coachMealPlans': coachMealPlans,
     'calls': calls,
   };
 
@@ -3108,6 +3962,14 @@ class _LocalDemoStore {
           k.toString(),
           (v as List).map((e) => Map<String, dynamic>.from(e as Map)).toList(),
         ),
+      );
+    }
+
+    Map<String, Map<String, dynamic>>? readNestedMap(String key) {
+      final raw = json[key];
+      if (raw is! Map) return null;
+      return raw.map(
+        (k, v) => MapEntry(k.toString(), Map<String, dynamic>.from(v as Map)),
       );
     }
 
@@ -3145,9 +4007,15 @@ class _LocalDemoStore {
       coachWorkSlots: readMap('coachWorkSlots') ?? base.coachWorkSlots,
       coachEntitlements:
           readList('coachEntitlements') ?? base.coachEntitlements,
+      coachPackages: readList('coachPackages') ?? base.coachPackages,
+      coachBlockedSlots:
+          readList('coachBlockedSlots') ?? base.coachBlockedSlots,
       coachBookings: readList('coachBookings') ?? base.coachBookings,
       coachNotifications:
           readList('coachNotifications') ?? base.coachNotifications,
+      coachTrainingPlans:
+          readMapList('coachTrainingPlans') ?? base.coachTrainingPlans,
+      coachMealPlans: readNestedMap('coachMealPlans') ?? base.coachMealPlans,
       calls: readList('calls') ?? base.calls,
     );
   }

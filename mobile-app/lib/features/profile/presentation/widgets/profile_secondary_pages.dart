@@ -1,16 +1,31 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' show FontFeature, ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/coach/presentation/coach_schedule_management_pages.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/profile_shared_widgets.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Trang Hồ sơ chuyên môn dành cho Huấn luyện viên (đồng bộ Core Design System).
+/// Trang **6.2 Chuyên môn & Bằng cấp Coach** (`CoachProfileDetailPage`)
+/// đồng bộ bản preview `workspace.js` (`coach-pro-profile`), layout & hệ thẻ của Member:
+/// - Nền [MetaGymBackground] Spatial Light Ribbons (`bg_app_dark.webp` / `bg_app_light.webp`)
+/// - Card 1 ([MetaGymHeroGlassCard] Warm Smoked Glass): Huy hiệu xác thực + tóm tắt uy tín + 3 ô chỉ số [MetaGymMetricPanel]
+/// - Card 2 ([MetaGymGlassCard] `solid: false`): Họ tên, SĐT & Giới thiệu bản thân (Bio)
+/// - Card 3 ([MetaGymGlassCard] `solid: false`): Chuyên môn nổi bật (chip `ProfileFilterPill`) & Chứng chỉ / Bằng cấp
+/// - Card 4 ([MetaGymGlassCard] `solid: false`): Kinh nghiệm (`tabularFigures` + thanh tiến độ + Slider) & Khung giờ dạy
+/// - Thanh CTA đáy `.bottom-cta-dock`: `Lưu hồ sơ Huấn luyện viên`.
 class CoachProfileDetailPage extends StatefulWidget {
   const CoachProfileDetailPage({
     required this.biography,
@@ -19,6 +34,11 @@ class CoachProfileDetailPage extends StatefulWidget {
     required this.experienceYears,
     required this.availabilityNote,
     required this.onSave,
+    this.initialFullName,
+    this.initialPhone,
+    this.email,
+    this.onSaveProfilePatch,
+    this.onShowToast,
     super.key,
   });
 
@@ -35,12 +55,39 @@ class CoachProfileDetailPage extends StatefulWidget {
     String avail,
   )
   onSave;
+  final String? initialFullName;
+  final String? initialPhone;
+  final String? email;
+  final Future<bool> Function(Map<String, Object?> patch)? onSaveProfilePatch;
+  final void Function(String message, {bool isError})? onShowToast;
 
   @override
   State<CoachProfileDetailPage> createState() => _CoachProfileDetailPageState();
 }
 
 class _CoachProfileDetailPageState extends State<CoachProfileDetailPage> {
+  static const List<String> _presetSpecialties = <String>[
+    'Hypertrophy',
+    'Sức mạnh',
+    'Giảm mỡ',
+    'Giảm mỡ bền vững',
+    'Phục hồi vận động',
+    'Powerbuilding',
+    'Mobility',
+  ];
+
+  static const List<String> _availabilityPresets = <String>[
+    'Thứ 2 – Thứ 7 · 06:00 – 20:00',
+    'Thứ 2 – Thứ 6 · 14:00 – 21:00',
+    'Cuối tuần T7 – CN · 07:30 – 18:00',
+  ];
+
+  late final TextEditingController _nameCtrl = TextEditingController(
+    text: widget.initialFullName ?? '',
+  );
+  late final TextEditingController _phoneCtrl = TextEditingController(
+    text: widget.initialPhone ?? '',
+  );
   late final TextEditingController _bioCtrl = TextEditingController(
     text: widget.biography,
   );
@@ -56,8 +103,15 @@ class _CoachProfileDetailPageState extends State<CoachProfileDetailPage> {
   late int _years = widget.experienceYears;
   bool _isSaving = false;
 
+  bool get _showContactFields =>
+      widget.initialFullName != null ||
+      widget.initialPhone != null ||
+      widget.onSaveProfilePatch != null;
+
   @override
   void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     _bioCtrl.dispose();
     _specsCtrl.dispose();
     _qualCtrl.dispose();
@@ -65,14 +119,76 @@ class _CoachProfileDetailPageState extends State<CoachProfileDetailPage> {
     super.dispose();
   }
 
+  List<String> _parseSpecialties(String raw) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final part in raw.split(',')) {
+      final trimmed = part.trim();
+      if (trimmed.isEmpty) continue;
+      final normalized = trimmed.toLowerCase();
+      if (seen.add(normalized)) {
+        result.add(trimmed);
+      }
+      if (result.length >= 20) break;
+    }
+    return result;
+  }
+
+  bool _hasSpecialty(String tag) {
+    final target = tag.trim().toLowerCase();
+    return _parseSpecialties(_specsCtrl.text)
+        .any((item) => item.toLowerCase() == target);
+  }
+
+  void _toggleSpecialty(String tag) {
+    final target = tag.trim().toLowerCase();
+    final current = _parseSpecialties(_specsCtrl.text);
+    final exists = current.any((item) => item.toLowerCase() == target);
+    if (exists) {
+      current.removeWhere((item) => item.toLowerCase() == target);
+    } else if (current.length < 20) {
+      current.add(tag.trim());
+    }
+    setState(() {
+      _specsCtrl.text = current.join(', ');
+    });
+  }
+
+  List<String> get _allSpecialtyChips {
+    final seen = <String>{};
+    final chips = <String>[];
+    for (final item in [
+      ..._presetSpecialties,
+      ..._parseSpecialties(_specsCtrl.text),
+    ]) {
+      final lower = item.toLowerCase();
+      if (seen.add(lower)) {
+        chips.add(item);
+      }
+    }
+    return chips;
+  }
+
   Future<void> _handleSave() async {
+    if (_showContactFields) {
+      final trimmedName = _nameCtrl.text.trim();
+      if (trimmedName.length < 2) {
+        final notify = widget.onShowToast;
+        if (notify != null) {
+          notify('Họ và tên cần ít nhất 2 ký tự', isError: true);
+        } else {
+          showProfileToast(
+            context,
+            'Họ và tên cần ít nhất 2 ký tự',
+            isError: true,
+          );
+        }
+        return;
+      }
+    }
+
     setState(() => _isSaving = true);
-    final parsedSpecs = _specsCtrl.text
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .take(20)
-        .toList();
+    final parsedSpecs = _parseSpecialties(_specsCtrl.text);
     final nextBio = _bioCtrl.text.trim().isNotEmpty
         ? _bioCtrl.text.trim()
         : widget.biography;
@@ -84,13 +200,23 @@ class _CoachProfileDetailPageState extends State<CoachProfileDetailPage> {
         : widget.availabilityNote;
     final nextSpecs = parsedSpecs.isNotEmpty ? parsedSpecs : widget.specialties;
 
-    final ok = await widget.onSave(
-      nextBio,
-      nextSpecs,
-      nextQual,
-      _years,
-      nextAvail,
-    );
+    bool ok;
+    if (widget.onSaveProfilePatch != null) {
+      ok = await widget.onSaveProfilePatch!({
+        if (_showContactFields) ...{
+          'fullName': _nameCtrl.text.trim(),
+          'phone': _phoneCtrl.text.trim(),
+        },
+        'biography': nextBio,
+        'specialties': nextSpecs,
+        'qualifications': nextQual,
+        'experienceYears': _years,
+        'availabilityNote': nextAvail,
+      });
+    } else {
+      ok = await widget.onSave(nextBio, nextSpecs, nextQual, _years, nextAvail);
+    }
+
     if (!mounted) return;
     setState(() => _isSaving = false);
     if (ok) {
@@ -101,84 +227,485 @@ class _CoachProfileDetailPageState extends State<CoachProfileDetailPage> {
   @override
   Widget build(BuildContext context) {
     final colors = MetaGymColors.of(context);
+    final activeSpecs = _parseSpecialties(_specsCtrl.text);
+    final qualSummary = _qualCtrl.text.trim().isNotEmpty
+        ? _qualCtrl.text.trim()
+        : 'Chứng chỉ Huấn luyện viên cá nhân';
+    final yearRatio = (_years / 10).clamp(0.06, 1.0).toDouble();
+
     return ProfileSubPageScaffold(
       eyebrow: 'Hồ sơ Huấn luyện viên',
       title: 'Chuyên môn & Lịch dạy',
-      body: MetaGymGlassCard(
-        solid: false,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ProfileLabeledTextField(
-              controller: _bioCtrl,
-              label: 'Giới thiệu bản thân (Bio)',
-              maxLines: 3,
-            ),
-            const SizedBox(height: 14),
-            ProfileLabeledTextField(
-              controller: _specsCtrl,
-              label: 'Chuyên môn (phân tách bằng dấu phẩy)',
-              maxLines: 2,
-            ),
-            const SizedBox(height: 14),
-            ProfileLabeledTextField(
-              controller: _qualCtrl,
-              label: 'Chứng chỉ / Bằng cấp',
-              maxLines: 2,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Card 1: Hero Chứng chỉ & Uy tín (Warm Smoked Glass khớp preview 6.2 & Member Hero)
+          MetaGymHeroGlassCard(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Số năm kinh nghiệm',
-                  style: TextStyle(
-                    color: colors.textSecondary,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const _QuickIconWell(
+                      svgAsset: MetaGymIcons.coachAchievement,
+                      size: 46,
+                      iconSize: MetaGymIconSize.md,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Hồ sơ công khai với Hội viên',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                flex: 0,
+                                child: _StatusPill(
+                                  label: '● Đã xác thực',
+                                  accentColor: colors.success,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '$qualSummary · $_years năm KN',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colors.textWarmMuted,
+                              fontSize: 12,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '$_years năm',
-                  style: TextStyle(
-                    color: colors.primaryText,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                const SizedBox(height: 12),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: MetaGymMetricPanel(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 9,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '$_years năm',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Kinh nghiệm',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: MetaGymMetricPanel(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 9,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${activeSpecs.length} mục',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Chuyên môn',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: MetaGymMetricPanel(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 9,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '90 phút',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Mỗi ca dạy',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: MetaGymTheme.brandOrange,
-                inactiveTrackColor: colors.border,
-                thumbColor: MetaGymTheme.brandOrange,
-                overlayColor: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
-              ),
-              child: Slider(
-                value: _years.toDouble().clamp(0, 40),
-                min: 0,
-                max: 40,
-                divisions: 40,
-                onChanged: (v) => setState(() => _years = v.round()),
-              ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card 2: Liên hệ & Giới thiệu bản thân (kiểu thẻ Member PersonalInfo)
+          MetaGymGlassCard(
+            solid: false,
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const MetaGymIcon(
+                      MetaGymIcons.settingPersonalInfo,
+                      size: MetaGymIconSize.sm,
+                      excludeFromSemantics: true,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        _showContactFields
+                            ? 'Thông tin liên hệ & Giới thiệu'
+                            : 'Giới thiệu bản thân',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_showContactFields) ...[
+                  ProfileLabeledTextField(
+                    key: const Key('coach-pro-name-field'),
+                    controller: _nameCtrl,
+                    label: 'Họ và tên',
+                    hintText: 'Nhập họ và tên Coach',
+                    leadingSvg: MetaGymIcons.settingPersonalInfo,
+                    onChanged: (value) {
+                      if (value.trim().length >= 2) {
+                        ScaffoldMessenger.maybeOf(context)
+                            ?.hideCurrentSnackBar();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  ProfileLabeledTextField(
+                    key: const Key('coach-pro-phone-field'),
+                    controller: _phoneCtrl,
+                    label: 'Số điện thoại',
+                    hintText: '0912 345 678',
+                    leadingSvg: MetaGymIcons.callAudioBadge,
+                    keyboardType: TextInputType.phone,
+                    tabularFigures: true,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                ProfileLabeledTextField(
+                  key: const Key('coach-pro-bio-field'),
+                  controller: _bioCtrl,
+                  label: 'Giới thiệu bản thân (Bio)',
+                  hintText: 'Mô tả thế mạnh và kinh nghiệm huấn luyện...',
+                  minLines: 3,
+                  maxLines: 4,
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            ProfileLabeledTextField(
-              controller: _availCtrl,
-              label: 'Khung giờ dạy & Lưu ý lịch',
-              maxLines: 2,
+          ),
+          const SizedBox(height: 12),
+
+          // Card 3: Chuyên môn nổi bật & Chứng chỉ (kiểu Member TrainingProfile chips + field)
+          MetaGymGlassCard(
+            solid: false,
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const MetaGymIcon(
+                      MetaGymIcons.coachAchievement,
+                      size: MetaGymIconSize.sm,
+                      excludeFromSemantics: true,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'Chuyên môn & Bằng cấp',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Chuyên môn nổi bật',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final tag in _allSpecialtyChips)
+                      ProfileFilterPill(
+                        label: tag,
+                        compact: true,
+                        selected: _hasSpecialty(tag),
+                        onTap: () => _toggleSpecialty(tag),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ProfileLabeledTextField(
+                  key: const Key('coach-pro-specialties-field'),
+                  controller: _specsCtrl,
+                  label: 'Chuyên môn (phân tách bằng dấu phẩy)',
+                  hintText: 'Hypertrophy, Sức mạnh, Giảm mỡ...',
+                  maxLines: 2,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                ProfileLabeledTextField(
+                  key: const Key('coach-pro-qual-field'),
+                  controller: _qualCtrl,
+                  label: 'Chứng chỉ / Bằng cấp',
+                  hintText: 'VD: NASM-CPT · Precision Nutrition Level 1',
+                  leadingSvg: MetaGymIcons.outcomeConsentBadge,
+                  maxLines: 2,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+
+          // Card 4: Kinh nghiệm & Khung giờ dạy
+          MetaGymGlassCard(
+            solid: false,
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const MetaGymIcon(
+                      MetaGymIcons.actionCoachWorkweek,
+                      size: MetaGymIconSize.sm,
+                      excludeFromSemantics: true,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'Số năm kinh nghiệm',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _StatusPill(
+                      key: const Key('coach-pro-years-pill'),
+                      label: '$_years năm',
+                      accentColor: MetaGymTheme.brandOrange,
+                      tabularFigures: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusFull),
+                  child: LinearProgressIndicator(
+                    value: yearRatio,
+                    minHeight: 6,
+                    backgroundColor: colors.metricPanelBg,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      MetaGymTheme.brandOrange,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: MetaGymTheme.brandOrange,
+                    inactiveTrackColor: colors.metricPanelBorder,
+                    thumbColor: MetaGymTheme.brandOrange,
+                    overlayColor: MetaGymTheme.brandOrange.withValues(
+                      alpha: 0.16,
+                    ),
+                  ),
+                  child: Slider(
+                    key: const Key('coach-pro-years-slider'),
+                    value: _years.toDouble().clamp(0, 40),
+                    min: 0,
+                    max: 40,
+                    divisions: 40,
+                    onChanged: (v) => setState(() => _years = v.round()),
+                  ),
+                ),
+                _buildWarmDivider(colors),
+                const SizedBox(height: 12),
+                ProfileLabeledTextField(
+                  key: const Key('coach-pro-avail-field'),
+                  controller: _availCtrl,
+                  label: 'Khung giờ dạy & Lưu ý lịch',
+                  hintText: 'VD: Thứ 2 – Thứ 7 · 06:00 – 20:00',
+                  leadingSvg: MetaGymIcons.workoutPlanCalendar,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final preset in _availabilityPresets)
+                      ProfileFilterPill(
+                        label: preset,
+                        compact: true,
+                        selected: _availCtrl.text.trim() == preset,
+                        onTap: () => setState(() => _availCtrl.text = preset),
+                      ),
+                  ],
+                ),
+                _buildWarmDivider(colors),
+                const SizedBox(height: 12),
+                Text(
+                  'Liên kết nhanh lịch dạy',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _CoachScheduleShortcutChip(
+                      key: const Key('coach-pro-open-sessions'),
+                      label: 'Lịch dạy & Buổi hẹn',
+                      svgAsset: MetaGymIcons.actionCoachSessions,
+                      onTap: _openCoachSessions,
+                    ),
+                    _CoachScheduleShortcutChip(
+                      key: const Key('coach-pro-open-workweek'),
+                      label: 'Lịch làm việc tuần',
+                      svgAsset: MetaGymIcons.actionCoachWorkweek,
+                      onTap: _openCoachWorkWeek,
+                    ),
+                    _CoachScheduleShortcutChip(
+                      key: const Key('coach-pro-open-blocks'),
+                      label: 'Chặn khung giờ bận',
+                      svgAsset: MetaGymIcons.actionCoachBlockSlot,
+                      onTap: _openCoachBlockedSlots,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       bottomBar: SizedBox(
         width: double.infinity,
         height: 48,
         child: FilledButton(
+          key: const Key('coach-pro-save-btn'),
           style: FilledButton.styleFrom(
             backgroundColor: MetaGymTheme.brandOrange,
             foregroundColor: MetaGymTheme.onPrimary,
@@ -189,7 +716,118 @@ class _CoachProfileDetailPageState extends State<CoachProfileDetailPage> {
           onPressed: _isSaving ? null : _handleSave,
           child: Text(
             _isSaving ? 'Đang lưu...' : 'Lưu hồ sơ Huấn luyện viên',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
+  }
+
+  T? _readOpt<T>() {
+    try {
+      return context.read<T?>();
+    } on ProviderNotFoundException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _openCoachSessions() {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.push<void>('/coach/features/sessions');
+      return;
+    }
+    final api = _readOpt<ApiClient>();
+    final coachId = _readOpt<SessionController>()?.user?.id;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => CoachSessionsPage(coachId: coachId, apiClient: api),
+      ),
+    );
+  }
+
+  void _openCoachWorkWeek() {
+    final api = _readOpt<ApiClient>();
+    final coachId = _readOpt<SessionController>()?.user?.id;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => CoachWorkWeekPage(coachId: coachId, apiClient: api),
+      ),
+    );
+  }
+
+  void _openCoachBlockedSlots() {
+    final api = _readOpt<ApiClient>();
+    final coachId = _readOpt<SessionController>()?.user?.id;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => CoachBlockedSlotsPage(coachId: coachId, apiClient: api),
+      ),
+    );
+  }
+}
+
+class _CoachScheduleShortcutChip extends StatelessWidget {
+  const _CoachScheduleShortcutChip({
+    required this.label,
+    required this.svgAsset,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final String svgAsset;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    return MetaGymTap(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+          decoration: BoxDecoration(
+            color: colors.metricPanelBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: MetaGymTheme.brandOrange.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MetaGymIcon(
+                svgAsset,
+                size: MetaGymIconSize.xs,
+                excludeFromSemantics: true,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: colors.textWarmMuted,
+              ),
+            ],
           ),
         ),
       ),
@@ -260,6 +898,9 @@ class _SecurityAccountDetailPageState extends State<SecurityAccountDetailPage> {
   late bool _biometricLoginEnabled = widget.initialBiometricLoginEnabled;
   late bool _biometricPaymentEnabled = widget.initialBiometricPaymentEnabled;
   _BiometricMethod _biometricMethod = _BiometricMethod.faceId;
+
+  bool get _isCoachAccount =>
+      widget.roleLabel.toLowerCase().contains('huấn luyện');
 
   @override
   void dispose() {
@@ -383,7 +1024,7 @@ class _SecurityAccountDetailPageState extends State<SecurityAccountDetailPage> {
     final isActive = widget.status.trim().toUpperCase() == 'ACTIVE';
     final displayEmail = widget.email.trim().isNotEmpty
         ? widget.email.trim()
-        : 'member@metagym.vn';
+        : (_isCoachAccount ? 'coach@metagym.vn' : 'member@metagym.vn');
 
     return ProfileSubPageScaffold(
       eyebrow: 'Tài khoản & Thiết bị',
@@ -488,15 +1129,23 @@ class _SecurityAccountDetailPageState extends State<SecurityAccountDetailPage> {
                 _buildWarmDivider(colors),
                 _SettingToggleRow(
                   switchKey: const Key('security-bio-payment-toggle'),
-                  title: 'Xác thực khi thanh toán',
-                  subtitle: 'Yêu cầu sinh trắc học khi mua hoặc nâng cấp gói',
+                  title: _isCoachAccount
+                      ? 'Xác thực thao tác tài khoản'
+                      : 'Xác thực khi thanh toán',
+                  subtitle: _isCoachAccount
+                      ? 'Yêu cầu sinh trắc học khi thay đổi mật khẩu hoặc hồ sơ Coach'
+                      : 'Yêu cầu sinh trắc học khi mua hoặc nâng cấp gói',
                   value: _biometricPaymentEnabled,
                   onChanged: (next) {
                     setState(() => _biometricPaymentEnabled = next);
                     widget.onShowToast(
                       next
-                          ? 'Đã bật xác thực sinh trắc học khi thanh toán'
-                          : 'Đã tắt xác thực sinh trắc học khi thanh toán',
+                          ? (_isCoachAccount
+                                ? 'Đã bật xác thực sinh trắc học cho thao tác Coach'
+                                : 'Đã bật xác thực sinh trắc học khi thanh toán')
+                          : (_isCoachAccount
+                                ? 'Đã tắt xác thực sinh trắc học cho thao tác Coach'
+                                : 'Đã tắt xác thực sinh trắc học khi thanh toán'),
                     );
                   },
                 ),
@@ -1004,6 +1653,7 @@ class AppSettingsDetailPage extends StatefulWidget {
     required this.reminderTime,
     required this.onSave,
     this.initialReduceBlur = false,
+    this.onReduceBlurChanged,
     this.onThemeModeChanged,
     super.key,
   });
@@ -1013,6 +1663,7 @@ class AppSettingsDetailPage extends StatefulWidget {
   final String reminderTime;
   final void Function(String unit, bool reminderEnabled, String time) onSave;
   final bool initialReduceBlur;
+  final ValueChanged<bool>? onReduceBlurChanged;
   final ValueChanged<ThemeMode>? onThemeModeChanged;
 
   @override
@@ -1279,7 +1930,10 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
                         title: 'Giảm hiệu ứng mờ (Pin yếu)',
                         subtitle: 'Chuyển sang bề mặt đặc mượt hơn',
                         value: _reduceBlur,
-                        onChanged: (v) => setState(() => _reduceBlur = v),
+                        onChanged: (v) {
+                          setState(() => _reduceBlur = v);
+                          widget.onReduceBlurChanged?.call(v);
+                        },
                       ),
                     ],
                   ),
@@ -1329,9 +1983,14 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
 /// - Thanh CTA đáy `.bottom-cta-dock`: `Liên hệ hỗ trợ ngay` (`setting_support_headset.svg`)
 ///   mở Level 3 Overlay Glass modal chọn Chat CSKH / Gọi Hotline 1900 6868 / Gửi Email CSKH.
 class SupportInfoDetailPage extends StatelessWidget {
-  const SupportInfoDetailPage({required this.onShowToast, super.key});
+  const SupportInfoDetailPage({
+    required this.onShowToast,
+    this.isCoach = false,
+    super.key,
+  });
 
   final void Function(String message) onShowToast;
+  final bool isCoach;
 
   Future<void> _openSupportModal(BuildContext context) async {
     final action = await _showSupportContactDialog(context);
@@ -1354,8 +2013,10 @@ class SupportInfoDetailPage extends StatelessWidget {
               Uri(
                 scheme: 'mailto',
                 path: 'cskh@metagym.vn',
-                queryParameters: const <String, String>{
-                  'subject': 'Hỗ trợ Hội viên Meta Gym',
+                queryParameters: <String, String>{
+                  'subject': isCoach
+                      ? 'Hỗ trợ Huấn luyện viên Meta Gym'
+                      : 'Hỗ trợ Hội viên Meta Gym',
                 },
               ),
             );
@@ -1836,7 +2497,9 @@ Widget _wrapOverlayGlassDialog({
     ),
   );
 
-  if (disableAnimations || MetaGymTheme.isFlutterTestEnvironment) {
+  if (disableAnimations ||
+      MetaGymSurfacePreferences.reduceBlurOf(context) ||
+      MetaGymTheme.isFlutterTestEnvironment) {
     return panel;
   }
   return BackdropFilter(

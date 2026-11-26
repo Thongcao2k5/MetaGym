@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
@@ -17,6 +19,7 @@ void main() {
     final sessions = _SessionsFixture();
     await tester.pumpWidget(
       MaterialApp(
+        theme: MetaGymTheme.dark,
         home: CoachSessionsPage(
           service: sessions,
           membersService: _MembersFixture(),
@@ -48,6 +51,7 @@ void main() {
       final sessions = _SessionsFixture(seed: true);
       await tester.pumpWidget(
         MaterialApp(
+          theme: MetaGymTheme.dark,
           home: CoachSessionsPage(
             service: sessions,
             membersService: _MembersFixture(),
@@ -56,6 +60,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Buổi cũ'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chỉnh sửa buổi tập'));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('session-end')),
@@ -67,9 +73,9 @@ void main() {
       expect(sessions.updated, isNull);
       await tester.tap(find.byTooltip('Quay lại'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Hủy buổi'));
+      await tester.tap(find.byKey(const Key('session-action-cancel')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Xác nhận hủy'));
+      await tester.tap(find.text('Xác nhận hủy ca'));
       await tester.pumpAndSettle();
       expect(find.text('Vui lòng nhập lý do hủy.'), findsOneWidget);
       expect(sessions.updated, isNull);
@@ -80,6 +86,7 @@ void main() {
     final sessions = _SessionsFixture(seed: true);
     await tester.pumpWidget(
       MaterialApp(
+        theme: MetaGymTheme.dark,
         home: CoachSessionsPage(
           service: sessions,
           membersService: _MembersFixture(),
@@ -87,7 +94,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Hoàn thành'));
+    await tester.tap(find.byKey(const Key('session-action-complete')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Xác nhận'));
     await tester.pumpAndSettle();
@@ -100,6 +107,7 @@ void main() {
       final sessions = _SessionsFixture(seed: true);
       await tester.pumpWidget(
         MaterialApp(
+          theme: MetaGymTheme.dark,
           home: CoachSessionsPage(
             service: sessions,
             membersService: _MembersFixture(),
@@ -107,13 +115,13 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Hủy buổi'));
+      await tester.tap(find.byKey(const Key('session-action-cancel')));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('session-cancellation-reason')),
         'Bận đột xuất',
       );
-      await tester.tap(find.text('Xác nhận hủy'));
+      await tester.tap(find.text('Xác nhận hủy ca'));
       await tester.pumpAndSettle();
       expect(sessions.updated?['cancellationReason'], 'Bận đột xuất');
       expect(tester.takeException(), isNull);
@@ -121,18 +129,16 @@ void main() {
   );
 
   testWidgets(
-    'renders Graphite tabs and coachBooking hero without overflow at 375x812',
+    'renders 4 preview status tabs, schedule banner & coachBooking fallback without overflow at 375x812',
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      addTearDown(tester.view.reset);
 
       final sessions = _SessionsFixture(seed: true);
       await tester.pumpWidget(
         MaterialApp(
+          theme: MetaGymTheme.dark,
           home: CoachSessionsPage(
             service: sessions,
             membersService: _MembersFixture(),
@@ -142,17 +148,21 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Quản lý buổi tập'), findsOneWidget);
-      expect(find.text('Quản lý lịch làm việc Coach'), findsOneWidget);
+      expect(find.text('Lịch dạy'), findsOneWidget);
+      expect(find.text('Lịch làm việc hằng tuần'), findsOneWidget);
+      expect(find.text('Hôm nay'), findsOneWidget);
+      expect(find.text('Sắp tới'), findsOneWidget);
+      expect(find.text('Đã xong'), findsOneWidget);
+      expect(find.text('Đã hủy'), findsOneWidget);
       expect(find.text('Buổi cũ'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.text('Lịch sử'));
+      await tester.tap(find.byKey(const Key('sessions-tab-done')));
       await tester.pumpAndSettle();
-      expect(find.text('Không có buổi tập ở mục này.'), findsOneWidget);
+      expect(find.text('Chưa có ca dạy đã hoàn thành.'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.text('Tất cả'));
+      await tester.tap(find.byKey(const Key('sessions-tab-today')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Quản lý lịch làm việc Coach'));
       await tester.pumpAndSettle();
@@ -166,14 +176,12 @@ void main() {
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      addTearDown(tester.view.reset);
 
       final sessions = _SessionsFixture(seed: true);
       await tester.pumpWidget(
         MaterialApp(
+          theme: MetaGymTheme.dark,
           home: CoachSessionsPage(
             service: sessions,
             membersService: _MembersFixture(),
@@ -183,12 +191,59 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final subtitleFinder = find.text('Buổi tập 1:1 & điểm danh');
-      expect(find.text('Quản lý buổi tập'), findsOneWidget);
+      final subtitleFinder = find.text('Quản lý ca 1:1 & điểm danh');
+      expect(find.text('Lịch dạy'), findsOneWidget);
       expect(subtitleFinder, findsOneWidget);
       final renderParagraph = tester.renderObject<RenderParagraph>(subtitleFinder);
       expect(renderParagraph.didExceedMaxLines, isFalse);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'places Tạo buổi tập FAB strictly above MetaGymBottomNav when embedded in extendBody Scaffold',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.dark,
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(390, 844),
+              padding: EdgeInsets.only(top: 44, bottom: 24),
+              viewPadding: EdgeInsets.only(top: 44, bottom: 24),
+            ),
+            child: Builder(
+              builder: (context) => Scaffold(
+                extendBody: true,
+                body: CoachSessionsPage(
+                  service: _SessionsFixture(seed: true),
+                  membersService: _MembersFixture(),
+                  bottomPadding: MetaGymBottomNav.contentBottomPadding(context),
+                ),
+                bottomNavigationBar: MetaGymBottomNav(
+                  currentIndex: 1,
+                  warmGlass: true,
+                  secondTabLabel: 'Lịch dạy',
+                  onTap: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fabRect = tester.getRect(find.byType(FloatingActionButton));
+      final navRect = tester.getRect(find.byType(MetaGymBottomNav));
+      expect(fabRect.bottom, lessThanOrEqualTo(navRect.top));
+
+      await tester.tap(find.text('Tạo buổi tập'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('session-title')), findsOneWidget);
     },
   );
 }

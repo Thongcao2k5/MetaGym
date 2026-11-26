@@ -1,3 +1,5 @@
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
+
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -46,6 +48,7 @@ class _TerminationReasonDialogState extends State<TerminationReasonDialog> {
     final radius = BorderRadius.circular(MetaGymTheme.radiusGlassDock);
     final enableBlur =
         !isLight &&
+        !MetaGymSurfacePreferences.reduceBlurOf(context) &&
         !disableAnimations &&
         !MetaGymTheme.isFlutterTestEnvironment;
 

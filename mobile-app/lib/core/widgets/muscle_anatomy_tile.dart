@@ -238,6 +238,8 @@ class MuscleAnatomyTile extends StatelessWidget {
     final targets = _resolvedTargets;
     final hasFocus = targets.isNotEmpty;
     final radius = width <= 48 ? 11.0 : 14.0;
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
     return Opacity(
       opacity: isUpcoming ? 1.0 : 0.72,
       child: Container(
@@ -245,10 +247,12 @@ class MuscleAnatomyTile extends StatelessWidget {
         height: height,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1B2230), Color(0xFF12161F)],
+            colors: isLight
+                ? [colors.surfaceRaised, colors.surface]
+                : const [Color(0xFF1B2230), Color(0xFF12161F)],
           ),
           borderRadius: BorderRadius.circular(radius),
           border: Border.all(
@@ -257,6 +261,8 @@ class MuscleAnatomyTile extends StatelessWidget {
                 ? MetaGymTheme.brandOrange
                 : hasFocus && isUpcoming
                 ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+                : isLight
+                ? colors.borderStrong
                 : const Color(0xFF2B3547),
           ),
           boxShadow: (selected || isUpcoming)
@@ -264,6 +270,8 @@ class MuscleAnatomyTile extends StatelessWidget {
                   BoxShadow(
                     color: selected
                         ? MetaGymTheme.brandOrange.withValues(alpha: 0.24)
+                        : isLight
+                        ? colors.border
                         : const Color(0x59000000),
                     blurRadius: selected ? 14 : 12,
                     offset: const Offset(0, 5),

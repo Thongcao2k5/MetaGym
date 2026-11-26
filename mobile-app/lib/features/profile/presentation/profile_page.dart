@@ -12,12 +12,20 @@ import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/calls/presentation/calls_page.dart';
+import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
+import 'package:meta_gym_app/features/coach/presentation/coach_schedule_management_pages.dart';
+import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_health_declaration_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
+import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_controller.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/personal_info_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/profile_secondary_pages.dart';
@@ -25,15 +33,20 @@ import 'package:meta_gym_app/features/profile/presentation/widgets/profile_share
 import 'package:meta_gym_app/features/profile/presentation/widgets/training_profile_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_history_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/theme_controller.dart';
 
-/// Màn hình **5.1 Hồ sơ** đồng bộ bản preview `tab5-profile.js` (`member-profile`),
+/// Màn hình **5.1 Hồ sơ (Member)** & **6.1 Hồ sơ Huấn luyện viên (Coach)**
+/// đồng bộ `tab5-profile.js` / `workspace.js` (`coach-profile`),
 /// `DESIGN.md` và Lõi Design System Dark + Light:
-/// - Nền [MetaGymBackground] + [MetaGymBrandHeader]
+/// - Nền [MetaGymBackground] Spatial Light Ribbons (`bg_app_dark.webp` / `bg_app_light.webp`) + [MetaGymBrandHeader]
 /// - Hero Profile Card ([MetaGymHeroGlassCard] Warm Glass): Avatar 60px + camera badge,
 ///   vai trò, trạng thái hoạt động, email (`comm_email.svg`), SĐT (`call_audio_badge.svg`)
-/// - 3 nhóm accordion solid Level 1 (quy tắc 80/20): `Cá nhân & thể trạng`,
-///   `Tập luyện & dịch vụ`, `Tài khoản & hỗ trợ`
+/// - 3 nhóm accordion card kiểu Member (`ProfileAccordionCard` / `MetaGymGlassCard(solid: false)`)
 /// - Thẻ Đăng xuất + Modal Level 3 Overlay Glass xác nhận đăng xuất.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({this.bottomPadding, this.coachMode, super.key});
@@ -90,12 +103,22 @@ class _ProfilePageState extends State<ProfilePage> {
   String _qualifications = 'CPT NASM · Chứng chỉ Dinh dưỡng Thể thao';
   int _experienceYears = 4;
   String _availabilityNote = 'Thứ 2 – Thứ 7 · 06:00 – 20:00';
+  int? _activeMemberCount;
+
+  bool get _isCoach => _role == UserRole.coach || (widget.coachMode ?? false);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!MetaGymTheme.isFlutterTestEnvironment) {
-      precacheImage(MetaGymBackground.bannerAsset, context).catchError((_) {});
+      precacheImage(
+        MetaGymBackground.darkAppBackgroundAsset,
+        context,
+      ).catchError((_) {});
+      precacheImage(
+        MetaGymBackground.lightAppBackgroundAsset,
+        context,
+      ).catchError((_) {});
     }
     if (_initialized) return;
     _initialized = true;
@@ -103,14 +126,31 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = context.read<SessionController?>()?.user;
     if (user != null) {
       _syncFromUser(user);
+    } else if (widget.coachMode == true) {
+      _role = UserRole.coach;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _reloadProfile();
         _loadSavedAvatar();
         _loadLatestWeight();
+        _loadCoachActiveMemberCount();
       }
     });
+  }
+
+  Future<void> _loadCoachActiveMemberCount() async {
+    if (!_isCoach) return;
+    try {
+      final membersService = context.read<CoachMembersService?>();
+      if (membersService == null) return;
+      final members = await membersService.getMembers();
+      if (!mounted) return;
+      final activeCount = members.where((m) => m.status == 'ACTIVE').length;
+      setState(() => _activeMemberCount = activeCount);
+    } catch (_) {
+      // Giữ null nếu không có CoachMembersService trong scope.
+    }
   }
 
   String get _avatarStorageKey {
@@ -323,7 +363,9 @@ class _ProfilePageState extends State<ProfilePage> {
   void _syncFromUser(AuthUser user) {
     _fullName = user.fullName.trim().isNotEmpty
         ? user.fullName.trim()
-        : 'Hội viên Meta Gym';
+        : (user.role == UserRole.coach
+              ? 'Huấn luyện viên Meta Gym'
+              : 'Hội viên Meta Gym');
     _email = user.email.trim();
     _phone = user.phone?.trim() ?? '';
     _role = user.role;
@@ -455,9 +497,14 @@ class _ProfilePageState extends State<ProfilePage> {
     if (sessionUser != null && _email.isEmpty) {
       _syncFromUser(sessionUser);
     }
+    final isCoachView = _isCoach;
     final isBusy = context.watch<ProfileController?>()?.isBusy ?? false;
     final effectiveBottomPadding =
         widget.bottomPadding ?? MetaGymBottomNav.contentBottomPadding(context);
+
+    final personalRows = _buildPersonalSectionRows(isCoachView);
+    final activityRows = _buildActivityServiceRows(isCoachView);
+    final accountRows = _buildAccountSupportRows(isCoachView);
 
     return Material(
       color: colors.canvas,
@@ -481,15 +528,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   const SizedBox(height: 6),
                   MetaGymBrandHeader(
-                    eyebrow: (widget.coachMode ?? (_role == UserRole.coach))
-                        ? 'META GYM · COACH'
-                        : 'META GYM',
-                    title: (widget.coachMode ?? (_role == UserRole.coach))
-                        ? 'Hồ sơ cá nhân'
-                        : 'Hồ sơ',
-                    subtitle: (widget.coachMode ?? (_role == UserRole.coach))
+                    eyebrow: isCoachView ? 'META GYM · COACH' : 'META GYM',
+                    title: isCoachView ? 'Hồ sơ cá nhân' : 'Hồ sơ',
+                    subtitle: isCoachView
                         ? 'Tài khoản & thiết lập huấn luyện viên'
                         : null,
+                    inlineSubtitle: isCoachView,
                     actions: [
                       if (isBusy)
                         const Padding(
@@ -505,98 +549,52 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                     ],
                   ),
-                  SizedBox(
-                    height: (widget.coachMode ?? (_role == UserRole.coach))
-                        ? 12
-                        : 14,
-                  ),
+                  SizedBox(height: isCoachView ? 12 : 14),
 
-                  // 1. Hero Profile Card (Level 2 Warm Smoked-Glass khớp preview 5.1)
+                  // 1. Hero Profile Card (Level 2 Warm Smoked-Glass khớp preview 5.1 & 6.1)
                   _buildHeroProfileCard(colors),
                   const SizedBox(height: 14),
 
-                  // 2. Ba nhóm Accordion Solid Level 1 (80/20 rule) khớp tab5-profile.js
+                  // 2. Ba nhóm Accordion kiểu thẻ của Member (Warm Smoked Card) khớp 5.1 & 6.1
                   ProfileAccordionCard(
-                    title: 'Cá nhân & thể trạng',
+                    title: isCoachView
+                        ? 'Cá nhân & chuyên môn'
+                        : 'Cá nhân & thể trạng',
                     svgIcon: MetaGymIcons.settingPersonalInfo,
-                    count: _role == UserRole.member ? 3 : 2,
+                    count: personalRows.length,
                     expanded: _expandedCategory == 0,
                     onToggle: () => _toggleCategory(0),
-                    children: [
-                      ProfileAccordionRow(
-                        title: 'Thông tin cá nhân',
-                        onTap: _openPersonalInfoPage,
-                      ),
-                      ProfileAccordionRow(
-                        title: _role == UserRole.coach
-                            ? 'Hồ sơ chuyên môn'
-                            : 'Thể trạng & Mục tiêu',
-                        onTap: _role == UserRole.coach
-                            ? _openCoachProfilePage
-                            : _openTrainingProfilePage,
-                      ),
-                      if (_role == UserRole.member)
-                        ProfileAccordionRow(
-                          title: 'Khai báo thể trạng cho Coach',
-                          onTap: () async {
-                            final saved = await Navigator.of(context)
-                                .push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const MemberHealthDeclarationPage(),
-                                  ),
-                                );
-                            if (saved == true && mounted) {
-                              await _reloadProfile();
-                            }
-                          },
-                        ),
-                    ],
+                    children: personalRows,
                   ),
                   const SizedBox(height: 12),
 
                   ProfileAccordionCard(
-                    title: 'Tập luyện & dịch vụ',
-                    svgIcon: MetaGymIcons.equipDumbbell,
-                    count: 3,
+                    title: isCoachView
+                        ? 'Công việc & giảng dạy'
+                        : 'Tập luyện & dịch vụ',
+                    svgIcon: isCoachView
+                        ? MetaGymIcons.coachAchievement
+                        : MetaGymIcons.equipDumbbell,
+                    count: activityRows.length,
                     expanded: _expandedCategory == 1,
                     onToggle: () => _toggleCategory(1),
-                    children: _buildActivityServiceRows(),
+                    children: activityRows,
                   ),
                   const SizedBox(height: 12),
 
                   ProfileAccordionCard(
-                    title: 'Tài khoản & hỗ trợ',
+                    title: isCoachView
+                        ? 'Tài khoản & bảo mật'
+                        : 'Tài khoản & hỗ trợ',
                     svgIcon: MetaGymIcons.settingSecurityShield,
-                    count: 5,
+                    count: accountRows.length,
                     expanded: _expandedCategory == 2,
                     onToggle: () => _toggleCategory(2),
-                    children: [
-                      ProfileAccordionRow(
-                        title: 'Thông báo',
-                        onTap: _openCoachNotifications,
-                      ),
-                      ProfileAccordionRow(
-                        title: 'Bảo mật & Tài khoản',
-                        onTap: _openSecurityAccountPage,
-                      ),
-                      ProfileAccordionRow(
-                        title: 'Quyền riêng tư & Chia sẻ',
-                        onTap: _openPrivacySettingsPage,
-                      ),
-                      ProfileAccordionRow(
-                        title: 'Cài đặt ứng dụng',
-                        onTap: _openAppSettingsPage,
-                      ),
-                      ProfileAccordionRow(
-                        title: 'Phòng tập & Hỗ trợ',
-                        onTap: _openSupportInfoPage,
-                      ),
-                    ],
+                    children: accountRows,
                   ),
                   const SizedBox(height: 16),
 
-                  // 3. Thẻ Đăng xuất khớp preview 5.1
+                  // 3. Thẻ Đăng xuất khớp preview 5.1 & 6.1
                   _buildSignOutCard(colors),
                   const SizedBox(height: 14),
 
@@ -613,13 +611,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildHeroProfileCard(MetaGymColors colors) {
-    final isCoach = _role == UserRole.coach;
+    final isCoachHero = _isCoach;
     final isActive = _status == 'ACTIVE';
+    final displayRole = isCoachHero ? 'Huấn luyện viên' : _roleLabel;
+    final statusText = isCoachHero
+        ? (isActive ? '● Đang nhận lịch' : '● Tạm ngưng nhận lịch')
+        : (isActive ? '● Đang hoạt động' : '● Chờ kích hoạt');
+
     return MetaGymHeroGlassCard(
       padding: EdgeInsets.zero,
       child: MetaGymTap(
         key: const Key('profile-hero-card'),
-        onTap: _openPersonalInfoPage,
+        onTap: isCoachHero ? _openCoachProfilePage : _openPersonalInfoPage,
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
         child: Padding(
           padding: const EdgeInsets.all(15),
@@ -641,10 +644,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: isCoach
+                          color: isCoachHero
                               ? MetaGymTheme.coachAvatarBackground
                               : null,
-                          gradient: isCoach
+                          gradient: isCoachHero
                               ? null
                               : const LinearGradient(
                                   begin: Alignment.topLeft,
@@ -656,7 +659,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isCoach
+                            color: isCoachHero
                                 ? MetaGymTheme.coachAvatarBackground
                                 : const Color(0x80FFE2D9),
                           ),
@@ -673,7 +676,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ? Text(
                                 _initials,
                                 style: TextStyle(
-                                  color: isCoach
+                                  color: isCoachHero
                                       ? MetaGymTheme.coachAvatarForeground
                                       : MetaGymTheme.onPrimary,
                                   fontSize: 19,
@@ -724,7 +727,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _fullName.isEmpty ? 'Hội viên Meta Gym' : _fullName,
+                      _fullName.isEmpty
+                          ? (isCoachHero
+                                ? 'Huấn luyện viên Meta Gym'
+                                : 'Hội viên Meta Gym')
+                          : _fullName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -741,14 +748,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
-                          _roleLabel,
+                          displayRole,
                           style: TextStyle(
                             color: colors.textSecondary,
                             fontSize: 11.5,
                           ),
                         ),
                         Text(
-                          isActive ? '● Đang hoạt động' : '● Chờ kích hoạt',
+                          statusText,
                           style: TextStyle(
                             color: isActive ? colors.success : colors.warning,
                             fontSize: 11.5,
@@ -950,20 +957,142 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  List<Widget> _buildActivityServiceRows() {
-    if (_role == UserRole.coach) {
+  List<Widget> _buildPersonalSectionRows(bool isCoach) {
+    if (isCoach) {
+      return [
+        ProfileAccordionRow(
+          title: 'Chuyên môn, Bằng cấp & Liên hệ',
+          trailingBadge: _experienceYears > 0 ? '$_experienceYears năm' : null,
+          onTap: _openCoachProfilePage,
+        ),
+      ];
+    }
+    return [
+      ProfileAccordionRow(
+        title: 'Thông tin cá nhân',
+        onTap: _openPersonalInfoPage,
+      ),
+      ProfileAccordionRow(
+        title: 'Thể trạng & Mục tiêu',
+        onTap: _openTrainingProfilePage,
+      ),
+      ProfileAccordionRow(
+        title: 'Khai báo thể trạng cho Coach',
+        onTap: () async {
+          final saved = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(
+              builder: (_) => const MemberHealthDeclarationPage(),
+            ),
+          );
+          if (saved == true && mounted) {
+            await _reloadProfile();
+          }
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _buildActivityServiceRows(bool isCoach) {
+    if (isCoach) {
+      final currentUserId =
+          context.read<SessionController?>()?.user?.id ?? 'coach';
       return [
         ProfileAccordionRow(
           title: 'Hội viên đang phụ trách',
-          onTap: () => _navigateOrPushWidget(route: '/coach/features/members'),
+          trailingBadge: _activeMemberCount != null
+              ? '$_activeMemberCount/8'
+              : null,
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/members',
+            fallbackPage: const CoachMembersPage(),
+          ),
         ),
         ProfileAccordionRow(
-          title: 'Lịch dạy & giáo trình',
-          onTap: () => _navigateOrPushWidget(route: '/coach/features/sessions'),
+          title: 'Lịch dạy & buổi hẹn',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/sessions',
+            fallbackPage: CoachSessionsPage(coachId: currentUserId),
+          ),
         ),
         ProfileAccordionRow(
-          title: 'Giáo án & Dinh dưỡng',
-          onTap: () => _navigateOrPushWidget(route: '/coach/features/training'),
+          title: 'Lịch làm việc cố định (Tuần)',
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => CoachWorkWeekPage(coachId: currentUserId),
+            ),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Chặn khung giờ bận',
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => CoachBlockedSlotsPage(coachId: currentUserId),
+            ),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Giáo án tập luyện',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/training',
+            fallbackPage: const CoachTrainingPage(),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Thực đơn 7 ngày',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/nutrition',
+            fallbackPage: const CoachNutritionPage(structured: true),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Lịch sử buổi dạy',
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => const CoachBookingHistoryPage(coachMode: true),
+            ),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Gói PT & Bảng giá',
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => CoachOffersPage(coachId: currentUserId),
+            ),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Tin nhắn học viên',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/messages',
+            fallbackPage: ConversationsPage(
+              currentUserId: currentUserId,
+              coachMode: true,
+            ),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Cuộc gọi 1:1 học viên',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/calls',
+            fallbackPage: CallsPage(
+              currentUserId: currentUserId,
+              coachMode: true,
+            ),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Trợ lý AI Coach',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/ai',
+            fallbackPage: const AiConversationsPage(coachMode: true),
+          ),
+        ),
+        ProfileAccordionRow(
+          title: 'Phòng gym & Thiết bị',
+          onTap: () => _navigateOrPushWidget(
+            route: '/coach/features/gym',
+            fallbackPage: const GymEquipmentPage(),
+          ),
         ),
       ];
     }
@@ -988,6 +1117,48 @@ class _ProfilePageState extends State<ProfilePage> {
           route: '/member/features/membership',
           fallbackPage: const MembershipPage(),
         ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildAccountSupportRows(bool isCoach) {
+    if (isCoach) {
+      return [
+        ProfileAccordionRow(
+          title: 'Thông báo Coach',
+          onTap: _openCoachNotifications,
+        ),
+        ProfileAccordionRow(
+          title: 'Bảo mật & Đổi mật khẩu',
+          onTap: _openSecurityAccountPage,
+        ),
+        ProfileAccordionRow(
+          title: 'Cài đặt ứng dụng',
+          onTap: _openAppSettingsPage,
+        ),
+        ProfileAccordionRow(
+          title: 'Phòng tập & Hỗ trợ',
+          onTap: _openSupportInfoPage,
+        ),
+      ];
+    }
+    return [
+      ProfileAccordionRow(title: 'Thông báo', onTap: _openCoachNotifications),
+      ProfileAccordionRow(
+        title: 'Bảo mật & Tài khoản',
+        onTap: _openSecurityAccountPage,
+      ),
+      ProfileAccordionRow(
+        title: 'Quyền riêng tư & Chia sẻ',
+        onTap: _openPrivacySettingsPage,
+      ),
+      ProfileAccordionRow(
+        title: 'Cài đặt ứng dụng',
+        onTap: _openAppSettingsPage,
+      ),
+      ProfileAccordionRow(
+        title: 'Phòng tập & Hỗ trợ',
+        onTap: _openSupportInfoPage,
       ),
     ];
   }
@@ -1033,7 +1204,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _openCoachNotifications() {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
+      MaterialPageRoute(
+        builder: (_) => CoachNotificationsPage(coachMode: _isCoach),
+      ),
     );
   }
 
@@ -1127,14 +1300,41 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openCoachProfilePage() async {
-    await Navigator.of(context).push<bool>(
+    final updated = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CoachProfileDetailPage(
+          initialFullName: _fullName,
+          initialPhone: _phone,
+          email: _email,
           biography: _biography,
           specialties: _specialties,
           qualifications: _qualifications,
           experienceYears: _experienceYears,
           availabilityNote: _availabilityNote,
+          onShowToast: _showToast,
+          onSaveProfilePatch: (patch) async {
+            setState(() {
+              _fullName = patch['fullName'] as String? ?? _fullName;
+              _phone = patch['phone'] as String? ?? _phone;
+              _biography = patch['biography'] as String? ?? _biography;
+              final nextSpecs = patch['specialties'];
+              if (nextSpecs is List<String>) {
+                _specialties = nextSpecs;
+              }
+              _qualifications =
+                  patch['qualifications'] as String? ?? _qualifications;
+              final nextYears = patch['experienceYears'];
+              if (nextYears is int) {
+                _experienceYears = nextYears;
+              }
+              _availabilityNote =
+                  patch['availabilityNote'] as String? ?? _availabilityNote;
+            });
+            return _persistPatch(
+              patch,
+              successMessage: 'Đã lưu hồ sơ chuyên môn huấn luyện viên',
+            );
+          },
           onSave: (bio, specs, qual, years, avail) async {
             setState(() {
               _biography = bio;
@@ -1154,15 +1354,19 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+    if (updated == true && mounted) {
+      _reloadProfile();
+    }
   }
 
   Future<void> _openSecurityAccountPage() async {
+    final effectiveRoleLabel = _isCoach ? 'Huấn luyện viên' : _roleLabel;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => SecurityAccountDetailPage(
           email: _email,
           status: _status,
-          roleLabel: _roleLabel,
+          roleLabel: effectiveRoleLabel,
           onChangePassword: (oldPass, newPass) async {
             final controller = context.read<ProfileController?>();
             if (controller == null) return false;
@@ -1211,6 +1415,10 @@ class _ProfilePageState extends State<ProfilePage> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => AppSettingsDetailPage(
+          onThemeModeChanged: context.read<ThemeController?>()?.setMode,
+          initialReduceBlur:
+              context.read<ThemeController?>()?.reduceBlur ?? false,
+          onReduceBlurChanged: context.read<ThemeController?>()?.setReduceBlur,
           unitSystem: _unitSystem,
           workoutReminderEnabled: _workoutReminderEnabled,
           reminderTime: _reminderTime,
@@ -1230,17 +1438,20 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _openSupportInfoPage() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) => SupportInfoDetailPage(onShowToast: _showToast),
+        builder: (_) =>
+            SupportInfoDetailPage(onShowToast: _showToast, isCoach: _isCoach),
       ),
     );
   }
 
   Future<void> _confirmSignOut() async {
+    final effectiveRoleLabel = _isCoach ? 'Huấn luyện viên' : _roleLabel;
     final confirmed = await showProfileSignOutDialog(
       context,
       fullName: _fullName,
       email: _email,
-      roleLabel: _roleLabel,
+      roleLabel: effectiveRoleLabel,
+      isCoach: _isCoach,
     );
     if (confirmed == true && mounted) {
       try {
