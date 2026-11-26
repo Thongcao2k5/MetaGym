@@ -78,6 +78,7 @@ class MetaGymIcon extends StatelessWidget {
     final normalized = assetPath.replaceAll('\\', '/');
     return normalized.endsWith('/nav_ai_on_primary.svg') ||
         normalized.contains('/backgrounds/') ||
+        normalized.contains('/muscles/') ||
         normalized.contains('/brand/pay_') ||
         normalized.contains('/brand/auth_') ||
         normalized.contains('/brand/flag_') ||
