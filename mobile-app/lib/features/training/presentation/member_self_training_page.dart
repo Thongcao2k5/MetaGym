@@ -421,7 +421,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.darkCanvas,
+    backgroundColor: MetaGymTheme.paletteOf(context).canvas,
     extendBodyBehindAppBar: true,
     appBar: AppBar(
       backgroundColor: Colors.transparent,

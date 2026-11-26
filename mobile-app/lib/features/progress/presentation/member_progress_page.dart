@@ -122,7 +122,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
     final canPop = Navigator.of(context).canPop();
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,

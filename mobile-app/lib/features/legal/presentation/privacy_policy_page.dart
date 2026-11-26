@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_auth_background.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình Chính sách bảo mật — đồng bộ 1:1 với `auth-privacy-policy` trong HTML Preview.
@@ -26,7 +25,7 @@ class PrivacyPolicyPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const Positioned.fill(child: MetaGymAuthBackground()),
+          const Positioned.fill(child: MetaGymBackground()),
           SafeArea(
             child: Column(
               children: [

@@ -82,7 +82,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
         )
         .toList();
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _exerciseAppBar(context, 'Thư viện bài tập'),
       body: Stack(
@@ -366,7 +366,7 @@ class ExerciseDetailPage extends StatelessWidget {
         item.usageSteps.isNotEmpty ||
         item.safetyNotes?.isNotEmpty == true;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _exerciseAppBar(context, item.name, isDetail: true),
       body: Stack(

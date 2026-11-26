@@ -154,7 +154,7 @@ class _MembershipPageState extends State<MembershipPage> {
         controller.plans.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

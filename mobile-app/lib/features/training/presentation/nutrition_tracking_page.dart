@@ -1390,7 +1390,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     final mealGroups = _buildMealGroups(entries, items, plan);
     final showLogButton = !_loading && _error == null && canWrite;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -1938,7 +1938,7 @@ class _EntryFormState extends State<_EntryForm> {
     ];
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,

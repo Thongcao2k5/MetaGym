@@ -183,7 +183,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.scaffoldBackground,
+    backgroundColor: MetaGymTheme.paletteOf(context).canvas,
     extendBodyBehindAppBar: true,
     appBar: AppBar(
       automaticallyImplyLeading: false,

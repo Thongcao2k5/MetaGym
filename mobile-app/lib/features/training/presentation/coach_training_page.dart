@@ -62,7 +62,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         extendBodyBehindAppBar: true,
         appBar: _buildCoachDarkAppBar(
           context,
@@ -286,7 +286,7 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         extendBodyBehindAppBar: true,
         appBar: _buildCoachDarkAppBar(
           context,

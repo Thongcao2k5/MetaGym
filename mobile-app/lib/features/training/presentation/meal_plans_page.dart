@@ -260,7 +260,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,

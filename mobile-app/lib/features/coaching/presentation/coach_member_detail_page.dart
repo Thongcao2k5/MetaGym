@@ -238,7 +238,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
             member.injuryNotes?.isNotEmpty == true);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leadingWidth: canPop ? 72 : null,

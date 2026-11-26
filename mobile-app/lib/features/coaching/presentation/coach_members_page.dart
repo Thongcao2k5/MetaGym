@@ -118,7 +118,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
     final pendingTerminations = _requests.where((item) => item.isOpen).length;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leadingWidth: canPop ? 72 : null,

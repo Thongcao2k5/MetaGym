@@ -301,7 +301,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
         : null;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

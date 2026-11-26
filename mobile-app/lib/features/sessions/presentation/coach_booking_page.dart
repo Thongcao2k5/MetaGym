@@ -492,7 +492,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
             (_isCoach || pastBookings.isNotEmpty));
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

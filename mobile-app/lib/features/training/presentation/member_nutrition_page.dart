@@ -71,7 +71,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
     }
     final canPop = Navigator.of(context).canPop();
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,

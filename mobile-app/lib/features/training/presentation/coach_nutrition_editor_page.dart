@@ -218,7 +218,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           automaticallyImplyLeading: false,

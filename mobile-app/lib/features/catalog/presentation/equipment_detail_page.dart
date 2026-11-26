@@ -49,7 +49,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
   Widget build(BuildContext context) {
     final item = _equipment;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         toolbarHeight: 76,

@@ -4,6 +4,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:livekit_client/livekit_client.dart' as rtc;
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -86,7 +87,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
   bool get _video => _call.callType == 'VIDEO';
   bool get _incoming => _call.receiverId == widget.currentUserId;
   bool get _connected =>
-      _simulatedConnected || _room.connectionState == rtc.ConnectionState.connected;
+      _simulatedConnected ||
+      _room.connectionState == rtc.ConnectionState.connected;
   bool get _reconnecting =>
       _room.connectionState == rtc.ConnectionState.reconnecting;
 
@@ -439,7 +441,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
     return PopScope(
       canPop: _call.isFinished,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         body: _video ? _buildVideoLayout(context) : _buildAudioLayout(context),
       ),
     );
@@ -452,7 +454,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        const _CallBackdrop(),
+        const MetaGymBackground(),
         SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -656,7 +658,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
           Stack(
             fit: StackFit.expand,
             children: [
-              const _CallBackdrop(),
+              const MetaGymBackground(),
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1018,33 +1020,6 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 }
 
-class _CallBackdrop extends StatelessWidget {
-  const _CallBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        color: MetaGymTheme.darkCanvas,
-        gradient: RadialGradient(
-          center: Alignment(0.75, -0.75),
-          radius: 1.1,
-          colors: [Color(0x1FA9C7E8), Color(0xFF0F1115)],
-        ),
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(-0.85, 0.85),
-            radius: 0.95,
-            colors: [Color(0x14FF5E36), Colors.transparent],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _CallModeChip extends StatelessWidget {
   const _CallModeChip({required this.icon, required this.label});
 
@@ -1135,9 +1110,7 @@ class _AudioGridButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = active
-        ? MetaGymTheme.textPrimary
-        : const Color(0xC42B2622);
+    final bgColor = active ? MetaGymTheme.textPrimary : const Color(0xC42B2622);
     final fgColor = active
         ? const Color(0xFF090B0E)
         : enabled
@@ -1159,9 +1132,7 @@ class _AudioGridButton extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: bgColor,
                 border: Border.all(
-                  color: active
-                      ? Colors.transparent
-                      : const Color(0xA3A79D92),
+                  color: active ? Colors.transparent : const Color(0xA3A79D92),
                 ),
               ),
               child: Icon(icon, size: 26, color: fgColor),
@@ -1172,9 +1143,7 @@ class _AudioGridButton extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: enabled
-                ? const Color(0xFFC8C2BC)
-                : const Color(0xFF9C948D),
+            color: enabled ? const Color(0xFFC8C2BC) : const Color(0xFF9C948D),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),

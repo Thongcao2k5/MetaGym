@@ -129,7 +129,7 @@ class _MemberPhotoPageState extends State<MemberPhotoPage> {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildPhotoAppBar(context, 'Ảnh tiến trình'),
       floatingActionButton: FloatingActionButton.extended(
@@ -374,7 +374,7 @@ class _PhotoFormPageState extends State<_PhotoFormPage> {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildPhotoAppBar(context, 'Thêm ảnh tiến trình'),
       body: Stack(
@@ -546,7 +546,7 @@ class _PhotoDetailPageState extends State<_PhotoDetailPage> {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildPhotoAppBar(context, 'Xem ảnh tiến trình'),
       body: Stack(

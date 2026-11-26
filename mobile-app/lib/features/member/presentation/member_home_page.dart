@@ -43,7 +43,7 @@ class _MemberHomePageState extends State<MemberHomePage> {
     return RepaintBoundary(
       child: Scaffold(
         extendBody: true,
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         body: IndexedStack(index: _index, children: pages),
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,

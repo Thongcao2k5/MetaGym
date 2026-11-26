@@ -18,66 +18,6 @@ import 'package:meta_gym_app/features/messaging/presentation/chat_message_image.
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
 
-const AssetImage _messagingGymBgAsset = AssetImage(
-  'assets/images/gym_banner.png',
-);
-
-/// Nền ảnh phòng gym + dual ambient glow + scrim nhẹ đồng bộ với Trang chủ.
-class _MessagingGymBackground extends StatelessWidget {
-  const _MessagingGymBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image(
-              image: _messagingGymBgAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) =>
-                  const ColoredBox(color: MetaGymTheme.darkCanvas),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.85, -0.75),
-                  radius: 0.9,
-                  colors: [Color(0x2E8EB9E5), Colors.transparent],
-                ),
-              ),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.85, 0.75),
-                  radius: 0.8,
-                  colors: [Color(0x24FF5A36), Colors.transparent],
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x73080A0D),
-                    Color(0x38080A0D),
-                    Color(0x8C080A0D),
-                  ],
-                  stops: [0.0, 0.48, 1.0],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Thẻ Kính Smoked Dark đồng bộ với Member Home (tránh bóng nhựa).
 Widget _buildLiquidGlassCard({
   required Widget child,
@@ -879,7 +819,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
       color: MetaGymTheme.darkCanvas,
       child: Stack(
         children: [
-          const _MessagingGymBackground(),
+          const Positioned.fill(child: MetaGymBackground()),
           SafeArea(
             bottom: false,
             child: RefreshIndicator(
@@ -2423,10 +2363,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         widget.conversation.initialsFor(widget.currentUserId);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         children: [
-          const _MessagingGymBackground(),
+          const Positioned.fill(child: MetaGymBackground()),
           Column(
             children: [
               _buildGlassAppBar(context, title, initials),

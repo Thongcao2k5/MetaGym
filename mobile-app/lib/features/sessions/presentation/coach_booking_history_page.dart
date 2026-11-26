@@ -27,7 +27,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
     final cancelledCount = bookings.length - completedCount;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

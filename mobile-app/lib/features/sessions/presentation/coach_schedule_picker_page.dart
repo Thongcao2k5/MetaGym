@@ -996,7 +996,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
         : shifts.where((s) => s.isOpen).length;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

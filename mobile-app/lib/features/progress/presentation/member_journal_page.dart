@@ -574,7 +574,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         !_loading;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

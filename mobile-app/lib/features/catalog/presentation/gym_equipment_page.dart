@@ -87,7 +87,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
         .where((item) => _category == null || item.category == _category)
         .toList();
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,

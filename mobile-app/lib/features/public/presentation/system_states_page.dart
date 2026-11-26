@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_auth_background.dart';
 import 'package:meta_gym_app/core/widgets/system_state_modals.dart';
 
 /// Catalogue available from the debug login tools, using the product dialogs.
@@ -48,10 +47,10 @@ class SystemStatesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.darkCanvas,
+    backgroundColor: MetaGymTheme.paletteOf(context).canvas,
     body: Stack(
       children: [
-        const Positioned.fill(child: MetaGymAuthBackground()),
+        const Positioned.fill(child: MetaGymBackground()),
         SafeArea(
           child: Column(
             children: [

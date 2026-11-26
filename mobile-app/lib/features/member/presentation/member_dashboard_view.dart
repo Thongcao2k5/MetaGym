@@ -49,10 +49,6 @@ class MemberDashboardView extends StatefulWidget {
 }
 
 class _MemberDashboardViewState extends State<MemberDashboardView> {
-  static const AssetImage _gymBannerAsset = AssetImage(
-    'assets/images/gym_banner.png',
-  );
-
   bool _initialized = false;
   bool _isLoading = true;
   String? _loadError;
@@ -69,7 +65,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!MetaGymTheme.isFlutterTestEnvironment) {
-      precacheImage(_gymBannerAsset, context).catchError((_) {});
+      precacheImage(
+        MetaGymBackground.assetFor(context),
+        context,
+      ).catchError((_) {});
     }
     if (!_initialized) {
       _initialized = true;

@@ -79,7 +79,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
     final data = _data;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -675,7 +675,7 @@ class _GymQrScannerState extends State<_GymQrScanner> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.scaffoldBackground,
+    backgroundColor: MetaGymTheme.paletteOf(context).canvas,
     appBar: AppBar(
       title: const Text('Quét mã tại quầy'),
       backgroundColor: const Color(0xFF211E1C),

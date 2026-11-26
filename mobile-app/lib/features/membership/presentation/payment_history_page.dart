@@ -217,7 +217,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     final coachBento = _resolveCoachBentoState(now, latestCoachInvoice);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

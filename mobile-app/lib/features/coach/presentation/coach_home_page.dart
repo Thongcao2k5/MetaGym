@@ -84,10 +84,6 @@ class CoachHomePage extends StatefulWidget {
 }
 
 class _CoachHomePageState extends State<CoachHomePage> {
-  static const AssetImage _gymBannerAsset = AssetImage(
-    'assets/images/gym_banner.png',
-  );
-
   int _index = 0;
   int _workHubInitialTab = 0;
   final Set<int> _visitedTabs = {0};
@@ -102,7 +98,10 @@ class _CoachHomePageState extends State<CoachHomePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!MetaGymTheme.isFlutterTestEnvironment) {
-      precacheImage(_gymBannerAsset, context).catchError((_) {});
+      precacheImage(
+        MetaGymBackground.assetFor(context),
+        context,
+      ).catchError((_) {});
     }
     if (!_initialized) {
       _initialized = true;
@@ -754,7 +753,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
     return RepaintBoundary(
       child: Scaffold(
         extendBody: true,
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         body: IndexedStack(index: _index, children: pages),
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,

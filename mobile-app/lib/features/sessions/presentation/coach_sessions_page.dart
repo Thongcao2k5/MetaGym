@@ -544,7 +544,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
         _members.any((m) => m.status == 'ACTIVE');
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       floatingActionButton: !canCreate
           ? null
           : FloatingActionButton.extended(
@@ -986,7 +986,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
   Widget build(BuildContext context) {
     final isCreate = widget.session == null;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

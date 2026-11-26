@@ -88,7 +88,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,

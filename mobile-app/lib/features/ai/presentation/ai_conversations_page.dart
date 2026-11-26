@@ -308,7 +308,7 @@ class _AiConversationsPageState extends State<AiConversationsPage> {
     final isCoachHeader = _resolveCoachHeader(context);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

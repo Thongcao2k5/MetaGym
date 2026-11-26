@@ -306,11 +306,11 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [
-            const _TrainingBackground(),
+            const MetaGymBackground(),
             SafeArea(
               bottom: false,
               child: RefreshIndicator(
@@ -541,59 +541,6 @@ String? _extractInitials(String? name) {
   }
   final word = parts.first;
   return word.substring(0, word.length >= 2 ? 2 : 1).toUpperCase();
-}
-
-/// Same ambient photo, dual-tone radial glow and dark scrim as Member Home.
-class _TrainingBackground extends StatelessWidget {
-  const _TrainingBackground();
-
-  @override
-  Widget build(BuildContext context) => const IgnorePointer(
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        Image(
-          image: AssetImage('assets/images/gym_banner.png'),
-          fit: BoxFit.cover,
-          errorBuilder: _backgroundFallback,
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0.85, -0.75),
-              radius: 0.9,
-              colors: [Color(0x2E8EB9E5), Colors.transparent],
-            ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(-0.85, 0.75),
-              radius: 0.8,
-              colors: [Color(0x24FF5A36), Colors.transparent],
-            ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0x9E0F1115), Color(0x900F1115), Color(0xAA0F1115)],
-              stops: [0, 0.48, 1],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  static Widget _backgroundFallback(
-    BuildContext context,
-    Object error,
-    StackTrace? stackTrace,
-  ) => const ColoredBox(color: MetaGymTheme.darkCanvas);
 }
 
 class _TrainingHeader extends StatelessWidget {
@@ -1807,19 +1754,33 @@ class _WeeklySelfPlanCard extends StatelessWidget {
           const SizedBox(height: 10),
           const Row(
             children: [
-              Expanded(child: _DayChip(label: 'T2✓', state: _DayState.done)),
+              Expanded(
+                child: _DayChip(label: 'T2✓', state: _DayState.done),
+              ),
               SizedBox(width: 5),
-              Expanded(child: _DayChip(label: 'T3✓', state: _DayState.done)),
+              Expanded(
+                child: _DayChip(label: 'T3✓', state: _DayState.done),
+              ),
               SizedBox(width: 5),
-              Expanded(child: _DayChip(label: 'T4', state: _DayState.today)),
+              Expanded(
+                child: _DayChip(label: 'T4', state: _DayState.today),
+              ),
               SizedBox(width: 5),
-              Expanded(child: _DayChip(label: 'T5', state: _DayState.upcoming)),
+              Expanded(
+                child: _DayChip(label: 'T5', state: _DayState.upcoming),
+              ),
               SizedBox(width: 5),
-              Expanded(child: _DayChip(label: 'T6', state: _DayState.upcoming)),
+              Expanded(
+                child: _DayChip(label: 'T6', state: _DayState.upcoming),
+              ),
               SizedBox(width: 5),
-              Expanded(child: _DayChip(label: 'T7', state: _DayState.upcoming)),
+              Expanded(
+                child: _DayChip(label: 'T7', state: _DayState.upcoming),
+              ),
               SizedBox(width: 5),
-              Expanded(child: _DayChip(label: 'CN', state: _DayState.rest)),
+              Expanded(
+                child: _DayChip(label: 'CN', state: _DayState.rest),
+              ),
             ],
           ),
         ],

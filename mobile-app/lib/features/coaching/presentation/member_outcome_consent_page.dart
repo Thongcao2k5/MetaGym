@@ -149,7 +149,7 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [

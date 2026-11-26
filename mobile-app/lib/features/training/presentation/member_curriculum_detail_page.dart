@@ -151,7 +151,7 @@ class _MemberCurriculumDetailPageState
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: MetaGymTheme.paletteOf(context).canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [

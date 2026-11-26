@@ -178,7 +178,7 @@ class _CallsPageState extends State<CallsPage> {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildCallsAppBar(context, 'Lịch sử cuộc gọi'),
       body: Stack(
@@ -514,7 +514,7 @@ class _CallDetailPageState extends State<CallDetailPage> {
     final receiver = _call.receiverId == widget.currentUserId;
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildCallsAppBar(context, 'Trạng thái cuộc gọi'),
       body: Stack(

@@ -5,7 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_auth_background.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:provider/provider.dart';
@@ -97,8 +97,8 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     try {
       await precacheImage(
         MetaGymTheme.isLightPalette(context)
-            ? MetaGymAuthBackground.lightAsset
-            : MetaGymAuthBackground.darkAsset,
+            ? MetaGymBackground.lightAsset
+            : MetaGymBackground.darkAsset,
         context,
       );
     } catch (_) {}
@@ -147,11 +147,11 @@ class _AppLoadingPageState extends State<AppLoadingPage>
         widget.debugProgressOverride == null;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const Positioned.fill(child: MetaGymAuthBackground()),
+          const Positioned.fill(child: MetaGymBackground()),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
