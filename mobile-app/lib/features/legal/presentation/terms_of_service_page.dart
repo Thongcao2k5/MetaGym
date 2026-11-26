@@ -50,7 +50,7 @@ class TermsOfServicePage extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: palette.primaryText,
-                                fontSize: 10.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.4,
                               ),
@@ -62,7 +62,7 @@ class TermsOfServicePage extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: palette.textPrimary,
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.3,
                               ),
@@ -75,7 +75,7 @@ class TermsOfServicePage extends StatelessWidget {
                 ),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
                     children: [
                       MetaGymHeroGlassCard(
                         padding: const EdgeInsets.symmetric(
@@ -121,7 +121,7 @@ class TermsOfServicePage extends StatelessWidget {
                                     'v1.0',
                                     style: TextStyle(
                                       color: palette.primaryText,
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       fontFeatures: MetaGymTheme.tabularFigures,
                                     ),
@@ -144,8 +144,7 @@ class TermsOfServicePage extends StatelessWidget {
                       const SizedBox(height: 12),
                       const _LegalSectionCard(
                         title: '1. Tài khoản & Thẻ Hội viên NFC',
-                        body:
-                            'Mỗi hội viên sử dụng một tài khoản định danh duy nhất. Thẻ hội viên kim loại NFC và mã QR Check-in trong ngày chỉ phục vụ cá nhân đăng ký và không được chuyển nhượng hoặc chia sẻ cho người khác.',
+                        body: 'Mỗi hội viên sử dụng một tài khoản định danh duy nhất. Thẻ hội viên kim loại NFC và mã QR Check-in trong ngày chỉ phục vụ cá nhân đăng ký và không được chuyển nhượng hoặc chia sẻ cho người khác.',
                       ),
                       const SizedBox(height: 10),
                       const _LegalSectionCard(
@@ -158,14 +157,12 @@ class TermsOfServicePage extends StatelessWidget {
                       const SizedBox(height: 10),
                       const _LegalSectionCard(
                         title: '3. An toàn tập luyện & Khai báo sức khỏe',
-                        body:
-                            'Hội viên cam kết khai báo trung thực các chỉ số cơ thể, tiền sử chấn thương và bệnh nền trong mục Khai báo thể trạng (PAR-Q) để Huấn luyện viên xây dựng giáo án an toàn, phù hợp nhất.',
+                        body: 'Hội viên cam kết khai báo trung thực các chỉ số cơ thể, tiền sử chấn thương và bệnh nền trong mục Khai báo thể trạng (PAR-Q) để Huấn luyện viên xây dựng giáo án an toàn, phù hợp nhất.',
                       ),
                       const SizedBox(height: 10),
                       const _LegalSectionCard(
                         title: '4. Quyền sở hữu & Liên hệ pháp lý',
-                        body:
-                            'Toàn bộ giáo trình, bài viết dinh dưỡng và thương hiệu thuộc quyền sở hữu của Meta Gym Studio. Mọi câu hỏi xin gửi về legal@metagym.vn.',
+                        body: 'Toàn bộ giáo trình, bài viết dinh dưỡng và thương hiệu thuộc quyền sở hữu của Meta Gym Studio. Mọi câu hỏi xin gửi về legal@metagym.vn.',
                       ),
                     ],
                   ),
@@ -210,7 +207,7 @@ class _LegalSectionCard extends StatelessWidget {
             title,
             style: TextStyle(
               color: palette.textPrimary,
-              fontSize: 13.5,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               height: 1.35,
             ),
@@ -220,7 +217,7 @@ class _LegalSectionCard extends StatelessWidget {
             body,
             style: TextStyle(
               color: palette.textSecondary,
-              fontSize: 12.5,
+              fontSize: 14,
               height: 1.6,
             ),
           ),
