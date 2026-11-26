@@ -302,12 +302,6 @@ void main() {
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1;
-      final prevOnError = FlutterError.onError;
-      FlutterError.onError = (details) {
-        debugPrint('FULL_FLUTTER_ERROR:\n${details.exceptionAsString()}\n${details.context}\n${details.informationCollector?.call().map((e) => e.toDescription()).join('\n')}');
-        prevOnError?.call(details);
-      };
-      addTearDown(() => FlutterError.onError = prevOnError);
       final formKey = GlobalKey();
       final fixture = Fixture('empty')..failOnFirstSave = true;
       addTearDown(tester.view.resetPhysicalSize);
@@ -550,6 +544,79 @@ void main() {
       expect(fixture.updatedId, 'entry-rice');
       expect(fixture.updatedItem?['quantity'], 200);
       expect(fixture.updatedItem?['estimatedCalories'], 260);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'live-search autocomplete matches catalog foods without diacritics and selects foodId',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fixture = Fixture('empty');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.light,
+          home: NutritionTrackingPage(api: fixture),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('nutrition-log-meal')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('nutrition-meal-label-field')),
+        'Bữa sáng',
+      );
+      await tester.enterText(
+        find.byKey(const Key('nutrition-dish-name-0')),
+        'yen',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('nutrition-food-suggestions-0')),
+        findsOneWidget,
+      );
+      final oatSuggestion = find.byKey(
+        const Key('nutrition-food-suggestion-0-food-oats'),
+      );
+      expect(oatSuggestion, findsOneWidget);
+      expect(find.text('Yến mạch'), findsOneWidget);
+      expect(find.text('170 kcal / 100g'), findsOneWidget);
+
+      await tester.tap(oatSuggestion);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('nutrition-food-suggestions-0')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('nutrition-selected-catalog-0')),
+        findsOneWidget,
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('nutrition-dish-qty-0')),
+        '100',
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nutrition-estimated-kcal')), findsOneWidget);
+      expect(find.text('≈ 170 kcal'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Lưu món'));
+      await tester.pumpAndSettle();
+
+      expect(fixture.addedItems.length, 1);
+      expect(fixture.addedItems.first['foodId'], 'food-oats');
+      expect(fixture.addedItems.first['mealName'], 'Yến mạch');
+      expect(fixture.addedItems.first['unit'], 'g');
+      expect(fixture.addedItems.first['quantity'], 100);
       expect(tester.takeException(), isNull);
     },
   );

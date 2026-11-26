@@ -227,6 +227,33 @@ double? estimateCustomFoodKcal({
   return null;
 }
 
+/// Lọc danh sách món từ danh mục theo từ khóa nhập (không phân biệt dấu),
+/// ưu tiên khớp tiền tố trước khi khớp giữa chuỗi.
+List<NutritionRecord> filterCatalogFoods(
+  String query,
+  List<NutritionRecord> catalogFoods, {
+  int limit = 5,
+}) {
+  final normQuery = _normalizeFoodKey(query);
+  if (normQuery.isEmpty || catalogFoods.isEmpty) return const [];
+  final prefixMatches = <NutritionRecord>[];
+  final containsMatches = <NutritionRecord>[];
+  for (final food in catalogFoods) {
+    final normName = _normalizeFoodKey((food['name'] ?? '').toString());
+    if (normName.isEmpty || !normName.contains(normQuery)) continue;
+    if (normName.startsWith(normQuery)) {
+      prefixMatches.add(food);
+    } else {
+      containsMatches.add(food);
+    }
+  }
+  int byName(NutritionRecord a, NutritionRecord b) =>
+      (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString());
+  prefixMatches.sort(byName);
+  containsMatches.sort(byName);
+  return [...prefixMatches, ...containsMatches].take(limit).toList();
+}
+
 ({String mealType, String? customLabel}) _resolveMealType(String rawInput) {
   final trimmed = rawInput.trim();
   final normalized = trimmed.toLowerCase();
@@ -2419,7 +2446,15 @@ class _EntryFormState extends State<_EntryForm> {
   }
 
   Widget _buildDishCard(int index, _DishDraft dish, _NutritionTokens t) {
-    final hasMatchedFood = _foods.any((f) => f['id'] == dish.foodId);
+    NutritionRecord? selectedCatalogFood;
+    if (dish.foodId != null) {
+      for (final f in _foods) {
+        if (f['id'] == dish.foodId) {
+          selectedCatalogFood = f;
+          break;
+        }
+      }
+    }
     const defaultUnits = ['g', 'ml', 'phần', 'cái', 'bát', 'ly'];
     final unitOptions = <String>[
       ...defaultUnits,
@@ -2429,6 +2464,9 @@ class _EntryFormState extends State<_EntryForm> {
     final resolvedKcal = dish.resolvedKcal(_foods);
     final isAuto = dish.isAutoEstimated(_foods);
     final showMultiHeader = widget.entry == null && _dishes.length > 1;
+    final suggestions = (dish.foodId == null && !_saving)
+        ? filterCatalogFoods(dish.name.text, _foods)
+        : const <NutritionRecord>[];
 
     return MetaGymGlassCard(
       key: Key('nutrition-dish-card-$index'),
@@ -2465,69 +2503,201 @@ class _EntryFormState extends State<_EntryForm> {
             ],
           ),
           const SizedBox(height: 14),
-          DropdownButtonFormField<String>(
-            key: ValueKey('food-$index-${_foods.length}-${dish.foodId ?? ''}'),
-            initialValue: dish.foodId,
-            isExpanded: true,
-            dropdownColor: t.dropdownSurface,
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-            icon: const Icon(Icons.keyboard_arrow_down_rounded),
-            iconEnabledColor: t.labelText,
-            iconDisabledColor: t.labelText.withValues(alpha: 0.4),
+          TextFormField(
+            key: Key('nutrition-dish-name-$index'),
+            controller: dish.name,
+            enabled: !_saving,
+            maxLength: 150,
+            cursorColor: MetaGymTheme.brandOrange,
             style: TextStyle(
-              fontFamily: MetaGymTheme.fontFamily,
-              fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
               color: t.textPrimary,
-              fontSize: 14.5,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
-            decoration: _warmInputDecoration(
-              labelText: 'Món từ danh mục (tùy chọn)',
+            buildCounter: (
+              _, {
+              required currentLength,
+              required isFocused,
+              required maxLength,
+            }) => null,
+            onChanged: (value) {
+              setState(() {
+                if (dish.foodId != null) {
+                  final expectedName =
+                      (selectedCatalogFood?['name'] ?? '').toString();
+                  if (value.trim() != expectedName.trim()) {
+                    dish.foodId = null;
+                  }
+                }
+              });
+            },
+            decoration: _warmInputDecoration(labelText: 'Tên món').copyWith(
+              hintText: 'Tìm trong danh mục hoặc nhập món tự do...',
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                size: 19,
+                color: t.textSecondary,
+              ),
+              suffixIcon: dish.name.text.isNotEmpty && !_saving
+                  ? IconButton(
+                      tooltip: 'Xóa tên món',
+                      onPressed: () {
+                        setState(() {
+                          dish.name.clear();
+                          dish.foodId = null;
+                        });
+                      },
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: t.textSecondary,
+                      ),
+                    )
+                  : null,
             ),
-            items: [
-              const DropdownMenuItem(
-                value: '',
-                child: Text(
-                  'Nhập món tự do',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Nhập tên món' : null,
+          ),
+          if (dish.foodId != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              key: Key('nutrition-selected-catalog-$index'),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: t.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: t.success.withValues(alpha: 0.35),
+                  width: 1,
                 ),
               ),
-              if (dish.foodId != null && !hasMatchedFood)
-                DropdownMenuItem(
-                  value: dish.foodId,
-                  child: Text(
-                    dish.name.text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  Icon(Icons.verified_rounded, size: 16, color: t.success),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      selectedCatalogFood?['kcalPer100g'] is num
+                          ? 'Món danh mục · ${_formatPlainNum(selectedCatalogFood!['kcalPer100g'])} kcal / 100g'
+                          : 'Món danh mục',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: t.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
                   ),
-                ),
-              for (final food in _foods)
-                DropdownMenuItem(
-                  value: food['id'] as String,
-                  child: Text(
-                    food['name'] as String,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _saving
+                        ? null
+                        : () => setState(() => dish.foodId = null),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        'Nhập tự do',
+                        style: TextStyle(
+                          color: t.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-            ],
-            onChanged: _saving
-                ? null
-                : (value) => setState(() {
-                    dish.foodId = value == '' ? null : value;
-                    if (dish.foodId != null) {
-                      final matched = _foods
-                          .where((f) => f['id'] == value)
-                          .firstOrNull;
-                      if (matched != null) {
-                        dish.name.text = matched['name'] as String;
-                      }
-                      dish.unit = 'g';
-                      dish.customKcal.clear();
-                    }
-                  }),
-          ),
+                ],
+              ),
+            ),
+          ] else if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              key: Key('nutrition-food-suggestions-$index'),
+              decoration: BoxDecoration(
+                color: t.dropdownSurface,
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                border: Border.all(color: t.recessedBorder, width: 1),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var sIdx = 0; sIdx < suggestions.length; sIdx++) ...[
+                    if (sIdx > 0)
+                      Divider(height: 1, thickness: 1, color: t.divider),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: Key(
+                          'nutrition-food-suggestion-$index-${suggestions[sIdx]['id']}',
+                        ),
+                        onTap: () {
+                          final food = suggestions[sIdx];
+                          setState(() {
+                            dish.foodId = food['id'] as String;
+                            dish.name.text = food['name'] as String;
+                            dish.name.selection = TextSelection.collapsed(
+                              offset: dish.name.text.length,
+                            );
+                            dish.unit = 'g';
+                            dish.customKcal.clear();
+                          });
+                        },
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.restaurant_menu_rounded,
+                                  size: 16,
+                                  color: t.orangeText,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${suggestions[sIdx]['name'] ?? ''}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: t.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (suggestions[sIdx]['kcalPer100g'] is num) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_formatPlainNum(suggestions[sIdx]['kcalPer100g'])} kcal / 100g',
+                                    style: TextStyle(
+                                      color: t.success,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fontFeatures: MetaGymTheme.tabularFigures,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
           if (_foodError && index == 0) ...[
             const SizedBox(height: 8),
             Align(
@@ -2549,29 +2719,6 @@ class _EntryFormState extends State<_EntryForm> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          TextFormField(
-            key: Key('nutrition-dish-name-$index'),
-            controller: dish.name,
-            readOnly: dish.foodId != null || _saving,
-            maxLength: 150,
-            cursorColor: MetaGymTheme.brandOrange,
-            style: TextStyle(
-              color: t.textPrimary,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-            buildCounter: (
-              _, {
-              required currentLength,
-              required isFocused,
-              required maxLength,
-            }) => null,
-            onChanged: (_) => setState(() {}),
-            decoration: _warmInputDecoration(labelText: 'Tên món'),
-            validator: (v) =>
-                v == null || v.trim().isEmpty ? 'Nhập tên món' : null,
-          ),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
