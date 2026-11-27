@@ -191,6 +191,140 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('10 tháng 11, 2026'), findsOneWidget);
   });
+
+  testWidgets('active Member opens Olympic weight picker modal and applies metrics', (
+    tester,
+  ) async {
+    final journal = _JournalFixture();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MemberJournalPage(
+          service: journal,
+          membershipService: const _MembershipFixture(true),
+          photoService: _PhotoFixture(),
+          picker: _PickerFixture(),
+          todayOverride: fixedToday,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('journal-open-weight-modal')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cân nặng & Mỡ cơ thể'), findsOneWidget);
+    expect(find.text('Đòn tạ 20kg + Đĩa đối xứng'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('modal-weight-plus')));
+    await tester.pumpAndSettle();
+    expect(find.text('72.9 kg'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('modal-weight-apply')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('72.9 kg'), findsOneWidget);
+    expect(find.text('Lưu thay đổi'), findsOneWidget);
+
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+    expect(journal.lastPayload, isNotNull);
+    expect(find.text('Đã lưu nhật ký hôm nay'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('active Member opens 3-ring tape scanner modal and saves measurements', (
+    tester,
+  ) async {
+    final journal = _JournalFixture();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MemberJournalPage(
+          service: journal,
+          membershipService: const _MembershipFixture(true),
+          photoService: _PhotoFixture(),
+          picker: _PickerFixture(),
+          todayOverride: fixedToday,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('journal-open-tape-chest')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('journal-open-tape-chest')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đo 3 vòng cơ thể'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('tape-gender-female')));
+    await tester.pumpAndSettle();
+    expect(find.text('WHR 0.83'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('tape-plus')));
+    await tester.pumpAndSettle();
+    expect(find.text('99 cm'), findsNWidgets(2));
+
+    await tester.tap(find.byKey(const Key('tape-tab-waist')));
+    await tester.pumpAndSettle();
+    expect(find.text('Vòng eo'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('tape-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('99 cm'), findsOneWidget);
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+
+    expect(journal.lastPayload?['chestCm'], 99.0);
+    expect(journal.lastPayload?['waistCm'], 78.0);
+    expect(journal.lastPayload?['hipsCm'], 94.0);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('active Member adds workout PR via interactive PR calculator sheet', (
+    tester,
+  ) async {
+    final journal = _JournalFixture();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MemberJournalPage(
+          service: journal,
+          membershipService: const _MembershipFixture(true),
+          photoService: _PhotoFixture(),
+          picker: _PickerFixture(),
+          todayOverride: fixedToday,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -320));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('journal-open-add-pr')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('journal-open-add-pr')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Thêm thành tích buổi tập'), findsOneWidget);
+    await tester.tap(find.text('Barbell Bench Press'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pr-kg-plus')));
+    await tester.pumpAndSettle();
+    expect(find.text('87.5 kg'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('pr-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Barbell Bench Press'), findsOneWidget);
+    expect(find.text('87.5 kg × 6'), findsOneWidget);
+
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+    expect(journal.lastPayload?['achievements'], [
+      {'title': 'Barbell Bench Press', 'result': '87.5 kg × 6'},
+    ]);
+    await tester.pump(const Duration(seconds: 3));
+  });
 }
 
 class _JournalFixture implements MemberJournalService {

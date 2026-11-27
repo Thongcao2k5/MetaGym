@@ -159,6 +159,10 @@ abstract final class MetaGymIcons {
   static const String muscleTraps = '$_root/muscles/muscle_traps.svg';
   static const String muscleTriceps = '$_root/muscles/muscle_triceps.svg';
   static const String muscleUpper = '$_root/muscles/muscle_upper.svg';
+  static const String femaleBodyDefault = '$_root/muscles/female_default.svg';
+  static const String femaleBodyChest = '$_root/muscles/female_chest.svg';
+  static const String femaleBodyCore = '$_root/muscles/female_core.svg';
+  static const String femaleBodyHips = '$_root/muscles/female_hips.svg';
 
   // === muscles/focus (31) ===
   static const String musclesFocusDefault = '$_root/muscles/focus/default.svg';
