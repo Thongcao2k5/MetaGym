@@ -1941,6 +1941,37 @@ class _LocalDemoStore {
           'safetyNotes': 'Không dùng đà đu người ra sau.',
           'status': 'ACTIVE',
         },
+        {
+          'id': '90000000-0000-4000-8000-000000000014',
+          'name': 'Cable Crossover Dual',
+          'category': 'Máy cáp',
+          'targetMuscles': ['Ngực giữa', 'Vai trước', 'Tay sau'],
+          'description':
+              'Cụm ròng rọc kép linh hoạt, tối ưu độ căng cơ liên tục ở mọi góc kéo.',
+          'usageSteps': [
+            'Chỉnh chốt ròng rọc hai bên ngang tầm vai và cài mức tạ phù hợp.',
+            'Bước nhẹ một chân lên trước, giữ lưng thẳng và hơi gập khuỷu tay.',
+            'Ép hai tay về phía trước ngực, siết cơ 1 giây rồi trả chậm có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Kiểm tra chốt tạ đã cắm chặt trước khi kéo; không thả rơi tạ tự do gây đứt dây cáp.',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000000015',
+          'name': 'Technogym Artis Run',
+          'category': 'Cardio',
+          'targetMuscles': ['Tim mạch', 'Đùi trước', 'Bắp chân'],
+          'description':
+              'Máy chạy bộ màn hình cảm ứng tích hợp theo dõi nhịp tim và đốt mỡ.',
+          'usageSteps': [
+            'Kẹp dây an toàn vào áo trước khi khởi động băng tải.',
+            'Bắt đầu đi bộ làm nóng 3 phút rồi tăng tốc độ phù hợp.',
+          ],
+          'safetyNotes':
+              'Đang bảo trì định kỳ băng tải; vui lòng sử dụng máy chạy kế bên.',
+          'status': 'MAINTENANCE',
+        },
       ],
       exercises: [
         {
@@ -1983,8 +2014,15 @@ class _LocalDemoStore {
       gymProfile: {
         'name': 'Meta Gym Flagship Center',
         'address': '123 Nguyễn Thị Minh Khai, Phường Bến Thành, Quận 1, TP.HCM',
+        'description':
+            'Không gian tập luyện chuẩn quốc tế với đầy đủ khu Free Weight, Máy cáp và Cardio.',
         'phone': '1900 886 688',
-        'openingHours': '05:30 - 22:30 (Hàng ngày)',
+        'rules':
+            'Trả tạ về kệ sau khi tập · Lau ghế máy · Mang giày thể thao.',
+        'openingHours': {
+          'Thứ 2 – Thứ 6': '05:30 – 22:30',
+          'Thứ 7 – CN': '06:00 – 21:30',
+        },
       },
       aiConversations: [
         {

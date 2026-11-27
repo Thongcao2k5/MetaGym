@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
+import 'package:meta_gym_app/features/catalog/presentation/equipment_detail_page.dart';
 import 'package:meta_gym_app/features/catalog/presentation/gym_equipment_page.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_library_page.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -110,6 +111,65 @@ void main() {
     expect(find.text('Meta Gym'), findsOneWidget);
     expect(service.profileLoads, 2);
   });
+
+  testWidgets('shows maintenance status pill on gym equipment page', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final service = _GymFixture();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: MetaGymTheme.dark,
+        home: GymEquipmentPage(service: service),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sẵn sàng'), findsAtLeastNWidgets(1));
+    expect(find.text('Đang bảo trì'), findsOneWidget);
+  });
+
+  testWidgets(
+    'equipment detail renders dark hero card, muscle pills, steps and safety notes',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final service = _GymFixture();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.dark,
+          home: EquipmentDetailPage(
+            equipmentId: 'equipment-cable',
+            service: service,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('HƯỚNG DẪN THIẾT BỊ'), findsOneWidget);
+      expect(find.text('Cable Crossover Dual'), findsAtLeastNWidgets(1));
+      expect(find.text('● Sẵn sàng sử dụng'), findsOneWidget);
+      expect(find.text('Ngực giữa'), findsOneWidget);
+      expect(find.text('Vai trước'), findsOneWidget);
+      expect(find.text('Tay sau'), findsOneWidget);
+      expect(find.text('Hướng dẫn sử dụng từng bước'), findsOneWidget);
+      expect(find.text('Bước 1'), findsOneWidget);
+      expect(find.text('Bước 2'), findsOneWidget);
+      expect(find.text('Chỉnh chốt ròng rọc ngang tầm vai.'), findsOneWidget);
+      expect(find.text('Ép hai tay về phía trước ngực.'), findsOneWidget);
+      expect(find.text('Lưu ý an toàn'), findsOneWidget);
+      expect(
+        find.text('Kiểm tra chốt tạ đã cắm chặt trước khi kéo.'),
+        findsOneWidget,
+      );
+    },
+  );
 }
 
 class _GymFixture implements CatalogService {
@@ -146,6 +206,12 @@ class _GymFixture implements CatalogService {
     return const [
       CatalogItem(id: 'equipment-1', name: 'Máy chạy bộ', category: 'Cardio'),
       CatalogItem(id: 'equipment-3', name: 'Tạ đơn', category: 'Sức mạnh'),
+      CatalogItem(
+        id: 'equipment-4',
+        name: 'Technogym Artis Run',
+        category: 'Cardio',
+        status: 'MAINTENANCE',
+      ),
       CatalogItem(id: 'equipment-2', name: 'Máy ẩn', status: 'HIDDEN'),
     ];
   }
@@ -153,6 +219,20 @@ class _GymFixture implements CatalogService {
   @override
   Future<CatalogItem> getEquipmentDetail(String id) async {
     detailId = id;
+    if (id == 'equipment-cable') {
+      return const CatalogItem(
+        id: 'equipment-cable',
+        name: 'Cable Crossover Dual',
+        category: 'Máy cáp',
+        description: 'Máy kéo cáp đa năng cho ngực, vai và tay sau.',
+        targetMuscles: ['Ngực giữa', 'Vai trước', 'Tay sau'],
+        usageSteps: [
+          'Chỉnh chốt ròng rọc ngang tầm vai.',
+          'Ép hai tay về phía trước ngực.',
+        ],
+        safetyNotes: 'Kiểm tra chốt tạ đã cắm chặt trước khi kéo.',
+      );
+    }
     return const CatalogItem(
       id: 'equipment-1',
       name: 'Máy chạy bộ',
