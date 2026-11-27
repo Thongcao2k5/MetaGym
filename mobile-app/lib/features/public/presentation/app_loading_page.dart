@@ -428,10 +428,12 @@ class _WarmGlassProgressBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        SizedBox(
-          width: 38,
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 50),
           child: Text(
             '$pct%',
+            maxLines: 1,
+            softWrap: false,
             textAlign: TextAlign.right,
             style: TextStyle(
               color: palette.primaryText,
