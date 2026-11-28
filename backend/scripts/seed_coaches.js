@@ -56,13 +56,14 @@ const coachesData = [
   },
 ];
 
-// Slots: 4 slots per day (08:00, 09:30, 14:00, 15:30) across 6 workdays (1 to 6)
-const slotMinutes = [
-  { start: 480, end: 570 },
-  { start: 570, end: 660 },
-  { start: 840, end: 930 },
-  { start: 930, end: 1020 },
-];
+// Standard gym coaching shifts: 05:00 – 22:00 (90 min/slot), Mon–Sat (T2–T7)
+const slotShiftsByCoach = {
+  'a1000001-0000-4000-8000-000000000001': [300, 390, 480, 570],   // 05:00 – 11:00
+  'a1000001-0000-4000-8000-000000000002': [390, 480, 570, 660],   // 06:30 – 12:30
+  'a1000001-0000-4000-8000-000000000003': [960, 1050, 1140, 1230], // 16:00 – 22:00
+  'a1000001-0000-4000-8000-000000000004': [870, 960, 1050, 1140],  // 14:30 – 20:30
+};
+const defaultSlotStarts = [780, 870, 960, 1050]; // 13:00 – 19:00
 const weekdays = [1, 2, 3, 4, 5, 6];
 
 const passwordHash = '$2b$10$k1wuaEmLZAAyTHg9zMCTkObae8fxOWFp7EufnxRS/NG8DBe9u8iXi';
@@ -109,16 +110,17 @@ async function seed() {
         coach.memberLimit,
       ]);
 
-      // 3. Delete existing weekly slots for this coach and recreate 24 slots (6 days x 4 slots)
+      // 3. Delete existing weekly slots for this coach and recreate 24 contiguous 90m slots (T2–T7)
       await client.query('DELETE FROM coach_weekly_slots WHERE coach_id = $1', [coach.id]);
 
+      const starts = slotShiftsByCoach[coach.id] || defaultSlotStarts;
       for (const weekday of weekdays) {
-        for (const slot of slotMinutes) {
+        for (const startMin of starts) {
           const slotId = crypto.randomUUID();
           await client.query(`
             INSERT INTO coach_weekly_slots (id, coach_id, weekday, start_minute)
             VALUES ($1, $2, $3, $4)
-          `, [slotId, coach.id, weekday, slot.start]);
+          `, [slotId, coach.id, weekday, startMin]);
         }
       }
     }
