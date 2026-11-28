@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import path from 'node:path';
 
 import { createApp } from './app.js';
 import { createDatabasePool } from './config/database.js';
@@ -13,10 +14,15 @@ import {
   createPasswordResetSenderFromEnv,
 } from './config/providers.js';
 import { createImageStorageFromEnv } from './storage/image-storage.js';
+import { createLocalImageStorage } from './storage/local-image-storage.js';
 
 const port = Number(process.env.PORT ?? 3000);
 const database = createDatabasePool();
-const imageStorage = createImageStorageFromEnv(process.env);
+const imageStorage =
+  createImageStorageFromEnv(process.env) ??
+  (process.env.NODE_ENV !== 'production'
+    ? createLocalImageStorage(path.resolve('uploads/media'))
+    : undefined);
 let vnpay;
 try {
   vnpay = createVnpayFromEnv();

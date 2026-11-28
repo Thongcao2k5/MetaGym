@@ -37,6 +37,9 @@ import { createDocsRouter } from './routes/docs.routes.js';
 import { createDatabaseUiRouter } from './routes/database-ui.routes.js';
 import { createPasswordResetsRouter } from './routes/password-resets.routes.js';
 import { createMediaRouter } from './routes/media.routes.js';
+import { createImagesRouter } from './routes/images.routes.js';
+import { createImageCollectionsRouter } from './routes/image-collections.routes.js';
+import { createImageAdminRouter } from './routes/image-admin.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
 
 const JWT_SECRET_PLACEHOLDER =
@@ -138,6 +141,9 @@ export function createApp({
   app.use('/api/v1/payments/zalopay', createZalopayCallbacksRouter({ database, zalopay }));
   app.use('/api/v1', createPasswordResetsRouter({ database, sendPasswordResetCode }));
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createImagesRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createImageCollectionsRouter({ database, jwtSecret }));
+  app.use('/api/v1', createImageAdminRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
   app.use('/api/v1', createAdminAuditRouter({ database, jwtSecret }));
