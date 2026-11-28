@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show MethodChannel, Uint8List;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
@@ -607,10 +608,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // 3. Thẻ Đăng xuất khớp preview 5.1
                   _buildSignOutCard(colors),
-                  const SizedBox(height: 14),
+                  if (_isLocalDemoMode(context)) ...[
+                    const SizedBox(height: 14),
 
-                  // 4. Bảng điều khiển Demo Offline của nhánh develop
-                  _buildOfflineDemoCard(colors),
+                    // 4. Bảng điều khiển Demo Offline (chỉ hiện khi bật ENABLE_LOCAL_DEMO=true)
+                    _buildOfflineDemoCard(colors),
+                  ],
                   const SizedBox(height: 20),
                 ],
               ),
@@ -965,6 +968,14 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
+  }
+
+  bool _isLocalDemoMode(BuildContext context) {
+    try {
+      return context.read<ApiClient>().isLocalDemoMode;
+    } on ProviderNotFoundException {
+      return ApiClient.localDemoFromEnvironment;
+    }
   }
 
   Widget _buildOfflineDemoCard(MetaGymColors colors) {

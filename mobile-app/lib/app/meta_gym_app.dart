@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
+import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/theme_mode_controller.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_responsive_scale.dart';
+import 'package:meta_gym_app/core/widgets/offline_cache_banner.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
@@ -111,6 +113,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final ThemeModeController _themeModeController;
   late final bool _ownsThemeModeController;
   late final SessionController _sessionController;
+  late final ApiCacheStatusController _apiCacheStatus;
   late final ApiClient _apiClient;
   late final AuthService _authService;
   late final AuthController _authController;
@@ -150,6 +153,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _ownsThemeModeController = widget.themeModeController == null;
     _themeModeController = widget.themeModeController ?? ThemeModeController();
     _themeModeController.restore();
+    _apiCacheStatus = ApiCacheStatusController();
     if (widget.sessionController case final injected?) {
       _sessionController = injected;
       _apiClient =
@@ -158,6 +162,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
             config: ApiConfig.fromEnvironment(),
             accessTokenProvider: () => injected.accessToken,
             onSessionExpired: injected.expire,
+            cacheStatus: _apiCacheStatus,
           );
     } else {
       late final SessionController session;
@@ -165,11 +170,14 @@ class _MetaGymAppState extends State<MetaGymApp> {
         config: ApiConfig.fromEnvironment(),
         accessTokenProvider: () => session.accessToken,
         onSessionExpired: () => session.expire(),
+        cacheStatus: _apiCacheStatus,
       );
       final authApi = AuthApi(_apiClient);
       session = SessionController(
         const SecureTokenStorage(),
         authApi.loadCurrentUser,
+        onClearCache: _apiClient.clearCache,
+        onOfflineSessionRestored: _apiCacheStatus.recordCacheFallback,
       );
       _sessionController = session;
     }
@@ -246,6 +254,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileController.dispose();
     _passwordResetController.dispose();
     _membershipController.dispose();
+    _apiCacheStatus.dispose();
     if (_ownsThemeModeController) {
       _themeModeController.dispose();
     }
@@ -257,6 +266,9 @@ class _MetaGymAppState extends State<MetaGymApp> {
     return MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: _apiClient),
+        ChangeNotifierProvider<ApiCacheStatusController>.value(
+          value: _apiCacheStatus,
+        ),
         Provider<MetaGymRealtime?>.value(value: _realtime),
         Provider<AuthService>.value(value: _authService),
         ChangeNotifierProvider<AuthController>.value(value: _authController),
@@ -324,12 +336,15 @@ class _MetaGymAppState extends State<MetaGymApp> {
                   )
                 : child;
             return MetaGymResponsiveScale(
-              child: InAppNotificationListener(
-                navigatorKey: _navigatorKey,
-                controller: _notificationsController,
-                session: _sessionController,
-                router: _router,
-                child: wrappedCalls,
+              child: OfflineCacheBannerOverlay(
+                controller: _apiCacheStatus,
+                child: InAppNotificationListener(
+                  navigatorKey: _navigatorKey,
+                  controller: _notificationsController,
+                  session: _sessionController,
+                  router: _router,
+                  child: wrappedCalls,
+                ),
               ),
             );
           },

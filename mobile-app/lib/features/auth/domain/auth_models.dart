@@ -3,6 +3,12 @@ enum UserRole {
   coach,
   admin;
 
+  String get apiValue => switch (this) {
+    UserRole.member => 'MEMBER',
+    UserRole.coach => 'COACH',
+    UserRole.admin => 'ADMIN',
+  };
+
   static UserRole fromApi(Object? value) => switch (value) {
     'MEMBER' => UserRole.member,
     'COACH' => UserRole.coach,
@@ -47,6 +53,17 @@ class AuthUser {
   final String? phone;
   final String? avatarUrl;
   final Map<String, dynamic> profile;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'email': email,
+    'fullName': fullName,
+    'role': role.apiValue,
+    'status': status,
+    'phone': phone,
+    'avatarUrl': avatarUrl,
+    'profile': profile,
+  };
 }
 
 class AuthSession {

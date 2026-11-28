@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
+import 'package:meta_gym_app/core/storage/api_cache_store.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
@@ -15,15 +18,28 @@ class SessionController extends ChangeNotifier {
     this._tokenStorage,
     this._loadCurrentUser, {
     AuthPreferenceStorage? preferenceStorage,
+    CachedUserStorage? cachedUserStorage,
+    this.onClearCache,
+    this.onOfflineSessionRestored,
+    this.allowLocalDemoTokens = ApiClient.localDemoFromEnvironment,
   }) : _preferenceStorage =
            preferenceStorage ??
            (MetaGymTheme.isFlutterTestEnvironment
                ? null
-               : const SecureAuthPreferenceStorage());
+               : const SecureAuthPreferenceStorage()),
+       _cachedUserStorage =
+           cachedUserStorage ??
+           (MetaGymTheme.isFlutterTestEnvironment
+               ? null
+               : const SecureCachedUserStorage());
 
   final TokenStorage _tokenStorage;
   final CurrentUserLoader _loadCurrentUser;
   final AuthPreferenceStorage? _preferenceStorage;
+  final CachedUserStorage? _cachedUserStorage;
+  final Future<void> Function()? onClearCache;
+  final void Function(DateTime savedAt)? onOfflineSessionRestored;
+  final bool allowLocalDemoTokens;
 
   SessionStatus _status = SessionStatus.restoring;
   AuthUser? _user;
@@ -89,17 +105,40 @@ class SessionController extends ChangeNotifier {
     if (token == null || token.isEmpty) {
       return;
     }
+    if (!allowLocalDemoTokens && LocalDemoAccounts.isDemoToken(token)) {
+      await _tokenStorage.delete();
+      return;
+    }
 
     _accessToken = token;
     try {
-      _user = await _loadCurrentUser(token);
+      final loaded = await _loadCurrentUser(token);
+      _user = loaded;
+      if (_rememberMe) {
+        await _persistCachedUserSafely(loaded);
+      }
     } on ApiException catch (error) {
       if (error.kind == ApiExceptionKind.sessionExpired ||
           error.kind == ApiExceptionKind.forbidden) {
         await _tokenStorage.delete();
+        await _deleteCachedUserSafely();
+        await _clearCacheSafely();
+        _accessToken = null;
+        _user = null;
+      } else if (error.kind == ApiExceptionKind.network ||
+          error.kind == ApiExceptionKind.server) {
+        final snapshot = await _readCachedUserSafely();
+        if (snapshot != null) {
+          _user = snapshot.user;
+          onOfflineSessionRestored?.call(snapshot.savedAt);
+        } else {
+          _accessToken = null;
+          _user = null;
+        }
+      } else {
+        _accessToken = null;
+        _user = null;
       }
-      _accessToken = null;
-      _user = null;
     }
   }
 
@@ -111,9 +150,11 @@ class SessionController extends ChangeNotifier {
     if (rememberMe) {
       await _tokenStorage.write(session.accessToken);
       _rememberedEmail = session.user.email;
+      await _persistCachedUserSafely(session.user);
     } else {
       await _tokenStorage.delete();
       _rememberedEmail = null;
+      await _deleteCachedUserSafely();
     }
     if (_preferenceStorage case final prefs?) {
       try {
@@ -132,6 +173,9 @@ class SessionController extends ChangeNotifier {
   void updateUser(AuthUser user) {
     if (_status != SessionStatus.authenticated || user.id != _user?.id) return;
     _user = user;
+    if (_rememberMe) {
+      unawaited(_persistCachedUserSafely(user));
+    }
     notifyListeners();
   }
 
@@ -150,7 +194,43 @@ class SessionController extends ChangeNotifier {
 
   Future<void> _clearSession() async {
     await _tokenStorage.delete();
+    await _deleteCachedUserSafely();
+    await _clearCacheSafely();
     _setUnauthenticated();
+  }
+
+  Future<CachedUserSnapshot?> _readCachedUserSafely() async {
+    try {
+      return await _cachedUserStorage?.read();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _persistCachedUserSafely(AuthUser user) async {
+    try {
+      await _cachedUserStorage?.write(
+        CachedUserSnapshot(user: user, savedAt: DateTime.now().toUtc()),
+      );
+    } catch (_) {
+      // Non-fatal on environments without keystore.
+    }
+  }
+
+  Future<void> _deleteCachedUserSafely() async {
+    try {
+      await _cachedUserStorage?.delete();
+    } catch (_) {
+      // Non-fatal.
+    }
+  }
+
+  Future<void> _clearCacheSafely() async {
+    try {
+      await onClearCache?.call();
+    } catch (_) {
+      // Non-fatal.
+    }
   }
 
   void _setUnauthenticated() {

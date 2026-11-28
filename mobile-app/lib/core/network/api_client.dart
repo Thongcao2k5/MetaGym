@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
+import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
+import 'package:meta_gym_app/core/storage/api_cache_store.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 
 typedef ApiDecoder<T> = T Function(Object? data);
 typedef ApiLogger = void Function(String message);
@@ -18,18 +21,41 @@ class ApiResult<T> {
 }
 
 class ApiClient {
-  ApiClient({
+  static const bool localDemoFromEnvironment = bool.fromEnvironment(
+    'ENABLE_LOCAL_DEMO',
+    defaultValue: false,
+  );
+
+  factory ApiClient({
     required ApiConfig config,
     ApiLogger? logger,
     ApiAccessTokenProvider? accessTokenProvider,
     ApiSessionExpiredCallback? onSessionExpired,
-    bool enableLocalDemoMode = true,
-  }) : this._(
-         _createDio(config, enableLocalDemoMode: enableLocalDemoMode),
-         logger,
-         accessTokenProvider,
-         onSessionExpired,
-       );
+    bool enableLocalDemoMode = localDemoFromEnvironment,
+    ApiCacheStore? cacheStore,
+    ApiCacheStatusController? cacheStatus,
+    bool enableOfflineCache = true,
+  }) {
+    final effectiveStore = _resolveCacheStore(
+      enableLocalDemoMode: enableLocalDemoMode,
+      enableOfflineCache: enableOfflineCache,
+      override: cacheStore,
+    );
+    return ApiClient._(
+      _createDio(
+        config,
+        enableLocalDemoMode: enableLocalDemoMode,
+        cacheStore: effectiveStore,
+        cacheStatus: cacheStatus,
+      ),
+      logger,
+      accessTokenProvider,
+      onSessionExpired,
+      effectiveStore,
+      cacheStatus,
+      isLocalDemoMode: enableLocalDemoMode,
+    );
+  }
 
   ApiClient.withAdapter({
     required ApiConfig config,
@@ -37,11 +63,22 @@ class ApiClient {
     ApiLogger? logger,
     ApiAccessTokenProvider? accessTokenProvider,
     ApiSessionExpiredCallback? onSessionExpired,
+    ApiCacheStore? cacheStore,
+    ApiCacheStatusController? cacheStatus,
+    DateTime Function()? cacheNow,
   }) : this._(
-         _createDio(config)..httpClientAdapter = adapter,
+         _createDio(
+           config,
+           cacheStore: cacheStore,
+           cacheStatus: cacheStatus,
+           cacheNow: cacheNow,
+         )..httpClientAdapter = adapter,
          logger,
          accessTokenProvider,
          onSessionExpired,
+         cacheStore,
+         cacheStatus,
+         isLocalDemoMode: false,
        );
 
   ApiClient._(
@@ -49,12 +86,25 @@ class ApiClient {
     this._logger,
     this._accessTokenProvider,
     this._onSessionExpired,
-  );
+    this._cacheStore,
+    this._cacheStatus, {
+    required this.isLocalDemoMode,
+  });
 
+  final bool isLocalDemoMode;
+  final ApiCacheStore? _cacheStore;
+  final ApiCacheStatusController? _cacheStatus;
   final Dio _dio;
   final ApiLogger? _logger;
   final ApiAccessTokenProvider? _accessTokenProvider;
   final ApiSessionExpiredCallback? _onSessionExpired;
+
+  bool get isOfflineCacheEnabled => _cacheStore != null;
+
+  Future<void> clearCache() async {
+    await _cacheStore?.clear();
+    _cacheStatus?.reset();
+  }
 
   Uri resolveServerPath(String path) {
     final uri = Uri.parse(path);
@@ -189,7 +239,12 @@ class ApiClient {
         ),
       );
       final result = _decodeResult(response.data, decode);
-      _logger?.call('API $method completed (${response.statusCode})');
+      final cachedSuffix = response.extra[apiCacheFromCacheExtraKey] == true
+          ? ' [cached]'
+          : '';
+      _logger?.call(
+        'API $method completed (${response.statusCode})$cachedSuffix',
+      );
       return result;
     } on DioException catch (error) {
       final apiException = ApiException.fromDio(error);
@@ -212,7 +267,23 @@ class ApiClient {
   }
 }
 
-Dio _createDio(ApiConfig config, {bool enableLocalDemoMode = false}) {
+ApiCacheStore? _resolveCacheStore({
+  required bool enableLocalDemoMode,
+  required bool enableOfflineCache,
+  ApiCacheStore? override,
+}) {
+  if (enableLocalDemoMode || !enableOfflineCache) return null;
+  if (override != null) return override;
+  return MetaGymTheme.isFlutterTestEnvironment ? null : SecureApiCacheStore();
+}
+
+Dio _createDio(
+  ApiConfig config, {
+  bool enableLocalDemoMode = false,
+  ApiCacheStore? cacheStore,
+  ApiCacheStatusController? cacheStatus,
+  DateTime Function()? cacheNow,
+}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: config.baseUrl.toString(),
@@ -225,6 +296,14 @@ Dio _createDio(ApiConfig config, {bool enableLocalDemoMode = false}) {
   );
   if (enableLocalDemoMode) {
     dio.interceptors.add(LocalDemoInterceptor());
+  } else if (cacheStore != null) {
+    dio.interceptors.add(
+      ApiCacheInterceptor(
+        store: cacheStore,
+        statusController: cacheStatus,
+        now: cacheNow,
+      ),
+    );
   }
   return dio;
 }
