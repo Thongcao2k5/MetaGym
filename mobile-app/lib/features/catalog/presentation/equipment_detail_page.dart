@@ -8,9 +8,242 @@ import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/catalog/presentation/exercise_video_player.dart';
 
+/// Maps the 7-muscle-group catalog entries (16 equipment SVGs & 21 videos)
+/// to their exact custom duotone SVG asset, preferring [CatalogItem.videoUrl]
+/// when present and falling back to distinctive Vietnamese/English names.
+String? catalog7GroupIconFor(CatalogItem item) {
+  final video = (item.videoUrl ?? '').trim().toLowerCase();
+  if (video.endsWith('lower_back_01_hyperextension_480p.mp4')) {
+    return MetaGymIcons.equip7HyperextensionCurved;
+  }
+  if (video.endsWith('lower_back_02_crossed_arms_480p.mp4') ||
+      video.endsWith('lower_back_03_weighted_480p.mp4')) {
+    return MetaGymIcons.equip7HyperextensionAngular;
+  }
+  if (video.endsWith('lats_01_normal_grip_480p.mp4') ||
+      video.endsWith('lats_02_wide_grip_480p.mp4') ||
+      video.endsWith('lats_03_close_grip_480p.mp4')) {
+    return MetaGymIcons.equip7LatPulldown;
+  }
+  if (video.endsWith('glutes_01_smith_hip_thrust_480p.mp4')) {
+    return MetaGymIcons.equip7SmithHipThrust;
+  }
+  if (video.endsWith('glutes_02_cable_kickback_480p.mp4')) {
+    return MetaGymIcons.equip7CableAnkleStation;
+  }
+  if (video.endsWith('glutes_03_multi_hip_abduction_480p.mp4')) {
+    return MetaGymIcons.equip7MultiHip;
+  }
+  if (video.endsWith('chest_01_pec_deck_480p.mp4')) {
+    return MetaGymIcons.equip7PecDeck;
+  }
+  if (video.endsWith('chest_02_cable_fly_480p.mp4')) {
+    return MetaGymIcons.equip7DualCable;
+  }
+  if (video.endsWith('chest_03_chest_press_480p.mp4')) {
+    return MetaGymIcons.equip7ChestPress;
+  }
+  if (video.endsWith('triceps_01_seated_dip_480p.mp4')) {
+    return MetaGymIcons.equip7SeatedDip;
+  }
+  if (video.endsWith('triceps_02_extension_machine_480p.mp4')) {
+    return MetaGymIcons.equip7SeatedTricepsExtension;
+  }
+  if (video.endsWith('triceps_03_rope_pushdown_480p.mp4')) {
+    return MetaGymIcons.equip7CableRopeStation;
+  }
+  if (video.endsWith('biceps_01_low_cable_curl_480p.mp4') ||
+      video.endsWith('biceps_03_wide_grip_cable_curl_480p.mp4')) {
+    return MetaGymIcons.equip7CableLowBar;
+  }
+  if (video.endsWith('biceps_02_cable_preacher_480p.mp4')) {
+    return MetaGymIcons.equip7CablePreacher;
+  }
+  if (video.endsWith('quads_01_bilateral_extension_480p.mp4') ||
+      video.endsWith('quads_02_single_leg_extension_480p.mp4')) {
+    return MetaGymIcons.equip7LegExtension;
+  }
+  if (video.endsWith('quads_03_smith_squat_480p.mp4')) {
+    return MetaGymIcons.equip7SmithSquat;
+  }
+
+  final nameOnly = item.name.trim().toLowerCase();
+  final normalized = '$nameOnly ${(item.category ?? '').trim().toLowerCase()}';
+  if (normalized.contains('khung cong') ||
+      normalized.contains('duỗi lưng trên ghế 45')) {
+    return MetaGymIcons.equip7HyperextensionCurved;
+  }
+  if (normalized.contains('khung tam giác') ||
+      normalized.contains('ghế duỗi lưng 45') ||
+      normalized.contains('tay trước ngực') ||
+      normalized.contains('duỗi lưng có tạ')) {
+    return MetaGymIcons.equip7HyperextensionAngular;
+  }
+  if (nameOnly == 'máy kéo xô' || normalized.contains('kéo xô tay')) {
+    return MetaGymIcons.equip7LatPulldown;
+  }
+  if (normalized.contains('nâng hông bằng máy smith') ||
+      normalized.contains('smith và ghế nâng hông') ||
+      normalized.contains('smith hip thrust')) {
+    return MetaGymIcons.equip7SmithHipThrust;
+  }
+  if (normalized.contains('dây cổ chân') ||
+      normalized.contains('đá chân sau bằng cáp') ||
+      normalized.contains('cable kickback')) {
+    return MetaGymIcons.equip7CableAnkleStation;
+  }
+  if (normalized.contains('multi hip') || normalized.contains('dạng hông')) {
+    return MetaGymIcons.equip7MultiHip;
+  }
+  if (normalized.contains('ép ngực trên máy') ||
+      normalized.contains('máy ép ngực pec deck')) {
+    return MetaGymIcons.equip7PecDeck;
+  }
+  if (normalized.contains('máy cáp đôi') ||
+      normalized.contains('ép ngực bằng cáp') ||
+      normalized.contains('cable fly')) {
+    return MetaGymIcons.equip7DualCable;
+  }
+  if (normalized.contains('máy đẩy ngực') ||
+      normalized.contains('đẩy ngực trên máy') ||
+      normalized.contains('chest press')) {
+    return MetaGymIcons.equip7ChestPress;
+  }
+  if (normalized.contains('máy dip ngồi') ||
+      normalized.contains('dip trên máy ngồi') ||
+      normalized.contains('seated dip')) {
+    return MetaGymIcons.equip7SeatedDip;
+  }
+  if (normalized.contains('máy duỗi tay sau') ||
+      normalized.contains('duỗi tay sau trên máy') ||
+      normalized.contains('triceps extension')) {
+    return MetaGymIcons.equip7SeatedTricepsExtension;
+  }
+  if (normalized.contains('dây thừng') ||
+      normalized.contains('rope pushdown')) {
+    return MetaGymIcons.equip7CableRopeStation;
+  }
+  if (normalized.contains('cáp thấp') ||
+      normalized.contains('thanh thẳng') ||
+      normalized.contains('low cable curl')) {
+    return MetaGymIcons.equip7CableLowBar;
+  }
+  if (normalized.contains('preacher') ||
+      normalized.contains('trên ghế với cáp')) {
+    return MetaGymIcons.equip7CablePreacher;
+  }
+  if (normalized.contains('duỗi đùi trước') ||
+      normalized.contains('leg extension')) {
+    return MetaGymIcons.equip7LegExtension;
+  }
+  if (nameOnly == 'máy smith' ||
+      normalized.contains('squat bằng máy smith') ||
+      normalized.contains('smith squat')) {
+    return MetaGymIcons.equip7SmithSquat;
+  }
+  return null;
+}
+
 /// Maps a [CatalogItem] category/name to the closest equipment duotone SVG asset.
 String equipmentIconAssetFor(CatalogItem item) {
-  final normalized = '${item.category ?? ''} ${item.name}'.toLowerCase();
+  final normalized = '${item.name} ${item.category ?? ''}'.toLowerCase();
+
+  // Explicit Realleader M3 model codes always map to their exact M3 assets.
+  if (normalized.contains('m3-1016') || normalized.contains('m3_1016')) {
+    return MetaGymIcons.equipM3BackExtension;
+  }
+  if (normalized.contains('m3-1017') || normalized.contains('m3_1017')) {
+    return MetaGymIcons.equipM3PecFlyRearDelt;
+  }
+  if (normalized.contains('m3-1018') || normalized.contains('m3_1018')) {
+    return MetaGymIcons.equipM3SeatedLegCurl;
+  }
+  if (normalized.contains('m3-1019') || normalized.contains('m3_1019')) {
+    return MetaGymIcons.equipM3StandingCalfRaise;
+  }
+  if (normalized.contains('m3-1020') || normalized.contains('m3_1020')) {
+    return MetaGymIcons.equipM3ChinDipAssist;
+  }
+  if (normalized.contains('m3-1021') || normalized.contains('m3_1021')) {
+    return MetaGymIcons.equipM3RotaryTorso;
+  }
+  if (normalized.contains('m3-1023') || normalized.contains('m3_1023')) {
+    return MetaGymIcons.equipM3GluteSeated;
+  }
+  if (normalized.contains('m3-1022') || normalized.contains('m3_1022')) {
+    return MetaGymIcons.equipM3GluteStanding;
+  }
+
+  final mapped7 = catalog7GroupIconFor(item);
+  if (mapped7 != null) return mapped7;
+
+  // Video-matched equipment items (non-M3).
+  if (normalized.contains('reverse machine fly') ||
+      normalized.contains('reverse fly') ||
+      normalized.contains('mở vai sau')) {
+    return MetaGymIcons.equipVideoReverseMachineFly;
+  }
+  if (normalized.contains('pec deck') ||
+      (normalized.contains('ép ngực') &&
+          !normalized.contains('m3-1017') &&
+          !normalized.contains('m3_1017') &&
+          !normalized.contains('vai sau'))) {
+    return MetaGymIcons.equipVideoPecDeckFly;
+  }
+  if ((normalized.contains('seated leg curl') ||
+          normalized.contains('cuốn đùi sau')) &&
+      !normalized.contains('m3-1018') &&
+      !normalized.contains('m3_1018')) {
+    return MetaGymIcons.equipVideoSeatedLegCurl;
+  }
+  if ((normalized.contains('assisted pull') ||
+          normalized.contains('kéo xà trợ lực')) &&
+      !normalized.contains('m3-1020') &&
+      !normalized.contains('m3_1020')) {
+    return MetaGymIcons.equipVideoAssistedPullUp;
+  }
+
+  // Remaining Realleader M3 name fallbacks.
+  if (normalized.contains('back extension') ||
+      normalized.contains('duỗi lưng')) {
+    return MetaGymIcons.equipM3BackExtension;
+  }
+  if (normalized.contains('pec fly') ||
+      normalized.contains('rear delt') ||
+      normalized.contains('ép ngực')) {
+    return MetaGymIcons.equipM3PecFlyRearDelt;
+  }
+  if (normalized.contains('leg curl') || normalized.contains('cuốn đùi')) {
+    return MetaGymIcons.equipM3SeatedLegCurl;
+  }
+  if (normalized.contains('calf raise') ||
+      normalized.contains('nhón bắp chân')) {
+    return MetaGymIcons.equipM3StandingCalfRaise;
+  }
+  if (normalized.contains('chin dip') ||
+      normalized.contains('chin/dip') ||
+      normalized.contains('dip assist') ||
+      normalized.contains('xà đơn') ||
+      normalized.contains('xà kép')) {
+    return MetaGymIcons.equipM3ChinDipAssist;
+  }
+  if (normalized.contains('rotary torso') ||
+      normalized.contains('torso rotation') ||
+      normalized.contains('xoay eo')) {
+    return MetaGymIcons.equipM3RotaryTorso;
+  }
+  if (normalized.contains('glute seated') ||
+      normalized.contains('glute_seated')) {
+    return MetaGymIcons.equipM3GluteSeated;
+  }
+  if (normalized.contains('glute standing') ||
+      normalized.contains('glute_standing') ||
+      normalized.contains('tập mông') ||
+      normalized.contains('glute')) {
+    return MetaGymIcons.equipM3GluteStanding;
+  }
+
+  // Generic equipment category fallbacks.
   if (normalized.contains('cáp') || normalized.contains('cable')) {
     return MetaGymIcons.equipCable;
   }
@@ -123,6 +356,8 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
                               if (item.videoUrl?.trim().isNotEmpty == true) ...[
                                 ExerciseVideoPlayer(
                                   url: item.videoUrl!.trim(),
+                                  loop: true,
+                                  autoPlay: true,
                                 ),
                                 const SizedBox(height: 14),
                               ],
@@ -161,6 +396,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
         children: [
           MetaGymCircleIconButton(
             icon: Icons.arrow_back_rounded,
+            svgAsset: MetaGymIcons.commonBack,
             tooltip: 'Quay lại',
             onTap: () => Navigator.of(context).maybePop(),
           ),
@@ -262,8 +498,8 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 54,
-                height: 54,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   color: palette.chipActiveBg,
                   borderRadius: BorderRadius.circular(16),
@@ -274,7 +510,7 @@ class _EquipmentDetailPageState extends State<EquipmentDetailPage> {
                 alignment: Alignment.center,
                 child: MetaGymSvgIcon(
                   equipmentIconAssetFor(item),
-                  size: 28,
+                  size: 36,
                   fallbackIcon: Icons.fitness_center_rounded,
                 ),
               ),

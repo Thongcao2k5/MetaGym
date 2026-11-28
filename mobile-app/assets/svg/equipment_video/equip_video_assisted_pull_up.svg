@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+<defs><linearGradient id="equip-video-assisted-pull-up-blush" x1="9" y1="7" x2="39" y2="41" gradientUnits="userSpaceOnUse"><stop stop-color="#FF5E36" stop-opacity=".03"/><stop offset="1" stop-color="#FF5E36" stop-opacity=".28"/></linearGradient></defs>
+<g stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 41V13l4-5h20l4 5v28M8 42h8M32 42h8M15 12v27M33 12v27M10 20h7M31 20h7M19 30v4M29 30v4M18 5v3M30 5v3M14 8l-6 2M34 8l6 2"/><path d="M22 37h9" stroke-width="2"/><g fill="url(#equip-video-assisted-pull-up-blush)"><rect x="18" y="25" width="12" height="5" rx="2.5"/><rect x="19" y="34" width="15" height="7" rx="2"/></g></g>
+<path d="M12 7l5-2M31 5l5 2M21 27.5h6" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

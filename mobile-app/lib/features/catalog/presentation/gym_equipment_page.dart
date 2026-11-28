@@ -250,6 +250,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
         children: [
           MetaGymCircleIconButton(
             icon: Icons.arrow_back_rounded,
+            svgAsset: MetaGymIcons.commonBack,
             tooltip: 'Quay lại',
             onTap: () => Navigator.of(context).maybePop(),
           ),
@@ -286,6 +287,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
           ),
           MetaGymCircleIconButton(
             icon: Icons.refresh_rounded,
+            svgAsset: MetaGymIcons.commonRefresh,
             tooltip: 'Tải lại',
             onTap: _loading ? null : _load,
           ),
@@ -693,8 +695,8 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
             child: Row(
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: palette.chipActiveBg,
                     borderRadius: BorderRadius.circular(14),
@@ -705,7 +707,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                   alignment: Alignment.center,
                   child: MetaGymSvgIcon(
                     equipmentIconAssetFor(item),
-                    size: 22,
+                    size: 30,
                     fallbackIcon: Icons.fitness_center_rounded,
                   ),
                 ),
@@ -761,7 +763,7 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
                     ),
                   ),
                 ),
-                if (item.videoUrl?.isNotEmpty == true) ...[
+                if (item.videoUrl?.trim().isNotEmpty == true) ...[
                   const SizedBox(width: 6),
                   MetaGymSvgIcon(
                     MetaGymIcons.exerciseVideoPlay,

@@ -313,6 +313,19 @@ class LocalDemoInterceptor extends Interceptor {
       isCoach: isCoach,
     );
     if (handled != null) {
+      if (handled.$2 >= 400) {
+        return handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            response: Response<Object?>(
+              requestOptions: options,
+              statusCode: handled.$2,
+              data: handled.$1,
+            ),
+          ),
+        );
+      }
       if (method != 'GET') {
         await _persist(store);
       }
@@ -357,11 +370,27 @@ class LocalDemoInterceptor extends Interceptor {
       '/coach-bookings',
       '/coach-entitlements',
       '/coach-notifications',
+      '/notifications',
     };
     if (emptyLists.contains(path) ||
         path.endsWith('/messages') ||
         path.endsWith('/outcomes')) {
       return const <Object?>[];
+    }
+    if (path == '/notifications/unread-count') {
+      return const {'unreadCount': 0};
+    }
+    if (path == '/notifications/preferences') {
+      return const {
+        'workoutRemindersEnabled': true,
+        'reminderTime': '17:30',
+        'ptBeforeMinutes': 30,
+        'nutritionRemindersEnabled': true,
+        'coachUpdatesEnabled': true,
+        'messagesEnabled': true,
+        'callsEnabled': true,
+        'adminBroadcastsEnabled': true,
+      };
     }
     if (path == '/relationships/me' ||
         path == '/training-plans/me/active' ||
@@ -611,6 +640,10 @@ class LocalDemoInterceptor extends Interceptor {
     if (path == '/coach-bookings' && method == 'GET') {
       return (store.coachBookings, 200);
     }
+    if (path == '/coach-bookings/available-slots' && method == 'GET') {
+      final date = options.queryParameters['date']?.toString();
+      return (store.availableCoachSlots(date), 200);
+    }
     if (path == '/coach-entitlements' && method == 'GET') {
       return (store.coachEntitlements, 200);
     }
@@ -618,6 +651,19 @@ class LocalDemoInterceptor extends Interceptor {
       return (const <Object?>[], 200);
     }
     if (path == '/coach-bookings' && method == 'POST') {
+      final startsAt = (body['startsAt'] ?? body['scheduledAt'])?.toString();
+      if (store.isRestOrRecoveryStartsAt(startsAt)) {
+        return (
+          const {
+            'error': {
+              'code': 'REST_DAY_BOOKING_NOT_ALLOWED',
+              'message':
+                  'Ngày đã chọn là ngày nghỉ ngơi hồi phục. Lịch hẹn với Coach bắt buộc phải là ngày tập luyện.',
+            },
+          },
+          409,
+        );
+      }
       return (store.createCoachBooking(body, currentUser), 201);
     }
     if (path == '/coach-bookings/blocks' && method == 'PUT') {
@@ -625,6 +671,20 @@ class LocalDemoInterceptor extends Interceptor {
     }
     if (path.startsWith('/coach-bookings/') && method == 'PATCH') {
       final id = path.split('/')[2];
+      final action = (body['action'] as String? ?? '').toUpperCase();
+      if (action == 'RESCHEDULE' &&
+          store.isRestOrRecoveryStartsAt(body['startsAt']?.toString())) {
+        return (
+          const {
+            'error': {
+              'code': 'REST_DAY_BOOKING_NOT_ALLOWED',
+              'message':
+                  'Ngày đã chọn là ngày nghỉ ngơi hồi phục. Lịch hẹn với Coach bắt buộc phải là ngày tập luyện.',
+            },
+          },
+          409,
+        );
+      }
       return (store.updateCoachBooking(id, body), 200);
     }
     if (path == '/coach-notifications' && method == 'GET') {
@@ -634,10 +694,105 @@ class LocalDemoInterceptor extends Interceptor {
         path.endsWith('/read') &&
         method == 'PATCH') {
       final id = path.split('/')[2];
+      final nowIso = DateTime.now().toUtc().toIso8601String();
       for (final n in store.coachNotifications) {
-        if (n['id'] == id) n['isRead'] = true;
+        if (n['id'].toString() == id) {
+          n['isRead'] = true;
+          n['readAt'] ??= nowIso;
+        }
       }
-      return (const {'read': true}, 200);
+      return ({'id': id, 'readAt': nowIso, 'read': true}, 200);
+    }
+    if (path == '/notifications' && method == 'GET') {
+      final category = (options.queryParameters['category'] as String? ?? 'ALL')
+          .toUpperCase();
+      final unreadOnly =
+          options.queryParameters['unreadOnly']?.toString() == 'true';
+      final list = store.coachNotifications.where((n) {
+        final itemCategory = (n['category'] as String? ?? 'COACH').toUpperCase();
+        if (category != 'ALL' && itemCategory != category) return false;
+        if (unreadOnly && n['readAt'] != null) return false;
+        return true;
+      }).toList();
+      return (list, 200);
+    }
+    if (path == '/notifications/unread-count' && method == 'GET') {
+      final unreadCount = store.coachNotifications
+          .where((n) => n['readAt'] == null)
+          .length;
+      return ({'unreadCount': unreadCount}, 200);
+    }
+    if (path == '/notifications/read-all' && method == 'PATCH') {
+      final category = (body['category'] as String? ?? 'ALL').toUpperCase();
+      final nowIso = DateTime.now().toUtc().toIso8601String();
+      var updated = 0;
+      for (final n in store.coachNotifications) {
+        final itemCategory = (n['category'] as String? ?? 'COACH').toUpperCase();
+        if (category != 'ALL' && itemCategory != category) continue;
+        if (n['readAt'] == null) {
+          n['readAt'] = nowIso;
+          n['isRead'] = true;
+          updated++;
+        }
+      }
+      return ({'updatedCount': updated}, 200);
+    }
+    if (path.startsWith('/notifications/') &&
+        path.endsWith('/read') &&
+        method == 'PATCH') {
+      final id = path.split('/')[2];
+      final nowIso = DateTime.now().toUtc().toIso8601String();
+      for (final n in store.coachNotifications) {
+        if (n['id'].toString() == id) {
+          n['readAt'] ??= nowIso;
+          n['isRead'] = true;
+        }
+      }
+      return ({'id': id, 'readAt': nowIso}, 200);
+    }
+    if (path == '/notifications/preferences' && method == 'GET') {
+      return (store.notificationPreferences, 200);
+    }
+    if (path == '/notifications/preferences' && method == 'PUT') {
+      store.notificationPreferences
+        ..clear()
+        ..addAll(body);
+      return (store.notificationPreferences, 200);
+    }
+    if (path == '/notifications/device-tokens' && method == 'POST') {
+      return ({'platform': body['platform'] ?? 'ANDROID', 'isActive': true}, 201);
+    }
+    if (path == '/notifications/device-tokens' && method == 'DELETE') {
+      return (const {'removed': true}, 200);
+    }
+    if (path == '/admin/notifications/broadcasts' && method == 'GET') {
+      return (store.adminBroadcasts, 200);
+    }
+    if (path == '/admin/notifications/broadcast' && method == 'POST') {
+      final nowIso = DateTime.now().toUtc().toIso8601String();
+      final broadcast = <String, dynamic>{
+        'id': 'bcast-${DateTime.now().millisecondsSinceEpoch}',
+        'title': body['title'] ?? 'Thông báo từ Meta Gym',
+        'body': body['body'] ?? '',
+        'audience': body['audience'] ?? 'ALL',
+        'actionRoute': body['actionRoute'],
+        'recipientCount': 2,
+        'createdAt': nowIso,
+      };
+      store.adminBroadcasts.insert(0, broadcast);
+      store.coachNotifications.insert(0, {
+        'id': '${DateTime.now().millisecondsSinceEpoch}',
+        'kind': 'ADMIN_BROADCAST',
+        'category': 'SYSTEM',
+        'subjectId': broadcast['id'],
+        'title': broadcast['title'],
+        'body': broadcast['body'],
+        'actionRoute': broadcast['actionRoute'],
+        'eventAt': nowIso,
+        'createdAt': nowIso,
+        'readAt': null,
+      });
+      return (broadcast, 201);
     }
     if (path == '/coach/members' && method == 'GET') {
       return (store.coachMembers, 200);
@@ -899,9 +1054,14 @@ class LocalDemoInterceptor extends Interceptor {
           .toLowerCase();
       if (q.isEmpty) return (store.equipment, 200);
       return (
-        store.equipment
-            .where((e) => (e['name'] as String).toLowerCase().contains(q))
-            .toList(),
+        store.equipment.where((e) {
+          final name = (e['name'] as String? ?? '').toLowerCase();
+          final cat = (e['category'] as String? ?? '').toLowerCase();
+          final muscles = ((e['targetMuscles'] as List?) ?? const [])
+              .map((m) => m.toString().toLowerCase())
+              .join(' ');
+          return name.contains(q) || cat.contains(q) || muscles.contains(q);
+        }).toList(),
         200,
       );
     }
@@ -919,9 +1079,16 @@ class LocalDemoInterceptor extends Interceptor {
           .toLowerCase();
       if (q.isEmpty) return (store.exercises, 200);
       return (
-        store.exercises
-            .where((e) => (e['name'] as String).toLowerCase().contains(q))
-            .toList(),
+        store.exercises.where((e) {
+          final name = (e['name'] as String? ?? '').toLowerCase();
+          final description = (e['description'] as String? ?? '').toLowerCase();
+          final muscles = ((e['targetMuscles'] as List?) ?? const [])
+              .map((m) => m.toString().toLowerCase())
+              .join(' ');
+          return name.contains(q) ||
+              description.contains(q) ||
+              muscles.contains(q);
+        }).toList(),
         200,
       );
     }
@@ -1078,6 +1245,8 @@ class _LocalDemoStore {
     required this.coachEntitlements,
     required this.coachBookings,
     required this.coachNotifications,
+    required this.notificationPreferences,
+    required this.adminBroadcasts,
     required this.calls,
   });
 
@@ -1112,6 +1281,8 @@ class _LocalDemoStore {
   final List<Map<String, dynamic>> coachEntitlements;
   final List<Map<String, dynamic>> coachBookings;
   final List<Map<String, dynamic>> coachNotifications;
+  final Map<String, dynamic> notificationPreferences;
+  final List<Map<String, dynamic>> adminBroadcasts;
   final List<Map<String, dynamic>> calls;
 
   static int _nutritionEntrySeq = 0;
@@ -1411,8 +1582,7 @@ class _LocalDemoStore {
         'days': [
           {
             'dayNumber': 1,
-            'title': 'Upper Body & Core',
-            'scheduledDate': todayStr,
+            'title': 'Ngực & Tay Sau (Push A)',
             'notes': 'Tập trung phát lực từ cơ ngực và kiểm soát nhịp hạ tạ.',
             'exercises': [
               {
@@ -1440,41 +1610,11 @@ class _LocalDemoStore {
                 'notes': 'Hít sâu khi hạ tạ.',
               },
             ],
-            'meals': [
-              {
-                'displayOrder': 1,
-                'mealType': 'BREAKFAST',
-                'scheduledTime': '07:30',
-                'title': 'Yến mạch, chuối & 3 lòng trắng trứng',
-                'notes': '520 kcal · 34g Protein · 68g Carbs · 10g Fat',
-              },
-              {
-                'displayOrder': 2,
-                'mealType': 'LUNCH',
-                'scheduledTime': '12:00',
-                'title': 'Ức gà áp chảo 200g & Cơm gạo lứt',
-                'notes': '680 kcal · 56g Protein · 75g Carbs · 14g Fat',
-              },
-              {
-                'displayOrder': 3,
-                'mealType': 'SNACK',
-                'scheduledTime': '16:30',
-                'title': 'Whey Isolate 1 muỗng & Táo xanh',
-                'notes': '220 kcal · 26g Protein · 22g Carbs · 2g Fat',
-              },
-              {
-                'displayOrder': 4,
-                'mealType': 'DINNER',
-                'scheduledTime': '19:45',
-                'title': 'Cá hồi phi lê 180g & Khoai lang',
-                'notes': '580 kcal · 42g Protein · 48g Carbs · 20g Fat',
-              },
-            ],
+            'meals': const <Object?>[],
           },
           {
             'dayNumber': 2,
-            'title': 'Lưng Xô & Tay Trước (Back & Biceps)',
-            'scheduledDate': _isoDate(now.add(const Duration(days: 2))),
+            'title': 'Lưng Xô & Tay Trước (Pull A)',
             'notes': 'Ưỡn ngực kéo vai về sau, gồng chặt xô 1 giây cuối động tác.',
             'exercises': [
               {
@@ -1507,7 +1647,6 @@ class _LocalDemoStore {
           {
             'dayNumber': 3,
             'title': 'Chân Đùi & Cơ Bụng (Legs & Core)',
-            'scheduledDate': _isoDate(now.add(const Duration(days: 4))),
             'notes': 'Khởi động kỹ khớp gối và hông trước khi gánh tạ.',
             'exercises': [
               {
@@ -1533,6 +1672,115 @@ class _LocalDemoStore {
                 'instructions': 'Giữ thân người thẳng tắp, gồng core.',
                 'safetyNotes': 'Không võng thắt lưng.',
                 'notes': 'Thở đều nhịp nhàng.',
+              },
+            ],
+            'meals': const <Object?>[],
+          },
+          {
+            'dayNumber': 4,
+            'title': 'Vai & Tay Sau (Push B)',
+            'notes': 'Ưu tiên kiểm soát khớp vai và biên độ động tác.',
+            'exercises': [
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000027',
+                'exerciseName': 'Seated Dumbbell Shoulder Press',
+                'displayOrder': 1,
+                'sets': 4,
+                'reps': '10',
+                'restSeconds': 90,
+                'weightGuidance': '16kg/tay',
+                'instructions': 'Đẩy tạ qua đầu giữ lưng áp sát ghế.',
+                'safetyNotes': 'Không khóa cứng khớp khuỷu tay.',
+              },
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000028',
+                'exerciseName': 'Dumbbell Lateral Raise',
+                'displayOrder': 2,
+                'sets': 3,
+                'reps': '15',
+                'restSeconds': 45,
+                'weightGuidance': '8kg/tay',
+                'instructions': 'Nâng ngang ngang vai, hạ chậm có kiểm soát.',
+              },
+            ],
+            'meals': const <Object?>[],
+          },
+          {
+            'dayNumber': 5,
+            'title': 'Lưng Giữa & Core (Pull B)',
+            'notes': 'Giữ cột sống trung tính trong suốt các bài kéo.',
+            'exercises': [
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000029',
+                'exerciseName': 'Seated Cable Row',
+                'displayOrder': 1,
+                'sets': 4,
+                'reps': '10-12',
+                'restSeconds': 75,
+                'weightGuidance': '50kg',
+                'instructions': 'Kéo tay cầm về bụng dưới, khép bả vai.',
+              },
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000030',
+                'exerciseName': 'Hanging Leg Raise',
+                'displayOrder': 2,
+                'sets': 3,
+                'reps': '12',
+                'restSeconds': 45,
+                'weightGuidance': 'Trọng lượng cơ thể',
+                'instructions': 'Nâng chân kiểm soát không vung người.',
+              },
+            ],
+            'meals': const <Object?>[],
+          },
+          {
+            'dayNumber': 6,
+            'title': 'Mông Đùi Sau & Thể Lực (Legs B)',
+            'notes': 'Siết chặt cơ mông đùi sau ở mỗi nhịp hạ hông.',
+            'exercises': [
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000031',
+                'exerciseName': 'Romanian Deadlift (RDL)',
+                'displayOrder': 1,
+                'sets': 4,
+                'reps': '8-10',
+                'restSeconds': 105,
+                'weightGuidance': '65kg',
+                'instructions': 'Đẩy hông ra sau, giữ thanh đòn sát ống chân.',
+                'safetyNotes': 'Luôn giữ lưng dưới phẳng.',
+              },
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000032',
+                'exerciseName': 'Dumbbell Walking Lunges',
+                'displayOrder': 2,
+                'sets': 3,
+                'reps': '12/chân',
+                'restSeconds': 60,
+                'weightGuidance': '12kg/tay',
+              },
+            ],
+            'meals': const <Object?>[],
+          },
+          {
+            'dayNumber': 7,
+            'title': 'Phục Hồi Chủ Động & Giãn Cơ',
+            'notes': 'Thả lỏng cơ bắp, hỗ trợ tuần hoàn phục hồi cho tuần mới.',
+            'exercises': [
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000033',
+                'exerciseName': 'Foam Rolling & Giãn Cơ Toàn Thân',
+                'displayOrder': 1,
+                'sets': 1,
+                'durationSeconds': 900,
+                'weightGuidance': 'Cường độ nhẹ',
+              },
+              {
+                'exerciseId': '90000000-0000-4000-8000-000000000034',
+                'exerciseName': 'Đi Bộ Nghiêng Zone 2',
+                'displayOrder': 2,
+                'sets': 1,
+                'durationSeconds': 1500,
+                'weightGuidance': 'Nhịp tim 120-135 bpm',
               },
             ],
             'meals': const <Object?>[],
@@ -1972,6 +2220,481 @@ class _LocalDemoStore {
               'Đang bảo trì định kỳ băng tải; vui lòng sử dụng máy chạy kế bên.',
           'status': 'MAINTENANCE',
         },
+        {
+          'id': '90000000-0000-4000-8000-000000001016',
+          'name': 'Máy duỗi lưng M3-1016',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Lưng dưới'],
+          'description':
+              'Máy khối Realleader M3-1016 hỗ trợ tập cơ dựng sống và vùng lưng dưới có kiểm soát.',
+          'usageSteps': [
+            'Điều chỉnh đệm tựa lưng và chốt tạ phù hợp chiều cao cơ thể.',
+            'Ngồi vững, gồng core rồi ngả thân người ra sau theo biên độ an toàn.',
+            'Trả người về vị trí ban đầu chậm rãi, giữ kiểm soát dây cáp.',
+          ],
+          'safetyNotes':
+              'Không giật đột ngột phần thắt lưng; chọn mức tạ khởi đầu vừa phải.',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001017',
+          'name': 'Máy ép ngực / vai sau M3-1017',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Ngực', 'Vai sau'],
+          'description':
+              'Máy tập hai chức năng Realleader M3-1017 hỗ trợ ép ngực (Pec Fly) và banh vai sau (Rear Delt).',
+          'usageSteps': [
+            'Chỉnh độ cao ghế và góc tay đòn tương ứng bài ép ngực hoặc vai sau.',
+            'Giữ lưng áp sát đệm, kéo hoặc ép tay đòn mượt mà theo cung tròn.',
+            'Siết cơ 1 giây ở điểm đỉnh trước khi thả tạ chậm về vị trí mở.',
+          ],
+          'safetyNotes':
+              'Khóa chốt biên độ tay đòn chắc chắn trước khi lên tạ nặng.',
+          'videoUrl': 'assets/videos/catalog/pec_deck_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001018',
+          'name': 'Máy cuốn đùi sau ngồi M3-1018',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Đùi sau'],
+          'description':
+              'Máy Realleader M3-1018 cô lập nhóm cơ đùi sau ở tư thế ngồi vững chắc.',
+          'usageSteps': [
+            'Chỉnh đệm lưng sao cho khớp gối thẳng hàng với trục xoay của máy.',
+            'Khóa đệm đè đùi và đặt gót chân lên đệm lăn dưới.',
+            'Cuốn cẳng chân xuống hết biên độ rồi nhả tạ chậm rãi.',
+          ],
+          'safetyNotes':
+              'Không nhấc hông khỏi ghế khi cuốn tạ; kiểm soát gối ở điểm duỗi.',
+          'videoUrl': 'assets/videos/catalog/seated_leg_curl_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001019',
+          'name': 'Máy nhón bắp chân đứng M3-1019',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Bắp chân'],
+          'description':
+              'Máy khối Realleader M3-1019 phát triển toàn diện cơ bắp chân ở tư thế đứng.',
+          'usageSteps': [
+            'Chỉnh đệm vai vừa vặn và đứng mũi bàn chân lên bệ kê.',
+            'Hạ gót chân xuống sâu để giãn cơ bắp chân.',
+            'Nhón gót lên cao nhất có thể, giữ 1 giây rồi hạ xuống có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Giữ gối thẳng tự nhiên nhưng không khóa khớp quá mức.',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001020',
+          'name': 'Máy xà đơn / xà kép trợ lực M3-1020',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Lưng', 'Tay sau'],
+          'description':
+              'Máy trợ lực đối trọng Realleader M3-1020 cho bài kéo xà đơn và chống xà kép.',
+          'usageSteps': [
+            'Chọn mức tạ đối trọng (tạ càng nặng lực trợ giúp càng lớn).',
+            'Bước lên bậc đỡ, đặt đầu gối lên đệm trợ lực và chọn tay cầm.',
+            'Thực hiện động tác kéo xà hoặc nhún xà kép với nhịp thở đều.',
+          ],
+          'safetyNotes':
+              'Bước ra khỏi đệm trợ lực cẩn thận sau khi đệm về vị trí thấp nhất.',
+          'videoUrl': 'assets/videos/catalog/assisted_pull_up_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001021',
+          'name': 'Máy xoay eo M3-1021',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Cơ bụng', 'Cơ liên sườn'],
+          'description':
+              'Máy Realleader M3-1021 tác động vào cơ bụng và cơ liên sườn qua chuyển động xoay thân.',
+          'usageSteps': [
+            'Chọn góc xoay khởi đầu của trục ngồi phù hợp bên trái hoặc phải.',
+            'Cố định phần thân trên vào đệm ngực và tay nắm.',
+            'Xoay phần hông dưới từ cơ liên sườn rồi trở về chậm rãi.',
+          ],
+          'safetyNotes':
+              'Không vặn quá biên độ dễ chịu của cột sống thắt lưng.',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001022',
+          'name': 'Máy tập mông M3-1022',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Mông'],
+          'description':
+              'Máy tập mông Realleader dòng M3 model M3-1022 tối ưu chuyển động cô lập cơ mông.',
+          'usageSteps': [
+            'Cài chốt tạ phù hợp và điều chỉnh đệm tựa theo hướng dẫn trên khung máy M3-1022.',
+            'Giữ thân người ổn định, thực hiện nhịp đẩy hoặc ép cơ mông mượt mà.',
+            'Trả tạ về vị trí ban đầu có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Kiểm tra chốt an toàn và giữ lưng trung tính suốt bài tập.',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000001023',
+          'name': 'Máy tập mông M3-1023',
+          'category': 'Máy Realleader M3',
+          'targetMuscles': ['Mông'],
+          'description':
+              'Máy tập mông Realleader dòng M3 model M3-1023 với thiết kế khung máy riêng biệt cho nhóm cơ mông.',
+          'usageSteps': [
+            'Cài chốt tạ vừa sức và ổn định tư thế trên máy M3-1023.',
+            'Phát lực từ nhóm cơ mông và giữ nhịp chuyển động đều đặn.',
+            'Thả chậm có kiểm soát để giữ lực căng cơ.',
+          ],
+          'safetyNotes':
+              'Tránh dùng đà bật người hoặc khóa khớp ở cuối biên độ.',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002001',
+          'name': 'Máy ép ngực (Pec Deck)',
+          'category': 'Thiết bị có video',
+          'targetMuscles': ['Ngực'],
+          'description':
+              'Máy ép ngực khung vòm với hai tay đòn trước giúp cô lập cơ ngực lớn theo cung tròn ổn định, kèm video minh họa trực quan.',
+          'usageSteps': [
+            'Chỉnh chiều cao ghế sao cho tay cầm ngang giữa ngực và cài chốt tạ phù hợp.',
+            'Ngồi tựa lưng sát đệm, mở ngực, hơi gập khuỷu tay khi nắm hai tay đòn.',
+            'Thở ra và ép hai tay đòn vào giữa ngực, siết cơ ngực 1 giây ở điểm đỉnh.',
+            'Hít vào và mở tay chậm rãi về vị trí ban đầu mà không thả rơi tạ.',
+          ],
+          'safetyNotes':
+              'Không mở khuỷu tay quá sâu ra sau mặt phẳng vai để tránh căng khớp vai trước.',
+          'videoUrl': 'assets/videos/catalog/pec_deck_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002002',
+          'name': 'Máy mở vai sau (Reverse Fly)',
+          'category': 'Thiết bị có video',
+          'targetMuscles': ['Vai sau'],
+          'description':
+              'Máy mở vai sau với tay đòn treo cao giúp cô lập cơ vai sau và ổn định khớp vai, đi kèm video hướng dẫn kỹ thuật.',
+          'usageSteps': [
+            'Chỉnh ghế để ngực áp sát đệm tựa và tay cầm nằm ngang tầm vai.',
+            'Ngồi quay mặt vào đệm ngực, duỗi tay về trước và hơi mềm khớp khuỷu.',
+            'Thở ra, kéo mở hai tay đòn ra sau theo hình vòng cung bằng lực vai sau.',
+            'Giữ 1 giây ở điểm co đỉnh rồi trả tay chậm có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Tránh nhún cầu vai hoặc dùng đà ngả lưng khi mở tay; ưu tiên mức tạ kiểm soát tốt.',
+          'videoUrl': 'assets/videos/catalog/reverse_machine_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002003',
+          'name': 'Máy cuốn đùi sau ngồi (Seated Leg Curl)',
+          'category': 'Thiết bị có video',
+          'targetMuscles': ['Đùi sau'],
+          'description':
+              'Máy cuốn đùi sau tư thế ngồi có tựa lưng nghiêng và trục cuốn chân thấp, giúp tập trung tối đa vào nhóm cơ đùi sau.',
+          'usageSteps': [
+            'Chỉnh tựa lưng sao cho khớp gối trùng với trục xoay của máy.',
+            'Đặt gót chân lên đệm lăn dưới và hạ đệm cố định ôm sát phía trên đùi.',
+            'Thở ra, cuốn cẳng chân xuống hết biên độ để siết chặt cơ đùi sau.',
+            'Hít vào và duỗi chân lên chậm rãi, giữ căng cơ suốt chuyển động.',
+          ],
+          'safetyNotes':
+              'Giữ hông và lưng dưới áp sát ghế; không giật mạnh hoặc khóa cứng khớp gối khi duỗi.',
+          'videoUrl': 'assets/videos/catalog/seated_leg_curl_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002004',
+          'name': 'Máy kéo xà trợ lực (Assisted Pull-Up)',
+          'category': 'Thiết bị có video',
+          'targetMuscles': ['Lưng', 'Tay trước'],
+          'description':
+              'Máy kéo xà trợ lực đối trọng với hai cột dẫn hướng và đệm gối, hỗ trợ kiểm soát nhịp kéo xà chuẩn form cho mọi trình độ.',
+          'usageSteps': [
+            'Cài mức tạ đối trọng phù hợp (tạ càng nặng lực nâng hỗ trợ càng nhiều).',
+            'Bước lên bậc kê, nắm chắc thanh xà trên cao rồi đặt hai đầu gối lên đệm trợ lực.',
+            'Hạ vai, gồng core, thở ra và kéo người lên cho đến khi cằm ngang hoặc qua thanh xà.',
+            'Hít vào và hạ người xuống chậm rãi cho tới khi cánh tay duỗi gần hết.',
+          ],
+          'safetyNotes':
+              'Đợi đệm trợ lực hạ về vị trí thấp nhất rồi mới bước từng chân xuống để tránh bật đệm.',
+          'videoUrl': 'assets/videos/catalog/assisted_pull_up_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003001',
+          'name': 'Ghế duỗi lưng khung cong',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Lưng dưới'],
+          'description':
+              'Ghế duỗi lưng 45° khung cong hỗ trợ tập dựng sống lưng dưới và cơ mông gân kheo với video minh họa.',
+          'usageSteps': [
+            'Điều chỉnh đệm đỡ hông nằm ngay dưới xương chậu để gập hông tự do.',
+            'Cài cổ chân chắc chắn vào chốt đệm sau rồi giữ lưng thẳng tự nhiên.',
+            'Gập người về trước có kiểm soát và nâng thân lên thẳng hàng.',
+          ],
+          'safetyNotes':
+              'Không ưỡn võng thắt lưng quá mức ở điểm cao nhất; giữ tốc độ chậm đều.',
+          'videoUrl': 'assets/videos/catalog/lower_back_01_hyperextension_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003002',
+          'name': 'Ghế duỗi lưng 45° khung tam giác',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Lưng dưới'],
+          'description':
+              'Ghế duỗi lưng 45° khung tam giác chắc chắn, phù hợp cả bài tay không và ôm tạ tăng kháng lực.',
+          'usageSteps': [
+            'Chỉnh đệm đùi ngang nếp gấp hông và cố định gót chân vững vàng.',
+            'Đan tay trước ngực hoặc ôm bánh tạ sát ngực, giữ cột sống trung tính.',
+            'Gập hông xuống 45–60° rồi siết cơ lưng dưới và mông để nâng thân lên.',
+          ],
+          'safetyNotes':
+              'Bắt đầu bằng trọng lượng cơ thể trước khi ôm tạ đĩa; tránh giật lưng.',
+          'videoUrl': 'assets/videos/catalog/lower_back_02_crossed_arms_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003003',
+          'name': 'Máy kéo xô',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Lưng xô'],
+          'description':
+              'Máy kéo xô khối tạ xếp đa góc nắm (nắm thường, tay rộng, tay hẹp) với video hướng dẫn từng biến thể.',
+          'usageSteps': [
+            'Chỉnh đệm giữ đùi áp sát mặt trên đùi và chọn thanh kéo phù hợp.',
+            'Hơi ưỡn ngực, kéo thanh tạ xuống ngang xương đòn bằng lực xô.',
+            'Trả tay về vị trí giãn cao hết tầm một cách có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Không ngả lưng lấy đà sâu hoặc thả tạ va mạnh vào tháp tạ.',
+          'videoUrl': 'assets/videos/catalog/lats_01_normal_grip_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003004',
+          'name': 'Máy Smith và ghế nâng hông',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Mông'],
+          'description':
+              'Cụm máy Smith kết hợp ghế nâng hông chuyên dụng giúp thiết lập quỹ đạo tạ thẳng đứng an toàn cho Hip Thrust.',
+          'usageSteps': [
+            'Đặt lưng trên tựa vững vào mép ghế và cố định hai bàn chân rộng bằng vai.',
+            'Đặt thanh đòn máy Smith ngang hông kèm đệm lót, xoay cổ tay mở khóa an toàn.',
+            'Đẩy hông lên cao sao cho đùi song song sàn, siết chặt mông 1 giây rồi hạ xuống.',
+          ],
+          'safetyNotes':
+              'Xoay khóa chốt an toàn hai đầu trước khi rời vị trí tập; giữ cằm hơi cúi.',
+          'videoUrl': 'assets/videos/catalog/glutes_01_smith_hip_thrust_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003005',
+          'name': 'Máy cáp với dây cổ chân',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Mông'],
+          'description':
+              'Trụ cáp đơn kết hợp vòng đeo cổ chân (ankle strap) cho các bài đá chân sau và cô lập cơ mông.',
+          'usageSteps': [
+            'Hạ ròng rọc xuống vị trí thấp nhất và móc dây đeo vào cổ chân.',
+            'Nắm trụ máy giữ thân hơi nghiêng, giữ lưng thẳng và gồng core.',
+            'Đá chân tập ra sau chếch nhẹ, siết cơ mông 1 giây rồi thu về chậm.',
+          ],
+          'safetyNotes':
+              'Không ưỡn thắt lưng khi đá chân lên; kiểm soát dây cáp khi trả về.',
+          'videoUrl': 'assets/videos/catalog/glutes_02_cable_kickback_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003006',
+          'name': 'Máy Multi Hip',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Mông'],
+          'description':
+              'Máy Multi Hip đa hướng với cánh tay xoay và đệm lăn giúp tập dạng hông (abduction) tác động cơ mông nhỡ.',
+          'usageSteps': [
+            'Chỉnh độ cao bàn đứng sao cho trục xoay máy ngang khớp hông.',
+            'Đứng vững một chân, tựa nhẹ tay vào khung đỡ và đặt má ngoài đùi lên đệm lăn.',
+            'Dạng chân sang ngang hết biên độ kiểm soát rồi đưa chân về vị trí đầu.',
+          ],
+          'safetyNotes':
+              'Giữ thân thẳng đứng, tránh nghiêng người để mượn lực hông.',
+          'videoUrl': 'assets/videos/catalog/glutes_03_multi_hip_abduction_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003007',
+          'name': 'Máy ép ngực pec deck',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Ngực'],
+          'description':
+              'Máy ép ngực pec deck khung vòm giúp cô lập cơ ngực lớn theo cung tròn đều ở cả hai bên.',
+          'usageSteps': [
+            'Chỉnh ghế để tay cầm ngang giữa ngực và tựa sát lưng vào đệm.',
+            'Hơi gập nhẹ khuỷu tay, ép hai tay đòn vào giữa trước ngực.',
+            'Giữ 1 giây ở điểm co đỉnh rồi mở tay chậm rãi.',
+          ],
+          'safetyNotes':
+              'Không mở khuỷu tay quá sâu ra sau vai; chọn chốt biên độ an toàn.',
+          'videoUrl': 'assets/videos/catalog/chest_01_pec_deck_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003008',
+          'name': 'Máy cáp đôi',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Ngực'],
+          'description':
+              'Hệ thống ròng rọc cáp đôi cho phép điều chỉnh chiều cao linh hoạt khi thực hiện ép ngực bằng cáp ngang.',
+          'usageSteps': [
+            'Đặt hai chốt ròng rọc ngang vai và cài cùng mức tạ ở cả hai tháp.',
+            'Bước nhẹ một chân về trước giữ thăng bằng, ưỡn ngực tự nhiên.',
+            'Ép hai tay cầm gặp nhau trước giữa ngực rồi mở ra chậm có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Kiểm tra chốt tạ hai bên bằng nhau và không buông tay cầm đột ngột.',
+          'videoUrl': 'assets/videos/catalog/chest_02_cable_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003009',
+          'name': 'Máy đẩy ngực',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Ngực'],
+          'description':
+              'Máy đẩy ngực khối tạ xếp dẫn hướng cố định, an toàn cho việc tập nặng và phát triển toàn bộ cơ ngực.',
+          'usageSteps': [
+            'Chỉnh chiều cao ghế sao cho tay cầm nằm ngang giữa ngực.',
+            'Áp chặt hai bả vai vào đệm tựa, nhấn chân trụ vững trên sàn.',
+            'Đẩy tay đòn về trước gần thẳng tay rồi hạ chậm để giãn cơ ngực.',
+          ],
+          'safetyNotes':
+              'Không khóa cứng khớp khuỷu tay khi đẩy hết biên độ và không nhấc vai.',
+          'videoUrl': 'assets/videos/catalog/chest_03_chest_press_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003010',
+          'name': 'Máy dip ngồi',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Tay sau'],
+          'description':
+              'Máy dip tư thế ngồi với hai tay đòn đòn bẩy tập trung phát triển bắp tay sau và phần ngực dưới.',
+          'usageSteps': [
+            'Chỉnh ghế ngồi và đai giữ ổn định (nếu có), nắm chắc hai tay cầm bên hông.',
+            'Thẳng lưng, nhấn mạnh hai tay đòn xuống cho tới khi cánh tay gần duỗi thẳng.',
+            'Trả tay lên chậm theo phương thẳng đứng để giữ áp lực lên tay sau.',
+          ],
+          'safetyNotes':
+              'Tránh nhún vai lên gần tai; giữ khuỷu tay ép sát về sau thân.',
+          'videoUrl': 'assets/videos/catalog/triceps_01_seated_dip_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003011',
+          'name': 'Máy duỗi tay sau ngồi',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Tay sau'],
+          'description':
+              'Máy duỗi tay sau ngồi giúp cô lập hoàn toàn cơ tam đầu cánh tay mà không cần giữ thăng bằng khớp vai.',
+          'usageSteps': [
+            'Chỉnh đệm ngồi sao cho trục xoay máy thẳng hàng với khớp khuỷu tay.',
+            'Tựa lưng vững, đặt hai bắp tay trên đệm và nắm chắc tay cầm.',
+            'Duỗi cẳng tay tới trước hết tầm, siết 1 giây rồi gập chậm về.',
+          ],
+          'safetyNotes':
+              'Chọn mức tạ vừa đủ kiểm soát để khuỷu tay không bật khỏi đệm.',
+          'videoUrl': 'assets/videos/catalog/triceps_02_extension_machine_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003012',
+          'name': 'Máy cáp với dây thừng',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Tay sau'],
+          'description':
+              'Trạm cáp ròng rọc cao gắn dây thừng kép giúp xoay cổ tay tự nhiên ở cuối nhịp đẩy dây thừng tay sau.',
+          'usageSteps': [
+            'Gắn dây thừng vào ròng rọc trên cao và đứng hơi nghiêng thân về trước.',
+            'Khép hai khuỷu tay sát hai bên sườn cố định làm điểm tựa.',
+            'Đẩy dây xuống và tách hai đầu dây ra ngoài, siết chặt tay sau 1 giây.',
+          ],
+          'safetyNotes':
+              'Chỉ di chuyển khớp khuỷu tay, không đưa cùi chỏ ra trước/sau.',
+          'videoUrl': 'assets/videos/catalog/triceps_03_rope_pushdown_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003013',
+          'name': 'Máy cáp thấp với thanh thẳng',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Tay trước'],
+          'description':
+              'Trạm cáp thấp lắp thanh thẳng hỗ trợ cuốn tay trước nắm thường hoặc nắm rộng với lực căng liên tục.',
+          'usageSteps': [
+            'Chỉnh ròng rọc xuống thấp nhất và gắn thanh thẳng ngang.',
+            'Nắm thanh thẳng lòng bàn tay ngửa (rộng bằng vai hoặc rộng hơn vai), khép cùi chỏ.',
+            'Cuốn thanh tạ lên gần vai, siết cơ nhị đầu 1 giây rồi hạ xuống chậm.',
+          ],
+          'safetyNotes':
+              'Không ngả lưng vung đà và không buông tạ chạm chồng tạ quá mạnh.',
+          'videoUrl': 'assets/videos/catalog/biceps_01_low_cable_curl_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003014',
+          'name': 'Máy cáp và ghế preacher',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Tay trước'],
+          'description':
+              'Ghế dốc preacher đặt trước ròng rọc cáp thấp giúp cố định mặt sau cánh tay để cuốn tay trước cô lập tối đa.',
+          'usageSteps': [
+            'Ngồi vững trên ghế preacher, tựa sát hai cánh tay trên đệm dốc.',
+            'Nắm thanh kéo gắn vào ròng rọc cáp thấp phía trước.',
+            'Cuốn thanh kéo lên hướng vai rồi hạ xuống gần hết nhưng vẫn giữ căng cơ.',
+          ],
+          'safetyNotes':
+              'Không thả duỗi khuỷu tay giật mạnh ở cuối biên độ hạ để bảo vệ gân nhị đầu.',
+          'videoUrl': 'assets/videos/catalog/biceps_02_cable_preacher_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003015',
+          'name': 'Máy duỗi đùi trước',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Đùi trước'],
+          'description':
+              'Máy duỗi đùi trước ngồi hỗ trợ tập cả hai chân hoặc từng chân độc lập, đi kèm video hướng dẫn chi tiết.',
+          'usageSteps': [
+            'Chỉnh đệm lưng sao cho khớp gối trùng với trục xoay của máy.',
+            'Đặt cổ chân phía sau đệm lăn dưới và nắm tay cầm giữ hông ổn định.',
+            'Duỗi thẳng cẳng chân lên, giữ 1 giây siết cơ đùi trước rồi hạ chậm.',
+          ],
+          'safetyNotes':
+              'Không bật tạ bằng quán tính; giảm mức tạ khi chuyển sang tập một chân.',
+          'videoUrl': 'assets/videos/catalog/quads_01_bilateral_extension_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003016',
+          'name': 'Máy Smith',
+          'category': 'Thiết bị 7 nhóm cơ',
+          'targetMuscles': ['Đùi trước'],
+          'description':
+              'Khung máy Smith thanh đòn dẫn hướng thẳng có các móc khóa an toàn dọc trụ, hỗ trợ Squat đùi trước ổn định.',
+          'usageSteps': [
+            'Đặt thanh đòn ngang cầu vai trên, bước hai chân hơi chếch trước trục thanh.',
+            'Xoay cổ tay mở móc khóa an toàn, gồng core và hạ hông sâu có kiểm soát.',
+            'Đạp gót chân đứng lên về vị trí đầu và xoay cổ tay móc khóa khi xong hiệp.',
+          ],
+          'safetyNotes':
+              'Luôn cài chốt chặn an toàn phía dưới ở độ sâu Squat thấp nhất.',
+          'videoUrl': 'assets/videos/catalog/quads_03_smith_squat_480p.mp4',
+          'status': 'ACTIVE',
+        },
       ],
       exercises: [
         {
@@ -2008,6 +2731,506 @@ class _LocalDemoStore {
           'instructions': 'Kéo thanh đòn về phía ức ngực, ép chặt 2 bả vai.',
           'safetyNotes': 'Giữ thân người cố định.',
           'difficulty': 'BEGINNER',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002101',
+          'equipmentId': '90000000-0000-4000-8000-000000002001',
+          'name': 'Ép ngực máy (Pec Deck Fly)',
+          'description':
+              'Bài tập cô lập cơ ngực lớn với quỹ đạo mượt và ổn định, phù hợp cả người mới lẫn giai đoạn siết cơ.',
+          'targetMuscles': ['Ngực'],
+          'instructions':
+              'Tựa lưng sát đệm, giữ khuỷu tay hơi cong cố định rồi ép hai tay đòn về trước ngực và siết cơ 1 giây.',
+          'usageSteps': [
+            'Chỉnh ghế để tay nắm ngang giữa ngực và chọn mức tạ phù hợp.',
+            'Ép hai cánh tay vào giữa theo cung tròn, thở ra ở điểm siết đỉnh.',
+            'Mở tay chậm rãi trong 2–3 giây để giữ lực căng cơ ngực.',
+          ],
+          'safetyNotes':
+              'Không nhấc vai về trước và không để tay đòn giật ngược quá sâu ra sau lưng.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/pec_deck_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002102',
+          'equipmentId': '90000000-0000-4000-8000-000000002002',
+          'name': 'Mở vai sau máy (Reverse Machine Fly)',
+          'description':
+              'Bài tập cô lập cơ vai sau giúp cân bằng khớp vai và cải thiện tư thế lưng trên.',
+          'targetMuscles': ['Vai sau'],
+          'instructions':
+              'Áp ngực vào đệm tựa, kéo mở hai tay ra ngang vai bằng lực vai sau, giữ cổ và cầu vai thả lỏng.',
+          'usageSteps': [
+            'Điều chỉnh chiều cao ghế để tay cầm ngang tầm vai và ngực tựa vững.',
+            'Mở rộng hai tay ra sau theo đường vòng cung, thở ra khi siết vai sau.',
+            'Khép tay về trước chậm rãi có kiểm soát, không để tạ va mạnh.',
+          ],
+          'safetyNotes':
+              'Giữ khuỷu tay mềm tự nhiên, tránh gồng cổ hoặc ngả thân người ra sau.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/reverse_machine_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002103',
+          'equipmentId': '90000000-0000-4000-8000-000000002003',
+          'name': 'Cuốn đùi sau ngồi (Seated Leg Curl)',
+          'description':
+              'Bài tập cô lập đùi sau ở tư thế ngồi giúp kéo giãn tốt và kiểm soát lực an toàn cho khớp gối.',
+          'targetMuscles': ['Đùi sau'],
+          'instructions':
+              'Cố định đùi dưới đệm chắn, cuốn cẳng chân xuống hết biên độ rồi trả lên chậm rãi.',
+          'usageSteps': [
+            'Canh khớp gối thẳng trục xoay máy và cài chặt đệm cố định đùi.',
+            'Cuốn chân xuống sâu, giữ 1 giây khi cơ đùi sau co tối đa.',
+            'Trả chân lên có kiểm soát trong 2–3 giây mà không khóa cứng gối.',
+          ],
+          'safetyNotes':
+              'Không nhấc mông khỏi ghế và tránh dùng đà hất tạ ở đầu chuyển động.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/seated_leg_curl_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000002104',
+          'equipmentId': '90000000-0000-4000-8000-000000002004',
+          'name': 'Kéo xà trợ lực (Assisted Pull-Up)',
+          'description':
+              'Bài kéo thân trên hỗ trợ đối trọng giúp phát triển cơ lưng xô và tay trước với biên độ chuẩn.',
+          'targetMuscles': ['Lưng', 'Tay trước'],
+          'instructions':
+              'Đặt gối lên đệm trợ lực, kéo khuỷu tay hướng xuống sườn để đưa ngực tiến gần thanh xà.',
+          'usageSteps': [
+            'Chọn mức tạ trợ lực phù hợp khả năng kéo đủ 8–12 lần chuẩn kỹ thuật.',
+            'Hạ bả vai, gồng nhẹ bụng và kéo người lên mượt mà theo phương thẳng đứng.',
+            'Hạ người xuống chậm rãi cho tới khi lưng xô giãn hết biên độ.',
+          ],
+          'safetyNotes':
+              'Giữ thân ổn định, không đung đưa chân và bước xuống chậm sau khi đệm chạm đáy.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/assisted_pull_up_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003101',
+          'equipmentId': '90000000-0000-4000-8000-000000003001',
+          'name': 'Duỗi lưng trên ghế 45°',
+          'description':
+              'Bài tập nền tảng trên ghế duỗi lưng 45° khung cong giúp tăng sức mạnh cơ dựng sống lưng dưới và chuỗi cơ sau.',
+          'targetMuscles': ['Lưng dưới'],
+          'instructions':
+              'Cố định hông dưới đệm đỡ, gập thân về trước giữ lưng phẳng rồi nâng lên thẳng hàng thân người.',
+          'usageSteps': [
+            'Chỉnh đệm đỡ hông ngay dưới xương chậu và gài chặt gót chân.',
+            'Khoanh tay trước ngực hoặc đặt nhẹ sau đầu, hít vào gập hông xuống 45–60°.',
+            'Thở ra, siết lưng dưới và mông nâng người về đường thẳng tự nhiên.',
+          ],
+          'safetyNotes':
+              'Dừng ở đường thẳng thân người, tránh ngả ưỡn thắt lưng quá mức.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/lower_back_01_hyperextension_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003102',
+          'equipmentId': '90000000-0000-4000-8000-000000003002',
+          'name': 'Duỗi lưng, tay trước ngực',
+          'description':
+              'Bài duỗi lưng trên ghế 45° khung tam giác với hai tay bắt chéo trước ngực giúp kiểm soát nhịp chuyển động chuẩn.',
+          'targetMuscles': ['Lưng dưới'],
+          'instructions':
+              'Bắt chéo hai tay trước ngực, gập hông chậm theo độ nghiêng ghế 45° rồi nâng thân về thẳng hàng.',
+          'usageSteps': [
+            'Tựa phần đùi trên lên đệm ghế, gót chân tì chắc vào giá đỡ.',
+            'Đan tay trước ngực, gồng nhẹ core và gập người xuống có kiểm soát.',
+            'Siết cơ dựng sống và mông kéo thân người lên ngang trục hông.',
+          ],
+          'safetyNotes':
+              'Giữ cổ thẳng hàng cột sống, không ngẩng đầu nhìn gương gây mỏi cổ.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/lower_back_02_crossed_arms_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003103',
+          'equipmentId': '90000000-0000-4000-8000-000000003002',
+          'name': 'Duỗi lưng có tạ',
+          'description':
+              'Biến thể nâng cao trên ghế duỗi lưng 45° khung tam giác bằng cách ôm bánh tạ trước ngực để tăng tải lưng dưới.',
+          'targetMuscles': ['Lưng dưới'],
+          'instructions':
+              'Ôm chặt bánh tạ sát ngực, giữ lưng thẳng suốt biên độ gập xuống và nâng lên trên ghế 45°.',
+          'usageSteps': [
+            'Chọn bánh tạ vừa sức và ôm sát vào giữa ngực bằng hai tay.',
+            'Gập hông hạ người chậm rãi trong 2 giây nhưng vẫn giữ cột sống trung tính.',
+            'Phát lực từ hông và lưng dưới nâng thân lên thẳng hàng rồi lặp lại.',
+          ],
+          'safetyNotes':
+              'Tuyệt đối không cong lưng khi cầm thêm tạ; đặt tạ xuống sàn trước khi bước ra.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/lower_back_03_weighted_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003104',
+          'equipmentId': '90000000-0000-4000-8000-000000003003',
+          'name': 'Kéo xô tay nắm thường',
+          'description':
+              'Bài kéo xô cơ bản với cự ly tay rộng vừa phải giúp cân bằng độ dày và độ rộng cơ lưng xô.',
+          'targetMuscles': ['Lưng xô'],
+          'instructions':
+              'Nắm thanh kéo rộng hơn vai một chút, hạ vai xuống trước rồi kéo thanh về phần ngực trên.',
+          'usageSteps': [
+            'Cố định hai đùi dưới đệm giữ và nắm thanh kéo với độ rộng vừa phải.',
+            'Ưỡn nhẹ ngực, kéo cùi chỏ thẳng xuống hông để đưa thanh tới ngực trên.',
+            'Thả thanh tạ lên chậm rãi cho đến khi lưng xô duỗi căng hết tầm.',
+          ],
+          'safetyNotes':
+              'Không lắc người về sau lấy đà; giữ cổ tay thẳng hàng cẳng tay.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/lats_01_normal_grip_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003105',
+          'equipmentId': '90000000-0000-4000-8000-000000003003',
+          'name': 'Kéo xô tay rộng',
+          'description':
+              'Biến thể cầm rộng trên máy kéo xô tập trung mở rộng xô hai bên tạo phom lưng chữ V.',
+          'targetMuscles': ['Lưng xô'],
+          'instructions':
+              'Nắm phần cong ngoài của thanh kéo rộng hơn vai, hướng khuỷu tay sang hai bên và xuống thấp.',
+          'usageSteps': [
+            'Nắm hai đầu ngoài thanh kéo và ngồi thẳng thân tựa chắc dưới đệm đùi.',
+            'Kéo thanh xuống ngang xương đòn, ép hai bả vai xuống và vào trong.',
+            'Kiểm soát nhịp nhả thanh lên để cảm nhận cơ xô hai bên giãn rõ rệt.',
+          ],
+          'safetyNotes':
+              'Không kéo thanh ra sau gáy để tránh gây áp lực xấu lên khớp vai.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/lats_02_wide_grip_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003106',
+          'equipmentId': '90000000-0000-4000-8000-000000003003',
+          'name': 'Kéo xô tay hẹp',
+          'description':
+              'Bài kéo xô tay nắm hẹp tăng biên độ kéo sâu vào vùng xô dưới và lưng giữa.',
+          'targetMuscles': ['Lưng xô'],
+          'instructions':
+              'Nắm tay hẹp hơn hoặc bằng vai, giữ khuỷu tay hướng về trước khi kéo thanh xuống ngực.',
+          'usageSteps': [
+            'Nắm thanh kéo cự ly hẹp trước mặt và hạ thấp hai vai khỏi tai.',
+            'Kéo khuỷu tay hướng thẳng xuống sàn cho tới khi thanh gần chạm ngực trên.',
+            'Siết lưng 1 giây rồi đưa thanh lên thẳng tay có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Tránh gù lưng trên ở điểm thả cao và không dùng quán tính lưng dưới.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/lats_03_close_grip_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003107',
+          'equipmentId': '90000000-0000-4000-8000-000000003004',
+          'name': 'Nâng hông bằng máy Smith',
+          'description':
+              'Bài đẩy hông tải nặng cực kỳ ổn định trên máy Smith và ghế nâng hông giúp phát triển tối đa cơ mông lớn.',
+          'targetMuscles': ['Mông'],
+          'instructions':
+              'Tựa lưng trên sát cạnh ghế, đặt thanh đòn Smith ngang hông rồi đạp gót chân đẩy hông lên cao.',
+          'usageSteps': [
+            'Điều chỉnh ghế chắc chắn và tựa phần dưới bả vai lên cạnh ghế.',
+            'Đặt thanh tạ Smith ngay nếp gấp hông kèm đệm, chân gập 90° khi ở đỉnh.',
+            'Đẩy hông thẳng lên cao siết chặt mông 1–2 giây rồi hạ hông chậm rãi.',
+          ],
+          'safetyNotes':
+              'Giữ cằm thu nhẹ về ngực tránh võng thắt lưng; khóa chốt thanh khi kết thúc.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/glutes_01_smith_hip_thrust_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003108',
+          'equipmentId': '90000000-0000-4000-8000-000000003005',
+          'name': 'Đá chân sau bằng cáp',
+          'description':
+              'Bài cô lập cơ mông với dây cáp cổ chân giữ sức căng liên tục suốt toàn bộ chuyển động.',
+          'targetMuscles': ['Mông'],
+          'instructions':
+              'Cài dây cổ chân vào ròng rọc thấp, giữ thân ổn định rồi đá chân thẳng ra sau siết cơ mông.',
+          'usageSteps': [
+            'Móc dây cổ chân vào cáp thấp và đứng cách trụ máy một sải tay.',
+            'Nghiêng nhẹ thân trên, gồng chặt core và đặt chân trụ vững trên sàn.',
+            'Đá chân tập về phía sau lên cao vừa tầm, siết mông 1 giây rồi trả về chậm.',
+          ],
+          'safetyNotes':
+              'Không võng lưng dưới khi đá chân lên; tập đủ hai bên chân cân bằng.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/glutes_02_cable_kickback_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003109',
+          'equipmentId': '90000000-0000-4000-8000-000000003006',
+          'name': 'Dạng hông bằng máy Multi Hip',
+          'description':
+              'Bài dạng hông đứng trên máy Multi Hip giúp làm tròn và khỏe nhóm cơ mông ngoài (mông nhỡ).',
+          'targetMuscles': ['Mông'],
+          'instructions':
+              'Đứng thẳng một chân trụ trên máy Multi Hip, dùng má ngoài đùi đẩy đệm lăn dạng chân sang ngang.',
+          'usageSteps': [
+            'Chỉnh chiều cao bệ đứng và tay đòn phù hợp chiều dài chân.',
+            'Nắm hai tay vào khung trước giữ thân thẳng và cố định hông.',
+            'Đẩy chân tập dạng rộng sang ngang hết tầm kiểm soát rồi khép về chậm.',
+          ],
+          'safetyNotes':
+              'Không nghiêng vai sang bên đối diện để kéo thêm lực.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/glutes_03_multi_hip_abduction_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003110',
+          'equipmentId': '90000000-0000-4000-8000-000000003007',
+          'name': 'Ép ngực trên máy',
+          'description':
+              'Bài ép ngực cô lập trên máy pec deck với đường đi tay đòn cố định giúp siết sâu rãnh ngực giữa.',
+          'targetMuscles': ['Ngực'],
+          'instructions':
+              'Tựa lưng sát ghế, mở ngực giữ khuỷu tay hơi cong rồi ép hai tay đòn chạm gần nhau trước ngực.',
+          'usageSteps': [
+            'Chỉnh ghế để tay nắm ngang giữa ngực và hai chân đặt vững.',
+            'Thở ra ép hai tay vào giữa, giữ chặt cơ ngực 1 giây ở đỉnh.',
+            'Hít vào mở tay ra chậm rãi đến khi ngực giãn vừa phải.',
+          ],
+          'safetyNotes':
+              'Hạ vai xuống khỏi tai và không để khuỷu tay trôi quá xa ra sau lưng.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/chest_01_pec_deck_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003111',
+          'equipmentId': '90000000-0000-4000-8000-000000003008',
+          'name': 'Ép ngực bằng cáp ngang',
+          'description':
+              'Bài ép ngực đứng với máy cáp đôi ngang vai giữ lực căng đều trên từng sợi cơ ngực lớn.',
+          'targetMuscles': ['Ngực'],
+          'instructions':
+              'Đặt hai ròng rọc ngang vai, bước một chân lên trước rồi ôm vòng hai tay cáp gặp nhau trước ngực.',
+          'usageSteps': [
+            'Chỉnh hai chốt ròng rọc ngang tầm vai và cầm chắc hai tay nắm.',
+            'Bước nhẹ lên trước tạo trụ vững, hơi gập khuỷu tay và ưỡn ngực.',
+            'Thở ra kéo vòng hai tay chạm nhau trước giữa ngực rồi trả về chậm rãi.',
+          ],
+          'safetyNotes':
+              'Giữ góc gập khuỷu tay cố định suốt hiệp tập để không biến thành bài đẩy.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/chest_02_cable_fly_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003112',
+          'equipmentId': '90000000-0000-4000-8000-000000003009',
+          'name': 'Đẩy ngực trên máy',
+          'description':
+              'Bài đẩy ngực hợp lực an toàn trên máy đẩy ngực giúp tập trung phát lực cơ ngực mà không cần người đỡ.',
+          'targetMuscles': ['Ngực'],
+          'instructions':
+              'Ngồi tựa lưng vững vào đệm, nắm tay cầm ngang ngực rồi đẩy thẳng về trước.',
+          'usageSteps': [
+            'Điều chỉnh ghế ngồi để tay nắm ngang giữa ngực, khép bả vai sát đệm.',
+            'Thở ra đẩy hai tay đòn về trước gần thẳng tay bằng lực cơ ngực.',
+            'Hít vào hạ tạ về chậm trong 2 giây nhưng không để tạ chạm chồng.',
+          ],
+          'safetyNotes':
+              'Giữ cổ tay thẳng và không đẩy khớp vai nhô về trước đệm.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/chest_03_chest_press_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003113',
+          'equipmentId': '90000000-0000-4000-8000-000000003010',
+          'name': 'Dip trên máy ngồi',
+          'description':
+              'Bài nhấn dip ngồi trên máy tạo khối lượng tập lớn và an toàn cho cả ba đầu cơ tay sau.',
+          'targetMuscles': ['Tay sau'],
+          'instructions':
+              'Ngồi tựa lưng thẳng, giữ khuỷu tay hướng ra sau rồi ấn mạnh hai tay đòn xuống hết tầm.',
+          'usageSteps': [
+            'Cài ghế vừa tầm để vai thả lỏng thoải mái khi nắm tay cầm.',
+            'Khép khuỷu tay gần thân, nhấn hai tay cầm thẳng xuống dưới.',
+            'Siết tay sau 1 giây ở điểm dưới cùng rồi nhả tay lên chậm.',
+          ],
+          'safetyNotes':
+              'Không nhấc mông khỏi ghế hoặc nhún cổ vai theo nhịp hạ tay.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/triceps_01_seated_dip_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003114',
+          'equipmentId': '90000000-0000-4000-8000-000000003011',
+          'name': 'Duỗi tay sau trên máy',
+          'description':
+              'Bài duỗi tay sau ngồi cô lập bắp tay sau chính xác nhờ điểm tựa cố định trên đệm tay.',
+          'targetMuscles': ['Tay sau'],
+          'instructions':
+              'Đặt hai bắp tay áp sát đệm, duỗi thẳng cẳng tay về phía trước để siết cơ tay sau.',
+          'usageSteps': [
+            'Điều chỉnh đệm ngồi sao cho trục khuỷu tay thẳng với trục xoay máy.',
+            'Nắm chắc tay cầm và giữ cổ tay trung tính.',
+            'Thở ra duỗi thẳng tay về trước rồi gập chậm về không để va tạ.',
+          ],
+          'safetyNotes':
+              'Giữ nguyên bắp tay áp sát đệm trong suốt cả hiệp.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/triceps_02_extension_machine_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003115',
+          'equipmentId': '90000000-0000-4000-8000-000000003012',
+          'name': 'Đẩy dây thừng cáp xuống',
+          'description':
+              'Bài tập kinh điển với máy cáp và dây thừng giúp tách nét đầu ngoài và đầu dài cơ tay sau.',
+          'targetMuscles': ['Tay sau'],
+          'instructions':
+              'Khép khuỷu tay cố định bên sườn, kéo dây thừng thẳng xuống và tách hai đầu dây ra hai bên đùi.',
+          'usageSteps': [
+            'Lắp dây thừng vào ròng rọc trên cao, hơi nghiêng thân trên 15°.',
+            'Khép hai cùi chỏ sát sườn và đẩy dây thừng xuống hết tầm tay.',
+            'Xoay tách nhẹ hai đầu dây sang hai bên ở đáy chuyển động rồi thu lên chậm.',
+          ],
+          'safetyNotes':
+              'Không thả bung khuỷu tay lên quá ngực khiến mất lực căng tay sau.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/triceps_03_rope_pushdown_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003116',
+          'equipmentId': '90000000-0000-4000-8000-000000003013',
+          'name': 'Cuốn tay trước cáp thấp',
+          'description':
+              'Bài cuốn tay trước đứng với máy cáp thấp thanh thẳng giúp duy trì lực căng ngay từ điểm khởi đầu.',
+          'targetMuscles': ['Tay trước'],
+          'instructions':
+              'Nắm thanh thẳng cự ly bằng vai ở ròng rọc thấp, khép cùi chỏ cố định và cuốn thanh lên ngang ngực.',
+          'usageSteps': [
+            'Đứng thẳng cách tháp cáp một bước nhỏ, lòng bàn tay ngửa nắm thanh thẳng.',
+            'Giữ hai khuỷu tay sát hông, thở ra cuốn tạ lên siết cơ tay trước.',
+            'Hạ tạ xuống chậm trong 2–3 giây cho đến khi tay gần thẳng.',
+          ],
+          'safetyNotes':
+              'Không đẩy cùi chỏ về trước quá nhiều hoặc ngả lưng vung người.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/biceps_01_low_cable_curl_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003117',
+          'equipmentId': '90000000-0000-4000-8000-000000003014',
+          'name': 'Cuốn tay trước trên ghế với cáp',
+          'description':
+              'Cuốn tay trước trên ghế dốc preacher kết hợp ròng rọc cáp thấp giúp loại bỏ hoàn toàn quán tính thân người.',
+          'targetMuscles': ['Tay trước'],
+          'instructions':
+              'Tựa chắc hai bắp tay trên mặt dốc ghế preacher và cuốn thanh cáp thấp lên bằng bắp tay trước.',
+          'usageSteps': [
+            'Chỉnh ghế để phần nách tựa gọn trên mép đệm, hai bắp tay áp sát đệm dốc.',
+            'Nắm thanh cáp thấp lòng bàn tay ngửa và giữ cổ tay thẳng.',
+            'Cuốn thanh lên mượt mà siết bắp tay 1 giây rồi hạ xuống có kiểm soát.',
+          ],
+          'safetyNotes':
+              'Không ngả thân trên ra sau để kéo thanh lên hoặc duỗi giật khớp khuỷu.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/biceps_02_cable_preacher_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003118',
+          'equipmentId': '90000000-0000-4000-8000-000000003013',
+          'name': 'Cuốn tay trước cáp thấp, tay rộng',
+          'description':
+              'Bài cuốn trên máy cáp thấp với thanh thẳng nắm tay rộng hơn vai nhằm nhấn mạnh đầu ngắn (mặt trong) bắp tay trước.',
+          'targetMuscles': ['Tay trước'],
+          'instructions':
+              'Nắm thanh thẳng rộng hơn vai ở trạm cáp thấp, giữ khuỷu tay sát sườn và cuốn thanh lên trước ngực.',
+          'usageSteps': [
+            'Gắn thanh thẳng vào ròng rọc cáp thấp và nắm rộng hơn bề ngang vai.',
+            'Giữ bả vai ổn định, cuốn thanh lên cao siết mạnh mặt trong tay trước.',
+            'Hạ thanh tạ chậm về điểm duỗi gần hết mà vẫn giữ căng dây cáp.',
+          ],
+          'safetyNotes':
+              'Tránh để cổ tay bẻ ngửa ra sau khi cầm tạ rộng; chọn mức tạ chuẩn form.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/biceps_03_wide_grip_cable_curl_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003119',
+          'equipmentId': '90000000-0000-4000-8000-000000003015',
+          'name': 'Duỗi đùi trước hai chân',
+          'description':
+              'Bài cô lập cơ tứ đầu đùi bằng cả hai chân trên máy duỗi đùi trước giúp cắt nét và tăng sức mạnh đùi trước.',
+          'targetMuscles': ['Đùi trước'],
+          'instructions':
+              'Ngồi tựa lưng sát ghế, cố định cổ chân dưới đệm lăn và duỗi thẳng cả hai chân lên trước.',
+          'usageSteps': [
+            'Chỉnh đệm lưng và đệm cổ chân vừa khớp sao cho gối nằm ngang trục xoay.',
+            'Nắm hai tay cầm bên hông giữ mông cố định trên mặt ghế.',
+            'Duỗi hai chân lên thẳng hoàn toàn, giữ 1 giây rồi hạ xuống chậm.',
+          ],
+          'safetyNotes':
+              'Không nhấc hông khỏi đệm và không giật tạ ở điểm bắt đầu.',
+          'difficulty': 'BEGINNER',
+          'videoUrl': 'assets/videos/catalog/quads_01_bilateral_extension_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003120',
+          'equipmentId': '90000000-0000-4000-8000-000000003015',
+          'name': 'Duỗi đùi trước một chân',
+          'description':
+              'Bài duỗi đùi trước từng chân một giúp khắc phục lệch sức mạnh hai bên đùi và cảm nhận cơ chính xác hơn.',
+          'targetMuscles': ['Đùi trước'],
+          'instructions':
+              'Cài mức tạ nhẹ vừa sức, tập từng chân luân phiên với cùng số lần lặp và biên độ chuẩn.',
+          'usageSteps': [
+            'Đặt một cổ chân phía sau đệm lăn dưới, chân còn lại giữ thả lỏng trên sàn.',
+            'Siết cơ đùi trước duỗi thẳng chân lên hết tầm trong nhịp thở ra.',
+            'Hạ chân xuống chậm 2–3 giây rồi hoàn tất đủ reps trước khi đổi chân.',
+          ],
+          'safetyNotes':
+              'Giảm mức tạ xuống khoảng một nửa so với bài hai chân để bảo vệ khớp gối.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/quads_02_single_leg_extension_480p.mp4',
+          'status': 'ACTIVE',
+        },
+        {
+          'id': '90000000-0000-4000-8000-000000003121',
+          'equipmentId': '90000000-0000-4000-8000-000000003016',
+          'name': 'Squat bằng máy Smith',
+          'description':
+              'Bài Squat trên máy Smith giúp dồn áp lực tối đa vào nhóm cơ đùi trước nhờ quỹ đạo thẳng cố định.',
+          'targetMuscles': ['Đùi trước'],
+          'instructions':
+              'Đặt thanh đòn lên cầu vai, đưa chân hơi tiến về trước trục thanh rồi ngồi xuống sâu và đạp lên.',
+          'usageSteps': [
+            'Mở khóa móc an toàn, giữ lưng thẳng và hít sâu gồng chặt vùng core.',
+            'Hạ hông xuống sâu tới khi đùi song song hoặc thấp hơn mặt sàn nhẹ.',
+            'Đạp mạnh qua lòng bàn chân đứng thẳng lên và xoay khóa chốt khi xong hiệp.',
+          ],
+          'safetyNotes':
+              'Luôn đặt chốt chặn an toàn ở mức phù hợp trước khi tập mức tạ nặng.',
+          'difficulty': 'INTERMEDIATE',
+          'videoUrl': 'assets/videos/catalog/quads_03_smith_squat_480p.mp4',
           'status': 'ACTIVE',
         },
       ],
@@ -2224,18 +3447,102 @@ class _LocalDemoStore {
       ],
       coachNotifications: [
         {
-          'id': 'cnoti-001',
-          'title': 'Buổi tập 18:00 hôm nay',
-          'message': 'Hội viên Nguyễn Minh Quân đã xác nhận lịch tập Ngực & Tay sau.',
+          'id': '101',
+          'kind': 'BOOKED',
+          'category': 'COACH',
+          'title': 'Nhắc lịch PT 1:1 hôm nay lúc 18:00',
+          'body':
+              'Coach Lê Hoàng Nam đã chuẩn bị bài Ngực & Tay sau. Nhớ khởi động trước 10 phút.',
+          'actionRoute': '/member/features/sessions',
+          'readAt': null,
           'isRead': false,
-          'createdAt': now.subtract(const Duration(hours: 1)).toIso8601String(),
+          'eventAt': now.subtract(const Duration(minutes: 25)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(minutes: 25)).toIso8601String(),
         },
         {
-          'id': 'cnoti-002',
-          'title': 'Yêu cầu Coach mới',
-          'message': 'Hoàng Gia Huy vừa gửi yêu cầu tập 1:1 cùng bạn.',
+          'id': '102',
+          'kind': 'TRAINING_PLAN_UPDATED',
+          'category': 'TRAINING',
+          'title': 'Giáo trình 8 tuần đã được cập nhật',
+          'body':
+              'Mức tạ tuần mới đã sẵn sàng trong mục Tập luyện.',
+          'actionRoute': '/member/features/training',
+          'readAt': null,
           'isRead': false,
-          'createdAt': now.subtract(const Duration(hours: 5)).toIso8601String(),
+          'eventAt': now.subtract(const Duration(hours: 2)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(hours: 2)).toIso8601String(),
+        },
+        {
+          'id': '103',
+          'kind': 'NUTRITION_UPDATED',
+          'category': 'TRAINING',
+          'title': 'Coach đã cập nhật thực đơn',
+          'body':
+              'Thực đơn 2.400 kcal đã sẵn sàng trong mục Dinh dưỡng.',
+          'actionRoute': '/member/features/nutrition',
+          'readAt': now.subtract(const Duration(hours: 6)).toIso8601String(),
+          'isRead': true,
+          'eventAt': now.subtract(const Duration(hours: 8)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(hours: 8)).toIso8601String(),
+        },
+        {
+          'id': '104',
+          'kind': 'NEW_MESSAGE',
+          'category': 'MESSAGE',
+          'title': 'Tin nhắn mới từ Lê Hoàng Nam',
+          'body': 'Hôm nay tập xong nhớ nhắn lại cảm nhận cơ ngực nhé!',
+          'actionRoute': '/member/features/messages',
+          'readAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+          'isRead': true,
+          'eventAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+        },
+        {
+          'id': '105',
+          'kind': 'ADMIN_BROADCAST',
+          'category': 'SYSTEM',
+          'title': 'Lịch hoạt động cuối tuần tại Meta Gym',
+          'body':
+              'Phòng tập mở cửa bình thường từ 05:30 đến 22:00 tất cả các ngày trong tuần.',
+          'readAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+          'isRead': true,
+          'eventAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+        },
+        {
+          'id': '106',
+          'kind': 'PACKAGE_ACTIVE',
+          'category': 'COACH',
+          'title': 'Gói Coach đã kích hoạt',
+          'body':
+              'Gói huấn luyện 1:1 12 buổi đã kích hoạt và sẵn sàng đặt lịch.',
+          'actionRoute': '/member/features/my-coach',
+          'readAt': now.subtract(const Duration(days: 4)).toIso8601String(),
+          'isRead': true,
+          'eventAt': now.subtract(const Duration(days: 4)).toIso8601String(),
+          'createdAt': now.subtract(const Duration(days: 4)).toIso8601String(),
+        },
+      ],
+      notificationPreferences: {
+        'workoutRemindersEnabled': true,
+        'reminderTime': '17:30',
+        'ptBeforeMinutes': 30,
+        'nutritionRemindersEnabled': true,
+        'coachUpdatesEnabled': true,
+        'messagesEnabled': true,
+        'callsEnabled': true,
+        'adminBroadcastsEnabled': true,
+      },
+      adminBroadcasts: [
+        {
+          'id': 'bcast-demo-001',
+          'title': 'Lịch hoạt động cuối tuần tại Meta Gym',
+          'body':
+              'Phòng tập mở cửa bình thường từ 05:30 đến 22:00 tất cả các ngày trong tuần.',
+          'audience': 'ALL',
+          'actionRoute': null,
+          'recipientCount': 2,
+          'createdAt': now.subtract(const Duration(days: 2)).toIso8601String(),
         },
       ],
       calls: [
@@ -2704,6 +4011,93 @@ class _LocalDemoStore {
         (body['status'] ?? body['decision'] ?? 'ACCEPTED').toString();
     req['status'] = nextStatus;
     return req;
+  }
+
+  static final RegExp _restDayTitlePattern = RegExp(
+    r'(nghỉ|phục hồi|hồi phục|\brest\b|recovery|off\s*day)',
+    caseSensitive: false,
+  );
+
+  bool isRestOrRecoveryStartsAt(String? startsAtStr) {
+    if (startsAtStr == null || startsAtStr.trim().isEmpty) return false;
+    final parsed = DateTime.tryParse(startsAtStr.trim());
+    if (parsed == null) return false;
+    final gym = parsed.toUtc().add(const Duration(hours: 7));
+    return isRestOrRecoveryDate(DateTime(gym.year, gym.month, gym.day));
+  }
+
+  bool isRestOrRecoveryDate(DateTime gymDate) {
+    final days = (activeTrainingPlan['days'] as List? ?? const [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    if (days.isEmpty) return false;
+
+    final iso = _isoDate(gymDate);
+    Map<String, dynamic>? matched;
+    for (final d in days) {
+      final scheduled = d['scheduledDate']?.toString();
+      if (scheduled != null &&
+          scheduled.length >= 10 &&
+          scheduled.substring(0, 10) == iso) {
+        matched = d;
+        break;
+      }
+    }
+    matched ??= () {
+      for (final d in days) {
+        final scheduled = d['scheduledDate']?.toString();
+        int weekday;
+        if (scheduled != null && scheduled.trim().isNotEmpty) {
+          final parsed = DateTime.tryParse(scheduled.trim());
+          weekday = parsed?.weekday ?? (((d['dayNumber'] as int? ?? 1) - 1) % 7) + 1;
+        } else {
+          weekday = (((d['dayNumber'] as int? ?? 1) - 1) % 7) + 1;
+        }
+        if (weekday == gymDate.weekday) return d;
+      }
+      return null;
+    }();
+
+    if (matched == null) return true;
+    final exercises = matched['exercises'] as List? ?? const [];
+    if (exercises.isEmpty) return true;
+    final title = matched['title']?.toString() ?? '';
+    return _restDayTitlePattern.hasMatch(title);
+  }
+
+  List<Map<String, dynamic>> availableCoachSlots(String? dateKey) {
+    if (dateKey == null || dateKey.trim().isEmpty) return const [];
+    final parsed = DateTime.tryParse('${dateKey.trim()}T00:00:00');
+    if (parsed == null) return const [];
+    if (isRestOrRecoveryDate(parsed)) return const [];
+
+    final workDays = (coachWorkSlots['days'] as List? ?? const [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    final daySlot = workDays
+        .where((d) => d['weekday'] == parsed.weekday)
+        .firstOrNull;
+    final starts = (daySlot?['starts'] as List? ?? const [])
+        .map((e) => e.toString())
+        .toList();
+    final nowUtc = DateTime.now().toUtc();
+
+    final result = <Map<String, dynamic>>[];
+    for (final hhmm in starts) {
+      final startLocal = DateTime.tryParse('${dateKey.trim()}T$hhmm:00+07:00');
+      if (startLocal == null) continue;
+      if (!startLocal.toUtc().isAfter(nowUtc)) continue;
+      result.add({
+        'startsAt': startLocal.toUtc().toIso8601String(),
+        'endsAt': startLocal
+            .add(const Duration(minutes: 90))
+            .toUtc()
+            .toIso8601String(),
+      });
+    }
+    return result;
   }
 
   Map<String, dynamic> createCoachBooking(
@@ -3205,6 +4599,8 @@ class _LocalDemoStore {
     'coachEntitlements': coachEntitlements,
     'coachBookings': coachBookings,
     'coachNotifications': coachNotifications,
+    'notificationPreferences': notificationPreferences,
+    'adminBroadcasts': adminBroadcasts,
     'calls': calls,
   };
 
@@ -3270,6 +4666,9 @@ class _LocalDemoStore {
       coachBookings: readList('coachBookings') ?? base.coachBookings,
       coachNotifications:
           readList('coachNotifications') ?? base.coachNotifications,
+      notificationPreferences:
+          readMap('notificationPreferences') ?? base.notificationPreferences,
+      adminBroadcasts: readList('adminBroadcasts') ?? base.adminBroadcasts,
       calls: readList('calls') ?? base.calls,
     );
   }

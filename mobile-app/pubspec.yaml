@@ -50,6 +50,10 @@ dependencies:
   url_launcher: ^6.3.3
   qr_flutter: ^4.1.0
   flutter_svg: ^2.5.0
+  flutter_local_notifications: ^23.0.4
+  timezone: ^0.11.2
+  firebase_core: ^5.2.0
+  firebase_messaging: ^17.1.0
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +88,9 @@ flutter:
     - assets/svg/coaching/
     - assets/svg/community/
     - assets/svg/default/
+    - assets/svg/equipment_m3/
+    - assets/svg/equipment_video/
+    - assets/svg/equipment_7groups/
     - assets/svg/membership/
     - assets/svg/muscles/
     - assets/svg/muscles/focus/
@@ -94,6 +101,7 @@ flutter:
     - assets/svg/setting/
     - assets/svg/states/
     - assets/svg/workout/
+    - assets/videos/catalog/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
