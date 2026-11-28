@@ -167,6 +167,21 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byKey(const Key('offline-cache-banner')), findsNothing);
         expect(tester.takeException(), isNull);
+
+        controller.setSyncWarning(
+          'Không thể đồng bộ lịch tự tập: máy chủ hiện tại chưa bật API nhiều buổi mới.',
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('offline-cache-banner')), findsOneWidget);
+        expect(
+          find.textContaining('Không thể đồng bộ lịch tự tập'),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byKey(const Key('offline-cache-banner-dismiss')));
+        await tester.pumpAndSettle();
+        expect(controller.syncWarningMessage, isNull);
+        expect(find.byKey(const Key('offline-cache-banner')), findsNothing);
       },
     );
   });

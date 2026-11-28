@@ -4,11 +4,11 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
 /// Lớp phủ hiển thị thông báo gọn phía trên khi app đang ngoại tuyến,
-/// chờ đồng bộ thao tác hoặc đang đồng bộ tự động lên máy chủ.
+/// chờ đồng bộ thao tác, đang đồng bộ hoặc gặp lỗi đồng bộ từ máy chủ.
 ///
 /// Tuân thủ `DESIGN.md`: dùng bề mặt đặc Level 1 (`surfaceSolid`, không blur),
-/// màu ngữ nghĩa cảnh báo (`warning`) / đồng bộ (`info`), chữ `12px` Be Vietnam Pro
-/// tương phản >= 4.5:1 và nút đóng đạt vùng chạm tối thiểu `44x44`.
+/// màu ngữ nghĩa cảnh báo (`warning`) / đồng bộ (`info`) / lỗi (`error`), chữ `12px`
+/// Be Vietnam Pro tương phản >= 4.5:1 và nút đóng đạt vùng chạm tối thiểu `44x44`.
 class OfflineCacheBannerOverlay extends StatelessWidget {
   const OfflineCacheBannerOverlay({
     required this.controller,
@@ -25,6 +25,9 @@ class OfflineCacheBannerOverlay extends StatelessWidget {
       return pending > 0
           ? 'Đang đồng bộ $pending thao tác lên máy chủ...'
           : 'Đang đồng bộ dữ liệu mới...';
+    }
+    if (controller.syncWarningMessage != null) {
+      return controller.syncWarningMessage!;
     }
     if (pending > 0) {
       return 'Đang ngoại tuyến · Chờ đồng bộ $pending thao tác';
@@ -66,6 +69,7 @@ class OfflineCacheBannerOverlay extends StatelessWidget {
                 child: _OfflineBannerCard(
                   message: formatBannerMessage(controller),
                   isSyncing: controller.isSyncing,
+                  hasErrorWarning: controller.syncWarningMessage != null,
                   hasPendingMutations: controller.pendingMutationCount > 0,
                   onDismiss: controller.dismissBanner,
                 ),
@@ -81,12 +85,14 @@ class _OfflineBannerCard extends StatelessWidget {
   const _OfflineBannerCard({
     required this.message,
     required this.isSyncing,
+    required this.hasErrorWarning,
     required this.hasPendingMutations,
     required this.onDismiss,
   });
 
   final String message;
   final bool isSyncing;
+  final bool hasErrorWarning;
   final bool hasPendingMutations;
   final VoidCallback onDismiss;
 
@@ -94,9 +100,15 @@ class _OfflineBannerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
-    final accentColor = isSyncing ? palette.info : palette.warning;
+    final accentColor = isSyncing
+        ? palette.info
+        : hasErrorWarning
+        ? palette.error
+        : palette.warning;
     final iconData = isSyncing
         ? Icons.sync_rounded
+        : hasErrorWarning
+        ? Icons.error_outline_rounded
         : hasPendingMutations
         ? Icons.cloud_upload_outlined
         : Icons.cloud_off_rounded;
@@ -126,7 +138,7 @@ class _OfflineBannerCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   message,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: palette.textPrimary,

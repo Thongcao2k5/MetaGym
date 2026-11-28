@@ -64,11 +64,13 @@ class CatalogItem {
       category: json['category'] as String?,
       instructions: json['instructions'] as String?,
       usageSteps: (json['usageSteps'] as List? ?? const [])
-          .map((value) => value as String)
+          .where((value) => value != null)
+          .map((value) => value.toString())
           .toList(),
       safetyNotes: json['safetyNotes'] as String?,
       targetMuscles: (json['targetMuscles'] as List? ?? const [])
-          .map((value) => value as String)
+          .where((value) => value != null)
+          .map((value) => value.toString())
           .toList(),
       videoUrl: json['videoUrl'] as String?,
     );

@@ -2,6 +2,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_service.dart';
@@ -72,6 +73,7 @@ class ExerciseLibraryPage extends StatefulWidget {
 class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
   final _search = TextEditingController();
   CatalogService? _service;
+  SyncRevisionBinding? _syncBinding;
   List<CatalogItem> _exercises = const [];
   String? _muscle;
   String? _error;
@@ -80,6 +82,9 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted) _load(silent: true);
+    });
     if (_service != null) return;
     _service = widget.service ?? context.read<CatalogService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -89,31 +94,49 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
 
   @override
   void dispose() {
+    _syncBinding?.dispose();
     _search.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    final query = _search.text.trim();
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
-      final exercises = await _service!.getExercises(
-        search: _search.text.trim(),
-      );
+      List<CatalogItem> exercises;
+      try {
+        exercises = await _service!.getExercises(search: query);
+      } on ApiException catch (error) {
+        if (error.kind == ApiExceptionKind.network && query.isNotEmpty) {
+          final allCached = await _service!.getExercises();
+          final lower = query.toLowerCase();
+          exercises = allCached.where((item) {
+            return item.name.toLowerCase().contains(lower) ||
+                (item.category?.toLowerCase().contains(lower) ?? false) ||
+                item.targetMuscles.any((m) => m.toLowerCase().contains(lower));
+          }).toList();
+        } else {
+          rethrow;
+        }
+      }
       if (!mounted) return;
       setState(() {
         _exercises = exercises
-            .where((item) => item.status == 'ACTIVE')
+            .where((item) => item.status.toUpperCase() == 'ACTIVE')
             .toList();
+        _error = null;
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!silent && mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải được bài tập.');
+      if (!silent && mounted) setState(() => _error = 'Không tải được bài tập.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 

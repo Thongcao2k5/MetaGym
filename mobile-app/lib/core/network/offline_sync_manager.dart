@@ -177,6 +177,7 @@ class OfflineSyncManager with WidgetsBindingObserver {
 
     var syncedCount = 0;
     var droppedCount = 0;
+    var sawLegacySelfTraining404 = false;
     final queued = await mutationQueue.listAll();
     if (queued.isNotEmpty) {
       statusController.setSyncing(true);
@@ -198,6 +199,10 @@ class OfflineSyncManager with WidgetsBindingObserver {
           }
           if (error.kind == ApiExceptionKind.validation ||
               error.kind == ApiExceptionKind.request) {
+            if (error.statusCode == 404 &&
+                mutation.path.startsWith('/member/self-training-days')) {
+              sawLegacySelfTraining404 = true;
+            }
             await mutationQueue.remove(mutation.id);
             droppedCount += 1;
           } else {
@@ -214,9 +219,19 @@ class OfflineSyncManager with WidgetsBindingObserver {
       final remaining = remainingList.length;
       statusController.setPendingMutationCount(remaining);
 
+      if (!_disposed && droppedCount > 0) {
+        statusController.setSyncWarning(
+          sawLegacySelfTraining404
+              ? 'Không thể đồng bộ lịch tự tập: máy chủ hiện tại chưa bật API nhiều buổi mới.'
+              : 'Không thể đồng bộ $droppedCount thao tác do máy chủ từ chối dữ liệu.',
+        );
+      } else if (!_disposed && syncedCount > 0 && remaining == 0) {
+        statusController.setSyncWarning(null);
+      }
+
       if (!_disposed &&
           sessionController.status == SessionStatus.authenticated &&
-          (syncedCount > 0 || forceRefresh)) {
+          (syncedCount > 0 || droppedCount > 0 || forceRefresh)) {
         try {
           await onRefreshControllers?.call();
         } catch (_) {}

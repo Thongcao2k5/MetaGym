@@ -159,7 +159,7 @@ class SecureOfflineMutationQueue implements OfflineMutationQueue {
   }) : _storage = storage ?? const FlutterSecureStorage();
 
   static const String _storageKey = 'meta_gym_offline_outbox_v1';
-  static const int defaultMaxTotalBytes = 524288;
+  static const int defaultMaxTotalBytes = 1048576;
 
   final FlutterSecureStorage _storage;
   final int maxItems;

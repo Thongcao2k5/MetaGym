@@ -291,6 +291,86 @@ void main() {
         expect(statusController.pendingMutationCount, 0);
       },
     );
+
+    test(
+      'falls back to legacy PUT /member/self-training-days/:date when POST returns 404 with UUID exercises',
+      () async {
+        connectivityController.add(const [ConnectivityResult.none]);
+        await pumpEventQueue();
+
+        final selfTrainingApi = MemberSelfTrainingApi(client);
+        await selfTrainingApi.createSession(
+          day: '2026-11-28',
+          title: 'Leg Day',
+          startTime: '17:30',
+          notes: 'Offline UUID',
+          exercises: const [
+            SelfTrainingExercise(
+              id: '11111111-1111-4111-8111-111111111111',
+              name: 'Squat',
+              sets: 4,
+              reps: '10',
+            ),
+          ],
+        );
+
+        adapter.offline = false;
+        adapter.statusOverrides['POST /member/self-training-days'] = 404;
+
+        connectivityController.add(const [ConnectivityResult.wifi]);
+        await _pumpUntil(
+          () => statusController.syncRevision > 0 && !statusController.isSyncing,
+        );
+
+        expect(await mutationQueue.listAll(), isEmpty);
+        expect(statusController.pendingMutationCount, 0);
+        expect(statusController.syncWarningMessage, isNull);
+        expect(
+          adapter.recordedMutations.map((m) => '${m.method} ${m.path}'),
+          ['PUT /member/self-training-days/2026-11-28'],
+        );
+      },
+    );
+
+    test(
+      'surfaces warning banner when custom self-training session hits 404 on legacy server',
+      () async {
+        connectivityController.add(const [ConnectivityResult.none]);
+        await pumpEventQueue();
+
+        final selfTrainingApi = MemberSelfTrainingApi(client);
+        await selfTrainingApi.createSession(
+          day: '2026-11-28',
+          title: 'Custom Offline',
+          startTime: '18:00',
+          notes: 'Manual',
+          exercises: const [
+            SelfTrainingExercise(
+              id: 'custom-1',
+              name: 'Push Up',
+              sets: 3,
+              reps: '15',
+            ),
+          ],
+        );
+
+        adapter.offline = false;
+        adapter.statusOverrides['POST /member/self-training-days'] = 404;
+
+        connectivityController.add(const [ConnectivityResult.wifi]);
+        await _pumpUntil(
+          () => statusController.syncRevision > 0 && !statusController.isSyncing,
+        );
+
+        expect(await mutationQueue.listAll(), isEmpty);
+        expect(statusController.pendingMutationCount, 0);
+        expect(
+          statusController.syncWarningMessage,
+          contains('Không thể đồng bộ lịch tự tập'),
+        );
+        expect(statusController.shouldShowBanner, isTrue);
+      },
+    );
   });
 
   group('SecureOfflineMutationQueue persistence', () {

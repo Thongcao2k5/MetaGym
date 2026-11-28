@@ -53,7 +53,7 @@ class MemoryApiCacheStore implements ApiCacheStore {
   });
 
   static const int defaultMaxEntries = 80;
-  static const int defaultMaxEntryBytes = 262144;
+  static const int defaultMaxEntryBytes = 1048576;
 
   final int maxEntries;
   final int maxEntryBytes;

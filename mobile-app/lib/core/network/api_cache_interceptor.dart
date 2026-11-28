@@ -18,6 +18,7 @@ class ApiCacheStatusController extends ChangeNotifier {
   bool _isSyncing = false;
   int _pendingMutationCount = 0;
   int _syncRevision = 0;
+  String? _syncWarningMessage;
 
   bool get isShowingCachedData => _isShowingCachedData;
   DateTime? get lastSyncedAt => _lastSyncedAt;
@@ -26,10 +27,14 @@ class ApiCacheStatusController extends ChangeNotifier {
   bool get isSyncing => _isSyncing;
   int get pendingMutationCount => _pendingMutationCount;
   int get syncRevision => _syncRevision;
+  String? get syncWarningMessage => _syncWarningMessage;
 
   bool get shouldShowBanner =>
       _isSyncing ||
-      ((_isShowingCachedData || _isDeviceOffline || _pendingMutationCount > 0) &&
+      ((_isShowingCachedData ||
+              _isDeviceOffline ||
+              _pendingMutationCount > 0 ||
+              _syncWarningMessage != null) &&
           !_isDismissed);
 
   void recordLiveSuccess(DateTime now) {
@@ -92,14 +97,26 @@ class ApiCacheStatusController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSyncWarning(String? message) {
+    final normalized = message?.trim();
+    final next = (normalized == null || normalized.isEmpty) ? null : normalized;
+    if (_syncWarningMessage == next) return;
+    _syncWarningMessage = next;
+    if (next != null) {
+      _isDismissed = false;
+    }
+    notifyListeners();
+  }
+
   void notifyDataSynced() {
     _syncRevision += 1;
     notifyListeners();
   }
 
   void dismissBanner() {
-    if (_isDismissed) return;
+    if (_isDismissed && _syncWarningMessage == null) return;
     _isDismissed = true;
+    _syncWarningMessage = null;
     notifyListeners();
   }
 
@@ -109,7 +126,8 @@ class ApiCacheStatusController extends ChangeNotifier {
         !_isDismissed &&
         !_isDeviceOffline &&
         !_isSyncing &&
-        _pendingMutationCount == 0) {
+        _pendingMutationCount == 0 &&
+        _syncWarningMessage == null) {
       return;
     }
     _isShowingCachedData = false;
@@ -118,6 +136,7 @@ class ApiCacheStatusController extends ChangeNotifier {
     _isDeviceOffline = false;
     _isSyncing = false;
     _pendingMutationCount = 0;
+    _syncWarningMessage = null;
     notifyListeners();
   }
 }

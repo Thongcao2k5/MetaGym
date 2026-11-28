@@ -120,6 +120,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final ApiCacheStatusController _apiCacheStatus;
   late final OfflineSyncManager _offlineSyncManager;
   late final ApiClient _apiClient;
+  String? _prewarmedUserId;
   late final AuthService _authService;
   late final AuthController _authController;
   late final ProfileService _profileService;
@@ -255,7 +256,34 @@ class _MetaGymAppState extends State<MetaGymApp> {
       onRefreshControllers: _refreshCoreControllers,
     );
     unawaited(_offlineSyncManager.start());
+    _sessionController.addListener(_handleSessionChanged);
+    _handleSessionChanged();
     _sessionController.restore();
+  }
+
+  void _handleSessionChanged() {
+    if (MetaGymTheme.isFlutterTestEnvironment) return;
+    final user = _sessionController.user;
+    if (_sessionController.status != SessionStatus.authenticated ||
+        user == null) {
+      _prewarmedUserId = null;
+      return;
+    }
+    if (_prewarmedUserId == user.id) return;
+    _prewarmedUserId = user.id;
+    unawaited(_prewarmOfflineCatalog());
+  }
+
+  Future<void> _prewarmOfflineCatalog() async {
+    if (_sessionController.status != SessionStatus.authenticated ||
+        _apiCacheStatus.isDeviceOffline) {
+      return;
+    }
+    await Future.wait<void>([
+      _catalogService.getGymProfile().then((_) {}).catchError((_) {}),
+      _catalogService.getEquipment().then((_) {}).catchError((_) {}),
+      _catalogService.getExercises().then((_) {}).catchError((_) {}),
+    ]);
   }
 
   Future<void> _refreshCoreControllers() async {
@@ -264,11 +292,13 @@ class _MetaGymAppState extends State<MetaGymApp> {
       _profileController.load().then((_) {}).catchError((_) {}),
       _membershipController.load().catchError((_) {}),
       _notificationsController.refresh(initial: false).catchError((_) {}),
+      if (!MetaGymTheme.isFlutterTestEnvironment) _prewarmOfflineCatalog(),
     ]);
   }
 
   @override
   void dispose() {
+    _sessionController.removeListener(_handleSessionChanged);
     _offlineSyncManager.dispose();
     if (_ownsNotificationsController) {
       _notificationsController.dispose();

@@ -308,21 +308,42 @@ Future<Object> _optimisticSelfTrainingMutation({
     'exercises': bodyMap['exercises'] ?? const <Object?>[],
   };
 
-  // Cập nhật các cache tuần/tháng thường gặp nếu có sẵn.
+  // Cập nhật cả cache chế độ xem Tuần và xem Tháng nếu đang có sẵn.
   final dayDate = DateTime.tryParse(planDate);
   if (dayDate != null) {
     final weekStart = dayDate.subtract(
       Duration(days: dayDate.weekday - DateTime.monday),
     );
-    final weekFrom = _formatDate(weekStart);
-    final weekTo = _formatDate(weekStart.add(const Duration(days: 6)));
-    final rangeKey = buildGetCacheKey(
-      '/member/self-training-days',
-      <String, dynamic>{'from': weekFrom, 'to': weekTo},
-      options,
+    final monthFirstDay = DateTime(dayDate.year, dayDate.month);
+    final monthGridStart = monthFirstDay.subtract(
+      Duration(days: monthFirstDay.weekday - DateTime.monday),
     );
-    final list = await _readListData(cacheStore, rangeKey);
-    if (list != null) {
+    final monthLastDay = DateTime(dayDate.year, dayDate.month + 1, 0);
+    final monthGridCount =
+        monthLastDay.difference(monthGridStart).inDays +
+        (7 - monthLastDay.weekday) +
+        1;
+    final ranges = <({String from, String to})>{
+      (
+        from: _formatDate(weekStart),
+        to: _formatDate(weekStart.add(const Duration(days: 6))),
+      ),
+      (
+        from: _formatDate(monthGridStart),
+        to: _formatDate(
+          monthGridStart.add(Duration(days: monthGridCount - 1)),
+        ),
+      ),
+    };
+
+    for (final range in ranges) {
+      final rangeKey = buildGetCacheKey(
+        '/member/self-training-days',
+        <String, dynamic>{'from': range.from, 'to': range.to},
+        options,
+      );
+      final list = await _readListData(cacheStore, rangeKey);
+      if (list == null) continue;
       if (method == 'DELETE') {
         list.removeWhere(
           (item) => item['id'] == sessionId || item['planDate'] == planDate,

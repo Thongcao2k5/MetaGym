@@ -132,11 +132,48 @@ class ApiClient {
     final method = mutation.method.toUpperCase();
     _logger?.call('API $method started [replay]');
     try {
-      final requestHeaders = await _buildRequestHeaders(mutation.headers);
-      final response = await _dio.request<Object?>(
-        mutation.path,
-        data: mutation.body,
+      await _sendReplayRequest(
+        method: method,
+        path: mutation.path,
+        body: mutation.body,
         queryParameters: mutation.queryParameters,
+        headers: mutation.headers,
+      );
+    } on ApiException catch (error) {
+      // Tương thích với máy chủ production (`origin/main`) chưa bật route POST nhiều buổi:
+      // tự chuyển về PUT /member/self-training-days/:date nếu mọi bài tập đều có UUID thư viện.
+      if (error.statusCode == 404 &&
+          method == 'POST' &&
+          mutation.path == '/member/self-training-days') {
+        final fallback = _buildLegacySelfTrainingPut(mutation);
+        if (fallback != null) {
+          await _sendReplayRequest(
+            method: 'PUT',
+            path: fallback.path,
+            body: fallback.body,
+            queryParameters: const <String, dynamic>{},
+            headers: mutation.headers,
+          );
+          return;
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _sendReplayRequest({
+    required String method,
+    required String path,
+    required Object? body,
+    required Map<String, dynamic> queryParameters,
+    required Map<String, String> headers,
+  }) async {
+    try {
+      final requestHeaders = await _buildRequestHeaders(headers);
+      final response = await _dio.request<Object?>(
+        path,
+        data: body,
+        queryParameters: queryParameters,
         options: Options(
           method: method,
           headers: requestHeaders,
@@ -147,6 +184,40 @@ class ApiClient {
     } on DioException catch (error) {
       throw await _mapAndReportDioError(method, error);
     }
+  }
+
+  ({String path, Map<String, dynamic> body})? _buildLegacySelfTrainingPut(
+    QueuedApiMutation mutation,
+  ) {
+    final body = mutation.body;
+    if (body is! Map) return null;
+    final planDate = body['planDate']?.toString().trim();
+    final exercisesRaw = body['exercises'];
+    if (planDate == null || planDate.isEmpty || exercisesRaw is! List) {
+      return null;
+    }
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
+    final exerciseIds = <String>[];
+    for (final item in exercisesRaw) {
+      if (item is! Map) return null;
+      final id = item['id']?.toString().trim() ?? '';
+      if (!uuidRegex.hasMatch(id)) {
+        return null;
+      }
+      exerciseIds.add(id);
+    }
+    if (exerciseIds.isEmpty) return null;
+    return (
+      path: '/member/self-training-days/${Uri.encodeComponent(planDate)}',
+      body: <String, dynamic>{
+        'title': (body['title']?.toString() ?? 'Buổi tự tập').trim(),
+        'startTime': body['startTime'],
+        'notes': (body['notes']?.toString() ?? '').trim(),
+        'exerciseIds': exerciseIds,
+      },
+    );
   }
 
   Uri resolveServerPath(String path) {
