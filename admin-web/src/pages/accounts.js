@@ -1,4 +1,4 @@
-import { api, buildQuery } from '../services/api.js';
+import { api, buildQuery, uploadRaw } from '../services/api.js';
 import {
   debounce,
   esc,
@@ -18,6 +18,8 @@ import { exportToExcel } from '../components/export.js';
 import { hasPermission, NO_PERMISSION_REASON } from '../services/permissions.js';
 import { openDrawer } from '../components/drawer.js';
 import { openConfirmModal, openModal } from '../components/modal.js';
+import { openImageCropper } from '../components/image-cropper.js';
+import { openImageViewer } from '../components/image-viewer.js';
 import { bindPagination, renderPagination } from '../components/pagination.js';
 import {
   renderBanner,
@@ -31,6 +33,79 @@ import { notice, toast } from '../components/toast.js';
 import { buildHash, updateQuery } from '../state/router.js';
 
 const DEFAULT_TEMP_PW_REMINDER = 'Hãy gửi mật khẩu tạm cho Coach qua kênh nội bộ và nhắc Coach đổi mật khẩu sau khi đăng nhập.';
+const ACCOUNT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ACCOUNT_PHONE_PATTERN = /^[+]?[0-9][0-9\s.-]{7,19}$/;
+
+function validateAccountFullName(raw) {
+  const value = String(raw || '').trim();
+  if (value.length < 2 || value.length > 120) {
+    return { valid: false, value, error: 'Họ và tên phải có từ 2 đến 120 ký tự.' };
+  }
+  return { valid: true, value, error: '' };
+}
+
+function validateAccountEmail(raw) {
+  const value = String(raw || '').trim().toLowerCase();
+  if (!value) {
+    return { valid: false, value, error: 'Email đăng nhập không được để trống.' };
+  }
+  if (value.length > 255 || !ACCOUNT_EMAIL_PATTERN.test(value)) {
+    return { valid: false, value, error: 'Email đăng nhập không hợp lệ.' };
+  }
+  return { valid: true, value, error: '' };
+}
+
+function validateAccountPhone(raw) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) {
+    return { valid: true, value: null, error: '' };
+  }
+  const digits = trimmed.replace(/\D/g, '');
+  if (trimmed.length > 20 || !ACCOUNT_PHONE_PATTERN.test(trimmed) || digits.length < 8 || digits.length > 15) {
+    return {
+      valid: false,
+      value: trimmed,
+      error: 'Số điện thoại không hợp lệ (8–15 chữ số, ví dụ: 0901234567 hoặc +84901234567).',
+    };
+  }
+  return { valid: true, value: trimmed, error: '' };
+}
+
+const GENDER_LABELS = Object.freeze({
+  MALE: 'Nam',
+  FEMALE: 'Nữ',
+  OTHER: 'Khác',
+  PREFER_NOT_TO_SAY: 'Không tiết lộ',
+});
+
+const EXPERIENCE_LABELS = Object.freeze({
+  BEGINNER: 'Mới bắt đầu',
+  INTERMEDIATE: 'Trung cấp',
+  ADVANCED: 'Nâng cao',
+});
+
+const ACTIVITY_LABELS = Object.freeze({
+  LOW: 'Thấp / Ít vận động',
+  MODERATE: 'Vừa phải',
+  HIGH: 'Cao / Vận động nhiều',
+});
+
+function renderSelectOptions(labelMap, selectedValue) {
+  const current = selectedValue || '';
+  return Object.entries(labelMap)
+    .map(([val, label]) => `<option value="${esc(val)}" ${current === val ? 'selected' : ''}>${esc(label)}</option>`)
+    .join('');
+}
+
+function resolveAvatarUrl(url, mediaId, { size = null } = {}) {
+  if (!url) return '';
+  const [base, query] = url.split('?');
+  const params = new URLSearchParams(query || '');
+  if (size) params.set('size', size);
+  if (mediaId && !params.has('v')) params.set('v', mediaId);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
 
 function extractMemberGymBadge(row) {
   if (row.activeMembershipEndDate) {
@@ -221,9 +296,23 @@ function buildLockPreviewImpactHtml(role, target, preview) {
 }
 
 function buildDetailDrawerHtml(role, detail) {
-  // EXPLICIT PRIVACY ALLOWLIST: NEVER read or display healthNotes, injuryNotes, heightCm, weightKg,
-  // bodyFatPercent, fitnessGoal, dietaryPreferences, journal, messages, aiMessages, etc.
+  // EXPLICIT PRIVACY ALLOWLIST: NEVER read or display healthNotes, injuryNotes, weightKg,
+  // bodyFatPercent, journal, messages, aiMessages, etc.
+  const prof = detail.profile || detail;
+
+  const directAvatarUrl = resolveAvatarUrl(detail.avatarUrl, detail.avatarMediaId);
+  const thumbAvatarUrl = resolveAvatarUrl(detail.avatarThumbnailUrl || detail.avatarUrl, detail.avatarMediaId, { size: '120' });
+  const avatarContent = thumbAvatarUrl
+    ? `<img src="${esc(thumbAvatarUrl)}" alt="${esc(detail.fullName)}" class="meta-avatar-img" />`
+    : `<span class="meta-avatar-text">${esc(initials(detail.fullName))}</span>`;
+
   const identityRows = `
+    <div class="impact-row" style="align-items:center;">
+      <span class="impact-key">Ảnh đại diện</span>
+      <span class="impact-val">
+        <span class="meta-avatar ${role === 'COACH' ? 'meta-avatar-coach' : ''} ${directAvatarUrl ? 'clickable-avatar' : ''}" style="width:40px; height:40px;" ${directAvatarUrl ? `data-view-avatar="${esc(directAvatarUrl)}" data-avatar-title="${esc(detail.fullName)}" title="Nhấp để xem ảnh phóng to"` : ''}>${avatarContent}</span>
+      </span>
+    </div>
     <div class="impact-row"><span class="impact-key">UUID kỹ thuật</span><span class="impact-val tabular" style="font-size:12px">${esc(detail.id)}</span></div>
     <div class="impact-row"><span class="impact-key">Họ và tên</span><span class="impact-val">${esc(detail.fullName)}</span></div>
     <div class="impact-row"><span class="impact-key">Email</span><span class="impact-val">${esc(detail.email)}</span></div>
@@ -241,12 +330,21 @@ function buildDetailDrawerHtml(role, detail) {
     const activeRels = Number(detail.activeRelationshipsCount ?? detail.operationalSummary?.activeRelationshipsCount ?? 0);
     const openHolds = Number(detail.openHoldCount ?? detail.operationalSummary?.openHoldCount ?? 0);
     const scheduleConfigured = detail.scheduleConfigured ?? detail.operationalSummary?.scheduleConfigured;
+    const specialties = Array.isArray(prof.specialties) ? prof.specialties : [];
+    const expYears = Number(prof.experienceYears ?? 0);
     opsBlock = `<div class="impact-box">
       <div class="impact-row"><span class="impact-key">Trần suất học viên</span><span class="impact-val"><span class="meta-badge meta-badge-info tabular">Trần cứng 8 hội viên / Coach</span></span></div>
       <div class="impact-row"><span class="impact-key">Suất đang chiếm</span><span class="impact-val tabular">${usedSlots} / 8 suất</span></div>
       <div class="impact-row"><span class="impact-key">Quan hệ đang hoạt động</span><span class="impact-val tabular">${activeRels}</span></div>
       <div class="impact-row"><span class="impact-key">Suất giữ chỗ 15 phút</span><span class="impact-val tabular">${openHolds}</span></div>
       <div class="impact-row"><span class="impact-key">Lịch tuần cố định</span><span class="impact-val">${scheduleConfigured === true ? statusBadge('ACTIVE', 'Đã cấu hình') : scheduleConfigured === false ? statusBadge('HIDDEN', 'Chưa cấu hình') : '—'}</span></div>
+      <div class="impact-divider"></div>
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--meta-accent,#FF5E36); margin-bottom:8px;">Hồ sơ chuyên môn Coach (CSDL)</div>
+      <div class="impact-row"><span class="impact-key">Kinh nghiệm</span><span class="impact-val tabular">${expYears} năm</span></div>
+      <div class="impact-row"><span class="impact-key">Chuyên môn</span><span class="impact-val">${specialties.length ? esc(specialties.join(', ')) : 'Chưa cập nhật'}</span></div>
+      <div class="impact-row"><span class="impact-key">Bằng cấp / Chứng chỉ</span><span class="impact-val">${prof.qualifications ? esc(prof.qualifications) : 'Chưa cập nhật'}</span></div>
+      <div class="impact-row"><span class="impact-key">Lịch trực / Khả dụng</span><span class="impact-val">${prof.availabilityNote ? esc(prof.availabilityNote) : 'Chưa cập nhật'}</span></div>
+      <div class="impact-row"><span class="impact-key">Giới thiệu</span><span class="impact-val">${prof.biography ? esc(prof.biography) : 'Chưa cập nhật'}</span></div>
     </div>`;
   } else {
     const membership = detail.currentMembership || detail.activeMembership || detail.gymMembership || null;
@@ -264,6 +362,15 @@ function buildDetailDrawerHtml(role, detail) {
         <span class="impact-key">Quan hệ Coach hiện tại</span>
         <span class="impact-val">${rel ? `${esc(rel.coachName || 'Coach')} · ${relationshipStatusBadge(rel)}` : extractMemberCoachBadge(detail)}</span>
       </div>
+      <div class="impact-divider"></div>
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--meta-accent,#FF5E36); margin-bottom:8px;">Hồ sơ hội viên (CSDL)</div>
+      <div class="impact-row"><span class="impact-key">Giới tính</span><span class="impact-val">${prof.gender ? (GENDER_LABELS[prof.gender] || esc(prof.gender)) : 'Chưa thiết lập'}</span></div>
+      <div class="impact-row"><span class="impact-key">Ngày sinh</span><span class="impact-val tabular">${prof.dateOfBirth ? formatDateVN(prof.dateOfBirth) : 'Chưa thiết lập'}</span></div>
+      <div class="impact-row"><span class="impact-key">Chiều cao</span><span class="impact-val tabular">${prof.heightCm ? `${prof.heightCm} cm` : 'Chưa thiết lập'}</span></div>
+      <div class="impact-row"><span class="impact-key">Trình độ</span><span class="impact-val">${prof.experienceLevel ? (EXPERIENCE_LABELS[prof.experienceLevel] || esc(prof.experienceLevel)) : 'Chưa thiết lập'}</span></div>
+      <div class="impact-row"><span class="impact-key">Mức vận động</span><span class="impact-val">${prof.activityLevel ? (ACTIVITY_LABELS[prof.activityLevel] || esc(prof.activityLevel)) : 'Chưa thiết lập'}</span></div>
+      <div class="impact-row"><span class="impact-key">Mục tiêu</span><span class="impact-val">${prof.fitnessGoal ? esc(prof.fitnessGoal) : 'Chưa thiết lập'}</span></div>
+      <div class="impact-row"><span class="impact-key">Dinh dưỡng</span><span class="impact-val">${prof.dietaryPreferences ? esc(prof.dietaryPreferences) : 'Chưa thiết lập'}</span></div>
     </div>`;
   }
 
@@ -387,16 +494,25 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     }
   };
 
+  const renderPersonCell = (row, isCoach = false) => {
+    const directAvatarUrl = resolveAvatarUrl(row.avatarUrl, row.avatarMediaId);
+    const thumbAvatarUrl = resolveAvatarUrl(row.avatarThumbnailUrl || row.avatarUrl, row.avatarMediaId, { size: '120' });
+    const avatarContent = thumbAvatarUrl
+      ? `<img src="${esc(thumbAvatarUrl)}" alt="${esc(row.fullName)}" class="meta-avatar-img" onerror="this.remove();" />`
+      : esc(initials(row.fullName));
+    return `<div class="person-cell">
+      <span class="meta-avatar ${isCoach ? 'meta-avatar-coach' : ''} ${directAvatarUrl ? 'clickable-avatar' : ''}" ${directAvatarUrl ? `data-view-avatar="${esc(directAvatarUrl)}" data-avatar-title="${esc(row.fullName)}" title="Nhấp để xem ảnh phóng to"` : ''}>${avatarContent}</span>
+      <div>
+        <span class="person-name">${esc(row.fullName)}</span>
+        <span class="person-sub">${esc(row.email)}</span>
+      </div>
+    </div>`;
+  };
+
   const columns = activeRole === 'COACH' ? [
       {
         label: 'Huấn luyện viên',
-        render: (row) => `<div class="person-cell">
-          <span class="meta-avatar meta-avatar-coach">${esc(initials(row.fullName))}</span>
-          <div>
-            <span class="person-name">${esc(row.fullName)}</span>
-            <span class="person-sub">${esc(row.email)}</span>
-          </div>
-        </div>`,
+        render: (row) => renderPersonCell(row, true),
       },
       {
         label: 'Liên hệ',
@@ -422,13 +538,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     ] : [
       {
         label: 'Hội viên',
-        render: (row) => `<div class="person-cell">
-          <span class="meta-avatar">${esc(initials(row.fullName))}</span>
-          <div>
-            <span class="person-name">${esc(row.fullName)}</span>
-            <span class="person-sub">${esc(row.email)}</span>
-          </div>
-        </div>`,
+        render: (row) => renderPersonCell(row, false),
       },
       {
         label: 'Liên hệ',
@@ -767,9 +877,25 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
           const res = await api(`/admin/users/${encodeURIComponent(btn.dataset.id)}`);
           const detail = res?.data || row;
           drawer?.setBody(buildDetailDrawerHtml(activeRole, detail));
+          drawer?.dialog?.querySelectorAll?.('[data-view-avatar]')?.forEach((el) => {
+            el.onclick = (e) => {
+              e.stopPropagation();
+              openImageViewer({ src: el.dataset.viewAvatar, title: `Ảnh đại diện: ${el.dataset.avatarTitle || ''}` });
+            };
+          });
         } catch (error) {
           drawer?.setBody(renderErrorState({ title: 'Không tải được hồ sơ chi tiết', message: error.message }));
         }
+      };
+    });
+
+    root.querySelectorAll('[data-view-avatar]').forEach((el) => {
+      el.onclick = (e) => {
+        e.stopPropagation();
+        openImageViewer({
+          src: el.dataset.viewAvatar,
+          title: `Ảnh đại diện: ${el.dataset.avatarTitle || ''}`,
+        });
       };
     });
 
@@ -833,7 +959,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
               await api('/admin/coaches', 'POST', { email, fullName, password });
               ctrl.close();
               await reloadWith({ page: 1 });
-              notice(`Đã tạo tài khoản Coach ${fullName} với trần cứng 8 hội viên.`);
+              toast(`Đã tạo tài khoản Coach ${fullName} với trần cứng 8 hội viên.`, 'success');
             } catch (error) {
               ctrl.setBusy(false);
               ctrl.showError(error.message);
@@ -843,53 +969,634 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
       });
     };
 
-    // 3. Edit Account Modal (fullName & phone ONLY — NEVER memberLimit)
+    // 3. Edit Account Modal (Shared 2-col layout: avatar + basic account info on left; Member or Coach profile on right — NEVER memberLimit edit)
     const openEditModal = (row) => {
       if (!row) return;
+      const isMember = activeRole === 'MEMBER';
+      const prof = row.profile || row;
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const currentAvatarUrl = resolveAvatarUrl(row.avatarUrl, row.avatarMediaId);
+      const initialSpecialtiesArr = Array.isArray(prof.specialties) ? prof.specialties : [];
+
       openModal({
-        title: `Sửa tài khoản: ${row.fullName}`,
-        subtitle: activeRole === 'COACH'
-          ? 'Chỉ cập nhật họ tên và số điện thoại · Trần cứng 8 suất không thể chỉnh sửa'
-          : 'Cập nhật họ tên và số điện thoại vận hành',
+        maxWidth: '960px',
+        title: isMember ? `Cập nhật hội viên: ${row.fullName}` : `Cập nhật Huấn luyện viên: ${row.fullName}`,
+        subtitle: isMember
+          ? 'Cập nhật ảnh đại diện, thông tin tài khoản và hồ sơ hội viên theo CSDL (Audit Log)'
+          : 'Cập nhật ảnh đại diện, thông tin tài khoản và hồ sơ chuyên môn Coach · Trần cứng 8 suất giữ nguyên',
         bodyHtml: `<form id="account-form" novalidate>
           <div class="meta-modal-body">
-            <div class="field">
-              <label class="field-label" for="edit-fullName">Họ và tên</label>
-              <input id="edit-fullName" class="form-control" name="fullName" value="${esc(row.fullName || '')}" required minlength="2" maxlength="120" />
-            </div>
-            <div class="field">
-              <label class="field-label" for="edit-phone">Số điện thoại</label>
-              <input id="edit-phone" class="form-control tabular" name="phone" value="${esc(row.phone || '')}" maxlength="20" placeholder="Ví dụ: 0901234567" />
+            <div class="meta-modal-horizontal-layout">
+              <!-- Cột trái: Avatar và Thông tin tài khoản -->
+              <div class="modal-col-left">
+                <div class="edit-avatar-horizontal">
+                  <div class="edit-avatar-preview-wrap" id="avatar-preview-wrap" role="button" tabindex="0" title="${currentAvatarUrl ? 'Nhấp để xem ảnh phóng to' : ''}">
+                    <div class="meta-avatar meta-avatar-xl ${!isMember ? 'meta-avatar-coach' : ''}" id="edit-avatar-preview">
+                      ${currentAvatarUrl
+                        ? `<img src="${esc(currentAvatarUrl)}" alt="${esc(row.fullName)}" class="meta-avatar-img" />`
+                        : `<span class="meta-avatar-text">${esc(initials(row.fullName))}</span>`}
+                    </div>
+                    <div class="avatar-zoom-badge" id="avatar-zoom-badge" title="Xem ảnh" ${!currentAvatarUrl ? 'style="display:none;"' : ''}>
+                      ${icon('zoomIn', 14)}
+                    </div>
+                  </div>
+                  <input type="file" id="edit-avatar-file" accept="image/png,image/jpeg,image/webp" style="display:none;" />
+                  <div class="meta-avatar-dropdown-wrap">
+                    <button type="button" class="btn btn-graphite btn-sm meta-avatar-trigger-btn" id="btn-avatar-dropdown" aria-haspopup="true" aria-expanded="false">
+                      ${icon('camera', 15)} <span>Tùy chọn ảnh</span> ${icon('chevronDown', 13)}
+                    </button>
+                    <div class="meta-avatar-dropdown-menu" id="avatar-dropdown-menu" hidden>
+                      <button type="button" class="meta-dropdown-item" id="btn-view-avatar" ${!currentAvatarUrl ? 'style="display:none;"' : ''}>
+                        ${icon('eye', 15)} <span>Xem ảnh phóng to</span>
+                      </button>
+                      <button type="button" class="meta-dropdown-item" id="btn-pick-avatar">
+                        ${icon('upload', 15)} <span>Tải ảnh mới...</span>
+                      </button>
+                      <button type="button" class="meta-dropdown-item" id="btn-crop-avatar" ${!currentAvatarUrl ? 'style="display:none;"' : ''}>
+                        ${icon('crop', 15)} <span>Cắt lại ảnh</span>
+                      </button>
+                      <div class="meta-dropdown-divider" id="avatar-menu-divider" ${!currentAvatarUrl ? 'style="display:none;"' : ''}></div>
+                      <button type="button" class="meta-dropdown-item text-danger" id="btn-remove-avatar" ${!currentAvatarUrl ? 'style="display:none;"' : ''}>
+                        ${icon('trash', 15)} <span>Gỡ ảnh</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="field-hint" style="font-size:11px; margin-top:4px;">JPG, PNG, WebP tối đa 5MB.</div>
+                  <div class="field-error" id="edit-avatar-error" aria-live="polite"></div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="edit-fullName">Họ và tên <span class="text-danger">*</span></label>
+                  <input id="edit-fullName" class="form-control" name="fullName" value="${esc(row.fullName || '')}" required minlength="2" maxlength="120" />
+                  <span class="field-error" id="edit-fullName-error" aria-live="polite"></span>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="edit-email">Email đăng nhập <span class="text-danger">*</span></label>
+                  <input id="edit-email" class="form-control" name="email" type="email" value="${esc(row.email || '')}" required maxlength="255" placeholder="${isMember ? 'member@metagym.vn' : 'coach@metagym.vn'}" />
+                  <span class="field-hint">Dùng để đăng nhập ứng dụng Meta Gym.</span>
+                  <span class="field-error" id="edit-email-error" aria-live="polite"></span>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="edit-phone">Số điện thoại</label>
+                  <input id="edit-phone" class="form-control tabular" name="phone" type="tel" value="${esc(row.phone || '')}" maxlength="20" placeholder="Ví dụ: 0901234567" />
+                  <span class="field-hint">Để trống hoặc nhập 8–15 chữ số hợp lệ.</span>
+                  <span class="field-error" id="edit-phone-error" aria-live="polite"></span>
+                </div>
+              </div>
+
+              <!-- Cột phải: Hồ sơ theo vai trò -->
+              <div class="modal-col-right">
+                ${isMember ? `
+                <div class="modal-section-card">
+                  <div class="meta-form-section-header">
+                    <span class="meta-form-section-title">Hồ sơ hội viên (CSDL)</span>
+                    <span class="meta-form-section-desc">Thông tin cá nhân, thể chất và mục tiêu từ bảng member_profiles</span>
+                  </div>
+
+                  <div class="meta-form-grid-2">
+                    <div class="field">
+                      <label class="field-label" for="edit-gender">Giới tính</label>
+                      <select id="edit-gender" class="form-control" name="gender">
+                        <option value="">-- Chưa thiết lập --</option>
+                        ${renderSelectOptions(GENDER_LABELS, prof.gender)}
+                      </select>
+                      <span class="field-error" id="edit-gender-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="field">
+                      <label class="field-label" for="edit-dateOfBirth">Ngày sinh</label>
+                      <input id="edit-dateOfBirth" class="form-control tabular" name="dateOfBirth" type="date" value="${esc(prof.dateOfBirth ? String(prof.dateOfBirth).slice(0, 10) : '')}" min="1900-01-01" max="${todayIso}" />
+                      <span class="field-error" id="edit-dateOfBirth-error" aria-live="polite"></span>
+                    </div>
+                  </div>
+
+                  <div class="meta-form-grid-2">
+                    <div class="field">
+                      <label class="field-label" for="edit-heightCm">Chiều cao (cm)</label>
+                      <input id="edit-heightCm" class="form-control tabular" name="heightCm" type="number" step="0.5" min="30" max="300" value="${prof.heightCm ?? ''}" placeholder="Ví dụ: 172.5" />
+                      <span class="field-error" id="edit-heightCm-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="field">
+                      <label class="field-label" for="edit-experienceLevel">Trình độ tập luyện</label>
+                      <select id="edit-experienceLevel" class="form-control" name="experienceLevel">
+                        <option value="">-- Chưa thiết lập --</option>
+                        ${renderSelectOptions(EXPERIENCE_LABELS, prof.experienceLevel)}
+                      </select>
+                      <span class="field-error" id="edit-experienceLevel-error" aria-live="polite"></span>
+                    </div>
+                  </div>
+
+                  <div class="meta-form-grid-2">
+                    <div class="field">
+                      <label class="field-label" for="edit-activityLevel">Mức độ vận động</label>
+                      <select id="edit-activityLevel" class="form-control" name="activityLevel">
+                        <option value="">-- Chưa thiết lập --</option>
+                        ${renderSelectOptions(ACTIVITY_LABELS, prof.activityLevel)}
+                      </select>
+                      <span class="field-error" id="edit-activityLevel-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="field">
+                      <label class="field-label" for="edit-fitnessGoal">Mục tiêu tập luyện</label>
+                      <input id="edit-fitnessGoal" class="form-control" name="fitnessGoal" value="${esc(prof.fitnessGoal || '')}" maxlength="500" placeholder="Ví dụ: Giảm mỡ, tăng cơ, cải thiện sức bền" />
+                      <span class="field-error" id="edit-fitnessGoal-error" aria-live="polite"></span>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label class="field-label" for="edit-dietaryPreferences">Chế độ dinh dưỡng</label>
+                    <input id="edit-dietaryPreferences" class="form-control" name="dietaryPreferences" value="${esc(prof.dietaryPreferences || '')}" maxlength="500" placeholder="Ví dụ: Eat clean, Keto, Không đường, Ăn chay..." />
+                    <span class="field-error" id="edit-dietaryPreferences-error" aria-live="polite"></span>
+                  </div>
+                </div>` : `
+                <div class="modal-section-card">
+                  <div class="meta-form-section-header">
+                    <span class="meta-form-section-title">Hồ sơ Huấn luyện viên (CSDL)</span>
+                    <span class="meta-form-section-desc">Thông tin chuyên môn và giới thiệu từ bảng coach_profiles</span>
+                  </div>
+
+                  <div class="impact-box" style="margin-bottom:12px;">
+                    <div class="impact-row">
+                      <span class="impact-key">Trần suất học viên</span>
+                      <span class="impact-val"><span class="meta-badge meta-badge-info tabular">Cố định 8 hội viên / Coach</span></span>
+                    </div>
+                  </div>
+
+                  <div class="meta-form-grid-2">
+                    <div class="field">
+                      <label class="field-label" for="edit-experienceYears">Số năm kinh nghiệm</label>
+                      <input id="edit-experienceYears" class="form-control tabular" name="experienceYears" type="number" step="1" min="0" max="80" value="${prof.experienceYears ?? 0}" placeholder="Ví dụ: 5" />
+                      <span class="field-error" id="edit-experienceYears-error" aria-live="polite"></span>
+                    </div>
+
+                    <div class="field">
+                      <label class="field-label" for="edit-qualifications">Bằng cấp / Chứng chỉ</label>
+                      <input id="edit-qualifications" class="form-control" name="qualifications" value="${esc(prof.qualifications || '')}" maxlength="500" placeholder="Ví dụ: NASM-CPT, HLV Thể hình Quốc gia" />
+                      <span class="field-error" id="edit-qualifications-error" aria-live="polite"></span>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label class="field-label" for="edit-specialties">Chuyên môn (ngăn cách bằng dấu phẩy)</label>
+                    <input id="edit-specialties" class="form-control" name="specialties" value="${esc(initialSpecialtiesArr.join(', '))}" maxlength="600" placeholder="Ví dụ: Tăng cơ, Giảm mỡ, Calisthenics, Phục hồi chức năng" />
+                    <span class="field-error" id="edit-specialties-error" aria-live="polite"></span>
+                  </div>
+
+                  <div class="field">
+                    <label class="field-label" for="edit-availabilityNote">Ghi chú lịch trực / Khả dụng</label>
+                    <input id="edit-availabilityNote" class="form-control" name="availabilityNote" value="${esc(prof.availabilityNote || '')}" maxlength="500" placeholder="Ví dụ: Thứ 2 – Thứ 7 · 06:00 – 20:00" />
+                    <span class="field-error" id="edit-availabilityNote-error" aria-live="polite"></span>
+                  </div>
+
+                  <div class="field">
+                    <label class="field-label" for="edit-biography">Giới thiệu bản thân</label>
+                    <textarea id="edit-biography" class="form-control" name="biography" rows="4" maxlength="2000" placeholder="Kinh nghiệm huấn luyện, thành tích thi đấu, phong cách hướng dẫn hội viên...">${esc(prof.biography || '')}</textarea>
+                    <span class="field-error" id="edit-biography-error" aria-live="polite"></span>
+                  </div>
+                </div>`}
+              </div>
             </div>
           </div>
           <div class="meta-modal-footer">
             <button type="button" class="btn btn-ghost" data-close-modal>Hủy</button>
-            <button type="submit" class="btn btn-primary" data-modal-submit>Lưu thay đổi</button>
+            <button type="submit" class="btn btn-primary" data-modal-submit style="min-width:140px;">
+              ${icon('check')} <span>Lưu thay đổi</span>
+            </button>
           </div>
         </form>`,
         onMount(ctrl) {
           const form = ctrl.dialog.querySelector('#account-form');
+          const fullNameInput = form.querySelector('[name="fullName"]');
+          const emailInput = form.querySelector('[name="email"]');
+          const phoneInput = form.querySelector('[name="phone"]');
+
+          const avatarDropdownBtn = form.querySelector('#btn-avatar-dropdown');
+          const avatarDropdownMenu = form.querySelector('#avatar-dropdown-menu');
+          const viewAvatarBtn = form.querySelector('#btn-view-avatar');
+          const pickAvatarBtn = form.querySelector('#btn-pick-avatar');
+          const cropAvatarBtn = form.querySelector('#btn-crop-avatar');
+          const fileInput = form.querySelector('#edit-avatar-file');
+          const removeAvatarBtn = form.querySelector('#btn-remove-avatar');
+          const previewWrap = form.querySelector('#avatar-preview-wrap');
+          const previewEl = form.querySelector('#edit-avatar-preview');
+          const avatarErrorEl = form.querySelector('#edit-avatar-error');
+          const zoomBadge = form.querySelector('#avatar-zoom-badge');
+          const menuDivider = form.querySelector('#avatar-menu-divider');
+
+          const genderInput = isMember ? form.querySelector('[name="gender"]') : null;
+          const dobInput = isMember ? form.querySelector('[name="dateOfBirth"]') : null;
+          const expInput = isMember ? form.querySelector('[name="experienceLevel"]') : null;
+          const actInput = isMember ? form.querySelector('[name="activityLevel"]') : null;
+          const heightInput = isMember ? form.querySelector('[name="heightCm"]') : null;
+          const fitnessGoalInput = isMember ? form.querySelector('[name="fitnessGoal"]') : null;
+          const dietaryInput = isMember ? form.querySelector('[name="dietaryPreferences"]') : null;
+
+          const expYearsInput = !isMember ? form.querySelector('[name="experienceYears"]') : null;
+          const qualificationsInput = !isMember ? form.querySelector('[name="qualifications"]') : null;
+          const specialtiesInput = !isMember ? form.querySelector('[name="specialties"]') : null;
+          const availabilityNoteInput = !isMember ? form.querySelector('[name="availabilityNote"]') : null;
+          const biographyInput = !isMember ? form.querySelector('[name="biography"]') : null;
+
+          let pendingAvatarFile = null;
+          let removeAvatarFlag = false;
+          let currentRawFile = null;
+          let activeAvatarUrl = currentAvatarUrl || null;
+
+          const closeDropdown = () => {
+            if (avatarDropdownMenu) {
+              avatarDropdownMenu.hidden = true;
+              if (avatarDropdownBtn) avatarDropdownBtn.setAttribute('aria-expanded', 'false');
+            }
+          };
+
+          const openDropdown = () => {
+            if (avatarDropdownMenu) {
+              avatarDropdownMenu.hidden = false;
+              if (avatarDropdownBtn) avatarDropdownBtn.setAttribute('aria-expanded', 'true');
+            }
+          };
+
+          const toggleDropdown = () => {
+            if (!avatarDropdownMenu) return;
+            if (avatarDropdownMenu.hidden) openDropdown();
+            else closeDropdown();
+          };
+
+          if (avatarDropdownBtn) {
+            avatarDropdownBtn.onclick = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleDropdown();
+            };
+          }
+
+          const onDocClick = (e) => {
+            if (!document.body.contains(form)) {
+              document.removeEventListener('click', onDocClick);
+              return;
+            }
+            if (!avatarDropdownMenu || avatarDropdownMenu.hidden) return;
+            if (!avatarDropdownBtn?.contains?.(e.target) && !avatarDropdownMenu?.contains?.(e.target)) {
+              closeDropdown();
+            }
+          };
+          document.addEventListener('click', onDocClick);
+
+          const updateAvatarUi = (hasImage, displayUrl) => {
+            activeAvatarUrl = hasImage ? displayUrl : null;
+            if (viewAvatarBtn) viewAvatarBtn.style.display = hasImage ? 'flex' : 'none';
+            if (cropAvatarBtn) cropAvatarBtn.style.display = hasImage ? 'flex' : 'none';
+            if (removeAvatarBtn) removeAvatarBtn.style.display = hasImage ? 'flex' : 'none';
+            if (menuDivider) menuDivider.style.display = hasImage ? 'block' : 'none';
+            if (zoomBadge) zoomBadge.style.display = hasImage ? 'flex' : 'none';
+            if (previewWrap) {
+              previewWrap.title = hasImage ? 'Nhấp để xem ảnh phóng to' : '';
+              previewWrap.style.cursor = hasImage ? 'pointer' : 'default';
+            }
+          };
+
+          const viewCurrentAvatar = () => {
+            if (!activeAvatarUrl) return;
+            openImageViewer({
+              src: activeAvatarUrl,
+              title: `Ảnh đại diện: ${fullNameInput?.value?.trim() || row.fullName}`,
+            });
+          };
+
+          if (previewWrap) {
+            previewWrap.onclick = () => {
+              if (activeAvatarUrl) viewCurrentAvatar();
+            };
+            previewWrap.onkeydown = (e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && activeAvatarUrl) {
+                e.preventDefault();
+                viewCurrentAvatar();
+              }
+            };
+          }
+
+          if (viewAvatarBtn) {
+            viewAvatarBtn.onclick = () => {
+              closeDropdown();
+              viewCurrentAvatar();
+            };
+          }
+
+          const triggerCrop = (fileToCrop) => {
+            if (!fileToCrop) return;
+            openImageCropper({
+              file: fileToCrop,
+              outputSize: 512,
+              circular: true,
+              onApply: ({ blob, dataUrl, file: croppedFile }) => {
+                pendingAvatarFile = croppedFile || blob;
+                removeAvatarFlag = false;
+                const src = dataUrl || (blob ? (typeof URL?.createObjectURL === 'function' ? URL.createObjectURL(blob) : '') : '');
+                if (previewEl && src) {
+                  previewEl.innerHTML = `<img src="${src}" alt="Preview" class="meta-avatar-img" />`;
+                }
+                updateAvatarUi(true, src);
+                if (avatarErrorEl) avatarErrorEl.textContent = '';
+              },
+            });
+          };
+
+          if (pickAvatarBtn && fileInput) {
+            pickAvatarBtn.onclick = () => {
+              closeDropdown();
+              fileInput.value = '';
+              fileInput.click();
+            };
+            fileInput.onchange = (e) => {
+              const file = e.target?.files?.[0];
+              if (!file) return;
+              if (avatarErrorEl) avatarErrorEl.textContent = '';
+              if (file.size > 5 * 1024 * 1024) {
+                if (avatarErrorEl) avatarErrorEl.textContent = 'Dung lượng ảnh tối đa 5MB.';
+                fileInput.value = '';
+                return;
+              }
+              const isAllowed = file.type?.startsWith('image/')
+                || ['image/png', 'image/jpeg', 'image/webp', 'image/jpg', 'image/pjpeg', 'image/x-png'].includes((file.type || '').toLowerCase())
+                || /\.(jpe?g|png|webp)$/i.test(file.name || '');
+              if (!isAllowed) {
+                if (avatarErrorEl) avatarErrorEl.textContent = 'Chỉ chấp nhận ảnh PNG, JPG hoặc WebP.';
+                fileInput.value = '';
+                return;
+              }
+              currentRawFile = file;
+              triggerCrop(file);
+            };
+          }
+
+          if (cropAvatarBtn) {
+            cropAvatarBtn.onclick = () => {
+              closeDropdown();
+              const fileToCrop = currentRawFile || pendingAvatarFile || currentAvatarUrl;
+              if (fileToCrop) triggerCrop(fileToCrop);
+            };
+          }
+
+          if (removeAvatarBtn) {
+            removeAvatarBtn.onclick = () => {
+              closeDropdown();
+              pendingAvatarFile = null;
+              currentRawFile = null;
+              removeAvatarFlag = Boolean(row.avatarMediaId || currentAvatarUrl);
+              if (fileInput) fileInput.value = '';
+              if (previewEl) {
+                previewEl.innerHTML = `<span class="meta-avatar-text">${esc(initials(fullNameInput?.value || row.fullName))}</span>`;
+              }
+              updateAvatarUi(false, null);
+              if (avatarErrorEl) avatarErrorEl.textContent = '';
+            };
+          }
+
+          const setFieldError = (fieldName, message) => {
+            const input = form.querySelector(`[name="${fieldName}"]`);
+            const errEl = form.querySelector(`#edit-${fieldName}-error`);
+            if (errEl) errEl.textContent = message || '';
+            if (input) {
+              if (message) input.setAttribute?.('aria-invalid', 'true');
+              else input.removeAttribute?.('aria-invalid');
+            }
+          };
+
+          const validators = {
+            fullName: () => validateAccountFullName(fullNameInput?.value),
+            email: () => validateAccountEmail(emailInput?.value),
+            phone: () => validateAccountPhone(phoneInput?.value),
+            ...(isMember ? {
+              dateOfBirth: () => {
+                const val = dobInput?.value?.trim();
+                if (!val) return { valid: true, value: null, error: '' };
+                const d = new Date(val);
+                const now = new Date();
+                if (Number.isNaN(d.getTime()) || d > now || d.getUTCFullYear() < 1900) {
+                  return { valid: false, value: val, error: 'Ngày sinh không hợp lệ (từ 1900 đến hiện tại).' };
+                }
+                return { valid: true, value: val, error: '' };
+              },
+              heightCm: () => {
+                const val = heightInput?.value?.trim();
+                if (!val) return { valid: true, value: null, error: '' };
+                const num = Number(val);
+                if (Number.isNaN(num) || num < 30 || num > 300) {
+                  return { valid: false, value: num, error: 'Chiều cao phải từ 30 đến 300 cm.' };
+                }
+                return { valid: true, value: num, error: '' };
+              },
+            } : {
+              experienceYears: () => {
+                const val = expYearsInput?.value?.trim();
+                if (!val) return { valid: true, value: 0, error: '' };
+                const num = Number(val);
+                if (!Number.isInteger(num) || num < 0 || num > 80) {
+                  return { valid: false, value: num, error: 'Số năm kinh nghiệm phải là số nguyên từ 0 đến 80.' };
+                }
+                return { valid: true, value: num, error: '' };
+              },
+            }),
+          };
+
+          [
+            ['fullName', fullNameInput],
+            ['email', emailInput],
+            ...(isMember ? [
+              ['dateOfBirth', dobInput],
+              ['heightCm', heightInput],
+            ] : [
+              ['experienceYears', expYearsInput],
+            ]),
+            ['phone', phoneInput],
+          ].forEach(([fieldName, input]) => {
+            if (!input) return;
+            input.oninput = () => {
+              setFieldError(fieldName, '');
+              ctrl.showError('');
+            };
+            input.onblur = () => {
+              const check = validators[fieldName]();
+              setFieldError(fieldName, check.valid ? '' : check.error);
+            };
+          });
+
           form.onsubmit = async (event) => {
             event.preventDefault();
             ctrl.showError('');
-            const fullName = (form.querySelector('[name="fullName"]')?.value || '').trim();
-            const phoneRaw = (form.querySelector('[name="phone"]')?.value || '').trim();
-            if (fullName.length < 2) {
-              ctrl.showError('Họ và tên phải có ít nhất 2 ký tự.');
+
+            const nameCheck = validators.fullName();
+            const emailCheck = validators.email();
+            const phoneCheck = validators.phone();
+            const dobCheck = isMember ? validators.dateOfBirth() : { valid: true, value: null, error: '' };
+            const heightCheck = isMember ? validators.heightCm() : { valid: true, value: null, error: '' };
+            const expYearsCheck = !isMember ? validators.experienceYears() : { valid: true, value: 0, error: '' };
+
+            setFieldError('fullName', nameCheck.valid ? '' : nameCheck.error);
+            setFieldError('email', emailCheck.valid ? '' : emailCheck.error);
+            if (isMember) {
+              setFieldError('dateOfBirth', dobCheck.valid ? '' : dobCheck.error);
+              setFieldError('heightCm', heightCheck.valid ? '' : heightCheck.error);
+            } else {
+              setFieldError('experienceYears', expYearsCheck.valid ? '' : expYearsCheck.error);
+            }
+            setFieldError('phone', phoneCheck.valid ? '' : phoneCheck.error);
+
+            const invalidEntry = [
+              ['fullName', nameCheck, fullNameInput],
+              ['email', emailCheck, emailInput],
+              ...(isMember ? [
+                ['dateOfBirth', dobCheck, dobInput],
+                ['heightCm', heightCheck, heightInput],
+              ] : [
+                ['experienceYears', expYearsCheck, expYearsInput],
+              ]),
+              ['phone', phoneCheck, phoneInput],
+            ].find(([, check]) => !check.valid);
+
+            if (invalidEntry) {
+              invalidEntry[2]?.focus?.();
               return;
             }
+
+            const initialFullName = String(row.fullName || '').trim();
+            const initialEmail = String(row.email || '').trim().toLowerCase();
+            const initialPhone = String(row.phone || '').trim() || null;
+
+            const initialGender = prof.gender || null;
+            const currentGender = genderInput?.value || null;
+
+            const initialDob = (prof.dateOfBirth ? String(prof.dateOfBirth).slice(0, 10) : '') || null;
+            const currentDob = dobCheck.value;
+
+            const initialExp = prof.experienceLevel || null;
+            const currentExp = expInput?.value || null;
+
+            const initialAct = prof.activityLevel || null;
+            const currentAct = actInput?.value || null;
+
+            const initialHeight = prof.heightCm !== undefined && prof.heightCm !== null ? Number(prof.heightCm) : null;
+            const currentHeight = heightCheck.value;
+
+            const initialGoal = (prof.fitnessGoal || '').trim() || null;
+            const currentGoal = fitnessGoalInput?.value ? fitnessGoalInput.value.trim() : null;
+
+            const initialDiet = (prof.dietaryPreferences || '').trim() || null;
+            const currentDiet = dietaryInput?.value ? dietaryInput.value.trim() : null;
+
+            const initialExpYears = Number(prof.experienceYears ?? 0);
+            const currentExpYears = Number(expYearsCheck.value ?? 0);
+
+            const initialQual = (prof.qualifications || '').trim() || null;
+            const currentQual = qualificationsInput?.value ? qualificationsInput.value.trim() : null;
+
+            const initialAvail = (prof.availabilityNote || '').trim() || null;
+            const currentAvail = availabilityNoteInput?.value ? availabilityNoteInput.value.trim() : null;
+
+            const initialBio = (prof.biography || '').trim() || null;
+            const currentBio = biographyInput?.value ? biographyInput.value.trim() : null;
+
+            const currentSpecsArr = String(specialtiesInput?.value || '')
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            const avatarChanged = Boolean(pendingAvatarFile) || removeAvatarFlag;
+            const basicUnchanged = nameCheck.value === initialFullName
+              && phoneCheck.value === initialPhone
+              && emailCheck.value === initialEmail;
+
+            const profileUnchanged = isMember
+              ? (
+                currentGender === initialGender
+                && currentDob === initialDob
+                && currentExp === initialExp
+                && currentAct === initialAct
+                && currentHeight === initialHeight
+                && currentGoal === initialGoal
+                && currentDiet === initialDiet
+              )
+              : (
+                currentExpYears === initialExpYears
+                && currentQual === initialQual
+                && currentAvail === initialAvail
+                && currentBio === initialBio
+                && JSON.stringify(currentSpecsArr) === JSON.stringify(initialSpecialtiesArr)
+              );
+
+            if (basicUnchanged && profileUnchanged && !avatarChanged) {
+              ctrl.showError('Chưa có thay đổi nào để lưu.');
+              return;
+            }
+
+            const payload = { fullName: nameCheck.value, phone: phoneCheck.value };
+            if (emailCheck.value !== initialEmail) payload.email = emailCheck.value;
+            if (removeAvatarFlag) payload.avatarMediaId = null;
+
+            if (isMember) {
+              if (currentGender !== initialGender) payload.gender = currentGender;
+              if (currentDob !== initialDob) payload.dateOfBirth = currentDob;
+              if (currentExp !== initialExp) payload.experienceLevel = currentExp;
+              if (currentAct !== initialAct) payload.activityLevel = currentAct;
+              if (currentHeight !== initialHeight) payload.heightCm = currentHeight;
+              if (currentGoal !== initialGoal) payload.fitnessGoal = currentGoal;
+              if (currentDiet !== initialDiet) payload.dietaryPreferences = currentDiet;
+            } else {
+              if (currentExpYears !== initialExpYears) payload.experienceYears = currentExpYears;
+              if (currentQual !== initialQual) payload.qualifications = currentQual;
+              if (currentAvail !== initialAvail) payload.availabilityNote = currentAvail;
+              if (currentBio !== initialBio) payload.biography = currentBio;
+              if (JSON.stringify(currentSpecsArr) !== JSON.stringify(initialSpecialtiesArr)) payload.specialties = currentSpecsArr;
+            }
+
             ctrl.setBusy(true);
             try {
-              await api(`/admin/users/${encodeURIComponent(row.id)}`, 'PATCH', {
-                fullName,
-                phone: phoneRaw || null,
-              });
+              if (pendingAvatarFile) {
+                const uploadRes = await uploadRaw(
+                  `/admin/users/${encodeURIComponent(row.id)}/avatar`,
+                  pendingAvatarFile,
+                  pendingAvatarFile.type || 'image/jpeg',
+                );
+                if (uploadRes?.data?.avatarUrl) {
+                  row.avatarUrl = uploadRes.data.avatarUrl;
+                  row.avatarMediaId = uploadRes.data.avatarMediaId;
+                }
+                pendingAvatarFile = null;
+              }
+
+              if (!basicUnchanged || !profileUnchanged || removeAvatarFlag) {
+                await api(`/admin/users/${encodeURIComponent(row.id)}`, 'PATCH', payload);
+              }
+
               ctrl.close();
               await reloadWith({ page: state.page });
-              notice('Đã lưu thông tin tài khoản.');
+              const emailChanged = emailCheck.value !== initialEmail;
+              const roleTitle = isMember ? 'hội viên' : 'Huấn luyện viên';
+              toast(emailChanged
+                ? `Đã cập nhật thông tin ${roleTitle} ${nameCheck.value} (bao gồm email đăng nhập).`
+                : `Đã cập nhật thông tin ${roleTitle} ${nameCheck.value}.`, 'success');
             } catch (error) {
               ctrl.setBusy(false);
               ctrl.showError(error.message);
+              const fieldErrors = error?.details?.fields;
+              if (fieldErrors && typeof fieldErrors === 'object') {
+                for (const fieldName of [
+                  'fullName', 'email', 'phone',
+                  'dateOfBirth', 'heightCm', 'gender', 'fitnessGoal', 'experienceLevel', 'activityLevel', 'dietaryPreferences',
+                  'experienceYears', 'qualifications', 'specialties', 'availabilityNote', 'biography',
+                ]) {
+                  const msgs = fieldErrors[fieldName];
+                  if (Array.isArray(msgs) && msgs.length) {
+                    setFieldError(fieldName, msgs[0]);
+                  }
+                }
+              }
+              if (error?.code === 'EMAIL_ALREADY_EXISTS' && !fieldErrors?.email?.length) {
+                setFieldError('email', error.message || 'Email đã được sử dụng.');
+              }
             }
           };
         },

@@ -86,7 +86,7 @@ export async function renderMediaSettingsPage({ root, shell }) {
             </div>
             <div class="col-6">
               <label class="form-label" for="set-quality">Chất lượng nén mặc định (%)</label>
-              <input type="number" id="set-quality" class="form-control tabular" min="10" max="100" value="${Number(proc.defaultQuality || 82)}" required />
+              <input type="number" id="set-quality" class="form-control tabular" min="10" max="100" value="${Number(proc.defaultQuality || 75)}" required />
             </div>
           </div>
           <div class="d-flex flex-column gap-2 mt-2">
@@ -164,7 +164,7 @@ export async function renderMediaSettingsPage({ root, shell }) {
             },
             image_processing: {
               thumbnailSize: Number(container.querySelector('#set-thumb-size')?.value || 400),
-              defaultQuality: Number(container.querySelector('#set-quality')?.value || 82),
+              defaultQuality: Number(container.querySelector('#set-quality')?.value || 75),
               autoWebp: Boolean(container.querySelector('#set-auto-webp')?.checked),
               autoAvif: Boolean(container.querySelector('#set-auto-avif')?.checked),
               stripGpsExif: Boolean(container.querySelector('#set-strip-exif')?.checked),

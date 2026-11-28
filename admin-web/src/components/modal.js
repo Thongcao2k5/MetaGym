@@ -77,8 +77,10 @@ export function openModal({
 
   if (maxWidth && dialog.style) {
     dialog.style.maxWidth = maxWidth;
+    dialog.style.width = `min(96vw, ${maxWidth})`;
   } else if (dialog.style) {
     dialog.style.maxWidth = '';
+    dialog.style.width = '';
   }
 
   dialog.innerHTML = `

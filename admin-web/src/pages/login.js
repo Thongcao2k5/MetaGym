@@ -126,7 +126,7 @@ export function renderLoginPage({ root, params, onLoginSuccess }) {
             ${icon('eye', 18)}
           </button>
         </div>
-        <span class="field-hint">Phiên chỉ cấp cho vai trò ADMIN; tự động thu hồi khi đổi mật khẩu hoặc tài khoản bị khóa.</span>
+        <span class="field-hint">Cấp phiên cho Quản trị viên (Admin) và Nhân sự vận hành (Quản lý, Lễ tân/Thu ngân, Kỹ thuật viên).</span>
       </div>
 
       <div class="login-remember-row">
@@ -206,8 +206,8 @@ export function renderLoginPage({ root, params, onLoginSuccess }) {
     try {
       const result = await api('/auth/sessions', 'POST', { email, password }, { skipAuthRedirect: true });
       const user = result?.data?.user;
-      if (!user || user.role !== 'ADMIN') {
-        showLoginError('Không có quyền quản trị', 'Tài khoản này không thuộc vai trò Quản trị viên (ADMIN).');
+      if (!user || !['ADMIN', 'STAFF'].includes(user.role)) {
+        showLoginError('Không có quyền quản trị', 'Tài khoản này không thuộc nhân sự vận hành Cổng quản trị.');
         return;
       }
       if (rememberCheck?.checked) {

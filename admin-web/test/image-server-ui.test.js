@@ -81,6 +81,8 @@ test('Image Library renders KPIs, images, Detail Drawer, and Image Editor modal'
 
   assert.equal(env.root.innerHTML.includes('gym-hero.webp'), true);
   assert.equal(env.root.innerHTML.includes('239 KB'), true);
+  assert.ok(env.root.querySelector('#media-select-all'));
+  assert.equal(env.root.querySelector('#mf-view-list').classList.contains('btn-primary'), true);
 
   env.root.querySelector('.media-act-detail').click();
   await flush();
@@ -205,4 +207,69 @@ test('Media Analytics & Settings render real stats and persist PATCH /admin/sett
   await flush();
 
   assert.equal(savedSettings.site_branding.siteName, 'Meta Gym Media Cloud');
+});
+
+test('Image Library Kho Supabase tab loads live Supabase bucket summary and syncs cleanly', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/media-library?tab=supabase', token: 'tok' });
+  setToken('tok');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Meta Admin', email: 'admin@metagym.vn' });
+
+  let syncedCalled = false;
+  globalThis.fetch = async (url, options = {}) => {
+    const path = new URL(url, 'http://localhost').pathname;
+    if (path === '/api/v1/admin/storage/supabase-objects') {
+      return jsonResponse({
+        success: true,
+        data: {
+          bucket: 'meta-gym-media',
+          totalObjects: 2,
+          totalBytes: 18500,
+          syncedCount: 1,
+          orphanCount: 0,
+          folders: [
+            { folder: 'users/avatars', fileCount: 1, totalBytes: 16500 },
+            { folder: 'users/avatars/thumbs', fileCount: 1, totalBytes: 2000 },
+          ],
+          objects: [
+            {
+              key: 'users/avatars/a.webp',
+              name: 'a.webp',
+              folder: 'users/avatars',
+              domainLabel: 'Ảnh đại diện',
+              sizeBytes: 16500,
+              mimeType: 'image/webp',
+              syncStatus: 'SYNCED',
+              ownerName: 'Nguyễn Trung Hậu',
+              imageId: 'img-1',
+              thumbnailUrl: '/api/v1/images/img-1/thumbnail',
+              createdAt: '2026-11-28T06:50:00.000Z',
+            },
+          ],
+        },
+      });
+    }
+    if (path === '/api/v1/admin/storage/sync-supabase' && options.method === 'POST') {
+      syncedCalled = true;
+      return jsonResponse({
+        success: true,
+        data: { bucket: 'meta-gym-media', syncedCount: 1, totalStorageObjects: 2, totalStorageBytes: 18500 },
+      });
+    }
+    throw new Error(`Unexpected ${path}`);
+  };
+
+  await renderMediaLibraryPage({
+    root: env.root,
+    params: new URLSearchParams({ tab: 'supabase' }),
+    shell: makeShell(env.root),
+  });
+
+  assert.equal(env.root.innerHTML.includes('meta-gym-media'), true);
+  assert.equal(env.root.innerHTML.includes('users/avatars/a.webp'), true);
+  assert.equal(env.root.innerHTML.includes('Nguyễn Trung Hậu'), true);
+  assert.equal(env.root.innerHTML.includes('Đã đồng bộ'), true);
+
+  env.root.querySelector('#sb-sync-now').click();
+  await flush();
+  assert.equal(syncedCalled, true);
 });

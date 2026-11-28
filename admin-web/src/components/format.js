@@ -49,6 +49,41 @@ export function formatDateTimeVN(value, { withSeconds = false } = {}) {
   }).format(date);
 }
 
+/**
+ * Formats an ISO timestamp as `YYYY-MM-DDTHH:mm` in `Asia/Ho_Chi_Minh` (GMT+7) for `datetime-local` inputs.
+ */
+export function toDateTimeLocalVN(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: VN_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const pick = (type) => parts.find((p) => p.type === type)?.value || '';
+  const hour = pick('hour') === '24' ? '00' : pick('hour');
+  return `${pick('year')}-${pick('month')}-${pick('day')}T${hour}:${pick('minute')}`;
+}
+
+/**
+ * Converts a `datetime-local` (`YYYY-MM-DDTHH:mm`) value assumed in GMT+7 into an ISO UTC timestamp.
+ */
+export function fromDateTimeLocalVN(value) {
+  const clean = String(value || '').trim();
+  if (!clean) return null;
+  const isoCandidate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(clean)
+    ? `${clean.length === 16 ? `${clean}:00` : clean}+07:00`
+    : clean;
+  const date = new Date(isoCandidate);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 export function isoDateVN(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: VN_TIMEZONE,

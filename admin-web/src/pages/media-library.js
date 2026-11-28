@@ -179,8 +179,8 @@ function openImageEditorModal(image, { onSaved }) {
             </select>
           </div>
           <div class="col-6">
-            <label class="form-label" for="ed-quality">Chất lượng: <span id="ed-quality-val" class="tabular">82</span>%</label>
-            <input type="range" id="ed-quality" class="form-range" min="10" max="100" value="82" />
+            <label class="form-label" for="ed-quality">Chất lượng: <span id="ed-quality-val" class="tabular">75</span>%</label>
+            <input type="range" id="ed-quality" class="form-range" min="10" max="100" value="75" />
           </div>
         </div>
         <div class="row g-2 mb-2">
@@ -278,7 +278,7 @@ function openImageEditorModal(image, { onSaved }) {
         event.preventDefault();
         const payload = {
           format: modal.dialog.querySelector('#ed-format')?.value || 'webp',
-          quality: Number(qualityInput?.value || 82),
+          quality: Number(qualityInput?.value || 75),
           rotate,
           flipHorizontal: flipH,
           flipVertical: flipV,
@@ -486,16 +486,17 @@ async function openImageDetailDrawer(imageId, { folderOptions, onChanged }) {
 }
 
 export async function renderMediaLibraryPage({ root, params, shell }) {
-  const tab = ['library', 'collections', 'tags'].includes(params?.get('tab')) ? params.get('tab') : 'library';
+  const tab = ['library', 'collections', 'tags', 'supabase'].includes(params?.get('tab')) ? params.get('tab') : 'library';
   const q = params?.get('q') || '';
   const format = params?.get('format') || '';
   const visibility = params?.get('visibility') || '';
   const folderId = params?.get('folderId') || '';
   const albumId = params?.get('albumId') || '';
   const tag = params?.get('tag') || '';
+  const prefix = params?.get('prefix') || '';
   const sortBy = params?.get('sortBy') || 'created_at';
   const order = params?.get('order') || 'desc';
-  const viewMode = params?.get('view') === 'list' ? 'list' : 'grid';
+  const viewMode = params?.get('view') === 'grid' ? 'grid' : 'list';
   const page = Math.max(1, Number(params?.get('page')) || 1);
   const limit = Math.max(1, Number(params?.get('limit')) || 12);
 
@@ -503,9 +504,11 @@ export async function renderMediaLibraryPage({ root, params, shell }) {
     <button type="button" class="media-subnav-btn" role="tab" aria-selected="${tab === 'library'}" data-media-tab="library">${icon('image', 15)} Thư viện ảnh</button>
     <button type="button" class="media-subnav-btn" role="tab" aria-selected="${tab === 'collections'}" data-media-tab="collections">${icon('folder', 15)} Album & Thư mục</button>
     <button type="button" class="media-subnav-btn" role="tab" aria-selected="${tab === 'tags'}" data-media-tab="tags">${icon('tag', 15)} Tags</button>
+    <button type="button" class="media-subnav-btn" role="tab" aria-selected="${tab === 'supabase'}" data-media-tab="supabase">${icon('database', 15)} Kho Supabase</button>
   </div>`;
 
-  const topbarActionsHtml = `<button type="button" class="btn btn-graphite btn-sm" id="media-import-url-btn">${icon('globe', 15)} Nhập từ URL</button>
+  const topbarActionsHtml = `<button type="button" class="btn btn-graphite btn-sm" id="media-sync-supabase-btn">${icon('refresh', 15)} Đồng bộ Supabase</button>
+    <button type="button" class="btn btn-graphite btn-sm" id="media-import-url-btn">${icon('globe', 15)} Nhập từ URL</button>
     <button type="button" class="btn btn-primary btn-sm" id="media-trigger-upload-btn">${icon('upload', 15)} Tải ảnh lên</button>`;
 
   shell({
@@ -521,6 +524,24 @@ export async function renderMediaLibraryPage({ root, params, shell }) {
       updateQuery({ tab: btn.getAttribute('data-media-tab'), page: 1 }, { replace: false });
     });
   });
+
+  async function runSupabaseSync(onDone) {
+    const syncBtn = root.querySelector('#media-sync-supabase-btn');
+    if (syncBtn) syncBtn.disabled = true;
+    try {
+      const res = await api('/admin/storage/sync-supabase', 'POST', {});
+      const s = res.data || {};
+      toast(
+        `Đồng bộ ${s.bucket || 'Supabase'} thành công: +${Number(s.syncedCount || 0)} ảnh mới, ${Number(s.totalStorageObjects || 0)} tệp đang lưu (${formatBytes(s.totalStorageBytes || 0)}).`,
+        'success',
+      );
+      await onDone?.();
+    } catch (err) {
+      toast(err.message || 'Không thể đồng bộ từ Supabase Storage.', 'danger');
+    } finally {
+      if (syncBtn) syncBtn.disabled = false;
+    }
+  }
 
   async function loadAllCollections() {
     const [foldersRes, albumsRes, tagsRes] = await Promise.all([
@@ -630,6 +651,7 @@ export async function renderMediaLibraryPage({ root, params, shell }) {
       const selectedIds = new Set();
       let queuedFiles = [];
 
+      root.querySelector('#media-sync-supabase-btn').onclick = () => runSupabaseSync(renderLibraryTab);
       root.querySelector('#media-import-url-btn').onclick = () => openUrlImportModal(collections, renderLibraryTab);
       root.querySelector('#media-trigger-upload-btn').onclick = () => bodyEl.querySelector('#media-file-input')?.click();
 
@@ -691,8 +713,8 @@ export async function renderMediaLibraryPage({ root, params, shell }) {
           <option value="filename:asc" ${sortBy === 'filename' && order === 'asc' ? 'selected' : ''}>Tên A-Z</option>
         </select>
         <div class="btn-group" role="group" aria-label="Chế độ hiển thị">
-          <button type="button" class="btn ${viewMode === 'grid' ? 'btn-primary' : 'btn-graphite'} btn-sm" id="mf-view-grid" title="Lưới">${icon('grid', 15)}</button>
           <button type="button" class="btn ${viewMode === 'list' ? 'btn-primary' : 'btn-graphite'} btn-sm" id="mf-view-list" title="Danh sách">${icon('list', 15)}</button>
+          <button type="button" class="btn ${viewMode === 'grid' ? 'btn-primary' : 'btn-graphite'} btn-sm" id="mf-view-grid" title="Lưới">${icon('grid', 15)}</button>
         </div>
         ${hasFilter ? '<button type="button" class="btn btn-ghost btn-sm" id="mf-clear">Xóa lọc</button>' : ''}
         <button type="button" class="btn btn-danger btn-sm" id="mf-bulk-delete" hidden>${icon('trash', 15)} Xóa đã chọn (<span id="mf-selected-count" class="tabular">0</span>)</button>
@@ -1078,6 +1100,7 @@ export async function renderMediaLibraryPage({ root, params, shell }) {
         </section>
       </div>`;
 
+      root.querySelector('#media-sync-supabase-btn').onclick = () => runSupabaseSync(renderCollectionsTab);
       root.querySelector('#media-import-url-btn').onclick = () => openUrlImportModal(collections, renderCollectionsTab);
       root.querySelector('#media-trigger-upload-btn').onclick = () => updateQuery({ tab: 'library' }, { replace: false });
 
@@ -1319,7 +1342,141 @@ export async function renderMediaLibraryPage({ root, params, shell }) {
     }
   }
 
+  async function renderSupabaseTab() {
+    if (pasteCleanup) { pasteCleanup(); pasteCleanup = null; }
+    root.querySelector('#media-sync-supabase-btn').onclick = () => runSupabaseSync(renderSupabaseTab);
+    root.querySelector('#media-import-url-btn').onclick = async () => {
+      const collections = await loadAllCollections();
+      openUrlImportModal(collections, renderSupabaseTab);
+    };
+    root.querySelector('#media-trigger-upload-btn').onclick = () => updateQuery({ tab: 'library' }, { replace: false });
+
+    try {
+      const res = await api(`/admin/storage/supabase-objects${buildQuery({ prefix, q })}`);
+      const data = res.data || {};
+      const folders = data.folders || [];
+      const objects = data.objects || [];
+      const statusLabels = {
+        SYNCED: { kind: 'ACTIVE', text: 'Đã đồng bộ' },
+        VARIANT: { kind: 'INFO', text: 'Bản thu nhỏ' },
+        MEDIA_ONLY: { kind: 'WARN', text: 'Chưa đồng bộ' },
+        ORPHAN: { kind: 'DANGER', text: 'File mồ côi' },
+      };
+
+      const kpiHtml = `<section class="media-kpi-strip">
+        <article class="kpi-card">
+          <div class="kpi-label">Bucket Supabase</div>
+          <div class="kpi-value" style="font-size:18px">${esc(data.bucket || 'meta-gym-media')}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">Tổng tệp đang lưu</div>
+          <div class="kpi-value tabular">${Number(data.totalObjects || 0)}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">Tổng dung lượng thật</div>
+          <div class="kpi-value tabular">${formatBytes(data.totalBytes || 0)}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">File mồ côi</div>
+          <div class="kpi-value tabular">${Number(data.orphanCount || 0)}</div>
+        </article>
+      </section>`;
+
+      const folderChipsHtml = folders.length
+        ? `<div class="d-flex flex-wrap gap-2 mb-3">
+            <button type="button" class="btn ${!prefix ? 'btn-primary' : 'btn-graphite'} btn-xs sb-prefix-btn" data-prefix="">Tất cả thư mục (${Number(data.totalObjects || 0)})</button>
+            ${folders.map((f) => `<button type="button" class="btn ${prefix === f.folder ? 'btn-primary' : 'btn-graphite'} btn-xs sb-prefix-btn" data-prefix="${esc(f.folder === '(Gốc bucket)' ? '' : f.folder)}">${icon('folder', 13)} ${esc(f.folder)} · ${Number(f.fileCount)} (${formatBytes(f.totalBytes)})</button>`).join('')}
+          </div>`
+        : '';
+
+      const filterHtml = `<form class="filter-bar mb-3" id="sb-filter-form">
+        <input type="search" id="sb-q" class="form-control filter-grow" placeholder="Tìm đường dẫn file, phân hệ hoặc chủ sở hữu…" value="${esc(q)}" aria-label="Tìm tệp Supabase" />
+        <button type="button" class="btn btn-primary btn-sm" id="sb-sync-now">${icon('refresh', 15)} Đồng bộ về Thư viện</button>
+        ${(prefix || q) ? '<button type="button" class="btn btn-ghost btn-sm" id="sb-clear">Xóa lọc</button>' : ''}
+      </form>`;
+
+      const tableHtml = !objects.length
+        ? renderEmptyState({
+            title: 'Không có tệp nào trên Supabase Storage',
+            message: prefix || q ? 'Không có tệp nào khớp điều kiện lọc.' : 'Bucket chưa có tệp ảnh nào.',
+          })
+        : `<div class="meta-card p-0 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr>
+              <th>Xem trước</th>
+              <th>Đường dẫn trên Supabase</th>
+              <th>Phân hệ / Chủ sở hữu</th>
+              <th>Dung lượng</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr></thead>
+            <tbody>${objects.map((obj) => {
+              const st = statusLabels[obj.syncStatus] || { kind: 'HIDDEN', text: obj.syncStatus };
+              return `<tr>
+                <td>${obj.thumbnailUrl
+                  ? `<img class="media-list-thumb" src="${esc(resolveAssetUrl(obj.thumbnailUrl))}" alt="${esc(obj.name)}" loading="lazy" decoding="async" />`
+                  : `<span class="meta-avatar">${icon('image', 16)}</span>`}</td>
+                <td>
+                  <div class="fw-semibold text-break" style="font-size:13px"><code>${esc(obj.key)}</code></div>
+                  <div class="text-secondary" style="font-size:12px">${esc(obj.mimeType || 'image/webp')} · ${obj.createdAt ? formatDateTimeVN(obj.createdAt) : '—'}</div>
+                </td>
+                <td>
+                  <div>${esc(obj.domainLabel || '—')}</div>
+                  <div class="text-secondary" style="font-size:12px">${esc(obj.ownerName || 'Hệ thống')}</div>
+                </td>
+                <td class="tabular">${formatBytes(obj.sizeBytes)}</td>
+                <td>${statusBadge(st.kind, st.text)}</td>
+                <td>
+                  <div class="d-flex gap-1">
+                    ${obj.imageId ? `<button type="button" class="btn btn-graphite btn-icon btn-xs sb-view-img" data-id="${esc(obj.imageId)}" title="Chi tiết trong thư viện">${icon('eye', 14)}</button>` : ''}
+                    ${obj.syncStatus === 'ORPHAN' ? `<button type="button" class="btn btn-graphite btn-icon btn-xs text-danger sb-delete-orphan" data-key="${esc(obj.key)}" title="Xóa file mồ côi">${icon('trash', 14)}</button>` : ''}
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div></div>`;
+
+      bodyEl.innerHTML = `${kpiHtml}${folderChipsHtml}${filterHtml}${tableHtml}`;
+
+      bodyEl.querySelectorAll('.sb-prefix-btn').forEach((btn) => {
+        btn.addEventListener('click', () => updateQuery({ tab: 'supabase', prefix: btn.getAttribute('data-prefix') || '', page: 1 }));
+      });
+      const sbQ = bodyEl.querySelector('#sb-q');
+      sbQ?.addEventListener('input', debounce(() => updateQuery({ tab: 'supabase', q: sbQ.value.trim(), page: 1 })));
+      bodyEl.querySelector('#sb-clear')?.addEventListener('click', () => updateQuery({ tab: 'supabase', prefix: '', q: '', page: 1 }));
+      bodyEl.querySelector('#sb-sync-now')?.addEventListener('click', () => runSupabaseSync(renderSupabaseTab));
+
+      bodyEl.querySelectorAll('.sb-view-img').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const collections = await loadAllCollections();
+          const folderOptions = flattenFolderOptions(collections.folderTree);
+          await openImageDetailDrawer(btn.getAttribute('data-id'), { folderOptions, onChanged: renderSupabaseTab });
+        });
+      });
+      bodyEl.querySelectorAll('.sb-delete-orphan').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-key');
+          openConfirmModal({
+            title: 'Xóa file mồ côi trên Supabase',
+            message: `Xác nhận xóa vĩnh viễn tệp "${key}" khỏi bucket?`,
+            confirmLabel: 'Xóa tệp',
+            confirmClass: 'btn-danger',
+            onConfirm: async () => {
+              await api('/admin/storage/cleanup-orphans', 'POST', { keys: [key] });
+              toast('Đã xóa tệp mồ côi trên Supabase Storage.', 'success');
+              await renderSupabaseTab();
+            },
+          });
+        });
+      });
+    } catch (err) {
+      bodyEl.innerHTML = renderErrorState({ title: 'Không tải được dữ liệu Supabase Storage', message: err.message });
+    }
+  }
+
+  root.querySelector('#media-sync-supabase-btn').onclick = () => runSupabaseSync(tab === 'supabase' ? renderSupabaseTab : renderLibraryTab);
+
   if (tab === 'collections') await renderCollectionsTab();
   else if (tab === 'tags') await renderTagsTab();
+  else if (tab === 'supabase') await renderSupabaseTab();
   else await renderLibraryTab();
 }

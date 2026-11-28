@@ -108,9 +108,9 @@ export async function renderEquipmentPage({ root, params, shell }) {
       <input type="search" id="cat-search" class="form-control filter-grow" placeholder="Tìm tên bài tập, mô tả hoặc tên thiết bị…" value="${esc(search)}" aria-label="Tìm bài tập" />
       <select id="cat-difficulty" class="form-select filter-fixed" aria-label="Lọc độ khó bài tập">
         <option value="" ${!difficultyFilter ? 'selected' : ''}>Tất cả độ khó</option>
-        <option value="BEGINNER" ${difficultyFilter === 'BEGINNER' ? 'selected' : ''}>Cơ bản (BEGINNER)</option>
-        <option value="INTERMEDIATE" ${difficultyFilter === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình (INTERMEDIATE)</option>
-        <option value="ADVANCED" ${difficultyFilter === 'ADVANCED' ? 'selected' : ''}>Nâng cao (ADVANCED)</option>
+        <option value="BEGINNER" ${difficultyFilter === 'BEGINNER' ? 'selected' : ''}>Cơ bản</option>
+        <option value="INTERMEDIATE" ${difficultyFilter === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình</option>
+        <option value="ADVANCED" ${difficultyFilter === 'ADVANCED' ? 'selected' : ''}>Nâng cao</option>
       </select>
       <select id="cat-equipment" class="form-select filter-fixed" aria-label="Lọc theo thiết bị liên kết">
         <option value="" ${!equipmentIdFilter ? 'selected' : ''}>Tất cả thiết bị</option>
@@ -248,19 +248,19 @@ export async function renderEquipmentPage({ root, params, shell }) {
             align: 'right',
             render: (row) => `<div class="cell-actions">
               ${renderActionButton({
-                iconName: 'eye',
-                label: 'Xem trước công khai',
-                className: 'preview-eq',
-                permission: 'catalog:read',
-                attrs: `data-id="${esc(row.id)}"`,
-              })}
+              iconName: 'eye',
+              label: 'Xem trước công khai',
+              className: 'preview-eq',
+              permission: 'catalog:read',
+              attrs: `data-id="${esc(row.id)}"`,
+            })}
               ${renderActionButton({
-                iconName: 'edit',
-                label: 'Sửa thiết bị',
-                className: 'edit-eq',
-                permission: 'catalog:update',
-                attrs: `data-id="${esc(row.id)}"`,
-              })}
+              iconName: 'edit',
+              label: 'Sửa thiết bị',
+              className: 'edit-eq',
+              permission: 'catalog:update',
+              attrs: `data-id="${esc(row.id)}"`,
+            })}
             </div>`,
           },
         ],
@@ -302,12 +302,12 @@ export async function renderEquipmentPage({ root, params, shell }) {
             align: 'right',
             render: (row) => `<div class="cell-actions">
               ${renderActionButton({
-                iconName: 'edit',
-                label: 'Sửa bài tập',
-                className: 'edit-ex',
-                permission: 'catalog:update',
-                attrs: `data-id="${esc(row.id)}"`,
-              })}
+              iconName: 'edit',
+              label: 'Sửa bài tập',
+              className: 'edit-ex',
+              permission: 'catalog:update',
+              attrs: `data-id="${esc(row.id)}"`,
+            })}
             </div>`,
           },
         ],
@@ -569,7 +569,7 @@ export async function renderEquipmentPage({ root, params, shell }) {
               <div class="field"><label class="field-label" for="ex-eq">Thiết bị liên kết</label><select id="ex-eq" class="form-select" name="equipmentId"><option value="">Không gắn thiết bị</option>${allEquipment.map((e) => `<option value="${esc(e.id)}" ${row?.equipmentId === e.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
             </div>
             <div class="grid-2">
-              <div class="field"><label class="field-label" for="ex-diff">Độ khó</label><select id="ex-diff" class="form-select" name="difficulty"><option value="">Chưa chọn</option><option value="BEGINNER" ${row?.difficulty === 'BEGINNER' ? 'selected' : ''}>Cơ bản (BEGINNER)</option><option value="INTERMEDIATE" ${row?.difficulty === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình (INTERMEDIATE)</option><option value="ADVANCED" ${row?.difficulty === 'ADVANCED' ? 'selected' : ''}>Nâng cao (ADVANCED)</option></select></div>
+              <div class="field"><label class="field-label" for="ex-diff">Độ khó</label><select id="ex-diff" class="form-select" name="difficulty"><option value="">Chưa chọn</option><option value="BEGINNER" ${row?.difficulty === 'BEGINNER' ? 'selected' : ''}>Cơ bản</option><option value="INTERMEDIATE" ${row?.difficulty === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình</option><option value="ADVANCED" ${row?.difficulty === 'ADVANCED' ? 'selected' : ''}>Nâng cao</option></select></div>
               <div class="field"><label class="field-label" for="ex-status">Trạng thái</label><select id="ex-status" class="form-select" name="status"><option value="ACTIVE" ${row?.status !== 'HIDDEN' ? 'selected' : ''}>Hiển thị</option><option value="HIDDEN" ${row?.status === 'HIDDEN' ? 'selected' : ''}>Ẩn</option></select></div>
             </div>
             <div class="field"><label class="field-label" for="ex-muscles">Nhóm cơ mục tiêu (phân tách bằng dấu phẩy)</label><input id="ex-muscles" class="form-control" name="targetMuscles" value="${esc((row?.targetMuscles || []).join(', '))}" placeholder="Ví dụ: Ngực, Vai trước, Tay sau" /></div>
