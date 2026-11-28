@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
@@ -5,6 +7,8 @@ import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
+import 'package:meta_gym_app/core/storage/offline_mutation_queue.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/theme_mode_controller.dart';
@@ -114,6 +118,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final bool _ownsThemeModeController;
   late final SessionController _sessionController;
   late final ApiCacheStatusController _apiCacheStatus;
+  late final OfflineSyncManager _offlineSyncManager;
   late final ApiClient _apiClient;
   late final AuthService _authService;
   late final AuthController _authController;
@@ -163,6 +168,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
             accessTokenProvider: () => injected.accessToken,
             onSessionExpired: injected.expire,
             cacheStatus: _apiCacheStatus,
+            isDeviceOffline: () => _apiCacheStatus.isDeviceOffline,
           );
     } else {
       late final SessionController session;
@@ -171,6 +177,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         accessTokenProvider: () => session.accessToken,
         onSessionExpired: () => session.expire(),
         cacheStatus: _apiCacheStatus,
+        isDeviceOffline: () => _apiCacheStatus.isDeviceOffline,
       );
       final authApi = AuthApi(_apiClient);
       session = SessionController(
@@ -240,11 +247,29 @@ class _MetaGymAppState extends State<MetaGymApp> {
       sessionController: _sessionController,
       navigatorKey: _navigatorKey,
     );
+    _offlineSyncManager = OfflineSyncManager(
+      apiClient: _apiClient,
+      mutationQueue: _apiClient.mutationQueue ?? MemoryOfflineMutationQueue(),
+      statusController: _apiCacheStatus,
+      sessionController: _sessionController,
+      onRefreshControllers: _refreshCoreControllers,
+    );
+    unawaited(_offlineSyncManager.start());
     _sessionController.restore();
+  }
+
+  Future<void> _refreshCoreControllers() async {
+    if (_sessionController.status != SessionStatus.authenticated) return;
+    await Future.wait<void>([
+      _profileController.load().then((_) {}).catchError((_) {}),
+      _membershipController.load().catchError((_) {}),
+      _notificationsController.refresh(initial: false).catchError((_) {}),
+    ]);
   }
 
   @override
   void dispose() {
+    _offlineSyncManager.dispose();
     if (_ownsNotificationsController) {
       _notificationsController.dispose();
     }
@@ -269,6 +294,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         ChangeNotifierProvider<ApiCacheStatusController>.value(
           value: _apiCacheStatus,
         ),
+        Provider<OfflineSyncManager>.value(value: _offlineSyncManager),
         Provider<MetaGymRealtime?>.value(value: _realtime),
         Provider<AuthService>.value(value: _authService),
         ChangeNotifierProvider<AuthController>.value(value: _authController),

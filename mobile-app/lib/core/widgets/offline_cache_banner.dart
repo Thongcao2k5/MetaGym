@@ -3,11 +3,12 @@ import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
-/// Lớp phủ hiển thị thông báo gọn phía trên khi app đang dùng dữ liệu đã lưu ngoại tuyến.
+/// Lớp phủ hiển thị thông báo gọn phía trên khi app đang ngoại tuyến,
+/// chờ đồng bộ thao tác hoặc đang đồng bộ tự động lên máy chủ.
 ///
 /// Tuân thủ `DESIGN.md`: dùng bề mặt đặc Level 1 (`surfaceSolid`, không blur),
-/// màu ngữ nghĩa cảnh báo (`warning`), chữ `12px` Be Vietnam Pro tương phản >= 4.5:1
-/// và nút đóng đạt vùng chạm tối thiểu `44x44`.
+/// màu ngữ nghĩa cảnh báo (`warning`) / đồng bộ (`info`), chữ `12px` Be Vietnam Pro
+/// tương phản >= 4.5:1 và nút đóng đạt vùng chạm tối thiểu `44x44`.
 class OfflineCacheBannerOverlay extends StatelessWidget {
   const OfflineCacheBannerOverlay({
     required this.controller,
@@ -18,7 +19,17 @@ class OfflineCacheBannerOverlay extends StatelessWidget {
   final ApiCacheStatusController controller;
   final Widget child;
 
-  static String formatBannerMessage(DateTime? lastSyncedAt) {
+  static String formatBannerMessage(ApiCacheStatusController controller) {
+    final pending = controller.pendingMutationCount;
+    if (controller.isSyncing) {
+      return pending > 0
+          ? 'Đang đồng bộ $pending thao tác lên máy chủ...'
+          : 'Đang đồng bộ dữ liệu mới...';
+    }
+    if (pending > 0) {
+      return 'Đang ngoại tuyến · Chờ đồng bộ $pending thao tác';
+    }
+    final lastSyncedAt = controller.lastSyncedAt;
     if (lastSyncedAt == null) {
       return 'Đang xem dữ liệu đã lưu';
     }
@@ -53,7 +64,9 @@ class OfflineCacheBannerOverlay extends StatelessWidget {
                 left: 16,
                 right: 16,
                 child: _OfflineBannerCard(
-                  message: formatBannerMessage(controller.lastSyncedAt),
+                  message: formatBannerMessage(controller),
+                  isSyncing: controller.isSyncing,
+                  hasPendingMutations: controller.pendingMutationCount > 0,
                   onDismiss: controller.dismissBanner,
                 ),
               ),
@@ -65,15 +78,28 @@ class OfflineCacheBannerOverlay extends StatelessWidget {
 }
 
 class _OfflineBannerCard extends StatelessWidget {
-  const _OfflineBannerCard({required this.message, required this.onDismiss});
+  const _OfflineBannerCard({
+    required this.message,
+    required this.isSyncing,
+    required this.hasPendingMutations,
+    required this.onDismiss,
+  });
 
   final String message;
+  final bool isSyncing;
+  final bool hasPendingMutations;
   final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final accentColor = isSyncing ? palette.info : palette.warning;
+    final iconData = isSyncing
+        ? Icons.sync_rounded
+        : hasPendingMutations
+        ? Icons.cloud_upload_outlined
+        : Icons.cloud_off_rounded;
 
     final card = Material(
       type: MaterialType.transparency,
@@ -82,7 +108,7 @@ class _OfflineBannerCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: palette.surfaceSolid,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: palette.warning.withValues(alpha: 0.45)),
+          border: Border.all(color: accentColor.withValues(alpha: 0.45)),
           boxShadow: const [
             BoxShadow(
               color: Color(0x28000000),
@@ -95,7 +121,7 @@ class _OfflineBannerCard extends StatelessWidget {
           padding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
           child: Row(
             children: [
-              Icon(Icons.cloud_off_rounded, size: 18, color: palette.warning),
+              Icon(iconData, size: 18, color: accentColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -110,26 +136,29 @@ class _OfflineBannerCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Semantics(
-                button: true,
-                label: 'Ẩn thông báo ngoại tuyến',
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: MetaGymTap(
-                    key: const Key('offline-cache-banner-dismiss'),
-                    onTap: onDismiss,
-                    customBorder: const CircleBorder(),
-                    child: Center(
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: palette.textSecondary,
+              if (!isSyncing)
+                Semantics(
+                  button: true,
+                  label: 'Ẩn thông báo ngoại tuyến',
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: MetaGymTap(
+                      key: const Key('offline-cache-banner-dismiss'),
+                      onTap: onDismiss,
+                      customBorder: const CircleBorder(),
+                      child: Center(
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: palette.textSecondary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                )
+              else
+                const SizedBox(width: 12, height: 44),
             ],
           ),
         ),

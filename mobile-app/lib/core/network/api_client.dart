@@ -5,7 +5,9 @@ import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
+import 'package:meta_gym_app/core/network/offline_mutation_policy.dart';
 import 'package:meta_gym_app/core/storage/api_cache_store.dart';
+import 'package:meta_gym_app/core/storage/offline_mutation_queue.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 
 typedef ApiDecoder<T> = T Function(Object? data);
@@ -34,6 +36,8 @@ class ApiClient {
     bool enableLocalDemoMode = localDemoFromEnvironment,
     ApiCacheStore? cacheStore,
     ApiCacheStatusController? cacheStatus,
+    OfflineMutationQueue? mutationQueue,
+    bool Function()? isDeviceOffline,
     bool enableOfflineCache = true,
   }) {
     final effectiveStore = _resolveCacheStore(
@@ -41,18 +45,26 @@ class ApiClient {
       enableOfflineCache: enableOfflineCache,
       override: cacheStore,
     );
+    final effectiveQueue = _resolveMutationQueue(
+      enableLocalDemoMode: enableLocalDemoMode,
+      enableOfflineCache: enableOfflineCache,
+      override: mutationQueue,
+    );
     return ApiClient._(
       _createDio(
         config,
         enableLocalDemoMode: enableLocalDemoMode,
         cacheStore: effectiveStore,
         cacheStatus: cacheStatus,
+        mutationQueue: effectiveQueue,
+        isDeviceOffline: isDeviceOffline,
       ),
       logger,
       accessTokenProvider,
       onSessionExpired,
       effectiveStore,
       cacheStatus,
+      effectiveQueue,
       isLocalDemoMode: enableLocalDemoMode,
     );
   }
@@ -65,12 +77,16 @@ class ApiClient {
     ApiSessionExpiredCallback? onSessionExpired,
     ApiCacheStore? cacheStore,
     ApiCacheStatusController? cacheStatus,
+    OfflineMutationQueue? mutationQueue,
+    bool Function()? isDeviceOffline,
     DateTime Function()? cacheNow,
   }) : this._(
          _createDio(
            config,
            cacheStore: cacheStore,
            cacheStatus: cacheStatus,
+           mutationQueue: mutationQueue,
+           isDeviceOffline: isDeviceOffline,
            cacheNow: cacheNow,
          )..httpClientAdapter = adapter,
          logger,
@@ -78,6 +94,7 @@ class ApiClient {
          onSessionExpired,
          cacheStore,
          cacheStatus,
+         mutationQueue,
          isLocalDemoMode: false,
        );
 
@@ -87,23 +104,49 @@ class ApiClient {
     this._accessTokenProvider,
     this._onSessionExpired,
     this._cacheStore,
-    this._cacheStatus, {
+    this._cacheStatus,
+    this._mutationQueue, {
     required this.isLocalDemoMode,
   });
 
   final bool isLocalDemoMode;
   final ApiCacheStore? _cacheStore;
   final ApiCacheStatusController? _cacheStatus;
+  final OfflineMutationQueue? _mutationQueue;
   final Dio _dio;
   final ApiLogger? _logger;
   final ApiAccessTokenProvider? _accessTokenProvider;
   final ApiSessionExpiredCallback? _onSessionExpired;
 
   bool get isOfflineCacheEnabled => _cacheStore != null;
+  OfflineMutationQueue? get mutationQueue => _mutationQueue;
 
   Future<void> clearCache() async {
     await _cacheStore?.clear();
+    await _mutationQueue?.clear();
     _cacheStatus?.reset();
+  }
+
+  /// Phát lại một thao tác ghi từ hàng đợi ngoại tuyến lên máy chủ bằng token phiên hiện tại.
+  Future<void> replayQueuedMutation(QueuedApiMutation mutation) async {
+    final method = mutation.method.toUpperCase();
+    _logger?.call('API $method started [replay]');
+    try {
+      final requestHeaders = await _buildRequestHeaders(mutation.headers);
+      final response = await _dio.request<Object?>(
+        mutation.path,
+        data: mutation.body,
+        queryParameters: mutation.queryParameters,
+        options: Options(
+          method: method,
+          headers: requestHeaders,
+          extra: const <String, dynamic>{offlineReplayExtraKey: true},
+        ),
+      );
+      _logger?.call('API $method completed (${response.statusCode}) [replay]');
+    } on DioException catch (error) {
+      throw await _mapAndReportDioError(method, error);
+    }
   }
 
   Uri resolveServerPath(String path) {
@@ -209,6 +252,39 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> _buildRequestHeaders(
+    Map<String, dynamic>? headers,
+  ) async {
+    final requestHeaders = Map<String, dynamic>.of(headers ?? const {});
+    final token = await _accessTokenProvider?.call();
+    final hasAuthorization = requestHeaders.keys.any(
+      (key) => key.toLowerCase() == 'authorization',
+    );
+    if (!hasAuthorization && token != null && token.isNotEmpty) {
+      requestHeaders['authorization'] = 'Bearer $token';
+    }
+    return requestHeaders;
+  }
+
+  Future<ApiException> _mapAndReportDioError(
+    String method,
+    DioException error,
+  ) async {
+    final apiException = ApiException.fromDio(error);
+    if (apiException.kind == ApiExceptionKind.sessionExpired) {
+      try {
+        await _onSessionExpired?.call();
+      } catch (_) {
+        // Session cleanup must not replace the original API exception.
+      }
+    }
+    _logger?.call(
+      'API $method failed (${apiException.statusCode ?? 'network'}; '
+      '${apiException.kind.name})',
+    );
+    return apiException;
+  }
+
   Future<ApiResult<T>> _request<T>(
     String method,
     String path, {
@@ -220,14 +296,7 @@ class ApiClient {
   }) async {
     _logger?.call('API $method started');
     try {
-      final requestHeaders = Map<String, dynamic>.of(headers ?? const {});
-      final token = await _accessTokenProvider?.call();
-      final hasAuthorization = requestHeaders.keys.any(
-        (key) => key.toLowerCase() == 'authorization',
-      );
-      if (!hasAuthorization && token != null && token.isNotEmpty) {
-        requestHeaders['authorization'] = 'Bearer $token';
-      }
+      final requestHeaders = await _buildRequestHeaders(headers);
       final response = await _dio.request<Object?>(
         path,
         data: body,
@@ -247,19 +316,7 @@ class ApiClient {
       );
       return result;
     } on DioException catch (error) {
-      final apiException = ApiException.fromDio(error);
-      if (apiException.kind == ApiExceptionKind.sessionExpired) {
-        try {
-          await _onSessionExpired?.call();
-        } catch (_) {
-          // Session cleanup must not replace the original API exception.
-        }
-      }
-      _logger?.call(
-        'API $method failed (${apiException.statusCode ?? 'network'}; '
-        '${apiException.kind.name})',
-      );
-      throw apiException;
+      throw await _mapAndReportDioError(method, error);
     } on ApiException catch (error) {
       _logger?.call('API $method failed (${error.kind.name})');
       rethrow;
@@ -277,11 +334,25 @@ ApiCacheStore? _resolveCacheStore({
   return MetaGymTheme.isFlutterTestEnvironment ? null : SecureApiCacheStore();
 }
 
+OfflineMutationQueue? _resolveMutationQueue({
+  required bool enableLocalDemoMode,
+  required bool enableOfflineCache,
+  OfflineMutationQueue? override,
+}) {
+  if (enableLocalDemoMode || !enableOfflineCache) return null;
+  if (override != null) return override;
+  return MetaGymTheme.isFlutterTestEnvironment
+      ? null
+      : SecureOfflineMutationQueue();
+}
+
 Dio _createDio(
   ApiConfig config, {
   bool enableLocalDemoMode = false,
   ApiCacheStore? cacheStore,
   ApiCacheStatusController? cacheStatus,
+  OfflineMutationQueue? mutationQueue,
+  bool Function()? isDeviceOffline,
   DateTime Function()? cacheNow,
 }) {
   final dio = Dio(
@@ -301,6 +372,8 @@ Dio _createDio(
       ApiCacheInterceptor(
         store: cacheStore,
         statusController: cacheStatus,
+        mutationQueue: mutationQueue,
+        isDeviceOffline: isDeviceOffline,
         now: cacheNow,
       ),
     );

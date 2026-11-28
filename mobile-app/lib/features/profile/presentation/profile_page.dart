@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/theme/theme_mode_controller.dart';
@@ -55,6 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   final ImagePicker _imagePicker = ImagePicker();
 
+  SyncRevisionBinding? _syncBinding;
   bool _initialized = false;
   int? _expandedCategory;
 
@@ -103,6 +105,9 @@ class _ProfilePageState extends State<ProfilePage> {
         context,
       ).catchError((_) {});
     }
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted) _reloadProfile();
+    });
     if (_initialized) return;
     _initialized = true;
 
@@ -452,6 +457,12 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(
       () => _expandedCategory = _expandedCategory == index ? null : index,
     );
+  }
+
+  @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
   }
 
   @override

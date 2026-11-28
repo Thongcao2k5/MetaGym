@@ -124,5 +124,50 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets(
+      'displays pending offline mutation count and syncing indicator cleanly',
+      (tester) async {
+        final controller = ApiCacheStatusController();
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: MetaGymTheme.dark,
+            builder: (context, child) => OfflineCacheBannerOverlay(
+              controller: controller,
+              child: child!,
+            ),
+            home: const Scaffold(body: Center(child: Text('Body'))),
+          ),
+        );
+
+        controller.setDeviceOffline(true);
+        controller.setPendingMutationCount(2);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Đang ngoại tuyến · Chờ đồng bộ 2 thao tác'),
+          findsOneWidget,
+        );
+
+        controller.setSyncing(true);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Đang đồng bộ 2 thao tác lên máy chủ...'),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('offline-cache-banner-dismiss')),
+          findsNothing,
+        );
+
+        controller.setPendingMutationCount(0);
+        controller.setSyncing(false);
+        controller.recordLiveSuccess(DateTime.now());
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('offline-cache-banner')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

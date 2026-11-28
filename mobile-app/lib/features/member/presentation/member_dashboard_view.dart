@@ -1,6 +1,7 @@
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
@@ -54,6 +55,7 @@ class MemberDashboardView extends StatefulWidget {
 }
 
 class _MemberDashboardViewState extends State<MemberDashboardView> {
+  SyncRevisionBinding? _syncBinding;
   bool _initialized = false;
   bool _isLoading = true;
   String? _loadError;
@@ -70,10 +72,21 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     MetaGymBackground.precache(context);
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted && !widget.previewMode) {
+        _loadFrame3Data();
+      }
+    });
     if (!_initialized) {
       _initialized = true;
       _loadFrame3Data();
     }
+  }
+
+  @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFrame3Data() async {
