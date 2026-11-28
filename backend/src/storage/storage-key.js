@@ -160,6 +160,14 @@ export function buildMediaStorageKey(purpose, id, extension) {
 }
 
 /**
+ * Builds a domain-scoped storage key for uploaded exercise tutorial videos (`exercises/videos/<uuid>.<ext>`).
+ */
+export function buildExerciseVideoStorageKey(id, extension = 'mp4') {
+  const ext = String(extension || 'mp4').replace(/^\./, '').toLowerCase();
+  return `exercises/videos/${id}.${ext}`;
+}
+
+/**
  * Builds a storage key under `library/` for Image Server assets (`original`, `thumbnails`, `variants`).
  */
 export function buildLibraryStorageKey(kind, id, extension) {

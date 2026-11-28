@@ -8,6 +8,7 @@ import { createDomEnvironment, flush, jsonResponse } from './helpers/dom-harness
 import { api, clearSession, setCurrentUser, setToken } from '../src/services/api.js';
 import { buildHash, parseHash } from '../src/state/router.js';
 import { renderShell } from '../src/components/layout.js';
+import { refreshNotifications } from '../src/components/notifications.js';
 import { closeModal, openConfirmModal } from '../src/components/modal.js';
 import { closeDrawer, openDrawer } from '../src/components/drawer.js';
 import { renderLoginPage } from '../src/pages/login.js';
@@ -418,4 +419,34 @@ test('Header Command Grid button opens full admin functions grid modal with inst
 
   filteredCards[0].click();
   assert.equal(env.modalOverlay.hidden, true, 'Clicking a grid card must close modal');
+});
+
+test('Notification polling queries /admin/termination-requests (never 404 /admin/coach-terminations)', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/dashboard', token: 'tok-notif' });
+  setToken('tok-notif');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Meta Admin' });
+
+  const requestedPaths = [];
+  globalThis.fetch = async (url) => {
+    const parsed = new URL(url, 'http://localhost');
+    requestedPaths.push(`${parsed.pathname}${parsed.search}`);
+    if (parsed.pathname === '/api/v1/admin/coach-incidents') {
+      return jsonResponse({ data: [] });
+    }
+    if (parsed.pathname === '/api/v1/admin/termination-requests') {
+      return jsonResponse({ data: [{ id: 'term-1', memberName: 'An', coachName: 'Bình', disputedAt: '2026-11-28T00:00:00.000Z' }] });
+    }
+    throw new Error(`Unexpected notification poll path: ${parsed.pathname}`);
+  };
+
+  renderShell({
+    root: env.root,
+    section: 'dashboard',
+    user: { role: 'ADMIN', fullName: 'Meta Admin', email: 'admin@metagym.vn' },
+    contentHtml: '<p>ok</p>',
+  });
+
+  await refreshNotifications({ force: true });
+  assert.equal(requestedPaths.includes('/api/v1/admin/termination-requests?status=DISPUTED&page=1&pageSize=20'), true);
+  assert.equal(requestedPaths.some((p) => p.includes('coach-terminations')), false);
 });

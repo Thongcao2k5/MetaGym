@@ -87,6 +87,7 @@ export function isSecondaryVariantKey(key) {
     || clean.startsWith('packages/thumbs/')
     || clean.startsWith('system/icons/thumbs/')
     || clean.startsWith('marketing/vouchers/thumbs/')
+    || clean.startsWith('exercises/videos/')
     || clean.startsWith('thumbnails/')
     || clean.startsWith('library/thumbnails/')
     || clean.startsWith('library/variants/')

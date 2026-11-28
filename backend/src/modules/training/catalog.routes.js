@@ -3,12 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { prepareMediaAssetCleanup } from '../media/media-cleanup.js';
+import { hasBackofficePermission } from '../users/staff-positions.js';
 import { createAuthentication } from '../users/users.routes.js';
 
 const idSchema = z.uuid();
 const text = (max) => z.string().trim().min(1).max(max);
 const optionalText = (max) => text(max).nullable().optional();
-const url = z.url().max(2000).nullable().optional();
+const url = z.url().max(2000)
+  .refine((val) => /^https?:\/\//i.test(val), 'Liên kết video phải bắt đầu bằng http:// hoặc https://')
+  .nullable()
+  .optional();
 const muscles = z.array(text(80)).max(30).default([]);
 const gymSchema = z.strictObject({
   name: text(150), address: text(2000), phone: optionalText(20),
@@ -18,7 +23,10 @@ const gymSchema = z.strictObject({
 }).partial();
 const equipmentSchema = z.strictObject({
   name: text(120), category: text(80), targetMuscles: muscles,
-  imageMediaId: idSchema.nullable().optional(), description: optionalText(5000),
+  imageMediaId: idSchema.nullable().optional(),
+  iconKey: z.string().trim().regex(/^[a-z0-9_-]{2,60}$/i).nullable().optional(),
+  iconMediaId: idSchema.nullable().optional(),
+  description: optionalText(5000),
   usageSteps: z.array(text(2000)).min(1).max(30), safetyNotes: optionalText(5000),
   videoUrl: url, status: z.enum(['ACTIVE', 'HIDDEN']).default('ACTIVE'),
 });
@@ -27,19 +35,22 @@ const exerciseSchema = z.strictObject({
   description: optionalText(5000), targetMuscles: muscles,
   instructions: text(10000), safetyNotes: optionalText(5000),
   difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).nullable().optional(),
-  videoUrl: url, status: z.enum(['ACTIVE', 'HIDDEN']).default('ACTIVE'),
+  videoUrl: url,
+  videoMediaId: idSchema.nullable().optional(),
+  status: z.enum(['ACTIVE', 'HIDDEN']).default('ACTIVE'),
 });
 const columns = {
   gym: { name: 'name', address: 'address', phone: 'phone', email: 'email',
     description: 'description', openingHours: 'opening_hours', rules: 'rules',
     coverMediaId: 'cover_media_id' },
   equipment: { name: 'name', category: 'category', targetMuscles: 'target_muscles',
-    imageMediaId: 'image_media_id', description: 'description', usageSteps: 'usage_steps',
+    imageMediaId: 'image_media_id', iconKey: 'icon_key', iconMediaId: 'icon_media_id',
+    description: 'description', usageSteps: 'usage_steps',
     safetyNotes: 'safety_notes', videoUrl: 'video_url', status: 'status' },
   exercises: { equipmentId: 'equipment_id', name: 'name', description: 'description',
     targetMuscles: 'target_muscles', instructions: 'instructions',
     safetyNotes: 'safety_notes', difficulty: 'difficulty', videoUrl: 'video_url',
-    status: 'status' },
+    videoMediaId: 'video_media_id', status: 'status' },
 };
 
 function fail(response, status, code, message) {
@@ -54,10 +65,61 @@ function publicRow(row, mapping) {
   return Object.fromEntries(Object.entries(mapping).map(([key, col]) => [key, row[col]]).concat([['id', row.id]]));
 }
 
+function resolveRequestOrigin(request) {
+  const configured = process.env.API_PUBLIC_URL?.trim()?.replace(/\/$/, '');
+  if (configured) return configured;
+  const host = request?.get?.('host');
+  if (!host) return '';
+  return `${request.protocol || 'http'}://${host}`;
+}
+
+function publicExerciseRow(row, mapping, request) {
+  const streamPath = row.video_media_id
+    ? `/api/v1/media/videos/public/${row.video_media_id}?v=${row.video_media_id}`
+    : null;
+  const origin = streamPath ? resolveRequestOrigin(request) : '';
+  const resolvedVideoUrl = streamPath
+    ? `${origin}${streamPath}`
+    : (row.video_url || row.equipment_video_url || null);
+  return {
+    ...publicRow({ ...row, video_url: resolvedVideoUrl }, mapping),
+    equipmentName: row.equipment_name ?? null,
+  };
+}
+
+function publicEquipmentRow(row, mapping) {
+  const base = publicRow(row, mapping);
+  return {
+    ...base,
+    iconKey: base.iconKey ?? null,
+    iconMediaId: base.iconMediaId ?? null,
+    iconUrl: row.icon_media_id ? `/api/v1/media/public/${row.icon_media_id}?v=${row.icon_media_id}` : null,
+    iconThumbnailUrl: row.icon_media_id ? `/api/v1/media/public/${row.icon_media_id}?size=120&v=${row.icon_media_id}` : null,
+  };
+}
+
 function publicCatalogRow(table, row, mapping) {
+  if (table === 'equipment') {
+    return publicEquipmentRow(row, mapping);
+  }
   const base = publicRow(row, mapping);
   if (table === 'exercises') {
-    return { ...base, equipmentName: row.equipment_name ?? null };
+    return {
+      ...base,
+      equipmentName: row.equipment_name ?? null,
+      equipmentVideoUrl: row.equipment_video_url ?? null,
+      videoStreamUrl: row.video_media_id
+        ? `/api/v1/media/videos/public/${row.video_media_id}?v=${row.video_media_id}`
+        : null,
+      videoMeta: row.video_media_id
+        ? {
+            id: row.video_media_id,
+            originalName: row.video_original_name ?? null,
+            mimeType: row.video_mime_type ?? null,
+            sizeBytes: row.video_size_bytes != null ? Number(row.video_size_bytes) : null,
+          }
+        : null,
+    };
   }
   return base;
 }
@@ -72,17 +134,19 @@ function serialize(key, value) {
 
 async function activeAdmin(client, user) {
   const result = await client.query(
-    `SELECT u.id FROM users u WHERE u.id = $1 AND u.role = 'ADMIN' AND u.status = 'ACTIVE'
-     AND u.session_version = $2 FOR SHARE`,
+    `SELECT u.id FROM users u
+     WHERE u.id = $1 AND u.role IN ('ADMIN', 'STAFF') AND u.status = 'ACTIVE'
+       AND u.session_version = $2 FOR SHARE`,
     [user.id, user.session_version],
   );
   return result.rows.length === 1;
 }
 
-async function verifyPublicMedia(client, mediaId, purpose) {
+async function verifyPublicMedia(client, mediaId, purpose, { videoOnly = false } = {}) {
   const result = await client.query(
     `SELECT id FROM media_assets
-     WHERE id = $1 AND status = 'READY' AND access_scope = 'PUBLIC' AND purpose = $2`,
+     WHERE id = $1 AND status = 'READY' AND access_scope = 'PUBLIC' AND purpose = $2
+       ${videoOnly ? "AND mime_type LIKE 'video/%'" : ''}`,
     [mediaId, purpose],
   );
   return result.rows.length === 1;
@@ -91,9 +155,13 @@ async function verifyPublicMedia(client, mediaId, purpose) {
 async function fetchCatalogRow(client, table, id) {
   if (table === 'exercises') {
     const result = await client.query(
-      `SELECT x.*, e.name AS equipment_name
+      `SELECT x.*, e.name AS equipment_name, e.video_url AS equipment_video_url,
+              vm.original_name AS video_original_name,
+              vm.mime_type AS video_mime_type,
+              vm.size_bytes AS video_size_bytes
        FROM exercises x
        LEFT JOIN equipment e ON e.id = x.equipment_id
+       LEFT JOIN media_assets vm ON vm.id = x.video_media_id AND vm.status = 'READY'
        WHERE x.id = $1`,
       [id],
     );
@@ -103,7 +171,7 @@ async function fetchCatalogRow(client, table, id) {
   return result.rows[0] ?? null;
 }
 
-export function createCatalogRouter({ database, jwtSecret }) {
+export function createCatalogRouter({ database, jwtSecret, imageStorage }) {
   const router = Router();
   router.get('/gym-profile', async (_request, response) => {
     try {
@@ -139,12 +207,12 @@ export function createCatalogRouter({ database, jwtSecret }) {
       try {
         const total = await database.query(`SELECT count(*)::int AS count FROM ${source} WHERE ${where}`, args);
         const result = await database.query(
-          `SELECT ${isExercise ? 'x.*, e.video_url AS equipment_video_url' : '*'} FROM ${source} WHERE ${where} ORDER BY ${prefix}created_at DESC, ${prefix}id DESC LIMIT $${args.length + 1} OFFSET $${args.length + 2}`,
+          `SELECT ${isExercise ? 'x.*, e.name AS equipment_name, e.video_url AS equipment_video_url' : '*'} FROM ${source} WHERE ${where} ORDER BY ${prefix}created_at DESC, ${prefix}id DESC LIMIT $${args.length + 1} OFFSET $${args.length + 2}`,
           [...args, pageSize, (page - 1) * pageSize],
         );
         const totalItems = total.rows[0].count;
-        return response.json({ data: result.rows.map((row) => publicRow(
-          isExercise ? { ...row, video_url: row.video_url || row.equipment_video_url } : row, mapping)),
+        return response.json({ data: result.rows.map((row) => (
+          isExercise ? publicExerciseRow(row, mapping, request) : publicEquipmentRow(row, mapping))),
           pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) } });
       } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được danh mục'); }
     });
@@ -153,19 +221,22 @@ export function createCatalogRouter({ database, jwtSecret }) {
       try {
         const isExercise = table === 'exercises';
         const result = await database.query(isExercise
-          ? `SELECT x.*, e.video_url AS equipment_video_url FROM exercises x
+          ? `SELECT x.*, e.name AS equipment_name, e.video_url AS equipment_video_url FROM exercises x
              LEFT JOIN equipment e ON e.id = x.equipment_id
              WHERE x.id = $1 AND x.status = 'ACTIVE'`
           : `SELECT * FROM ${table} WHERE id = $1 AND status = 'ACTIVE'`, [request.params.itemId]);
         const row = result.rows[0];
-        return row ? response.json({ data: publicRow(
-          isExercise ? { ...row, video_url: row.video_url || row.equipment_video_url } : row, mapping) })
+        return row ? response.json({ data: isExercise
+          ? publicExerciseRow(row, mapping, request)
+          : publicEquipmentRow(row, mapping) })
           : fail(response, 404, 'NOT_FOUND', 'Không tìm thấy mục');
       } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được mục'); }
     });
     router.use(`/admin/${basePath}`, createAuthentication({ database, jwtSecret }));
     router.use(`/admin/${basePath}`, (request, response, next) =>
-      request.authUser.role === 'ADMIN' ? next() : fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị'));
+      hasBackofficePermission(request.authUser, 'equipment:manage')
+        ? next()
+        : fail(response, 403, 'FORBIDDEN', 'Không có quyền quản trị'));
     router.get(`/admin/${basePath}`, async (request, response) => {
       const isExercise = table === 'exercises';
       const querySchema = isExercise
@@ -176,6 +247,7 @@ export function createCatalogRouter({ database, jwtSecret }) {
           status: z.enum(['ACTIVE', 'HIDDEN']).optional(),
           difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
           equipmentId: idSchema.optional(),
+          hasVideo: z.enum(['WITH_VIDEO', 'WITHOUT_VIDEO']).optional(),
         })
         : z.strictObject({
           page: z.coerce.number().int().min(1).default(1),
@@ -190,7 +262,11 @@ export function createCatalogRouter({ database, jwtSecret }) {
       const filters = [];
       const args = [];
       const prefix = isExercise ? 'x.' : '';
-      const source = isExercise ? 'exercises x LEFT JOIN equipment e ON e.id = x.equipment_id' : table;
+      const source = isExercise
+        ? `exercises x
+           LEFT JOIN equipment e ON e.id = x.equipment_id
+           LEFT JOIN media_assets vm ON vm.id = x.video_media_id AND vm.status = 'READY'`
+        : table;
       if (search) {
         args.push(`%${escapeLike(search)}%`);
         const param = `$${args.length}`;
@@ -214,6 +290,11 @@ export function createCatalogRouter({ database, jwtSecret }) {
         args.push(parsed.data.equipmentId);
         filters.push(`x.equipment_id = $${args.length}`);
       }
+      if (isExercise && parsed.data.hasVideo === 'WITH_VIDEO') {
+        filters.push("(x.video_media_id IS NOT NULL OR NULLIF(trim(COALESCE(x.video_url, '')), '') IS NOT NULL)");
+      } else if (isExercise && parsed.data.hasVideo === 'WITHOUT_VIDEO') {
+        filters.push("(x.video_media_id IS NULL AND NULLIF(trim(COALESCE(x.video_url, '')), '') IS NULL)");
+      }
       const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
       try {
         const total = await database.query(
@@ -221,7 +302,11 @@ export function createCatalogRouter({ database, jwtSecret }) {
           args,
         );
         const result = await database.query(
-          `SELECT ${isExercise ? 'x.*, e.name AS equipment_name' : '*'}
+          `SELECT ${isExercise
+            ? `x.*, e.name AS equipment_name, e.video_url AS equipment_video_url,
+               vm.original_name AS video_original_name, vm.mime_type AS video_mime_type,
+               vm.size_bytes AS video_size_bytes`
+            : '*'}
            FROM ${source}
            ${whereClause}
            ORDER BY ${prefix}created_at DESC, ${prefix}id DESC
@@ -243,6 +328,9 @@ export function createCatalogRouter({ database, jwtSecret }) {
     router.post(`/admin/${basePath}`, async (request, response) => {
       const parsed = schema.safeParse(request.body);
       if (!parsed.success) return fail(response, 422, 'VALIDATION_ERROR', 'Dữ liệu không hợp lệ');
+      if (table === 'exercises' && parsed.data.videoMediaId && parsed.data.videoUrl) {
+        return fail(response, 422, 'VALIDATION_ERROR', 'Chỉ chọn tải video lên hoặc nhập liên kết URL, không dùng đồng thời');
+      }
       const entries = values(parsed.data, mapping);
       const id = randomUUID();
       const client = await database.connect().catch(() => null);
@@ -257,6 +345,18 @@ export function createCatalogRouter({ database, jwtSecret }) {
           if (!await verifyPublicMedia(client, parsed.data.imageMediaId, 'EQUIPMENT')) {
             await client.query('ROLLBACK');
             return fail(response, 422, 'VALIDATION_ERROR', 'Ảnh thiết bị không hợp lệ');
+          }
+        }
+        if (table === 'equipment' && parsed.data.iconMediaId) {
+          if (!await verifyPublicMedia(client, parsed.data.iconMediaId, 'SYSTEM_ICON')) {
+            await client.query('ROLLBACK');
+            return fail(response, 422, 'VALIDATION_ERROR', 'Icon thiết bị không hợp lệ');
+          }
+        }
+        if (table === 'exercises' && parsed.data.videoMediaId) {
+          if (!await verifyPublicMedia(client, parsed.data.videoMediaId, 'EXERCISE', { videoOnly: true })) {
+            await client.query('ROLLBACK');
+            return fail(response, 422, 'VALIDATION_ERROR', 'Video hướng dẫn bài tập không hợp lệ');
           }
         }
         if (table === 'exercises' && parsed.data.equipmentId) {
@@ -299,9 +399,21 @@ export function createCatalogRouter({ database, jwtSecret }) {
       if (!idSchema.safeParse(request.params.itemId).success) return fail(response, 422, 'VALIDATION_ERROR', 'Mã không hợp lệ');
       const parsed = schema.partial().safeParse(request.body);
       if (!parsed.success || !Object.keys(parsed.data ?? {}).length) return fail(response, 422, 'VALIDATION_ERROR', 'Dữ liệu không hợp lệ');
-      const entries = values(parsed.data, mapping);
+      const normalizedData = { ...parsed.data };
+      if (table === 'exercises') {
+        if (normalizedData.videoMediaId && normalizedData.videoUrl) {
+          return fail(response, 422, 'VALIDATION_ERROR', 'Chỉ chọn tải video lên hoặc nhập liên kết URL, không dùng đồng thời');
+        }
+        if (normalizedData.videoMediaId && !('videoUrl' in normalizedData)) {
+          normalizedData.videoUrl = null;
+        } else if (normalizedData.videoUrl && !('videoMediaId' in normalizedData)) {
+          normalizedData.videoMediaId = null;
+        }
+      }
+      const entries = values(normalizedData, mapping);
       const client = await database.connect().catch(() => null);
       if (!client) return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không kết nối được database');
+      const mediaCleanups = [];
       try {
         await client.query('BEGIN');
         if (!await activeAdmin(client, request.authUser)) {
@@ -316,16 +428,28 @@ export function createCatalogRouter({ database, jwtSecret }) {
           await client.query('ROLLBACK');
           return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy mục');
         }
-        if (table === 'equipment' && parsed.data.imageMediaId) {
-          if (!await verifyPublicMedia(client, parsed.data.imageMediaId, 'EQUIPMENT')) {
+        if (table === 'equipment' && normalizedData.imageMediaId) {
+          if (!await verifyPublicMedia(client, normalizedData.imageMediaId, 'EQUIPMENT')) {
             await client.query('ROLLBACK');
             return fail(response, 422, 'VALIDATION_ERROR', 'Ảnh thiết bị không hợp lệ');
           }
         }
-        if (table === 'exercises' && parsed.data.equipmentId) {
+        if (table === 'equipment' && normalizedData.iconMediaId) {
+          if (!await verifyPublicMedia(client, normalizedData.iconMediaId, 'SYSTEM_ICON')) {
+            await client.query('ROLLBACK');
+            return fail(response, 422, 'VALIDATION_ERROR', 'Icon thiết bị không hợp lệ');
+          }
+        }
+        if (table === 'exercises' && normalizedData.videoMediaId) {
+          if (!await verifyPublicMedia(client, normalizedData.videoMediaId, 'EXERCISE', { videoOnly: true })) {
+            await client.query('ROLLBACK');
+            return fail(response, 422, 'VALIDATION_ERROR', 'Video hướng dẫn bài tập không hợp lệ');
+          }
+        }
+        if (table === 'exercises' && normalizedData.equipmentId) {
           const equipmentExists = await client.query(
             'SELECT id FROM equipment WHERE id = $1',
-            [parsed.data.equipmentId],
+            [normalizedData.equipmentId],
           );
           if (!equipmentExists.rows.length) {
             await client.query('ROLLBACK');
@@ -334,10 +458,52 @@ export function createCatalogRouter({ database, jwtSecret }) {
         }
         const beforeRow = await fetchCatalogRow(client, table, request.params.itemId);
         const before = publicCatalogRow(table, beforeRow, mapping);
+        if (table === 'equipment' && beforeRow?.image_media_id && 'imageMediaId' in normalizedData
+          && normalizedData.imageMediaId !== beforeRow.image_media_id) {
+          mediaCleanups.push(await prepareMediaAssetCleanup(client, beforeRow.image_media_id, {
+            purpose: 'EQUIPMENT',
+            refCheck: async (c, mediaId) => {
+              const r = await c.query(
+                'SELECT 1 FROM equipment WHERE image_media_id = $1 AND id <> $2 LIMIT 1',
+                [mediaId, request.params.itemId],
+              );
+              return r.rows.length > 0;
+            },
+          }));
+        }
+        if (table === 'equipment' && beforeRow?.icon_media_id && 'iconMediaId' in normalizedData
+          && normalizedData.iconMediaId !== beforeRow.icon_media_id) {
+          mediaCleanups.push(await prepareMediaAssetCleanup(client, beforeRow.icon_media_id, {
+            purpose: 'SYSTEM_ICON',
+            refCheck: async (c, mediaId) => {
+              const r = await c.query(
+                'SELECT 1 FROM equipment WHERE icon_media_id = $1 AND id <> $2 LIMIT 1',
+                [mediaId, request.params.itemId],
+              );
+              return r.rows.length > 0;
+            },
+          }));
+        }
+        if (table === 'exercises' && beforeRow?.video_media_id && 'videoMediaId' in normalizedData
+          && normalizedData.videoMediaId !== beforeRow.video_media_id) {
+          mediaCleanups.push(await prepareMediaAssetCleanup(client, beforeRow.video_media_id, {
+            purpose: 'EXERCISE',
+            refCheck: async (c, mediaId) => {
+              const r = await c.query(
+                'SELECT 1 FROM exercises WHERE video_media_id = $1 AND id <> $2 LIMIT 1',
+                [mediaId, request.params.itemId],
+              );
+              return r.rows.length > 0;
+            },
+          }));
+        }
         await client.query(
           `UPDATE ${table} SET ${entries.map(([, col], index) => `${col} = $${index + 1}`).join(', ')} WHERE id = $${entries.length + 1}`,
-          [...entries.map(([key]) => serialize(key, parsed.data[key])), request.params.itemId],
+          [...entries.map(([key]) => serialize(key, normalizedData[key])), request.params.itemId],
         );
+        for (const cleanup of mediaCleanups) {
+          await cleanup.deleteDbRow();
+        }
         const afterRow = await fetchCatalogRow(client, table, request.params.itemId);
         const after = publicCatalogRow(table, afterRow, mapping);
         await client.query(
@@ -354,6 +520,9 @@ export function createCatalogRouter({ database, jwtSecret }) {
           ],
         );
         await client.query('COMMIT');
+        for (const cleanup of mediaCleanups) {
+          await cleanup.removeStorageObjects(imageStorage);
+        }
         return response.json({ data: after });
       } catch {
         await client.query('ROLLBACK').catch(() => {});

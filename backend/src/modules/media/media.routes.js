@@ -1,6 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { Router, raw } from 'express';
+import multer from 'multer';
 import sharp from 'sharp';
 import { z } from 'zod';
 
@@ -10,8 +11,10 @@ import {
   processPackageImages,
 } from './image-processor.js';
 import { resetSupabaseSyncCache } from './supabase-sync.js';
+import { hasBackofficePermission } from '../users/staff-positions.js';
 import { createAuthentication } from '../users/users.routes.js';
 import {
+  buildExerciseVideoStorageKey,
   buildMediaStorageKey,
   buildPackageStorageKeys,
   buildSystemIconStorageKeys,
@@ -21,8 +24,59 @@ import {
 
 const uuid = z.uuid();
 const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
 const PUBLIC_PURPOSES = ['GYM', 'EQUIPMENT', 'PACKAGE', 'SYSTEM_ICON', 'VOUCHER'];
 const WEBP_THUMB_PURPOSES = new Set(['PACKAGE', 'SYSTEM_ICON', 'VOUCHER']);
+const ALLOWED_VIDEO_MIMES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+
+/**
+ * Verifies video container magic bytes (MP4/QuickTime `ftyp` or WebM EBML) against declared MIME.
+ */
+function detectVideoFormat(buffer, declaredMime = '') {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return null;
+  const cleanMime = String(declaredMime || '').split(';')[0].trim().toLowerCase();
+  if (cleanMime && cleanMime !== 'application/octet-stream' && !ALLOWED_VIDEO_MIMES.has(cleanMime)) {
+    return null;
+  }
+  const isWebm = buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3;
+  if (isWebm) {
+    if (cleanMime && cleanMime !== 'application/octet-stream' && cleanMime !== 'video/webm') return null;
+    return { mimeType: 'video/webm', ext: 'webm' };
+  }
+  const boxType = buffer.subarray(4, 8).toString('ascii');
+  if (boxType === 'ftyp') {
+    const majorBrand = buffer.subarray(8, 12).toString('ascii');
+    if (cleanMime === 'video/quicktime' || majorBrand === 'qt  ') {
+      return { mimeType: 'video/quicktime', ext: 'mov' };
+    }
+    return { mimeType: 'video/mp4', ext: 'mp4' };
+  }
+  return null;
+}
+
+function parseByteRange(rangeHeader, totalLength) {
+  if (typeof rangeHeader !== 'string' || !rangeHeader.startsWith('bytes=')) return null;
+  const spec = rangeHeader.slice('bytes='.length).split(',')[0].trim();
+  const match = /^(\d*)-(\d*)$/.exec(spec);
+  if (!match || (!match[1] && !match[2])) return { invalid: true };
+
+  let start;
+  let end;
+  if (!match[1]) {
+    const suffixLength = Number(match[2]);
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) return { invalid: true };
+    start = Math.max(0, totalLength - suffixLength);
+    end = totalLength - 1;
+  } else {
+    start = Number(match[1]);
+    end = match[2] ? Math.min(Number(match[2]), totalLength - 1) : totalLength - 1;
+  }
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start > end || start >= totalLength) {
+    return { invalid: true };
+  }
+  return { start, end };
+}
 
 function fail(response, status, code, message) {
   return response.status(status).json({ error: { code, message, details: {} } });
@@ -185,6 +239,147 @@ export function createMediaRouter({ database, jwtSecret, imageStorage }) {
       return fail(response, 413, 'PAYLOAD_TOO_LARGE', 'Ảnh vượt giới hạn 5 MB');
     }
     return next(error);
+  });
+
+  const videoUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_VIDEO_BYTES },
+  }).single('file');
+
+  router.post('/media/videos', authenticate, (request, response) => {
+    if (!hasBackofficePermission(request.authUser, 'equipment:manage')) {
+      return fail(response, 403, 'FORBIDDEN', 'Không có quyền tải video bài tập');
+    }
+    if (!imageStorage || typeof imageStorage.put !== 'function' ||
+      typeof imageStorage.get !== 'function') {
+      return fail(response, 503, 'SERVICE_UNAVAILABLE', 'Lưu trữ media chưa được cấu hình');
+    }
+
+    videoUpload(request, response, async (uploadErr) => {
+      if (uploadErr) {
+        if (uploadErr.code === 'LIMIT_FILE_SIZE') {
+          return fail(response, 413, 'PAYLOAD_TOO_LARGE', 'Video vượt giới hạn tối đa 30 MB');
+        }
+        return fail(response, 422, 'VALIDATION_ERROR', 'Không đọc được tệp video tải lên');
+      }
+
+      const purpose = String(request.body?.purpose || request.get('x-video-purpose') || 'EXERCISE').toUpperCase();
+      if (purpose !== 'EXERCISE') {
+        return fail(response, 422, 'VALIDATION_ERROR', 'Mục đích tải video không hợp lệ');
+      }
+
+      const file = request.file;
+      const detected = file ? detectVideoFormat(file.buffer, file.mimetype) : null;
+      if (!file || !detected) {
+        return fail(response, 422, 'VALIDATION_ERROR', 'Chỉ hỗ trợ video MP4, WebM hoặc MOV hợp lệ (tối đa 30 MB)');
+      }
+
+      const rawName = String(file.originalname || `exercise-video.${detected.ext}`);
+      const originalName = rawName.slice(0, 255) || `exercise-video.${detected.ext}`;
+      const id = randomUUID();
+      const storageKey = buildExerciseVideoStorageKey(id, detected.ext);
+      let objectStored = false;
+
+      try {
+        await database.query(
+          `INSERT INTO media_assets
+           (id, owner_id, purpose, access_scope, storage_key, original_name, expires_at)
+           VALUES ($1, $2, 'EXERCISE', 'PUBLIC', $3, $4, now() + interval '15 minutes')`,
+          [id, request.authUser.id, storageKey, originalName],
+        );
+        await imageStorage.put(storageKey, file.buffer, detected.mimeType);
+        objectStored = true;
+        await database.query(
+          `UPDATE media_assets
+           SET status = 'READY', mime_type = $1, size_bytes = $2, ready_at = now()
+           WHERE id = $3`,
+          [detected.mimeType, file.buffer.length, id],
+        );
+        resetSupabaseSyncCache();
+        return response.status(201).json({
+          data: {
+            id,
+            purpose: 'EXERCISE',
+            accessScope: 'PUBLIC',
+            mimeType: detected.mimeType,
+            sizeBytes: file.buffer.length,
+            originalName,
+            publicUrl: `/api/v1/media/videos/public/${id}?v=${id}`,
+          },
+        });
+      } catch {
+        if (objectStored && typeof imageStorage.remove === 'function') {
+          await imageStorage.remove(storageKey).catch(() => {});
+        }
+        await database.query(
+          `UPDATE media_assets SET status = 'FAILED', failed_at = now(),
+           failure_reason = 'Video storage operation failed'
+           WHERE id = $1 AND status = 'UPLOADING'`,
+          [id],
+        ).catch(() => {});
+        return fail(response, 502, 'STORAGE_ERROR', 'Không lưu được video lên hệ thống lưu trữ');
+      }
+    });
+  });
+
+  router.get('/media/videos/public/:mediaId', async (request, response) => {
+    const { mediaId } = request.params;
+    if (!uuid.safeParse(mediaId).success) {
+      return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy video');
+    }
+    if (!imageStorage || typeof imageStorage.get !== 'function') {
+      return fail(response, 503, 'SERVICE_UNAVAILABLE', 'Lưu trữ media chưa được cấu hình');
+    }
+    try {
+      const found = await database.query(
+        `SELECT storage_key, mime_type
+         FROM media_assets
+         WHERE id = $1
+           AND status = 'READY'
+           AND access_scope = 'PUBLIC'
+           AND purpose = 'EXERCISE'
+           AND mime_type LIKE 'video/%'`,
+        [mediaId],
+      );
+      if (!found.rows.length) {
+        return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy video');
+      }
+      const etag = `"${mediaId}"`;
+      response.set('ETag', etag);
+      if (request.headers['if-none-match'] === etag) {
+        return response.status(304).end();
+      }
+
+      const bytes = await imageStorage.get(found.rows[0].storage_key);
+      if (!Buffer.isBuffer(bytes)) throw new Error('INVALID_STORAGE_RESPONSE');
+
+      const mimeType = found.rows[0].mime_type || 'video/mp4';
+      response.set({
+        'Cross-Origin-Resource-Policy': 'cross-origin',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600',
+      });
+      response.type(mimeType);
+
+      const range = parseByteRange(request.headers.range, bytes.length);
+      if (range?.invalid) {
+        response.set('Content-Range', `bytes */${bytes.length}`);
+        return response.status(416).end();
+      }
+      if (range) {
+        const chunk = bytes.subarray(range.start, range.end + 1);
+        response.set({
+          'Content-Range': `bytes ${range.start}-${range.end}/${bytes.length}`,
+          'Content-Length': String(chunk.length),
+        });
+        return response.status(206).send(chunk);
+      }
+
+      response.set('Content-Length', String(bytes.length));
+      return response.send(bytes);
+    } catch {
+      return fail(response, 502, 'STORAGE_ERROR', 'Không tải được video');
+    }
   });
 
   router.get('/media/public/:mediaId', async (request, response) => {

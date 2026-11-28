@@ -63,6 +63,16 @@ const ICONS = {
   chevronDown: '<polyline points="6 9 12 15 18 9"/>',
   moreVertical: '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>',
   zoomIn: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>',
+  video: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+  treadmill: '<path d="M4 18h14l3-4"/><path d="M7 18l-2 3"/><path d="M16 18l1 3"/><path d="M18 14V7l-3-2"/><circle cx="11" cy="6" r="1.5"/><path d="M8 12l2-3 3 1 2-2"/>',
+  bike: '<circle cx="6.5" cy="16.5" r="3.5"/><circle cx="17.5" cy="16.5" r="3.5"/><path d="M10 16.5h3.5l2-6.5h-4l-2 4.5"/><path d="M14 6h3"/>',
+  barbell: '<path d="M6 7v10"/><path d="M18 7v10"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M2 12h20"/>',
+  kettlebell: '<path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M7 9h10l1.5 7.5a3.5 3.5 0 0 1-3.45 4.5H8.95A3.5 3.5 0 0 1 5.5 16.5L7 9z"/>',
+  cable: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="8" r="2"/><path d="M12 10v5"/><path d="M9 17h6"/>',
+  bench: '<path d="M4 14h16"/><path d="M6 14v5"/><path d="M18 14v5"/><path d="M14 14l4-5"/>',
+  heartPulse: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l1.5-2 2 4 1.5-2h6.28"/>',
+  core: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
 };
 
 export function icon(name, size = 18) {

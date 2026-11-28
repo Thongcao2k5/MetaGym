@@ -175,7 +175,7 @@ export function createApp({
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPaymentHoldsRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachBookingsRouter({ database, jwtSecret }));
-  app.use('/api/v1', createCatalogRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCatalogRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1', createStructuredNutritionRouter({ database, jwtSecret }));
   app.use('/api/v1', createTrainingRouter({ database, jwtSecret }));
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));

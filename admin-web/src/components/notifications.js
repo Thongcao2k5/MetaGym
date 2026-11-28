@@ -97,7 +97,7 @@ export async function refreshNotifications({ force = false } = {}) {
   try {
     const [incRes, termRes] = await Promise.allSettled([
       api('/admin/coach-incidents?status=OPEN&page=1&pageSize=20'),
-      api('/admin/coach-terminations?status=DISPUTED&page=1&pageSize=20'),
+      api('/admin/termination-requests?status=DISPUTED&page=1&pageSize=20'),
     ]);
 
     const incidents = incRes.status === 'fulfilled' && Array.isArray(incRes.value?.data)
@@ -184,15 +184,15 @@ function buildNotificationBodyHtml() {
         </div>`
       : filtered.length === 0
         ? renderEmptyState({
-            iconName: 'bell',
-            title: 'Chưa có dữ liệu',
-            description: emptyDesc,
-          })
+          iconName: 'bell',
+          title: 'Chưa có dữ liệu',
+          description: emptyDesc,
+        })
         : `<div class="notif-list">
             ${filtered.map((item) => {
-              const isRead = readSet.has(item.key);
-              const badgeCls = item.kind === 'DISPUTE' ? 'meta-badge-danger' : (item.urgent ? 'meta-badge-coral' : 'meta-badge-warning');
-              return `<a class="notif-item ${isRead ? 'is-read' : 'is-unread'}" href="${esc(item.href)}" data-notif-key="${esc(item.key)}">
+          const isRead = readSet.has(item.key);
+          const badgeCls = item.kind === 'DISPUTE' ? 'meta-badge-danger' : (item.urgent ? 'meta-badge-coral' : 'meta-badge-warning');
+          return `<a class="notif-item ${isRead ? 'is-read' : 'is-unread'}" href="${esc(item.href)}" data-notif-key="${esc(item.key)}">
                 <div class="notif-item-top">
                   <span class="meta-badge ${badgeCls}">${esc(item.kindLabel)}</span>
                   <span class="notif-item-time tabular">${esc(item.createdAt ? formatDateTimeVN(item.createdAt) : 'Mới')}</span>
@@ -200,7 +200,7 @@ function buildNotificationBodyHtml() {
                 <div class="notif-item-title">${!isRead ? '<span class="notif-unread-dot" aria-hidden="true"></span>' : ''}${esc(item.title)}</div>
                 <div class="notif-item-sub">${esc(item.subtitle)}</div>
               </a>`;
-            }).join('')}
+        }).join('')}
           </div>`;
 
   return { pendingCount, readCount, unreadCount, listHtml };
