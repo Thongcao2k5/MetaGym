@@ -1,15 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
+import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/metagym_realtime.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
+import 'package:meta_gym_app/core/storage/offline_mutation_queue.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/theme_mode_controller.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_responsive_scale.dart';
+import 'package:meta_gym_app/core/widgets/offline_cache_banner.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
@@ -43,6 +50,7 @@ import 'package:meta_gym_app/features/training/data/member_training_service.dart
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/data/nutrition_tracking_api.dart';
 import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
@@ -111,7 +119,10 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final ThemeModeController _themeModeController;
   late final bool _ownsThemeModeController;
   late final SessionController _sessionController;
+  late final ApiCacheStatusController _apiCacheStatus;
+  late final OfflineSyncManager _offlineSyncManager;
   late final ApiClient _apiClient;
+  String? _prewarmedUserId;
   late final AuthService _authService;
   late final AuthController _authController;
   late final ProfileService _profileService;
@@ -150,6 +161,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _ownsThemeModeController = widget.themeModeController == null;
     _themeModeController = widget.themeModeController ?? ThemeModeController();
     _themeModeController.restore();
+    _apiCacheStatus = ApiCacheStatusController();
     if (widget.sessionController case final injected?) {
       _sessionController = injected;
       _apiClient =
@@ -158,6 +170,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
             config: ApiConfig.fromEnvironment(),
             accessTokenProvider: () => injected.accessToken,
             onSessionExpired: injected.expire,
+            cacheStatus: _apiCacheStatus,
+            isDeviceOffline: () => _apiCacheStatus.isDeviceOffline,
           );
     } else {
       late final SessionController session;
@@ -165,11 +179,15 @@ class _MetaGymAppState extends State<MetaGymApp> {
         config: ApiConfig.fromEnvironment(),
         accessTokenProvider: () => session.accessToken,
         onSessionExpired: () => session.expire(),
+        cacheStatus: _apiCacheStatus,
+        isDeviceOffline: () => _apiCacheStatus.isDeviceOffline,
       );
       final authApi = AuthApi(_apiClient);
       session = SessionController(
         const SecureTokenStorage(),
         authApi.loadCurrentUser,
+        onClearCache: _apiClient.clearCache,
+        onOfflineSessionRestored: _apiCacheStatus.recordCacheFallback,
       );
       _sessionController = session;
     }
@@ -232,11 +250,73 @@ class _MetaGymAppState extends State<MetaGymApp> {
       sessionController: _sessionController,
       navigatorKey: _navigatorKey,
     );
+    _offlineSyncManager = OfflineSyncManager(
+      apiClient: _apiClient,
+      mutationQueue: _apiClient.mutationQueue ?? MemoryOfflineMutationQueue(),
+      statusController: _apiCacheStatus,
+      sessionController: _sessionController,
+      onRefreshControllers: _refreshCoreControllers,
+    );
+    unawaited(_offlineSyncManager.start());
+    _sessionController.addListener(_handleSessionChanged);
+    _handleSessionChanged();
     _sessionController.restore();
+  }
+
+  void _handleSessionChanged() {
+    if (MetaGymTheme.isFlutterTestEnvironment) return;
+    final user = _sessionController.user;
+    if (_sessionController.status != SessionStatus.authenticated ||
+        user == null) {
+      _prewarmedUserId = null;
+      return;
+    }
+    if (_prewarmedUserId == user.id) return;
+    _prewarmedUserId = user.id;
+    unawaited(_prewarmOfflineCatalog());
+  }
+
+  Future<void> _prewarmOfflineCatalog() async {
+    if (_sessionController.status != SessionStatus.authenticated ||
+        _apiCacheStatus.isDeviceOffline) {
+      return;
+    }
+    final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final todayVn =
+        '${vnNow.year.toString().padLeft(4, '0')}-'
+        '${vnNow.month.toString().padLeft(2, '0')}-'
+        '${vnNow.day.toString().padLeft(2, '0')}';
+    final isMember = _sessionController.user?.role == UserRole.member;
+    final nutritionApi = NutritionTrackingApi(_apiClient);
+
+    await Future.wait<void>([
+      _catalogService.getGymProfile().then((_) {}).catchError((_) {}),
+      _catalogService.getEquipment().then((_) {}).catchError((_) {}),
+      _catalogService.getExercises().then((_) {}).catchError((_) {}),
+      if (isMember) ...[
+        nutritionApi.day(todayVn).then((_) {}).catchError((_) {}),
+        nutritionApi.foods().then((_) {}).catchError((_) {}),
+        _memberJournalService.getPage(1).then((_) {}).catchError((_) {}),
+        _memberMeasurementService.getPage(1).then((_) {}).catchError((_) {}),
+        _memberProgressService.getSummary().then((_) {}).catchError((_) {}),
+      ],
+    ]);
+  }
+
+  Future<void> _refreshCoreControllers() async {
+    if (_sessionController.status != SessionStatus.authenticated) return;
+    await Future.wait<void>([
+      _profileController.load().then((_) {}).catchError((_) {}),
+      _membershipController.load().catchError((_) {}),
+      _notificationsController.refresh(initial: false).catchError((_) {}),
+      if (!MetaGymTheme.isFlutterTestEnvironment) _prewarmOfflineCatalog(),
+    ]);
   }
 
   @override
   void dispose() {
+    _sessionController.removeListener(_handleSessionChanged);
+    _offlineSyncManager.dispose();
     if (_ownsNotificationsController) {
       _notificationsController.dispose();
     }
@@ -246,6 +326,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileController.dispose();
     _passwordResetController.dispose();
     _membershipController.dispose();
+    _apiCacheStatus.dispose();
     if (_ownsThemeModeController) {
       _themeModeController.dispose();
     }
@@ -257,6 +338,10 @@ class _MetaGymAppState extends State<MetaGymApp> {
     return MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: _apiClient),
+        ChangeNotifierProvider<ApiCacheStatusController>.value(
+          value: _apiCacheStatus,
+        ),
+        Provider<OfflineSyncManager>.value(value: _offlineSyncManager),
         Provider<MetaGymRealtime?>.value(value: _realtime),
         Provider<AuthService>.value(value: _authService),
         ChangeNotifierProvider<AuthController>.value(value: _authController),
@@ -324,12 +409,15 @@ class _MetaGymAppState extends State<MetaGymApp> {
                   )
                 : child;
             return MetaGymResponsiveScale(
-              child: InAppNotificationListener(
-                navigatorKey: _navigatorKey,
-                controller: _notificationsController,
-                session: _sessionController,
-                router: _router,
-                child: wrappedCalls,
+              child: OfflineCacheBannerOverlay(
+                controller: _apiCacheStatus,
+                child: InAppNotificationListener(
+                  navigatorKey: _navigatorKey,
+                  controller: _notificationsController,
+                  session: _sessionController,
+                  router: _router,
+                  child: wrappedCalls,
+                ),
               ),
             );
           },

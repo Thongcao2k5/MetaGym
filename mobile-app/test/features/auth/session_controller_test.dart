@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/storage/api_cache_store.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -71,6 +72,116 @@ void main() {
       expect(controller.status, SessionStatus.unauthenticated);
     },
   );
+
+  test(
+    'clears stale local-demo token during restore when offline demo is disabled',
+    () async {
+      var loaderCalled = false;
+      final storage = _MemoryTokenStorage('local-demo-member-token');
+      final controller = SessionController(storage, (_) async {
+        loaderCalled = true;
+        return member;
+      });
+
+      await controller.restore();
+
+      expect(loaderCalled, isFalse);
+      expect(storage.deleteCount, 1);
+      expect(storage.value, isNull);
+      expect(controller.accessToken, isNull);
+      expect(controller.status, SessionStatus.unauthenticated);
+    },
+  );
+
+  test(
+    'restores cached user snapshot on network failure and updates banner callback',
+    () async {
+      final tokenStorage = _MemoryTokenStorage('jwt-valid-1');
+      final cachedStorage = _MemoryCachedUserStorage(
+        CachedUserSnapshot(
+          user: member,
+          savedAt: DateTime.utc(2026, 11, 28, 9, 30),
+        ),
+      );
+      DateTime? restoredAt;
+      final controller = SessionController(
+        tokenStorage,
+        (_) async => throw const ApiException(
+          kind: ApiExceptionKind.network,
+          message: 'offline',
+        ),
+        cachedUserStorage: cachedStorage,
+        onOfflineSessionRestored: (at) => restoredAt = at,
+      );
+
+      await controller.restore();
+
+      expect(controller.status, SessionStatus.authenticated);
+      expect(controller.user?.email, member.email);
+      expect(controller.accessToken, 'jwt-valid-1');
+      expect(restoredAt, DateTime.utc(2026, 11, 28, 9, 30));
+    },
+  );
+
+  test(
+    'clears cached user and API cache on 401 session expiry and signOut',
+    () async {
+      final tokenStorage = _MemoryTokenStorage('expired-jwt');
+      final cachedStorage = _MemoryCachedUserStorage(
+        CachedUserSnapshot(
+          user: member,
+          savedAt: DateTime.utc(2026, 11, 28, 9, 30),
+        ),
+      );
+      var clearCacheCount = 0;
+      final expiredController = SessionController(
+        tokenStorage,
+        (_) async => throw const ApiException(
+          kind: ApiExceptionKind.sessionExpired,
+          message: 'expired',
+        ),
+        cachedUserStorage: cachedStorage,
+        onClearCache: () async => clearCacheCount += 1,
+      );
+
+      await expiredController.restore();
+      expect(expiredController.status, SessionStatus.unauthenticated);
+      expect(cachedStorage.snapshot, isNull);
+      expect(clearCacheCount, 1);
+
+      final signOutController = SessionController(
+        _MemoryTokenStorage(),
+        (_) async => member,
+        cachedUserStorage: cachedStorage,
+        onClearCache: () async => clearCacheCount += 1,
+      );
+      await signOutController.authenticate(
+        const AuthSession(accessToken: 'jwt-2', user: member),
+      );
+      expect(cachedStorage.snapshot?.user.email, member.email);
+
+      await signOutController.signOut();
+      expect(cachedStorage.snapshot, isNull);
+      expect(clearCacheCount, 2);
+    },
+  );
+}
+
+class _MemoryCachedUserStorage implements CachedUserStorage {
+  _MemoryCachedUserStorage([this.snapshot]);
+
+  CachedUserSnapshot? snapshot;
+
+  @override
+  Future<void> delete() async => snapshot = null;
+
+  @override
+  Future<CachedUserSnapshot?> read() async => snapshot;
+
+  @override
+  Future<void> write(CachedUserSnapshot snapshot) async {
+    this.snapshot = snapshot;
+  }
 }
 
 class _MemoryTokenStorage implements TokenStorage {

@@ -1,6 +1,7 @@
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
@@ -54,6 +55,7 @@ class MemberDashboardView extends StatefulWidget {
 }
 
 class _MemberDashboardViewState extends State<MemberDashboardView> {
+  SyncRevisionBinding? _syncBinding;
   bool _initialized = false;
   bool _isLoading = true;
   String? _loadError;
@@ -70,10 +72,21 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     MetaGymBackground.precache(context);
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted && !widget.previewMode) {
+        _loadFrame3Data();
+      }
+    });
     if (!_initialized) {
       _initialized = true;
       _loadFrame3Data();
     }
+  }
+
+  @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFrame3Data() async {
@@ -118,97 +131,109 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
     ProgressSummary? progressSummary;
     Object? firstError;
 
-    if (coachingService != null) {
-      try {
-        final current = await coachingService.getCurrentRelationship();
-        relationship = current;
-      } catch (error) {
-        firstError ??= error;
-      }
-      try {
-        coachNames = await coachingService.getCoachNames();
-      } catch (_) {}
-      try {
-        coachRequests = await coachingService.getRequests();
-      } catch (_) {}
-    }
-
-    if (nutritionService != null) {
-      try {
-        final guide = await nutritionService.getActive();
-        if (guide != null && guide.status == 'ACTIVE') {
-          activeNutrition = guide;
-        }
-      } catch (error) {
-        firstError ??= error;
-      }
-    }
-
-    if (trainingService != null) {
-      try {
-        activePlan = await trainingService.getActive();
-      } catch (error) {
-        firstError ??= error;
-      }
-    }
-
-    if (sessionsService != null) {
-      try {
-        sessions = await sessionsService.getMine();
-        if (sessionsService is MemberSessionsApi) {
-          final bookings = await CoachV2Api(sessionsService.client)
-              .list('/coach-bookings');
-          if (mounted) {
-            try {
-              final notifCtrl = Provider.of<NotificationsController>(
-                context,
-                listen: false,
-              );
-              await notifCtrl.syncUpcomingBookings(bookings);
-            } on ProviderNotFoundException {
-              // Optional when dashboard is rendered in isolation.
-            }
+    final tasks = <Future<void>>[
+      if (coachingService != null) ...[
+        () async {
+          try {
+            relationship = await coachingService!.getCurrentRelationship();
+          } catch (error) {
+            firstError ??= error;
           }
-          sessions = [
-            ...sessions,
-            for (final booking in bookings)
-              TrainingSession(
-                id: booking['id'] as String,
-                title: 'Buổi tập với Coach',
-                scheduledStartAt: booking['startsAt'] as String,
-                scheduledEndAt: booking['endsAt'] as String,
-                status: booking['status'] == 'BOOKED'
-                    ? 'SCHEDULED'
-                    : booking['status'] as String,
-              ),
-          ];
-        }
-      } catch (error) {
-        firstError ??= error;
-      }
-    }
+        }(),
+        () async {
+          try {
+            coachNames = await coachingService!.getCoachNames();
+          } catch (_) {}
+        }(),
+        () async {
+          try {
+            coachRequests = await coachingService!.getRequests();
+          } catch (_) {}
+        }(),
+      ],
+      if (nutritionService != null)
+        () async {
+          try {
+            final guide = await nutritionService!.getActive();
+            if (guide != null && guide.status == 'ACTIVE') {
+              activeNutrition = guide;
+            }
+          } catch (error) {
+            firstError ??= error;
+          }
+        }(),
+      if (trainingService != null)
+        () async {
+          try {
+            activePlan = await trainingService!.getActive();
+          } catch (error) {
+            firstError ??= error;
+          }
+        }(),
+      if (sessionsService != null)
+        () async {
+          try {
+            final baseSessionsFuture = sessionsService!.getMine();
+            final bookingsFuture = sessionsService is MemberSessionsApi
+                ? CoachV2Api(sessionsService.client).list('/coach-bookings')
+                : Future<List<Map<String, dynamic>>>.value(const []);
+            final baseSessions = await baseSessionsFuture;
+            final bookings = await bookingsFuture;
+            if (sessionsService is MemberSessionsApi && mounted) {
+              try {
+                final notifCtrl = Provider.of<NotificationsController>(
+                  context,
+                  listen: false,
+                );
+                await notifCtrl.syncUpcomingBookings(bookings);
+              } on ProviderNotFoundException {
+                // Optional when dashboard is rendered in isolation.
+              }
+            }
+            sessions = [
+              ...baseSessions,
+              for (final booking in bookings)
+                TrainingSession(
+                  id: booking['id'] as String,
+                  title: 'Buổi tập với Coach',
+                  scheduledStartAt: booking['startsAt'] as String,
+                  scheduledEndAt: booking['endsAt'] as String,
+                  status: booking['status'] == 'BOOKED'
+                      ? 'SCHEDULED'
+                      : booking['status'] as String,
+                ),
+            ];
+          } catch (error) {
+            firstError ??= error;
+          }
+        }(),
+      if (membershipService != null)
+        () async {
+          try {
+            memberships = await membershipService!.getCurrentMemberships();
+          } catch (error) {
+            firstError ??= error;
+          }
+        }(),
+      if (journalService is MemberJournalApi)
+        () async {
+          try {
+            progressSummary = ProgressSummary(
+              workoutCount: await journalService.getCount(),
+              mealCount: 0,
+              progressPhotoCount: 0,
+            );
+          } catch (_) {}
+        }()
+      else if (progressService != null)
+        () async {
+          try {
+            progressSummary = await progressService!.getSummary();
+          } catch (_) {}
+        }(),
+    ];
 
-    if (membershipService != null) {
-      try {
-        memberships = await membershipService.getCurrentMemberships();
-      } catch (error) {
-        firstError ??= error;
-      }
-    }
-
-    if (journalService is MemberJournalApi) {
-      try {
-        progressSummary = ProgressSummary(
-          workoutCount: await journalService.getCount(),
-          mealCount: 0,
-          progressPhotoCount: 0,
-        );
-      } catch (_) {}
-    } else if (progressService != null) {
-      try {
-        progressSummary = await progressService.getSummary();
-      } catch (_) {}
-    }
+    await Future.wait<void>(tasks);
 
     if (!mounted) return;
     setState(() {

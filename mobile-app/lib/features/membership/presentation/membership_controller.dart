@@ -26,6 +26,7 @@ class MembershipController extends ChangeNotifier {
   String? errorMessage;
   int _purchaseSequence = 0;
   final Map<String, String> _purchaseKeys = {};
+  Future<void>? _loadInFlight;
 
   MembershipCheckoutService? get checkoutService => switch (_service) {
     final MembershipCheckoutService service => service,
@@ -46,6 +47,7 @@ class MembershipController extends ChangeNotifier {
     errorMessage = null;
     isLoading = false;
     isConfirming = false;
+    _loadInFlight = null;
     _purchaseKeys.clear();
     notifyListeners();
   }
@@ -77,19 +79,33 @@ class MembershipController extends ChangeNotifier {
     }
   }
 
-  Future<void> load() async {
-    if (isLoading || isConfirming) return;
+  Future<void> load() {
+    if (isConfirming) return Future<void>.value();
+    if (_loadInFlight case final inFlight?) return inFlight;
+    if (isLoading) return Future<void>.value();
+
+    late final Future<void> future;
+    future = _performLoad().whenComplete(() {
+      if (identical(_loadInFlight, future)) {
+        _loadInFlight = null;
+      }
+    });
+    _loadInFlight = future;
+    return future;
+  }
+
+  Future<void> _performLoad() async {
     final generation = _generation;
     isLoading = true;
     errorMessage = null;
     notifyListeners();
     try {
-      final result = await Future.wait<Object>([
+      final result = await Future.wait<Object?>([
         _service.getPlans(),
         _service.getCurrentMemberships(),
         _service.getMembershipHistory(),
+        checkoutService?.getPendingPayment() ?? Future<Payment?>.value(null),
       ]);
-      final recovered = await checkoutService?.getPendingPayment();
       if (generation != _generation) return;
       plans =
           (result[0] as List<MembershipPlan>)
@@ -98,6 +114,7 @@ class MembershipController extends ChangeNotifier {
             ..sort((a, b) => a.durationDays.compareTo(b.durationDays));
       memberships = result[1] as List<Membership>;
       history = result[2] as List<Membership>;
+      final recovered = result[3] as Payment?;
       pendingPayment =
           recovered ?? (checkoutService == null ? pendingPayment : null);
     } on ApiException catch (error) {

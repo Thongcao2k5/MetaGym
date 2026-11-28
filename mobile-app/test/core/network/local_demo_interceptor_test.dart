@@ -31,6 +31,7 @@ void main() {
         final client = ApiClient(
           config: ApiConfig.fromValues(environment: 'local'),
           accessTokenProvider: () => activeToken,
+          enableLocalDemoMode: true,
         );
         final authApi = AuthApi(client);
 
@@ -118,6 +119,7 @@ void main() {
         final client = ApiClient(
           config: ApiConfig.fromValues(environment: 'local'),
           accessTokenProvider: () => activeToken,
+          enableLocalDemoMode: true,
         );
         final session = await AuthApi(client).login(
           email: LocalDemoAccounts.memberEmail,
@@ -255,6 +257,7 @@ void main() {
       final client = ApiClient(
         config: ApiConfig.fromValues(environment: 'local'),
         accessTokenProvider: () => activeToken,
+        enableLocalDemoMode: true,
       );
       final authApi = AuthApi(client);
       final session = await authApi.login(
@@ -283,6 +286,7 @@ void main() {
     test('authenticates seeded coach account', () async {
       final client = ApiClient(
         config: ApiConfig.fromValues(environment: 'local'),
+        enableLocalDemoMode: true,
       );
       final authApi = AuthApi(client);
       final session = await authApi.login(

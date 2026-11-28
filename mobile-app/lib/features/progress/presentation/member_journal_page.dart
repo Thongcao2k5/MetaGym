@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -114,6 +115,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   Timer? _toastTimer;
   int _modalSyncVersion = 0;
   bool _isFemale = false;
+  SyncRevisionBinding? _syncBinding;
 
   DateTime get _today {
     final now = widget.todayOverride ?? DateTime.now();
@@ -128,6 +130,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   @override
   void dispose() {
+    _syncBinding?.dispose();
     _toastTimer?.cancel();
     super.dispose();
   }
@@ -135,6 +138,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted && !_loading && !_saving && _openCard == null) {
+        _load(silent: true);
+      }
+    });
     if (_service != null) return;
     _service = widget.service ?? context.read<MemberJournalService>();
     _membershipService =
@@ -164,41 +172,77 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     }
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _accessError = null;
-      _saveError = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _accessError = null;
+        _saveError = null;
+      });
+    }
     try {
-      final entries = await _service!.getPage(1);
+      List<JournalEntry> entries = const [];
+      Object? entriesError;
       var canWrite = false;
       String? accessError;
-      try {
-        final memberships = await _membershipService!.getCurrentMemberships();
-        canWrite = memberships.any((item) => item.status == 'ACTIVE');
-      } catch (_) {
-        accessError = 'Không kiểm tra được gói tập. Nhật ký tạm thời chỉ xem.';
-      }
-
       List<BodyMeasurement> measurements = const [];
-      if (_measurementService != null) {
-        try {
-          measurements = await _measurementService!.getPage(1);
-        } catch (_) {}
-      }
-
       ProgressSummary? summary;
       List<WeightPoint> weightPoints = const [];
-      if (_progressService != null) {
-        try {
-          summary = await _progressService!.getSummary();
-          weightPoints = await _fetchChartRange(_chartRange);
-        } catch (_) {}
-      }
+
+      await Future.wait<void>([
+        () async {
+          try {
+            entries = await _service!.getPage(1);
+          } catch (error) {
+            entriesError = error;
+          }
+        }(),
+        () async {
+          try {
+            final memberships = await _membershipService!
+                .getCurrentMemberships();
+            canWrite = memberships.any((item) => item.status == 'ACTIVE');
+          } catch (_) {
+            accessError =
+                'Không kiểm tra được gói tập. Nhật ký tạm thời chỉ xem.';
+          }
+        }(),
+        if (_measurementService != null)
+          () async {
+            try {
+              measurements = await _measurementService!.getPage(1);
+            } catch (_) {}
+          }(),
+        if (_progressService != null) ...[
+          () async {
+            try {
+              summary = await _progressService!.getSummary();
+            } catch (_) {}
+          }(),
+          () async {
+            try {
+              weightPoints = await _fetchChartRange(_chartRange);
+            } catch (_) {}
+          }(),
+        ],
+      ]);
 
       if (!mounted) return;
+      if (entriesError != null) {
+        if (!silent) {
+          setState(() {
+            _error = entriesError is ApiException
+                ? (entriesError as ApiException).message
+                : 'Không tải được nhật ký tập.';
+          });
+        }
+        return;
+      }
+      if (silent && (_openCard != null || _saving)) {
+        return;
+      }
+
       final todayEntry = _entryForDate(_today, entries);
       final todayMeasurement = _measurementForDate(_today, measurements);
       final initialDraft = _DayDraft.fromRecords(
@@ -216,13 +260,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         _savedDraft = initialDraft;
         _draft = initialDraft.copy();
         _openCard = null;
+        _error = null;
       });
-    } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
-    } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải được nhật ký tập.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 

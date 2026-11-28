@@ -230,6 +230,19 @@ void main() {
       expect(deleted.data, isTrue);
       expect(adapter.lastRequest?.method, 'DELETE');
     });
+
+    test('disables local demo mode by default unless explicitly enabled', () {
+      final liveClient = ApiClient(
+        config: ApiConfig.fromValues(environment: 'local'),
+      );
+      expect(liveClient.isLocalDemoMode, isFalse);
+
+      final demoClient = ApiClient(
+        config: ApiConfig.fromValues(environment: 'local'),
+        enableLocalDemoMode: true,
+      );
+      expect(demoClient.isLocalDemoMode, isTrue);
+    });
   });
 }
 

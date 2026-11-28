@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
@@ -66,6 +67,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   static const _weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
   late final MemberSelfTrainingApi _api;
   late final SelfTrainingIconStore _iconStore;
+  SyncRevisionBinding? _syncBinding;
   late DateTime _selected = _today;
   final _title = TextEditingController();
   final _notes = TextEditingController();
@@ -103,6 +105,9 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted && !_editing) _load(silent: true);
+    });
     if (_ready) return;
     _ready = true;
     _api = widget.api ?? MemberSelfTrainingApi(context.read<ApiClient>());
@@ -142,6 +147,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   @override
   void dispose() {
+    _syncBinding?.dispose();
     _title.removeListener(_onDraftTitleChanged);
     _clearExerciseDrafts();
     _title.dispose();
@@ -168,11 +174,13 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     return List.generate(count, (index) => first.add(Duration(days: index)));
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     final days = _visibleDays;
     try {
       final results = await Future.wait([
@@ -196,13 +204,14 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         _iconKeys
           ..clear()
           ..addAll(storedIcons);
+        _error = null;
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!silent && mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải được lịch tập.');
+      if (!silent && mounted) setState(() => _error = 'Không tải được lịch tập.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 

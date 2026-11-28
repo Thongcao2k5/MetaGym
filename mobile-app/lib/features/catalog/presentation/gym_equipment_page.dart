@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
@@ -23,6 +24,7 @@ class GymEquipmentPage extends StatefulWidget {
 class _GymEquipmentPageState extends State<GymEquipmentPage> {
   final _search = TextEditingController();
   CatalogService? _service;
+  SyncRevisionBinding? _syncBinding;
   GymProfile? _gym;
   List<CatalogItem> _equipment = const [];
   String? _category;
@@ -32,6 +34,9 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted) _load(silent: true);
+    });
     if (_service != null) return;
     _service = widget.service ?? context.read<CatalogService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -41,20 +46,36 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
 
   @override
   void dispose() {
+    _syncBinding?.dispose();
     _search.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    final query = _search.text.trim();
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final gym = await _service!.getGymProfile();
-      final equipment = await _service!.getEquipment(
-        search: _search.text.trim(),
-      );
+      List<CatalogItem> equipment;
+      try {
+        equipment = await _service!.getEquipment(search: query);
+      } on ApiException catch (error) {
+        if (error.kind == ApiExceptionKind.network && query.isNotEmpty) {
+          final allCached = await _service!.getEquipment();
+          final lower = query.toLowerCase();
+          equipment = allCached.where((item) {
+            return item.name.toLowerCase().contains(lower) ||
+                (item.category?.toLowerCase().contains(lower) ?? false);
+          }).toList();
+        } else {
+          rethrow;
+        }
+      }
       if (!mounted) return;
       setState(() {
         _gym = gym;
@@ -65,15 +86,16 @@ class _GymEquipmentPageState extends State<GymEquipmentPage> {
         if (!_equipment.any((item) => item.category == _category)) {
           _category = null;
         }
+        _error = null;
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!silent && mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) {
+      if (!silent && mounted) {
         setState(() => _error = 'Không tải được thông tin phòng gym.');
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 

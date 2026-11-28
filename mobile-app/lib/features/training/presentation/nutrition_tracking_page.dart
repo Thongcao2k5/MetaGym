@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
@@ -52,67 +53,67 @@ String _encodeEntryNotes(String? customMealLabel, String notes) {
   return '$_customMealPrefix$cleanLabel]\n$cleanNotes';
 }
 
-const Map<String, ({double per100g, double perServing})>
-_kVietnameseFoodKcal = <String, ({double per100g, double perServing})>{
-  'com gao lut': (per100g: 112, perServing: 180),
-  'gao lut': (per100g: 112, perServing: 180),
-  'com trang': (per100g: 130, perServing: 200),
-  'com tam': (per100g: 165, perServing: 550),
-  'com ga': (per100g: 170, perServing: 520),
-  'com': (per100g: 130, perServing: 200),
-  'uc ga': (per100g: 165, perServing: 250),
-  'dui ga': (per100g: 195, perServing: 240),
-  'thit ga': (per100g: 180, perServing: 250),
-  'thit bo': (per100g: 250, perServing: 300),
-  'thit heo': (per100g: 242, perServing: 290),
-  'thit lon': (per100g: 242, perServing: 290),
-  'suon nuong': (per100g: 260, perServing: 320),
-  'ca hoi': (per100g: 208, perServing: 280),
-  'ca ngu': (per100g: 132, perServing: 180),
-  'ca basa': (per100g: 120, perServing: 180),
-  'ca thu': (per100g: 205, perServing: 260),
-  'tom': (per100g: 99, perServing: 140),
-  'muc': (per100g: 92, perServing: 140),
-  'trung ga': (per100g: 155, perServing: 78),
-  'trung vit': (per100g: 185, perServing: 130),
-  'trung': (per100g: 155, perServing: 78),
-  'pho bo': (per100g: 115, perServing: 450),
-  'pho ga': (per100g: 105, perServing: 400),
-  'pho': (per100g: 110, perServing: 430),
-  'bun bo': (per100g: 125, perServing: 520),
-  'bun cha': (per100g: 145, perServing: 500),
-  'bun rieu': (per100g: 105, perServing: 420),
-  'bun thit nuong': (per100g: 140, perServing: 480),
-  'bun': (per100g: 110, perServing: 220),
-  'hu tieu': (per100g: 115, perServing: 420),
-  'mien ga': (per100g: 95, perServing: 350),
-  'mi tom': (per100g: 450, perServing: 350),
-  'banh mi': (per100g: 265, perServing: 350),
-  'banh cuon': (per100g: 140, perServing: 320),
-  'xoi': (per100g: 210, perServing: 380),
-  'chao': (per100g: 70, perServing: 260),
-  'khoai lang': (per100g: 86, perServing: 130),
-  'yen mach': (per100g: 389, perServing: 155),
-  'chuoi': (per100g: 89, perServing: 105),
-  'tao': (per100g: 52, perServing: 95),
-  'qua bo': (per100g: 160, perServing: 240),
-  'trai bo': (per100g: 160, perServing: 240),
-  'sua tuoi': (per100g: 62, perServing: 150),
-  'sua dau nanh': (per100g: 54, perServing: 130),
-  'sua chua': (per100g: 65, perServing: 100),
-  'whey': (per100g: 400, perServing: 120),
-  'dau phu': (per100g: 76, perServing: 115),
-  'dau hu': (per100g: 76, perServing: 115),
-  'bong cai xanh': (per100g: 34, perServing: 50),
-  'salad': (per100g: 40, perServing: 120),
-  'rau xanh': (per100g: 25, perServing: 50),
-  'rau': (per100g: 25, perServing: 50),
-  'dau phong': (per100g: 567, perServing: 170),
-  'hanh nhan': (per100g: 579, perServing: 175),
-  'ca phe sua': (per100g: 110, perServing: 180),
-  'tra sua': (per100g: 95, perServing: 320),
-  'nuoc cam': (per100g: 45, perServing: 110),
-};
+const Map<String, ({double per100g, double perServing})> _kVietnameseFoodKcal =
+    <String, ({double per100g, double perServing})>{
+      'com gao lut': (per100g: 112, perServing: 180),
+      'gao lut': (per100g: 112, perServing: 180),
+      'com trang': (per100g: 130, perServing: 200),
+      'com tam': (per100g: 165, perServing: 550),
+      'com ga': (per100g: 170, perServing: 520),
+      'com': (per100g: 130, perServing: 200),
+      'uc ga': (per100g: 165, perServing: 250),
+      'dui ga': (per100g: 195, perServing: 240),
+      'thit ga': (per100g: 180, perServing: 250),
+      'thit bo': (per100g: 250, perServing: 300),
+      'thit heo': (per100g: 242, perServing: 290),
+      'thit lon': (per100g: 242, perServing: 290),
+      'suon nuong': (per100g: 260, perServing: 320),
+      'ca hoi': (per100g: 208, perServing: 280),
+      'ca ngu': (per100g: 132, perServing: 180),
+      'ca basa': (per100g: 120, perServing: 180),
+      'ca thu': (per100g: 205, perServing: 260),
+      'tom': (per100g: 99, perServing: 140),
+      'muc': (per100g: 92, perServing: 140),
+      'trung ga': (per100g: 155, perServing: 78),
+      'trung vit': (per100g: 185, perServing: 130),
+      'trung': (per100g: 155, perServing: 78),
+      'pho bo': (per100g: 115, perServing: 450),
+      'pho ga': (per100g: 105, perServing: 400),
+      'pho': (per100g: 110, perServing: 430),
+      'bun bo': (per100g: 125, perServing: 520),
+      'bun cha': (per100g: 145, perServing: 500),
+      'bun rieu': (per100g: 105, perServing: 420),
+      'bun thit nuong': (per100g: 140, perServing: 480),
+      'bun': (per100g: 110, perServing: 220),
+      'hu tieu': (per100g: 115, perServing: 420),
+      'mien ga': (per100g: 95, perServing: 350),
+      'mi tom': (per100g: 450, perServing: 350),
+      'banh mi': (per100g: 265, perServing: 350),
+      'banh cuon': (per100g: 140, perServing: 320),
+      'xoi': (per100g: 210, perServing: 380),
+      'chao': (per100g: 70, perServing: 260),
+      'khoai lang': (per100g: 86, perServing: 130),
+      'yen mach': (per100g: 389, perServing: 155),
+      'chuoi': (per100g: 89, perServing: 105),
+      'tao': (per100g: 52, perServing: 95),
+      'qua bo': (per100g: 160, perServing: 240),
+      'trai bo': (per100g: 160, perServing: 240),
+      'sua tuoi': (per100g: 62, perServing: 150),
+      'sua dau nanh': (per100g: 54, perServing: 130),
+      'sua chua': (per100g: 65, perServing: 100),
+      'whey': (per100g: 400, perServing: 120),
+      'dau phu': (per100g: 76, perServing: 115),
+      'dau hu': (per100g: 76, perServing: 115),
+      'bong cai xanh': (per100g: 34, perServing: 50),
+      'salad': (per100g: 40, perServing: 120),
+      'rau xanh': (per100g: 25, perServing: 50),
+      'rau': (per100g: 25, perServing: 50),
+      'dau phong': (per100g: 567, perServing: 170),
+      'hanh nhan': (per100g: 579, perServing: 175),
+      'ca phe sua': (per100g: 110, perServing: 180),
+      'tra sua': (per100g: 95, perServing: 320),
+      'nuoc cam': (per100g: 45, perServing: 110),
+    };
 
 const Set<String> _kServingUnits = <String>{
   'phần',
@@ -305,14 +306,19 @@ class _NutritionTokens {
   Color get divider => palette.borderSolid.withValues(alpha: 0.7);
   Color get dropdownSurface => colors.surface;
   Color get dialogSurface => colors.overlayGlass;
-  Color get dockSurface => isLight ? colors.overlayGlass : const Color(0xE01A1715);
-  Color get dockBorder => isLight ? palette.borderSolid : const Color(0x3DFFF6EA);
+  Color get dockSurface =>
+      isLight ? colors.overlayGlass : const Color(0xE01A1715);
+  Color get dockBorder =>
+      isLight ? palette.borderSolid : const Color(0x3DFFF6EA);
   Color get textPrimary => palette.textPrimary;
   Color get textSecondary => palette.textSecondary;
-  Color get labelText => isLight ? palette.textSecondary : const Color(0xFFD5CCBF);
-  Color get hintText =>
-      isLight ? palette.textSecondary.withValues(alpha: 0.7) : const Color(0xA6C4BAAE);
-  Color get orangeText => isLight ? palette.primaryText : const Color(0xFFFF7852);
+  Color get labelText =>
+      isLight ? palette.textSecondary : const Color(0xFFD5CCBF);
+  Color get hintText => isLight
+      ? palette.textSecondary.withValues(alpha: 0.7)
+      : const Color(0xA6C4BAAE);
+  Color get orangeText =>
+      isLight ? palette.primaryText : const Color(0xFFFF7852);
   Color get success => palette.success;
   Color get warning => palette.warning;
   Color get error => palette.error;
@@ -397,6 +403,7 @@ class NutritionTrackingPage extends StatefulWidget {
 
 class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
   late final NutritionTrackingApi _api;
+  SyncRevisionBinding? _syncBinding;
   DateTime _date = _vietnamToday();
   MetaGymCalendarMode _calendarMode = MetaGymCalendarMode.week;
   final Map<String, int> _dayEntryCounts = {};
@@ -413,12 +420,28 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     _load();
   }
 
-  Future<void> _load() async {
-    final date = _dateKey;
-    setState(() {
-      _loading = true;
-      _error = null;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted) _load(silent: true);
     });
+  }
+
+  @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load({bool silent = false}) async {
+    final date = _dateKey;
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final data = await _api.day(date);
       if (mounted && date == _dateKey) {
@@ -426,10 +449,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
         setState(() {
           _data = data;
           _dayEntryCounts[date] = count;
+          _error = null;
         });
       }
     } catch (error) {
-      if (mounted && date == _dateKey) {
+      if (!silent && mounted && date == _dateKey) {
         setState(
           () => _error = error is ApiException
               ? error.message
@@ -437,7 +461,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
         );
       }
     } finally {
-      if (mounted && date == _dateKey) setState(() => _loading = false);
+      if (!silent && mounted && date == _dateKey) setState(() => _loading = false);
     }
   }
 
@@ -607,9 +631,13 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
               ),
               child: Row(
                 children: [
-                  MetaGymResolvedIcon(isExpired
+                  MetaGymResolvedIcon(
+                    isExpired
                         ? Icons.lock_outline_rounded
-                        : Icons.history_toggle_off_rounded, size: 16, fallbackColor: isExpired ? t.warning : t.textSecondary),
+                        : Icons.history_toggle_off_rounded,
+                    size: 16,
+                    fallbackColor: isExpired ? t.warning : t.textSecondary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -716,11 +744,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Text(
           'Bạn có thể tự ghi món, không cần thực đơn.',
-          style: TextStyle(
-            color: t.textSecondary,
-            fontSize: 12.5,
-            height: 1.4,
-          ),
+          style: TextStyle(color: t.textSecondary, fontSize: 12.5, height: 1.4),
         ),
       );
     }
@@ -825,7 +849,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     minHeight: 48,
                   ),
                   onPressed: _openMealPlans,
-                  icon: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 22, fallbackIcon: Icons.chevron_right_rounded),
+                  icon: MetaGymSvgIcon(
+                    MetaGymIcons.commonChevronRight,
+                    size: 22,
+                    fallbackIcon: Icons.chevron_right_rounded,
+                  ),
                 ),
             ],
           ),
@@ -855,7 +883,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
           const SizedBox(height: 7),
           Row(
             children: [
-              MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 15, fallbackIcon: Icons.info_outline_rounded),
+              MetaGymSvgIcon(
+                MetaGymIcons.commonInfo,
+                size: 15,
+                fallbackIcon: Icons.info_outline_rounded,
+              ),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
@@ -882,21 +914,13 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
         Icons.wb_twilight_rounded,
         t.warning,
       ),
-      'LUNCH' => (
-        MetaGymIcons.mealLunch,
-        Icons.wb_sunny_rounded,
-        t.success,
-      ),
+      'LUNCH' => (MetaGymIcons.mealLunch, Icons.wb_sunny_rounded, t.success),
       'DINNER' => (
         MetaGymIcons.mealDinner,
         Icons.nights_stay_rounded,
         t.reflection,
       ),
-      _ => (
-        MetaGymIcons.mealSnack,
-        Icons.local_cafe_rounded,
-        t.orangeText,
-      ),
+      _ => (MetaGymIcons.mealSnack, Icons.local_cafe_rounded, t.orangeText),
     };
   }
 
@@ -950,7 +974,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    leading: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 18, fallbackIcon: Icons.edit_outlined),
+                    leading: MetaGymSvgIcon(
+                      MetaGymIcons.commonEdit,
+                      size: 18,
+                      fallbackIcon: Icons.edit_outlined,
+                    ),
                     title: Text(
                       '${entry['mealName'] ?? entry['foodName'] ?? 'Món ăn'}',
                       style: TextStyle(
@@ -984,7 +1012,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  leading: MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 20, fallbackIcon: Icons.add_circle_outline_rounded),
+                  leading: MetaGymSvgIcon(
+                    MetaGymIcons.commonAdd,
+                    size: 20,
+                    fallbackIcon: Icons.add_circle_outline_rounded,
+                  ),
                   title: Text(
                     'Thêm món mới vào $title',
                     style: TextStyle(
@@ -1131,7 +1163,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                                 width: 0.9,
                               ),
                             ),
-                            child: MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 19, fallbackIcon: Icons.add_rounded),
+                            child: MetaGymSvgIcon(
+                              MetaGymIcons.commonAdd,
+                              size: 19,
+                              fallbackIcon: Icons.add_rounded,
+                            ),
                           ),
                         ),
                       ),
@@ -1427,7 +1463,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(color: t.recessedBorder, width: 0.8),
               ),
-              child: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 15, fallbackIcon: Icons.edit_outlined),
+              child: MetaGymSvgIcon(
+                MetaGymIcons.commonEdit,
+                size: 15,
+                fallbackIcon: Icons.edit_outlined,
+              ),
             ),
           ],
         ],
@@ -1489,11 +1529,13 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   decoration: BoxDecoration(
                     color: t.error.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: t.error.withValues(alpha: 0.40),
-                    ),
+                    border: Border.all(color: t.error.withValues(alpha: 0.40)),
                   ),
-                  child: MetaGymSvgIcon(MetaGymIcons.stateOffline, size: 20, fallbackIcon: Icons.cloud_off_rounded),
+                  child: MetaGymSvgIcon(
+                    MetaGymIcons.stateOffline,
+                    size: 20,
+                    fallbackIcon: Icons.cloud_off_rounded,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1532,7 +1574,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                 ),
               ),
-              icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
+              icon: const MetaGymSvgIcon(
+                MetaGymIcons.commonRefresh,
+                size: 18,
+                fallbackIcon: Icons.refresh_rounded,
+              ),
               label: const Text('Thử lại'),
             ),
           ],
@@ -1677,9 +1723,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
           ? DecoratedBox(
               decoration: BoxDecoration(
                 color: t.dockSurface,
-                border: Border(
-                  top: BorderSide(color: t.dockBorder, width: 1),
-                ),
+                border: Border(top: BorderSide(color: t.dockBorder, width: 1)),
               ),
               child: SafeArea(
                 top: false,
@@ -1703,7 +1747,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 20, fallbackIcon: Icons.add_rounded),
+                  icon: const MetaGymSvgIcon(
+                    MetaGymIcons.commonAdd,
+                    size: 20,
+                    fallbackIcon: Icons.add_rounded,
+                  ),
                   label: const Text('Ghi lại bữa ăn'),
                 ),
               ),
@@ -2108,11 +2156,7 @@ class _EntryFormState extends State<_EntryForm> {
           ),
           content: Text(
             (entry['mealName'] ?? entry['foodName'] ?? 'Món ăn').toString(),
-            style: TextStyle(
-              color: dt.labelText,
-              fontSize: 14.5,
-              height: 1.45,
-            ),
+            style: TextStyle(color: dt.labelText, fontSize: 14.5, height: 1.45),
           ),
           actions: [
             TextButton(
@@ -2279,17 +2323,18 @@ class _EntryFormState extends State<_EntryForm> {
       decoration: BoxDecoration(
         color: t.error.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: t.error.withValues(alpha: 0.45),
-          width: 1,
-        ),
+        border: Border.all(color: t.error.withValues(alpha: 0.45), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 1),
-            child: MetaGymSvgIcon(MetaGymIcons.stateError, size: 17, fallbackIcon: Icons.error_outline_rounded),
+            child: MetaGymSvgIcon(
+              MetaGymIcons.stateError,
+              size: 17,
+              fallbackIcon: Icons.error_outline_rounded,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -2356,7 +2401,11 @@ class _EntryFormState extends State<_EntryForm> {
                       minHeight: 44,
                     ),
                     onPressed: _saving ? null : () => _removeDish(index),
-                    icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 20, fallbackIcon: Icons.close_rounded),
+                    icon: MetaGymSvgIcon(
+                      MetaGymIcons.commonClose,
+                      size: 20,
+                      fallbackIcon: Icons.close_rounded,
+                    ),
                   ),
                 ),
             ],
@@ -2382,8 +2431,8 @@ class _EntryFormState extends State<_EntryForm> {
             onChanged: (value) {
               setState(() {
                 if (dish.foodId != null) {
-                  final expectedName =
-                      (selectedCatalogFood?['name'] ?? '').toString();
+                  final expectedName = (selectedCatalogFood?['name'] ?? '')
+                      .toString();
                   if (value.trim() != expectedName.trim()) {
                     dish.foodId = null;
                   }
@@ -2392,7 +2441,11 @@ class _EntryFormState extends State<_EntryForm> {
             },
             decoration: _warmInputDecoration(labelText: 'Tên món').copyWith(
               hintText: 'Tìm trong danh mục hoặc nhập món tự do...',
-              prefixIcon: MetaGymSvgIcon(MetaGymIcons.commonSearch, size: 19, fallbackIcon: Icons.search_rounded),
+              prefixIcon: MetaGymSvgIcon(
+                MetaGymIcons.commonSearch,
+                size: 19,
+                fallbackIcon: Icons.search_rounded,
+              ),
               suffixIcon: dish.name.text.isNotEmpty && !_saving
                   ? IconButton(
                       tooltip: 'Xóa tên món',
@@ -2402,7 +2455,11 @@ class _EntryFormState extends State<_EntryForm> {
                           dish.foodId = null;
                         });
                       },
-                      icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
+                      icon: MetaGymSvgIcon(
+                        MetaGymIcons.commonClose,
+                        size: 18,
+                        fallbackIcon: Icons.close_rounded,
+                      ),
                     )
                   : null,
             ),
@@ -2424,7 +2481,11 @@ class _EntryFormState extends State<_EntryForm> {
               ),
               child: Row(
                 children: [
-                  MetaGymSvgIcon(MetaGymIcons.authVerified, size: 16, fallbackIcon: Icons.verified_rounded),
+                  MetaGymSvgIcon(
+                    MetaGymIcons.authVerified,
+                    size: 16,
+                    fallbackIcon: Icons.verified_rounded,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -2508,7 +2569,11 @@ class _EntryFormState extends State<_EntryForm> {
                             ),
                             child: Row(
                               children: [
-                                MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 16, fallbackIcon: Icons.restaurant_menu_rounded),
+                                MetaGymSvgIcon(
+                                  MetaGymIcons.foodMeal,
+                                  size: 16,
+                                  fallbackIcon: Icons.restaurant_menu_rounded,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -2522,7 +2587,8 @@ class _EntryFormState extends State<_EntryForm> {
                                     ),
                                   ),
                                 ),
-                                if (suggestions[sIdx]['kcalPer100g'] is num) ...[
+                                if (suggestions[sIdx]['kcalPer100g']
+                                    is num) ...[
                                   const SizedBox(width: 8),
                                   Text(
                                     '${_formatPlainNum(suggestions[sIdx]['kcalPer100g'])} kcal / 100g',
@@ -2559,7 +2625,11 @@ class _EntryFormState extends State<_EntryForm> {
                   ),
                   minimumSize: const Size(44, 44),
                 ),
-                icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 17, fallbackIcon: Icons.refresh_rounded),
+                icon: const MetaGymSvgIcon(
+                  MetaGymIcons.commonRefresh,
+                  size: 17,
+                  fallbackIcon: Icons.refresh_rounded,
+                ),
                 label: const Text(
                   'Danh mục tải lỗi · Thử lại; vẫn có thể nhập món tự do',
                 ),
@@ -2611,7 +2681,10 @@ class _EntryFormState extends State<_EntryForm> {
                   isExpanded: true,
                   dropdownColor: t.dropdownSurface,
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                  icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronDown, fallbackIcon: Icons.keyboard_arrow_down_rounded),
+                  icon: const MetaGymSvgIcon(
+                    MetaGymIcons.commonChevronDown,
+                    fallbackIcon: Icons.keyboard_arrow_down_rounded,
+                  ),
                   iconEnabledColor: t.labelText,
                   iconDisabledColor: t.labelText.withValues(alpha: 0.4),
                   disabledHint: Text(
@@ -2736,7 +2809,11 @@ class _EntryFormState extends State<_EntryForm> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    MetaGymSvgIcon(MetaGymIcons.streakFlame, size: 16, fallbackIcon: Icons.bolt_rounded),
+                    MetaGymSvgIcon(
+                      MetaGymIcons.streakFlame,
+                      size: 16,
+                      fallbackIcon: Icons.bolt_rounded,
+                    ),
                     const SizedBox(width: 5),
                     Flexible(
                       child: Text(
@@ -2811,7 +2888,10 @@ class _EntryFormState extends State<_EntryForm> {
                 tooltip: 'Xóa món',
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 onPressed: _saving ? null : _deleteEntry,
-                icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, fallbackIcon: Icons.delete_outline_rounded),
+                icon: MetaGymSvgIcon(
+                  MetaGymIcons.commonDelete,
+                  fallbackIcon: Icons.delete_outline_rounded,
+                ),
               ),
             ),
         ],
@@ -3013,7 +3093,11 @@ class _EntryFormState extends State<_EntryForm> {
                           ),
                         ),
                       ),
-                      icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 19, fallbackIcon: Icons.add_rounded),
+                      icon: const MetaGymSvgIcon(
+                        MetaGymIcons.commonAdd,
+                        size: 19,
+                        fallbackIcon: Icons.add_rounded,
+                      ),
                       label: const Text(
                         'Thêm món vào bữa này',
                         maxLines: 1,
@@ -3037,10 +3121,7 @@ class _EntryFormState extends State<_EntryForm> {
                             borderRadius: BorderRadius.circular(
                               MetaGymTheme.radiusInput,
                             ),
-                            side: BorderSide(
-                              color: t.recessedBorder,
-                              width: 1,
-                            ),
+                            side: BorderSide(color: t.recessedBorder, width: 1),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -3062,7 +3143,11 @@ class _EntryFormState extends State<_EntryForm> {
                                         color: t.palette.chipActiveBg,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 18, fallbackIcon: Icons.schedule_rounded),
+                                      child: MetaGymSvgIcon(
+                                        MetaGymIcons.timeClock,
+                                        size: 18,
+                                        fallbackIcon: Icons.schedule_rounded,
+                                      ),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -3096,7 +3181,11 @@ class _EntryFormState extends State<_EntryForm> {
                                         ],
                                       ),
                                     ),
-                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
+                                    MetaGymSvgIcon(
+                                      MetaGymIcons.commonChevronRight,
+                                      size: 20,
+                                      fallbackIcon: Icons.chevron_right_rounded,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -3133,10 +3222,7 @@ class _EntryFormState extends State<_EntryForm> {
                             borderRadius: BorderRadius.circular(
                               MetaGymTheme.radiusInput,
                             ),
-                            side: BorderSide(
-                              color: t.recessedBorder,
-                              width: 1,
-                            ),
+                            side: BorderSide(color: t.recessedBorder, width: 1),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -3158,7 +3244,11 @@ class _EntryFormState extends State<_EntryForm> {
                                         color: t.palette.chipActiveBg,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 18, fallbackIcon: Icons.photo_outlined),
+                                      child: MetaGymSvgIcon(
+                                        MetaGymIcons.mediaGallery,
+                                        size: 18,
+                                        fallbackIcon: Icons.photo_outlined,
+                                      ),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -3184,14 +3274,30 @@ class _EntryFormState extends State<_EntryForm> {
                                           width: 38,
                                           height: 38,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.image_rounded),
+                                          errorBuilder: (_, _, _) =>
+                                              MetaGymSvgIcon(
+                                                MetaGymIcons.mediaGallery,
+                                                size: 20,
+                                                fallbackIcon:
+                                                    Icons.image_rounded,
+                                              ),
                                         ),
                                       ),
                                     ] else if (hasPhoto) ...[
                                       const SizedBox(width: 8),
-                                      MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_outline_rounded),
+                                      MetaGymSvgIcon(
+                                        MetaGymIcons.stateSuccess,
+                                        size: 20,
+                                        fallbackIcon:
+                                            Icons.check_circle_outline_rounded,
+                                      ),
                                     ] else
-                                      MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.add_photo_alternate_outlined),
+                                      MetaGymSvgIcon(
+                                        MetaGymIcons.mediaGallery,
+                                        size: 20,
+                                        fallbackIcon:
+                                            Icons.add_photo_alternate_outlined,
+                                      ),
                                   ],
                                 ),
                               ),
