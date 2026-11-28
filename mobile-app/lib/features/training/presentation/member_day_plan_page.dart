@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
+import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:provider/provider.dart';
@@ -451,11 +455,48 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                   ),
                 ),
               ],
+              if (_hasJournalService(context)) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  key: const Key('day-plan-open-journal'),
+                  onPressed: () => MetaGymNavigation.pushOnce<void>(
+                    context,
+                    MetaGymPageRoute(builder: (_) => const MemberJournalPage()),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.textPrimary,
+                    backgroundColor: colors.liquidGlass,
+                    minimumSize: const Size.fromHeight(48),
+                    side: BorderSide(color: colors.liquidGlassBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: const MetaGymSvgIcon(
+                    MetaGymIcons.statsReport,
+                    size: 18,
+                    fallbackIcon: Icons.edit_note_rounded,
+                  ),
+                  label: const Text(
+                    'Ghi nhật ký sau buổi tập',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ],
           ),
         ],
       ),
     );
+  }
+
+  bool _hasJournalService(BuildContext context) {
+    try {
+      context.read<MemberJournalService>();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _heading(

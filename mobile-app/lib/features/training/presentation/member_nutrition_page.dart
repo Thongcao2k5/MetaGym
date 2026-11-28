@@ -6,7 +6,7 @@ import 'package:meta_gym_app/features/training/data/member_nutrition_service.dar
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:provider/provider.dart';
 
-import 'meal_plans_page.dart';
+import 'member_coach_nutrition_page.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
@@ -69,7 +69,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
   @override
   Widget build(BuildContext context) {
     if (widget.structured && _service is MemberNutritionApi) {
-      return const MealPlansPage();
+      return const MemberCoachNutritionPage();
     }
     final palette = MetaGymTheme.paletteOf(context);
     final colors = MetaGymColors.of(context);

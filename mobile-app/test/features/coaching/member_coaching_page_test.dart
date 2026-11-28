@@ -30,7 +30,8 @@ void main() {
       expect(find.text('Coach Linh'), findsOneWidget);
       expect(find.text('Đang hoạt động'), findsOneWidget);
       expect(find.text('Xem lịch với Coach'), findsOneWidget);
-      expect(find.text('Giáo trình'), findsOneWidget);
+      expect(find.text('Giáo trình tập luyện'), findsOneWidget);
+      expect(find.text('Thực đơn & Dinh dưỡng'), findsOneWidget);
       expect(find.text('Nhắn Coach'), findsOneWidget);
       expect(find.text('Yêu cầu đang chờ'), findsNothing);
       expect(find.text('Kết thúc quan hệ'), findsNothing);

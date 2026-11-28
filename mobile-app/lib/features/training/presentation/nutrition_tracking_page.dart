@@ -5,12 +5,13 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_schedule_calendar.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
 
 import '../data/nutrition_tracking_api.dart';
-import 'meal_plans_page.dart';
+import 'member_coach_nutrition_page.dart';
 
 const _meals = {
   'BREAKFAST': 'Bữa sáng',
@@ -397,14 +398,13 @@ class NutritionTrackingPage extends StatefulWidget {
 class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
   late final NutritionTrackingApi _api;
   DateTime _date = _vietnamToday();
+  MetaGymCalendarMode _calendarMode = MetaGymCalendarMode.week;
+  final Map<String, int> _dayEntryCounts = {};
   NutritionRecord? _data;
   String? _error;
   bool _loading = true;
 
   String get _dateKey => DateFormat('yyyy-MM-dd').format(_date);
-
-  bool get _isToday =>
-      _dateKey == DateFormat('yyyy-MM-dd').format(_vietnamToday());
 
   @override
   void initState() {
@@ -421,7 +421,13 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     });
     try {
       final data = await _api.day(date);
-      if (mounted && date == _dateKey) setState(() => _data = data);
+      if (mounted && date == _dateKey) {
+        final count = (data['entries'] as List? ?? const []).length;
+        setState(() {
+          _data = data;
+          _dayEntryCounts[date] = count;
+        });
+      }
     } catch (error) {
       if (mounted && date == _dateKey) {
         setState(
@@ -435,36 +441,15 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     }
   }
 
-  Future<void> _shiftDate(int deltaDays) async {
+  Future<void> _selectCalendarDate(DateTime date) async {
     final today = _vietnamToday();
-    final next = DateTime(_date.year, _date.month, _date.day + deltaDays);
-    if (next.isAfter(today)) return;
+    final target = metaGymDateOnly(date);
+    if (target.isAfter(today) || metaGymIsoDate(target) == _dateKey) return;
     setState(() {
-      _date = next;
+      _date = target;
       _data = null;
     });
     await _load();
-  }
-
-  Future<void> _pickDate() async {
-    final today = _vietnamToday();
-    final initial = _date.isAfter(today) ? today : _date;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2000),
-      lastDate: today,
-      builder: (context, child) =>
-          Theme(data: _warmPickerTheme(context), child: child!),
-    );
-    if (picked != null) {
-      final normalized = DateTime(picked.year, picked.month, picked.day);
-      setState(() {
-        _date = normalized;
-        _data = null;
-      });
-      await _load();
-    }
   }
 
   Future<void> _openForm({
@@ -510,122 +495,32 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     return buffer.toString();
   }
 
-  String _dayLabel() {
-    const weekdays = [
-      'Thứ Hai',
-      'Thứ Ba',
-      'Thứ Tư',
-      'Thứ Năm',
-      'Thứ Sáu',
-      'Thứ Bảy',
-      'Chủ nhật',
-    ];
-    final label = DateFormat('dd/MM/yyyy').format(_date);
-    return _isToday
-        ? 'Hôm nay · $label'
-        : '${weekdays[_date.weekday - 1]} · $label';
-  }
-
   _NutritionTokens get _t => _NutritionTokens.of(context);
-
-  Widget _dateArrowButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback? onTap,
-  }) {
-    final t = _t;
-    final enabled = onTap != null;
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            child: Center(
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: enabled ? t.recessedFill : Colors.transparent,
-                  borderRadius: BorderRadius.circular(11),
-                  border: enabled
-                      ? Border.all(color: t.recessedBorder, width: 1)
-                      : null,
-                ),
-                child: MetaGymResolvedIcon(icon, size: 20, fallbackColor: enabled
-                      ? t.textPrimary
-                      : t.textSecondary.withValues(alpha: 0.4)),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _dateSelector() => MetaGymGlassCard(
     solid: false,
     borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+    padding: const EdgeInsets.all(14),
     child: _dateNavigation(),
   );
 
   Widget _dateNavigation() {
     final t = _t;
-    return Row(
-      key: const Key('nutrition-date-selector'),
-      children: [
-        _dateArrowButton(
-          icon: Icons.chevron_left_rounded,
-          tooltip: 'Ngày trước',
-          onTap: _loading ? null : () => _shiftDate(-1),
-        ),
-        Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-            onTap: _loading ? null : _pickDate,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 16, fallbackIcon: Icons.calendar_today_rounded),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.center,
-                        child: Text(
-                          _dayLabel(),
-                          maxLines: 1,
-                          style: TextStyle(
-                            color: t.textPrimary,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            fontFeatures: MetaGymTheme.tabularFigures,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    MetaGymSvgIcon(MetaGymIcons.commonChevronDown, size: 18, fallbackIcon: Icons.keyboard_arrow_down_rounded),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        _dateArrowButton(
-          icon: Icons.chevron_right_rounded,
-          tooltip: 'Ngày sau',
-          onTap: (_loading || _isToday) ? null : () => _shiftDate(1),
-        ),
-      ],
+    final today = _vietnamToday();
+    return MetaGymScheduleCalendar(
+      wrapInHeroCard: false,
+      selectorKey: const Key('nutrition-date-selector'),
+      selectedDate: _date,
+      today: today,
+      maxDate: today,
+      mode: _calendarMode,
+      onModeChanged: (mode) => setState(() => _calendarMode = mode),
+      onSelectDate: (picked) {
+        if (!_loading) _selectCalendarDate(picked);
+      },
+      badgeCountForDay: (day) =>
+          (_dayEntryCounts[metaGymIsoDate(day)] ?? 0).clamp(0, 3),
+      badgeColorForDay: (_) => t.success,
     );
   }
 
@@ -638,17 +533,32 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     final t = _t;
     final isExpired = _data?['hasActiveMembership'] == false;
     final showNotice = isExpired || !canWrite;
+    final today = _vietnamToday();
     return MetaGymHeroGlassCard(
       key: const Key('nutrition-day-summary'),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _dateNavigation(),
-          const SizedBox(height: 6),
+          MetaGymScheduleCalendar(
+            wrapInHeroCard: false,
+            selectorKey: const Key('nutrition-date-selector'),
+            selectedDate: _date,
+            today: today,
+            maxDate: today,
+            mode: _calendarMode,
+            onModeChanged: (mode) => setState(() => _calendarMode = mode),
+            onSelectDate: (picked) {
+              if (!_loading) _selectCalendarDate(picked);
+            },
+            badgeCountForDay: (day) =>
+                (_dayEntryCounts[metaGymIsoDate(day)] ?? 0).clamp(0, 3),
+            badgeColorForDay: (_) => t.success,
+          ),
+          const SizedBox(height: 10),
           Container(
             key: const Key('nutrition-day-metrics'),
-            padding: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
               border: Border(top: BorderSide(color: t.divider)),
             ),
@@ -785,8 +695,9 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
   }
 
   void _openMealPlans() {
-    Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => const MealPlansPage()));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const MemberCoachNutritionPage()),
+    );
   }
 
   Widget _coachSummary(Map? plan) {

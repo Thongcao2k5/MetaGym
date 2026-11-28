@@ -19,11 +19,16 @@ import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/widgets/membership_tier_widgets.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
 import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
+import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/gym_visits_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_day_plan_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_self_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +42,7 @@ class MemberTrainingHubPage extends StatefulWidget {
     this.bottomPadding,
     this.membershipController,
     this.coachingService,
+    this.trainingService,
     this.selfTrainingApi,
     super.key,
   });
@@ -44,6 +50,7 @@ class MemberTrainingHubPage extends StatefulWidget {
   final double? bottomPadding;
   final MembershipController? membershipController;
   final MemberCoachingService? coachingService;
+  final MemberTrainingService? trainingService;
   final MemberSelfTrainingApi? selfTrainingApi;
 
   @override
@@ -54,11 +61,21 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   MembershipController? _membership;
   MemberCoachingService? _coaching;
   MemberCoachRelationship? _relationship;
+  TrainingPlan? _activePlan;
+  TrainingDay? _todayPlanDay;
   MemberSelfTrainingDay? _todaySelfPlan;
   String? _todaySelfIconKey;
   String? _coachName;
   String? _error;
   bool _loading = true;
+
+  T? _tryRead<T>() {
+    try {
+      return context.read<T>();
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -90,6 +107,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       if (_membership!.errorMessage != null) {
         throw StateError(_membership!.errorMessage!);
       }
+      final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
       final relationship = await _coaching!.getCurrentRelationship();
       String? coachName;
       if (relationship != null) {
@@ -98,12 +116,34 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
         } catch (_) {
           // The relationship is still useful if the public Coach list is offline.
         }
+        final relCoachName = relationship.coachName?.trim();
+        coachName = coachName?.trim().isNotEmpty == true
+            ? coachName!.trim()
+            : (relCoachName != null && relCoachName.isNotEmpty
+                  ? relCoachName
+                  : null);
+      }
+      TrainingPlan? activePlan;
+      TrainingDay? todayPlanDay;
+      if (relationship != null && relationship.status == 'ACTIVE') {
+        final apiClient = _tryRead<ApiClient>();
+        final trainingService =
+            widget.trainingService ??
+            _tryRead<MemberTrainingService>() ??
+            (apiClient != null ? MemberTrainingApi(apiClient) : null);
+        if (trainingService != null) {
+          try {
+            activePlan = await trainingService.getActive();
+            todayPlanDay = activePlan?.dayForDate(vnNow);
+          } catch (_) {
+            // Optional summary enhancement; hub remains usable without plan API.
+          }
+        }
       }
       MemberSelfTrainingDay? todaySelfPlan;
       String? todaySelfIconKey;
       if (selfApi != null) {
         try {
-          final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
           final todayStr =
               '${vnNow.year.toString().padLeft(4, '0')}-${vnNow.month.toString().padLeft(2, '0')}-${vnNow.day.toString().padLeft(2, '0')}';
           final results = await Future.wait([
@@ -126,6 +166,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       if (!mounted) return;
       setState(() {
         _relationship = relationship;
+        _activePlan = activePlan;
+        _todayPlanDay = todayPlanDay;
         _todaySelfPlan = todaySelfPlan;
         _todaySelfIconKey = todaySelfIconKey;
         _coachName = coachName;
@@ -258,6 +300,33 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     }
   }
 
+  void _startTodayWorkout() {
+    if (_loading || _error != null) {
+      _load();
+      return;
+    }
+    if (_currentGym == null) {
+      _requirePackage(coach: false, feature: 'buổi tập hôm nay');
+    } else if (!_hasCoach) {
+      if (_todaySelfPlan != null) {
+        _open(const MemberSelfTrainingPage());
+      } else {
+        _requirePackage(coach: true, feature: 'giáo trình của Coach');
+      }
+    } else if (_todayPlanDay != null) {
+      _open(
+        MemberDayPlanPage(
+          day: _todayPlanDay!,
+          planTitle: _activePlan?.title,
+        ),
+      );
+    } else if (_todaySelfPlan != null) {
+      _open(const MemberSelfTrainingPage());
+    } else {
+      _open(const MemberTrainingPage());
+    }
+  }
+
   void _openPlan() {
     if (_loading || _error != null) {
       _load();
@@ -347,14 +416,15 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
                       hasGym: hasGym,
                       coachName: _coachName,
                       coachInitials: coachInitials,
+                      todayPlanDay: _todayPlanDay,
+                      planTitle: _activePlan?.title,
                       todaySelfPlan: _todaySelfPlan,
-                      onStartWorkout: lockedCurriculum
-                          ? _openPlan
-                          : _openJournal,
+                      onStartWorkout: _startTodayWorkout,
                       onOpenCurriculum: _openPlan,
                     ),
                     const SizedBox(height: 12),
                     _buildServiceBento(
+                      activeMembership: gym,
                       hasGym: hasGym,
                       daysLeft: daysLeft,
                       endDate: end,
@@ -464,6 +534,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   Widget _buildServiceBento({
+    required Membership? activeMembership,
     required bool hasGym,
     required int? daysLeft,
     required DateTime? endDate,
@@ -500,6 +571,11 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     final gymProgress = hasGym && daysLeft != null
         ? (daysLeft / 60).clamp(0.18, 0.96)
         : 0.0;
+    final activePlanName = activeMembership?.planName?.trim();
+    final activeTier =
+        hasGym && activePlanName != null && activePlanName.isNotEmpty
+        ? resolveMembershipTierInfo(planName: activePlanName)
+        : null;
     final coachActive = relationship != null && relationship.status == 'ACTIVE';
     final coachPaused = relationship != null && relationship.status == 'PAUSED';
 
@@ -511,6 +587,9 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
             child: _MembershipBentoCard(
               hasGym: hasGym,
               hadGym: _hadGym,
+              tierLabel: activeTier?.tierLabel.toUpperCase(),
+              tierAccentColor: activeTier?.accentColor,
+              tierKind: activeTier?.kind,
               daysLeft: daysLeft,
               endDate: endDate,
               progress: gymProgress,
@@ -528,6 +607,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
               onTap: () => _open(
                 relationship == null
                     ? const CoachSelectionPage()
+                    : coachActive
+                    ? const CoachBookingPage()
                     : const MemberCoachingPage(),
               ),
             ),
@@ -784,6 +865,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
     required this.hasGym,
     required this.coachName,
     required this.coachInitials,
+    required this.todayPlanDay,
+    required this.planTitle,
     required this.todaySelfPlan,
     required this.onStartWorkout,
     required this.onOpenCurriculum,
@@ -793,6 +876,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
   final bool hasGym;
   final String? coachName;
   final String? coachInitials;
+  final TrainingDay? todayPlanDay;
+  final String? planTitle;
   final MemberSelfTrainingDay? todaySelfPlan;
   final VoidCallback onStartWorkout;
   final VoidCallback onOpenCurriculum;
@@ -801,16 +886,44 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    final hasCoachPlanDay = !locked && todayPlanDay != null;
+    final isRestDay = hasCoachPlanDay && todayPlanDay!.isRestOrRecovery;
     final timeBadge = todaySelfPlan?.startTime != null
         ? '● Hôm nay · ${todaySelfPlan!.startTime}'
+        : hasCoachPlanDay
+        ? (isRestDay ? '● Hôm nay · Nghỉ phục hồi' : '● Hôm nay · Theo tuần')
         : '● Hôm nay · 18:00';
     final headline = locked
         ? 'Giáo trình của Coach'
+        : hasCoachPlanDay
+        ? todayPlanDay!.title
         : (todaySelfPlan?.title ?? 'Ngực & Tay sau · Chest & Triceps');
-    final exerciseCount =
-        todaySelfPlan != null && todaySelfPlan!.exercises.isNotEmpty
+    final exerciseCount = hasCoachPlanDay
+        ? '${todayPlanDay!.exercises.length}'
+        : todaySelfPlan != null && todaySelfPlan!.exercises.isNotEmpty
         ? '${todaySelfPlan!.exercises.length}'
         : '6';
+    final totalSets = hasCoachPlanDay
+        ? '${todayPlanDay!.exercises.fold<int>(0, (sum, ex) => sum + (ex.sets ?? 0))}'
+        : todaySelfPlan != null && todaySelfPlan!.exercises.isNotEmpty
+        ? '${todaySelfPlan!.exercises.fold<int>(0, (sum, ex) => sum + (ex.sets ?? 0))}'
+        : '22';
+    final thirdMetricValue = hasCoachPlanDay
+        ? '${todayPlanDay!.meals.length}'
+        : '~540';
+    final thirdMetricLabel = hasCoachPlanDay ? 'Bữa ăn' : 'Kcal';
+    final badgePillRight = locked
+        ? 'Chưa kích hoạt'
+        : isRestDay
+        ? 'Phục hồi · Chủ nhật'
+        : hasCoachPlanDay
+        ? 'Giáo trình Coach'
+        : (todaySelfPlan != null ? 'Lịch tự tập' : '90 phút · Push Day');
+    final primaryCtaLabel = locked
+        ? 'Đăng ký'
+        : isRestDay
+        ? 'Xem ngày nghỉ'
+        : 'Bắt đầu tập →';
     final displayCoach = coachName ?? 'Lê Hoàng Nam';
     final displayInitials = coachInitials ?? 'LN';
 
@@ -878,7 +991,7 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    locked ? 'Chưa kích hoạt' : '90 phút · Push Day',
+                    badgePillRight,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -957,7 +1070,7 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
               const SizedBox(width: 7),
               Expanded(
                 child: _HeroMetricBox(
-                  value: '22',
+                  value: totalSets,
                   label: 'Tổng hiệp',
                   valueColor: palette.primaryText,
                 ),
@@ -965,8 +1078,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
               const SizedBox(width: 7),
               Expanded(
                 child: _HeroMetricBox(
-                  value: '~540',
-                  label: 'Kcal',
+                  value: thirdMetricValue,
+                  label: thirdMetricLabel,
                   valueColor: palette.success,
                 ),
               ),
@@ -991,7 +1104,7 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        locked ? 'Đăng ký' : 'Bắt đầu tập →',
+                        primaryCtaLabel,
                         maxLines: 1,
                         style: const TextStyle(
                           fontSize: 12.5,
@@ -1100,7 +1213,7 @@ class _HeroMetricBox extends StatelessWidget {
   }
 }
 
-/// Left Bento Card: HẠNG VÀNG / Gói tập (100% single-line text, no wrapping).
+/// Left Bento Card: Hạng thẻ thành viên / Gói tập (100% single-line text, no wrapping).
 class _MembershipBentoCard extends StatelessWidget {
   const _MembershipBentoCard({
     required this.hasGym,
@@ -1109,10 +1222,16 @@ class _MembershipBentoCard extends StatelessWidget {
     required this.endDate,
     required this.progress,
     required this.onTap,
+    this.tierLabel,
+    this.tierAccentColor,
+    this.tierKind,
   });
 
   final bool hasGym;
   final bool hadGym;
+  final String? tierLabel;
+  final Color? tierAccentColor;
+  final MembershipTierKind? tierKind;
   final int? daysLeft;
   final DateTime? endDate;
   final double progress;
@@ -1122,7 +1241,15 @@ class _MembershipBentoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
-    final gold = isLight ? palette.warning : const Color(0xFFF5B041);
+    final tierAccent = isLight
+        ? switch (tierKind) {
+            MembershipTierKind.diamond => palette.reflection,
+            MembershipTierKind.silver => palette.textSecondary,
+            MembershipTierKind.bronze || MembershipTierKind.gold || null =>
+              palette.warning,
+          }
+        : (tierAccentColor ?? const Color(0xFFF5B041));
+    final headerLabel = hasGym ? (tierLabel ?? 'GÓI TẬP') : 'GÓI TẬP';
     final statusColor = hasGym
         ? palette.success
         : hadGym
@@ -1133,10 +1260,10 @@ class _MembershipBentoCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
       radius: 20,
       borderColor: hasGym
-          ? (isLight ? const Color(0x70B45309) : const Color(0x6BF5B041))
+          ? tierAccent.withValues(alpha: isLight ? 0.44 : 0.42)
           : null,
       cornerGlowColor: hasGym
-          ? (isLight ? const Color(0x20B45309) : const Color(0x42F5B041))
+          ? tierAccent.withValues(alpha: isLight ? 0.13 : 0.26)
           : null,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -1163,14 +1290,14 @@ class _MembershipBentoCard extends StatelessWidget {
                   const SizedBox(width: 5),
                   Expanded(
                     child: Text(
-                      hasGym ? 'HẠNG VÀNG' : 'GÓI TẬP',
+                      headerLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: gold,
-                        fontSize: 9.5,
+                        color: tierAccent,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
@@ -1221,7 +1348,7 @@ class _MembershipBentoCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: palette.textSecondary,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
@@ -1243,7 +1370,7 @@ class _MembershipBentoCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: palette.textSecondary,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -1254,7 +1381,7 @@ class _MembershipBentoCard extends StatelessWidget {
               const SizedBox(height: 10),
               _MiniProgressBar(
                 progress: progress,
-                colors: const [Color(0xFFF5B041), Color(0xFF2ECC71)],
+                colors: [tierAccent, palette.success],
               ),
               const SizedBox(height: 8),
               Row(
@@ -1269,7 +1396,7 @@ class _MembershipBentoCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: gold,
+                        color: tierAccent,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1278,7 +1405,7 @@ class _MembershipBentoCard extends StatelessWidget {
                   Text(
                     '›',
                     style: TextStyle(
-                      color: gold,
+                      color: tierAccent,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1459,7 +1586,11 @@ class _CoachBentoCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      relationship == null ? 'Xem danh sách' : 'Lịch Coach',
+                      relationship == null
+                          ? 'Xem danh sách'
+                          : coachPaused
+                          ? 'Quản lý Coach'
+                          : 'Lịch Coach',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

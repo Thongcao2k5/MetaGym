@@ -7,6 +7,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
 
 enum _PickerCalMode { week, month }
 
@@ -50,6 +51,7 @@ class CoachSchedulePickerPage extends StatefulWidget {
     required this.existingBookings,
     required this.availableToBook,
     this.bookingId,
+    this.activePlan,
     super.key,
   });
 
@@ -58,6 +60,7 @@ class CoachSchedulePickerPage extends StatefulWidget {
   final List<CoachRecord> existingBookings;
   final int availableToBook;
   final String? bookingId;
+  final TrainingPlan? activePlan;
 
   @override
   State<CoachSchedulePickerPage> createState() =>
@@ -123,6 +126,12 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
 
   bool _isOutOfBounds(DateTime date) =>
       date.isBefore(_minDate) || date.isAfter(_maxDate);
+
+  TrainingDay? _planDayFor(DateTime date) =>
+      widget.activePlan?.dayForDate(date);
+
+  bool _isRestOrRecoveryDate(DateTime date) =>
+      widget.activePlan?.isRestOrRecoveryDate(date) ?? false;
 
   bool _hasExistingBookingOnDate(String dateKey) {
     return widget.existingBookings.any((b) {
@@ -311,6 +320,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
   void _toggleShift(String dateKey, _ShiftDisplayItem item) {
     final startsAt = item.startsAt;
     if (!item.isOpen || startsAt == null || _submitting) return;
+    if (_isRestOrRecoveryDate(_selectedDate)) return;
     final currentPick = _pickedByDate[dateKey];
     setState(() {
       _error = null;
@@ -352,6 +362,16 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     if (_pickedByDate.isEmpty || _submitting) return;
     final picks = _pickedByDate.values.toList()
       ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    for (final pick in picks) {
+      final parsed = DateTime.tryParse(pick.startsAt);
+      if (parsed != null && _isRestOrRecoveryDate(_gymTime(parsed))) {
+        setState(() {
+          _error =
+              'Ngày nghỉ ngơi hồi phục không thể đặt lịch hẹn với Coach.';
+        });
+        return;
+      }
+    }
 
     setState(() {
       _submitting = true;
@@ -555,13 +575,16 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       _calMode == _PickerCalMode.month &&
                       date.month != _selectedDate.month;
                   final disabled = _isOutOfBounds(date);
+                  final isRestDay = !disabled && _isRestOrRecoveryDate(date);
                   final hasWork =
                       !disabled &&
+                      !isRestDay &&
                       (_weeklyWorkStarts.isEmpty ||
                           (_weeklyWorkStarts[date.weekday]?.isNotEmpty ??
                               false));
 
                   return MetaGymTap(
+                    key: Key('coach-picker-day-$ymd'),
                     borderRadius: BorderRadius.circular(11),
                     onTap: disabled ? null : () => _selectDate(date),
                     child: AnimatedContainer(
@@ -589,49 +612,30 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (_calMode == _PickerCalMode.week)
-                                Text(
-                                  _weekdaysShort[index],
-                                  style: TextStyle(
-                                    color: selected
-                                        ? MetaGymTheme.onPrimary
-                                        : disabled
-                                        ? palette.textSecondary.withValues(
-                                            alpha: 0.45,
-                                          )
-                                        : palette.textSecondary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.05,
-                                  ),
-                                ),
-                              Text(
-                                '${date.day}',
-                                style: TextStyle(
-                                  color: selected
-                                      ? MetaGymTheme.onPrimary
-                                      : disabled
-                                      ? palette.textSecondary.withValues(
-                                          alpha: 0.45,
-                                        )
-                                      : outsideMonth
-                                      ? palette.textSecondary.withValues(
-                                          alpha: 0.60,
-                                        )
-                                      : palette.textPrimary,
-                                  fontSize: 12.5,
-                                  fontWeight: selected
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                  height: 1.15,
-                                  fontFeatures: MetaGymTheme.tabularFigures,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            _calMode == _PickerCalMode.week
+                                ? _weekdaysShort[index]
+                                : '${date.day}',
+                            style: TextStyle(
+                              color: selected
+                                  ? MetaGymTheme.onPrimary
+                                  : disabled
+                                  ? palette.textSecondary.withValues(
+                                      alpha: 0.45,
+                                    )
+                                  : outsideMonth
+                                  ? palette.textSecondary.withValues(
+                                      alpha: 0.60,
+                                    )
+                                  : palette.textPrimary,
+                              fontSize:
+                                  _calMode == _PickerCalMode.week ? 13 : 12.5,
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              height: 1.15,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
                           ),
                           if (isPickedDay || hasWork)
                             Positioned(
@@ -667,8 +671,10 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
   Widget _buildShiftGroups(
     String dateKey,
     List<_ShiftDisplayItem> shifts,
-    bool alreadyHasDayBooking,
-  ) {
+    bool alreadyHasDayBooking, {
+    required bool isRestDay,
+    TrainingDay? selectedPlanDay,
+  }) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final morning = shifts
@@ -713,6 +719,97 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (isRestDay) ...[
+          Container(
+            key: const Key('coach-picker-rest-day-banner'),
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isLight
+                  ? palette.warning.withValues(alpha: 0.12)
+                  : const Color(0xC430251D),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: palette.warning.withValues(alpha: 0.6),
+                width: 1.1,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.self_improvement_rounded,
+                  size: 18,
+                  color: palette.warning,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        selectedPlanDay != null
+                            ? 'Ngày nghỉ · ${selectedPlanDay.title}'
+                            : 'Ngày nghỉ ngơi · hồi phục',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Khi có lịch hẹn với Coach, ngày hôm đó bắt buộc phải là ngày tập luyện theo giáo trình — không thể đặt vào ngày nghỉ ngơi hồi phục.',
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (selectedPlanDay != null) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isLight
+                  ? palette.success.withValues(alpha: 0.10)
+                  : const Color(0xC41D2922),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: palette.success.withValues(alpha: 0.45),
+                width: 1.0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.fitness_center_rounded,
+                  size: 15,
+                  color: palette.success,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Giáo án hôm đó: ${selectedPlanDay.title}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: palette.success,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (alreadyHasDayBooking) ...[
           Container(
             margin: const EdgeInsets.only(bottom: 10),
@@ -769,6 +866,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                       dateKey,
                       items[i],
                       alreadyHasDayBooking,
+                      isRestDay: isRestDay,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -778,6 +876,7 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         dateKey,
                         items[i + 1],
                         alreadyHasDayBooking,
+                        isRestDay: isRestDay,
                       ),
                     )
                   else
@@ -794,15 +893,17 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
   Widget _buildShiftTile(
     String dateKey,
     _ShiftDisplayItem item,
-    bool alreadyHasDayBooking,
-  ) {
+    bool alreadyHasDayBooking, {
+    required bool isRestDay,
+  }) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final picked =
         _pickedByDate[dateKey]?.startsAt == item.startsAt &&
         item.startsAt != null;
     final blockedByDay = alreadyHasDayBooking && item.isOpen;
-    final enabled = item.isOpen && !blockedByDay;
+    final blockedByRest = isRestDay && item.isOpen;
+    final enabled = item.isOpen && !blockedByDay && !blockedByRest;
 
     final Color bgColor;
     final Color borderColor;
@@ -844,6 +945,8 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
 
     final metaText = picked
         ? 'Đang chọn'
+        : blockedByRest
+        ? 'Ngày nghỉ hồi phục'
         : blockedByDay
         ? 'Đã đủ 1 buổi/ngày'
         : item.statusLabel;
@@ -1015,9 +1118,11 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
     final isLight = MetaGymTheme.isLightPalette(context);
     final dateKey = _ymd(_selectedDate);
     final shifts = _buildDayShifts(dateKey);
+    final selectedPlanDay = _planDayFor(_selectedDate);
+    final isRestDay = _isRestOrRecoveryDate(_selectedDate);
     final alreadyHasDayBooking =
         !_isReschedule && _hasExistingBookingOnDate(dateKey);
-    final openCount = alreadyHasDayBooking
+    final openCount = (alreadyHasDayBooking || isRestDay)
         ? 0
         : shifts.where((s) => s.isOpen).length;
 
@@ -1130,7 +1235,9 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                                   ),
                                 ),
                                 Text(
-                                  alreadyHasDayBooking
+                                  isRestDay
+                                      ? 'Ngày nghỉ hồi phục'
+                                      : alreadyHasDayBooking
                                       ? 'Đã có lịch ngày này'
                                       : openCount > 0
                                       ? '$openCount ca trống · 1h30/ca'
@@ -1148,7 +1255,13 @@ class _CoachSchedulePickerPageState extends State<CoachSchedulePickerPage> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      _buildShiftGroups(dateKey, shifts, alreadyHasDayBooking),
+                      _buildShiftGroups(
+                        dateKey,
+                        shifts,
+                        alreadyHasDayBooking,
+                        isRestDay: isRestDay,
+                        selectedPlanDay: selectedPlanDay,
+                      ),
                       if (_pickedByDate.isNotEmpty) ...[
                         _buildPickedTray(),
                         const SizedBox(height: 14),

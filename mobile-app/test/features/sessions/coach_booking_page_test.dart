@@ -15,6 +15,8 @@ import 'package:meta_gym_app/features/sessions/presentation/coach_schedule_picke
 import 'package:meta_gym_app/features/training/presentation/member_day_plan_page.dart';
 import 'package:provider/provider.dart';
 
+const _wdLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
 ResponseBody _jsonResponse(Object? data, {int statusCode = 200}) =>
     ResponseBody.fromString(
       jsonEncode({'data': data}),
@@ -210,7 +212,7 @@ void main() {
   );
 
   testWidgets(
-    'shows half-package curriculum hint before member books 1/2 sessions',
+    'decouples booking-count prerequisite and links full-week curriculum by weekday',
     (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1;
@@ -231,10 +233,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Đặt tối thiểu 5/10 buổi để Coach lên giáo án (2/5)'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Đặt tối thiểu'), findsNothing);
+      expect(find.textContaining('Chờ Coach lên giáo án'), findsNothing);
       expect(find.byType(CoachMuscleAnatomyTile), findsNothing);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
       await tester.pumpAndSettle();
@@ -246,6 +246,107 @@ void main() {
         findsNWidgets(2),
       );
       expect(find.text('Lê Hoàng Nam'), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'matches full-week Coach curriculum onto PT booking card by weekday',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: _WeeklyCurriculumAdapter(),
+      );
+      await tester.pumpWidget(
+        Provider.value(
+          value: api,
+          child: const MaterialApp(home: CoachBookingPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CoachMuscleAnatomyTile), findsWidgets);
+      expect(find.text('Giáo án tuần · Ngực'), findsOneWidget);
+      expect(find.text('Giáo án · 1 bài tập'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'blocks booking Coach appointment on rest/recovery curriculum days and allows training days',
+    (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final adapter = _RestDayRulePickerAdapter();
+      final api = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: adapter,
+      );
+      await tester.pumpWidget(
+        Provider.value(
+          value: api,
+          child: const MaterialApp(home: CoachBookingPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Đặt lịch'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CoachSchedulePickerPage), findsOneWidget);
+
+      // Tomorrow is configured as a recovery/rest day -> banner shown, shifts disabled
+      if (adapter.tomorrowCrossesWeek) {
+        await tester.tap(find.byTooltip('Tuần sau'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text(_wdLabels[adapter.tomorrowWeekday - 1]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('coach-picker-rest-day-banner')),
+        findsOneWidget,
+      );
+      expect(find.text('Ngày nghỉ hồi phục'), findsWidgets);
+      await tester.tap(find.text('08:00 – 09:30'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đặt lịch'), findsNothing);
+
+      // Day after tomorrow is a training day -> green curriculum banner shown, shift selectable
+      if (adapter.dayAfterCrossesWeek) {
+        await tester.tap(find.byTooltip('Tuần sau'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(
+        find.descendant(
+          of: find.byType(GridView),
+          matching: find.text(_wdLabels[adapter.dayAfterWeekday - 1]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('coach-picker-rest-day-banner')),
+        findsNothing,
+      );
+      expect(find.textContaining('Giáo án hôm đó: Ngực & Vai'), findsOneWidget);
+      await tester.tap(find.text('08:00 – 09:30'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đặt lịch'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -292,7 +393,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(GridView),
-          matching: find.text('${adapter.tomorrowDay}'),
+          matching: find.text(_wdLabels[adapter.tomorrowWeekday - 1]),
         ),
       );
       await tester.pumpAndSettle();
@@ -309,7 +410,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byType(GridView),
-          matching: find.text('${adapter.dayAfterDay}'),
+          matching: find.text(_wdLabels[adapter.dayAfterWeekday - 1]),
         ),
       );
       await tester.pumpAndSettle();
@@ -695,8 +796,8 @@ class _MultiBookingAdapter implements HttpClientAdapter {
     dayAfterCrossesWeek = weekMonday(dayAfter) != weekMonday(tmrw);
     tomorrowStr = tmrw.toIso8601String().substring(0, 10);
     dayAfterStr = dayAfter.toIso8601String().substring(0, 10);
-    tomorrowDay = tmrw.day;
-    dayAfterDay = dayAfter.day;
+    tomorrowWeekday = tmrw.weekday;
+    dayAfterWeekday = dayAfter.weekday;
   }
 
   late final String todayStr;
@@ -704,8 +805,8 @@ class _MultiBookingAdapter implements HttpClientAdapter {
   late final String todayBookingEnd;
   late final String tomorrowStr;
   late final String dayAfterStr;
-  late final int tomorrowDay;
-  late final int dayAfterDay;
+  late final int tomorrowWeekday;
+  late final int dayAfterWeekday;
   late final bool tomorrowCrossesWeek;
   late final bool dayAfterCrossesWeek;
   final List<String> createdStartsAt = [];
@@ -780,6 +881,194 @@ class _MultiBookingAdapter implements HttpClientAdapter {
         ],
       },
       '/training-plans/me/active' => null,
+      _ => throw StateError('Path: ${options.path}'),
+    };
+    return _jsonResponse(data);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _WeeklyCurriculumAdapter implements HttpClientAdapter {
+  _WeeklyCurriculumAdapter() {
+    final gymToday = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final bookingGym = DateTime.utc(
+      gymToday.year,
+      gymToday.month,
+      gymToday.day,
+      10,
+    ).add(const Duration(days: 1));
+    targetWeekday = bookingGym.weekday;
+    bookingIso = bookingGym.subtract(const Duration(hours: 7)).toIso8601String();
+    bookingEndIso = bookingGym
+        .subtract(const Duration(hours: 7))
+        .add(const Duration(minutes: 90))
+        .toIso8601String();
+  }
+
+  late final int targetWeekday;
+  late final String bookingIso;
+  late final String bookingEndIso;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final data = switch (options.path) {
+      '/coach-entitlements' => [
+        {
+          'id': 'pack-wk',
+          'planName': 'Gói 12 buổi',
+          'status': 'ACTIVE',
+          'relationshipStatus': 'ACTIVE',
+          'remainingSessions': 10,
+          'totalSessions': 12,
+          'endsOn': '2030-12-31',
+        },
+      ],
+      '/coach-bookings' => [
+        {
+          'id': 'b-wk-1',
+          'entitlementId': 'pack-wk',
+          'coachName': 'Lê Hoàng Nam',
+          'startsAt': bookingIso,
+          'endsAt': bookingEndIso,
+          'status': 'BOOKED',
+        },
+      ],
+      '/training-plans/me/active' => {
+        'id': 'plan-wk',
+        'title': 'Giáo trình Full Tuần',
+        'status': 'ACTIVE',
+        'version': 1,
+        'days': [
+          {
+            'dayNumber': targetWeekday,
+            'title': 'Giáo án tuần · Ngực',
+            'exercises': [
+              {
+                'exerciseId': 'ex-1',
+                'exerciseName': 'Barbell Bench Press',
+                'displayOrder': 1,
+                'sets': 4,
+                'reps': '8',
+              },
+            ],
+          },
+        ],
+      },
+      _ => throw StateError('Path: ${options.path}'),
+    };
+    return _jsonResponse(data);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _RestDayRulePickerAdapter implements HttpClientAdapter {
+  _RestDayRulePickerAdapter() {
+    final nowGym = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final today = DateTime.utc(nowGym.year, nowGym.month, nowGym.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final dayAfter = today.add(const Duration(days: 2));
+    tomorrowDate = tomorrow.toIso8601String().substring(0, 10);
+    tomorrowDay = tomorrow.day;
+    tomorrowWeekday = tomorrow.weekday;
+    dayAfterDate = dayAfter.toIso8601String().substring(0, 10);
+    dayAfterDay = dayAfter.day;
+    dayAfterWeekday = dayAfter.weekday;
+    final todayMonday = today.subtract(Duration(days: today.weekday - 1));
+    final tomorrowMonday =
+        tomorrow.subtract(Duration(days: tomorrow.weekday - 1));
+    final dayAfterMonday =
+        dayAfter.subtract(Duration(days: dayAfter.weekday - 1));
+    tomorrowCrossesWeek = tomorrowMonday != todayMonday;
+    dayAfterCrossesWeek = dayAfterMonday != tomorrowMonday;
+  }
+
+  late final String tomorrowDate;
+  late final int tomorrowDay;
+  late final int tomorrowWeekday;
+  late final String dayAfterDate;
+  late final int dayAfterDay;
+  late final int dayAfterWeekday;
+  late final bool tomorrowCrossesWeek;
+  late final bool dayAfterCrossesWeek;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (options.path == '/coach-bookings/available-slots') {
+      final date = (options.queryParameters['date'] as String?) ?? dayAfterDate;
+      return _jsonResponse([
+        {'startsAt': '${date}T08:00:00+07:00', 'endsAt': '${date}T09:30:00+07:00'},
+      ]);
+    }
+    final data = switch (options.path) {
+      '/coach-entitlements' => [
+        {
+          'id': 'pack-rest-rule',
+          'coachId': 'coach-1',
+          'planName': 'Gói 10 buổi',
+          'status': 'ACTIVE',
+          'relationshipStatus': 'ACTIVE',
+          'remainingSessions': 8,
+          'totalSessions': 10,
+          'endsOn': '2030-12-31',
+        },
+      ],
+      '/coach-bookings' => const <Object>[],
+      '/coaches/coach-1/work-slots' => {
+        'configured': true,
+        'days': [
+          for (var wd = 1; wd <= 7; wd++)
+            {
+              'weekday': wd,
+              'starts': ['08:00'],
+            },
+        ],
+      },
+      '/training-plans/me/active' => {
+        'id': 'plan-rest-rule',
+        'title': 'Giáo trình Chuẩn Tuần',
+        'status': 'ACTIVE',
+        'version': 1,
+        'days': [
+          {
+            'dayNumber': tomorrowWeekday,
+            'title': 'Phục Hồi Chủ Động & Giãn Cơ',
+            'exercises': [
+              {
+                'exerciseId': 'ex-rec',
+                'exerciseName': 'Foam Rolling',
+                'displayOrder': 1,
+                'sets': 1,
+                'durationSeconds': 900,
+              },
+            ],
+          },
+          {
+            'dayNumber': dayAfterWeekday,
+            'title': 'Ngực & Vai',
+            'exercises': [
+              {
+                'exerciseId': 'ex-1',
+                'exerciseName': 'Bench Press',
+                'displayOrder': 1,
+                'sets': 4,
+                'reps': '8',
+              },
+            ],
+          },
+        ],
+      },
       _ => throw StateError('Path: ${options.path}'),
     };
     return _jsonResponse(data);

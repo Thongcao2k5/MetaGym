@@ -5,6 +5,7 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_schedule_calendar.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
@@ -50,6 +51,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
   TrainingPlan? _activePlan;
   int _unreadNotifications = 0;
   _BookingTab _currentTab = _BookingTab.all;
+  DateTime _calendarDate = metaGymDateOnly(_gymTime(DateTime.now()));
+  MetaGymCalendarMode _calendarMode = MetaGymCalendarMode.week;
+  bool _filterByCalendarDate = false;
 
   @override
   void initState() {
@@ -152,6 +156,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           existingBookings: _bookings,
           availableToBook: availableToBook,
           bookingId: bookingId,
+          activePlan: _activePlan,
         ),
       ),
     );
@@ -516,13 +521,23 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     final upcomingBookings = _bookings.where((b) {
       if (b['status'] != 'BOOKED') return false;
       final startsAt = DateTime.tryParse(b['startsAt'] as String? ?? '');
-      return startsAt != null && startsAt.isAfter(now);
+      if (startsAt == null || !startsAt.isAfter(now)) return false;
+      if (_filterByCalendarDate &&
+          _date(_gymTime(startsAt)) != metaGymIsoDate(_calendarDate)) {
+        return false;
+      }
+      return true;
     }).toList();
 
     final pastBookings = _bookings.where((b) {
-      if (b['status'] != 'BOOKED') return true;
       final startsAt = DateTime.tryParse(b['startsAt'] as String? ?? '');
-      return startsAt == null || !startsAt.isAfter(now);
+      final isPast =
+          b['status'] != 'BOOKED' || startsAt == null || !startsAt.isAfter(now);
+      if (!isPast) return false;
+      if (_filterByCalendarDate && startsAt != null) {
+        return _date(_gymTime(startsAt)) == metaGymIsoDate(_calendarDate);
+      }
+      return true;
     }).toList();
 
     final showPackages =
@@ -534,7 +549,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
     final showHistory =
         _currentTab == _BookingTab.history ||
         (_currentTab == _BookingTab.all &&
-            (_isCoach || pastBookings.isNotEmpty));
+            (_isCoach || pastBookings.isNotEmpty || _filterByCalendarDate));
 
     return Scaffold(
       backgroundColor: palette.canvas,
@@ -564,7 +579,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                               color: MetaGymTheme.brandOrange,
                             ),
                           )
-                        : ListView(
+                        : SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
                               16,
@@ -572,7 +587,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                               16,
                               MediaQuery.paddingOf(context).bottom + 36,
                             ),
-                            children: [
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                               if (_busy)
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
@@ -955,6 +972,13 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                 ],
                               ],
 
+                              if (_loaded &&
+                                  (_currentTab == _BookingTab.upcoming ||
+                                      _currentTab == _BookingTab.history)) ...[
+                                _buildScheduleCalendarSection(now),
+                                const SizedBox(height: 16),
+                              ],
+
                               // Section: Lịch sắp tới
                               if (showUpcoming) ...[
                                 _buildSectionHeader(
@@ -969,7 +993,9 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                 const SizedBox(height: 6),
                                 if (_loaded && upcomingBookings.isEmpty)
                                   _buildEmptyStateCard(
-                                    'Chưa có buổi tập nào sắp tới.',
+                                    _filterByCalendarDate
+                                        ? 'Không có buổi tập nào vào ngày đã chọn.'
+                                        : 'Chưa có buổi tập nào sắp tới.',
                                   ),
                                 for (final booking in upcomingBookings) ...[
                                   if (_isCoach)
@@ -1011,7 +1037,12 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: 16),
+                              ],
+
+                              if (_loaded && _currentTab == _BookingTab.all) ...[
+                                _buildScheduleCalendarSection(now),
+                                const SizedBox(height: 16),
                               ],
 
                               // Section: Lịch sử buổi tập
@@ -1041,6 +1072,7 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                               ],
                             ],
                           ),
+                        ),
                   ),
                 ),
               ],
@@ -1139,6 +1171,173 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildScheduleCalendarSection(DateTime now) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final countsByDate = <String, int>{};
+    var upcomingCount = 0;
+
+    for (final b in _bookings) {
+      final startsAt = DateTime.tryParse(b['startsAt'] as String? ?? '');
+      if (startsAt == null) continue;
+      final iso = _date(_gymTime(startsAt));
+      countsByDate[iso] = (countsByDate[iso] ?? 0) + 1;
+      if (b['status'] == 'BOOKED' && startsAt.isAfter(now)) {
+        upcomingCount++;
+      }
+    }
+
+    final visibleDays = metaGymVisibleCalendarDays(_calendarDate, _calendarMode);
+    var sessionsInPeriod = 0;
+    var activeDaysInPeriod = 0;
+    for (final day in visibleDays) {
+      if (_calendarMode == MetaGymCalendarMode.month &&
+          day.month != _calendarDate.month) {
+        continue;
+      }
+      final c = countsByDate[metaGymIsoDate(day)] ?? 0;
+      if (c > 0) {
+        activeDaysInPeriod++;
+        sessionsInPeriod += c;
+      }
+    }
+    final filteredPlanDay = _filterByCalendarDate && !_isCoach
+        ? _matchedPlanDayForDate(_calendarDate)
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        MetaGymScheduleCalendar(
+          selectedDate: _calendarDate,
+          today: metaGymDateOnly(_gymTime(now)),
+          mode: _calendarMode,
+          onModeChanged: (mode) => setState(() => _calendarMode = mode),
+          onSelectDate: (picked) {
+            final normalized = metaGymDateOnly(picked);
+            setState(() {
+              if (_filterByCalendarDate &&
+                  metaGymIsoDate(_calendarDate) == metaGymIsoDate(normalized)) {
+                _filterByCalendarDate = false;
+              } else {
+                _calendarDate = normalized;
+                _filterByCalendarDate = true;
+              }
+            });
+          },
+          badgeCountForDay: (day) =>
+              (countsByDate[metaGymIsoDate(day)] ?? 0).clamp(0, 3),
+          badgeColorForDay: (_) => palette.primaryText,
+          stats: [
+            MetaGymCalendarStat(
+              label: _calendarMode == MetaGymCalendarMode.week
+                  ? 'Tuần này'
+                  : 'Tháng này',
+              value: '$sessionsInPeriod buổi',
+              accent: palette.primaryText,
+            ),
+            MetaGymCalendarStat(
+              label: 'Buổi sắp tới',
+              value: '$upcomingCount lịch',
+              accent: palette.success,
+            ),
+            MetaGymCalendarStat(
+              label: 'Ngày đặt',
+              value: '$activeDaysInPeriod ngày',
+              accent: palette.reflection,
+            ),
+          ],
+        ),
+        if (_filterByCalendarDate) ...[
+          const SizedBox(height: 8),
+          MetaGymGlassCard(
+            solid: false,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.filter_alt_rounded,
+                      size: 16,
+                      color: palette.primaryText,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Đang lọc ngày ${_formatDmy(metaGymIsoDate(_calendarDate))}',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        foregroundColor: palette.primaryText,
+                      ),
+                      onPressed: () =>
+                          setState(() => _filterByCalendarDate = false),
+                      child: const Text(
+                        'Xem tất cả',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                if (filteredPlanDay != null) ...[
+                  Divider(
+                    height: 12,
+                    thickness: 1,
+                    color: palette.borderSolid.withValues(alpha: 0.55),
+                  ),
+                  InkWell(
+                    onTap: () => _openPlanDay(filteredPlanDay),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.fitness_center_rounded,
+                            size: 15,
+                            color: palette.success,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Giáo án hôm đó: ${filteredPlanDay.title} · ${filteredPlanDay.exercises.length} bài',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.success,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: palette.success,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1459,7 +1658,6 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
 
   Widget _buildPackageCard(CoachRecord pack, String gymNow, DateTime now) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     final remaining = (pack['remainingSessions'] as num?)?.toInt() ?? 0;
     final total = (pack['totalSessions'] as num?)?.toInt() ?? 0;
     final bookedCount = _bookings
@@ -1468,10 +1666,6 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
         )
         .length;
     final availableToBook = (remaining - bookedCount).clamp(0, remaining);
-    final minForCurriculum = total > 0 ? (total / 2).ceil() : 0;
-    final registeredCount = total > 0
-        ? ((total - remaining) + bookedCount).clamp(0, total)
-        : 0;
     final isPaused = pack['relationshipStatus'] == 'PAUSED';
     final endsOn = pack['endsOn'] as String? ?? '';
     final isExpired =
@@ -1650,46 +1844,6 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
                 ),
             ],
           ),
-          if (_activePlan == null && total > 0) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: palette.metricPanelBg,
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: palette.metricPanelBorder),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  MetaGymResolvedIcon(registeredCount >= minForCurriculum
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.info_outline_rounded, size: 15, fallbackColor: registeredCount >= minForCurriculum
-                        ? (isLight ? palette.success : const Color(0xFF59E59A))
-                        : (isLight ? palette.warning : const Color(0xFFFFC573))),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      registeredCount >= minForCurriculum
-                          ? 'Đã đăng ký $registeredCount/$minForCurriculum buổi · Chờ Coach lên giáo án'
-                          : 'Đặt tối thiểu $minForCurriculum/$total buổi để Coach lên giáo án ($registeredCount/$minForCurriculum)',
-                      style: TextStyle(
-                        color: registeredCount >= minForCurriculum
-                            ? (isLight
-                                  ? palette.success
-                                  : const Color(0xFF59E59A))
-                            : (isLight
-                                  ? palette.warning
-                                  : const Color(0xFFFFC573)),
-                        fontSize: 12,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ] else ...[
           const SizedBox(height: 6),
           Text(
@@ -1754,11 +1908,13 @@ class _CoachBookingPageState extends State<CoachBookingPage> {
   }
 
   TrainingDay? _matchedPlanDay(String startsAtStr) {
-    final plan = _activePlan;
-    if (plan == null) return null;
-    final date = _date(_gymTime(DateTime.parse(startsAtStr)));
-    return plan.days.where((day) => day.scheduledDate == date).firstOrNull;
+    final parsed = DateTime.tryParse(startsAtStr);
+    if (parsed == null) return null;
+    return _matchedPlanDayForDate(_gymTime(parsed));
   }
+
+  TrainingDay? _matchedPlanDayForDate(DateTime date) =>
+      _activePlan?.dayForDate(date);
 
   void _openPlanDay(TrainingDay? day) {
     if (day == null) return;
