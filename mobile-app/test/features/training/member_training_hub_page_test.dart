@@ -585,6 +585,104 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'keeps membership and coach cards visible without spinner during background refresh after subpage pop',
+    (tester) async {
+      setPhoneViewport(tester);
+      final client = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: _CoachBookingEmptyAdapter(),
+      );
+      final secondLoadGate = Completer<void>();
+      addTearDown(() {
+        if (!secondLoadGate.isCompleted) secondLoadGate.complete();
+      });
+
+      final membership = MembershipController(
+        _DeferredReloadMembershipService(
+          memberships: [
+            Membership(
+              id: 'mem-1',
+              startDate: pastIso(5),
+              endDate: futureIso(10),
+              status: 'ACTIVE',
+              planName: 'Gói Vàng 6 tháng',
+            ),
+          ],
+          secondLoadGate: secondLoadGate,
+        ),
+      );
+      final coaching = _FakeCoachingService(
+        relationship: const MemberCoachRelationship(
+          id: 'rel-1',
+          coachId: 'coach-1',
+          status: 'ACTIVE',
+        ),
+        coachNames: const {'coach-1': 'Lê Hoàng Nam'},
+      );
+      final training = _FakeTrainingService();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: client),
+            Provider<MemberCoachingService>.value(value: coaching),
+            Provider<MemberTrainingService>.value(value: training),
+          ],
+          child: MaterialApp(
+            theme: MetaGymTheme.dark,
+            home: MemberTrainingHubPage(
+              membershipController: membership,
+              coachingService: coaching,
+              trainingService: training,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('HẠNG VÀNG'), findsOneWidget);
+      expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+
+      await tester.tap(find.text('Bắt đầu tập →'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MemberTrainingPage), findsOneWidget);
+
+      Navigator.of(tester.element(find.byType(MemberTrainingPage))).pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('HẠNG VÀNG'), findsOneWidget);
+      expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+
+      secondLoadGate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('HẠNG VÀNG'), findsOneWidget);
+      expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+}
+
+class _DeferredReloadMembershipService extends _FakeMembershipService {
+  _DeferredReloadMembershipService({
+    required super.memberships,
+    required this.secondLoadGate,
+  });
+
+  final Completer<void> secondLoadGate;
+  int _getPlanCalls = 0;
+
+  @override
+  Future<List<MembershipPlan>> getPlans() async {
+    _getPlanCalls += 1;
+    if (_getPlanCalls >= 2) {
+      await secondLoadGate.future;
+    }
+    return const [];
+  }
 }
 
 class _FakeMembershipService implements MembershipService {

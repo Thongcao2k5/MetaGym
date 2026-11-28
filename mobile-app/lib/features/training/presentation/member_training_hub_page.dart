@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
@@ -60,6 +61,9 @@ class MemberTrainingHubPage extends StatefulWidget {
 class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   MembershipController? _membership;
   MemberCoachingService? _coaching;
+  SyncRevisionBinding? _syncBinding;
+  Future<void>? _loadInFlight;
+  bool _hasLoadedOnce = false;
   MemberCoachRelationship? _relationship;
   TrainingPlan? _activePlan;
   TrainingDay? _todayPlanDay;
@@ -78,8 +82,17 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted) _load(silent: _hasLoadedOnce);
+    });
     if (_membership != null) return;
     _membership =
         widget.membershipController ?? context.read<MembershipController>();
@@ -89,82 +102,130 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     });
   }
 
-  Future<void> _load() async {
-    MemberSelfTrainingApi? selfApi = widget.selfTrainingApi;
-    if (selfApi == null) {
-      try {
-        selfApi = MemberSelfTrainingApi(context.read<ApiClient>());
-      } catch (_) {
-        selfApi = null;
+  Future<void> _load({bool silent = false}) {
+    if (_loadInFlight case final inFlight?) return inFlight;
+
+    late final Future<void> future;
+    future = _performLoad(silent: silent).whenComplete(() {
+      if (identical(_loadInFlight, future)) {
+        _loadInFlight = null;
       }
-    }
-    setState(() {
-      _loading = true;
-      _error = null;
     });
+    _loadInFlight = future;
+    return future;
+  }
+
+  Future<void> _performLoad({required bool silent}) async {
+    final apiClient = _tryRead<ApiClient>();
+    final trainingService =
+        widget.trainingService ??
+        _tryRead<MemberTrainingService>() ??
+        (apiClient != null ? MemberTrainingApi(apiClient) : null);
+    MemberSelfTrainingApi? selfApi = widget.selfTrainingApi;
+    if (selfApi == null && apiClient != null) {
+      selfApi = MemberSelfTrainingApi(apiClient);
+    }
+
+    final showSpinner = !silent || !_hasLoadedOnce;
+    if (showSpinner) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+
     try {
-      await _membership!.load();
-      if (_membership!.errorMessage != null) {
-        throw StateError(_membership!.errorMessage!);
-      }
       final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
-      final relationship = await _coaching!.getCurrentRelationship();
+      Object? loadError;
+      MemberCoachRelationship? relationship;
       String? coachName;
-      if (relationship != null) {
-        try {
-          coachName = (await _coaching!.getCoachNames())[relationship.coachId];
-        } catch (_) {
-          // The relationship is still useful if the public Coach list is offline.
-        }
-        final relCoachName = relationship.coachName?.trim();
-        coachName = coachName?.trim().isNotEmpty == true
-            ? coachName!.trim()
-            : (relCoachName != null && relCoachName.isNotEmpty
-                  ? relCoachName
-                  : null);
-      }
       TrainingPlan? activePlan;
       TrainingDay? todayPlanDay;
-      if (relationship != null && relationship.status == 'ACTIVE') {
-        final apiClient = _tryRead<ApiClient>();
-        final trainingService =
-            widget.trainingService ??
-            _tryRead<MemberTrainingService>() ??
-            (apiClient != null ? MemberTrainingApi(apiClient) : null);
-        if (trainingService != null) {
-          try {
-            activePlan = await trainingService.getActive();
-            todayPlanDay = activePlan?.dayForDate(vnNow);
-          } catch (_) {
-            // Optional summary enhancement; hub remains usable without plan API.
-          }
-        }
-      }
       MemberSelfTrainingDay? todaySelfPlan;
       String? todaySelfIconKey;
-      if (selfApi != null) {
-        try {
-          final todayStr =
-              '${vnNow.year.toString().padLeft(4, '0')}-${vnNow.month.toString().padLeft(2, '0')}-${vnNow.day.toString().padLeft(2, '0')}';
-          final results = await Future.wait([
-            selfApi.getRange(todayStr, todayStr),
-            SelfTrainingIconStore().loadAll(),
-          ]);
-          final plans = results[0] as List<MemberSelfTrainingDay>;
-          final icons = results[1] as Map<String, String>;
-          todaySelfPlan = plans.firstOrNull;
-          if (todaySelfPlan != null) {
-            todaySelfIconKey =
-                icons[todaySelfPlan.id] ??
-                icons[todaySelfPlan.planDate] ??
-                todaySelfPlan.iconKey;
+
+      await Future.wait<void>([
+        () async {
+          try {
+            await _membership!.load();
+            if (_membership!.errorMessage != null) {
+              loadError ??= StateError(_membership!.errorMessage!);
+            }
+          } catch (error) {
+            loadError ??= error;
           }
-        } catch (_) {
-          // Optional summary enhancement; hub remains usable without self-plan API.
-        }
-      }
+        }(),
+        () async {
+          try {
+            relationship = await _coaching!.getCurrentRelationship();
+            if (relationship != null) {
+              final rel = relationship!;
+              await Future.wait<void>([
+                () async {
+                  try {
+                    coachName = (await _coaching!.getCoachNames())[rel.coachId];
+                  } catch (_) {
+                    // The relationship is still useful if the public Coach list is offline.
+                  }
+                  final relCoachName = rel.coachName?.trim();
+                  coachName = coachName?.trim().isNotEmpty == true
+                      ? coachName!.trim()
+                      : (relCoachName != null && relCoachName.isNotEmpty
+                            ? relCoachName
+                            : null);
+                }(),
+                if (rel.status == 'ACTIVE' && trainingService != null)
+                  () async {
+                    try {
+                      activePlan = await trainingService.getActive();
+                      todayPlanDay = activePlan?.dayForDate(vnNow);
+                    } catch (_) {
+                      // Optional summary enhancement; hub remains usable without plan API.
+                    }
+                  }(),
+              ]);
+            }
+          } catch (error) {
+            loadError ??= error;
+          }
+        }(),
+        if (selfApi != null)
+          () async {
+            try {
+              final todayStr =
+                  '${vnNow.year.toString().padLeft(4, '0')}-${vnNow.month.toString().padLeft(2, '0')}-${vnNow.day.toString().padLeft(2, '0')}';
+              final results = await Future.wait([
+                selfApi!.getRange(todayStr, todayStr),
+                SelfTrainingIconStore().loadAll(),
+              ]);
+              final plans = results[0] as List<MemberSelfTrainingDay>;
+              final icons = results[1] as Map<String, String>;
+              todaySelfPlan = plans.firstOrNull;
+              if (todaySelfPlan != null) {
+                todaySelfIconKey =
+                    icons[todaySelfPlan!.id] ??
+                    icons[todaySelfPlan!.planDate] ??
+                    todaySelfPlan!.iconKey;
+              }
+            } catch (_) {
+              // Optional summary enhancement; hub remains usable without self-plan API.
+            }
+          }(),
+      ]);
+
       if (!mounted) return;
+      if (loadError != null) {
+        if (showSpinner) {
+          setState(
+            () => _error = 'Chưa tải được thông tin gói tập. Hãy thử lại.',
+          );
+        }
+        return;
+      }
+
       setState(() {
+        _hasLoadedOnce = true;
+        _error = null;
         _relationship = relationship;
         _activePlan = activePlan;
         _todayPlanDay = todayPlanDay;
@@ -172,14 +233,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
         _todaySelfIconKey = todaySelfIconKey;
         _coachName = coachName;
       });
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _error = 'Chưa tải được thông tin gói tập. Hãy thử lại.',
-        );
-      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && _loading) setState(() => _loading = false);
     }
   }
 
@@ -207,7 +262,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       context,
       MetaGymPageRoute(builder: (_) => page),
     ).then((_) {
-      if (mounted) _load();
+      if (mounted) _load(silent: _hasLoadedOnce);
     });
   }
 
@@ -301,7 +356,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   void _startTodayWorkout() {
-    if (_loading || _error != null) {
+    if (_loading) return;
+    if (_error != null) {
       _load();
       return;
     }
@@ -328,7 +384,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   void _openPlan() {
-    if (_loading || _error != null) {
+    if (_loading) return;
+    if (_error != null) {
       _load();
       return;
     }
@@ -342,7 +399,8 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
   }
 
   void _openJournal() {
-    if (_loading || _error != null) {
+    if (_loading) return;
+    if (_error != null) {
       _load();
       return;
     }
@@ -395,7 +453,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
               child: RefreshIndicator(
                 color: MetaGymTheme.primary,
                 backgroundColor: colors.surface,
-                onRefresh: _load,
+                onRefresh: () => _load(silent: _hasLoadedOnce),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
