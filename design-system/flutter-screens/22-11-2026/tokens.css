@@ -1376,8 +1376,83 @@ body.light-mode .qr-checkin-btn {
 .ico-md { width: var(--ico-md); height: var(--ico-md); display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
 .ico-lg { width: var(--ico-lg); height: var(--ico-lg); display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
 .ico-dock { width: var(--ico-lg); height: var(--ico-lg); display: block; object-fit: contain; }
-.ico-dock.ico-3d { width: 40px; height: 40px; margin: -1px 0; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.24)); }
-body.light-mode .ico-dock.ico-3d { filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.14)) !important; }
+.ico-dock.ico-3d {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  margin: -1px 0;
+  filter: brightness(1.12) contrast(1.04) drop-shadow(0 2px 8px rgba(255, 94, 54, 0.24));
+}
+.ico-dock.ico-3d[src*="action_nutrition_3d"] {
+  filter: brightness(1.12) contrast(1.04) drop-shadow(0 2px 8px rgba(46, 204, 113, 0.24));
+}
+.quick-tile:has(.ico-3d),
+.explore-tile:has(.ico-3d) {
+  position: relative;
+  overflow: hidden;
+}
+.quick-tile:has(.ico-3d) .quick-lbl,
+.explore-tile:has(.ico-3d) .explore-lbl {
+  position: relative;
+  z-index: 1;
+}
+.quick-tile:has(.ico-3d)::before,
+.explore-tile:has(.ico-3d)::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(255, 118, 72, 0.44) 0%,
+    rgba(255, 94, 54, 0.24) 44%,
+    rgba(169, 199, 232, 0.10) 68%,
+    rgba(255, 94, 54, 0) 84%
+  );
+}
+.quick-tile:has(img[src*="action_nutrition_3d"])::before,
+.explore-tile:has(img[src*="action_nutrition_3d"])::before {
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(46, 204, 113, 0.40) 0%,
+    rgba(46, 204, 113, 0.20) 44%,
+    rgba(169, 199, 232, 0.10) 68%,
+    rgba(46, 204, 113, 0) 84%
+  );
+}
+body.light-mode .ico-dock.ico-3d {
+  filter: brightness(1.06) drop-shadow(0 3px 7px rgba(255, 94, 54, 0.22)) !important;
+}
+body.light-mode .ico-dock.ico-3d[src*="action_nutrition_3d"] {
+  filter: brightness(1.06) drop-shadow(0 3px 7px rgba(46, 204, 113, 0.22)) !important;
+}
+body.light-mode .quick-tile:has(.ico-3d)::before,
+body.light-mode .explore-tile:has(.ico-3d)::before {
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(255, 94, 54, 0.34) 0%,
+    rgba(255, 110, 68, 0.22) 48%,
+    rgba(255, 130, 88, 0.08) 68%,
+    rgba(255, 94, 54, 0) 84%
+  );
+}
+body.light-mode .quick-tile:has(img[src*="action_nutrition_3d"])::before,
+body.light-mode .explore-tile:has(img[src*="action_nutrition_3d"])::before {
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(46, 204, 113, 0.32) 0%,
+    rgba(46, 204, 113, 0.19) 48%,
+    rgba(46, 204, 113, 0.07) 68%,
+    rgba(46, 204, 113, 0) 84%
+  );
+}
 
 /* Auth Legal Notice & Version Footer */
 .auth-legal {
