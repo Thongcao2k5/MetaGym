@@ -198,7 +198,8 @@ body.light-mode img[src*="brand_mark.svg"],
 body.light-mode img[src*="brand_wordmark_"],
 body.light-mode img[src*="brand/default.svg"],
 body.light-mode img[src*="notification_small_monochrome.svg"],
-body.light-mode img[src*="mascot/"] {
+body.light-mode img[src*="mascot/"],
+body.light-mode img[src*="icons_3d/"] {
   filter: none !important;
 }
 body.light-mode .circle-btn {
@@ -1375,6 +1376,8 @@ body.light-mode .qr-checkin-btn {
 .ico-md { width: var(--ico-md); height: var(--ico-md); display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
 .ico-lg { width: var(--ico-lg); height: var(--ico-lg); display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; }
 .ico-dock { width: var(--ico-lg); height: var(--ico-lg); display: block; object-fit: contain; }
+.ico-dock.ico-3d { width: 40px; height: 40px; margin: -1px 0; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.24)); }
+body.light-mode .ico-dock.ico-3d { filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.14)) !important; }
 
 /* Auth Legal Notice & Version Footer */
 .auth-legal {

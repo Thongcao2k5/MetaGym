@@ -73,6 +73,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final muscles =
         _exercises.expand((item) => item.targetMuscles).toSet().toList()
           ..sort();
@@ -82,7 +83,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
         )
         .toList();
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _exerciseAppBar(context, 'Thư viện bài tập'),
       body: Stack(
@@ -91,7 +92,7 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
           const MetaGymBackground(),
           RefreshIndicator(
             color: MetaGymTheme.primary,
-            backgroundColor: MetaGymTheme.cardSurface,
+            backgroundColor: palette.surfaceSolid,
             onRefresh: _load,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -105,34 +106,34 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                 TextField(
                   controller: _search,
                   cursorColor: MetaGymTheme.brandOrange,
-                  style: const TextStyle(color: MetaGymTheme.textPrimary),
+                  style: TextStyle(color: palette.textPrimary),
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _searchExercises(),
                   decoration: InputDecoration(
                     hintText: 'Tìm tên bài tập',
-                    hintStyle: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                    hintStyle: TextStyle(
+                      color: palette.textSecondary,
                     ),
                     prefixIcon: const Icon(
                       Icons.search_rounded,
                       color: MetaGymTheme.brandOrange,
                     ),
                     filled: true,
-                    fillColor: MetaGymTheme.cardSurface,
+                    fillColor: palette.surfaceSolid,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         MetaGymTheme.radiusInput,
                       ),
-                      borderSide: const BorderSide(
-                        color: MetaGymTheme.cardBorder,
+                      borderSide: BorderSide(
+                        color: palette.borderSolid,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
                         MetaGymTheme.radiusInput,
                       ),
-                      borderSide: const BorderSide(
-                        color: MetaGymTheme.cardBorder,
+                      borderSide: BorderSide(
+                        color: palette.borderSolid,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -151,9 +152,9 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                         minHeight: 48,
                       ),
                       onPressed: _searchExercises,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_forward_rounded,
-                        color: MetaGymTheme.textPrimary,
+                        color: palette.textPrimary,
                       ),
                     ),
                   ),
@@ -166,9 +167,9 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _filterChip('Tất cả', null),
+                          _filterChip('Tất cả', null, palette),
                           for (final muscle in muscles)
-                            _filterChip(muscle, muscle),
+                            _filterChip(muscle, muscle, palette),
                         ],
                       ),
                     ),
@@ -178,11 +179,11 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                 if (!_loading && _error == null) ...[
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Bài tập',
                           style: TextStyle(
-                            color: MetaGymTheme.textPrimary,
+                            color: palette.textPrimary,
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
@@ -190,8 +191,8 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                       ),
                       Text(
                         '${visible.length} bài',
-                        style: const TextStyle(
-                          color: MetaGymTheme.textSecondary,
+                        style: TextStyle(
+                          color: palette.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -217,14 +218,14 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                       children: [
                         Text(
                           _error!,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textPrimary,
+                          style: TextStyle(
+                            color: palette.textPrimary,
                           ),
                         ),
                         TextButton.icon(
                           onPressed: _load,
                           style: TextButton.styleFrom(
-                            foregroundColor: MetaGymTheme.brandOrange,
+                            foregroundColor: palette.primaryText,
                             minimumSize: const Size(48, 48),
                           ),
                           icon: const Icon(Icons.refresh_rounded),
@@ -234,12 +235,12 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
                     ),
                   ),
                 ] else if (visible.isEmpty)
-                  const MetaGymGlassCard(
+                  MetaGymGlassCard(
                     solid: true,
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     child: Text(
                       'Chưa có bài tập phù hợp.',
-                      style: TextStyle(color: MetaGymTheme.textPrimary),
+                      style: TextStyle(color: palette.textPrimary),
                     ),
                   )
                 else
@@ -255,30 +256,31 @@ class _ExerciseLibraryPageState extends State<ExerciseLibraryPage> {
     );
   }
 
-  Widget _filterChip(String title, String? value) => Padding(
-    padding: const EdgeInsets.only(right: 8),
-    child: ChoiceChip(
-      label: Text(title),
-      selected: _muscle == value,
-      onSelected: (_) => setState(() => _muscle = value),
-      visualDensity: VisualDensity.standard,
-      materialTapTargetSize: MaterialTapTargetSize.padded,
-      selectedColor: const Color(0xFF493025),
-      backgroundColor: MetaGymTheme.cardSurface,
-      showCheckmark: false,
-      side: BorderSide(
-        color: _muscle == value
-            ? MetaGymTheme.primary
-            : MetaGymTheme.cardBorder,
-      ),
-      labelStyle: TextStyle(
-        color: _muscle == value
-            ? MetaGymTheme.textPrimary
-            : const Color(0xFFC8C2BC),
-        fontWeight: _muscle == value ? FontWeight.w700 : FontWeight.w500,
-      ),
-    ),
-  );
+  Widget _filterChip(String title, String? value, MetaGymPalette palette) =>
+      Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(title),
+          selected: _muscle == value,
+          onSelected: (_) => setState(() => _muscle = value),
+          visualDensity: VisualDensity.standard,
+          materialTapTargetSize: MaterialTapTargetSize.padded,
+          selectedColor: palette.chipActiveBg,
+          backgroundColor: palette.surfaceSolid,
+          showCheckmark: false,
+          side: BorderSide(
+            color: _muscle == value
+                ? MetaGymTheme.primary
+                : palette.borderSolid,
+          ),
+          labelStyle: TextStyle(
+            color: _muscle == value
+                ? palette.chipActiveText
+                : palette.textWarmMuted,
+            fontWeight: _muscle == value ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      );
 }
 
 class _ExerciseItem extends StatelessWidget {
@@ -286,72 +288,79 @@ class _ExerciseItem extends StatelessWidget {
   final CatalogItem item;
 
   @override
-  Widget build(BuildContext context) => MetaGymGlassCard(
-    solid: true,
-    padding: EdgeInsets.zero,
-    child: Material(
-      color: Colors.transparent,
-      child: MetaGymTap(
-        borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-        onTap: () => MetaGymNavigation.pushOnce(
-          context,
-          MetaGymPageRoute<void>(
-            builder: (_) => ExerciseDetailPage(item: item),
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return MetaGymGlassCard(
+      solid: true,
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: MetaGymTap(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
+          onTap: () => MetaGymNavigation.pushOnce(
+            context,
+            MetaGymPageRoute<void>(
+              builder: (_) => ExerciseDetailPage(item: item),
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0x33FF5E36),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x66FF5E36)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0x33FF5E36),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0x66FF5E36)),
+                  ),
+                  child: const Icon(
+                    Icons.sports_gymnastics_rounded,
+                    color: MetaGymTheme.brandOrange,
+                    size: 24,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.sports_gymnastics_rounded,
-                  color: MetaGymTheme.brandOrange,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: MetaGymTheme.textPrimary,
-                      ),
-                    ),
-                    if (item.targetMuscles.isNotEmpty || item.category != null)
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        item.targetMuscles.isNotEmpty
-                            ? item.targetMuscles.join(' · ')
-                            : item.category!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textSecondary,
-                          fontSize: 12,
+                        item.name,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: palette.textPrimary,
                         ),
                       ),
-                  ],
+                      if (item.targetMuscles.isNotEmpty ||
+                          item.category != null)
+                        Text(
+                          item.targetMuscles.isNotEmpty
+                              ? item.targetMuscles.join(' · ')
+                              : item.category!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFFC7BDB5)),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: palette.textSecondary,
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class ExerciseDetailPage extends StatelessWidget {
@@ -360,13 +369,14 @@ class ExerciseDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final hasGuidance =
         item.description?.isNotEmpty == true ||
         item.instructions?.isNotEmpty == true ||
         item.usageSteps.isNotEmpty ||
         item.safetyNotes?.isNotEmpty == true;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _exerciseAppBar(context, item.name, isDetail: true),
       body: Stack(
@@ -400,8 +410,8 @@ class ExerciseDetailPage extends StatelessWidget {
                             item.targetMuscles.isNotEmpty
                                 ? item.targetMuscles.join(' · ')
                                 : item.category!,
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
+                            style: TextStyle(
+                              color: palette.primaryText,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -411,8 +421,8 @@ class ExerciseDetailPage extends StatelessWidget {
                         if (item.description?.isNotEmpty == true) ...[
                           Text(
                             item.description!,
-                            style: const TextStyle(
-                              color: Color(0xFFE4DAD1),
+                            style: TextStyle(
+                              color: palette.textWarmMuted,
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -423,8 +433,8 @@ class ExerciseDetailPage extends StatelessWidget {
                         if (item.instructions?.isNotEmpty == true)
                           Text(
                             item.instructions!,
-                            style: const TextStyle(
-                              color: Color(0xFFE4DAD1),
+                            style: TextStyle(
+                              color: palette.textWarmMuted,
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -450,8 +460,8 @@ class ExerciseDetailPage extends StatelessWidget {
                               children: [
                                 Text(
                                   '${i + 1}.',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.brandOrange,
+                                  style: TextStyle(
+                                    color: palette.primaryText,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -459,8 +469,8 @@ class ExerciseDetailPage extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     item.usageSteps[i],
-                                    style: const TextStyle(
-                                      color: Color(0xFFE4DAD1),
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
                                       fontSize: 14,
                                       height: 1.5,
                                     ),
@@ -482,8 +492,8 @@ class ExerciseDetailPage extends StatelessWidget {
                     icon: Icons.shield_outlined,
                     body: Text(
                       item.safetyNotes!,
-                      style: const TextStyle(
-                        color: Color(0xFFE4DAD1),
+                      style: TextStyle(
+                        color: palette.textWarmMuted,
                         fontSize: 14,
                         height: 1.5,
                       ),
@@ -493,10 +503,10 @@ class ExerciseDetailPage extends StatelessWidget {
               ],
               if (!hasGuidance) ...[
                 const SizedBox(height: 14),
-                const _ExerciseDetailCard(
+                _ExerciseDetailCard(
                   child: Text(
                     'Hướng dẫn cho bài tập này đang được cập nhật.',
-                    style: TextStyle(color: Color(0xFFE4DAD1)),
+                    style: TextStyle(color: palette.textWarmMuted),
                   ),
                 ),
               ],
@@ -533,60 +543,70 @@ class _DetailSection extends StatelessWidget {
   final Widget body;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Icon(icon, color: MetaGymTheme.brandOrange, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: palette.primaryText, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      body,
-    ],
-  );
+          ],
+        ),
+        const SizedBox(height: 10),
+        body,
+      ],
+    );
+  }
 }
 
 AppBar _exerciseAppBar(
   BuildContext context,
   String title, {
   bool isDetail = false,
-}) => AppBar(
-  automaticallyImplyLeading: false,
-  toolbarHeight: isDetail ? 76 : kToolbarHeight,
-  leadingWidth: 72,
-  leading: Navigator.of(context).canPop()
-      ? Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: MetaGymCircleIconButton(
-              icon: Icons.arrow_back_rounded,
-              tooltip: 'Quay lại',
-              onTap: () => Navigator.of(context).maybePop(),
+}) {
+  final palette = MetaGymTheme.paletteOf(context);
+  return AppBar(
+    automaticallyImplyLeading: false,
+    toolbarHeight: isDetail ? 76 : kToolbarHeight,
+    leadingWidth: 72,
+    leading: Navigator.of(context).canPop()
+        ? Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: MetaGymCircleIconButton(
+                icon: Icons.arrow_back_rounded,
+                tooltip: 'Quay lại',
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
             ),
-          ),
-        )
-      : null,
-  title: Text(
-    title,
-    maxLines: isDetail ? 2 : 1,
-    overflow: TextOverflow.ellipsis,
-    style: TextStyle(fontSize: isDetail ? 18 : 20, fontWeight: FontWeight.w700),
-  ),
-  titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
-  backgroundColor: Colors.transparent,
-  foregroundColor: MetaGymTheme.textPrimary,
-  surfaceTintColor: Colors.transparent,
-);
+          )
+        : null,
+    title: Text(
+      title,
+      maxLines: isDetail ? 2 : 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: palette.textPrimary,
+        fontSize: isDetail ? 18 : 20,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+    titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
+    backgroundColor: Colors.transparent,
+    foregroundColor: palette.textPrimary,
+    surfaceTintColor: Colors.transparent,
+  );
+}

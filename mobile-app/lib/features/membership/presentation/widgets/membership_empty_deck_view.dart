@@ -205,7 +205,14 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final spec = _kEmptyWalletTiers[_activeIndex];
+    final badgeColor = spec.badgeColor == MetaGymTheme.brandOrange
+        ? palette.primaryText
+        : spec.badgeColor == MetaGymTheme.progressGreen
+        ? palette.success
+        : palette.textSecondary;
     final matchedPlan = _resolvePlanForTier(spec);
     final displayTitle = matchedPlan?.name ?? spec.defaultTitle;
     final displayPrice = matchedPlan?.price ?? spec.defaultPrice;
@@ -235,7 +242,9 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
         Expanded(
           child: RefreshIndicator(
             color: MetaGymTheme.brandOrange,
-            backgroundColor: const Color(0xFF2B2622),
+            backgroundColor: isLight
+                ? palette.surfaceSolid
+                : const Color(0xFF2B2622),
             onRefresh: widget.onRefresh,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 24),
@@ -268,7 +277,7 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -277,18 +286,18 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                                color: palette.textPrimary,
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            SizedBox(height: 1),
+                            const SizedBox(height: 1),
                             Text(
                               'Chọn thẻ kim loại NFC & nhận ưu đãi Coach 1:1',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: MetaGymTheme.textSecondary,
+                                color: palette.textSecondary,
                                 fontSize: 11.5,
                                 height: 1.25,
                               ),
@@ -303,15 +312,13 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: MetaGymTheme.brandOrange.withValues(
-                            alpha: 0.16,
-                          ),
+                          color: palette.chipActiveBg,
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Ưu đãi ›',
                           style: TextStyle(
-                            color: MetaGymTheme.brandOrange,
+                            color: palette.primaryText,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -326,10 +333,14 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                   padding: const EdgeInsets.all(3),
                   margin: const EdgeInsets.only(bottom: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0x991C1917),
+                    color: isLight
+                        ? palette.metricPanelBg
+                        : const Color(0x991C1917),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0x55A79D92),
+                      color: isLight
+                          ? palette.metricPanelBorder
+                          : const Color(0x55A79D92),
                       width: 0.9,
                     ),
                   ),
@@ -432,7 +443,9 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                               decoration: BoxDecoration(
                                 color: i == _activeIndex
                                     ? MetaGymTheme.brandOrange
-                                    : const Color(0x55FFFFFF),
+                                    : (isLight
+                                          ? palette.borderSolid
+                                          : const Color(0x55FFFFFF)),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                             ),
@@ -460,17 +473,19 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                             ),
                             decoration: BoxDecoration(
                               color: _centerFlipped
-                                  ? MetaGymTheme.brandOrange.withValues(
-                                      alpha: 0.18,
-                                    )
-                                  : const Color(0x88181513),
+                                  ? palette.chipActiveBg
+                                  : (isLight
+                                        ? palette.surfaceSolid
+                                        : const Color(0x88181513)),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
                                 color: _centerFlipped
                                     ? MetaGymTheme.brandOrange.withValues(
                                         alpha: 0.7,
                                       )
-                                    : const Color(0x45FFF6EA),
+                                    : (isLight
+                                          ? palette.borderSolid
+                                          : const Color(0x45FFF6EA)),
                                 width: 0.9,
                               ),
                             ),
@@ -481,8 +496,8 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                                   Icons.flip_rounded,
                                   size: 12.5,
                                   color: _centerFlipped
-                                      ? MetaGymTheme.brandOrange
-                                      : MetaGymTheme.textSecondary,
+                                      ? palette.primaryText
+                                      : palette.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -491,8 +506,8 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                                       : 'Lật mặt sau',
                                   style: TextStyle(
                                     color: _centerFlipped
-                                        ? MetaGymTheme.brandOrange
-                                        : MetaGymTheme.textSecondary,
+                                        ? palette.primaryText
+                                        : palette.textSecondary,
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -525,8 +540,8 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                               displayTitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontSize: 15.5,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.2,
@@ -540,16 +555,16 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: spec.badgeColor.withValues(alpha: 0.16),
+                              color: badgeColor.withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
-                                color: spec.badgeColor.withValues(alpha: 0.45),
+                                color: badgeColor.withValues(alpha: 0.45),
                               ),
                             ),
                             child: Text(
                               spec.badgeLabel,
                               style: TextStyle(
-                                color: spec.badgeColor,
+                                color: badgeColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -564,8 +579,8 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                         children: [
                           Text(
                             formattedPrice,
-                            style: const TextStyle(
-                              color: MetaGymTheme.brandOrange,
+                            style: TextStyle(
+                              color: palette.primaryText,
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.3,
@@ -574,8 +589,8 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                           ),
                           Text(
                             displayPeriod,
-                            style: const TextStyle(
-                              color: MetaGymTheme.textSecondary,
+                            style: TextStyle(
+                              color: palette.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -585,38 +600,43 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                       const SizedBox(height: 3),
                       Text(
                         spec.subtitle,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textSecondary,
+                        style: TextStyle(
+                          color: palette.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Divider(height: 1, color: Color(0x28FFF6EA)),
+                      Divider(
+                        height: 1,
+                        color: isLight
+                            ? palette.borderSolid
+                            : const Color(0x28FFF6EA),
+                      ),
                       const SizedBox(height: 10),
-                      const _EmptyPerkRow(
+                      _EmptyPerkRow(
                         label: 'Quẹt thẻ kim loại NFC & QR Check-in',
                         value: 'Full giờ',
-                        valueColor: MetaGymTheme.progressGreen,
+                        valueColor: palette.success,
                       ),
                       const SizedBox(height: 6),
                       _EmptyPerkRow(
                         label: 'Giảm trực tiếp phí Gói Coach 1:1',
                         value: spec.coachDiscount,
-                        valueColor: MetaGymTheme.brandOrange,
+                        valueColor: palette.primaryText,
                       ),
                       const SizedBox(height: 6),
                       _EmptyPerkRow(
                         label: 'Đo chỉ số cơ thể InBody',
                         value: spec.inBodyText,
-                        valueColor: MetaGymTheme.textPrimary,
+                        valueColor: palette.textPrimary,
                       ),
                       const SizedBox(height: 6),
                       _EmptyPerkRow(
                         label: 'Hệ số tích điểm Meta Points',
                         value: spec.pointsText,
-                        valueColor: MetaGymTheme.textPrimary,
+                        valueColor: palette.textPrimary,
                       ),
                       ],
                     ),
@@ -630,9 +650,16 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
         // Bottom CTA Dock cố định
         Container(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-          decoration: const BoxDecoration(
-            color: Color(0xE615181F),
-            border: Border(top: BorderSide(color: Color(0x26FFF6EA), width: 1)),
+          decoration: BoxDecoration(
+            color: isLight ? palette.surfaceSolid : const Color(0xE615181F),
+            border: Border(
+              top: BorderSide(
+                color: isLight
+                    ? palette.borderSolid
+                    : const Color(0x26FFF6EA),
+                width: 1,
+              ),
+            ),
           ),
           child: SizedBox(
             width: double.infinity,
@@ -685,12 +712,9 @@ class _WalletTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = active
-        ? MetaGymTheme.textPrimary
-        : MetaGymTheme.textSecondary;
-    final starColor = showStar
-        ? const Color(0xFFF5B041)
-        : textColor;
+    final palette = MetaGymTheme.paletteOf(context);
+    final textColor = active ? palette.chipActiveText : palette.textSecondary;
+    final starColor = showStar ? const Color(0xFFF5B041) : textColor;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -699,7 +723,7 @@ class _WalletTabButton extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? const Color(0x28FF5E36) : Colors.transparent,
+          color: active ? palette.chipActiveBg : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: active
               ? Border.all(
@@ -1001,12 +1025,13 @@ class _EmptyPerkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.check_rounded,
           size: 14,
-          color: MetaGymTheme.progressGreen,
+          color: palette.success,
         ),
         const SizedBox(width: 6),
         Expanded(
@@ -1014,8 +1039,8 @@ class _EmptyPerkRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFE0D9CE),
+            style: TextStyle(
+              color: palette.textWarmMuted,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -1058,6 +1083,8 @@ class _VipPromotionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final disableAnimations =
         MetaGymTheme.isFlutterTestEnvironment ||
         MediaQuery.disableAnimationsOf(context);
@@ -1068,9 +1095,12 @@ class _VipPromotionsSheet extends StatelessWidget {
     final content = Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
-        color: const Color(0xF2171A21),
+        color: isLight ? palette.surfaceSolid : const Color(0xF2171A21),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-        border: Border.all(color: const Color(0x38FFF6EA), width: 1.0),
+        border: Border.all(
+          color: isLight ? palette.borderSolid : const Color(0x38FFF6EA),
+          width: 1.0,
+        ),
       ),
       padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + bottomInset),
       child: SingleChildScrollView(
@@ -1083,7 +1113,9 @@ class _VipPromotionsSheet extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0x45FFF6EA),
+                  color: isLight
+                      ? palette.borderSolid
+                      : const Color(0x45FFF6EA),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -1115,7 +1147,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1124,20 +1156,20 @@ class _VipPromotionsSheet extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                          color: palette.textPrimary,
                           fontSize: 15.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
                           height: 1.2,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         'Kích hoạt tự động theo hạng thẻ kim loại NFC',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Color(0xFFB8B0A8),
+                          color: palette.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1156,18 +1188,22 @@ class _VipPromotionsSheet extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0x8824201D),
+                        color: isLight
+                            ? palette.metricPanelBg
+                            : const Color(0x8824201D),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0x45FFF6EA),
+                          color: isLight
+                              ? palette.borderSolid
+                              : const Color(0x45FFF6EA),
                           width: 0.9,
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         size: 18,
-                        color: MetaGymTheme.textPrimary,
+                        color: palette.textPrimary,
                       ),
                     ),
                   ),
@@ -1183,25 +1219,25 @@ class _VipPromotionsSheet extends StatelessWidget {
               ),
               const SizedBox(height: 10),
             ],
-            const Padding(
-              padding: EdgeInsets.only(top: 2),
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(top: 1.5),
+                    padding: const EdgeInsets.only(top: 1.5),
                     child: Icon(
                       Icons.info_outline_rounded,
                       size: 14,
-                      color: MetaGymTheme.textSecondary,
+                      color: palette.textSecondary,
                     ),
                   ),
-                  SizedBox(width: 6),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Ưu đãi Coach 1:1 và hệ số tích điểm Meta Points tự động kích hoạt sau khi đăng ký thành công.',
                       style: TextStyle(
-                        color: MetaGymTheme.textSecondary,
+                        color: palette.textSecondary,
                         fontSize: 11.5,
                         height: 1.35,
                       ),
@@ -1239,17 +1275,24 @@ class _VipPromotionsSheet extends StatelessWidget {
     int idx, {
     required bool isFeatured,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final spec = _kEmptyWalletTiers[idx];
+    final badgeColor = spec.badgeColor == MetaGymTheme.brandOrange
+        ? palette.primaryText
+        : spec.badgeColor == MetaGymTheme.progressGreen
+        ? palette.success
+        : palette.textSecondary;
     final plan = resolvePlan(spec);
     final title = plan?.name ?? spec.defaultTitle;
     final price = formatMembershipMoney(plan?.price ?? spec.defaultPrice);
     final isCurrentChoice = idx == activeIndex;
     final accent = _tierAccent(spec.kind);
     final borderColor = isCurrentChoice
-        ? MetaGymTheme.progressGreen.withValues(alpha: 0.65)
+        ? palette.success.withValues(alpha: 0.65)
         : isFeatured
         ? accent.withValues(alpha: 0.58)
-        : const Color(0x5CA79D92);
+        : (isLight ? palette.borderSolid : const Color(0x5CA79D92));
 
     return Material(
       color: Colors.transparent,
@@ -1263,10 +1306,15 @@ class _VipPromotionsSheet extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                accent.withValues(alpha: isFeatured ? 0.14 : 0.08),
-                const Color(0xD6231F1C),
-              ],
+              colors: isLight
+                  ? [
+                      accent.withValues(alpha: isFeatured ? 0.12 : 0.06),
+                      palette.metricPanelBg,
+                    ]
+                  : [
+                      accent.withValues(alpha: isFeatured ? 0.14 : 0.08),
+                      const Color(0xD6231F1C),
+                    ],
             ),
             border: Border.all(
               color: borderColor,
@@ -1315,8 +1363,8 @@ class _VipPromotionsSheet extends StatelessWidget {
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textPrimary,
+                          style: TextStyle(
+                            color: palette.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.2,
@@ -1328,16 +1376,16 @@ class _VipPromotionsSheet extends StatelessWidget {
                             children: [
                               TextSpan(
                                 text: price,
-                                style: const TextStyle(
-                                  color: MetaGymTheme.brandOrange,
+                                style: TextStyle(
+                                  color: palette.primaryText,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               TextSpan(
                                 text: ' ${spec.periodLabel}',
-                                style: const TextStyle(
-                                  color: MetaGymTheme.textSecondary,
+                                style: TextStyle(
+                                  color: palette.textSecondary,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1360,16 +1408,16 @@ class _VipPromotionsSheet extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: spec.badgeColor.withValues(alpha: 0.16),
+                      color: badgeColor.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: spec.badgeColor.withValues(alpha: 0.45),
+                        color: badgeColor.withValues(alpha: 0.45),
                       ),
                     ),
                     child: Text(
                       spec.badgeLabel,
                       style: TextStyle(
-                        color: spec.badgeColor,
+                        color: badgeColor,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1387,31 +1435,34 @@ class _VipPromotionsSheet extends StatelessWidget {
                   _PromoPerkChip(
                     icon: Icons.fitness_center_rounded,
                     label: 'Coach 1:1 ${spec.coachDiscount}',
-                    color: MetaGymTheme.brandOrange,
+                    color: palette.primaryText,
                   ),
                   _PromoPerkChip(
                     icon: Icons.monitor_heart_outlined,
                     label: 'InBody: ${spec.inBodyText}',
-                    color: MetaGymTheme.progressGreen,
+                    color: palette.success,
                   ),
                   _PromoPerkChip(
                     icon: Icons.local_fire_department_rounded,
                     label: 'Tích điểm ${spec.pointsText}',
-                    color: const Color(0xFFF5B041),
+                    color: palette.warning,
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              const Divider(height: 1, color: Color(0x26A79D92)),
+              Divider(
+                height: 1,
+                color: isLight ? palette.borderSolid : const Color(0x26A79D92),
+              ),
               const SizedBox(height: 9),
 
               // Row 3: Bonus highlight + Single-primary CTA
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.auto_awesome_rounded,
                     size: 14,
-                    color: Color(0xFFF5B041),
+                    color: palette.warning,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -1419,8 +1470,8 @@ class _VipPromotionsSheet extends StatelessWidget {
                       spec.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFE0D9CE),
+                      style: TextStyle(
+                        color: palette.textWarmMuted,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         fontFeatures: MetaGymTheme.tabularFigures,
@@ -1451,16 +1502,18 @@ class _VipPromotionsSheet extends StatelessWidget {
     required bool isCurrentChoice,
     required bool isFeatured,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final key = ValueKey<String>('promo-select-tier-${kind.name}');
     if (isCurrentChoice) {
       return OutlinedButton(
         key: key,
         onPressed: () => Navigator.of(context).pop(idx),
         style: OutlinedButton.styleFrom(
-          backgroundColor: MetaGymTheme.progressGreen.withValues(alpha: 0.16),
-          foregroundColor: MetaGymTheme.progressGreen,
+          backgroundColor: palette.success.withValues(alpha: 0.16),
+          foregroundColor: palette.success,
           side: BorderSide(
-            color: MetaGymTheme.progressGreen.withValues(alpha: 0.55),
+            color: palette.success.withValues(alpha: 0.55),
           ),
           minimumSize: const Size(0, 40),
           tapTargetSize: MaterialTapTargetSize.padded,
@@ -1501,9 +1554,13 @@ class _VipPromotionsSheet extends StatelessWidget {
       key: key,
       onPressed: () => Navigator.of(context).pop(idx),
       style: OutlinedButton.styleFrom(
-        backgroundColor: const Color(0x1AFFFFFF),
-        foregroundColor: MetaGymTheme.textPrimary,
-        side: const BorderSide(color: Color(0x4DFFF6EA)),
+        backgroundColor: isLight
+            ? palette.surfaceSolid
+            : const Color(0x1AFFFFFF),
+        foregroundColor: palette.textPrimary,
+        side: BorderSide(
+          color: isLight ? palette.borderSolid : const Color(0x4DFFF6EA),
+        ),
         minimumSize: const Size(0, 40),
         tapTargetSize: MaterialTapTargetSize.padded,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1531,28 +1588,32 @@ class _PromoPerkChip extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
-    decoration: BoxDecoration(
-      color: const Color(0x901C1815),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: color.withValues(alpha: 0.34), width: 0.8),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12.5, color: color),
-        const SizedBox(width: 4.5),
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            fontFeatures: MetaGymTheme.tabularFigures,
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+      decoration: BoxDecoration(
+        color: isLight ? palette.surfaceSolid : const Color(0x901C1815),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.34), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12.5, color: color),
+          const SizedBox(width: 4.5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

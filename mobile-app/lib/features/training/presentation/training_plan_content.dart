@@ -11,6 +11,12 @@ class TrainingPlanContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -40,8 +46,8 @@ class TrainingPlanContent extends StatelessWidget {
                       ),
                       child: Text(
                         '${plan.statusLabel} · Phiên bản ${plan.version}',
-                        style: const TextStyle(
-                          color: MetaGymTheme.brandOrange,
+                        style: TextStyle(
+                          color: palette.primaryText,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           fontFamily: MetaGymTheme.fontFamily,
@@ -54,23 +60,23 @@ class TrainingPlanContent extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0x80211E1C),
+                        color: palette.metricPanelBg,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0x9A8C8176)),
+                        border: Border.all(color: palette.metricPanelBorder),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.calendar_view_week_rounded,
                             size: 14,
-                            color: MetaGymTheme.reflectionBlue,
+                            color: palette.reflection,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${plan.days.length} ngày tập',
-                            style: const TextStyle(
-                              color: Color(0xFFC8C2BC),
+                            style: TextStyle(
+                              color: palette.textWarmMuted,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               fontFamily: MetaGymTheme.fontFamily,
@@ -84,8 +90,8 @@ class TrainingPlanContent extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   plan.title,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.02,
@@ -97,17 +103,17 @@ class TrainingPlanContent extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.track_changes_rounded,
                         size: 16,
-                        color: MetaGymTheme.reflectionBlue,
+                        color: palette.reflection,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           'Mục tiêu: ${plan.goal}',
-                          style: const TextStyle(
-                            color: Color(0xFFC8C2BC),
+                          style: TextStyle(
+                            color: palette.textWarmMuted,
                             fontSize: 14,
                             fontFamily: MetaGymTheme.fontFamily,
                           ),
@@ -120,7 +126,12 @@ class TrainingPlanContent extends StatelessWidget {
                     plan.endDate != null ||
                     plan.publishedAt != null) ...[
                   const SizedBox(height: 14),
-                  const Divider(color: Color(0x26FFF5E9), height: 1),
+                  Divider(
+                    color: isLight
+                        ? palette.borderSolid
+                        : const Color(0x26FFF5E9),
+                    height: 1,
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
@@ -183,14 +194,16 @@ class TrainingPlanContent extends StatelessWidget {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0x80211E1C),
+                            color: palette.metricPanelBg,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0x9A8C8176)),
+                            border: Border.all(
+                              color: palette.metricPanelBorder,
+                            ),
                           ),
                           child: Text(
                             'Buổi ${day.dayNumber}',
-                            style: const TextStyle(
-                              color: MetaGymTheme.reflectionBlue,
+                            style: TextStyle(
+                              color: palette.reflection,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               fontFamily: MetaGymTheme.fontFamily,
@@ -201,8 +214,8 @@ class TrainingPlanContent extends StatelessWidget {
                         Expanded(
                           child: Text(
                             'Ngày ${day.dayNumber}: ${day.title}',
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
+                            style: TextStyle(
+                              color: palette.textPrimary,
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                               fontFamily: MetaGymTheme.fontFamily,
@@ -215,8 +228,8 @@ class TrainingPlanContent extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Lịch ngày ${day.scheduledDate!.substring(8, 10)}/${day.scheduledDate!.substring(5, 7)}/${day.scheduledDate!.substring(0, 4)}',
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
+                        style: TextStyle(
+                          color: palette.textWarmMuted,
                           fontSize: 13,
                         ),
                       ),
@@ -227,8 +240,8 @@ class TrainingPlanContent extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 4),
                         child: Text(
                           day.notes!,
-                          style: const TextStyle(
-                            color: Color(0xFFB8B0A8),
+                          style: TextStyle(
+                            color: subtleMuted,
                             fontSize: 13,
                             fontFamily: MetaGymTheme.fontFamily,
                           ),
@@ -242,15 +255,15 @@ class TrainingPlanContent extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0x80211E1C),
+                          color: palette.metricPanelBg,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0x9A8C8176)),
+                          border: Border.all(color: palette.metricPanelBorder),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'Chưa có bài tập.',
                             style: TextStyle(
-                              color: Color(0xFFB8B0A8),
+                              color: subtleMuted,
                               fontSize: 14,
                               fontFamily: MetaGymTheme.fontFamily,
                             ),
@@ -261,20 +274,20 @@ class TrainingPlanContent extends StatelessWidget {
                       for (var i = 0; i < day.exercises.length; i++)
                         _ExerciseCard(exercise: day.exercises[i], index: i + 1),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       'Lịch ăn',
                       style: TextStyle(
-                        color: Color(0xFFF7F9FC),
+                        color: palette.textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 8),
                     if (day.meals.isEmpty)
-                      const Text(
+                      Text(
                         'Coach chưa xếp lịch ăn cho ngày này.',
                         style: TextStyle(
-                          color: Color(0xFFB8B0A8),
+                          color: subtleMuted,
                           fontSize: 13,
                         ),
                       )
@@ -285,10 +298,10 @@ class TrainingPlanContent extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.restaurant_outlined,
                                 size: 18,
-                                color: MetaGymTheme.progressGreen,
+                                color: palette.success,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -297,15 +310,15 @@ class TrainingPlanContent extends StatelessWidget {
                                   children: [
                                     Text(
                                       '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
-                                      style: const TextStyle(
-                                        color: Color(0xFFC8C2BC),
+                                      style: TextStyle(
+                                        color: palette.textWarmMuted,
                                         fontSize: 12,
                                       ),
                                     ),
                                     Text(
                                       meal.title,
-                                      style: const TextStyle(
-                                        color: Color(0xFFF7F9FC),
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -313,8 +326,8 @@ class TrainingPlanContent extends StatelessWidget {
                                     if (meal.notes?.isNotEmpty == true)
                                       Text(
                                         meal.notes!,
-                                        style: const TextStyle(
-                                          color: Color(0xFFB8B0A8),
+                                        style: TextStyle(
+                                          color: subtleMuted,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -342,15 +355,20 @@ class _MetaInfoPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final color = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFFB8B0A8)),
+        Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text(
           text,
-          style: const TextStyle(
-            color: Color(0xFFB8B0A8),
+          style: TextStyle(
+            color: color,
             fontSize: 12,
             fontFamily: MetaGymTheme.fontFamily,
           ),
@@ -368,13 +386,19 @@ class _ExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x9A8C8176)),
+        border: Border.all(color: palette.metricPanelBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,14 +411,14 @@ class _ExerciseCard extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0x80211E1C),
+                  color: palette.metricPanelBg,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0x9A8C8176)),
+                  border: Border.all(color: palette.metricPanelBorder),
                 ),
                 child: Text(
                   '$index',
-                  style: const TextStyle(
-                    color: MetaGymTheme.reflectionBlue,
+                  style: TextStyle(
+                    color: palette.reflection,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     fontFamily: MetaGymTheme.fontFamily,
@@ -405,18 +429,18 @@ class _ExerciseCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   exercise.exerciseName,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     fontFamily: MetaGymTheme.fontFamily,
                   ),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.fitness_center_rounded,
                 size: 16,
-                color: MetaGymTheme.brandOrange,
+                color: palette.primaryText,
               ),
             ],
           ),
@@ -432,8 +456,8 @@ class _ExerciseCard extends StatelessWidget {
               ),
               child: Text(
                 exercise.prescription,
-                style: const TextStyle(
-                  color: MetaGymTheme.brandOrange,
+                style: TextStyle(
+                  color: palette.primaryText,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -447,17 +471,17 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.scale_rounded,
                   size: 14,
-                  color: MetaGymTheme.reflectionBlue,
+                  color: palette.reflection,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Mức tạ: ${exercise.weightGuidance}',
-                    style: const TextStyle(
-                      color: Color(0xFFC8C2BC),
+                    style: TextStyle(
+                      color: palette.textWarmMuted,
                       fontSize: 13,
                       fontFamily: MetaGymTheme.fontFamily,
                     ),
@@ -471,8 +495,8 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               exercise.instructions!,
-              style: const TextStyle(
-                color: Color(0xFFC8C2BC),
+              style: TextStyle(
+                color: palette.textWarmMuted,
                 fontSize: 13,
                 height: 1.35,
                 fontFamily: MetaGymTheme.fontFamily,
@@ -492,17 +516,19 @@ class _ExerciseCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.security_rounded,
                     size: 15,
-                    color: MetaGymTheme.warningAmber,
+                    color: palette.warning,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Lưu ý an toàn: ${exercise.safetyNotes}',
-                      style: const TextStyle(
-                        color: Color(0xFFF7D08A),
+                      style: TextStyle(
+                        color: isLight
+                            ? palette.warning
+                            : const Color(0xFFF7D08A),
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
                         fontFamily: MetaGymTheme.fontFamily,
@@ -518,8 +544,8 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               exercise.notes!,
-              style: const TextStyle(
-                color: Color(0xFFB8B0A8),
+              style: TextStyle(
+                color: subtleMuted,
                 fontSize: 12,
                 fontFamily: MetaGymTheme.fontFamily,
               ),

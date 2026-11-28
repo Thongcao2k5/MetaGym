@@ -79,52 +79,63 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
     final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xF0241F1B),
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-        ),
-        title: const Text(
-          'Công bố giáo trình?',
-          style: TextStyle(
-            color: MetaGymTheme.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: const Text(
-          'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
-          style: TextStyle(
-            color: Color(0xFFC8C2BC),
-            fontSize: 14,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFC8C2BC),
-              minimumSize: const Size(48, 48),
+      builder: (dialogContext) {
+        final palette = MetaGymTheme.paletteOf(dialogContext);
+        final isLight = MetaGymTheme.isLightPalette(dialogContext);
+        return AlertDialog(
+          backgroundColor: isLight
+              ? palette.surfaceSolid
+              : const Color(0xF0241F1B),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+            side: BorderSide(
+              color: isLight
+                  ? palette.borderSolid
+                  : MetaGymWarmGlassTokens.cardBorder,
+              width: 1.1,
             ),
-            child: const Text('Quay lại'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.primary,
-              foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(48, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          title: Text(
+            'Công bố giáo trình?',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
+            style: TextStyle(
+              color: palette.textWarmMuted,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              style: TextButton.styleFrom(
+                foregroundColor: palette.textWarmMuted,
+                minimumSize: const Size(48, 48),
               ),
+              child: const Text('Quay lại'),
             ),
-            child: const Text('Xác nhận công bố'),
-          ),
-        ],
-      ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: MetaGymTheme.primary,
+                foregroundColor: MetaGymTheme.onPrimary,
+                minimumSize: const Size(48, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              child: const Text('Xác nhận công bố'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted || _plan?.status != 'DRAFT') return;
     setState(() {
@@ -153,6 +164,8 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final plan = _plan;
     final canEditActive =
         plan != null &&
@@ -168,9 +181,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
     final canPop = Navigator.of(context).canPop();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -189,12 +202,12 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                 )
               : null,
           titleSpacing: canPop ? 8 : 16,
-          title: const Text(
+          title: Text(
             'Chi tiết giáo trình',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: MetaGymTheme.textPrimary,
+              color: palette.textPrimary,
               fontSize: 19,
               fontWeight: FontWeight.w700,
             ),
@@ -212,7 +225,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
             ),
           ],
           backgroundColor: Colors.transparent,
-          foregroundColor: MetaGymTheme.textPrimary,
+          foregroundColor: palette.textPrimary,
           elevation: 0,
           scrolledUnderElevation: 0,
           surfaceTintColor: Colors.transparent,
@@ -231,7 +244,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   Expanded(
                     child: RefreshIndicator(
                       color: MetaGymTheme.primary,
-                      backgroundColor: const Color(0xFF282320),
+                      backgroundColor: isLight
+                          ? palette.surfaceSolid
+                          : const Color(0xFF282320),
                       onRefresh: _load,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -257,10 +272,16 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   ),
                   if (showBottomBar)
                     Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xF0241F1B),
+                      decoration: BoxDecoration(
+                        color: isLight
+                            ? palette.surfaceSolid
+                            : const Color(0xF0241F1B),
                         border: Border(
-                          top: BorderSide(color: Color(0xA3A79D92)),
+                          top: BorderSide(
+                            color: isLight
+                                ? palette.borderSolid
+                                : MetaGymWarmGlassTokens.cardBorder,
+                          ),
                         ),
                       ),
                       child: SafeArea(

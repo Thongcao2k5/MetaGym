@@ -145,14 +145,29 @@ const List<ExploreArticleItem> kMemberExploreArticles = [
   ),
 ];
 
+Color _adaptiveCategoryColor(
+  ExploreArticleItem article,
+  MetaGymPalette palette,
+) {
+  if (article.categoryColor == MetaGymTheme.progressGreen) {
+    return palette.success;
+  }
+  if (article.categoryColor == MetaGymTheme.brandOrange) {
+    return palette.primaryText;
+  }
+  return article.categoryColor;
+}
+
 /// Trang danh sách bài viết kiến thức & dinh dưỡng đồng bộ Warm Smoked Glass.
 class MemberExploreListPage extends StatelessWidget {
   const MemberExploreListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -171,24 +186,24 @@ class MemberExploreListPage extends StatelessWidget {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'KIẾN THỨC & CẨM NANG',
                               style: TextStyle(
-                                color: MetaGymTheme.brandOrange,
+                                color: palette.primaryText,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.4,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'Tin tức & Bài viết',
                               style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                                color: palette.textPrimary,
                                 fontSize: 21,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.3,
@@ -207,6 +222,10 @@ class MemberExploreListPage extends StatelessWidget {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final article = kMemberExploreArticles[index];
+                      final categoryColor = _adaptiveCategoryColor(
+                        article,
+                        palette,
+                      );
                       return MetaGymGlassCard(
                         solid: false,
                         onTap: () {
@@ -230,12 +249,12 @@ class MemberExploreListPage extends StatelessWidget {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: article.categoryColor.withValues(
+                                    color: categoryColor.withValues(
                                       alpha: 0.16,
                                     ),
                                     borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                      color: article.categoryColor.withValues(
+                                      color: categoryColor.withValues(
                                         alpha: 0.42,
                                       ),
                                     ),
@@ -243,7 +262,7 @@ class MemberExploreListPage extends StatelessWidget {
                                   child: Text(
                                     article.categoryLabel,
                                     style: TextStyle(
-                                      color: article.categoryColor,
+                                      color: categoryColor,
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -252,8 +271,8 @@ class MemberExploreListPage extends StatelessWidget {
                                 const Spacer(),
                                 Text(
                                   '${article.readTimeLabel} · ${article.publishedDateLabel}',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textSecondary,
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
                                     fontSize: 11.5,
                                     fontFeatures: MetaGymTheme.tabularFigures,
                                   ),
@@ -263,8 +282,8 @@ class MemberExploreListPage extends StatelessWidget {
                             const SizedBox(height: 8),
                             Text(
                               article.title,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontSize: 15.5,
                                 fontWeight: FontWeight.w800,
                                 height: 1.3,
@@ -275,8 +294,8 @@ class MemberExploreListPage extends StatelessWidget {
                               article.shortDescription,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFFD5CCBF),
+                              style: TextStyle(
+                                color: palette.textWarmMuted,
                                 fontSize: 12.5,
                                 height: 1.45,
                               ),
@@ -313,16 +332,20 @@ class _MemberExploreArticleDetailPageState
 
   void _toggleBookmark() {
     setState(() => _bookmarked = !_bookmarked);
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF2B2622),
+          backgroundColor: isLight
+              ? palette.surfaceSolid
+              : const Color(0xFF2B2622),
           content: Text(
             _bookmarked ? 'Đã lưu bài viết vào danh sách đọc.' : 'Đã bỏ lưu bài viết.',
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -339,14 +362,14 @@ class _MemberExploreArticleDetailPageState
     Navigator.of(context).maybePop();
   }
 
-  Widget _buildBulletText(String text) {
+  Widget _buildBulletText(String text, MetaGymPalette palette) {
     const highlight = 'Nhật ký tập luyện';
     final idx = text.indexOf(highlight);
     if (idx < 0) {
       return Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFFD5CCBF),
+        style: TextStyle(
+          color: palette.textWarmMuted,
           fontSize: 13,
           height: 1.55,
         ),
@@ -354,8 +377,8 @@ class _MemberExploreArticleDetailPageState
     }
     return Text.rich(
       TextSpan(
-        style: const TextStyle(
-          color: Color(0xFFD5CCBF),
+        style: TextStyle(
+          color: palette.textWarmMuted,
           fontSize: 13,
           height: 1.55,
         ),
@@ -363,8 +386,8 @@ class _MemberExploreArticleDetailPageState
           if (idx > 0) TextSpan(text: text.substring(0, idx)),
           TextSpan(
             text: highlight,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -378,9 +401,11 @@ class _MemberExploreArticleDetailPageState
   @override
   Widget build(BuildContext context) {
     final article = widget.article;
+    final palette = MetaGymTheme.paletteOf(context);
+    final categoryColor = _adaptiveCategoryColor(article, palette);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -408,20 +433,20 @@ class _MemberExploreArticleDetailPageState
                               article.eyebrow,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: MetaGymTheme.brandOrange,
+                              style: TextStyle(
+                                color: palette.primaryText,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.4,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
+                            Text(
                               'Chi tiết bài viết',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                                color: palette.textPrimary,
                                 fontSize: 21,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.3,
@@ -473,12 +498,12 @@ class _MemberExploreArticleDetailPageState
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: article.categoryColor.withValues(
+                                    color: categoryColor.withValues(
                                       alpha: 0.16,
                                     ),
                                     borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                      color: article.categoryColor.withValues(
+                                      color: categoryColor.withValues(
                                         alpha: 0.45,
                                       ),
                                     ),
@@ -486,7 +511,7 @@ class _MemberExploreArticleDetailPageState
                                   child: Text(
                                     article.categoryLabel,
                                     style: TextStyle(
-                                      color: article.categoryColor,
+                                      color: categoryColor,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -495,8 +520,8 @@ class _MemberExploreArticleDetailPageState
                                 const Spacer(),
                                 Text(
                                   '${article.readTimeLabel} · ${article.publishedDateLabel}',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textSecondary,
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
                                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -507,8 +532,8 @@ class _MemberExploreArticleDetailPageState
                             const SizedBox(height: 8),
                             Text(
                               article.title,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 height: 1.3,
@@ -540,15 +565,15 @@ class _MemberExploreArticleDetailPageState
                                   child: Text.rich(
                                     TextSpan(
                                       text: 'Biên soạn bởi ',
-                                      style: const TextStyle(
-                                        color: MetaGymTheme.textSecondary,
+                                      style: TextStyle(
+                                        color: palette.textSecondary,
                                         fontSize: 12,
                                       ),
                                       children: [
                                         TextSpan(
                                           text: article.authorName,
-                                          style: const TextStyle(
-                                            color: MetaGymTheme.textPrimary,
+                                          style: TextStyle(
+                                            color: palette.textPrimary,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
@@ -575,8 +600,8 @@ class _MemberExploreArticleDetailPageState
                               if (i > 0) const SizedBox(height: 11),
                               Text(
                                 article.sections[i].heading,
-                                style: const TextStyle(
-                                  color: MetaGymTheme.textPrimary,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w800,
                                   height: 1.32,
@@ -588,8 +613,8 @@ class _MemberExploreArticleDetailPageState
                                   padding: const EdgeInsets.only(bottom: 5),
                                   child: Text(
                                     p,
-                                    style: const TextStyle(
-                                      color: Color(0xFFD5CCBF),
+                                    style: TextStyle(
+                                      color: palette.textWarmMuted,
                                       fontSize: 13,
                                       height: 1.55,
                                     ),
@@ -602,16 +627,18 @@ class _MemberExploreArticleDetailPageState
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         '•  ',
                                         style: TextStyle(
-                                          color: MetaGymTheme.brandOrange,
+                                          color: palette.primaryText,
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w800,
                                           height: 1.48,
                                         ),
                                       ),
-                                      Expanded(child: _buildBulletText(b)),
+                                      Expanded(
+                                        child: _buildBulletText(b, palette),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -642,8 +669,8 @@ class _MemberExploreArticleDetailPageState
                                       children: [
                                         Text(
                                           article.practiceTipTitle,
-                                          style: const TextStyle(
-                                            color: MetaGymTheme.brandOrange,
+                                          style: TextStyle(
+                                            color: palette.primaryText,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w800,
                                           ),
@@ -651,8 +678,8 @@ class _MemberExploreArticleDetailPageState
                                         const SizedBox(height: 2),
                                         Text(
                                           article.practiceTipBody,
-                                          style: const TextStyle(
-                                            color: Color(0xFFE0D9CE),
+                                          style: TextStyle(
+                                            color: palette.textWarmMuted,
                                             fontSize: 12.2,
                                             height: 1.42,
                                           ),

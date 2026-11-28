@@ -114,11 +114,12 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final canPop = Navigator.of(context).canPop();
     final pendingTerminations = _requests.where((item) => item.isOpen).length;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leadingWidth: canPop ? 72 : null,
@@ -135,12 +136,12 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                 ),
               )
             : null,
-        title: const Text(
+        title: Text(
           'Hội viên của tôi',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: palette.textPrimary,
             fontSize: 19,
             fontWeight: FontWeight.w700,
           ),
@@ -160,7 +161,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: MetaGymTheme.textPrimary),
+        iconTheme: IconThemeData(color: palette.textPrimary),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -175,7 +176,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: const Color(0xFF282320),
+                    backgroundColor: palette.surfaceRaised,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -261,6 +262,8 @@ class _MembersOverviewHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return MetaGymHeroGlassCard(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(18),
@@ -277,7 +280,7 @@ class _MembersOverviewHero extends StatelessWidget {
             width: 1,
             height: 40,
             margin: const EdgeInsets.symmetric(horizontal: 14),
-            color: const Color(0x26FFF5E9),
+            color: isLight ? palette.borderSolid : const Color(0x26FFF5E9),
           ),
           Expanded(
             child: _MetricColumn(
@@ -307,18 +310,19 @@ class _MetricColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final color = warning
-        ? MetaGymTheme.warning
+        ? palette.warning
         : accent
-        ? MetaGymTheme.primary
-        : MetaGymTheme.textPrimary;
+        ? palette.primaryText
+        : palette.textPrimary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
+          style: TextStyle(color: palette.textWarmMuted, fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(
@@ -348,6 +352,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -355,8 +360,8 @@ class _SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -380,6 +385,7 @@ class _MemberRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final isActive = member.status == 'ACTIVE';
     return MetaGymGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -401,8 +407,8 @@ class _MemberRowCard extends StatelessWidget {
                   member.memberFullName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -418,9 +424,9 @@ class _MemberRowCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(
+          Icon(
             Icons.chevron_right_rounded,
-            color: Color(0xFFC8C2BC),
+            color: palette.textWarmMuted,
             size: 20,
           ),
         ],
@@ -442,6 +448,7 @@ class _EmptySectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -452,11 +459,11 @@ class _EmptySectionCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0x80211E1C),
+              color: palette.metricPanelBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x9A8C8176)),
+              border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: const Color(0xFFC8C2BC), size: 20),
+            child: Icon(icon, color: palette.textWarmMuted, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -465,8 +472,8 @@ class _EmptySectionCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -475,8 +482,8 @@ class _EmptySectionCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle!,
-                    style: const TextStyle(
-                      color: Color(0xFFC8C2BC),
+                    style: TextStyle(
+                      color: palette.textWarmMuted,
                       fontSize: 12.5,
                       height: 1.45,
                     ),

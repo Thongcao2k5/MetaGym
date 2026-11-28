@@ -92,6 +92,7 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final canPop = Navigator.of(context).canPop();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
@@ -105,7 +106,7 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
             ),
             const SizedBox(width: 12),
           ],
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -114,19 +115,19 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: MetaGymTheme.brandOrange,
+                    color: palette.primaryText,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Thành quả của bạn',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
+                    color: palette.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
@@ -148,8 +149,9 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -167,7 +169,7 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
-                          backgroundColor: const Color(0xFF282320),
+                          backgroundColor: palette.surfaceRaised,
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -178,10 +180,10 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
                               MediaQuery.paddingOf(context).bottom + 28,
                             ),
                             children: [
-                              const Text(
+                              Text(
                                 'Chỉ những thành quả bạn đồng ý mới hiển thị trên hồ sơ Coach. Bạn có thể chọn ẩn danh hoặc thu hồi bất cứ lúc nào.',
                                 style: TextStyle(
-                                  color: Color(0xFFC8C2BC),
+                                  color: palette.textWarmMuted,
                                   fontSize: 13,
                                   height: 1.5,
                                 ),
@@ -206,26 +208,26 @@ class _MemberOutcomeConsentPageState extends State<MemberOutcomeConsentPage> {
                                         width: 40,
                                         height: 40,
                                         decoration: BoxDecoration(
-                                          color: const Color(0x80211E1C),
+                                          color: palette.metricPanelBg,
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                           border: Border.all(
-                                            color: const Color(0x9A8C8176),
+                                            color: palette.metricPanelBorder,
                                           ),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.verified_outlined,
-                                          color: Color(0xFFC8C2BC),
+                                          color: palette.textWarmMuted,
                                           size: 20,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      const Expanded(
+                                      Expanded(
                                         child: Text(
                                           'Chưa có thành quả nào từ Coach.',
                                           style: TextStyle(
-                                            color: Color(0xFFC8C2BC),
+                                            color: palette.textWarmMuted,
                                             fontSize: 13.5,
                                           ),
                                         ),
@@ -302,6 +304,8 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final item = widget.item;
     final status = item.status;
     final previewItem = CoachOutcomeCase(
@@ -339,7 +343,7 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
           if (item.coachName != null) ...[
             Text(
               'Gửi bởi: ${item.coachName}',
-              style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
+              style: TextStyle(color: palette.textWarmMuted, fontSize: 12),
             ),
             const SizedBox(height: 8),
           ],
@@ -348,18 +352,22 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
               contentPadding: EdgeInsets.zero,
               value: _allowRealName,
               activeTrackColor: MetaGymTheme.primary,
-              inactiveTrackColor: const Color(0xFF3A322C),
-              inactiveThumbColor: const Color(0xFFC8C2BC),
+              inactiveTrackColor: isLight
+                  ? palette.borderSolid
+                  : const Color(0xFF3A322C),
+              inactiveThumbColor: isLight
+                  ? palette.surfaceSolid
+                  : const Color(0xFFC8C2BC),
               onChanged: widget.busy
                   ? null
                   : (next) {
                       setState(() => _allowRealName = next);
                       if (status == 'APPROVED') widget.onToggleName(next);
                     },
-              title: const Text(
+              title: Text(
                 'Học viên cho phép hiện tên thật',
                 style: TextStyle(
-                  color: Color(0xFFF7F9FC),
+                  color: palette.textPrimary,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -368,7 +376,7 @@ class _ConsentOutcomeItemState extends State<_ConsentOutcomeItem> {
                 _allowRealName
                     ? 'Hiển thị tên thật trên hồ sơ Coach'
                     : 'Đang hiển thị là Học viên ẩn danh',
-                style: const TextStyle(color: Color(0xFFC8C2BC), fontSize: 12),
+                style: TextStyle(color: palette.textWarmMuted, fontSize: 12),
               ),
             ),
           if (status == 'PENDING_MEMBER') ...[

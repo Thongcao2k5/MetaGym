@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:meta_gym_app/core/network/local_demo_interceptor.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/theme/theme_mode_controller.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
@@ -1208,12 +1209,19 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openAppSettingsPage() async {
+    ThemeModeController? themeController;
+    try {
+      themeController = context.read<ThemeModeController>();
+    } catch (_) {}
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => AppSettingsDetailPage(
           unitSystem: _unitSystem,
           workoutReminderEnabled: _workoutReminderEnabled,
           reminderTime: _reminderTime,
+          onThemeModeChanged: themeController == null
+              ? null
+              : (mode) => themeController!.setThemeMode(mode),
           onSave: (unit, reminderEnabled, time) {
             setState(() {
               _unitSystem = unit;

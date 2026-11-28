@@ -57,9 +57,10 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final payment = _payment;
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -106,8 +107,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                       children: [
                                         MembershipStatusPill(
                                           label: payment.statusLabel,
-                                          color: membershipStatusColor(
+                                          color: membershipStatusColorFor(
                                             payment.status,
+                                            palette,
                                           ),
                                         ),
                                         if (payment.method != null)
@@ -115,9 +117,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                             formatPaymentMethodLabel(
                                               payment.method!,
                                             ),
-                                            style: const TextStyle(
-                                              color:
-                                                  MetaGymTheme.reflectionBlue,
+                                            style: TextStyle(
+                                              color: palette.reflection,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -128,12 +129,12 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                     if (payment.amount != null)
                                       Text(
                                         formatMembershipMoney(payment.amount!),
-                                        style: const TextStyle(
-                                          color: MetaGymTheme.textPrimary,
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
                                           fontSize: 30,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: -0.4,
-                                          fontFeatures: [
+                                          fontFeatures: const [
                                             FontFeature.tabularFigures(),
                                           ],
                                         ),
@@ -141,8 +142,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                     const SizedBox(height: 4),
                                     Text(
                                       payment.planName ?? 'Không có tên gói',
-                                      style: const TextStyle(
-                                        color: Color(0xFFD5CCBF),
+                                      style: TextStyle(
+                                        color: palette.textWarmMuted,
                                         fontSize: 14.5,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -231,6 +232,7 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
@@ -239,7 +241,7 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: Color(0xFFB7B2AF), fontSize: 13.5),
+              style: TextStyle(color: palette.textSecondary, fontSize: 13.5),
             ),
           ),
           const SizedBox(width: 12),
@@ -253,11 +255,11 @@ class _DetailRow extends StatelessWidget {
                   child: SelectableText(
                     value,
                     textAlign: TextAlign.end,
-                    style: const TextStyle(
-                      color: MetaGymTheme.textPrimary,
+                    style: TextStyle(
+                      color: palette.textPrimary,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
-                      fontFeatures: [FontFeature.tabularFigures()],
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ),
@@ -269,13 +271,13 @@ class _DetailRow extends StatelessWidget {
                     child: MetaGymTap(
                       onTap: onCopy,
                       borderRadius: BorderRadius.circular(10),
-                      child: const SizedBox(
+                      child: SizedBox(
                         width: 44,
                         height: 44,
                         child: Icon(
                           Icons.copy_rounded,
                           size: 17,
-                          color: MetaGymTheme.reflectionBlue,
+                          color: palette.reflection,
                         ),
                       ),
                     ),

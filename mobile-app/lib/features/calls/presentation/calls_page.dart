@@ -8,55 +8,61 @@ import 'package:meta_gym_app/features/calls/domain/call_log.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:provider/provider.dart';
 
-AppBar _buildCallsAppBar(BuildContext context, String title) => AppBar(
-  automaticallyImplyLeading: false,
-  leadingWidth: 72,
-  leading: Navigator.of(context).canPop()
-      ? Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: MetaGymCircleIconButton(
-              icon: Icons.arrow_back_rounded,
-              tooltip: 'Quay lại',
-              onTap: () => Navigator.of(context).maybePop(),
+AppBar _buildCallsAppBar(BuildContext context, String title) {
+  final palette = MetaGymTheme.paletteOf(context);
+  return AppBar(
+    automaticallyImplyLeading: false,
+    leadingWidth: 72,
+    leading: Navigator.of(context).canPop()
+        ? Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: MetaGymCircleIconButton(
+                icon: Icons.arrow_back_rounded,
+                tooltip: 'Quay lại',
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
             ),
-          ),
-        )
-      : null,
-  titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
-  title: Text(
-    title,
-    style: const TextStyle(
-      color: MetaGymTheme.textPrimary,
-      fontSize: 20,
-      fontWeight: FontWeight.w700,
+          )
+        : null,
+    titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
+    title: Text(
+      title,
+      style: TextStyle(
+        color: palette.textPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+      ),
     ),
-  ),
-  backgroundColor: Colors.transparent,
-  surfaceTintColor: Colors.transparent,
-  elevation: 0,
-);
+    backgroundColor: Colors.transparent,
+    surfaceTintColor: Colors.transparent,
+    elevation: 0,
+  );
+}
 
-InputDecoration _warmCallsInputDecoration(String label) => InputDecoration(
-  labelText: label,
-  labelStyle: const TextStyle(color: Color(0xFFB8B0A8)),
-  filled: true,
-  fillColor: const Color(0x80211E1C),
-  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-  border: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-    borderSide: const BorderSide(color: Color(0x9A8C8176)),
-  ),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-    borderSide: const BorderSide(color: Color(0x9A8C8176)),
-  ),
-  focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-    borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.4),
-  ),
-);
+InputDecoration _warmCallsInputDecoration(BuildContext context, String label) {
+  final palette = MetaGymTheme.paletteOf(context);
+  return InputDecoration(
+    labelText: label,
+    labelStyle: TextStyle(color: palette.textWarmMuted),
+    filled: true,
+    fillColor: palette.metricPanelBg,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      borderSide: const BorderSide(color: MetaGymTheme.brandOrange, width: 1.4),
+    ),
+  );
+}
 
 class CallsPage extends StatefulWidget {
   const CallsPage({this.service, required this.currentUserId, super.key});
@@ -176,9 +182,11 @@ class _CallsPageState extends State<CallsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildCallsAppBar(context, 'Lịch sử cuộc gọi'),
       body: Stack(
@@ -193,28 +201,30 @@ class _CallsPageState extends State<CallsPage> {
                 )
               : RefreshIndicator(
                   color: MetaGymTheme.brandOrange,
-                  backgroundColor: const Color(0xFF282320),
+                  backgroundColor: isLight
+                      ? palette.surfaceSolid
+                      : const Color(0xFF282320),
                   onRefresh: _load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.fromLTRB(16, topInset, 16, 32),
                     children: [
-                      const MetaGymGlassCard(
-                        padding: EdgeInsets.all(14),
+                      MetaGymGlassCard(
+                        padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
                             Icon(
                               Icons.info_outline_rounded,
-                              color: MetaGymTheme.reflectionBlue,
+                              color: palette.reflection,
                               size: 20,
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 'Đây chỉ là bản ghi thử API. Ứng dụng chưa tích hợp RTC, '
                                 'nên không thể kết nối cuộc gọi thoại/video thật.',
                                 style: TextStyle(
-                                  color: Color(0xFFC8C2BC),
+                                  color: palette.textWarmMuted,
                                   fontSize: 12.5,
                                   height: 1.4,
                                 ),
@@ -228,29 +238,37 @@ class _CallsPageState extends State<CallsPage> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF24161A),
+                            color: isLight
+                                ? palette.error.withValues(alpha: 0.08)
+                                : const Color(0xFF24161A),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF642B32)),
+                            border: Border.all(
+                              color: isLight
+                                  ? palette.error.withValues(alpha: 0.35)
+                                  : const Color(0xFF642B32),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.error_outline_rounded,
-                                color: MetaGymTheme.dangerCoral,
+                                color: palette.error,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _error!,
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFB2B6),
+                                  style: TextStyle(
+                                    color: isLight
+                                        ? palette.error
+                                        : const Color(0xFFFFB2B6),
                                   ),
                                 ),
                               ),
                               TextButton(
                                 style: TextButton.styleFrom(
-                                  foregroundColor: MetaGymTheme.brandOrange,
+                                  foregroundColor: palette.primaryText,
                                   minimumSize: const Size(48, 48),
                                 ),
                                 onPressed: _calls.isEmpty ? _load : _loadMore,
@@ -262,16 +280,16 @@ class _CallsPageState extends State<CallsPage> {
                         const SizedBox(height: 12),
                       ],
                       if (_relationships.isEmpty)
-                        const MetaGymGlassCard(
-                          padding: EdgeInsets.all(16),
+                        MetaGymGlassCard(
+                          padding: const EdgeInsets.all(16),
                           child: ListTile(
                             leading: Icon(
                               Icons.link_off_rounded,
-                              color: Color(0xFFC8C2BC),
+                              color: palette.textWarmMuted,
                             ),
                             title: Text(
                               'Chưa có quan hệ hoạt động để tạo cuộc gọi.',
-                              style: TextStyle(color: Color(0xFFC8C2BC)),
+                              style: TextStyle(color: palette.textWarmMuted),
                             ),
                           ),
                         )
@@ -283,11 +301,12 @@ class _CallsPageState extends State<CallsPage> {
                             children: [
                               DropdownButtonFormField<String>(
                                 initialValue: _selectedRelationship,
-                                dropdownColor: const Color(0xFF2B2622),
-                                style: const TextStyle(
-                                  color: MetaGymTheme.textPrimary,
-                                ),
+                                dropdownColor: isLight
+                                    ? palette.surfaceSolid
+                                    : const Color(0xFF2B2622),
+                                style: TextStyle(color: palette.textPrimary),
                                 decoration: _warmCallsInputDecoration(
+                                  context,
                                   'Quan hệ',
                                 ),
                                 items: [
@@ -306,11 +325,12 @@ class _CallsPageState extends State<CallsPage> {
                               const SizedBox(height: 12),
                               DropdownButtonFormField<String>(
                                 initialValue: _callType,
-                                dropdownColor: const Color(0xFF2B2622),
-                                style: const TextStyle(
-                                  color: MetaGymTheme.textPrimary,
-                                ),
+                                dropdownColor: isLight
+                                    ? palette.surfaceSolid
+                                    : const Color(0xFF2B2622),
+                                style: TextStyle(color: palette.textPrimary),
                                 decoration: _warmCallsInputDecoration(
+                                  context,
                                   'Loại cuộc gọi',
                                 ),
                                 items: const [
@@ -354,17 +374,17 @@ class _CallsPageState extends State<CallsPage> {
                         ),
                       const SizedBox(height: 16),
                       if (_calls.isEmpty && _error == null)
-                        const MetaGymGlassCard(
-                          padding: EdgeInsets.all(16),
+                        MetaGymGlassCard(
+                          padding: const EdgeInsets.all(16),
                           child: ListTile(
-                            leading: Icon(
+                            leading: const Icon(
                               Icons.call_outlined,
                               color: MetaGymTheme.brandOrange,
                             ),
                             title: Text(
                               'Chưa có cuộc gọi nào.',
                               style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                                color: palette.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -383,10 +403,10 @@ class _CallsPageState extends State<CallsPage> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: const Color(0x80211E1C),
+                                color: palette.metricPanelBg,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0x9A8C8176),
+                                  color: palette.metricPanelBorder,
                                 ),
                               ),
                               child: Icon(
@@ -399,22 +419,22 @@ class _CallsPageState extends State<CallsPage> {
                             ),
                             title: Text(
                               '${call.typeLabel} · ${call.statusLabel}',
-                              style: const TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             subtitle: Text(
                               call.initiatedAt,
-                              style: const TextStyle(
-                                color: Color(0xFFC8C2BC),
+                              style: TextStyle(
+                                color: palette.textWarmMuted,
                                 fontSize: 12.5,
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                             ),
-                            trailing: const Icon(
+                            trailing: Icon(
                               Icons.chevron_right,
-                              color: Color(0xFFC8C2BC),
+                              color: palette.textWarmMuted,
                             ),
                             onTap: () async {
                               await Navigator.of(context).push(
@@ -433,7 +453,7 @@ class _CallsPageState extends State<CallsPage> {
                       if (_hasMore)
                         TextButton(
                           style: TextButton.styleFrom(
-                            foregroundColor: MetaGymTheme.brandOrange,
+                            foregroundColor: palette.primaryText,
                             minimumSize: const Size(48, 48),
                           ),
                           onPressed: _loadingMore ? null : _loadMore,
@@ -492,29 +512,40 @@ class _CallDetailPageState extends State<CallDetailPage> {
   Widget _warmActionOutlinedButton({
     required String label,
     required VoidCallback? onPressed,
-  }) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: MetaGymTheme.textPrimary,
-        backgroundColor: const Color(0xA82B2622),
-        minimumSize: const Size.fromHeight(48),
-        side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+  }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: palette.textPrimary,
+          backgroundColor: isLight
+              ? palette.surfaceSolid
+              : const Color(0xA82B2622),
+          minimumSize: const Size.fromHeight(48),
+          side: BorderSide(
+            color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
+            width: 1.1,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          ),
         ),
+        onPressed: onPressed,
+        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
-      onPressed: onPressed,
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final receiver = _call.receiverId == widget.currentUserId;
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: _buildCallsAppBar(context, 'Trạng thái cuộc gọi'),
       body: Stack(
@@ -524,11 +555,11 @@ class _CallDetailPageState extends State<CallDetailPage> {
           ListView(
             padding: EdgeInsets.fromLTRB(16, topInset, 16, 32),
             children: [
-              const MetaGymGlassCard(
-                padding: EdgeInsets.all(14),
+              MetaGymGlassCard(
+                padding: const EdgeInsets.all(14),
                 child: Text(
                   'Chỉ hiển thị metadata. Chưa có RTC để kết nối âm thanh/video.',
-                  style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 12.5),
+                  style: TextStyle(color: palette.textWarmMuted, fontSize: 12.5),
                 ),
               ),
               const SizedBox(height: 12),
@@ -539,49 +570,49 @@ class _CallDetailPageState extends State<CallDetailPage> {
                     ListTile(
                       title: Text(
                         _call.typeLabel,
-                        style: const TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       subtitle: Text(
                         _call.statusLabel,
-                        style: const TextStyle(color: MetaGymTheme.brandOrange),
+                        style: TextStyle(color: palette.primaryText),
                       ),
                     ),
                     ListTile(
-                      title: const Text(
+                      title: Text(
                         'Quan hệ',
-                        style: TextStyle(color: MetaGymTheme.textPrimary),
+                        style: TextStyle(color: palette.textPrimary),
                       ),
                       subtitle: Text(
                         _call.relationshipId,
-                        style: const TextStyle(color: Color(0xFFC8C2BC)),
+                        style: TextStyle(color: palette.textWarmMuted),
                       ),
                     ),
                     ListTile(
-                      title: const Text(
+                      title: Text(
                         'Thời điểm tạo',
-                        style: TextStyle(color: MetaGymTheme.textPrimary),
+                        style: TextStyle(color: palette.textPrimary),
                       ),
                       subtitle: Text(
                         _call.initiatedAt,
-                        style: const TextStyle(
-                          color: Color(0xFFC8C2BC),
+                        style: TextStyle(
+                          color: palette.textWarmMuted,
                           fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                     ),
                     if (_call.endedAt != null)
                       ListTile(
-                        title: const Text(
+                        title: Text(
                           'Kết thúc',
-                          style: TextStyle(color: MetaGymTheme.textPrimary),
+                          style: TextStyle(color: palette.textPrimary),
                         ),
                         subtitle: Text(
                           _call.endedAt!,
-                          style: const TextStyle(
-                            color: Color(0xFFC8C2BC),
+                          style: TextStyle(
+                            color: palette.textWarmMuted,
                             fontFeatures: MetaGymTheme.tabularFigures,
                           ),
                         ),
@@ -593,7 +624,11 @@ class _CallDetailPageState extends State<CallDetailPage> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             _call.failureReason!,
-                            style: const TextStyle(color: Color(0xFFFFB2B6)),
+                            style: TextStyle(
+                              color: isLight
+                                  ? palette.error
+                                  : const Color(0xFFFFB2B6),
+                            ),
                           ),
                         ),
                       ),
@@ -605,13 +640,21 @@ class _CallDetailPageState extends State<CallDetailPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF24161A),
+                    color: isLight
+                        ? palette.error.withValues(alpha: 0.08)
+                        : const Color(0xFF24161A),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF642B32)),
+                    border: Border.all(
+                      color: isLight
+                          ? palette.error.withValues(alpha: 0.35)
+                          : const Color(0xFF642B32),
+                    ),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: Color(0xFFFFB2B6)),
+                    style: TextStyle(
+                      color: isLight ? palette.error : const Color(0xFFFFB2B6),
+                    ),
                   ),
                 ),
               ],

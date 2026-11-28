@@ -139,20 +139,20 @@ class _ExerciseVideoPlayerState extends State<ExerciseVideoPlayer>
                   )
                 : _filePlayer(),
           ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.ondemand_video_rounded,
                 size: 19,
                 color: MetaGymTheme.primary,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Video hướng dẫn',
                 style: TextStyle(
-                  color: MetaGymTheme.textPrimary,
+                  color: MetaGymTheme.paletteOf(context).textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),

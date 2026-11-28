@@ -59,10 +59,12 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: _buildNutritionAppBar(
           context,
@@ -81,7 +83,9 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: const Color(0xFF282320),
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -145,8 +149,8 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                             member.memberFullName,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: MetaGymTheme.textPrimary,
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
                                               fontSize: 16,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -165,9 +169,11 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(
+                                    Icon(
                                       Icons.chevron_right_rounded,
-                                      color: Color(0xFFB7B2AF),
+                                      color: isLight
+                                          ? palette.textSecondary
+                                          : const Color(0xFFB7B2AF),
                                     ),
                                   ],
                                 ),
@@ -248,18 +254,20 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
     _ => Icons.history_rounded,
   };
 
-  Color _guideAccent(String status) => switch (status) {
-    'ACTIVE' => MetaGymTheme.success,
-    'DRAFT' => MetaGymTheme.warning,
-    _ => MetaGymTheme.reflectionBlue,
+  Color _guideAccent(String status, MetaGymPalette palette) => switch (status) {
+    'ACTIVE' => palette.success,
+    'DRAFT' => palette.warning,
+    _ => palette.reflection,
   };
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: _buildNutritionAppBar(
           context,
@@ -278,7 +286,9 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: const Color(0xFF282320),
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -310,8 +320,8 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                         widget.member.memberFullName,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: MetaGymTheme.textPrimary,
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -319,8 +329,8 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                       const SizedBox(height: 3),
                                       Text(
                                         '${_guides.length} hướng dẫn dinh dưỡng',
-                                        style: const TextStyle(
-                                          color: MetaGymTheme.textSecondary,
+                                        style: TextStyle(
+                                          color: palette.textSecondary,
                                           fontSize: 12.5,
                                         ),
                                       ),
@@ -361,9 +371,7 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                               CoachingGraphiteCard(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 borderColor: guide.status == 'ACTIVE'
-                                    ? MetaGymTheme.success.withValues(
-                                        alpha: 0.40,
-                                      )
+                                    ? palette.success.withValues(alpha: 0.40)
                                     : null,
                                 onTap: () => _open(guide),
                                 child: Row(
@@ -373,17 +381,24 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: _guideAccent(guide.status)
-                                            .withValues(alpha: 0.14),
+                                        color: _guideAccent(
+                                          guide.status,
+                                          palette,
+                                        ).withValues(alpha: 0.14),
                                         borderRadius: BorderRadius.circular(13),
                                         border: Border.all(
-                                          color: _guideAccent(guide.status)
-                                              .withValues(alpha: 0.35),
+                                          color: _guideAccent(
+                                            guide.status,
+                                            palette,
+                                          ).withValues(alpha: 0.35),
                                         ),
                                       ),
                                       child: Icon(
                                         _guideIcon(guide.status),
-                                        color: _guideAccent(guide.status),
+                                        color: _guideAccent(
+                                          guide.status,
+                                          palette,
+                                        ),
                                         size: 22,
                                       ),
                                     ),
@@ -404,8 +419,8 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                             guide.title,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: MetaGymTheme.textPrimary,
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
                                               fontSize: 16,
                                               fontWeight: FontWeight.w700,
                                               height: 1.3,
@@ -414,8 +429,8 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                           const SizedBox(height: 4),
                                           Text(
                                             guide.publicationLabel,
-                                            style: const TextStyle(
-                                              color: MetaGymTheme.textSecondary,
+                                            style: TextStyle(
+                                              color: palette.textSecondary,
                                               fontSize: 12.5,
                                             ),
                                           ),
@@ -423,11 +438,11 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 6),
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 10),
                                       child: Icon(
                                         Icons.chevron_right_rounded,
-                                        color: MetaGymTheme.textSecondary,
+                                        color: palette.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -449,6 +464,7 @@ PreferredSizeWidget _buildNutritionAppBar(
   required String title,
   VoidCallback? onRefresh,
 }) {
+  final palette = MetaGymTheme.paletteOf(context);
   final canPop = Navigator.of(context).canPop();
   return AppBar(
     automaticallyImplyLeading: false,
@@ -471,8 +487,8 @@ PreferredSizeWidget _buildNutritionAppBar(
       title,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        color: MetaGymTheme.textPrimary,
+      style: TextStyle(
+        color: palette.textPrimary,
         fontSize: 19,
         fontWeight: FontWeight.w700,
       ),
@@ -490,7 +506,7 @@ PreferredSizeWidget _buildNutritionAppBar(
       ),
     ],
     backgroundColor: Colors.transparent,
-    foregroundColor: MetaGymTheme.textPrimary,
+    foregroundColor: palette.textPrimary,
     elevation: 0,
     scrolledUnderElevation: 0,
     surfaceTintColor: Colors.transparent,
@@ -520,17 +536,18 @@ class _NutritionSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: MetaGymTheme.success, size: 19),
+        Icon(icon, color: palette.success, size: 19),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -555,6 +572,9 @@ class _NutritionEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final muted = isLight ? palette.textSecondary : const Color(0xFFB7B2AF);
     return CoachingGraphiteCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -563,18 +583,18 @@ class _NutritionEmptyCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0x80211E1C),
+              color: palette.metricPanelBg,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x9A8C8176)),
+              border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 24),
+            child: Icon(icon, color: muted, size: 24),
           ),
           const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),
@@ -583,8 +603,8 @@ class _NutritionEmptyCard extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFB7B2AF),
+            style: TextStyle(
+              color: muted,
               fontSize: 13,
               height: 1.45,
             ),

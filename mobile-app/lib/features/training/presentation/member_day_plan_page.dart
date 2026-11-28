@@ -72,14 +72,18 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final bodyColor = isLight ? palette.textSecondary : const Color(0xFFE4DAD1);
+    final dividerColor = isLight ? palette.borderSolid : const Color(0x40A79D92);
     final date = widget.day.scheduledDate;
     final dateLabel = date != null && date.length == 10
         ? '${date.substring(8, 10)}/${date.substring(5, 7)}/${date.substring(0, 4)}'
         : 'Chưa chọn ngày';
     final status = widget.session?.statusLabel ?? 'Đã lên lịch';
     final statusColor = switch (widget.session?.status) {
-      'CANCELLED' || 'MEMBER_ABSENT' => MetaGymTheme.warningAmber,
-      _ => MetaGymTheme.progressGreen,
+      'CANCELLED' || 'MEMBER_ABSENT' => palette.warning,
+      _ => palette.success,
     };
     final focuses = resolveMuscleFocusSet(
       widget.day.title,
@@ -88,7 +92,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -107,10 +111,10 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
               )
             : null,
         titleSpacing: canPop ? 8 : 16,
-        title: const Text(
+        title: Text(
           'Kế hoạch trong ngày',
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: palette.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
@@ -118,7 +122,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
         ),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: const Color(0xFFF7F9FC),
+        foregroundColor: palette.textPrimary,
         elevation: 0,
       ),
       body: Stack(
@@ -154,8 +158,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                               if (widget.planTitle?.isNotEmpty == true) ...[
                                 Text(
                                   'GIÁO TRÌNH · ${widget.planTitle}',
-                                  style: const TextStyle(
-                                    color: Color(0xFFC8C2BC),
+                                  style: TextStyle(
+                                    color: palette.textWarmMuted,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.4,
@@ -165,8 +169,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                               ],
                               Text(
                                 dateLabel,
-                                style: const TextStyle(
-                                  color: MetaGymTheme.brandOrange,
+                                style: TextStyle(
+                                  color: palette.primaryText,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -175,8 +179,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                               const SizedBox(height: 4),
                               Text(
                                 widget.day.title,
-                                style: const TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                style: TextStyle(
+                                  color: palette.textPrimary,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
                                   height: 1.25,
@@ -215,14 +219,14 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0x80211E1C),
+                          color: palette.metricPanelBg,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0x9A8C8176)),
+                          border: Border.all(color: palette.metricPanelBorder),
                         ),
                         child: Text(
                           widget.day.notes!,
-                          style: const TextStyle(
-                            color: Color(0xFFE4DAD1),
+                          style: TextStyle(
+                            color: bodyColor,
                             fontSize: 13,
                             height: 1.45,
                           ),
@@ -234,8 +238,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                       const SizedBox(height: 10),
                       Text(
                         'Lý do: ${widget.session!.cancellationReason}',
-                        style: const TextStyle(
-                          color: MetaGymTheme.warningAmber,
+                        style: TextStyle(
+                          color: palette.warning,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -252,14 +256,14 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                     _heading(
                       Icons.fitness_center_rounded,
                       'Lịch tập',
-                      color: MetaGymTheme.brandOrange,
+                      color: palette.primaryText,
                     ),
                     const SizedBox(height: 12),
                     if (widget.day.exercises.isEmpty)
-                      const Text(
+                      Text(
                         'Coach chưa thêm bài tập.',
                         style: TextStyle(
-                          color: Color(0xFFC8C2BC),
+                          color: palette.textWarmMuted,
                           fontSize: 13.5,
                         ),
                       )
@@ -267,7 +271,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                       for (final (index, exercise)
                           in widget.day.exercises.indexed) ...[
                         if (index > 0)
-                          const Divider(color: Color(0x40A79D92), height: 20),
+                          Divider(color: dividerColor, height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -277,16 +281,16 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0x80211E1C),
+                                color: palette.metricPanelBg,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: const Color(0x9A8C8176),
+                                  color: palette.metricPanelBorder,
                                 ),
                               ),
                               child: Text(
                                 '${index + 1}'.padLeft(2, '0'),
-                                style: const TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                style: TextStyle(
+                                  color: palette.textPrimary,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -300,8 +304,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                                 children: [
                                   Text(
                                     exercise.exerciseName,
-                                    style: const TextStyle(
-                                      color: Color(0xFFF7F9FC),
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -310,8 +314,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                                     const SizedBox(height: 4),
                                     Text(
                                       exercise.prescription,
-                                      style: const TextStyle(
-                                        color: MetaGymTheme.brandOrange,
+                                      style: TextStyle(
+                                        color: palette.primaryText,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         fontFeatures:
@@ -323,8 +327,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                                     const SizedBox(height: 4),
                                     Text(
                                       exercise.notes!,
-                                      style: const TextStyle(
-                                        color: Color(0xFFE4DAD1),
+                                      style: TextStyle(
+                                        color: bodyColor,
                                         fontSize: 13,
                                         height: 1.4,
                                       ),
@@ -347,25 +351,25 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                     _heading(
                       Icons.restaurant_menu_rounded,
                       'Lịch ăn',
-                      color: MetaGymTheme.progressGreen,
+                      color: palette.success,
                     ),
                     const SizedBox(height: 12),
                     if (widget.day.meals.isEmpty)
-                      const Text(
+                      Text(
                         'Coach chưa xếp bữa ăn cho ngày này.',
                         style: TextStyle(
-                          color: Color(0xFFC8C2BC),
+                          color: palette.textWarmMuted,
                           fontSize: 13.5,
                         ),
                       )
                     else
                       for (final (index, meal) in widget.day.meals.indexed) ...[
                         if (index > 0)
-                          const Divider(color: Color(0x40A79D92), height: 20),
+                          Divider(color: dividerColor, height: 20),
                         Text(
                           '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
-                          style: const TextStyle(
-                            color: MetaGymTheme.progressGreen,
+                          style: TextStyle(
+                            color: palette.success,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             fontFeatures: MetaGymTheme.tabularFigures,
@@ -374,8 +378,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                         const SizedBox(height: 3),
                         Text(
                           meal.title,
-                          style: const TextStyle(
-                            color: Color(0xFFF7F9FC),
+                          style: TextStyle(
+                            color: palette.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
@@ -384,8 +388,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                           const SizedBox(height: 4),
                           Text(
                             meal.notes!,
-                            style: const TextStyle(
-                              color: Color(0xFFE4DAD1),
+                            style: TextStyle(
+                              color: bodyColor,
                               fontSize: 13,
                               height: 1.4,
                             ),
@@ -404,7 +408,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                       _heading(
                         Icons.rate_review_outlined,
                         'Nhận xét của Coach',
-                        color: MetaGymTheme.reflectionBlue,
+                        color: palette.reflection,
                       ),
                       const SizedBox(height: 10),
                       if (_loadingFeedback)
@@ -412,10 +416,10 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                           color: MetaGymTheme.brandOrange,
                         )
                       else if (_feedback.isEmpty)
-                        const Text(
+                        Text(
                           'Chưa có nhận xét cho nhật ký tập ngày này.',
                           style: TextStyle(
-                            color: Color(0xFFC8C2BC),
+                            color: palette.textWarmMuted,
                             fontSize: 13.5,
                           ),
                         )
@@ -425,8 +429,8 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                             padding: const EdgeInsets.only(bottom: 10),
                             child: Text(
                               comment.content,
-                              style: const TextStyle(
-                                color: Color(0xFFF7F9FC),
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontSize: 14,
                                 height: 1.45,
                               ),
@@ -443,28 +447,40 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
     );
   }
 
-  Widget _heading(IconData icon, String label, {required Color color}) => Row(
-    children: [
-      Icon(icon, size: 19, color: color),
-      const SizedBox(width: 8),
-      Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFFF7F9FC),
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
+  Widget _heading(IconData icon, String label, {required Color color}) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Row(
+      children: [
+        Icon(icon, size: 19, color: color),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _section({required Widget child}) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isLight ? palette.surfaceSolid : MetaGymWarmGlassTokens.cardFill,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isLight
+              ? palette.borderSolid
+              : MetaGymWarmGlassTokens.cardBorder,
+          width: 1.1,
         ),
       ),
-    ],
-  );
-
-  Widget _section({required Widget child}) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: const Color(0xC42B2622),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xA3A79D92), width: 1.1),
-    ),
-    child: child,
-  );
+      child: child,
+    );
+  }
 }

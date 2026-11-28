@@ -6,16 +6,28 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
-/// Nền hình ảnh phòng gym kết hợp ánh sáng môi trường (Ambient Depth Lights)
-/// và lớp phủ scrim đồng bộ với DESIGN.md và tokens.css (hỗ trợ cả Dark & Light).
+/// Nền kiến trúc Meta Gym (Architectural Spatial Light Ribbons) đồng bộ
+/// DESIGN.md cho cả chế độ Tối (`bg_app_dark.webp`) và Sáng (`bg_app_light.webp`).
 class MetaGymBackground extends StatelessWidget {
   const MetaGymBackground({this.useSolidFallback = false, super.key});
 
   final bool useSolidFallback;
 
-  static const AssetImage bannerAsset = AssetImage(
-    'assets/images/gym_banner.png',
+  static const AssetImage darkBackgroundAsset = AssetImage(
+    'assets/images/backgrounds/bg_app_dark.webp',
   );
+  static const AssetImage lightBackgroundAsset = AssetImage(
+    'assets/images/backgrounds/bg_app_light.webp',
+  );
+
+  /// Alias giữ tương thích ngược với các chỗ gọi cũ.
+  static const AssetImage bannerAsset = darkBackgroundAsset;
+
+  static void precache(BuildContext context) {
+    if (MetaGymTheme.isFlutterTestEnvironment) return;
+    precacheImage(darkBackgroundAsset, context).catchError((_) {});
+    precacheImage(lightBackgroundAsset, context).catchError((_) {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,68 +38,18 @@ class MetaGymBackground extends StatelessWidget {
       return IgnorePointer(child: ColoredBox(color: palette.canvas));
     }
 
-    if (isLight) {
-      return IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: palette.canvas,
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFEAF0F7), Color(0xFFE1E8F2), Color(0xFFDCE4EE)],
-            ),
-          ),
-        ),
-      );
-    }
+    final activeAsset = isLight ? lightBackgroundAsset : darkBackgroundAsset;
 
     return RepaintBoundary(
       child: IgnorePointer(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image(
-              image: bannerAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) =>
-                  const ColoredBox(color: MetaGymTheme.darkCanvas),
-            ),
-            // Ambient glow: Cool blue ở góc trên bên phải
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.85, -0.75),
-                  radius: 0.9,
-                  colors: [Color(0x2E8EB9E5), Colors.transparent],
-                ),
-              ),
-            ),
-            // Ambient glow: Warm orange ở góc dưới bên trái
-            Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.85, 0.75),
-                  radius: 0.8,
-                  colors: [Color(0x24FF5A36), Colors.transparent],
-                ),
-              ),
-            ),
-            // Lớp phủ scrim đồng bộ (72–84% tương phản đọc chữ)
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x9E0F1115),
-                    Color(0x900F1115),
-                    Color(0xAA0F1115),
-                  ],
-                  stops: [0.0, 0.48, 1.0],
-                ),
-              ),
-            ),
-          ],
+        child: ColoredBox(
+          color: palette.canvas,
+          child: Image(
+            image: activeAsset,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => ColoredBox(color: palette.canvas),
+          ),
         ),
       ),
     );
@@ -152,24 +114,7 @@ class MetaGymHeroGlassCard extends StatelessWidget {
               ]
             : null,
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 20,
-            right: 20,
-            top: 0,
-            child: SizedBox(
-              height: 1,
-              child: ColoredBox(
-                color: isLight
-                    ? palette.glassHighlight
-                    : MetaGymWarmGlassTokens.heroHighlight,
-              ),
-            ),
-          ),
-          Padding(padding: padding, child: child),
-        ],
-      ),
+      child: Padding(padding: padding, child: child),
     );
 
     final Widget wrapped = enableBlur
@@ -297,23 +242,7 @@ class MetaGymGlassCard extends StatelessWidget {
       ),
       child: Material(
         type: MaterialType.transparency,
-        child: Stack(
-          children: [
-            if (!isSolidSurface && !isLight)
-              const Positioned(
-                top: 0,
-                left: 18,
-                right: 18,
-                child: SizedBox(
-                  height: 1,
-                  child: ColoredBox(
-                    color: MetaGymWarmGlassTokens.cardHighlight,
-                  ),
-                ),
-              ),
-            interactiveContent,
-          ],
-        ),
+        child: interactiveContent,
       ),
     );
 

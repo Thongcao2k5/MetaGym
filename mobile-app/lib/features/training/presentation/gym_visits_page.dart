@@ -74,12 +74,20 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final mutedColor = isLight
+        ? palette.textSecondary
+        : const Color(0xFFB7B2AF);
+    final secondaryBody = isLight
+        ? palette.textSecondary
+        : const Color(0xFFEAE6E2);
     final now = DateTime.now();
     final canGoForward = _month.isBefore(DateTime(now.year, now.month));
     final data = _data;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -99,24 +107,24 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                         ),
                         const SizedBox(width: 12),
                       ],
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'ĐIỂM DANH QR',
                               style: TextStyle(
-                                color: Color(0xFFB7B2AF),
+                                color: mutedColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.0,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'Lịch sử đến gym',
                               style: TextStyle(
-                                color: Color(0xFFF7F9FC),
+                                color: palette.textPrimary,
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.3,
@@ -137,7 +145,9 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                   child: RefreshIndicator(
                     onRefresh: _load,
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: const Color(0xFF2B2622),
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF2B2622),
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -148,17 +158,17 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.calendar_month_rounded,
-                                    color: MetaGymTheme.brandOrange,
+                                    color: palette.primaryText,
                                     size: 18,
                                   ),
                                   const SizedBox(width: 8),
-                                  const Expanded(
+                                  Expanded(
                                     child: Text(
                                       'Lịch đến gym',
                                       style: TextStyle(
-                                        color: Color(0xFFF7F9FC),
+                                        color: palette.textPrimary,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -170,10 +180,10 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0x80211E1C),
+                                      color: palette.metricPanelBg,
                                       borderRadius: BorderRadius.circular(999),
                                       border: Border.all(
-                                        color: const Color(0x9A8C8176),
+                                        color: palette.metricPanelBorder,
                                       ),
                                     ),
                                     child: Row(
@@ -188,9 +198,9 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                           padding: EdgeInsets.zero,
                                           onPressed: () => _moveMonth(-1),
                                           tooltip: 'Tháng trước',
-                                          icon: const Icon(
+                                          icon: Icon(
                                             Icons.chevron_left_rounded,
-                                            color: Color(0xFFF7F9FC),
+                                            color: palette.textPrimary,
                                             size: 20,
                                           ),
                                         ),
@@ -201,8 +211,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                           child: Text(
                                             DateFormat('MM/yyyy')
                                                 .format(_month),
-                                            style: const TextStyle(
-                                              color: Color(0xFFF7F9FC),
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
                                               fontFeatures:
@@ -224,8 +234,10 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                           icon: Icon(
                                             Icons.chevron_right_rounded,
                                             color: canGoForward
-                                                ? const Color(0xFFF7F9FC)
-                                                : const Color(0x55B7B2AF),
+                                                ? palette.textPrimary
+                                                : mutedColor.withValues(
+                                                    alpha: 0.4,
+                                                  ),
                                             size: 20,
                                           ),
                                         ),
@@ -250,17 +262,17 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                     onTap: _load,
                                     child: Row(
                                       children: [
-                                        const Icon(
+                                        Icon(
                                           Icons.refresh_rounded,
-                                          color: MetaGymTheme.brandOrange,
+                                          color: palette.primaryText,
                                           size: 20,
                                         ),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
                                             '$_error · Chạm để thử lại',
-                                            style: const TextStyle(
-                                              color: Color(0xFFEAE6E2),
+                                            style: TextStyle(
+                                              color: secondaryBody,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -277,7 +289,7 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                       child: _stat(
                                         'Đã đến gym',
                                         data.visitedDays,
-                                        MetaGymTheme.brandOrange,
+                                        palette.primaryText,
                                         Icons.bolt_rounded,
                                       ),
                                     ),
@@ -287,7 +299,9 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         'Ngày chưa đến',
                                         (data.eligibleDays - data.visitedDays)
                                             .clamp(0, 31),
-                                        const Color(0xFFEAE6E2),
+                                        isLight
+                                            ? palette.textPrimary
+                                            : const Color(0xFFEAE6E2),
                                         Icons.event_busy_outlined,
                                       ),
                                     ),
@@ -296,10 +310,10 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                 const SizedBox(height: 16),
                                 _calendar(data),
                                 const SizedBox(height: 10),
-                                const Text(
+                                Text(
                                   'Ngày chưa đến chỉ tính khi gói tập có hiệu lực.',
                                   style: TextStyle(
-                                    color: Color(0xFFB7B2AF),
+                                    color: mutedColor,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -310,17 +324,17 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                         const SizedBox(height: 18),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.history_rounded,
-                              color: MetaGymTheme.brandOrange,
+                              color: palette.primaryText,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Các lần đến gym',
                                 style: TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                  color: palette.textPrimary,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -341,8 +355,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                 ),
                                 child: Text(
                                   '${data.entryCount} lượt quét',
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.progressGreen,
+                                  style: TextStyle(
+                                    color: palette.success,
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -355,8 +369,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               '${data.entryCount} lượt quét trong tháng · Có thể vào nhiều lần mỗi ngày',
-                              style: const TextStyle(
-                                color: Color(0xFFB7B2AF),
+                              style: TextStyle(
+                                color: mutedColor,
                                 fontSize: 12,
                               ),
                             ),
@@ -366,21 +380,21 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                             _error == null &&
                             data != null &&
                             data.visits.isEmpty)
-                          const MetaGymGlassCard(
-                            padding: EdgeInsets.all(16),
+                          MetaGymGlassCard(
+                            padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
                                 Icon(
                                   Icons.info_outline_rounded,
-                                  color: Color(0xFFB7B2AF),
+                                  color: mutedColor,
                                   size: 20,
                                 ),
-                                SizedBox(width: 10),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     'Chưa có lượt đến gym trong tháng này.',
                                     style: TextStyle(
-                                      color: Color(0xFFEAE6E2),
+                                      color: secondaryBody,
                                       fontSize: 13.5,
                                     ),
                                   ),
@@ -406,9 +420,9 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         color: const Color(0x4DFF5A36),
                                       ),
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.place_outlined,
-                                      color: MetaGymTheme.brandOrange,
+                                      color: palette.primaryText,
                                       size: 20,
                                     ),
                                   ),
@@ -421,8 +435,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         Text(
                                           DateFormat('dd/MM/yyyy')
                                               .format(visit.day),
-                                          style: const TextStyle(
-                                            color: Color(0xFFF7F9FC),
+                                          style: TextStyle(
+                                            color: palette.textPrimary,
                                             fontWeight: FontWeight.w700,
                                             fontSize: 15,
                                           ),
@@ -430,8 +444,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                         const SizedBox(height: 4),
                                         Text(
                                           '${DateFormat('HH:mm').format(visit.checkedInAt.toLocal())} · ${visit.gymName}',
-                                          style: const TextStyle(
-                                            color: Color(0xFFEAE6E2),
+                                          style: TextStyle(
+                                            color: secondaryBody,
                                             fontSize: 13,
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -441,8 +455,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                                           visit.gymAddress,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Color(0xFFB7B2AF),
+                                          style: TextStyle(
+                                            color: mutedColor,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -488,6 +502,11 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
   }
 
   Widget _calendar(GymVisitMonth data) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final mutedColor = isLight
+        ? palette.textSecondary
+        : const Color(0xFFB7B2AF);
     final first = DateTime(_month.year, _month.month);
     final leading = first.weekday - 1;
     final days = DateTime(_month.year, _month.month + 1, 0).day;
@@ -503,8 +522,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                   child: Center(
                     child: Text(
                       label,
-                      style: const TextStyle(
-                        color: Color(0xFFB7B2AF),
+                      style: TextStyle(
+                        color: mutedColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -545,14 +564,20 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                         color: visited
                             ? null
                             : future
-                            ? const Color(0x4D211E1C)
-                            : const Color(0x80211E1C),
+                            ? (isLight
+                                  ? palette.surfaceRaised.withValues(
+                                      alpha: 0.65,
+                                    )
+                                  : const Color(0x4D211E1C))
+                            : palette.metricPanelBg,
                         border: Border.all(
                           color: today
-                              ? const Color(0xFF8EB9E5)
+                              ? (isLight
+                                    ? palette.reflection
+                                    : const Color(0xFF8EB9E5))
                               : visited
                               ? const Color(0xFFFF8566)
-                              : const Color(0x9A8C8176),
+                              : palette.metricPanelBorder,
                           width: today ? 1.4 : 1.0,
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -563,8 +588,8 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
                           color: visited
                               ? Colors.white
                               : future
-                              ? const Color(0x77B7B2AF)
-                              : const Color(0xFFF7F9FC),
+                              ? mutedColor.withValues(alpha: 0.5)
+                              : palette.textPrimary,
                           fontWeight: visited || today
                               ? FontWeight.w800
                               : FontWeight.w500,
@@ -582,44 +607,49 @@ class _GymVisitsPageState extends State<GymVisitsPage> {
     );
   }
 
-  Widget _stat(String label, int value, Color accent, IconData icon) =>
-      MetaGymMetricPanel(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 15, color: accent),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFB7B2AF),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+  Widget _stat(String label, int value, Color accent, IconData icon) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return MetaGymMetricPanel(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: accent),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isLight
+                        ? palette.textSecondary
+                        : const Color(0xFFB7B2AF),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '$value',
-              style: TextStyle(
-                color: accent,
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                height: 1.05,
-                fontFeatures: MetaGymTheme.tabularFigures,
               ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$value',
+            style: TextStyle(
+              color: accent,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              height: 1.05,
+              fontFeatures: MetaGymTheme.tabularFigures,
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _GymQrScanner extends StatefulWidget {
@@ -674,86 +704,89 @@ class _GymQrScannerState extends State<_GymQrScanner> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: MetaGymTheme.scaffoldBackground,
-    appBar: AppBar(
-      title: const Text('Quét mã tại quầy'),
-      backgroundColor: const Color(0xFF211E1C),
-      foregroundColor: const Color(0xFFF7F9FC),
-    ),
-    body: Stack(
-      children: [
-        MobileScanner(
-          controller: _controller,
-          onDetect: _detected,
-          errorBuilder: (context, error) => const Center(
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Scaffold(
+      backgroundColor: MetaGymTheme.scaffoldBackground,
+      appBar: AppBar(
+        title: const Text('Quét mã tại quầy'),
+        backgroundColor: const Color(0xFF211E1C),
+        foregroundColor: const Color(0xFFF7F9FC),
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _controller,
+            onDetect: _detected,
+            errorBuilder: (context, error) => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Không mở được camera. Hãy cấp quyền camera rồi thử lại.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFFF7F9FC)),
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'Không mở được camera. Hãy cấp quyền camera rồi thử lại.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFFF7F9FC)),
-              ),
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: MetaGymHeroGlassCard(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Đưa mã QR tại quầy vào khung hình.',
-                    style: TextStyle(
-                      color: Color(0xFFF7F9FC),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (_busy)
-                    const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: CircularProgressIndicator(
-                        color: MetaGymTheme.brandOrange,
+              padding: const EdgeInsets.all(16),
+              child: MetaGymHeroGlassCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Đưa mã QR tại quầy vào khung hình.',
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Column(
-                        children: [
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: MetaGymTheme.warning),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              setState(() => _error = null);
-                              try {
-                                await _controller.start();
-                              } catch (_) {
-                                if (mounted) {
-                                  setState(
-                                    () => _error =
-                                        'Không mở được camera. Hãy thử lại.',
-                                  );
+                    if (_busy)
+                      const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          color: MetaGymTheme.brandOrange,
+                        ),
+                      ),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Column(
+                          children: [
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: palette.warning),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                setState(() => _error = null);
+                                try {
+                                  await _controller.start();
+                                } catch (_) {
+                                  if (mounted) {
+                                    setState(
+                                      () => _error =
+                                          'Không mở được camera. Hãy thử lại.',
+                                    );
+                                  }
                                 }
-                              }
-                            },
-                            child: const Text('Quét lại'),
-                          ),
-                        ],
+                              },
+                              child: const Text('Quét lại'),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

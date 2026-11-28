@@ -211,6 +211,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final canPop = Navigator.of(context).canPop();
     final member = _member;
     final hasApiClient = optionalProvider<ApiClient>(context) != null;
@@ -238,7 +239,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
             member.injuryNotes?.isNotEmpty == true);
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leadingWidth: canPop ? 72 : null,
@@ -255,12 +256,12 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                 ),
               )
             : null,
-        title: const Text(
+        title: Text(
           'Hồ sơ hội viên',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: Color(0xFFF7F9FC),
+            color: palette.textPrimary,
             fontSize: 19,
             fontWeight: FontWeight.w700,
           ),
@@ -280,7 +281,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: MetaGymTheme.textPrimary),
+        iconTheme: IconThemeData(color: palette.textPrimary),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -295,7 +296,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: const Color(0xFF282320),
+                    backgroundColor: palette.surfaceRaised,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -362,10 +363,10 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                 spacing: 10,
                                 runSpacing: 10,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Thành quả học viên',
                                     style: TextStyle(
-                                      color: MetaGymTheme.textPrimary,
+                                      color: palette.textPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -400,22 +401,22 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                               ),
                             ),
                             if (_outcomes.isEmpty)
-                              const MetaGymGlassCard(
-                                margin: EdgeInsets.only(bottom: 12),
-                                padding: EdgeInsets.all(16),
+                              MetaGymGlassCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
                                     Icon(
                                       Icons.emoji_events_outlined,
-                                      color: Color(0xFFC8C2BC),
+                                      color: palette.textWarmMuted,
                                       size: 20,
                                     ),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
                                         'Chưa có thành quả nào được gửi cho học viên này.',
                                         style: TextStyle(
-                                          color: Color(0xFFC8C2BC),
+                                          color: palette.textWarmMuted,
                                           fontSize: 13,
                                           height: 1.45,
                                         ),
@@ -445,8 +446,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                           ? null
                                           : () => _deleteOutcome(outcome),
                                       style: TextButton.styleFrom(
-                                        foregroundColor:
-                                            MetaGymTheme.dangerCoral,
+                                        foregroundColor: palette.error,
                                         minimumSize: const Size(48, 48),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 12,
@@ -479,6 +479,8 @@ class _MemberHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final isActive = member.status == 'ACTIVE';
     return MetaGymHeroGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -500,8 +502,8 @@ class _MemberHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       member.memberFullName,
-                      style: const TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
@@ -511,8 +513,8 @@ class _MemberHeroCard extends StatelessWidget {
                       member.email,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFC8C2BC),
+                      style: TextStyle(
+                        color: palette.textWarmMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -529,11 +531,14 @@ class _MemberHeroCard extends StatelessWidget {
             ],
           ),
           if (member.fitnessGoal?.isNotEmpty == true) ...[
-            const Divider(color: Color(0x26FFF5E9), height: 24),
+            Divider(
+              color: isLight ? palette.borderSolid : const Color(0x26FFF5E9),
+              height: 24,
+            ),
             Text(
               'Mục tiêu: ${member.fitnessGoal}',
-              style: const TextStyle(
-                color: Color(0xFFF7F9FC),
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 height: 1.45,
@@ -553,25 +558,27 @@ class _HealthDeclarationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return MetaGymGlassCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.monitor_heart_outlined,
-                color: MetaGymTheme.primary,
+                color: palette.primaryText,
                 size: 20,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Khai báo thể trạng',
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
+                    color: palette.textPrimary,
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -595,7 +602,10 @@ class _HealthDeclarationCard extends StatelessWidget {
           if (member.heightCm != null ||
               member.weightKg != null ||
               member.bodyFatPercent != null)
-            const Divider(color: Color(0x26FFF5E9), height: 18),
+            Divider(
+              color: isLight ? palette.borderSolid : const Color(0x26FFF5E9),
+              height: 18,
+            ),
           _HealthInfoLine(
             text:
                 'Bệnh nền: ${member.healthNotes?.isNotEmpty == true ? member.healthNotes : 'Không'}',
@@ -617,12 +627,14 @@ class _HealthInfoLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFFE4DAD1),
+        style: TextStyle(
+          color: isLight ? palette.textPrimary : const Color(0xFFE4DAD1),
           fontSize: 13.5,
           height: 1.45,
           fontFeatures: MetaGymTheme.tabularFigures,
@@ -632,26 +644,28 @@ class _HealthInfoLine extends StatelessWidget {
   }
 }
 
-InputDecoration _darkInputDecoration({
+InputDecoration _adaptiveInputDecoration(
+  BuildContext context, {
   required String label,
   String? errorText,
 }) {
+  final palette = MetaGymTheme.paletteOf(context);
   return InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 13),
-    counterStyle: const TextStyle(color: Color(0xFFB8B0A8), fontSize: 11.5),
+    labelStyle: TextStyle(color: palette.textWarmMuted, fontSize: 13),
+    counterStyle: TextStyle(color: palette.textWarmMuted, fontSize: 11.5),
     filled: true,
-    fillColor: const Color(0x99211E1C),
+    fillColor: palette.metricPanelBg,
     errorText: errorText,
-    errorStyle: const TextStyle(color: MetaGymTheme.dangerCoral),
+    errorStyle: TextStyle(color: palette.error),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -659,11 +673,11 @@ InputDecoration _darkInputDecoration({
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+      borderSide: BorderSide(color: palette.error),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: MetaGymTheme.dangerCoral, width: 1.5),
+      borderSide: BorderSide(color: palette.error, width: 1.5),
     ),
   );
 }
@@ -799,18 +813,25 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return AlertDialog(
-      backgroundColor: const Color(0xF0241F1B),
+      backgroundColor: isLight
+          ? palette.surfaceSolid
+          : const Color(0xF0241F1B),
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-        side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
+        side: BorderSide(
+          color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
+          width: 1.1,
+        ),
       ),
-      title: const Text(
+      title: Text(
         'Gửi thành quả học viên',
         style: TextStyle(
-          color: Color(0xFFF7F9FC),
+          color: palette.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
@@ -824,8 +845,11 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
               key: const Key('outcome-goal'),
               controller: _goal,
               cursorColor: MetaGymTheme.brandOrange,
-              style: const TextStyle(color: Color(0xFFF7F9FC)),
-              decoration: _darkInputDecoration(label: 'Mục tiêu tập luyện'),
+              style: TextStyle(color: palette.textPrimary),
+              decoration: _adaptiveInputDecoration(
+                context,
+                label: 'Mục tiêu tập luyện',
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -833,11 +857,14 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
               controller: _weeks,
               cursorColor: MetaGymTheme.brandOrange,
               keyboardType: TextInputType.number,
-              style: const TextStyle(
-                color: Color(0xFFF7F9FC),
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontFeatures: MetaGymTheme.tabularFigures,
               ),
-              decoration: _darkInputDecoration(label: 'Số tuần đồng hành'),
+              decoration: _adaptiveInputDecoration(
+                context,
+                label: 'Số tuần đồng hành',
+              ),
             ),
             const SizedBox(height: 10),
             Row(
@@ -850,11 +877,14 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: const TextStyle(
-                      color: Color(0xFFF7F9FC),
+                    style: TextStyle(
+                      color: palette.textPrimary,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
-                    decoration: _darkInputDecoration(label: 'Trước (kg)'),
+                    decoration: _adaptiveInputDecoration(
+                      context,
+                      label: 'Trước (kg)',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -866,11 +896,14 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: const TextStyle(
-                      color: Color(0xFFF7F9FC),
+                    style: TextStyle(
+                      color: palette.textPrimary,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
-                    decoration: _darkInputDecoration(label: 'Sau (kg)'),
+                    decoration: _adaptiveInputDecoration(
+                      context,
+                      label: 'Sau (kg)',
+                    ),
                   ),
                 ),
               ],
@@ -886,11 +919,12 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: const TextStyle(
-                      color: Color(0xFFF7F9FC),
+                    style: TextStyle(
+                      color: palette.textPrimary,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
-                    decoration: _darkInputDecoration(
+                    decoration: _adaptiveInputDecoration(
+                      context,
                       label: '% mỡ trước · tùy chọn',
                     ),
                   ),
@@ -904,11 +938,12 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: const TextStyle(
-                      color: Color(0xFFF7F9FC),
+                    style: TextStyle(
+                      color: palette.textPrimary,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
-                    decoration: _darkInputDecoration(
+                    decoration: _adaptiveInputDecoration(
+                      context,
                       label: '% mỡ sau · tùy chọn',
                     ),
                   ),
@@ -922,13 +957,13 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: OutlinedButton(
                     onPressed: _saving ? null : () => _pickPhoto(true),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFF7F9FC),
-                      backgroundColor: const Color(0x80211E1C),
+                      foregroundColor: palette.textPrimary,
+                      backgroundColor: palette.metricPanelBg,
                       minimumSize: const Size(48, 48),
                       side: BorderSide(
                         color: _beforePhoto != null
-                            ? MetaGymTheme.success
-                            : const Color(0x9A8C8176),
+                            ? palette.success
+                            : palette.metricPanelBorder,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -948,13 +983,13 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
                   child: OutlinedButton(
                     onPressed: _saving ? null : () => _pickPhoto(false),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFF7F9FC),
-                      backgroundColor: const Color(0x80211E1C),
+                      foregroundColor: palette.textPrimary,
+                      backgroundColor: palette.metricPanelBg,
                       minimumSize: const Size(48, 48),
                       side: BorderSide(
                         color: _afterPhoto != null
-                            ? MetaGymTheme.success
-                            : const Color(0x9A8C8176),
+                            ? palette.success
+                            : palette.metricPanelBorder,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
@@ -982,7 +1017,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFC8C2BC),
+            foregroundColor: palette.textSecondary,
             minimumSize: const Size(48, 48),
           ),
           child: const Text('Hủy'),
@@ -1023,62 +1058,72 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    backgroundColor: const Color(0xF0241F1B),
-    surfaceTintColor: Colors.transparent,
-    insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-      side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-    ),
-    title: const Text(
-      'Xin ngừng phụ trách?',
-      style: TextStyle(
-        color: Color(0xFFF7F9FC),
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-    content: TextField(
-      key: const Key('termination-request-reason'),
-      controller: _reason,
-      cursorColor: MetaGymTheme.brandOrange,
-      maxLength: 1000,
-      maxLines: 3,
-      style: const TextStyle(color: Color(0xFFF7F9FC)),
-      decoration: _darkInputDecoration(
-        label: 'Lý do',
-        errorText: _invalid ? 'Vui lòng nhập lý do.' : null,
-      ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFFC8C2BC),
-          minimumSize: const Size(48, 48),
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return AlertDialog(
+      backgroundColor: isLight
+          ? palette.surfaceSolid
+          : const Color(0xF0241F1B),
+      surfaceTintColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+        side: BorderSide(
+          color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
+          width: 1.1,
         ),
-        child: const Text('Quay lại'),
       ),
-      FilledButton(
-        onPressed: () {
-          final reason = _reason.text.trim();
-          if (reason.isEmpty) {
-            setState(() => _invalid = true);
-            return;
-          }
-          Navigator.pop(context, reason);
-        },
-        style: FilledButton.styleFrom(
-          backgroundColor: MetaGymTheme.primary,
-          foregroundColor: MetaGymTheme.onPrimary,
-          minimumSize: const Size(48, 48),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+      title: Text(
+        'Xin ngừng phụ trách?',
+        style: TextStyle(
+          color: palette.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: TextField(
+        key: const Key('termination-request-reason'),
+        controller: _reason,
+        cursorColor: MetaGymTheme.brandOrange,
+        maxLength: 1000,
+        maxLines: 3,
+        style: TextStyle(color: palette.textPrimary),
+        decoration: _adaptiveInputDecoration(
+          context,
+          label: 'Lý do',
+          errorText: _invalid ? 'Vui lòng nhập lý do.' : null,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(
+            foregroundColor: palette.textSecondary,
+            minimumSize: const Size(48, 48),
           ),
+          child: const Text('Quay lại'),
         ),
-        child: const Text('Gửi yêu cầu'),
-      ),
-    ],
-  );
+        FilledButton(
+          onPressed: () {
+            final reason = _reason.text.trim();
+            if (reason.isEmpty) {
+              setState(() => _invalid = true);
+              return;
+            }
+            Navigator.pop(context, reason);
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.primary,
+            foregroundColor: MetaGymTheme.onPrimary,
+            minimumSize: const Size(48, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            ),
+          ),
+          child: const Text('Gửi yêu cầu'),
+        ),
+      ],
+    );
+  }
 }

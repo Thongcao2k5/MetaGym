@@ -124,24 +124,6 @@ class MetaGymBottomNav extends StatelessWidget {
       decoration: pillDecoration,
       child: Stack(
         children: [
-          // Cool specular top-edge highlight (DESIGN.md §2)
-          Positioned(
-            top: 0,
-            left: 28,
-            right: 28,
-            child: IgnorePointer(
-              child: SizedBox(
-                height: 1,
-                child: ColoredBox(
-                  color: isLight
-                      ? palette.glassHighlight
-                      : warmGlass
-                      ? MetaGymWarmGlassTokens.heroHighlight
-                      : MetaGymTheme.performanceGlassTopHighlight,
-                ),
-              ),
-            ),
-          ),
           // Sliding active indicator bar
           AnimatedAlign(
             alignment: _indicatorAlignmentForIndex(currentIndex),
@@ -235,38 +217,45 @@ class MetaGymBottomNav extends StatelessWidget {
           _horizontalMargin,
           _bottomMargin + safeBottom,
         ),
-        child: SizedBox(
-          height: _barHeight + _aiProtrusion,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.bottomCenter,
-            children: [
-              // Clipped Level 2 Backdrop Blur container (rounded-full capsule)
-              ClipRRect(
-                borderRadius: capsuleRadius,
-                child: enableBlur
-                    ? BackdropFilter(
-                        filter: ImageFilter.blur(
-                          sigmaX: MetaGymTheme.bottomNavGlassBlur,
-                          sigmaY: MetaGymTheme.bottomNavGlassBlur,
-                        ),
-                        child: pillContent,
-                      )
-                    : pillContent,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          heightFactor: 1.0,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560.0),
+            child: SizedBox(
+              height: _barHeight + _aiProtrusion,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
+                children: [
+                  // Clipped Level 2 Backdrop Blur container (rounded-full capsule)
+                  ClipRRect(
+                    borderRadius: capsuleRadius,
+                    child: enableBlur
+                        ? BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: MetaGymTheme.bottomNavGlassBlur,
+                              sigmaY: MetaGymTheme.bottomNavGlassBlur,
+                            ),
+                            child: pillContent,
+                          )
+                        : pillContent,
+                  ),
+                  // Center protruding AI button
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    child: _AiCenterButton(
+                      label: 'AI',
+                      selected: currentIndex == 2,
+                      warmGlass: warmGlass,
+                      duration: duration,
+                      onTap: () => onTap(2),
+                    ),
+                  ),
+                ],
               ),
-              // Center protruding AI button
-              Positioned(
-                top: 0,
-                bottom: 0,
-                child: _AiCenterButton(
-                  label: 'AI',
-                  selected: currentIndex == 2,
-                  warmGlass: warmGlass,
-                  duration: duration,
-                  onTap: () => onTap(2),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -388,19 +377,18 @@ class _AiCenterButton extends StatelessWidget {
       label: label,
       child: Material(
         color: Colors.transparent,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.none,
         child: MetaGymTap(
           onTap: onTap,
-          customBorder: const CircleBorder(),
-          splashColor: Colors.white.withValues(alpha: 0.26),
-          highlightColor: Colors.white.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(20),
+          splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
+          highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
           focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.2),
           child: SizedBox(
-            width: 68,
-            height: 68,
+            width: 72,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedScale(
                   scale: selected ? 1.04 : 1.0,

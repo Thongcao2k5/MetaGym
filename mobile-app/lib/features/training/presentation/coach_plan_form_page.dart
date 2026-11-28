@@ -144,21 +144,24 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
   Future<void> _selectDayDate(int dayIndex) async {
+    final isLight = MetaGymTheme.isLightPalette(context);
     final picked = await showDatePicker(
       context: context,
       initialDate: _days[dayIndex].scheduledDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       builder: (context, child) => Theme(
-        data: MetaGymTheme.dark.copyWith(
-          colorScheme: MetaGymTheme.dark.colorScheme.copyWith(
-            surface: const Color(0xFF241F1B),
-            surfaceContainerHigh: const Color(0xFF2B2622),
-          ),
-          dialogTheme: MetaGymTheme.dark.dialogTheme.copyWith(
-            backgroundColor: const Color(0xFF241F1B),
-          ),
-        ),
+        data: isLight
+            ? MetaGymTheme.light
+            : MetaGymTheme.dark.copyWith(
+                colorScheme: MetaGymTheme.dark.colorScheme.copyWith(
+                  surface: const Color(0xFF241F1B),
+                  surfaceContainerHigh: const Color(0xFF2B2622),
+                ),
+                dialogTheme: MetaGymTheme.dark.dialogTheme.copyWith(
+                  backgroundColor: const Color(0xFF241F1B),
+                ),
+              ),
         child: child!,
       ),
     );
@@ -332,41 +335,60 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     await MetaGymNavigation.showDialogOnce<void>(
       context: context,
       barrierColor: const Color(0xB8040609),
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xF0241F1B),
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-        ),
-        title: const Text(
-          'Xem trước giáo trình',
-          style: TextStyle(
-            color: MetaGymTheme.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: SizedBox(
-          width: 400,
-          child: SingleChildScrollView(child: TrainingPlanContent(plan: plan)),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xA82B2622),
-              foregroundColor: MetaGymTheme.textPrimary,
-              minimumSize: const Size(48, 48),
-              side: const BorderSide(color: Color(0xA3A79D92)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-              ),
+      builder: (dialogContext) {
+        final palette = MetaGymTheme.paletteOf(dialogContext);
+        final isLight = MetaGymTheme.isLightPalette(dialogContext);
+        return AlertDialog(
+          backgroundColor: isLight
+              ? palette.surfaceSolid
+              : const Color(0xF0241F1B),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+            side: BorderSide(
+              color: isLight
+                  ? palette.borderSolid
+                  : MetaGymWarmGlassTokens.cardBorder,
+              width: 1.1,
             ),
-            child: const Text('Đóng'),
           ),
-        ],
-      ),
+          title: Text(
+            'Xem trước giáo trình',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: TrainingPlanContent(plan: plan),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              style: FilledButton.styleFrom(
+                backgroundColor: isLight
+                    ? palette.surfaceRaised
+                    : const Color(0xA82B2622),
+                foregroundColor: palette.textPrimary,
+                minimumSize: const Size(48, 48),
+                side: BorderSide(
+                  color: isLight
+                      ? palette.borderSolid
+                      : MetaGymWarmGlassTokens.cardBorder,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -389,31 +411,36 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     required String labelText,
     String? hintText,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-      borderSide: const BorderSide(color: Color(0x9A8C8176)),
+      borderSide: BorderSide(color: palette.metricPanelBorder),
     );
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
       filled: true,
-      fillColor: const Color(0x80211E1C),
-      labelStyle: const TextStyle(
-        color: Color(0xFFC8C2BC),
+      fillColor: palette.metricPanelBg,
+      labelStyle: TextStyle(
+        color: palette.textWarmMuted,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
-      floatingLabelStyle: const TextStyle(
-        color: MetaGymTheme.brandOrange,
+      floatingLabelStyle: TextStyle(
+        color: palette.primaryText,
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      hintStyle: const TextStyle(
-        color: Color(0xFFB8B0A8),
+      hintStyle: TextStyle(
+        color: subtleMuted,
         fontSize: 13.5,
       ),
-      counterStyle: const TextStyle(
-        color: Color(0xFFB8B0A8),
+      counterStyle: TextStyle(
+        color: subtleMuted,
         fontSize: 11,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -425,19 +452,21 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: MetaGymTheme.dangerCoral),
+        borderSide: BorderSide(color: palette.error),
       ),
     );
   }
 
-  static const TextStyle _fieldTextStyle = TextStyle(
-    color: MetaGymTheme.textPrimary,
+  TextStyle get _fieldTextStyle => TextStyle(
+    color: MetaGymTheme.paletteOf(context).textPrimary,
     fontSize: 14.5,
     fontWeight: FontWeight.w500,
   );
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final media = MediaQuery.paddingOf(context);
     final canPop = Navigator.of(context).canPop();
     final pageTitle = widget.plan == null
@@ -447,9 +476,9 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
               : 'Sửa bản nháp');
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -472,14 +501,14 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
             pageTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 19,
               fontWeight: FontWeight.w700,
             ),
           ),
           backgroundColor: Colors.transparent,
-          foregroundColor: MetaGymTheme.textPrimary,
+          foregroundColor: palette.textPrimary,
           elevation: 0,
           scrolledUnderElevation: 0,
           surfaceTintColor: Colors.transparent,
@@ -552,10 +581,16 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                               ? null
                               : () => setState(() => _days.add(_DayDraft())),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: MetaGymTheme.textPrimary,
-                            backgroundColor: const Color(0xC42B2622),
+                            foregroundColor: palette.textPrimary,
+                            backgroundColor: isLight
+                                ? palette.surfaceSolid
+                                : MetaGymWarmGlassTokens.cardFill,
                             minimumSize: const Size(double.infinity, 48),
-                            side: const BorderSide(color: Color(0xA3A79D92)),
+                            side: BorderSide(
+                              color: isLight
+                                  ? palette.borderSolid
+                                  : MetaGymWarmGlassTokens.cardBorder,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                 MetaGymTheme.radiusInput,
@@ -596,6 +631,11 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
   }
 
   Widget _buildDayCard(int dayIndex) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
     final day = _days[dayIndex];
     final dayFocuses = _resolveDayFocuses(day);
     final focusSummary = dayFocuses.isEmpty
@@ -632,8 +672,8 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: dayFocuses.isNotEmpty
-                            ? MetaGymTheme.reflectionBlue
-                            : MetaGymTheme.textSecondary,
+                            ? palette.reflection
+                            : palette.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -652,9 +692,9 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                       ? null
                       : () =>
                             setState(() => _days.removeAt(dayIndex).dispose()),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline_rounded,
-                    color: Color(0xFFB8B0A8),
+                    color: subtleMuted,
                   ),
                 ),
             ],
@@ -666,22 +706,22 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
               key: Key('day-date-$dayIndex'),
               onPressed: _busy ? null : () => _selectDayDate(dayIndex),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MetaGymTheme.textPrimary,
-                backgroundColor: const Color(0x80211E1C),
+                foregroundColor: palette.textPrimary,
+                backgroundColor: palette.metricPanelBg,
                 minimumSize: const Size(double.infinity, 48),
                 alignment: Alignment.centerLeft,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 12,
                 ),
-                side: const BorderSide(color: Color(0x9A8C8176)),
+                side: BorderSide(color: palette.metricPanelBorder),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                 ),
               ),
-              icon: const Icon(
+              icon: Icon(
                 Icons.event_outlined,
-                color: MetaGymTheme.brandOrange,
+                color: palette.primaryText,
                 size: 20,
               ),
               label: Text(
@@ -731,10 +771,10 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                 ? null
                 : () => setState(() => day.exercises.add(_ExerciseDraft())),
             style: OutlinedButton.styleFrom(
-              foregroundColor: MetaGymTheme.reflectionBlue,
-              backgroundColor: const Color(0x80211E1C),
+              foregroundColor: palette.reflection,
+              backgroundColor: palette.metricPanelBg,
               minimumSize: const Size(double.infinity, 48),
-              side: const BorderSide(color: Color(0x9A8C8176)),
+              side: BorderSide(color: palette.metricPanelBorder),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
@@ -743,11 +783,14 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
             label: const Text('Thêm bài tập'),
           ),
           const SizedBox(height: 16),
-          const Divider(color: Color(0x26FFF5E9), height: 1),
+          Divider(
+            color: isLight ? palette.borderSolid : const Color(0x26FFF5E9),
+            height: 1,
+          ),
           const SizedBox(height: 14),
-          const _FormSectionHeader(
+          _FormSectionHeader(
             icon: Icons.restaurant_menu_rounded,
-            iconColor: MetaGymTheme.success,
+            iconColor: palette.success,
             title: 'Lịch ăn trong ngày',
           ),
           const SizedBox(height: 10),
@@ -758,10 +801,10 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                 ? null
                 : () => setState(() => day.meals.add(_MealDraft())),
             style: OutlinedButton.styleFrom(
-              foregroundColor: MetaGymTheme.success,
-              backgroundColor: const Color(0x80211E1C),
+              foregroundColor: palette.success,
+              backgroundColor: palette.metricPanelBg,
               minimumSize: const Size(double.infinity, 48),
-              side: const BorderSide(color: Color(0x9A8C8176)),
+              side: BorderSide(color: palette.metricPanelBorder),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
@@ -775,15 +818,20 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
   }
 
   Widget _exerciseFields(int dayIndex, int exerciseIndex) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
     final day = _days[dayIndex];
     final draft = day.exercises[exerciseIndex];
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x9A8C8176)),
+        border: Border.all(color: palette.metricPanelBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -793,8 +841,8 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
               Expanded(
                 child: Text(
                   'Bài tập ${exerciseIndex + 1}',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -812,9 +860,9 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                       : () => setState(() {
                           day.exercises.removeAt(exerciseIndex).dispose();
                         }),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
-                    color: Color(0xFFB8B0A8),
+                    color: subtleMuted,
                     size: 20,
                   ),
                 ),
@@ -825,8 +873,10 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
             key: Key('exercise-choice-$dayIndex-$exerciseIndex'),
             initialValue: draft.exerciseId,
             isExpanded: true,
-            dropdownColor: const Color(0xF0241F1B),
-            iconEnabledColor: const Color(0xFFB8B0A8),
+            dropdownColor: isLight
+                ? palette.surfaceSolid
+                : const Color(0xF0241F1B),
+            iconEnabledColor: subtleMuted,
             style: _fieldTextStyle,
             decoration: _darkInputDecoration(labelText: 'Bài tập'),
             items: [
@@ -879,15 +929,20 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
   }
 
   Widget _mealFields(int dayIndex, int mealIndex) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
     final draft = _days[dayIndex].meals[mealIndex];
     return Container(
       key: Key('day-meal-$dayIndex-$mealIndex'),
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0x80211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x9A8C8176)),
+        border: Border.all(color: palette.metricPanelBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -897,8 +952,8 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
               Expanded(
                 child: Text(
                   'Bữa ăn ${mealIndex + 1}',
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -912,9 +967,9 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                     : () => setState(() {
                         _days[dayIndex].meals.removeAt(mealIndex).dispose();
                       }),
-                icon: const Icon(
+                icon: Icon(
                   Icons.close_rounded,
-                  color: Color(0xFFB8B0A8),
+                  color: subtleMuted,
                   size: 20,
                 ),
               ),
@@ -924,8 +979,10 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
           DropdownButtonFormField<String>(
             initialValue: draft.mealType,
             isExpanded: true,
-            dropdownColor: const Color(0xF0241F1B),
-            iconEnabledColor: const Color(0xFFB8B0A8),
+            dropdownColor: isLight
+                ? palette.surfaceSolid
+                : const Color(0xF0241F1B),
+            iconEnabledColor: subtleMuted,
             style: _fieldTextStyle,
             decoration: _darkInputDecoration(labelText: 'Loại bữa'),
             items: const [
@@ -973,26 +1030,27 @@ class _FormSectionHeader extends StatelessWidget {
   const _FormSectionHeader({
     required this.icon,
     required this.title,
-    this.iconColor = MetaGymTheme.brandOrange,
+    this.iconColor,
   });
 
   final IconData icon;
   final String title;
-  final Color iconColor;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: iconColor, size: 18),
+        Icon(icon, color: iconColor ?? palette.primaryText, size: 18),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),

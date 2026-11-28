@@ -73,6 +73,8 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
@@ -80,9 +82,12 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
     final content = Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
-        color: const Color(0xF0171A21),
+        color: isLight ? palette.surfaceSolid : const Color(0xF0171A21),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-        border: Border.all(color: const Color(0x38FFF6EA), width: 1.0),
+        border: Border.all(
+          color: isLight ? palette.borderSolid : const Color(0x38FFF6EA),
+          width: 1.0,
+        ),
       ),
       padding: EdgeInsets.fromLTRB(18, 12, 18, 18 + bottomInset),
       child: SingleChildScrollView(
@@ -95,7 +100,7 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0x52FFFFFF),
+                color: isLight ? palette.borderSolid : const Color(0x52FFFFFF),
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -124,10 +129,10 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Đổi điểm Meta Points',
                       style: TextStyle(
-                        color: MetaGymTheme.textPrimary,
+                        color: palette.textPrimary,
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
@@ -135,8 +140,8 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       'Số dư khả dụng: ${_formatPoints(currentPoints)} điểm',
-                      style: const TextStyle(
-                        color: MetaGymTheme.brandOrange,
+                      style: TextStyle(
+                        color: palette.primaryText,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         fontFeatures: MetaGymTheme.tabularFigures,
@@ -148,9 +153,9 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
               IconButton(
                 tooltip: 'Đóng',
                 onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(
+                icon: Icon(
                   Icons.close_rounded,
-                  color: MetaGymTheme.textSecondary,
+                  color: palette.textSecondary,
                 ),
               ),
             ],
@@ -202,15 +207,19 @@ class _RewardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0xC42B2622),
+        color: isLight ? palette.metricPanelBg : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: canAfford
-              ? const Color(0xA3A79D92)
-              : const Color(0x40A79D92),
+              ? (isLight ? palette.borderSolid : const Color(0xA3A79D92))
+              : (isLight
+                    ? palette.borderSolid.withValues(alpha: 0.5)
+                    : const Color(0x40A79D92)),
         ),
       ),
       child: Row(
@@ -236,8 +245,8 @@ class _RewardTile extends StatelessWidget {
               children: [
                 Text(
                   reward.title,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -247,8 +256,8 @@ class _RewardTile extends StatelessWidget {
                   reward.subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 11.5,
                     height: 1.35,
                   ),
@@ -256,8 +265,8 @@ class _RewardTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${_formatPoints(reward.costPoints)} điểm',
-                  style: const TextStyle(
-                    color: MetaGymTheme.brandOrange,
+                  style: TextStyle(
+                    color: palette.primaryText,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -273,9 +282,11 @@ class _RewardTile extends StatelessWidget {
               onPressed: canAfford ? onRedeem : null,
               style: FilledButton.styleFrom(
                 backgroundColor: MetaGymTheme.brandOrange,
-                disabledBackgroundColor: const Color(0x33FFFFFF),
+                disabledBackgroundColor: isLight
+                    ? palette.borderSolid.withValues(alpha: 0.45)
+                    : const Color(0x33FFFFFF),
                 foregroundColor: Colors.white,
-                disabledForegroundColor: MetaGymTheme.textSecondary,
+                disabledForegroundColor: palette.textSecondary,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

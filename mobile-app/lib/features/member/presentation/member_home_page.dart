@@ -40,10 +40,11 @@ class _MemberHomePageState extends State<MemberHomePage> {
       ProfilePage(bottomPadding: bottomPadding),
     ];
 
+    final palette = MetaGymTheme.paletteOf(context);
     return RepaintBoundary(
       child: Scaffold(
         extendBody: true,
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: palette.canvas,
         body: IndexedStack(index: _index, children: pages),
         bottomNavigationBar: MetaGymBottomNav(
           currentIndex: _index,

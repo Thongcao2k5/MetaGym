@@ -47,6 +47,28 @@ Color membershipStatusColor(String status) => switch (status) {
   _ => const Color(0xFF9AA3B2),
 };
 
+Color membershipStatusColorFor(String status, MetaGymPalette palette) =>
+    switch (status) {
+      'ACTIVE' || 'SUCCESS' => palette.success,
+      'SCHEDULED' => palette.reflection,
+      'PENDING' => palette.warning,
+      'CANCELLED' || 'FAILED' => palette.error,
+      _ => palette.textSecondary,
+    };
+
+Color _adaptMembershipAccent(Color color, MetaGymPalette palette) {
+  if (color == MetaGymTheme.progressGreen) return palette.success;
+  if (color == MetaGymTheme.reflectionBlue) return palette.reflection;
+  if (color == MetaGymTheme.warningAmber) return palette.warning;
+  if (color == MetaGymTheme.dangerCoral) return palette.error;
+  if (color == MetaGymTheme.brandOrange) return palette.primaryText;
+  if (color == MetaGymTheme.infoSteelBlue) return palette.info;
+  if (color == const Color(0xFF9AA3B2) || color == const Color(0xFFA8B1C2)) {
+    return palette.textSecondary;
+  }
+  return color;
+}
+
 /// Thanh tiêu đề đồng bộ Warm Smoked Glass cho cụm màn hình Gói tập & Giao dịch.
 class MembershipTopBar extends StatelessWidget {
   const MembershipTopBar({
@@ -64,6 +86,7 @@ class MembershipTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final canPop = onBack != null || Navigator.of(context).canPop();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -87,8 +110,8 @@ class MembershipTopBar extends StatelessWidget {
                   eyebrow,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.brandOrange,
+                  style: TextStyle(
+                    color: palette.primaryText,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.4,
@@ -100,8 +123,8 @@ class MembershipTopBar extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
@@ -135,31 +158,36 @@ class MembershipStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final effectiveColor = _adaptMembershipAccent(color, palette);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
+        color: effectiveColor.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
+        border: Border.all(color: effectiveColor.withValues(alpha: 0.45)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12.5, color: color),
+            Icon(icon, size: 12.5, color: effectiveColor),
             const SizedBox(width: 5),
           ] else ...[
             Container(
               width: 6,
               height: 6,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: effectiveColor,
+                shape: BoxShape.circle,
+              ),
             ),
             const SizedBox(width: 6),
           ],
           Text(
             label,
             style: TextStyle(
-              color: color,
+              color: effectiveColor,
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.2,
@@ -190,6 +218,8 @@ class MembershipSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final effectiveIconColor = _adaptMembershipAccent(iconColor, palette);
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Row(
@@ -202,11 +232,13 @@ class MembershipSectionHeader extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.16),
+                color: effectiveIconColor.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: iconColor.withValues(alpha: 0.35)),
+                border: Border.all(
+                  color: effectiveIconColor.withValues(alpha: 0.35),
+                ),
               ),
-              child: Icon(icon, color: iconColor, size: 15),
+              child: Icon(icon, color: effectiveIconColor, size: 15),
             ),
             const SizedBox(width: 8),
           ],
@@ -215,8 +247,8 @@ class MembershipSectionHeader extends StatelessWidget {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: MetaGymTheme.textPrimary,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
@@ -239,13 +271,17 @@ class MembershipErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x2EF15B64),
+        color: palette.error.withValues(alpha: isLight ? 0.10 : 0.18),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x70F15B64)),
+        border: Border.all(
+          color: palette.error.withValues(alpha: isLight ? 0.35 : 0.44),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,17 +289,17 @@ class MembershipErrorCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
-                color: MetaGymTheme.dangerCoral,
+                color: palette.error,
                 size: 20,
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(
-                    color: Color(0xFFFFB2AF),
+                  style: TextStyle(
+                    color: isLight ? palette.error : const Color(0xFFFFB2AF),
                     fontSize: 13.5,
                     height: 1.4,
                   ),
@@ -278,7 +314,7 @@ class MembershipErrorCard extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onRetry,
                 style: TextButton.styleFrom(
-                  foregroundColor: MetaGymTheme.brandOrange,
+                  foregroundColor: palette.primaryText,
                 ),
                 icon: const Icon(Icons.refresh_rounded, size: 17),
                 label: const Text(

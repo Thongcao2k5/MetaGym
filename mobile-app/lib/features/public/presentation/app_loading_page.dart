@@ -137,12 +137,13 @@ class _AppLoadingPageState extends State<AppLoadingPage>
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final disableAnimations =
         MediaQuery.disableAnimationsOf(context) &&
         widget.debugProgressOverride == null;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -216,6 +217,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
     required double pulse,
     required bool animatePulse,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
     final breath = animatePulse
         ? 0.5 - 0.5 * math.cos(pulse * 2 * math.pi)
         : 0.5;
@@ -243,6 +245,7 @@ class _AppLoadingPageState extends State<AppLoadingPage>
               painter: _MetaGymMorphPainter(
                 progress: morphProgress,
                 pulse: breath,
+                textColor: palette.textPrimary,
               ),
             ),
           ),
@@ -251,11 +254,11 @@ class _AppLoadingPageState extends State<AppLoadingPage>
         _StaggeredSlideFade(
           progress: subtitleFade,
           offsetY: 12,
-          child: const Text(
+          child: Text(
             'Đang khởi động không gian tập luyện...',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFFC8C2BC),
+              color: palette.textWarmMuted,
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
               height: 1.4,
@@ -276,20 +279,20 @@ class _AppLoadingPageState extends State<AppLoadingPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            MetaGymSvgIcon(
+          children: [
+            const MetaGymSvgIcon(
               MetaGymIcons.settingVersion,
               size: 14,
               fallbackIcon: Icons.info_outline_rounded,
             ),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 'Meta Gym v1.0.0 · Build 2026.11',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: MetaGymTheme.textSecondary,
+                  color: palette.textSecondary,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w500,
                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -333,6 +336,7 @@ class _WarmGlassProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final pct = (progress * 100).round().clamp(0, 100);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -342,9 +346,9 @@ class _WarmGlassProgressBar extends StatelessWidget {
           height: 5,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: const Color(0x80211E1C),
+            color: palette.metricPanelBg,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0x66A79D92), width: 1),
+            border: Border.all(color: palette.metricPanelBorder, width: 1),
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
@@ -365,11 +369,11 @@ class _WarmGlassProgressBar extends StatelessWidget {
           child: Text(
             '$pct%',
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: MetaGymTheme.brandOrange,
+            style: TextStyle(
+              color: palette.primaryText,
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ),
@@ -379,10 +383,15 @@ class _WarmGlassProgressBar extends StatelessWidget {
 }
 
 class _MetaGymMorphPainter extends CustomPainter {
-  const _MetaGymMorphPainter({required this.progress, required this.pulse});
+  const _MetaGymMorphPainter({
+    required this.progress,
+    required this.pulse,
+    required this.textColor,
+  });
 
   final double progress;
   final double pulse;
+  final Color textColor;
 
   static const _wordChars = <String>['M', 'e', 't', 'a', 'G', 'y', 'm'];
 
@@ -432,9 +441,7 @@ class _MetaGymMorphPainter extends CustomPainter {
             fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
             height: 1.0,
-            color: isOrangeCap
-                ? MetaGymTheme.brandOrange
-                : const Color(0xFFF7F9FC),
+            color: isOrangeCap ? MetaGymTheme.brandOrange : textColor,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -615,9 +622,7 @@ class _MetaGymMorphPainter extends CustomPainter {
 
         final ch = _wordChars[i];
         final isOrangeCap = ch == 'G';
-        final baseColor = isOrangeCap
-            ? MetaGymTheme.brandOrange
-            : const Color(0xFFF7F9FC);
+        final baseColor = isOrangeCap ? MetaGymTheme.brandOrange : textColor;
 
         final tp = charPainters[i];
         final baseOffset = charOffsets[i];
@@ -1322,5 +1327,7 @@ class _MetaGymMorphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MetaGymMorphPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.pulse != pulse;
+      oldDelegate.progress != progress ||
+      oldDelegate.pulse != pulse ||
+      oldDelegate.textColor != textColor;
 }

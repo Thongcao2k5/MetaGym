@@ -58,11 +58,13 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final canPop = Navigator.of(context).canPop();
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: _buildCoachDarkAppBar(
           context,
@@ -82,7 +84,9 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: const Color(0xFF282320),
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -140,8 +144,8 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                                             member.memberFullName,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: MetaGymTheme.textPrimary,
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
                                               fontSize: 16,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -160,9 +164,11 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(
+                                    Icon(
                                       Icons.chevron_right_rounded,
-                                      color: Color(0xFFB7B2AF),
+                                      color: isLight
+                                          ? palette.textSecondary
+                                          : const Color(0xFFB7B2AF),
                                     ),
                                   ],
                                 ),
@@ -273,6 +279,8 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final visiblePlans = _plans
         .where(
           (plan) =>
@@ -284,9 +292,9 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
         !_plans.any((plan) => plan.status == 'ACTIVE');
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: _buildCoachDarkAppBar(
           context,
@@ -306,7 +314,9 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: const Color(0xFF282320),
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -338,8 +348,8 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
                                         widget.member.memberFullName,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: MetaGymTheme.textPrimary,
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -347,8 +357,8 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
                                       const SizedBox(height: 3),
                                       Text(
                                         '${visiblePlans.length} giáo trình đã tạo',
-                                        style: const TextStyle(
-                                          color: MetaGymTheme.textSecondary,
+                                        style: TextStyle(
+                                          color: palette.textSecondary,
                                           fontSize: 12.5,
                                         ),
                                       ),
@@ -424,6 +434,7 @@ class _PlanSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return CoachingGraphiteCard(
       margin: const EdgeInsets.only(bottom: 12),
       onTap: onTap,
@@ -452,8 +463,8 @@ class _PlanSummaryCard extends StatelessWidget {
                   plan.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     height: 1.3,
@@ -465,8 +476,8 @@ class _PlanSummaryCard extends StatelessWidget {
                     plan.goal!,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: MetaGymTheme.textSecondary,
+                    style: TextStyle(
+                      color: palette.textSecondary,
                       fontSize: 13,
                       height: 1.35,
                     ),
@@ -481,16 +492,16 @@ class _PlanSummaryCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today_outlined,
                           size: 13,
-                          color: MetaGymTheme.reflectionBlue,
+                          color: palette.reflection,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${plan.days.length} ngày tập',
-                          style: const TextStyle(
-                            color: MetaGymTheme.textSecondary,
+                          style: TextStyle(
+                            color: palette.textSecondary,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -501,10 +512,10 @@ class _PlanSummaryCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.accessibility_new_rounded,
                             size: 13,
-                            color: MetaGymTheme.brandOrange,
+                            color: palette.primaryText,
                           ),
                           const SizedBox(width: 4),
                           Flexible(
@@ -512,8 +523,8 @@ class _PlanSummaryCard extends StatelessWidget {
                               summarizeMuscleFocuses(focuses),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: MetaGymTheme.textSecondary,
+                              style: TextStyle(
+                                color: palette.textSecondary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -527,11 +538,11 @@ class _PlanSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          const Padding(
-            padding: EdgeInsets.only(top: 18),
+          Padding(
+            padding: const EdgeInsets.only(top: 18),
             child: Icon(
               Icons.chevron_right_rounded,
-              color: MetaGymTheme.textSecondary,
+              color: palette.textSecondary,
             ),
           ),
         ],
@@ -546,6 +557,7 @@ PreferredSizeWidget _buildCoachDarkAppBar(
   required bool canPop,
   VoidCallback? onRefresh,
 }) {
+  final palette = MetaGymTheme.paletteOf(context);
   return AppBar(
     automaticallyImplyLeading: false,
     leadingWidth: 72,
@@ -567,8 +579,8 @@ PreferredSizeWidget _buildCoachDarkAppBar(
       title,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        color: MetaGymTheme.textPrimary,
+      style: TextStyle(
+        color: palette.textPrimary,
         fontSize: 19,
         fontWeight: FontWeight.w700,
       ),
@@ -586,7 +598,7 @@ PreferredSizeWidget _buildCoachDarkAppBar(
       ),
     ],
     backgroundColor: Colors.transparent,
-    foregroundColor: MetaGymTheme.textPrimary,
+    foregroundColor: palette.textPrimary,
     elevation: 0,
     scrolledUnderElevation: 0,
     surfaceTintColor: Colors.transparent,
@@ -616,17 +628,18 @@ class _SectionHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: MetaGymTheme.brandOrange, size: 19),
+        Icon(icon, color: palette.primaryText, size: 19),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -651,6 +664,9 @@ class _EmptyStateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final muted = isLight ? palette.textSecondary : const Color(0xFFB7B2AF);
     return CoachingGraphiteCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -659,18 +675,18 @@ class _EmptyStateCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0x80211E1C),
+              color: palette.metricPanelBg,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x9A8C8176)),
+              border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: const Color(0xFFB7B2AF), size: 24),
+            child: Icon(icon, color: muted, size: 24),
           ),
           const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: MetaGymTheme.textPrimary,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),
@@ -679,8 +695,8 @@ class _EmptyStateCard extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFB7B2AF),
+            style: TextStyle(
+              color: muted,
               fontSize: 13,
               height: 1.45,
             ),

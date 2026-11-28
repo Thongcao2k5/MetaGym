@@ -93,52 +93,63 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
     final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
       barrierColor: const Color(0xB8040609),
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xF0241F1B),
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-          side: const BorderSide(color: Color(0xA3A79D92), width: 1.1),
-        ),
-        title: const Text(
-          'Công bố hướng dẫn?',
-          style: TextStyle(
-            color: MetaGymTheme.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: const Text(
-          'Member sẽ thấy hướng dẫn này; bản cũ chuyển vào lịch sử.',
-          style: TextStyle(
-            color: Color(0xFFC8C2BC),
-            fontSize: 14,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFC8C2BC),
-              minimumSize: const Size(48, 48),
+      builder: (dialogContext) {
+        final palette = MetaGymTheme.paletteOf(dialogContext);
+        final isLight = MetaGymTheme.isLightPalette(dialogContext);
+        return AlertDialog(
+          backgroundColor: isLight
+              ? palette.surfaceSolid
+              : const Color(0xF0241F1B),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+            side: BorderSide(
+              color: isLight
+                  ? palette.borderSolid
+                  : MetaGymWarmGlassTokens.cardBorder,
+              width: 1.1,
             ),
-            child: const Text('Quay lại'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.primary,
-              foregroundColor: MetaGymTheme.onPrimary,
-              minimumSize: const Size(48, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          title: Text(
+            'Công bố hướng dẫn?',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Member sẽ thấy hướng dẫn này; bản cũ chuyển vào lịch sử.',
+            style: TextStyle(
+              color: palette.textWarmMuted,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              style: TextButton.styleFrom(
+                foregroundColor: palette.textWarmMuted,
+                minimumSize: const Size(48, 48),
               ),
+              child: const Text('Quay lại'),
             ),
-            child: const Text('Xác nhận công bố'),
-          ),
-        ],
-      ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: MetaGymTheme.primary,
+                foregroundColor: MetaGymTheme.onPrimary,
+                minimumSize: const Size(48, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              child: const Text('Xác nhận công bố'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed == true && mounted) await _save(publish: true);
   }
@@ -155,10 +166,10 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
     _ => Icons.history_rounded,
   };
 
-  Color _guideAccent(String status) => switch (status) {
-    'ACTIVE' => MetaGymTheme.success,
-    'DRAFT' => MetaGymTheme.warning,
-    _ => MetaGymTheme.reflectionBlue,
+  Color _guideAccent(String status, MetaGymPalette palette) => switch (status) {
+    'ACTIVE' => palette.success,
+    'DRAFT' => palette.warning,
+    _ => palette.reflection,
   };
 
   InputDecoration _darkInputDecoration({
@@ -166,33 +177,45 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
     String? hintText,
     required bool enabled,
   }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final disabledBorderColor = isLight
+        ? palette.borderSolid.withValues(alpha: 0.6)
+        : const Color(0x528C8176);
+    final subtleMuted = isLight
+        ? palette.textSecondary
+        : MetaGymWarmGlassTokens.subtitleMuted;
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
       borderSide: BorderSide(
-        color: enabled ? const Color(0x9A8C8176) : const Color(0x528C8176),
+        color: enabled ? palette.metricPanelBorder : disabledBorderColor,
       ),
     );
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
       filled: true,
-      fillColor: enabled ? const Color(0x80211E1C) : const Color(0x52211E1C),
-      labelStyle: const TextStyle(
-        color: Color(0xFFC8C2BC),
+      fillColor: enabled
+          ? palette.metricPanelBg
+          : (isLight
+                ? palette.surfaceRaised.withValues(alpha: 0.7)
+                : const Color(0x52211E1C)),
+      labelStyle: TextStyle(
+        color: palette.textWarmMuted,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
-      floatingLabelStyle: const TextStyle(
-        color: MetaGymTheme.brandOrange,
+      floatingLabelStyle: TextStyle(
+        color: palette.primaryText,
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      hintStyle: const TextStyle(
-        color: Color(0xFFB8B0A8),
+      hintStyle: TextStyle(
+        color: subtleMuted,
         fontSize: 13.5,
       ),
-      counterStyle: const TextStyle(
-        color: Color(0xFFB8B0A8),
+      counterStyle: TextStyle(
+        color: subtleMuted,
         fontSize: 11,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -200,7 +223,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
       enabledBorder: border,
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-        borderSide: const BorderSide(color: Color(0x528C8176)),
+        borderSide: BorderSide(color: disabledBorderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
@@ -211,14 +234,16 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final editable = _guide == null || _guide?.status == 'DRAFT';
     final media = MediaQuery.paddingOf(context);
     final canPop = Navigator.of(context).canPop();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.scaffoldBackground,
+        backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -237,18 +262,18 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                 )
               : null,
           titleSpacing: canPop ? 8 : 16,
-          title: const Text(
+          title: Text(
             'Hướng dẫn dinh dưỡng',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: MetaGymTheme.textPrimary,
+              color: palette.textPrimary,
               fontSize: 19,
               fontWeight: FontWeight.w700,
             ),
           ),
           backgroundColor: Colors.transparent,
-          foregroundColor: MetaGymTheme.textPrimary,
+          foregroundColor: palette.textPrimary,
           elevation: 0,
           scrolledUnderElevation: 0,
           surfaceTintColor: Colors.transparent,
@@ -269,7 +294,7 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                   CoachingGraphiteCard(
                     margin: const EdgeInsets.only(bottom: 14),
                     borderColor: _guide!.status == 'ACTIVE'
-                        ? MetaGymTheme.success.withValues(alpha: 0.40)
+                        ? palette.success.withValues(alpha: 0.40)
                         : null,
                     child: Row(
                       children: [
@@ -277,17 +302,21 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: _guideAccent(_guide!.status)
-                                .withValues(alpha: 0.14),
+                            color: _guideAccent(
+                              _guide!.status,
+                              palette,
+                            ).withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(13),
                             border: Border.all(
-                              color: _guideAccent(_guide!.status)
-                                  .withValues(alpha: 0.35),
+                              color: _guideAccent(
+                                _guide!.status,
+                                palette,
+                              ).withValues(alpha: 0.35),
                             ),
                           ),
                           child: Icon(
                             _guideIcon(_guide!.status),
-                            color: _guideAccent(_guide!.status),
+                            color: _guideAccent(_guide!.status, palette),
                             size: 22,
                           ),
                         ),
@@ -306,8 +335,8 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                                 const SizedBox(height: 6),
                                 Text(
                                   _guide!.publicationLabel,
-                                  style: const TextStyle(
-                                    color: MetaGymTheme.textSecondary,
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
                                     fontSize: 12.5,
                                   ),
                                 ),
@@ -323,21 +352,21 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(
                             Icons.restaurant_menu_rounded,
-                            color: MetaGymTheme.success,
+                            color: palette.success,
                             size: 18,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Nội dung hướng dẫn',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: MetaGymTheme.textPrimary,
+                                color: palette.textPrimary,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -353,8 +382,8 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                         maxLength: 150,
                         style: TextStyle(
                           color: editable
-                              ? MetaGymTheme.textPrimary
-                              : MetaGymTheme.textSecondary,
+                              ? palette.textPrimary
+                              : palette.textSecondary,
                           fontSize: 14.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -374,8 +403,8 @@ class _CoachNutritionEditorPageState extends State<CoachNutritionEditorPage> {
                         maxLines: 12,
                         style: TextStyle(
                           color: editable
-                              ? MetaGymTheme.textPrimary
-                              : MetaGymTheme.textSecondary,
+                              ? palette.textPrimary
+                              : palette.textSecondary,
                           fontSize: 14.5,
                           height: 1.5,
                         ),

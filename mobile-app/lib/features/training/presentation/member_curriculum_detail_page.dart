@@ -147,18 +147,22 @@ class _MemberCurriculumDetailPageState
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final plan = _plan;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: palette.canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [
             const MetaGymBackground(),
             RefreshIndicator(
               color: MetaGymTheme.primary,
-              backgroundColor: const Color(0xFF282320),
+              backgroundColor: isLight
+                  ? palette.surfaceSolid
+                  : const Color(0xFF282320),
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -228,6 +232,7 @@ class _MemberCurriculumDetailPageState
   }
 
   Widget _header(BuildContext context, TrainingPlan? plan) {
+    final palette = MetaGymTheme.paletteOf(context);
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -245,7 +250,7 @@ class _MemberCurriculumDetailPageState
                   ),
                   const SizedBox(width: 12),
                 ],
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -254,17 +259,17 @@ class _MemberCurriculumDetailPageState
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: MetaGymTheme.primary,
+                          color: palette.primaryText,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.3,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         'Giáo trình',
                         style: TextStyle(
-                          color: Color(0xFFF7F9FC),
+                          color: palette.textPrimary,
                           fontSize: 21,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.3,
@@ -301,36 +306,50 @@ class _MemberCurriculumDetailPageState
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
-  }) => OutlinedButton.icon(
-    onPressed: onPressed,
-    icon: Icon(icon, size: 17, color: const Color(0xFFF7F9FC)),
-    label: Text(label),
-    style: OutlinedButton.styleFrom(
-      minimumSize: const Size(48, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 13),
-      foregroundColor: const Color(0xFFF7F9FC),
-      backgroundColor: const Color(0x9E2F2924),
-      side: const BorderSide(color: Color(0x95ADA295), width: 1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      textStyle: const TextStyle(
-        fontSize: 12.5,
-        fontWeight: FontWeight.w600,
-        fontFamily: MetaGymTheme.fontFamily,
+  }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 17, color: palette.textPrimary),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 13),
+        foregroundColor: palette.textPrimary,
+        backgroundColor: isLight
+            ? palette.surfaceSolid
+            : MetaGymWarmGlassTokens.circleButtonFill,
+        side: BorderSide(
+          color: isLight
+              ? palette.borderSolid
+              : MetaGymWarmGlassTokens.circleButtonBorder,
+          width: 1,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          fontFamily: MetaGymTheme.fontFamily,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _hero(TrainingPlan plan) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final bodyColor = isLight ? palette.textSecondary : const Color(0xFFE4DAD1);
     final status = _paused
         ? 'Tạm khóa'
         : plan.status == 'ARCHIVED'
         ? 'Đã lưu trữ'
         : 'Đang áp dụng';
     final statusColor = _paused
-        ? MetaGymTheme.warning
+        ? palette.warning
         : plan.status == 'ARCHIVED'
-        ? MetaGymTheme.reflectionBlue
-        : MetaGymTheme.success;
+        ? palette.reflection
+        : palette.success;
     final coach = _coachName;
     final disableBlur =
         MediaQuery.disableAnimationsOf(context) ||
@@ -339,8 +358,10 @@ class _MemberCurriculumDetailPageState
     final card = Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: disableBlur ? const Color(0xFF282320) : null,
-        gradient: disableBlur
+        color: isLight
+            ? palette.surfaceSolid
+            : (disableBlur ? const Color(0xFF282320) : null),
+        gradient: isLight || disableBlur
             ? null
             : const LinearGradient(
                 begin: Alignment.topLeft,
@@ -348,17 +369,24 @@ class _MemberCurriculumDetailPageState
                 colors: [Color(0xCD342D28), Color(0xC829241F)],
               ),
         borderRadius: radius,
-        border: Border.all(color: const Color(0xB7B3A99D), width: 1.2),
+        border: Border.all(
+          color: isLight ? palette.borderSolid : const Color(0xB7B3A99D),
+          width: 1.2,
+        ),
       ),
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             left: 20,
             right: 20,
             top: 0,
             child: SizedBox(
               height: 1,
-              child: ColoredBox(color: Color(0x75FFF5E9)),
+              child: ColoredBox(
+                color: isLight
+                    ? palette.glassHighlight
+                    : const Color(0x75FFF5E9),
+              ),
             ),
           ),
           Padding(
@@ -395,9 +423,9 @@ class _MemberCurriculumDetailPageState
                                 ),
                               ),
                               alignment: Alignment.center,
-                              child: const Icon(
+                              child: Icon(
                                 Icons.menu_book_rounded,
-                                color: MetaGymTheme.primary,
+                                color: palette.primaryText,
                                 size: 20,
                               ),
                             ),
@@ -405,8 +433,8 @@ class _MemberCurriculumDetailPageState
                             Expanded(
                               child: Text(
                                 plan.title,
-                                style: const TextStyle(
-                                  color: Color(0xFFF7F9FC),
+                                style: TextStyle(
+                                  color: palette.textPrimary,
                                   fontSize: 17,
                                   height: 1.3,
                                   fontWeight: FontWeight.w700,
@@ -419,7 +447,7 @@ class _MemberCurriculumDetailPageState
                               _heroExpanded
                                   ? Icons.keyboard_arrow_up_rounded
                                   : Icons.keyboard_arrow_down_rounded,
-                              color: const Color(0xFFF7F9FC),
+                              color: palette.textPrimary,
                               size: 24,
                             ),
                           ],
@@ -434,8 +462,8 @@ class _MemberCurriculumDetailPageState
                             if (plan.publishedAt != null)
                               Text(
                                 _date(plan.publishedAt!),
-                                style: const TextStyle(
-                                  color: Color(0xFFC8C2BC),
+                                style: TextStyle(
+                                  color: palette.textWarmMuted,
                                   fontSize: 11.5,
                                   fontFeatures: MetaGymTheme.tabularFigures,
                                   fontFamily: MetaGymTheme.fontFamily,
@@ -447,8 +475,8 @@ class _MemberCurriculumDetailPageState
                           const SizedBox(height: 8),
                           Text(
                             plan.goal!,
-                            style: const TextStyle(
-                              color: Color(0xFFE4DAD1),
+                            style: TextStyle(
+                              color: bodyColor,
                               fontSize: 13.5,
                               height: 1.45,
                               fontFamily: MetaGymTheme.fontFamily,
@@ -456,7 +484,12 @@ class _MemberCurriculumDetailPageState
                           ),
                         ],
                         const SizedBox(height: 10),
-                        const Divider(color: Color(0x40A79D92), height: 1),
+                        Divider(
+                          color: isLight
+                              ? palette.borderSolid
+                              : const Color(0x40A79D92),
+                          height: 1,
+                        ),
                         const SizedBox(height: 10),
                         Row(
                           children: [
@@ -483,8 +516,8 @@ class _MemberCurriculumDetailPageState
                                 child: Text(
                                   coach,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFFF7F9FC),
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w600,
                                     fontFamily: MetaGymTheme.fontFamily,
@@ -506,7 +539,7 @@ class _MemberCurriculumDetailPageState
         ],
       ),
     );
-    if (disableBlur) return card;
+    if (disableBlur || isLight) return card;
     return RepaintBoundary(
       child: ClipRRect(
         borderRadius: radius,
@@ -518,93 +551,106 @@ class _MemberCurriculumDetailPageState
     );
   }
 
-  Widget _emptyHero() => MetaGymHeroGlassCard(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _status('Chờ Coach', MetaGymTheme.warning),
-        const SizedBox(height: 12),
-        const Text(
-          'Chưa có giáo trình',
-          style: TextStyle(
-            color: Color(0xFFF7F9FC),
-            fontSize: 19,
-            fontWeight: FontWeight.w700,
-            fontFamily: MetaGymTheme.fontFamily,
+  Widget _emptyHero() {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return MetaGymHeroGlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _status('Chờ Coach', palette.warning),
+          const SizedBox(height: 12),
+          Text(
+            'Chưa có giáo trình',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              fontFamily: MetaGymTheme.fontFamily,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Coach sẽ gửi kế hoạch tập luyện và dinh dưỡng phù hợp cho bạn.',
-          style: TextStyle(color: Color(0xFFE4DAD1), fontSize: 13.5, height: 1.45),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 6),
+          Text(
+            'Coach sẽ gửi kế hoạch tập luyện và dinh dưỡng phù hợp cho bạn.',
+            style: TextStyle(
+              color: isLight ? palette.textSecondary : const Color(0xFFE4DAD1),
+              fontSize: 13.5,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _archivedPlans() => _surface(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(
-              Icons.history_rounded,
-              color: MetaGymTheme.reflectionBlue,
-              size: 18,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Giáo trình đã lưu trữ',
-              style: TextStyle(
-                color: Color(0xFFF7F9FC),
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+  Widget _archivedPlans() {
+    final palette = MetaGymTheme.paletteOf(context);
+    return _surface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.history_rounded,
+                color: palette.reflection,
+                size: 18,
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        for (final old in _history)
-          Material(
-            color: Colors.transparent,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                old.title,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 8),
+              Text(
+                'Giáo trình đã lưu trữ',
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              trailing: const Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xFFC8C2BC),
-              ),
-              onTap: () => MetaGymNavigation.pushOnce(
-                context,
-                MetaGymPageRoute(
-                  builder: (_) => MemberCurriculumDetailPage(
-                    id: old.id,
-                    service: widget.service,
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final old in _history)
+            Material(
+              color: Colors.transparent,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  old.title,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                trailing: Icon(
+                  Icons.chevron_right_rounded,
+                  color: palette.textWarmMuted,
+                ),
+                onTap: () => MetaGymNavigation.pushOnce(
+                  context,
+                  MetaGymPageRoute(
+                    builder: (_) => MemberCurriculumDetailPage(
+                      id: old.id,
+                      service: widget.service,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   Widget _tabSelector(TrainingPlan? plan) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final count = _mealPlan == null ? 'Chưa có' : 'T2–CN';
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(5),
       decoration: _box(
-        fill: const Color(0xD826221F),
-        border: const Color(0xA3A79D92),
+        fill: isLight ? palette.surfaceRaised : const Color(0xD826221F),
+        border: isLight ? palette.borderSolid : MetaGymWarmGlassTokens.cardBorder,
         radius: 16,
       ),
       child: Row(
@@ -626,7 +672,9 @@ class _MemberCurriculumDetailPageState
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: _tab == index
-                        ? MetaGymTheme.primary.withValues(alpha: 0.20)
+                        ? (isLight
+                              ? palette.chipActiveBg
+                              : MetaGymTheme.primary.withValues(alpha: 0.20))
                         : null,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -644,8 +692,10 @@ class _MemberCurriculumDetailPageState
                           label,
                           style: TextStyle(
                             color: _tab == index
-                                ? const Color(0xFFF7F9FC)
-                                : const Color(0xFFC8C2BC),
+                                ? (isLight
+                                      ? palette.primaryText
+                                      : const Color(0xFFF7F9FC))
+                                : palette.textWarmMuted,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             fontFamily: MetaGymTheme.fontFamily,
@@ -656,8 +706,10 @@ class _MemberCurriculumDetailPageState
                           badge,
                           style: TextStyle(
                             color: _tab == index
-                                ? const Color(0xFFFF987E)
-                                : MetaGymTheme.textSecondary,
+                                ? (isLight
+                                      ? palette.primaryText
+                                      : const Color(0xFFFF987E))
+                                : palette.textSecondary,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             fontFeatures: MetaGymTheme.tabularFigures,
@@ -674,60 +726,69 @@ class _MemberCurriculumDetailPageState
     );
   }
 
-  Widget _pausedNotice() => Container(
-    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-    padding: const EdgeInsets.all(16),
-    decoration: _box(border: const Color(0xFF815423)),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.lock_clock_outlined, color: MetaGymTheme.warning),
-            SizedBox(width: 8),
-            Text(
-              'Giáo trình đang tạm khóa',
-              style: TextStyle(
-                color: Color(0xFFF7F9FC),
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+  Widget _pausedNotice() {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(16),
+      decoration: _box(
+        border: isLight
+            ? palette.warning.withValues(alpha: 0.5)
+            : const Color(0xFF815423),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.lock_clock_outlined, color: palette.warning),
+              const SizedBox(width: 8),
+              Text(
+                'Giáo trình đang tạm khóa',
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Kế hoạch Coach đã tạo được giữ lại. Gia hạn gói Gym để tiếp tục sử dụng khi quan hệ Coach có hiệu lực.',
+            style: TextStyle(
+              color: isLight ? palette.textSecondary : const Color(0xFFE4DAD1),
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () => MetaGymNavigation.pushOnce(
+              context,
+              MetaGymPageRoute(builder: (_) => const MembershipPage()),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.primary,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(150, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Kế hoạch Coach đã tạo được giữ lại. Gia hạn gói Gym để tiếp tục sử dụng khi quan hệ Coach có hiệu lực.',
-          style: TextStyle(
-            color: Color(0xFFE4DAD1),
-            fontSize: 13,
-            height: 1.45,
-          ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: () => MetaGymNavigation.pushOnce(
-            context,
-            MetaGymPageRoute(builder: (_) => const MembershipPage()),
-          ),
-          style: FilledButton.styleFrom(
-            backgroundColor: MetaGymTheme.primary,
-            foregroundColor: MetaGymTheme.onPrimary,
-            minimumSize: const Size(150, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+            child: const Text(
+              'Gia hạn gói tập',
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
-          child: const Text(
-            'Gia hạn gói tập',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   Widget _training(TrainingPlan plan) {
+    final palette = MetaGymTheme.paletteOf(context);
     final days = plan.days;
     if (days.isEmpty) {
       return _message(
@@ -782,8 +843,8 @@ class _MemberCurriculumDetailPageState
                         children: [
                           Text(
                             'Ngày ${day.dayNumber} trong giáo án',
-                            style: const TextStyle(
-                              color: MetaGymTheme.primary,
+                            style: TextStyle(
+                              color: palette.primaryText,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               fontFeatures: MetaGymTheme.tabularFigures,
@@ -792,8 +853,8 @@ class _MemberCurriculumDetailPageState
                           const SizedBox(height: 4),
                           Text(
                             day.title,
-                            style: const TextStyle(
-                              color: Color(0xFFF7F9FC),
+                            style: TextStyle(
+                              color: palette.textPrimary,
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                             ),
@@ -802,8 +863,8 @@ class _MemberCurriculumDetailPageState
                             const SizedBox(height: 4),
                             Text(
                               'Lịch: ${_date(day.scheduledDate!)}',
-                              style: const TextStyle(
-                                color: Color(0xFFC8C2BC),
+                              style: TextStyle(
+                                color: palette.textWarmMuted,
                                 fontSize: 12,
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
@@ -836,83 +897,88 @@ class _MemberCurriculumDetailPageState
     );
   }
 
-  Widget _exercise(TrainingExercise exercise, int number) => _surface(
-    bottom: 12,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _smallChip(number.toString().padLeft(2, '0')),
-            const SizedBox(width: 10),
-            Expanded(
+  Widget _exercise(TrainingExercise exercise, int number) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return _surface(
+      bottom: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _smallChip(number.toString().padLeft(2, '0')),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  exercise.exerciseName,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (exercise.prescription.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: MetaGymTheme.primary.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: MetaGymTheme.primary.withValues(alpha: 0.35),
+                ),
+              ),
               child: Text(
-                exercise.exerciseName,
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
-                  fontSize: 15,
+                exercise.prescription,
+                style: TextStyle(
+                  color: palette.primaryText,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  height: 1.35,
+                  fontFeatures: MetaGymTheme.tabularFigures,
                 ),
               ),
             ),
           ],
-        ),
-        if (exercise.prescription.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: MetaGymTheme.primary.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: MetaGymTheme.primary.withValues(alpha: 0.35),
-              ),
-            ),
-            child: Text(
-              exercise.prescription,
-              style: const TextStyle(
-                color: MetaGymTheme.primary,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+          if (exercise.restSeconds != null ||
+              exercise.weightGuidance?.isNotEmpty == true) ...[
+            const SizedBox(height: 6),
+            Text(
+              [
+                if (exercise.restSeconds != null)
+                  'Nghỉ ${exercise.restSeconds} giây',
+                if (exercise.weightGuidance?.isNotEmpty == true)
+                  'Mức tạ ${exercise.weightGuidance}',
+              ].join(' · '),
+              style: TextStyle(
+                color: palette.textWarmMuted,
+                fontSize: 12.5,
                 fontFeatures: MetaGymTheme.tabularFigures,
               ),
             ),
-          ),
-        ],
-        if (exercise.restSeconds != null ||
-            exercise.weightGuidance?.isNotEmpty == true) ...[
-          const SizedBox(height: 6),
-          Text(
-            [
-              if (exercise.restSeconds != null)
-                'Nghỉ ${exercise.restSeconds} giây',
-              if (exercise.weightGuidance?.isNotEmpty == true)
-                'Mức tạ ${exercise.weightGuidance}',
-            ].join(' · '),
-            style: const TextStyle(
-              color: Color(0xFFC8C2BC),
-              fontSize: 12.5,
-              fontFeatures: MetaGymTheme.tabularFigures,
-            ),
-          ),
-        ],
-        for (final note in [
-          exercise.instructions,
-          exercise.safetyNotes,
-          exercise.notes,
-        ])
-          if (note?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 10),
-            _note(note!),
           ],
-      ],
-    ),
-  );
+          for (final note in [
+            exercise.instructions,
+            exercise.safetyNotes,
+            exercise.notes,
+          ])
+            if (note?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: 10),
+              _note(note!),
+            ],
+        ],
+      ),
+    );
+  }
 
   Widget _nutrition() {
     if (_paused) return const SizedBox.shrink();
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     if (_mealError != null) {
       return _message(
         icon: Icons.error_outline_rounded,
@@ -945,7 +1011,7 @@ class _MemberCurriculumDetailPageState
             itemBuilder: (context, index) => _choice(
               title: index == 6 ? 'CN' : 'T${index + 2}',
               selected: _weekday == index + 1,
-              color: MetaGymTheme.success,
+              color: palette.success,
               onTap: () => setState(() => _weekday = index + 1),
             ),
           ),
@@ -960,22 +1026,22 @@ class _MemberCurriculumDetailPageState
                   Expanded(
                     child: Text(
                       '${_weekday == 7 ? 'Chủ nhật' : 'Thứ ${_weekday + 1}'} · Lặp lại mỗi tuần',
-                      style: const TextStyle(
-                        color: MetaGymTheme.success,
+                      style: TextStyle(
+                        color: palette.success,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   if (items.isNotEmpty)
-                    _status('${total.round()} kcal', MetaGymTheme.success),
+                    _status('${total.round()} kcal', palette.success),
                 ],
               ),
               const SizedBox(height: 5),
               Text(
                 plan['title'] as String? ?? 'Thực đơn của Coach',
-                style: const TextStyle(
-                  color: Color(0xFFF7F9FC),
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1003,10 +1069,10 @@ class _MemberCurriculumDetailPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Lưu ý từ Coach',
                   style: TextStyle(
-                    color: Color(0xFFF7F9FC),
+                    color: palette.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1014,8 +1080,10 @@ class _MemberCurriculumDetailPageState
                 const SizedBox(height: 8),
                 Text(
                   plan['content'] as String,
-                  style: const TextStyle(
-                    color: Color(0xFFE4DAD1),
+                  style: TextStyle(
+                    color: isLight
+                        ? palette.textSecondary
+                        : const Color(0xFFE4DAD1),
                     fontSize: 13,
                     height: 1.45,
                   ),
@@ -1033,6 +1101,8 @@ class _MemberCurriculumDetailPageState
     IconData icon,
     List<CoachRecord> items,
   ) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final foods = items.where((item) => item['meal'] == key).toList();
     final total = foods.fold<double>(0, (sum, item) => sum + _kcal(item));
     return _surface(
@@ -1042,13 +1112,13 @@ class _MemberCurriculumDetailPageState
         children: [
           Row(
             children: [
-              Icon(icon, color: MetaGymTheme.success, size: 19),
+              Icon(icon, color: palette.success, size: 19),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1057,8 +1127,8 @@ class _MemberCurriculumDetailPageState
               if (foods.isNotEmpty)
                 Text(
                   '${total.round()} kcal',
-                  style: const TextStyle(
-                    color: MetaGymTheme.success,
+                  style: TextStyle(
+                    color: palette.success,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -1068,20 +1138,23 @@ class _MemberCurriculumDetailPageState
           ),
           const SizedBox(height: 10),
           if (foods.isEmpty)
-            const Text(
+            Text(
               'Chưa có món',
-              style: TextStyle(color: Color(0xFFC8C2BC), fontSize: 13),
+              style: TextStyle(color: palette.textWarmMuted, fontSize: 13),
             )
           else
             for (final food in foods) ...[
-              const Divider(color: Color(0x40A79D92), height: 16),
+              Divider(
+                color: isLight ? palette.borderSolid : const Color(0x40A79D92),
+                height: 16,
+              ),
               Row(
                 children: [
                   Expanded(
                     child: Text(
                       food['foodName'] as String? ?? 'Thực phẩm',
-                      style: const TextStyle(
-                        color: Color(0xFFF7F9FC),
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1090,8 +1163,8 @@ class _MemberCurriculumDetailPageState
                   const SizedBox(width: 8),
                   Text(
                     '${food['grams']} g · ${_kcal(food).round()} kcal',
-                    style: const TextStyle(
-                      color: Color(0xFFC8C2BC),
+                    style: TextStyle(
+                      color: palette.textWarmMuted,
                       fontSize: 12.5,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
@@ -1109,50 +1182,57 @@ class _MemberCurriculumDetailPageState
     String? subtitle,
     required bool selected,
     required VoidCallback? onTap,
-    Color color = MetaGymTheme.primary,
-  }) => MetaGymTap(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(14),
-    child: AnimatedContainer(
-      duration: MetaGymTheme.stateDurationOf(context),
-      curve: Curves.easeOutCubic,
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 46),
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-      decoration: _box(
-        fill: selected
-            ? color.withValues(alpha: 0.18)
-            : const Color(0xC42B2622),
-        border: selected ? color : const Color(0xA3A79D92),
-        radius: 14,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: selected
-                  ? const Color(0xFFF7F9FC)
-                  : const Color(0xFFC8C2BC),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              fontFeatures: MetaGymTheme.tabularFigures,
-            ),
-          ),
-          if (subtitle != null)
+    Color? color,
+  }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final activeColor = color ?? (isLight ? palette.primaryText : MetaGymTheme.primary);
+    return MetaGymTap(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: MetaGymTheme.stateDurationOf(context),
+        curve: Curves.easeOutCubic,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 46),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+        decoration: _box(
+          fill: selected
+              ? activeColor.withValues(alpha: isLight ? 0.14 : 0.18)
+              : null,
+          border: selected ? activeColor : null,
+          radius: 14,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Text(
-              subtitle,
-              style: const TextStyle(
-                color: Color(0xFFB8B0A8),
-                fontSize: 11,
+              title,
+              style: TextStyle(
+                color: selected
+                    ? (isLight ? activeColor : const Color(0xFFF7F9FC))
+                    : palette.textWarmMuted,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
                 fontFeatures: MetaGymTheme.tabularFigures,
               ),
             ),
-        ],
+            if (subtitle != null)
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: isLight
+                      ? palette.textSecondary
+                      : MetaGymWarmGlassTokens.subtitleMuted,
+                  fontSize: 11,
+                  fontFeatures: MetaGymTheme.tabularFigures,
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _surface({required Widget child, double bottom = 0}) => Container(
     margin: EdgeInsets.fromLTRB(16, 0, 16, bottom),
@@ -1166,51 +1246,59 @@ class _MemberCurriculumDetailPageState
     required String title,
     required String body,
     Widget? action,
-  }) => _surface(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: MetaGymTheme.reflectionBlue, size: 24),
-        const SizedBox(height: 10),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+  }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return _surface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: palette.reflection, size: 24),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          body,
-          style: const TextStyle(
-            color: Color(0xFFE4DAD1),
-            fontSize: 13.5,
-            height: 1.45,
+          const SizedBox(height: 5),
+          Text(
+            body,
+            style: TextStyle(
+              color: isLight ? palette.textSecondary : const Color(0xFFE4DAD1),
+              fontSize: 13.5,
+              height: 1.45,
+            ),
           ),
-        ),
-        if (action != null) ...[const SizedBox(height: 12), action],
-      ],
-    ),
-  );
-
-  Widget _note(String value) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(12),
-    decoration: _box(
-      fill: const Color(0x80211E1C),
-      border: const Color(0x9A8C8176),
-      radius: 14,
-    ),
-    child: Text(
-      value,
-      style: const TextStyle(
-        color: Color(0xFFE4DAD1),
-        fontSize: 12.5,
-        height: 1.45,
+          if (action != null) ...[const SizedBox(height: 12), action],
+        ],
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _note(String value) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: _box(
+        fill: palette.metricPanelBg,
+        border: palette.metricPanelBorder,
+        radius: 14,
+      ),
+      child: Text(
+        value,
+        style: TextStyle(
+          color: isLight ? palette.textSecondary : const Color(0xFFE4DAD1),
+          fontSize: 12.5,
+          height: 1.45,
+        ),
+      ),
+    );
+  }
 
   Widget _status(String label, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -1231,33 +1319,47 @@ class _MemberCurriculumDetailPageState
     ),
   );
 
-  Widget _smallChip(String label) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-    decoration: BoxDecoration(
-      color: const Color(0x80211E1C),
-      border: Border.all(color: const Color(0x9A8C8176)),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: Color(0xFFF7F9FC),
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        fontFeatures: MetaGymTheme.tabularFigures,
+  Widget _smallChip(String label) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: palette.metricPanelBg,
+        border: Border.all(color: palette.metricPanelBorder),
+        borderRadius: BorderRadius.circular(8),
       ),
-    ),
-  );
+      child: Text(
+        label,
+        style: TextStyle(
+          color: palette.textPrimary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          fontFeatures: MetaGymTheme.tabularFigures,
+        ),
+      ),
+    );
+  }
 
   BoxDecoration _box({
-    Color fill = const Color(0xC42B2622),
-    Color border = const Color(0xA3A79D92),
+    Color? fill,
+    Color? border,
     double radius = 20,
-  }) => BoxDecoration(
-    color: fill,
-    border: Border.all(color: border, width: 1.1),
-    borderRadius: BorderRadius.circular(radius),
-  );
+  }) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    return BoxDecoration(
+      color: fill ??
+          (isLight ? palette.surfaceSolid : MetaGymWarmGlassTokens.cardFill),
+      border: Border.all(
+        color: border ??
+            (isLight
+                ? palette.borderSolid
+                : MetaGymWarmGlassTokens.cardBorder),
+        width: 1.1,
+      ),
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
 
   String _date(String value) {
     final parsed = DateTime.tryParse(value);

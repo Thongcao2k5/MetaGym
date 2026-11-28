@@ -1389,15 +1389,16 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     final canWrite = _data?['canWrite'] == true;
     final mealGroups = _buildMealGroups(entries, items, plan);
     final showLogButton = !_loading && _error == null && canWrite;
+    final palette = MetaGymTheme.paletteOf(context);
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: _warmTextPrimary,
+        foregroundColor: palette.textPrimary,
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
@@ -1937,15 +1938,16 @@ class _EntryFormState extends State<_EntryForm> {
       if (_unit.isNotEmpty && !defaultUnits.contains(_unit)) _unit,
     ];
 
+    final palette = MetaGymTheme.paletteOf(context);
     return Scaffold(
-      backgroundColor: MetaGymTheme.darkCanvas,
+      backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: _warmTextPrimary,
+        foregroundColor: palette.textPrimary,
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),

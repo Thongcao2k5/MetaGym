@@ -89,12 +89,17 @@ class _LoginPageState extends State<LoginPage> {
     final svg = isFaceId
         ? MetaGymIcons.authFaceId
         : MetaGymIcons.authFingerprint;
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: MetaGymTheme.overlayGlass,
+      backgroundColor: isLight
+          ? palette.surfaceSolid
+          : MetaGymTheme.overlayGlass,
       builder: (sheetCtx) {
+        final sheetPalette = MetaGymTheme.paletteOf(sheetCtx);
         return SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -123,18 +128,18 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 14),
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textPrimary,
+                  style: TextStyle(
+                    color: sheetPalette.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Đăng nhập nhanh vào tài khoản test local Nguyễn Minh Quân (đầy đủ dữ liệu mẫu).',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: MetaGymTheme.textSecondary,
+                    color: sheetPalette.textSecondary,
                     fontSize: 13,
                     height: 1.45,
                   ),
@@ -166,15 +171,16 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final formBody = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Chào mừng trở lại',
           textAlign: TextAlign.left,
           style: TextStyle(
-            color: MetaGymTheme.textPrimary,
+            color: palette.textPrimary,
             fontSize: 23,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.3,
@@ -182,11 +188,11 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Đăng nhập để tiếp tục lịch tập và kết nối cùng Coach của bạn.',
           textAlign: TextAlign.left,
           style: TextStyle(
-            color: MetaGymWarmGlassTokens.subtitleMuted,
+            color: palette.textWarmMuted,
             fontSize: 12.5,
             height: 1.4,
           ),
@@ -264,12 +270,16 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           color: _rememberMe
                               ? MetaGymTheme.brandOrange
-                              : const Color(0x88181513),
+                              : (isLight
+                                    ? palette.metricPanelBg
+                                    : const Color(0x88181513)),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: _rememberMe
                                 ? MetaGymTheme.brandOrange
-                                : MetaGymWarmGlassTokens.cardBorder,
+                                : (isLight
+                                      ? palette.borderSolid
+                                      : MetaGymWarmGlassTokens.cardBorder),
                           ),
                         ),
                         child: _rememberMe
@@ -281,10 +291,10 @@ class _LoginPageState extends State<LoginPage> {
                             : null,
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Ghi nhớ đăng nhập',
                         style: TextStyle(
-                          color: MetaGymTheme.textPrimary,
+                          color: palette.textPrimary,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w500,
                         ),
@@ -302,7 +312,7 @@ class _LoginPageState extends State<LoginPage> {
                       context.push(AppRoutes.forgotPassword);
                     },
               style: TextButton.styleFrom(
-                foregroundColor: MetaGymTheme.reflectionBlue,
+                foregroundColor: palette.reflection,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: const Size(44, 44),
                 tapTargetSize: MaterialTapTargetSize.padded,
@@ -378,9 +388,13 @@ class _LoginPageState extends State<LoginPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MetaGymTheme.textPrimary,
-                  backgroundColor: const Color(0x66181513),
-                  side: const BorderSide(color: Color(0x66FF5E36)),
+                  foregroundColor: palette.textPrimary,
+                  backgroundColor: isLight
+                      ? palette.surfaceSolid
+                      : const Color(0x66181513),
+                  side: BorderSide(
+                    color: palette.primaryText.withValues(alpha: 0.45),
+                  ),
                   minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   shape: RoundedRectangleBorder(
@@ -412,9 +426,13 @@ class _LoginPageState extends State<LoginPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MetaGymTheme.textPrimary,
-                  backgroundColor: const Color(0x66181513),
-                  side: const BorderSide(color: Color(0x6670AEE8)),
+                  foregroundColor: palette.textPrimary,
+                  backgroundColor: isLight
+                      ? palette.surfaceSolid
+                      : const Color(0x66181513),
+                  side: BorderSide(
+                    color: palette.info.withValues(alpha: 0.45),
+                  ),
                   minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   shape: RoundedRectangleBorder(
@@ -442,8 +460,8 @@ class _LoginPageState extends State<LoginPage> {
               TextSpan(
                 text: 'Điều khoản sử dụng',
                 recognizer: _termsTap,
-                style: const TextStyle(
-                  color: MetaGymTheme.reflectionBlue,
+                style: TextStyle(
+                  color: palette.reflection,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
                 ),
@@ -452,8 +470,8 @@ class _LoginPageState extends State<LoginPage> {
               TextSpan(
                 text: 'Chính sách bảo mật',
                 recognizer: _privacyTap,
-                style: const TextStyle(
-                  color: MetaGymTheme.reflectionBlue,
+                style: TextStyle(
+                  color: palette.reflection,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
                 ),
@@ -464,21 +482,21 @@ class _LoginPageState extends State<LoginPage> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
-        const Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            MetaGymSvgIcon(
+            const MetaGymSvgIcon(
               MetaGymIcons.authVerified,
               size: 14,
               fallbackIcon: Icons.verified_user_outlined,
             ),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 'Không gian Hội viên & Huấn luyện viên Meta Gym',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: MetaGymTheme.textSecondary,
+                  color: palette.textSecondary,
                   fontSize: 11,
                   height: 1.35,
                   fontWeight: FontWeight.w500,
@@ -525,15 +543,16 @@ class _BiometricButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return SizedBox(
       height: 44,
       child: OutlinedButton(
         key: buttonKey,
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
-          backgroundColor: MetaGymWarmGlassTokens.metricPanelFill,
-          side: const BorderSide(
-            color: MetaGymWarmGlassTokens.metricPanelBorder,
+          backgroundColor: palette.metricPanelBg,
+          side: BorderSide(
+            color: palette.metricPanelBorder,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(13),
@@ -551,8 +570,8 @@ class _BiometricButton extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: MetaGymTheme.textPrimary,
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                 ),

@@ -178,67 +178,70 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                coach
-                    ? 'Cần gói Coach'
-                    : isExpired
-                    ? 'Gói tập đã hết hạn'
-                    : 'Cần gói tập',
-                style: const TextStyle(
-                  color: MetaGymTheme.textPrimary,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                coach
-                    ? 'Đăng ký gói Coach để mở $feature.'
-                    : '${isExpired ? 'Gia hạn' : 'Đăng ký'} gói tập để sử dụng $feature.',
-                style: const TextStyle(
-                  color: MetaGymTheme.textSecondary,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: MetaGymTheme.primary,
-                  foregroundColor: MetaGymTheme.onPrimary,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 15,
+      builder: (sheetCtx) {
+        final palette = MetaGymTheme.paletteOf(sheetCtx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  coach
+                      ? 'Cần gói Coach'
+                      : isExpired
+                      ? 'Gói tập đã hết hạn'
+                      : 'Cần gói tập',
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 19,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text('Đăng ký ngay'),
-              ),
-              if (isExpired) ...[
                 const SizedBox(height: 8),
+                Text(
+                  coach
+                      ? 'Đăng ký gói Coach để mở $feature.'
+                      : '${isExpired ? 'Gia hạn' : 'Đăng ký'} gói tập để sử dụng $feature.',
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => Navigator.pop(sheetCtx, true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MetaGymTheme.primary,
+                    foregroundColor: MetaGymTheme.onPrimary,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: const Text('Đăng ký ngay'),
+                ),
+                if (isExpired) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pop(sheetCtx, false),
+                    child: const Text('Xem lịch sử'),
+                  ),
+                ],
                 TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Xem lịch sử'),
+                  onPressed: () => Navigator.pop(sheetCtx),
+                  child: const Text('Để sau'),
                 ),
               ],
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Để sau'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
     if (!mounted) return;
     if (destination == true) {
@@ -303,10 +306,12 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
     final lockedCurriculum =
         !_loading && _error == null && (!hasGym || !hasCoach);
 
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: MetaGymTheme.darkCanvas,
+        backgroundColor: palette.canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -315,7 +320,7 @@ class _MemberTrainingHubPageState extends State<MemberTrainingHubPage> {
               bottom: false,
               child: RefreshIndicator(
                 color: MetaGymTheme.primary,
-                backgroundColor: const Color(0xFF282320),
+                backgroundColor: palette.surfaceSolid,
                 onRefresh: _load,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -543,57 +548,12 @@ String? _extractInitials(String? name) {
   return word.substring(0, word.length >= 2 ? 2 : 1).toUpperCase();
 }
 
-/// Same ambient photo, dual-tone radial glow and dark scrim as Member Home.
+/// Same architectural dark/light background as Member Home.
 class _TrainingBackground extends StatelessWidget {
   const _TrainingBackground();
 
   @override
-  Widget build(BuildContext context) => const IgnorePointer(
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        Image(
-          image: AssetImage('assets/images/gym_banner.png'),
-          fit: BoxFit.cover,
-          errorBuilder: _backgroundFallback,
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0.85, -0.75),
-              radius: 0.9,
-              colors: [Color(0x2E8EB9E5), Colors.transparent],
-            ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(-0.85, 0.75),
-              radius: 0.8,
-              colors: [Color(0x24FF5A36), Colors.transparent],
-            ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0x9E0F1115), Color(0x900F1115), Color(0xAA0F1115)],
-              stops: [0, 0.48, 1],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  static Widget _backgroundFallback(
-    BuildContext context,
-    Object error,
-    StackTrace? stackTrace,
-  ) => const ColoredBox(color: MetaGymTheme.darkCanvas);
+  Widget build(BuildContext context) => const MetaGymBackground();
 }
 
 class _TrainingHeader extends StatelessWidget {
@@ -661,10 +621,14 @@ class _CircleHeaderActionButton extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xB82F2924),
+                    color: MetaGymTheme.isLightPalette(context)
+                        ? MetaGymTheme.paletteOf(context).surfaceSolid
+                        : const Color(0xB82F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0x95ADA295),
+                      color: MetaGymTheme.isLightPalette(context)
+                          ? MetaGymTheme.paletteOf(context).borderSolid
+                          : const Color(0x95ADA295),
                       width: 1,
                     ),
                   ),
@@ -691,38 +655,41 @@ class _SectionHeader extends StatelessWidget {
   final String trailing;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xFFF7F9FC),
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.2,
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
           ),
         ),
-      ),
-      const SizedBox(width: 8),
-      Text(
-        trailing,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Color(0xFFB7B2AF),
-          fontSize: 11.5,
-          fontWeight: FontWeight.w600,
-          fontFeatures: MetaGymTheme.tabularFigures,
+        const SizedBox(width: 8),
+        Text(
+          trailing,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: palette.textSecondary,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            fontFeatures: MetaGymTheme.tabularFigures,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
-/// Shared Warm Smoked Glass container (zero scrolling BackdropFilter).
+/// Shared Warm Smoked Glass container (adapts cleanly to Light Mode porcelain cards).
 class _WarmGlassShell extends StatelessWidget {
   const _WarmGlassShell({
     required this.child,
@@ -744,11 +711,13 @@ class _WarmGlassShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final borderRadius = BorderRadius.circular(radius);
     final content = Stack(
       clipBehavior: Clip.hardEdge,
       children: [
-        if (cornerGlowColor != null)
+        if (cornerGlowColor != null && !isLight)
           Positioned(
             top: -24,
             right: -24,
@@ -766,25 +735,30 @@ class _WarmGlassShell extends StatelessWidget {
               ),
             ),
           ),
-        const Positioned(
-          top: 0,
-          left: 18,
-          right: 18,
-          child: SizedBox(
-            height: 1,
-            child: ColoredBox(color: Color(0x70FFF6EA)),
-          ),
-        ),
         Padding(padding: padding, child: child),
       ],
     );
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: gradient == null ? const Color(0xC42B2622) : null,
-        gradient: gradient,
+        color: isLight
+            ? palette.surfaceSolid
+            : (gradient == null ? const Color(0xC42B2622) : null),
+        gradient: isLight ? null : gradient,
         borderRadius: borderRadius,
-        border: Border.all(color: borderColor, width: 1.1),
+        border: Border.all(
+          color: isLight ? palette.borderSolid : borderColor,
+          width: isLight ? 1.0 : 1.1,
+        ),
+        boxShadow: isLight
+            ? const [
+                BoxShadow(
+                  color: Color(0x120F172A),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -824,6 +798,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final timeBadge = todaySelfPlan?.startTime != null
         ? '● Hôm nay · ${todaySelfPlan!.startTime}'
         : '● Hôm nay · 18:00';
@@ -859,10 +835,12 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0x2EFF5E36),
+                    color: palette.chipActiveBg,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: const Color(0x66FF5E36),
+                      color: MetaGymTheme.brandOrange.withValues(
+                        alpha: isLight ? 0.35 : 0.40,
+                      ),
                       width: 0.9,
                     ),
                   ),
@@ -870,8 +848,10 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                     timeBadge,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFFF9B73),
+                    style: TextStyle(
+                      color: isLight
+                          ? palette.primaryText
+                          : const Color(0xFFFF9B73),
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
                       fontFeatures: MetaGymTheme.tabularFigures,
@@ -887,10 +867,10 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0x55181513),
+                    color: palette.metricPanelBg,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: const Color(0x4CB3A99D),
+                      color: palette.metricPanelBorder,
                       width: 0.9,
                     ),
                   ),
@@ -898,8 +878,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                     locked ? 'Chưa kích hoạt' : '90 phút · Push Day',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFD2CBC4),
+                    style: TextStyle(
+                      color: palette.textSecondary,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       fontFeatures: MetaGymTheme.tabularFigures,
@@ -914,8 +894,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
             headline,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFF7F9FC),
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 16.5,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
@@ -952,8 +932,8 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                       : 'Giáo trình tuần 4 · HLV $displayCoach',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFD0C9C2),
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -968,23 +948,23 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                 child: _HeroMetricBox(
                   value: exerciseCount,
                   label: 'Bài tập',
-                  valueColor: const Color(0xFFF7F9FC),
+                  valueColor: palette.textPrimary,
                 ),
               ),
               const SizedBox(width: 7),
-              const Expanded(
+              Expanded(
                 child: _HeroMetricBox(
                   value: '22',
                   label: 'Tổng hiệp',
-                  valueColor: MetaGymTheme.primary,
+                  valueColor: palette.primaryText,
                 ),
               ),
               const SizedBox(width: 7),
-              const Expanded(
+              Expanded(
                 child: _HeroMetricBox(
                   value: '~540',
                   label: 'Kcal',
-                  valueColor: MetaGymTheme.success,
+                  valueColor: palette.success,
                 ),
               ),
             ],
@@ -1026,10 +1006,10 @@ class _TodayWorkoutHeroCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onOpenCurriculum,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFF7F9FC),
-                      backgroundColor: const Color(0x55181513),
-                      side: const BorderSide(
-                        color: Color(0x70B3A99D),
+                      foregroundColor: palette.textPrimary,
+                      backgroundColor: palette.metricPanelBg,
+                      side: BorderSide(
+                        color: palette.metricPanelBorder,
                         width: 1,
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -1072,12 +1052,13 @@ class _HeroMetricBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       decoration: BoxDecoration(
-        color: const Color(0x78181513),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x45B3A99D), width: 0.9),
+        border: Border.all(color: palette.metricPanelBorder, width: 0.9),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1100,8 +1081,8 @@ class _HeroMetricBox extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFB7B2AF),
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 10.5,
               fontWeight: FontWeight.w600,
             ),
@@ -1132,12 +1113,14 @@ class _MembershipBentoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFF5B041);
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final gold = isLight ? palette.warning : const Color(0xFFF5B041);
     final statusColor = hasGym
-        ? MetaGymTheme.success
+        ? palette.success
         : hadGym
-        ? MetaGymTheme.warning
-        : MetaGymTheme.textSecondary;
+        ? palette.warning
+        : palette.textSecondary;
 
     return _WarmGlassShell(
       padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
@@ -1170,7 +1153,7 @@ class _MembershipBentoCard extends StatelessWidget {
                       hasGym ? 'HẠNG VÀNG' : 'GÓI TẬP',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: gold,
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
@@ -1194,8 +1177,8 @@ class _MembershipBentoCard extends StatelessWidget {
                       Text(
                         '$daysLeft',
                         maxLines: 1,
-                        style: const TextStyle(
-                          color: Color(0xFFF7F9FC),
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontSize: 23,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.6,
@@ -1204,11 +1187,11 @@ class _MembershipBentoCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         'ngày còn lại',
                         maxLines: 1,
                         style: TextStyle(
-                          color: Color(0xFFD0C9C2),
+                          color: palette.textSecondary,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1223,8 +1206,8 @@ class _MembershipBentoCard extends StatelessWidget {
                       : 'Đang hiệu lực',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFB7B2AF),
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 10.5,
                     fontFeatures: MetaGymTheme.tabularFigures,
                   ),
@@ -1234,8 +1217,8 @@ class _MembershipBentoCard extends StatelessWidget {
                   hadGym ? 'Đã hết hạn' : 'Chưa có gói',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFF7F9FC),
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1245,8 +1228,8 @@ class _MembershipBentoCard extends StatelessWidget {
                   hadGym ? 'Gia hạn để tiếp tục' : 'Chọn gói để bắt đầu',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFB7B2AF),
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 10.5,
                   ),
                 ),
@@ -1272,14 +1255,14 @@ class _MembershipBentoCard extends StatelessWidget {
                           : 'Xem gói tập',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: gold,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     '›',
                     style: TextStyle(
                       color: gold,
@@ -1317,11 +1300,12 @@ class _CoachBentoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final statusColor = coachActive
-        ? MetaGymTheme.success
+        ? palette.success
         : coachPaused
-        ? MetaGymTheme.warning
-        : MetaGymTheme.reflectionBlue;
+        ? palette.warning
+        : palette.reflection;
 
     return _WarmGlassShell(
       padding: const EdgeInsets.fromLTRB(12, 13, 12, 12),
@@ -1345,13 +1329,13 @@ class _CoachBentoCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'COACH 1:1',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: MetaGymTheme.primary,
+                        color: palette.primaryText,
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.6,
@@ -1397,20 +1381,20 @@ class _CoachBentoCard extends StatelessWidget {
                       height: 28,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: MetaGymTheme.reflectionBlue.withValues(
+                        color: palette.reflection.withValues(
                           alpha: 0.16,
                         ),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: MetaGymTheme.reflectionBlue.withValues(
+                          color: palette.reflection.withValues(
                             alpha: 0.4,
                           ),
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.person_outline_rounded,
                         size: 16,
-                        color: MetaGymTheme.reflectionBlue,
+                        color: palette.reflection,
                       ),
                     ),
                   const SizedBox(width: 7),
@@ -1424,8 +1408,8 @@ class _CoachBentoCard extends StatelessWidget {
                               : (coachName ?? 'Coach của bạn'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFF7F9FC),
+                          style: TextStyle(
+                            color: palette.textPrimary,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,
                             height: 1.2,
@@ -1440,8 +1424,8 @@ class _CoachBentoCard extends StatelessWidget {
                               : 'Còn 14/24 buổi',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFD0C9C2),
+                          style: TextStyle(
+                            color: palette.textSecondary,
                             fontSize: 10,
                             fontFeatures: MetaGymTheme.tabularFigures,
                           ),
@@ -1468,17 +1452,17 @@ class _CoachBentoCard extends StatelessWidget {
                       relationship == null ? 'Xem danh sách' : 'Lịch Coach',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: MetaGymTheme.primary,
+                      style: TextStyle(
+                        color: palette.primaryText,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     '›',
                     style: TextStyle(
-                      color: MetaGymTheme.primary,
+                      color: palette.primaryText,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -1527,12 +1511,13 @@ class _MiniProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = MetaGymTheme.isLightPalette(context);
     final clamped = progress.clamp(0.0, 1.0);
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),
       child: Container(
         height: height,
-        color: const Color(0x22FFFFFF),
+        color: isLight ? const Color(0xFFE2E8F0) : const Color(0x22FFFFFF),
         alignment: Alignment.centerLeft,
         child: FractionallySizedBox(
           widthFactor: clamped,
@@ -1556,23 +1541,24 @@ class _ServiceErrorPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
-              color: MetaGymTheme.warning,
+              color: palette.warning,
               size: 20,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Color(0xFFEAE6E2),
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontSize: 13,
                   height: 1.4,
                 ),
@@ -1611,6 +1597,7 @@ class _NutritionTodayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return _WarmGlassShell(
       padding: const EdgeInsets.fromLTRB(14, 10, 10, 13),
       radius: 20,
@@ -1623,12 +1610,12 @@ class _NutritionTodayCard extends StatelessWidget {
               _SvgIconWell(
                 svgAsset: MetaGymIcons.actionNutrition,
                 fallbackIcon: Icons.restaurant_menu_rounded,
-                accentColor: MetaGymTheme.success,
+                accentColor: palette.success,
                 size: 38,
                 iconSize: 20,
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1637,18 +1624,18 @@ class _NutritionTodayCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFF7F9FC),
+                        color: palette.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       '1.840 / 2.400 kcal · Đạm 140/160g',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFB7B2AF),
+                        color: palette.textSecondary,
                         fontSize: 11,
                         fontFeatures: MetaGymTheme.tabularFigures,
                       ),
@@ -1675,17 +1662,17 @@ class _NutritionTodayCard extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: MetaGymTheme.success.withValues(alpha: 0.16),
+                          color: palette.success.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
-                            color: MetaGymTheme.success.withValues(alpha: 0.45),
+                            color: palette.success.withValues(alpha: 0.40),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           '77%',
                           maxLines: 1,
                           style: TextStyle(
-                            color: MetaGymTheme.success,
+                            color: palette.success,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w800,
                             fontFeatures: MetaGymTheme.tabularFigures,
@@ -1699,12 +1686,12 @@ class _NutritionTodayCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.only(right: 4),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
             child: _MiniProgressBar(
               progress: 0.77,
               height: 5,
-              colors: [MetaGymTheme.success, Color(0xFF59E59A)],
+              colors: [palette.success, const Color(0xFF59E59A)],
             ),
           ),
         ],
@@ -1728,6 +1715,7 @@ class _WeeklySelfPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final subtitle = todaySelfPlan == null
         ? 'Hoàn thành 3/5 buổi mục tiêu'
         : [
@@ -1757,10 +1745,10 @@ class _WeeklySelfPlanCard extends StatelessWidget {
                   height: 42,
                 )
               else
-                const _SvgIconWell(
+                _SvgIconWell(
                   svgAsset: MetaGymIcons.workoutPlanCalendar,
                   fallbackIcon: Icons.event_note_rounded,
-                  accentColor: MetaGymTheme.reflectionBlue,
+                  accentColor: palette.reflection,
                   size: 38,
                   iconSize: 20,
                 ),
@@ -1769,12 +1757,12 @@ class _WeeklySelfPlanCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Lịch tập tuần của tôi',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFFF7F9FC),
+                        color: palette.textPrimary,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1784,8 +1772,8 @@ class _WeeklySelfPlanCard extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFB7B2AF),
+                      style: TextStyle(
+                        color: palette.textSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -1793,11 +1781,11 @@ class _WeeklySelfPlanCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Mở ›',
                 maxLines: 1,
                 style: TextStyle(
-                  color: MetaGymTheme.primary,
+                  color: palette.primaryText,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1838,29 +1826,31 @@ class _DayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final (bg, border, textColor, weight) = switch (state) {
       _DayState.done => (
-        const Color(0x292ECC71),
-        const Color(0x6B2ECC71),
-        MetaGymTheme.success,
+        palette.success.withValues(alpha: 0.14),
+        palette.success.withValues(alpha: 0.40),
+        palette.success,
         FontWeight.w700,
       ),
       _DayState.today => (
-        const Color(0x38FF5E36),
+        palette.chipActiveBg,
         MetaGymTheme.primary,
-        const Color(0xFFFFFFFF),
+        palette.chipActiveText,
         FontWeight.w800,
       ),
       _DayState.upcoming => (
-        const Color(0x8C181513),
-        const Color(0x47B3A99D),
-        const Color(0xFFB7B2AF),
+        isLight ? palette.metricPanelBg : const Color(0x8C181513),
+        isLight ? palette.metricPanelBorder : const Color(0x47B3A99D),
+        palette.textSecondary,
         FontWeight.w600,
       ),
       _DayState.rest => (
-        const Color(0x59181513),
-        const Color(0x2EB3A99D),
-        const Color(0xFF8E8A86),
+        isLight ? palette.surfaceRaised : const Color(0x59181513),
+        isLight ? palette.borderSolid : const Color(0x2EB3A99D),
+        palette.textSecondary,
         FontWeight.w600,
       ),
     };
@@ -1914,6 +1904,7 @@ class _BentoToolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return _WarmGlassShell(
       padding: const EdgeInsets.all(12),
       radius: 18,
@@ -1926,7 +1917,7 @@ class _BentoToolCard extends StatelessWidget {
               _SvgIconWell(
                 svgAsset: svgAsset,
                 fallbackIcon: fallbackIcon,
-                accentColor: locked ? MetaGymTheme.textSecondary : accentColor,
+                accentColor: locked ? palette.textSecondary : accentColor,
                 size: 34,
                 iconSize: 18,
                 locked: locked,
@@ -1953,10 +1944,10 @@ class _BentoToolCard extends StatelessWidget {
                   ),
                 )
               else
-                const Text(
+                Text(
                   '›',
                   style: TextStyle(
-                    color: Color(0xFFB7B2AF),
+                    color: palette.textSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1968,8 +1959,8 @@ class _BentoToolCard extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFF7F9FC),
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
             ),
@@ -1979,8 +1970,8 @@ class _BentoToolCard extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFB7B2AF),
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 10.5,
               fontFeatures: MetaGymTheme.tabularFigures,
             ),
@@ -2010,6 +2001,7 @@ class _SvgIconWell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     return SizedBox(
       width: size,
       height: size,
@@ -2042,7 +2034,7 @@ class _SvgIconWell extends StatelessWidget {
                 width: 16,
                 height: 16,
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.cardSurface,
+                  color: palette.surfaceSolid,
                   shape: BoxShape.circle,
                   border: Border.all(color: MetaGymTheme.primary, width: 1),
                 ),
