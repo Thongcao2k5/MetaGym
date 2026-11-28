@@ -77,6 +77,7 @@ async function uploadPublicImage(file, purpose) {
 
 export async function renderEquipmentPage({ root, params, shell }) {
   const tab = params?.get('tab') === 'exercises' ? 'exercises' : 'equipment';
+  const section = tab === 'exercises' ? 'exercises' : 'equipment';
   const search = params?.get('search') || '';
   const statusFilter = params?.get('status') || '';
   const categoryFilter = params?.get('category') || '';
@@ -88,11 +89,6 @@ export async function renderEquipmentPage({ root, params, shell }) {
   const hasFilter = tab === 'equipment'
     ? Boolean(search || statusFilter || categoryFilter)
     : Boolean(search || statusFilter || difficultyFilter || equipmentIdFilter);
-
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Thiết bị và thư viện bài tập">
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'equipment'}" data-cat-tab="equipment">Thiết bị phòng tập</button>
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'exercises'}" data-cat-tab="exercises">Thư viện bài tập (exercises)</button>
-  </div>`;
 
   const buildFilterHtml = (allEquipment = [], canExport = false) => (tab === 'equipment'
     ? `<form class="filter-bar" id="cat-filter-form">
@@ -134,9 +130,9 @@ export async function renderEquipmentPage({ root, params, shell }) {
   const topbarActionsHtml = `<button type="button" class="btn btn-primary" id="create-item">${icon('plus', 16)} ${tab === 'equipment' ? 'Thêm thiết bị' : 'Thêm bài tập'}</button>`;
 
   shell({
-    section: 'equipment',
+    section,
     topbarActionsHtml,
-    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml([], false)}${renderTableSkeleton(5)}</div>`,
+    contentHtml: `<div class="stack-20">${buildFilterHtml([], false)}${renderTableSkeleton(5)}</div>`,
   });
 
   const reloadWith = (patch = {}) => {
@@ -332,27 +328,14 @@ export async function renderEquipmentPage({ root, params, shell }) {
       });
 
     const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
       ${buildFilterHtml(allEquipment, rows.length > 0)}
       ${tableHtml}
     </div>`;
 
     shell({
-      section: 'equipment',
+      section,
       contentHtml,
       topbarActionsHtml,
-    });
-
-    root.querySelectorAll('[data-cat-tab]').forEach((btn) => {
-      btn.onclick = () => reloadWith({
-        tab: btn.dataset.catTab,
-        search: '',
-        status: '',
-        category: '',
-        difficulty: '',
-        equipmentId: '',
-        page: 1,
-      });
     });
 
     const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
@@ -696,7 +679,7 @@ export async function renderEquipmentPage({ root, params, shell }) {
     });
   } catch (error) {
     shell({
-      section: 'equipment',
+      section,
       topbarActionsHtml,
       contentHtml: renderErrorState({ title: 'Không tải được thiết bị & bài tập', message: error.message }),
     });

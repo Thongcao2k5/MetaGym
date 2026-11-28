@@ -33,9 +33,11 @@ test('T8 Static Gate: ZERO native confirm()/prompt()/alert() and ZERO backdrop-f
     const raw = readFileSync(file, 'utf8');
     const codeOnly = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
     assert.equal(/\b(?:window\.)?(?:confirm|prompt|alert)\s*\(/.test(codeOnly), false, `Forbidden native dialog in ${file}`);
+    assert.equal(/\bmeta-tabs?\b|\bmeta-tab-btn\b/.test(raw), false, `Forbidden meta-tabs class in ${file}`);
   }
 
   const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.equal(/\bmeta-tabs?\b|\bmeta-tab-btn\b/.test(css), false, 'style.css must not contain meta-tabs styles');
   assert.equal(/backdrop-filter\s*:\s*blur/i.test(css), false, 'style.css must not use backdrop-filter blur on Admin surfaces');
   assert.equal(css.includes('#0F1115'), true, 'Must include Dark Graphite canvas #0F1115');
   assert.equal(css.includes('#181B22'), true, 'Must include Solid Card #181B22');
@@ -352,4 +354,31 @@ test('Dashboard supports 7/30/60/90 quick ranges and period comparison with card
   env.root.querySelector('#dash-compare-btn').click();
   await flush();
   assert.equal(env.root.querySelectorAll('.kpi-trend').length, 0);
+});
+
+test('Sidebar renders dedicated links for all promoted sections and marks the active item with aria-current="page"', () => {
+  const promoted = [
+    ['simulated-refunds', '#/admin/incidents?tab=refunds'],
+    ['terminations', '#/admin/relationships?tab=terminations'],
+    ['coach-transfers', '#/admin/relationships?tab=transfers'],
+    ['plan-entitlements', '#/admin/plans?tab=entitlements'],
+    ['coach-entitlements', '#/admin/coach-packages?tab=entitlements'],
+    ['exercises', '#/admin/equipment?tab=exercises'],
+  ];
+
+  for (const [section, expectedHref] of promoted) {
+    const env = createDomEnvironment({ hash: expectedHref, token: 'tok' });
+    renderShell({
+      root: env.root,
+      section,
+      user: { fullName: 'Meta Admin', email: 'admin@metagym.vn' },
+      contentHtml: '<p>ok</p>',
+    });
+    for (const [, href] of promoted) {
+      assert.ok(env.root.querySelector(`a.meta-nav-item[href="${href}"]`), `Sidebar must include ${href}`);
+    }
+    const activeLink = env.root.querySelector(`a.meta-nav-item[href="${expectedHref}"]`);
+    assert.equal(activeLink.classList.contains('active'), true, `${section} link must have .active`);
+    assert.equal(activeLink.getAttribute('aria-current'), 'page', `${section} link must have aria-current="page"`);
+  }
 });

@@ -41,6 +41,10 @@ import { renderAuditLogsPage } from './pages/audit-logs.js';
 import { renderProfilePage } from './pages/profile.js';
 import { renderNotificationPage } from './pages/notification.js';
 import { renderDesignSystemPage } from './pages/design-system.js';
+import { renderMediaLibraryPage } from './pages/media-library.js';
+import { renderMediaSharingPage } from './pages/media-sharing.js';
+import { destroyAnalyticsCharts, renderMediaAnalyticsPage } from './pages/media-analytics.js';
+import { renderMediaSettingsPage } from './pages/media-settings.js';
 
 export function createApp({
   root = document.querySelector('#app'),
@@ -53,6 +57,7 @@ export function createApp({
   function signOut({ expired = false, returnHash = null } = {}) {
     stopNotificationPolling();
     destroyDashboardChart();
+    destroyAnalyticsCharts();
     closeModal();
     closeDrawer();
     clearSession({ expired, returnHash });
@@ -66,6 +71,7 @@ export function createApp({
     onUnauthorized: (returnHash) => {
       stopNotificationPolling();
       destroyDashboardChart();
+      destroyAnalyticsCharts();
       closeModal();
       closeDrawer();
       if (globalThis.location) {
@@ -125,28 +131,43 @@ export function createApp({
       }
 
       destroyDashboardChart();
+      destroyAnalyticsCharts();
       const shell = makeShell();
       const ctx = { root, params: parsed.params, shell, ChartCtor, QRCodeLib, onSignOut: () => signOut({ expired: false }) };
 
       const roleFromAccounts = (parsed.params.get('role') || 'COACH').toUpperCase() === 'MEMBER' ? 'MEMBER' : 'COACH';
+      const withTab = (baseParams, tabName) => {
+        const next = new URLSearchParams(baseParams);
+        next.set('tab', tabName);
+        return next;
+      };
       const pages = {
         dashboard: () => renderDashboardPage(ctx),
         'coach-incidents': () => renderIncidentsPage(ctx),
+        'simulated-refunds': () => renderIncidentsPage({ ...ctx, params: withTab(ctx.params, 'refunds') }),
         members: () => renderAccountsPage({ ...ctx, role: 'MEMBER' }),
         coaches: () => renderAccountsPage({ ...ctx, role: 'COACH' }),
         accounts: () => renderAccountsPage({ ...ctx, role: roleFromAccounts }),
         plans: () => renderPlansPage(ctx),
+        'plan-entitlements': () => renderPlansPage({ ...ctx, params: withTab(ctx.params, 'entitlements') }),
         'coach-packages': () => renderCoachPackagesPage(ctx),
+        'coach-entitlements': () => renderCoachPackagesPage({ ...ctx, params: withTab(ctx.params, 'entitlements') }),
         payments: () => renderPaymentsPage(ctx),
         relationships: () => renderRelationshipsPage(ctx),
         terminations: () => renderTerminationsPage(ctx),
+        'coach-transfers': () => renderRelationshipsPage({ ...ctx, params: withTab(ctx.params, 'transfers') }),
         'nutrition-foods': () => renderNutritionFoodsPage(ctx),
         gym: () => renderGymPage(ctx),
         equipment: () => renderEquipmentPage(ctx),
+        exercises: () => renderEquipmentPage({ ...ctx, params: withTab(ctx.params, 'exercises') }),
         'audit-logs': () => renderAuditLogsPage(ctx),
         profile: () => renderProfilePage(ctx),
         notification: () => renderNotificationPage(ctx),
         'design-system': () => renderDesignSystemPage(ctx),
+        'media-library': () => renderMediaLibraryPage(ctx),
+        'media-sharing': () => renderMediaSharingPage(ctx),
+        'media-analytics': () => renderMediaAnalyticsPage(ctx),
+        'media-settings': () => renderMediaSettingsPage(ctx),
       };
 
       const handler = pages[parsed.section];

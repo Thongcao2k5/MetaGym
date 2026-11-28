@@ -56,7 +56,6 @@ export async function renderDesignSystemPage({ root, shell }) {
   const today = isoDateVN();
   const weekAgo = daysAgoVN(6);
   let viewMode = 'both'; // both | desktop | mobile
-  let activeTab = 'ALL';
   let statePreview = 'empty'; // empty | filter | skeleton | error
   let samplePage = 1;
   let samplePageSize = 10;
@@ -130,10 +129,9 @@ export async function renderDesignSystemPage({ root, shell }) {
   };
 
   const renderContent = () => {
-    const filteredRows = activeTab === 'ALL' ? rowsState : rowsState.filter((r) => r.status === activeTab);
     const tableHtml = renderDataTable({
       columns: tableColumns,
-      rows: filteredRows,
+      rows: rowsState,
       selectable: true,
       paginationHtml: renderPagination({
         page: samplePage,
@@ -225,13 +223,8 @@ export async function renderDesignSystemPage({ root, shell }) {
 
         <section class="meta-card stack-16">
           <div>
-            <h2 class="card-title-text">3. Tabs, Thanh lọc chuẩn & Bộ chọn ngày (Desktop vs Mobile)</h2>
-            <p class="card-sub">Chuẩn theo <code>admin-web-data-page-guidelines.md</code>: Tabs + Thanh lọc <code>.filter-bar</code> + Date Picker tách theo thiết bị.</p>
-          </div>
-          <div class="meta-tabs" role="tablist" aria-label="Tabs mẫu">
-            <button type="button" class="meta-tab-btn ${activeTab === 'ALL' ? 'active' : ''}" role="tab" aria-selected="${activeTab === 'ALL'}" data-ds-tab="ALL">Tất cả (${rowsState.length})</button>
-            <button type="button" class="meta-tab-btn ${activeTab === 'ACTIVE' ? 'active' : ''}" role="tab" aria-selected="${activeTab === 'ACTIVE'}" data-ds-tab="ACTIVE">Hoạt động</button>
-            <button type="button" class="meta-tab-btn ${activeTab === 'DISABLED' ? 'active' : ''}" role="tab" aria-selected="${activeTab === 'DISABLED'}" data-ds-tab="DISABLED">Bị khóa</button>
+            <h2 class="card-title-text">3. Thanh lọc chuẩn & Bộ chọn ngày (Desktop vs Mobile)</h2>
+            <p class="card-sub">Chuẩn theo <code>admin-web-data-page-guidelines.md</code>: Thanh lọc <code>.filter-bar</code> + Date Picker tách theo thiết bị.</p>
           </div>
           <div class="filter-bar">
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
@@ -362,13 +355,6 @@ export async function renderDesignSystemPage({ root, shell }) {
     root.querySelectorAll('[data-ds-mode]').forEach((btn) => {
       btn.onclick = () => {
         viewMode = btn.dataset.dsMode || 'both';
-        mount();
-      };
-    });
-
-    root.querySelectorAll('[data-ds-tab]').forEach((btn) => {
-      btn.onclick = () => {
-        activeTab = btn.dataset.dsTab || 'ALL';
         mount();
       };
     });

@@ -109,16 +109,12 @@ function openGymPlanModal(row, onSaved) {
 
 export async function renderPlansPage({ root, params, shell }) {
   const tab = params?.get('tab') === 'entitlements' ? 'entitlements' : 'catalog';
+  const section = tab === 'entitlements' ? 'plan-entitlements' : 'plans';
   const search = params?.get('search') || '';
   const statusFilter = params?.get('status') || '';
   const page = Math.max(1, Number(params?.get('page')) || 1);
   const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const hasFilter = Boolean(search || statusFilter);
-
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý gói Gym">
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'catalog'}" data-plans-tab="catalog">Danh mục gói Gym</button>
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'entitlements'}" data-plans-tab="entitlements">Quyền sử dụng gói Gym</button>
-  </div>`;
 
   const snapshotBannerHtml = renderBanner({
     kind: 'info',
@@ -155,12 +151,14 @@ export async function renderPlansPage({ root, params, shell }) {
       </button>
     </form>`);
 
-  const topbarActionsHtml = `<button type="button" class="btn btn-primary" id="create-plan">${icon('plus', 16)} Tạo gói Gym</button>`;
+  const topbarActionsHtml = tab === 'catalog'
+    ? `<button type="button" class="btn btn-primary" id="create-plan">${icon('plus', 16)} Tạo gói Gym</button>`
+    : '';
 
   shell({
-    section: 'plans',
+    section,
     topbarActionsHtml,
-    contentHtml: `<div class="stack-20">${tabsHtml}${snapshotBannerHtml}${buildFilterHtml(false)}${renderTableSkeleton(5)}</div>`,
+    contentHtml: `<div class="stack-20">${tab === 'catalog' ? snapshotBannerHtml : ''}${buildFilterHtml(false)}${renderTableSkeleton(5)}</div>`,
   });
 
   const reloadWith = (patch = {}) => {
@@ -297,20 +295,15 @@ export async function renderPlansPage({ root, params, shell }) {
       });
 
     const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
-      ${snapshotBannerHtml}
+      ${tab === 'catalog' ? snapshotBannerHtml : ''}
       ${buildFilterHtml(rows.length > 0)}
       ${tableHtml}
     </div>`;
 
     shell({
-      section: 'plans',
+      section,
       contentHtml,
       topbarActionsHtml,
-    });
-
-    root.querySelectorAll('[data-plans-tab]').forEach((btn) => {
-      btn.onclick = () => reloadWith({ tab: btn.dataset.plansTab, search: '', status: '', page: 1 });
     });
 
     const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
@@ -403,7 +396,7 @@ export async function renderPlansPage({ root, params, shell }) {
     });
   } catch (error) {
     shell({
-      section: 'plans',
+      section,
       topbarActionsHtml,
       contentHtml: renderErrorState({
         title: tab === 'entitlements' ? 'Không tải được quyền sử dụng gói Gym' : 'Không tải được danh mục gói Gym',

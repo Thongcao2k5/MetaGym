@@ -178,3 +178,12 @@ export function methodLabel(method) {
     ZALOPAY: 'ZaloPay Sandbox',
   })[method] || method || '—';
 }
+
+export function formatBytes(bytes) {
+  const num = Number(bytes ?? 0);
+  if (!Number.isFinite(num) || num <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const idx = Math.min(units.length - 1, Math.floor(Math.log(num) / Math.log(1024)));
+  const val = num / (1024 ** idx);
+  return `${val >= 10 || idx === 0 ? val.toFixed(0) : val.toFixed(1)} ${units[idx]}`;
+}

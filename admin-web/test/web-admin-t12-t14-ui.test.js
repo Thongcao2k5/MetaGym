@@ -262,9 +262,13 @@ test('T14 Simulated Refund modal shows ACTIVE + QUEUED breakdown, requires reaso
   assert.equal(refundPosts[0].body.reason, 'Member chọn nhận hoàn tiền mô phỏng D3');
   assert.ok(refundPosts[0].idempotencyKey, 'Simulated refund must send Idempotency-Key');
 
-  // Switch to refunds history tab
-  env.root.querySelector('[data-inc-tab="refunds"]').click();
-  await flush();
+  // Verify meta-tabs are removed and refunds link is in sidebar, then render refunds view directly
+  assert.equal(env.root.querySelector('.meta-tabs'), null, 'Must not render .meta-tabs');
+  assert.ok(env.root.querySelector('a.meta-nav-item[href="#/admin/incidents?tab=refunds"]'), 'Sidebar must include refunds link');
+  await renderIncidentsPage({ root: env.root, params: new URLSearchParams({ tab: 'refunds' }), shell: makeShell(env) });
+
+  const refundsNav = env.root.querySelector('a.meta-nav-item[href="#/admin/incidents?tab=refunds"]');
+  assert.equal(refundsNav.classList.contains('active'), true, 'Refunds sidebar item must be active');
 
   const pageHtml = env.root.innerHTML;
   assert.equal(pageHtml.includes('Tổng tiền hoàn mô phỏng'), true);
@@ -381,6 +385,10 @@ test('T12 Relationships D5 terminations tab shows 72h countdown, DISPUTED adjudi
     shell: makeShell(env),
   });
 
+  assert.equal(env.root.querySelector('.meta-tabs'), null, 'Must not render .meta-tabs');
+  const termNav = env.root.querySelector('a.meta-nav-item[href="#/admin/relationships?tab=terminations"]');
+  assert.ok(termNav?.classList.contains('active'), 'Terminations sidebar item must be active');
+
   const tableHtml = env.root.querySelector('table')?.innerHTML || '';
   assert.equal(tableHtml.includes('Nguyễn Thảo Vy'), true);
   assert.equal(tableHtml.includes('DISPUTED'), true);
@@ -413,9 +421,9 @@ test('T12 Relationships D5 terminations tab shows 72h countdown, DISPUTED adjudi
     reason: 'Quá 72 giờ không phản hồi; chấp thuận kết thúc sớm theo D5',
   });
 
-  // Switch to list tab and verify pagination/filter + Detail Drawer (GET /admin/relationships/:id)
-  env.root.querySelector('[data-rel-tab="list"]').click();
-  await flush();
+  // Switch to list view via sidebar navigation and verify pagination/filter + Detail Drawer (GET /admin/relationships/:id)
+  assert.ok(env.root.querySelector('a.meta-nav-item[href="#/admin/relationships"]'), 'Sidebar must include relationships list link');
+  await renderRelationshipsPage({ root: env.root, params: new URLSearchParams(), shell: makeShell(env) });
 
   const statusSel = env.root.querySelector('#rel-status');
   statusSel.value = 'PAUSED';

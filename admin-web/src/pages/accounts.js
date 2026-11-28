@@ -337,11 +337,6 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     || state.toDate,
   );
 
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Phân loại tài khoản">
-    <a class="meta-tab-btn ${activeRole === 'COACH' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'COACH'}" href="#/admin/coaches">Huấn luyện viên (Coach)</a>
-    <a class="meta-tab-btn ${activeRole === 'MEMBER' ? 'active' : ''}" role="tab" aria-selected="${activeRole === 'MEMBER'}" href="#/admin/members">Hội viên (Member)</a>
-  </div>`;
-
   const activeFilterCount = [state.hasGym, state.hasCoach, state.hasAvailableSlots, state.fromDate || state.toDate].filter(Boolean).length;
   const mobileExtraCount = [state.statusFilter, state.hasGym, state.hasCoach, state.hasAvailableSlots, state.fromDate || state.toDate].filter(Boolean).length;
 
@@ -368,7 +363,7 @@ export async function renderAccountsPage({ root, role = 'MEMBER', params, shell 
     topbarActionsHtml: activeRole === 'COACH'
       ? `<button type="button" class="btn btn-primary" id="create">${icon('plus', 16)} Tạo Coach</button>`
       : `<button type="button" class="btn btn-primary" id="create-member">${icon('plus', 16)} Tạo hội viên</button>`,
-    contentHtml: `<div class="stack-20">${tabsHtml}${filterHtml}<div id="acc-table-region">${renderTableSkeleton(6)}</div></div>`,
+    contentHtml: `<div class="stack-20">${filterHtml}<div id="acc-table-region">${renderTableSkeleton(6)}</div></div>`,
   });
 
   let currentRows = [];

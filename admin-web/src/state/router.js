@@ -7,6 +7,13 @@ const SECTION_ALIASES = {
   notifications: 'notification',
   design: 'design-system',
   'ui-kit': 'design-system',
+  images: 'media-library',
+  library: 'media-library',
+  sharing: 'media-sharing',
+  'api-keys': 'media-sharing',
+  storage: 'media-analytics',
+  analytics: 'media-analytics',
+  settings: 'media-settings',
 };
 
 export function normalizeSection(rawSection) {

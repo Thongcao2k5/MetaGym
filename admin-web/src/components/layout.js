@@ -9,6 +9,7 @@ export const NAV_GROUPS = [
     items: [
       { id: 'dashboard', href: '#/admin/dashboard', label: 'Tổng quan', icon: 'dashboard' },
       { id: 'coach-incidents', href: '#/admin/incidents', label: 'Sự cố Coach', icon: 'alert', badgeKey: 'incidents' },
+      { id: 'simulated-refunds', href: '#/admin/incidents?tab=refunds', label: 'Hoàn tiền mô phỏng', icon: 'refund' },
     ],
   },
   {
@@ -16,14 +17,18 @@ export const NAV_GROUPS = [
     items: [
       { id: 'members', href: '#/admin/members', label: 'Hội viên', icon: 'users' },
       { id: 'coaches', href: '#/admin/coaches', label: 'Huấn luyện viên', icon: 'award' },
-      { id: 'relationships', href: '#/admin/relationships', label: 'Quan hệ & Kết thúc', icon: 'link', badgeKey: 'disputes' },
+      { id: 'relationships', href: '#/admin/relationships', label: 'Quan hệ Member–Coach', icon: 'link' },
+      { id: 'terminations', href: '#/admin/relationships?tab=terminations', label: 'Kết thúc sớm & Tranh chấp', icon: 'shield', badgeKey: 'disputes' },
+      { id: 'coach-transfers', href: '#/admin/relationships?tab=transfers', label: 'Lịch sử chuyển Coach', icon: 'swap' },
     ],
   },
   {
     label: 'Gói dịch vụ & Tiền',
     items: [
-      { id: 'plans', href: '#/admin/plans', label: 'Gói Gym', icon: 'card' },
-      { id: 'coach-packages', href: '#/admin/coach-packages', label: 'Gói Coach', icon: 'dumbbell' },
+      { id: 'plans', href: '#/admin/plans', label: 'Danh mục gói Gym', icon: 'card' },
+      { id: 'plan-entitlements', href: '#/admin/plans?tab=entitlements', label: 'Quyền sử dụng gói Gym', icon: 'checkDouble' },
+      { id: 'coach-packages', href: '#/admin/coach-packages', label: 'Danh mục gói Coach', icon: 'dumbbell' },
+      { id: 'coach-entitlements', href: '#/admin/coach-packages?tab=entitlements', label: 'Quyền lợi gói Coach', icon: 'calendar' },
       { id: 'payments', href: '#/admin/payments', label: 'Giao dịch', icon: 'receipt' },
     ],
   },
@@ -32,7 +37,17 @@ export const NAV_GROUPS = [
     items: [
       { id: 'nutrition-foods', href: '#/admin/foods', label: 'Thực phẩm', icon: 'food' },
       { id: 'gym', href: '#/admin/gym', label: 'Phòng gym & QR', icon: 'building' },
-      { id: 'equipment', href: '#/admin/equipment', label: 'Thiết bị & Bài tập', icon: 'dumbbell' },
+      { id: 'equipment', href: '#/admin/equipment', label: 'Thiết bị phòng tập', icon: 'dumbbell' },
+      { id: 'exercises', href: '#/admin/equipment?tab=exercises', label: 'Thư viện bài tập', icon: 'layers' },
+    ],
+  },
+  {
+    label: 'Image Server',
+    items: [
+      { id: 'media-library', href: '#/admin/media-library', label: 'Thư viện ảnh', icon: 'image' },
+      { id: 'media-sharing', href: '#/admin/media-sharing', label: 'Chia sẻ & API Key', icon: 'share' },
+      { id: 'media-analytics', href: '#/admin/media-analytics', label: 'Analytics & Lưu trữ', icon: 'hardDrive' },
+      { id: 'media-settings', href: '#/admin/media-settings', label: 'Cấu hình Image Server', icon: 'settings' },
     ],
   },
   {
@@ -53,6 +68,10 @@ export const PAGE_META = {
     title: 'Sự cố Coach (COACH_LOCKED)',
     subtitle: 'Theo dõi hội viên đóng băng gói Coach: chờ mở khóa (D1), chuyển Coach (D2) hoặc hoàn mô phỏng (D3).',
   },
+  'simulated-refunds': {
+    title: 'Lịch sử hoàn tiền mô phỏng',
+    subtitle: 'Theo dõi các bút toán hoàn tiền mô phỏng phát sinh từ sự cố khóa Coach (D3).',
+  },
   members: {
     title: 'Quản lý Hội viên (Member)',
     subtitle: 'Tìm kiếm server-side, hồ sơ vận hành (không lộ dữ liệu riêng tư) và khóa/mở theo quy tắc D4.',
@@ -66,20 +85,32 @@ export const PAGE_META = {
     subtitle: 'Hội viên & Huấn luyện viên — trần cứng 8 suất và khóa/mở có xem trước tác động.',
   },
   relationships: {
-    title: 'Quan hệ & Kết thúc sớm',
-    subtitle: 'Phân biệt lý do tạm ngưng, phân xử tranh chấp 72h (D5) và lịch sử chuyển Coach.',
+    title: 'Quan hệ Member–Coach',
+    subtitle: 'Theo dõi trạng thái ACTIVE / PAUSED / ENDED, phân biệt lý do tạm ngưng và chuyển Coach trực tiếp.',
   },
   terminations: {
     title: 'Kết thúc sớm & Tranh chấp (D5)',
     subtitle: 'Hàng chờ yêu cầu kết thúc sớm và tranh chấp quá 72 giờ cần Admin phân xử.',
   },
+  'coach-transfers': {
+    title: 'Lịch sử chuyển Coach',
+    subtitle: 'Truy vết các lượt chuyển Coach cùng số ngày đóng băng đã cộng bù và lý do xử lý.',
+  },
   plans: {
-    title: 'Gói Gym & Quyền sử dụng',
+    title: 'Danh mục gói Gym',
     subtitle: 'Chỉnh sửa giá/số ngày trực tiếp cho giao dịch mới; gói đã mua giữ nguyên snapshot.',
   },
+  'plan-entitlements': {
+    title: 'Quyền sử dụng gói Gym',
+    subtitle: 'Theo dõi gói Gym hội viên đang hiệu lực, đã xếp lịch, hết hạn hoặc đã hủy.',
+  },
   'coach-packages': {
-    title: 'Gói Coach & Quyền lợi',
-    subtitle: 'Danh mục Full CRUD không giới hạn 3 mã; theo dõi quyền lợi ACTIVE / QUEUED / ENDED.',
+    title: 'Danh mục gói Coach',
+    subtitle: 'Danh mục Full CRUD không giới hạn 3 mã; giá và số buổi áp dụng cho giao dịch mới.',
+  },
+  'coach-entitlements': {
+    title: 'Quyền lợi gói Coach',
+    subtitle: 'Theo dõi quyền lợi gói Coach ACTIVE / QUEUED / ENDED và các gói đang đóng băng (COACH_LOCKED).',
   },
   payments: {
     title: 'Giao dịch tại quầy & Lịch sử',
@@ -94,8 +125,12 @@ export const PAGE_META = {
     subtitle: 'Cập nhật thông tin công khai và in/đổi mã QR điểm danh tại quầy.',
   },
   equipment: {
-    title: 'Thiết bị & Thư viện Bài tập',
-    subtitle: 'Quản lý thiết bị phòng tập, hướng dẫn an toàn và danh mục bài tập (exercises).',
+    title: 'Thiết bị phòng tập',
+    subtitle: 'Quản lý thiết bị phòng tập, ảnh công khai và hướng dẫn sử dụng an toàn.',
+  },
+  exercises: {
+    title: 'Thư viện bài tập (exercises)',
+    subtitle: 'Quản lý danh mục bài tập, độ khó, nhóm cơ mục tiêu và liên kết thiết bị.',
   },
   'audit-logs': {
     title: 'Nhật ký Hệ thống (Audit Log)',
@@ -112,6 +147,22 @@ export const PAGE_META = {
   'design-system': {
     title: 'Thư viện Thiết kế',
     subtitle: 'Tổng hợp các component dùng chung trên Desktop và Mobile để dev xem và tái sử dụng.',
+  },
+  'media-library': {
+    title: 'Image Library & Albums',
+    subtitle: 'Upload đa tệp, Paste Clipboard, Import URL, quản lý Folder/Album/Tag và chỉnh sửa biến thể ảnh.',
+  },
+  'media-sharing': {
+    title: 'Chia sẻ & Quản lý API Key',
+    subtitle: 'Tạo liên kết chia sẻ có mật khẩu/hết hạn và cấp phát API Key tích hợp ngoài (/api/v1/*).',
+  },
+  'media-analytics': {
+    title: 'Analytics & Quản lý Lưu trữ',
+    subtitle: 'Thống kê lượt xem thật vs bot, băng thông, quota từng tài khoản, dọn file mồ côi & backup metadata.',
+  },
+  'media-settings': {
+    title: 'Cấu hình Hệ thống Image Server',
+    subtitle: 'Thiết lập thương hiệu, giới hạn upload, tối ưu Sharp (WebP/AVIF), SMTP, rate limit và bảo trì.',
   },
 };
 
@@ -147,8 +198,7 @@ export function renderShell({
   badges = {},
   onSignOut,
 }) {
-  const activeKey = section === 'terminations' ? 'relationships'
-    : section === 'accounts' ? 'coaches' : section;
+  const activeKey = section === 'accounts' ? 'coaches' : section;
   const meta = PAGE_META[section] || { title: section, subtitle: '' };
   const resolvedTitle = title || meta.title;
   const resolvedSub = subtitle !== undefined ? subtitle : meta.subtitle;

@@ -363,6 +363,7 @@ function renderRefundDetailHtml(row) {
 
 export async function renderIncidentsPage({ root, params, shell }) {
   const tab = params?.get('tab') === 'refunds' ? 'refunds' : 'incidents';
+  const section = tab === 'refunds' ? 'simulated-refunds' : 'coach-incidents';
   const page = Math.max(1, Number(params?.get('page')) || 1);
   const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const search = params?.get('search') || '';
@@ -376,11 +377,6 @@ export async function renderIncidentsPage({ root, params, shell }) {
   const hasFilter = tab === 'incidents'
     ? Boolean(search || memberChoice || (status && status !== 'OPEN'))
     : Boolean(search || fromDate || toDate);
-
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Phân mục sự cố Coach">
-    <button type="button" class="meta-tab-btn${tab === 'incidents' ? ' active' : ''}" role="tab" aria-selected="${tab === 'incidents'}" data-inc-tab="incidents">Sự cố khóa Coach</button>
-    <button type="button" class="meta-tab-btn${tab === 'refunds' ? ' active' : ''}" role="tab" aria-selected="${tab === 'refunds'}" data-inc-tab="refunds">Lịch sử hoàn tiền mô phỏng</button>
-  </div>`;
 
   const incidentFilterCount = [memberChoice, status && status !== 'OPEN'].filter(Boolean).length;
   const refundFilterCount = [fromDate || toDate].filter(Boolean).length;
@@ -426,10 +422,10 @@ export async function renderIncidentsPage({ root, params, shell }) {
     </form>`;
   };
 
-  // Keep .meta-tabs and .filter-bar mounted during loading (guidelines §2)
+  // Keep .filter-bar mounted during loading (guidelines §2)
   shell({
-    section: 'coach-incidents',
-    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
+    section,
+    contentHtml: `<div class="stack-20">${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
   });
 
   const reloadWith = (patch = {}) => {
@@ -563,7 +559,6 @@ export async function renderIncidentsPage({ root, params, shell }) {
         });
 
       const contentHtml = `<div class="stack-20">
-        ${tabsHtml}
         ${kpiHtml}
         ${buildFilterHtml(rows.length > 0)}
         ${renderDataTable({
@@ -580,7 +575,7 @@ export async function renderIncidentsPage({ root, params, shell }) {
         })}
       </div>`;
 
-      shell({ section: 'coach-incidents', contentHtml });
+      shell({ section, contentHtml });
 
       wireCommonHandlers({
         root,
@@ -718,7 +713,6 @@ export async function renderIncidentsPage({ root, params, shell }) {
       });
 
     const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
       ${buildFilterHtml(rows.length > 0)}
       ${renderDataTable({
         columns,
@@ -734,7 +728,7 @@ export async function renderIncidentsPage({ root, params, shell }) {
       })}
     </div>`;
 
-    shell({ section: 'coach-incidents', contentHtml });
+    shell({ section, contentHtml });
 
     wireCommonHandlers({
       root,
@@ -792,11 +786,8 @@ export async function renderIncidentsPage({ root, params, shell }) {
     });
   } catch (error) {
     shell({
-      section: 'coach-incidents',
-      contentHtml: `<div class="stack-20">${tabsHtml}${renderErrorState({ title: 'Không tải được dữ liệu sự cố Coach', message: error?.message || 'Lỗi kết nối máy chủ' })}</div>`,
-    });
-    root.querySelectorAll('[data-inc-tab]').forEach((btn) => {
-      btn.onclick = () => reloadWith({ tab: btn.dataset.incTab, page: 1 });
+      section,
+      contentHtml: `<div class="stack-20">${renderErrorState({ title: 'Không tải được dữ liệu sự cố Coach', message: error?.message || 'Lỗi kết nối máy chủ' })}</div>`,
     });
     const retry = root.querySelector('#retry-load-btn');
     if (retry) retry.onclick = () => renderIncidentsPage({ root, params, shell });
@@ -804,13 +795,6 @@ export async function renderIncidentsPage({ root, params, shell }) {
 }
 
 function wireCommonHandlers({ root, tab, rows, pagination, prefix, reloadWith, onOpenFilterModal, onExport }) {
-  root.querySelectorAll('[data-inc-tab]').forEach((btn) => {
-    btn.onclick = () => {
-      const nextTab = btn.dataset.incTab;
-      if (nextTab && nextTab !== tab) reloadWith({ tab: nextTab, page: 1 });
-    };
-  });
-
   const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
   const searchInput = root.querySelector('#inc-search');
   if (searchInput) searchInput.oninput = () => debouncedSearch();
