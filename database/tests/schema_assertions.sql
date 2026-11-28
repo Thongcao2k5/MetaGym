@@ -191,7 +191,9 @@ DECLARE
     'ix_payment_adjustments_created_at',
     'ix_termination_disputed_created',
     'ix_nutrition_foods_name_lower',
-    'ix_member_self_training_days_member_date_time'
+    'ix_member_self_training_days_member_date_time',
+    'ix_exercises_video_media_id',
+    'ix_equipment_icon_media_id'
   ];
   missing_indexes text[];
 BEGIN
@@ -207,6 +209,23 @@ BEGIN
 
   IF missing_indexes IS NOT NULL THEN
     RAISE EXCEPTION 'Missing 0033 reporting/audit indexes: %', missing_indexes;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'exercises' AND column_name = 'video_media_id'
+  ) THEN
+    RAISE EXCEPTION 'Missing 0043 column exercises.video_media_id';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'icon_key'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'icon_media_id'
+  ) THEN
+    RAISE EXCEPTION 'Missing 0044 columns equipment.icon_key / equipment.icon_media_id';
   END IF;
 END
 $$;
