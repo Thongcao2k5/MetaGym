@@ -192,7 +192,7 @@
 
   <div class="toast" id="toast">Đã copy đường dẫn icon!</div>
 
-  <script src="./icons-manifest.js?v=20261127m3"></script>
+  <script src="./icons-manifest.js?v=20261128video"></script>
   <script>
     const data = window.METAGYM_ASSETS || { svgs: [], sheets: [] };
     const svgs = data.svgs || [];
@@ -220,7 +220,8 @@
     svgs.forEach(i => catCounts.set(i.cat, (catCounts.get(i.cat) || 0) + 1));
     let catHtml = `<button class="cat-chip" data-cat="all">Tất cả (${svgs.length})</button>`;
     catCounts.forEach((cnt, cat) => {
-      catHtml += `<button class="cat-chip" data-cat="${cat}">${cat === 'equipment_m3' ? 'Máy Realleader M3' : cat} (${cnt})</button>`;
+      const label = { equipment_m3: 'Máy Realleader M3', equipment_video: 'Máy theo video đã lưu' }[cat] || cat;
+      catHtml += `<button class="cat-chip" data-cat="${cat}">${label} (${cnt})</button>`;
     });
     catsEl.innerHTML = catHtml;
     catsEl.querySelector(`[data-cat="${activeCat}"]`).classList.add('active');
@@ -238,7 +239,7 @@
       const q = normalize(searchEl.value.trim());
       const filtered = svgs.filter(i =>
         (activeCat === 'all' || i.cat === activeCat) &&
-        (!q || normalize([i.name, i.cat, i.label || '', i.model || '', i.muscles || ''].join(' ')).includes(q))
+        (!q || normalize([i.name, i.cat, i.label || '', i.model || '', i.muscles || '', i.videoFile || ''].join(' ')).includes(q))
       );
       gridEl.innerHTML = filtered.map(i => `
         <div class="icon-card" ${i.model ? 'data-equipment role="group"' : 'tabindex="0" role="button"'} data-path="${i.path}" aria-label="${i.model ? i.label : 'Sao chép đường dẫn ' + i.name}" title="Bấm để copy: ${i.path}">
@@ -246,7 +247,8 @@
           ${i.label ? `<div class="equipment-label">${i.label}</div><div class="equipment-model">${i.model} · ${i.muscles}</div>` : ''}
           <div class="icon-name">${i.name}</div>
           <div class="icon-cat">${i.cat}</div>
-          ${i.model ? `<div class="equipment-actions"><button type="button">Sao chép</button><a href="./${i.path}" download>Tải SVG</a><a href="${i.source}" target="_blank" rel="noopener">Máy gốc</a></div>` : ''}
+          ${i.videoFile ? `<div class="equipment-model" style="overflow-wrap:anywhere;">Video: ${i.videoFile}</div>` : ''}
+          ${i.model ? `<div class="equipment-actions"><button type="button">Sao chép</button><a href="./${i.path}" download>Tải SVG</a><a href="${i.source}" target="_blank" rel="noopener">${i.videoFile ? 'Nguồn video' : 'Máy gốc'}</a></div>` : ''}
         </div>
       `).join('');
       if (!filtered.length) gridEl.innerHTML = '<p class="equipment-empty">Không có icon phù hợp. Thử tên máy hoặc mã M3 khác.</p>';
