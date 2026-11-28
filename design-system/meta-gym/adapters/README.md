@@ -4,7 +4,11 @@ Các tệp trong thư mục này chuyển đổi bộ token từ tệp chuẩn g
 
 ## Flutter (Ứng dụng Di động)
 
-Sao chép tệp `meta_gym_theme.dart` vào thư mục theme của ứng dụng Flutter, sau đó cấu hình ứng dụng:
+Tệp `meta_gym_theme.dart.example` là adapter mẫu để tham khảo, không phải mã ứng dụng đang chạy. Đuôi `.example` giúp Dart analyzer không phân tích tệp nằm ngoài package Flutter như mã nguồn thực thi.
+
+Theme hiện tại của ứng dụng nằm tại [`mobile-app/lib/core/theme/app_theme.dart`](../../../mobile-app/lib/core/theme/app_theme.dart). Không sao chép adapter mẫu đè lên theme này; khi sửa giao diện Meta Gym, dùng theme và component hiện hành của ứng dụng.
+
+Nếu tái sử dụng mẫu cho một ứng dụng Flutter khác, sao chép vào package của ứng dụng đó, đổi đuôi về `.dart` và điều chỉnh theo phiên bản Flutter đang dùng. Ví dụ cấu hình:
 
 ```dart
 MaterialApp.router(

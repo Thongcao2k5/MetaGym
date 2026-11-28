@@ -17,90 +17,38 @@ import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/presentation/chat_message_image.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
-/// Nền kiến trúc đồng bộ Dark / Light Mode với Trang chủ (`bg_app_dark` / `bg_app_light`).
-class _MessagingGymBackground extends StatelessWidget {
-  const _MessagingGymBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Positioned.fill(child: MetaGymBackground());
-  }
+String _formatChatSentAt(String raw) {
+  final parsed = DateTime.tryParse(raw.trim());
+  if (parsed == null) return raw;
+  final local = parsed.toLocal();
+  final hh = local.hour.toString().padLeft(2, '0');
+  final mm = local.minute.toString().padLeft(2, '0');
+  return '$hh:$mm';
 }
 
-/// Thẻ Kính Smoked Dark / Daylight Studio đồng bộ với Member Home (tránh bóng nhựa).
+/// Thẻ Kính Smoked Dark (Dark Mode) / Porcelain Card (Light Mode) đồng bộ với Tab 1 & Tab 4.
 Widget _buildLiquidGlassCard({
-  required BuildContext context,
   required Widget child,
   BorderRadius? borderRadius,
   EdgeInsetsGeometry? margin,
   bool isHighlighted = false,
 }) {
-  final palette = MetaGymTheme.paletteOf(context);
-  final isLight = MetaGymTheme.isLightPalette(context);
-  final radius = borderRadius ?? BorderRadius.circular(MetaGymTheme.radiusCard);
-  final enableBlur =
-      isHighlighted && !isLight && !MetaGymTheme.isFlutterTestEnvironment;
-
-  final cardBody = Container(
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      color: isLight
-          ? palette.surfaceSolid
-          : isHighlighted
-          ? const Color(0xB82D2824)
-          : const Color(0xC42B2622),
-      borderRadius: radius,
-      border: Border.all(
-        color: isLight
-            ? palette.borderSolid
-            : isHighlighted
-            ? const Color(0x8CA79D92)
-            : const Color(0x529C9084),
-        width: 1.0,
-      ),
-      boxShadow: isLight
-          ? const [
-              BoxShadow(
-                color: Color(0x0F0F172A),
-                blurRadius: 10,
-                offset: Offset(0, 3),
-              ),
-            ]
-          : null,
-    ),
-    child: isHighlighted && !isLight
-        ? Stack(
-            children: [
-              const Positioned(
-                top: 0,
-                left: 18,
-                right: 18,
-                height: 1,
-                child: ColoredBox(color: Color(0x45FFF6EA)),
-              ),
-              child,
-            ],
-          )
-        : child,
-  );
-
-  final result = enableBlur
-      ? RepaintBoundary(
-          child: ClipRRect(
-            borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: cardBody,
-            ),
-          ),
-        )
-      : cardBody;
-
-  if (margin != null) {
-    return Padding(padding: margin, child: result);
+  if (isHighlighted) {
+    return MetaGymHeroGlassCard(
+      padding: EdgeInsets.zero,
+      margin: margin,
+      child: child,
+    );
   }
-  return result;
+  return MetaGymGlassCard(
+    solid: false,
+    borderRadius: borderRadius,
+    margin: margin,
+    child: child,
+  );
 }
 
 class _CircleGlassIconButton extends StatelessWidget {
@@ -108,18 +56,21 @@ class _CircleGlassIconButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.svgAsset,
     this.isActive = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
+  final String? svgAsset;
   final bool isActive;
 
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    final iconColor = isActive ? palette.primaryText : palette.textPrimary;
     return Semantics(
       button: true,
       label: tooltip,
@@ -138,27 +89,34 @@ class _CircleGlassIconButton extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     color: isActive
-                        ? (isLight
-                              ? palette.chipActiveBg
-                              : const Color(0x2EFF5A36))
-                        : (isLight
-                              ? palette.surfaceSolid
-                              : const Color(0x9E2F2924)),
+                        ? palette.chipActiveBg
+                        : isLight
+                        ? palette.surfaceSolid
+                        : const Color(0x9E2F2924),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isActive
                           ? MetaGymTheme.brandOrange
-                          : (isLight
-                                ? palette.borderSolid
-                                : const Color(0x95ADA295)),
+                          : isLight
+                          ? palette.borderSolid
+                          : const Color(0x95ADA295),
                       width: 1.0,
                     ),
                   ),
-                  child: Icon(
-                    icon,
-                    color: isActive ? palette.primaryText : palette.textPrimary,
-                    size: 19,
-                  ),
+                  child: svgAsset != null
+                      ? Center(
+                          child: MetaGymSvgIcon(
+                            svgAsset!,
+                            size: 19,
+                            color: isActive ? palette.primaryText : null,
+                            fallbackIcon: icon,
+                          ),
+                        )
+                      : MetaGymResolvedIcon(
+                          icon,
+                          size: 19,
+                          fallbackColor: iconColor,
+                        ),
                 ),
               ),
             ),
@@ -856,7 +814,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
       color: palette.canvas,
       child: Stack(
         children: [
-          const _MessagingGymBackground(),
+          const Positioned.fill(child: MetaGymBackground()),
           SafeArea(
             bottom: false,
             child: RefreshIndicator(
@@ -887,7 +845,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   const SizedBox(height: 10),
                   if (_loading && widget.isActive)
                     _buildLiquidGlassCard(
-                      context: context,
                       child: const SizedBox(
                         height: 140,
                         child: Center(
@@ -930,8 +887,17 @@ class _ConversationsPageState extends State<ConversationsPage> {
                           subtitle: 'Thử đổi bộ lọc hoặc từ khóa tìm kiếm.',
                         )
                       else
-                        for (final item in _filteredRealItems)
-                          _buildRealConversationCard(item),
+                        for (final (idx, item) in _filteredRealItems.indexed)
+                          if (idx == 0 &&
+                              !useCoachHeader &&
+                              item.status == 'ACTIVE' &&
+                              item.memberId == _effectiveUserId)
+                            _buildFeaturedRealCoachCard(item, _effectiveUserId)
+                          else
+                            _buildRealConversationCard(
+                              item,
+                              useCoachHeader: useCoachHeader,
+                            ),
                       if (_hasMore)
                         Center(
                           child: TextButton(
@@ -968,6 +934,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
       actions: [
         _CircleGlassIconButton(
           icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
+          svgAsset: _showSearch
+              ? MetaGymIcons.commonClose
+              : MetaGymIcons.commonSearch,
           tooltip: 'Tìm kiếm cuộc trò chuyện',
           isActive: _showSearch,
           onTap: () {
@@ -1032,6 +1001,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
       subtitle: 'Trao đổi cùng học viên & hỗ trợ',
       leading: canPop
           ? MetaGymCircleIconButton(
+              svgAsset: MetaGymIcons.commonBack,
               icon: Icons.arrow_back_rounded,
               tooltip: 'Quay lại',
               onTap: () => Navigator.of(context).maybePop(),
@@ -1040,6 +1010,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
       actions: [
         _CircleGlassIconButton(
           icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
+          svgAsset: _showSearch
+              ? MetaGymIcons.commonClose
+              : MetaGymIcons.commonSearch,
           tooltip: 'Tìm kiếm cuộc trò chuyện',
           isActive: _showSearch,
           onTap: () {
@@ -1076,17 +1049,12 @@ class _ConversationsPageState extends State<ConversationsPage> {
   Widget _buildSearchBar({bool useCoachHeader = false}) {
     final palette = MetaGymTheme.paletteOf(context);
     return _buildLiquidGlassCard(
-      context: context,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         child: Row(
           children: [
-            Icon(
-              Icons.search_rounded,
-              color: palette.reflection,
-              size: 19,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.commonSearch, size: 19, fallbackIcon: Icons.search_rounded),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -1119,11 +1087,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   _searchController.clear();
                   setState(() => _searchQuery = '');
                 },
-                icon: Icon(
-                  Icons.clear_rounded,
-                  color: palette.textSecondary,
-                  size: 18,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.clear_rounded),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               ),
@@ -1183,8 +1147,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
         label,
         style: TextStyle(
           color: isActive
-              ? (isLight ? palette.chipActiveText : palette.textPrimary)
-              : palette.textWarmMuted,
+              ? palette.chipActiveText
+              : (isLight ? palette.textSecondary : palette.textWarmMuted),
           fontSize: 12,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
         ),
@@ -1212,44 +1176,44 @@ class _ConversationsPageState extends State<ConversationsPage> {
 
   Widget _buildFeaturedCoachCard() {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     final coachThread = _mockThreads.first;
     return _buildLiquidGlassCard(
-      context: context,
       isHighlighted: true,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: MetaGymTheme.brandOrange,
-                  size: 12,
+                const MetaGymSvgIcon(
+                  MetaGymIcons.commChat,
+                  size: 13,
+                  fallbackIcon: Icons.chat_bubble_outline_rounded,
                 ),
                 const SizedBox(width: 5),
-                Text(
-                  'COACH CÁ NHÂN',
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                Flexible(
+                  child: Text(
+                    'COACH CÁ NHÂN',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 7),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1.5,
+                    horizontal: 7,
+                    vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: palette.success.withValues(
-                      alpha: isLight ? 0.12 : 0.15,
-                    ),
+                    color: palette.success.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: palette.success.withValues(alpha: 0.30),
@@ -1260,8 +1224,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 4.5,
-                        height: 4.5,
+                        width: 5,
+                        height: 5,
                         decoration: BoxDecoration(
                           color: palette.success,
                           shape: BoxShape.circle,
@@ -1270,9 +1234,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       const SizedBox(width: 4),
                       Text(
                         'Đang hoạt động',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: palette.success,
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1281,29 +1247,23 @@ class _ConversationsPageState extends State<ConversationsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isLight
-                        ? palette.chipActiveBg
-                        : const Color(0x332A1510),
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: MetaGymTheme.coachAvatarBackground,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: MetaGymTheme.brandOrange,
-                      width: 1.2,
-                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     coachThread.initials,
-                    style: TextStyle(
-                      color: palette.primaryText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                    style: const TextStyle(
+                      color: MetaGymTheme.coachAvatarForeground,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -1316,18 +1276,18 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         coachThread.displayName,
                         style: TextStyle(
                           color: palette.textPrimary,
-                          fontSize: 13.5,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 1),
+                      const SizedBox(height: 2),
                       Text(
                         'Huấn luyện viên 1-1 · Sẵn sàng hỗ trợ',
                         style: TextStyle(
                           color: palette.textSecondary,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1348,7 +1308,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       ),
                       child: Center(
                         child: Container(
-                          height: 32,
+                          height: 34,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
                             color: MetaGymTheme.brandOrange,
@@ -1359,7 +1319,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             'Nhắn ngay ▶',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1376,15 +1336,197 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
+  Widget _buildFeaturedRealCoachCard(Conversation item, String userId) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final timeLabel = item.formatLastMessageTime();
+    return _buildLiquidGlassCard(
+      isHighlighted: true,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+        onTap: () => _openRealConversation(item),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const MetaGymSvgIcon(
+                    MetaGymIcons.commChat,
+                    size: 14,
+                    fallbackIcon: Icons.chat_bubble_outline_rounded,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'COACH CÁ NHÂN',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.success.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: palette.success.withValues(alpha: 0.30),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: palette.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Đang hoạt động',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.success,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: MetaGymTheme.coachAvatarBackground,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      item.initialsFor(userId),
+                      style: const TextStyle(
+                        color: MetaGymTheme.coachAvatarForeground,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.displayNameFor(userId),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            if (timeLabel.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                timeLabel,
+                                style: TextStyle(
+                                  color: item.unreadCount > 0
+                                      ? palette.primaryText
+                                      : palette.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.lastMessagePreview,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: item.unreadCount > 0
+                                      ? palette.textPrimary
+                                      : palette.textWarmMuted,
+                                  fontSize: 12,
+                                  fontWeight: item.unreadCount > 0
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                            if (item.unreadCount > 0) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: MetaGymTheme.brandOrange,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${item.unreadCount} tin chưa đọc',
+                                  style: const TextStyle(
+                                    color: MetaGymTheme.onBrandOrange,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    fontFeatures: MetaGymTheme.tabularFigures,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(
-          Icons.history_rounded,
-          color: palette.reflection,
-          size: 16,
-        ),
+        MetaGymSvgIcon(MetaGymIcons.workoutHistory, size: 16, fallbackIcon: Icons.history_rounded),
         const SizedBox(width: 6),
         Text(
           title,
@@ -1400,10 +1542,8 @@ class _ConversationsPageState extends State<ConversationsPage> {
 
   Widget _buildMockConversationCard(_MockThread thread) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     final unread = thread.conversation.unreadCount;
     return _buildLiquidGlassCard(
-      context: context,
       borderRadius: BorderRadius.circular(14),
       margin: const EdgeInsets.only(bottom: 7),
       child: InkWell(
@@ -1420,24 +1560,26 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: palette.metricPanelBg,
+                      color: thread.category == _MessageFilter.coach
+                          ? MetaGymTheme.coachAvatarBackground
+                          : palette.metricPanelBg,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: thread.category == _MessageFilter.coach
-                            ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
-                            : palette.metricPanelBorder,
-                        width: 1.0,
-                      ),
+                      border: thread.category == _MessageFilter.coach
+                          ? null
+                          : Border.all(
+                              color: palette.metricPanelBorder,
+                              width: 1.0,
+                            ),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       thread.initials,
                       style: TextStyle(
                         color: thread.category == _MessageFilter.coach
-                            ? palette.primaryText
+                            ? MetaGymTheme.coachAvatarForeground
                             : palette.textPrimary,
                         fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -1452,9 +1594,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                           color: palette.success,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isLight
-                                ? palette.surfaceSolid
-                                : palette.canvas,
+                            color: palette.surfaceSolid,
                             width: 1.5,
                           ),
                         ),
@@ -1488,16 +1628,14 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: isLight
-                                ? palette.surfaceRaised
-                                : const Color(0x26A79D92),
+                            color: palette.metricPanelBg,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             thread.roleLabel,
                             style: TextStyle(
                               color: palette.textSecondary,
-                              fontSize: 8.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1511,7 +1649,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         color: unread > 0
                             ? palette.textPrimary
                             : palette.textSecondary,
-                        fontSize: 11.5,
+                        fontSize: 12,
                         fontWeight: unread > 0
                             ? FontWeight.w500
                             : FontWeight.w400,
@@ -1533,9 +1671,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       color: unread > 0
                           ? palette.primaryText
                           : palette.textSecondary,
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                   ),
                   if (unread > 0) ...[
@@ -1543,7 +1681,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
-                        vertical: 1.5,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: MetaGymTheme.brandOrange,
@@ -1553,9 +1691,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                         '$unread',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                          fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                     ),
@@ -1569,39 +1707,48 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget _buildRealConversationCard(Conversation item) {
+  Widget _buildRealConversationCard(
+    Conversation item, {
+    required bool useCoachHeader,
+  }) {
     final palette = MetaGymTheme.paletteOf(context);
     final userId = _effectiveUserId;
     final timeLabel = item.formatLastMessageTime();
+    final isCoachPeer = !useCoachHeader && item.memberId == userId;
     return _buildLiquidGlassCard(
-      context: context,
-      borderRadius: BorderRadius.circular(14),
-      margin: const EdgeInsets.only(bottom: 7),
+      borderRadius: BorderRadius.circular(20),
+      margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         onTap: () => _openRealConversation(item),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: palette.metricPanelBg,
+                  color: isCoachPeer
+                      ? MetaGymTheme.coachAvatarBackground
+                      : palette.metricPanelBg,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: palette.metricPanelBorder,
-                    width: 1.0,
-                  ),
+                  border: isCoachPeer
+                      ? null
+                      : Border.all(
+                          color: palette.metricPanelBorder,
+                          width: 1.0,
+                        ),
                 ),
-                child: Center(
-                  child: Icon(
-                    item.memberId == userId
-                        ? Icons.sports_gymnastics_rounded
-                        : Icons.person_rounded,
-                    color: palette.reflection,
-                    size: 20,
+                alignment: Alignment.center,
+                child: Text(
+                  item.initialsFor(userId),
+                  style: TextStyle(
+                    color: isCoachPeer
+                        ? MetaGymTheme.coachAvatarForeground
+                        : palette.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -1614,7 +1761,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       item.displayNameFor(userId),
                       style: TextStyle(
                         color: palette.textPrimary,
-                        fontSize: 13.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 1,
@@ -1630,7 +1777,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                             shape: BoxShape.circle,
                             color: item.canSend
                                 ? palette.success
-                                : palette.textWarmMuted,
+                                : palette.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 5),
@@ -1641,7 +1788,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                               color: item.unreadCount > 0
                                   ? palette.textPrimary
                                   : palette.textWarmMuted,
-                              fontSize: 11.5,
+                              fontSize: 12,
                               fontWeight: item.unreadCount > 0
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -1666,10 +1813,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       style: TextStyle(
                         color: item.unreadCount > 0
                             ? palette.primaryText
-                            : palette.textWarmMuted,
-                        fontSize: 10,
+                            : palette.textSecondary,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                        fontFeatures: MetaGymTheme.tabularFigures,
                       ),
                     ),
                   if (timeLabel.isNotEmpty && item.unreadCount > 0)
@@ -1683,13 +1830,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
                       decoration: BoxDecoration(
                         color: MetaGymTheme.brandOrange,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x4DFF5A36),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: Text(
                         '${item.unreadCount} tin chưa đọc',
@@ -1697,14 +1837,15 @@ class _ConversationsPageState extends State<ConversationsPage> {
                           color: MetaGymTheme.onBrandOrange,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
                         ),
                       ),
                     )
                   else if (timeLabel.isEmpty)
-                    Icon(
-                      Icons.chevron_right,
-                      color: palette.textWarmMuted,
+                    const MetaGymSvgIcon(
+                      MetaGymIcons.commonChevronRight,
                       size: 20,
+                      fallbackIcon: Icons.chevron_right,
                     ),
                 ],
               ),
@@ -1718,7 +1859,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
   Widget _buildErrorCard() {
     final palette = MetaGymTheme.paletteOf(context);
     return _buildLiquidGlassCard(
-      context: context,
       margin: const EdgeInsets.only(bottom: 14),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1727,11 +1867,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: palette.error,
-                  size: 20,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1748,11 +1884,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: _load,
-              icon: Icon(
-                Icons.replay_rounded,
-                size: 16,
-                color: palette.primaryText,
-              ),
+              icon: MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 16, fallbackIcon: Icons.replay_rounded),
               label: Text(
                 'Thử lại',
                 style: TextStyle(
@@ -1770,7 +1902,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
   Widget _buildEmptyCard({required String title, required String subtitle}) {
     final palette = MetaGymTheme.paletteOf(context);
     return _buildLiquidGlassCard(
-      context: context,
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Center(
@@ -1785,11 +1916,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                   shape: BoxShape.circle,
                   border: Border.all(color: palette.metricPanelBorder),
                 ),
-                child: Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: palette.reflection,
-                  size: 26,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.commChat, size: 26, fallbackIcon: Icons.chat_bubble_outline_rounded),
               ),
               const SizedBox(height: 14),
               Text(
@@ -2446,7 +2573,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       backgroundColor: palette.canvas,
       body: Stack(
         children: [
-          const _MessagingGymBackground(),
+          const Positioned.fill(child: MetaGymBackground()),
           Column(
             children: [
               _buildGlassAppBar(context, title, initials),
@@ -2469,7 +2596,6 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     else ...[
                       if (_error != null)
                         _buildLiquidGlassCard(
-                          context: context,
                           margin: const EdgeInsets.only(bottom: 12),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -2564,7 +2690,6 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                       ],
                     ],
                     _buildLiquidGlassCard(
-                      context: context,
                       margin: const EdgeInsets.only(bottom: 14),
                       child: Padding(
                         padding: const EdgeInsets.all(14),
@@ -2580,7 +2705,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                     shape: BoxShape.circle,
                                     color: widget.conversation.canSend
                                         ? palette.success
-                                        : palette.textWarmMuted,
+                                        : palette.textSecondary,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -2634,11 +2759,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final enableBlur = !isLight && !MetaGymTheme.isFlutterTestEnvironment;
+    final isMemberWithCoach =
+        widget.conversation.memberId == widget.currentUserId;
     final bar = Container(
       decoration: BoxDecoration(
-        color: isLight
-            ? palette.surfaceSolid.withValues(alpha: 0.96)
-            : const Color(0xC8241F1B),
+        color: isLight ? const Color(0xEBFFFFFF) : const Color(0xC8241F1B),
         border: Border(
           bottom: BorderSide(
             color: isLight ? palette.borderSolid : const Color(0x52A79D92),
@@ -2654,30 +2779,37 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             children: [
               _CircleGlassIconButton(
                 icon: Icons.arrow_back_rounded,
+                svgAsset: MetaGymIcons.commonBack,
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 onTap: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(width: 8),
               Container(
-                width: 38,
-                height: 38,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: isLight
-                      ? palette.chipActiveBg
-                      : const Color(0x332A1510),
+                  color: isMemberWithCoach
+                      ? MetaGymTheme.coachAvatarBackground
+                      : (isLight
+                            ? palette.chipActiveBg
+                            : const Color(0x332A1510)),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: MetaGymTheme.brandOrange,
-                    width: 1.2,
-                  ),
+                  border: isMemberWithCoach
+                      ? null
+                      : Border.all(
+                          color: MetaGymTheme.brandOrange,
+                          width: 1.2,
+                        ),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   initials,
                   style: TextStyle(
-                    color: palette.primaryText,
+                    color: isMemberWithCoach
+                        ? MetaGymTheme.coachAvatarForeground
+                        : palette.primaryText,
                     fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -2691,7 +2823,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                       title,
                       style: TextStyle(
                         color: palette.textPrimary,
-                        fontSize: 15.5,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 1,
@@ -2719,7 +2851,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                             _recipientDisabled
                                 ? 'Tài khoản bị khóa'
                                 : widget.conversation.canSend
-                                ? 'Đang hoạt động'
+                                ? (isMemberWithCoach
+                                      ? 'Đang hoạt động · Coach 1:1'
+                                      : 'Đang hoạt động')
                                 : 'Chỉ đọc',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2729,7 +2863,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                   : widget.conversation.canSend
                                   ? palette.success
                                   : palette.textSecondary,
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2741,12 +2875,14 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               ),
               _CircleGlassIconButton(
                 icon: Icons.call_outlined,
+                svgAsset: MetaGymIcons.callAudioBadge,
                 tooltip: 'Gọi thoại',
                 onTap: () => _startCall('VOICE'),
               ),
               const SizedBox(width: 4),
               _CircleGlassIconButton(
                 icon: Icons.videocam_outlined,
+                svgAsset: MetaGymIcons.callVideoBadge,
                 tooltip: 'Gọi video',
                 onTap: () => _startCall('VIDEO'),
               ),
@@ -2784,24 +2920,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isLight
-                      ? palette.error.withValues(alpha: 0.08)
+                      ? palette.error.withValues(alpha: 0.10)
                       : const Color(0xFF24161A),
                   borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
                   border: Border.all(
-                    color: palette.error.withValues(
-                      alpha: isLight ? 0.35 : 0.55,
-                    ),
+                    color: palette.error.withValues(alpha: 0.55),
                     width: 1,
                   ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.block_rounded,
-                      color: palette.error,
-                      size: 20,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.commBlock, size: 20, fallbackIcon: Icons.block_rounded),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -2916,12 +3046,12 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: palette.reflection.withValues(
-                                    alpha: isLight ? 0.12 : 0.15,
+                                    alpha: 0.14,
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: palette.reflection.withValues(
-                                      alpha: 0.30,
+                                      alpha: 0.35,
                                     ),
                                     width: 0.8,
                                   ),
@@ -2929,11 +3059,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      Icons.image_outlined,
-                                      size: 14,
-                                      color: palette.reflection,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 14, fallbackIcon: Icons.image_outlined),
                                     const SizedBox(width: 5),
                                     Text(
                                       _imageSending
@@ -2941,7 +3067,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                           : 'Gửi ảnh',
                                       style: TextStyle(
                                         color: palette.reflection,
-                                        fontSize: 11.5,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -2986,10 +3112,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                                   child: Text(
                                     reply,
                                     style: TextStyle(
-                                      color: isLight
-                                          ? palette.textPrimary
-                                          : const Color(0xFFE6E0DA),
-                                      fontSize: 11.5,
+                                      color: palette.textPrimary,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -3025,21 +3149,12 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
       decoration: BoxDecoration(
-        color: isLight ? palette.surfaceSolid : const Color(0xCC1E1A17),
+        color: isLight ? const Color(0xF5FFFFFF) : const Color(0xCC1E1A17),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isLight ? palette.borderSolid : const Color(0x529C9084),
           width: 1.0,
         ),
-        boxShadow: isLight
-            ? const [
-                BoxShadow(
-                  color: Color(0x120F172A),
-                  blurRadius: 12,
-                  offset: Offset(0, 3),
-                ),
-              ]
-            : null,
       ),
       child: Row(
         children: [
@@ -3054,20 +3169,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: isLight
-                          ? palette.textPrimary
-                          : const Color(0xFFD5DEE8),
+                      color: palette.textPrimary,
                     ),
                   )
-                : Icon(
-                    Icons.image_outlined,
-                    color: _recipientDisabled
-                        ? palette.textSecondary
-                        : (isLight
-                              ? palette.textPrimary
-                              : const Color(0xFFD5DEE8)),
-                    size: 21,
-                  ),
+                : MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 21, fallbackIcon: Icons.image_outlined),
           ),
           Expanded(
             child: TextField(
@@ -3141,6 +3246,12 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final isMe = message.senderId == widget.currentUserId;
+    final isCoachSender =
+        !isMe && message.senderId == widget.conversation.coachId;
+    final peerInitials =
+        widget.mockInitials ??
+        widget.conversation.initialsFor(widget.currentUserId);
+    final formattedTime = _formatChatSentAt(message.sentAt);
 
     final bubbleRadius = BorderRadius.only(
       topLeft: const Radius.circular(18),
@@ -3161,7 +3272,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       decoration: BoxDecoration(
         color: isMe
             ? MetaGymTheme.brandOrange
-            : (isLight ? palette.surfaceSolid : const Color(0xCC2B2622)),
+            : isLight
+            ? palette.surfaceSolid
+            : const Color(0xD428231F),
         borderRadius: bubbleRadius,
         border: isMe
             ? null
@@ -3169,12 +3282,12 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 color: isLight ? palette.borderSolid : const Color(0x529C9084),
                 width: 1.0,
               ),
-        boxShadow: !isMe && isLight
+        boxShadow: isMe && !isLight
             ? const [
                 BoxShadow(
-                  color: Color(0x0D0F172A),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+                  color: Color(0x3DFF5E36),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
                 ),
               ]
             : null,
@@ -3195,7 +3308,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               style: TextStyle(
                 color: isMe ? Colors.white : palette.textPrimary,
                 fontSize: 14,
-                height: 1.35,
+                height: 1.4,
               ),
             ),
           const SizedBox(height: 4),
@@ -3207,13 +3320,13 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  message.sentAt,
+                  formattedTime,
                   style: TextStyle(
                     color: isMe
-                        ? Colors.white.withValues(alpha: 0.78)
-                        : palette.textWarmMuted,
-                    fontSize: 10,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                        ? Colors.white.withValues(alpha: 0.84)
+                        : palette.textSecondary,
+                    fontSize: 11,
+                    fontFeatures: MetaGymTheme.tabularFigures,
                   ),
                 ),
                 if (isMe) ...[
@@ -3221,7 +3334,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                   Icon(
                     Icons.done_all_rounded,
                     size: 13,
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ],
               ],
@@ -3231,13 +3344,55 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       ),
     );
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
+    final maxWidth = MediaQuery.sizeOf(context).width * 0.76;
+    if (isMe) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: bubbleBody,
         ),
-        child: bubbleBody,
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isCoachSender
+                  ? MetaGymTheme.coachAvatarBackground
+                  : palette.metricPanelBg,
+              shape: BoxShape.circle,
+              border: isCoachSender
+                  ? null
+                  : Border.all(color: palette.metricPanelBorder),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              peerInitials,
+              style: TextStyle(
+                color: isCoachSender
+                    ? MetaGymTheme.coachAvatarForeground
+                    : palette.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: bubbleBody,
+            ),
+          ),
+        ],
       ),
     );
   }

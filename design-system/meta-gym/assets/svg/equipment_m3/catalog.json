@@ -1,0 +1,74 @@
+[
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_back_extension.svg",
+    "name": "equip_m3_back_extension",
+    "cat": "equipment_m3",
+    "label": "Máy duỗi lưng",
+    "model": "M3-1016",
+    "muscles": "Lưng dưới",
+    "source": "https://realleadergym.com/M3-1016-Back-Extension-pd45278156.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_pec_fly_rear_delt.svg",
+    "name": "equip_m3_pec_fly_rear_delt",
+    "cat": "equipment_m3",
+    "label": "Máy ép ngực / vai sau",
+    "model": "M3-1017",
+    "muscles": "Ngực · Vai sau",
+    "source": "https://realleadergym.com/M3-1017-Pec-Fly-Rear-Delt-pd45604755.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_seated_leg_curl.svg",
+    "name": "equip_m3_seated_leg_curl",
+    "cat": "equipment_m3",
+    "label": "Máy cuốn đùi sau ngồi",
+    "model": "M3-1018",
+    "muscles": "Đùi sau",
+    "source": "https://realleadergym.com/M3-1018-Seated-Leg-Curl-pd44604755.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_standing_calf_raise.svg",
+    "name": "equip_m3_standing_calf_raise",
+    "cat": "equipment_m3",
+    "label": "Máy nhón bắp chân đứng",
+    "model": "M3-1019",
+    "muscles": "Bắp chân",
+    "source": "https://realleadergym.com/M3-1019-Standing-Calf-Raise-pd43604755.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_chin_dip_assist.svg",
+    "name": "equip_m3_chin_dip_assist",
+    "cat": "equipment_m3",
+    "label": "Máy xà đơn / xà kép trợ lực",
+    "model": "M3-1020",
+    "muscles": "Lưng · Tay sau",
+    "source": "https://realleadergym.com/M3-1020-Chin-Dip-Assist-pd42604755.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_rotary_torso.svg",
+    "name": "equip_m3_rotary_torso",
+    "cat": "equipment_m3",
+    "label": "Máy xoay eo",
+    "model": "M3-1021",
+    "muscles": "Cơ bụng · Cơ liên sườn",
+    "source": "https://realleadergym.com/M3-1021-Rotary-Torso-Rotation-pd41604755.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_glute_standing.svg",
+    "name": "equip_m3_glute_standing",
+    "cat": "equipment_m3",
+    "label": "Máy tập mông M3-1022",
+    "model": "M3-1022",
+    "muscles": "Mông",
+    "source": "https://realleadergym.com/M3-1022-Glute-Machine-pd40604755.html"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_m3/equip_m3_glute_seated.svg",
+    "name": "equip_m3_glute_seated",
+    "cat": "equipment_m3",
+    "label": "Máy tập mông M3-1023",
+    "model": "M3-1023",
+    "muscles": "Mông",
+    "source": "https://realleadergym.com/M3-1023-Glute-Machine-pd49604755.html"
+  }
+]

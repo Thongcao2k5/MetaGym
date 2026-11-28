@@ -49,6 +49,11 @@ class TrainingExercise {
   ].join(' · ');
 }
 
+final RegExp _restOrRecoveryTitlePattern = RegExp(
+  r'(nghỉ|phục hồi|hồi phục|\brest\b|recovery|off\s*day)',
+  caseSensitive: false,
+);
+
 class TrainingDay {
   const TrainingDay({
     required this.dayNumber,
@@ -81,6 +86,20 @@ class TrainingDay {
   final String? notes;
   final List<TrainingExercise> exercises;
   final List<PlannedMeal> meals;
+
+  bool get isRestOrRecovery =>
+      exercises.isEmpty || _restOrRecoveryTitlePattern.hasMatch(title);
+
+  bool get isTrainingDay => !isRestOrRecovery;
+
+  int get recurringWeekday {
+    final raw = scheduledDate?.trim();
+    if (raw != null && raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed.weekday;
+    }
+    return ((dayNumber - 1) % DateTime.daysPerWeek) + 1;
+  }
 }
 
 class PlannedMeal {
@@ -163,6 +182,32 @@ class TrainingPlan {
   final String? endDate;
   final String? publishedAt;
   final List<TrainingDay> days;
+
+  TrainingDay? dayForDate(DateTime date) {
+    if (days.isEmpty) return null;
+    final iso =
+        '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    for (final day in days) {
+      final scheduled = day.scheduledDate;
+      if (scheduled != null &&
+          scheduled.length >= 10 &&
+          scheduled.substring(0, 10) == iso) {
+        return day;
+      }
+    }
+    for (final day in days) {
+      if (day.recurringWeekday == date.weekday) return day;
+    }
+    return null;
+  }
+
+  bool isRestOrRecoveryDate(DateTime date) {
+    if (days.isEmpty) return false;
+    final day = dayForDate(date);
+    return day == null || day.isRestOrRecovery;
+  }
 
   String get statusLabel => switch (status) {
     'ACTIVE' => 'Đã công bố',

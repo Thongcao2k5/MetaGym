@@ -74,7 +74,7 @@ class MetaGymBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isLight = MetaGymTheme.isLightPalette(context);
-    final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     final disableAnimations = mediaQuery.disableAnimations;
     final safeBottom = mediaQuery.padding.bottom;
     final duration = disableAnimations
@@ -88,7 +88,7 @@ class MetaGymBottomNav extends StatelessWidget {
 
     final Color pillBg;
     if (isLight) {
-      pillBg = useGlassSurface ? palette.glassCoolBg : palette.surfaceSolid;
+      pillBg = useGlassSurface ? colors.navBarGlass : colors.navBarSolid;
     } else if (warmGlass) {
       pillBg = useGlassSurface
           ? MetaGymWarmGlassTokens.navGlassFill
@@ -104,19 +104,32 @@ class MetaGymBottomNav extends StatelessWidget {
       borderRadius: capsuleRadius,
       border: Border.all(
         color: isLight
-            ? palette.glassCoolBorder
+            ? colors.navBarBorder
             : warmGlass
             ? MetaGymWarmGlassTokens.cardBorder
             : MetaGymTheme.performanceGlassBorder,
         width: 1.0,
       ),
-      boxShadow: [
-        BoxShadow(
-          color: isLight ? const Color(0x1F0F172A) : const Color(0x33000000),
-          blurRadius: 24,
-          offset: const Offset(0, -4),
-        ),
-      ],
+      boxShadow: isLight
+          ? const [
+              BoxShadow(
+                color: Color(0x290F172A),
+                blurRadius: 30,
+                offset: Offset(0, 12),
+              ),
+              BoxShadow(
+                color: Color(0x140F172A),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ]
+          : const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 24,
+                offset: Offset(0, -4),
+              ),
+            ],
     );
 
     final pillContent = Container(
@@ -124,6 +137,24 @@ class MetaGymBottomNav extends StatelessWidget {
       decoration: pillDecoration,
       child: Stack(
         children: [
+          // Cool specular top-edge highlight (DESIGN.md §2)
+          Positioned(
+            top: 0,
+            left: 28,
+            right: 28,
+            child: IgnorePointer(
+              child: SizedBox(
+                height: 1,
+                child: ColoredBox(
+                  color: isLight
+                      ? colors.navBarTopHighlight
+                      : warmGlass
+                      ? MetaGymWarmGlassTokens.heroHighlight
+                      : MetaGymTheme.performanceGlassTopHighlight,
+                ),
+              ),
+            ),
+          ),
           // Sliding active indicator bar
           AnimatedAlign(
             alignment: _indicatorAlignmentForIndex(currentIndex),
@@ -217,45 +248,38 @@ class MetaGymBottomNav extends StatelessWidget {
           _horizontalMargin,
           _bottomMargin + safeBottom,
         ),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: 1.0,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560.0),
-            child: SizedBox(
-              height: _barHeight + _aiProtrusion,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomCenter,
-                children: [
-                  // Clipped Level 2 Backdrop Blur container (rounded-full capsule)
-                  ClipRRect(
-                    borderRadius: capsuleRadius,
-                    child: enableBlur
-                        ? BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: MetaGymTheme.bottomNavGlassBlur,
-                              sigmaY: MetaGymTheme.bottomNavGlassBlur,
-                            ),
-                            child: pillContent,
-                          )
-                        : pillContent,
-                  ),
-                  // Center protruding AI button
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    child: _AiCenterButton(
-                      label: 'AI',
-                      selected: currentIndex == 2,
-                      warmGlass: warmGlass,
-                      duration: duration,
-                      onTap: () => onTap(2),
-                    ),
-                  ),
-                ],
+        child: SizedBox(
+          height: _barHeight + _aiProtrusion,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Clipped Level 2 Backdrop Blur container (rounded-full capsule)
+              ClipRRect(
+                borderRadius: capsuleRadius,
+                child: enableBlur
+                    ? BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: MetaGymTheme.bottomNavGlassBlur,
+                          sigmaY: MetaGymTheme.bottomNavGlassBlur,
+                        ),
+                        child: pillContent,
+                      )
+                    : pillContent,
               ),
-            ),
+              // Center protruding AI button
+              Positioned(
+                top: 0,
+                bottom: 0,
+                child: _AiCenterButton(
+                  label: 'AI',
+                  selected: currentIndex == 2,
+                  warmGlass: warmGlass,
+                  duration: duration,
+                  onTap: () => onTap(2),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -284,8 +308,16 @@ class _NavTabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
-    final color = selected ? palette.primaryText : palette.textSecondary;
+    final color = selected
+        ? palette.primaryText
+        : (isLight ? const Color(0xFF334155) : palette.textSecondary);
+    final iconWidget = MetaGymSvgIcon(
+      selected ? svgFilled : svgOutline,
+      size: 24.0,
+      fallbackIcon: fallbackIcon,
+    );
     final overlayColor = WidgetStateProperty.resolveWith<Color?>((states) {
       if (states.contains(WidgetState.focused) ||
           states.contains(WidgetState.hovered)) {
@@ -318,11 +350,7 @@ class _NavTabItem extends StatelessWidget {
                   scale: selected ? 1.06 : 1.0,
                   duration: duration,
                   curve: Curves.easeOutCubic,
-                  child: MetaGymSvgIcon(
-                    selected ? svgFilled : svgOutline,
-                    size: 24.0,
-                    fallbackIcon: fallbackIcon,
-                  ),
+                  child: iconWidget,
                 ),
                 const SizedBox(height: 3.0),
                 AnimatedDefaultTextStyle(
@@ -368,8 +396,17 @@ class _AiCenterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = MetaGymTheme.isLightPalette(context);
     final palette = MetaGymTheme.paletteOf(context);
     final isPrimarySurface = selected || warmGlass;
+    final aiIconWidget = MetaGymSvgIcon(
+      isPrimarySurface
+          ? MetaGymIcons.navAiOnPrimary
+          : MetaGymIcons.navAiEmblem,
+      size: 26.0,
+      adaptForLightMode: isPrimarySurface ? false : null,
+      fallbackIcon: Icons.auto_awesome_rounded,
+    );
 
     return Semantics(
       button: true,
@@ -377,18 +414,19 @@ class _AiCenterButton extends StatelessWidget {
       label: label,
       child: Material(
         color: Colors.transparent,
-        clipBehavior: Clip.none,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
         child: MetaGymTap(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          splashColor: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
-          highlightColor: MetaGymTheme.brandOrange.withValues(alpha: 0.08),
+          customBorder: const CircleBorder(),
+          splashColor: Colors.white.withValues(alpha: 0.26),
+          highlightColor: Colors.white.withValues(alpha: 0.16),
           focusColor: MetaGymTheme.reflectionBlue.withValues(alpha: 0.2),
           child: SizedBox(
-            width: 72,
+            width: 68,
+            height: 68,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedScale(
                   scale: selected ? 1.04 : 1.0,
@@ -419,15 +457,7 @@ class _AiCenterButton extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Center(
-                      child: MetaGymSvgIcon(
-                        isPrimarySurface
-                            ? MetaGymIcons.navAiOnPrimary
-                            : MetaGymIcons.navAiEmblem,
-                        size: 26.0,
-                        fallbackIcon: Icons.auto_awesome_rounded,
-                      ),
-                    ),
+                    child: Center(child: aiIconWidget),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -438,7 +468,9 @@ class _AiCenterButton extends StatelessWidget {
                     fontFamily: MetaGymTheme.fontFamily,
                     color: selected
                         ? palette.primaryText
-                        : palette.textSecondary,
+                        : (isLight
+                              ? const Color(0xFF334155)
+                              : palette.textSecondary),
                     fontSize: 11.0,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     letterSpacing: 0.2,

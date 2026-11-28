@@ -1,5 +1,6 @@
 import 'package:meta_gym_app/features/admin/presentation/admin_home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
@@ -170,8 +171,10 @@ GoRouter createAppRouter({
         routes: [
           GoRoute(
             path: AppRoutes.login,
-            pageBuilder: (context, state) =>
-                NoTransitionPage<void>(key: state.pageKey, child: const LoginPage()),
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              key: state.pageKey,
+              child: const LoginPage(),
+            ),
           ),
           GoRoute(
             path: AppRoutes.register,
@@ -325,8 +328,15 @@ GoRouter createAppRouter({
         ),
       ),
     ],
-    errorBuilder: (context, state) =>
-        const Scaffold(body: Center(child: Text('Không tìm thấy trang.'))),
+    errorBuilder: (context, state) => const Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          MetaGymBackground(),
+          Center(child: Text('Không tìm thấy trang.')),
+        ],
+      ),
+    ),
   );
 }
 

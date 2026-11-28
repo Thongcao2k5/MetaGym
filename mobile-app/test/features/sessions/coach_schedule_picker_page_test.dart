@@ -97,14 +97,7 @@ void main() {
         await tester.tap(find.byTooltip('Tuần sau'));
         await tester.pumpAndSettle();
       }
-      await tester.tap(
-        find
-            .descendant(
-              of: find.byType(GridView),
-              matching: find.text('${adapter.tomorrowDay}'),
-            )
-            .first,
-      );
+      await tester.tap(find.byKey(Key('coach-picker-day-${adapter.tomorrowStr}')));
       await tester.pumpAndSettle();
 
       expect(find.text('09:00 – 10:30'), findsOneWidget);

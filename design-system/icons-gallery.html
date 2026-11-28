@@ -150,6 +150,18 @@
     }
     .toast.show { opacity: 1; }
     .hidden { display: none !important; }
+    .equipment-label { font-size: 14px; font-weight: 600; line-height: 1.5; }
+    .equipment-model { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .equipment-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: auto; }
+    .equipment-actions a { color: var(--text); font-size: 12px; padding: 12px 8px; min-height: 48px; text-underline-offset: 4px; }
+    .icon-card[data-equipment] .icon-well { width: 80px; height: 80px; }
+    .icon-card[data-equipment] .icon-well img { width: 48px; height: 48px; }
+    .icon-card[data-equipment] .icon-name, .icon-card[data-equipment] .icon-cat { font-size: 12px; }
+    .equipment-actions button { background: transparent; color: var(--text); border: 0; font: inherit; font-size: 12px; padding: 12px 8px; min-height: 48px; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+    .toast { max-width: calc(100vw - 32px); overflow-wrap: anywhere; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; }
+    .equipment-empty { grid-column: 1 / -1; padding: 24px 0; color: var(--muted); }
+    .icon-card:focus-visible, .equipment-actions a:focus-visible { outline: 2px solid var(--reflection); outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) { .icon-card { transition: none; } }
   </style>
 </head>
 <body>
@@ -163,7 +175,7 @@
         <button class="btn active" id="tab-svgs">Icon SVG (<span id="svg-total">0</span>)</button>
         <button class="btn" id="tab-sheets">Preview Sheets (<span id="sheet-total">0</span>)</button>
         <button class="btn" id="btn-theme">Chế độ Sáng</button>
-        <input class="search" id="search" type="search" placeholder="Tìm tên icon (vd: nav_home, muscle, meal)..." />
+        <input class="search" id="search" type="search" aria-label="Tìm icon theo tên hoặc mã máy" placeholder="Tìm icon, tên máy, M3-1018..." />
       </div>
     </div>
   </header>
@@ -180,7 +192,7 @@
 
   <div class="toast" id="toast">Đã copy đường dẫn icon!</div>
 
-  <script src="./icons-manifest.js"></script>
+  <script src="./icons-manifest.js?v=20261128video"></script>
   <script>
     const data = window.METAGYM_ASSETS || { svgs: [], sheets: [] };
     const svgs = data.svgs || [];
@@ -188,7 +200,8 @@
     document.getElementById('svg-total').textContent = svgs.length;
     document.getElementById('sheet-total').textContent = sheets.length;
 
-    let activeCat = 'all';
+    const requestedCat = new URLSearchParams(location.search).get('cat');
+    let activeCat = svgs.some(i => i.cat === requestedCat) ? requestedCat : 'all';
     const searchEl = document.getElementById('search');
     const gridEl = document.getElementById('icon-grid');
     const catsEl = document.getElementById('cats');
@@ -205,11 +218,13 @@
     // Build category chips
     const catCounts = new Map();
     svgs.forEach(i => catCounts.set(i.cat, (catCounts.get(i.cat) || 0) + 1));
-    let catHtml = `<button class="cat-chip active" data-cat="all">Tất cả (${svgs.length})</button>`;
+    let catHtml = `<button class="cat-chip" data-cat="all">Tất cả (${svgs.length})</button>`;
     catCounts.forEach((cnt, cat) => {
-      catHtml += `<button class="cat-chip" data-cat="${cat}">${cat} (${cnt})</button>`;
+      const label = { equipment_m3: 'Máy Realleader M3', equipment_video: 'Máy theo video đã lưu' }[cat] || cat;
+      catHtml += `<button class="cat-chip" data-cat="${cat}">${label} (${cnt})</button>`;
     });
     catsEl.innerHTML = catHtml;
+    catsEl.querySelector(`[data-cat="${activeCat}"]`).classList.add('active');
     catsEl.querySelectorAll('.cat-chip').forEach(btn => {
       btn.addEventListener('click', () => {
         activeCat = btn.dataset.cat;
@@ -220,24 +235,35 @@
     });
 
     function renderIcons() {
-      const q = searchEl.value.trim().toLowerCase();
+      const normalize = text => String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
+      const q = normalize(searchEl.value.trim());
       const filtered = svgs.filter(i =>
         (activeCat === 'all' || i.cat === activeCat) &&
-        (!q || i.name.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q))
+        (!q || normalize([i.name, i.cat, i.label || '', i.model || '', i.muscles || '', i.videoFile || ''].join(' ')).includes(q))
       );
       gridEl.innerHTML = filtered.map(i => `
-        <div class="icon-card" data-path="${i.path}" title="Bấm để copy: ${i.path}">
+        <div class="icon-card" ${i.model ? 'data-equipment role="group"' : 'tabindex="0" role="button"'} data-path="${i.path}" aria-label="${i.model ? i.label : 'Sao chép đường dẫn ' + i.name}" title="Bấm để copy: ${i.path}">
           <div class="icon-well"><img loading="lazy" src="./${i.path}" alt="${i.name}" /></div>
+          ${i.label ? `<div class="equipment-label">${i.label}</div><div class="equipment-model">${i.model} · ${i.muscles}</div>` : ''}
           <div class="icon-name">${i.name}</div>
           <div class="icon-cat">${i.cat}</div>
+          ${i.videoFile ? `<div class="equipment-model" style="overflow-wrap:anywhere;">Video: ${i.videoFile}</div>` : ''}
+          ${i.model ? `<div class="equipment-actions"><button type="button">Sao chép</button><a href="./${i.path}" download>Tải SVG</a><a href="${i.source}" target="_blank" rel="noopener">${i.videoFile ? 'Nguồn video' : 'Máy gốc'}</a></div>` : ''}
         </div>
       `).join('');
+      if (!filtered.length) gridEl.innerHTML = '<p class="equipment-empty">Không có icon phù hợp. Thử tên máy hoặc mã M3 khác.</p>';
 
       gridEl.querySelectorAll('.icon-card').forEach(card => {
-        card.addEventListener('click', () => {
+        card.addEventListener('click', async (event) => {
+          if (event.target.closest('a')) return;
           const p = card.dataset.path;
-          if (navigator.clipboard) navigator.clipboard.writeText(p).catch(() => {});
-          showToast('Đã copy: ' + p);
+          try {
+            await navigator.clipboard.writeText(p);
+            showToast('Đã copy: ' + p);
+          } catch { showToast('Không thể copy. Đường dẫn: ' + p); }
+        });
+        card.addEventListener('keydown', event => {
+          if (event.target === card && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); card.click(); }
         });
       });
     }

@@ -21,6 +21,10 @@ import 'package:meta_gym_app/features/progress/data/member_journal_service.dart'
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
+import 'package:meta_gym_app/features/notifications/domain/notification_models.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notification_router.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
@@ -154,6 +158,17 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         if (sessionsService is MemberSessionsApi) {
           final bookings = await CoachV2Api(sessionsService.client)
               .list('/coach-bookings');
+          if (mounted) {
+            try {
+              final notifCtrl = Provider.of<NotificationsController>(
+                context,
+                listen: false,
+              );
+              await notifCtrl.syncUpcomingBookings(bookings);
+            } on ProviderNotFoundException {
+              // Optional when dashboard is rendered in isolation.
+            }
+          }
           sessions = [
             ...sessions,
             for (final booking in bookings)
@@ -290,13 +305,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         ],
       );
     }
-    final now = DateTime.now();
-    final date =
-        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    for (final day in _activePlan?.days ?? const <TrainingDay>[]) {
-      if (day.scheduledDate == date) return day;
-    }
-    return null;
+    return _activePlan?.dayForDate(DateTime.now());
   }
 
   Future<void> _pushAndReload(String route) async {
@@ -325,12 +334,11 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final user = context.watch<SessionController>().user;
     final userName = user != null && user.fullName.trim().isNotEmpty
         ? user.fullName.trim()
         : 'Minh Quân';
-
-    final palette = MetaGymTheme.paletteOf(context);
 
     return Material(
       color: palette.canvas,
@@ -474,11 +482,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: palette.warning,
-            size: 19,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.stateWarning, size: 19, fallbackIcon: Icons.warning_amber_rounded),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -492,11 +496,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           IconButton(
             onPressed: _loadFrame3Data,
             tooltip: 'Thử lại',
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: palette.warning,
-              size: 19,
-            ),
+            icon: MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 19, fallbackIcon: Icons.refresh_rounded),
           ),
         ],
       ),
@@ -505,6 +505,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
 
   Widget _buildHeader(BuildContext context, String userName) {
     final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final shortName = userName.split(RegExp(r'\s+')).length >= 2
         ? userName.split(RegExp(r'\s+')).sublist(1).join(' ')
         : userName;
@@ -541,15 +542,17 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: MetaGymTheme.isLightPalette(context)
+                          colors: isLight
                               ? const [Color(0xFFFFFFFF), Color(0xFFE5ECF5)]
                               : const [Color(0x33FF5E36), Color(0xD629241F)],
                         ),
                         borderRadius: BorderRadius.circular(13),
                         border: Border.all(
-                          color: MetaGymTheme.brandOrange.withValues(
-                            alpha: 0.60,
-                          ),
+                          color: isLight
+                              ? palette.primaryText.withValues(alpha: 0.45)
+                              : MetaGymTheme.brandOrange.withValues(
+                                  alpha: 0.60,
+                                ),
                           width: 1.2,
                         ),
                       ),
@@ -557,9 +560,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                       child: MetaGymSvgIcon(
                         MetaGymIcons.qrScanFrame,
                         size: 24,
-                        color: MetaGymTheme.isLightPalette(context)
-                            ? palette.primaryText
-                            : Colors.white,
+                        color: isLight ? palette.primaryText : Colors.white,
                         fallbackIcon: Icons.qr_code_2_rounded,
                       ),
                     ),
@@ -603,47 +604,66 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             ),
           ),
           const SizedBox(width: 8),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              MetaGymCircleIconButton(
-                icon: Icons.notifications_none_rounded,
-                svgAsset: MetaGymIcons.settingNotificationsBell,
-                tooltip: 'Thông báo',
-                onTap: () => _showHomeNotificationsSheet(context),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: IgnorePointer(
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: palette.canvas,
-                        width: 2,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: MetaGymTheme.tabularFigures,
-                      ),
-                    ),
+          Builder(
+            builder: (bellCtx) {
+              NotificationsController? notificationsCtrl;
+              try {
+                notificationsCtrl = Provider.of<NotificationsController>(
+                  bellCtx,
+                );
+              } on ProviderNotFoundException {
+                notificationsCtrl = null;
+              }
+              final unreadCount = notificationsCtrl?.unreadCount ?? 0;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  MetaGymCircleIconButton(
+                    key: const Key('member-home-bell-btn'),
+                    icon: Icons.notifications_none_rounded,
+                    svgAsset: MetaGymIcons.settingNotificationsBell,
+                    tooltip: 'Thông báo',
+                    onTap: () => _showHomeNotificationsSheet(bellCtx),
                   ),
-                ),
-              ),
-            ],
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: IgnorePointer(
+                        child: Container(
+                          key: const Key('member-home-bell-badge'),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(
+                            color: MetaGymTheme.brandOrange,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: isLight
+                                  ? palette.surfaceSolid
+                                  : MetaGymTheme.scaffoldBackground,
+                              width: 2,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              height: 1.0,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -653,83 +673,185 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   void _showHomeNotificationsSheet(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    NotificationsController? controller;
+    try {
+      controller = Provider.of<NotificationsController>(context, listen: false);
+    } on ProviderNotFoundException {
+      controller = null;
+    }
+    SessionController? sessionCtrl;
+    try {
+      sessionCtrl = Provider.of<SessionController>(context, listen: false);
+    } on ProviderNotFoundException {
+      sessionCtrl = null;
+    }
+    if (controller != null && controller.items.isEmpty && !controller.isLoading) {
+      controller.refresh(initial: true);
+    }
+
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
-      backgroundColor: isLight ? palette.surfaceSolid : MetaGymTheme.overlayGlass,
-      builder: (sheetCtx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Thông báo mới',
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              MetaGymGlassCard(
-                solid: true,
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: isLight
+          ? palette.surfaceSolid
+          : MetaGymTheme.overlayGlass,
+      builder: (sheetCtx) {
+        final previewItems = (controller?.items ?? const <AppNotification>[])
+            .take(4)
+            .toList();
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      'Nhắc lịch PT 1:1 hôm nay lúc 18:00',
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
+                    Expanded(
+                      child: Text(
+                        'Thông báo mới',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Coach Lê Hoàng Nam đã chuẩn bị bài Ngực & Tay sau. Nhớ khởi động trước 10 phút.',
+                    if ((controller?.unreadCount ?? 0) > 0)
+                      TextButton(
+                        onPressed: () => controller?.markAllRead(),
+                        child: Text(
+                          'Đọc tất cả',
+                          style: TextStyle(
+                            color: palette.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (previewItems.isEmpty)
+                  MetaGymGlassCard(
+                    solid: true,
+                    padding: const EdgeInsets.all(14),
+                    child: Text(
+                      'Bạn chưa có thông báo mới. Các nhắc lịch tập, thực đơn và tin nhắn sẽ hiển thị tại đây.',
                       style: TextStyle(
                         color: palette.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
+                        fontSize: 13,
+                        height: 1.45,
+                      ),
+                    ),
+                  )
+                else
+                  for (var i = 0; i < previewItems.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    MetaGymGlassCard(
+                      solid: true,
+                      padding: const EdgeInsets.all(12),
+                      borderColor: previewItems[i].isUnread
+                          ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+                          : null,
+                      onTap: () async {
+                        final item = previewItems[i];
+                        Navigator.of(sheetCtx).pop();
+                        if (item.isUnread && item.id.isNotEmpty) {
+                          controller?.markRead(item.id);
+                        }
+                        if (context.mounted) {
+                          await openNotificationTarget(
+                            context,
+                            item,
+                            role: sessionCtrl?.user?.role,
+                          );
+                        }
+                      },
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (previewItems[i].isUnread)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.only(top: 5, right: 8),
+                              decoration: const BoxDecoration(
+                                color: MetaGymTheme.brandOrange,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  previewItems[i].title ?? 'Thông báo mới',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if ((previewItems[i].body ?? '').isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    previewItems[i].body!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 12,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              MetaGymGlassCard(
-                solid: true,
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Giáo trình 8 tuần đã được cập nhật',
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    key: const Key('member-home-view-all-notifs-btn'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MetaGymTheme.brandOrange,
+                      foregroundColor: MetaGymTheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusInput,
+                        ),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(sheetCtx).pop();
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => const CoachNotificationsPage(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Xem tất cả thông báo',
                       style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Thực đơn 2.400 kcal và mức tạ tuần mới đã sẵn sàng trong mục Tập luyện.',
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -830,6 +952,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   // 4. THẺ "HÔM NAY [SẮP DIỄN RA]" (LIQUID GLASS TRONG SUỐT)
   // ===========================================================================
   Widget _buildTodaySection(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     if (_isLoading) {
       return _buildLiquidGlassCard(
         child: SizedBox(
@@ -855,7 +978,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 day.title.trim().toLowerCase()
         ? _todaySession
         : null;
-    final palette = MetaGymTheme.paletteOf(context);
     final status = day == null
         ? 'Chưa có lịch'
         : session?.statusLabel ?? 'Đã lên lịch';
@@ -933,11 +1055,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: palette.textSecondary,
-                        size: 18,
-                      ),
+                      MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 18, fallbackIcon: Icons.chevron_right_rounded),
                     ],
                   ),
                   const SizedBox(height: 7),
@@ -1050,6 +1168,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   // 3. THẺ "GÓI TẬP & COACH"
   // ===========================================================================
   Widget _buildMembershipAndCoachCard(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     if (_isLoading) {
       return _buildMembershipGlassCard(
         child: Container(
@@ -1122,7 +1241,6 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                     .toUpperCase()
               : 'LN');
 
-    final palette = MetaGymTheme.paletteOf(context);
     return _buildMembershipGlassCard(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -1325,11 +1443,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.fitness_center_rounded,
-                      color: MetaGymTheme.brandOrange,
-                      size: 18,
-                    ),
+                    const MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 18, fallbackIcon: Icons.fitness_center_rounded),
                     const SizedBox(width: 9),
                     Expanded(
                       child: Text(
@@ -1341,10 +1455,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         ),
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: palette.textSecondary,
-                    ),
+                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1384,10 +1495,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 else
                   Text(
                     'Chưa có gói tập · Chạm để khám phá gói',
-                    style: TextStyle(
-                      color: palette.textSecondary,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: palette.textSecondary, fontSize: 12),
                   ),
               ],
             ),
@@ -1407,11 +1515,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.fitness_center_rounded,
-                  color: MetaGymTheme.brandOrange,
-                  size: 18,
-                ),
+                const MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 18, fallbackIcon: Icons.fitness_center_rounded),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1437,7 +1541,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                 );
                 final action = FilledButton.icon(
                   onPressed: () => _pushAndReload('/member/features/workouts'),
-                  icon: const Icon(Icons.calendar_month_rounded, size: 17),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 17, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.calendar_month_rounded),
                   label: const Text('Mở nhật ký'),
                   style: FilledButton.styleFrom(
                     backgroundColor: MetaGymTheme.brandOrange,
@@ -1472,9 +1576,10 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Widget _buildBentoSection(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
-    final progressTrackColor = isLight
-        ? const Color(0xFFE2E8F0)
+    final progTrackColor = isLight
+        ? const Color(0xFFDCE4EE)
         : const Color(0x26FFFFFF);
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1579,7 +1684,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           child: LinearProgressIndicator(
                             value: 0.85,
                             minHeight: 3,
-                            backgroundColor: progressTrackColor,
+                            backgroundColor: progTrackColor,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               palette.success,
                             ),
@@ -1717,7 +1822,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                           child: LinearProgressIndicator(
                             value: 3 / 7,
                             minHeight: 3,
-                            backgroundColor: progressTrackColor,
+                            backgroundColor: progTrackColor,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               palette.success,
                             ),
@@ -1797,7 +1902,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: palette.chipActiveBg,
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(
                           MetaGymTheme.radiusFull,
                         ),
@@ -1849,16 +1954,14 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             shape: BoxShape.circle,
             color: isCompleted
                 ? MetaGymTheme.brandOrange
-                : (isLight
-                      ? palette.metricPanelBg
-                      : const Color(0x1AFFFFFF)),
+                : (isLight ? const Color(0xFFE8EEF5) : const Color(0x1AFFFFFF)),
             border: Border.all(
               color: isActive
-                  ? (isLight ? palette.primaryText : Colors.white)
+                  ? (isLight ? palette.textPrimary : Colors.white)
                   : (isCompleted
                         ? MetaGymTheme.brandOrange
                         : (isLight
-                              ? palette.metricPanelBorder
+                              ? const Color(0xFFB8C4D2)
                               : const Color(0x33FFFFFF))),
               width: isActive ? 1.4 : 0.8,
             ),

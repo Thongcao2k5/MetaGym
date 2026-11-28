@@ -12,6 +12,8 @@ import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_plan_detail_page.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_plan_form_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachTrainingPage extends StatefulWidget {
   const CoachTrainingPage({this.service, super.key});
@@ -59,10 +61,11 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final canPop = Navigator.of(context).canPop();
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
@@ -84,9 +87,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: isLight
-                        ? palette.surfaceSolid
-                        : const Color(0xFF282320),
+                    backgroundColor: colors.surface,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -164,12 +165,7 @@ class _CoachTrainingPageState extends State<CoachTrainingPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: isLight
-                                          ? palette.textSecondary
-                                          : const Color(0xFFB7B2AF),
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                                   ],
                                 ),
                               ),
@@ -280,7 +276,8 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final visiblePlans = _plans
         .where(
           (plan) =>
@@ -292,7 +289,7 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
         !_plans.any((plan) => plan.status == 'ACTIVE');
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
@@ -314,9 +311,7 @@ class _MemberPlansPageState extends State<_MemberPlansPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: isLight
-                        ? palette.surfaceSolid
-                        : const Color(0xFF282320),
+                    backgroundColor: colors.surface,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -492,11 +487,7 @@ class _PlanSummaryCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: 13,
-                          color: palette.reflection,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 13, fallbackIcon: Icons.calendar_today_outlined),
                         const SizedBox(width: 4),
                         Text(
                           '${plan.days.length} ngày tập',
@@ -512,11 +503,7 @@ class _PlanSummaryCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.accessibility_new_rounded,
-                            size: 13,
-                            color: palette.primaryText,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.settingAccessibility, size: 13, fallbackIcon: Icons.accessibility_new_rounded),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -540,10 +527,7 @@ class _PlanSummaryCard extends StatelessWidget {
           const SizedBox(width: 6),
           Padding(
             padding: const EdgeInsets.only(top: 18),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: palette.textSecondary,
-            ),
+            child: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
           ),
         ],
       ),
@@ -631,7 +615,7 @@ class _SectionHeaderRow extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: palette.primaryText, size: 19),
+        MetaGymResolvedIcon(icon, size: 19, fallbackColor: palette.primaryText),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -665,8 +649,6 @@ class _EmptyStateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final muted = isLight ? palette.textSecondary : const Color(0xFFB7B2AF);
     return CoachingGraphiteCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -679,7 +661,7 @@ class _EmptyStateCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: muted, size: 24),
+            child: MetaGymResolvedIcon(icon, size: 24, fallbackColor: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           Text(
@@ -696,7 +678,7 @@ class _EmptyStateCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: muted,
+              color: palette.textSecondary,
               fontSize: 13,
               height: 1.45,
             ),

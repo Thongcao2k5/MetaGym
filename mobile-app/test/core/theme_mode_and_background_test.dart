@@ -6,22 +6,22 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 
 void main() {
   group('ThemeModeController', () {
-    test('defaults to light mode and notifies on toggle', () async {
+    test('defaults to dark mode and notifies on toggle', () async {
       final controller = ThemeModeController(persist: false);
       var notifications = 0;
       controller.addListener(() => notifications++);
 
-      expect(controller.themeMode, ThemeMode.light);
-      expect(controller.isLight, isTrue);
-
-      await controller.setThemeMode(ThemeMode.dark);
       expect(controller.themeMode, ThemeMode.dark);
       expect(controller.isLight, isFalse);
+
+      await controller.setThemeMode(ThemeMode.light);
+      expect(controller.themeMode, ThemeMode.light);
+      expect(controller.isLight, isTrue);
       expect(notifications, 1);
 
       await controller.toggle();
-      expect(controller.themeMode, ThemeMode.light);
-      expect(controller.isLight, isTrue);
+      expect(controller.themeMode, ThemeMode.dark);
+      expect(controller.isLight, isFalse);
       expect(notifications, 2);
 
       controller.dispose();

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
-import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icon_mapper.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum MetaGymActionButtonStatus { idle, loading, success, error }
 
@@ -136,27 +138,41 @@ class _MetaGymActionButtonState extends State<MetaGymActionButton> {
         ),
       );
     } else {
+      final resolvedSvg =
+          widget.svgAsset ??
+          (widget.icon != null ? resolveMetaGymSvgAsset(widget.icon!) : null);
       child = Row(
         key: ValueKey(text),
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           if (isSuccess)
-            const Icon(Icons.check_circle_outline_rounded, size: 19)
-          else if (isError)
-            const Icon(Icons.error_outline_rounded, size: 19)
-          else if (widget.svgAsset != null)
-            MetaGymIcon(
-              widget.svgAsset!,
+            const MetaGymSvgIcon(
+              MetaGymIcons.stateSuccess,
               size: 19,
+              color: Colors.white,
               adaptForLightMode: false,
-              excludeFromSemantics: true,
+            )
+          else if (isError)
+            const MetaGymSvgIcon(
+              MetaGymIcons.stateError,
+              size: 19,
+              color: Colors.white,
+              adaptForLightMode: false,
+            )
+          else if (resolvedSvg != null)
+            MetaGymSvgIcon(
+              resolvedSvg,
+              size: 19,
+              color: Colors.white,
+              adaptForLightMode: false,
+              fallbackIcon: widget.icon,
             )
           else if (widget.icon != null)
             Icon(widget.icon, size: 19),
           if (isSuccess ||
               isError ||
-              widget.svgAsset != null ||
+              resolvedSvg != null ||
               widget.icon != null)
             const SizedBox(width: 8),
           Flexible(

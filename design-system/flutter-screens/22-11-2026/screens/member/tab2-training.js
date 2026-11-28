@@ -25,7 +25,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="mg-title">Tập luyện</div>
             </div>
             <div class="circle-btn" title="Thư viện bài tập" data-go="member-exercises" style="cursor:pointer;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Thư viện" /></div>
-            <div class="circle-btn" title="Lịch sử tập" data-go="member-visits" style="cursor:pointer;"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
+            <div class="circle-btn" title="Lịch sử tập" data-go="member-gym-visits" style="cursor:pointer;"><img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" /></div>
           </div>
 
           <!-- Hero Card: Buổi tập hôm nay (Thích ứng mượt Dark & Light Mode) -->
@@ -58,7 +58,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             </div>
 
             <div class="grid-2" style="gap:8px;">
-              <button type="button" class="btn-primary" style="height:40px;font-size:14px;white-space:nowrap;" data-go="member-workout-log">Bắt đầu tập →</button>
+              <button type="button" class="btn-primary" style="height:40px;font-size:14px;white-space:nowrap;" data-go="member-curriculum">Bắt đầu tập →</button>
               <button type="button" class="btn-secondary" style="height:40px;font-size:14px;white-space:nowrap;" data-go="member-curriculum">Xem giáo trình</button>
             </div>
           </div>
@@ -182,7 +182,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="txt-xs" style="font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Lưu PR, ảnh &amp; số đo</div>
             </div>
 
-            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-visits">
+            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-gym-visits">
               <div class="row-between" style="margin-bottom:8px;">
                 <div class="quick-ico" style="width:34px;height:34px;border-radius:10px;background:rgba(46,204,113,0.16);border:1px solid rgba(46,204,113,0.38);">
                   <img class="ico-md" src="../../meta-gym/assets/svg/workout/workout_history.svg" alt="Lịch sử" />
@@ -206,7 +206,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <div class="txt-xs tnum" style="font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">120+ bài chuẩn form</div>
             </div>
 
-            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-equipment">
+            <div class="card-warm-glass" style="margin-bottom:0;padding:12px;cursor:pointer;min-width:0;" data-go="member-gym-equipment">
               <div class="row-between" style="margin-bottom:8px;">
                 <div class="quick-ico" style="width:34px;height:34px;border-radius:10px;background:rgba(169,199,232,0.16);border:1px solid rgba(169,199,232,0.38);">
                   <img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Phòng gym & thiết bị" />
@@ -882,8 +882,8 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
 
           <div class="filter-row">
             <div class="filter-pill active">Tất cả</div>
+            <div class="filter-pill">Máy M3</div>
             <div class="filter-pill">Máy cáp</div>
-            <div class="filter-pill">Free Weight</div>
             <div class="filter-pill">Cardio</div>
           </div>
 
@@ -902,10 +902,10 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-liquid" style="padding:13px;margin-bottom:9px;">
             <div class="row-between">
               <div class="row" style="gap:11px;">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cable" /></div>
+                <div class="quick-ico" style="width:48px;height:48px;"><img style="width:30px;height:30px;" src="../../meta-gym/assets/svg/equipment_m3/equip_m3_pec_fly_rear_delt.svg" alt="M3-1017" /></div>
                 <div>
-                  <div class="txt-sm txt-bold">Cable Crossover Dual</div>
-                  <div class="txt-xs">Khu Máy Cáp · Ngực, Vai, Tay sau</div>
+                  <div class="txt-sm txt-bold">Máy ép ngực / vai sau M3-1017</div>
+                  <div class="txt-xs">Máy Realleader M3 · Ngực, Vai sau</div>
                 </div>
               </div>
               <span class="pill pill-success">Sẵn sàng</span>
@@ -915,10 +915,23 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-liquid" style="padding:13px;margin-bottom:9px;">
             <div class="row-between">
               <div class="row" style="gap:11px;">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Smith" /></div>
+                <div class="quick-ico" style="width:48px;height:48px;"><img style="width:30px;height:30px;" src="../../meta-gym/assets/svg/equipment_m3/equip_m3_seated_leg_curl.svg" alt="M3-1018" /></div>
                 <div>
-                  <div class="txt-sm txt-bold">Smith Machine Pro 3D</div>
-                  <div class="txt-xs">Khu Free Weight · Squat, Bench Press</div>
+                  <div class="txt-sm txt-bold">Máy cuốn đùi sau ngồi M3-1018</div>
+                  <div class="txt-xs">Máy Realleader M3 · Đùi sau</div>
+                </div>
+              </div>
+              <span class="pill pill-success">Sẵn sàng</span>
+            </div>
+          </div>
+
+          <div class="card-liquid" style="padding:13px;margin-bottom:9px;">
+            <div class="row-between">
+              <div class="row" style="gap:11px;">
+                <div class="quick-ico" style="width:48px;height:48px;"><img style="width:30px;height:30px;" src="../../meta-gym/assets/svg/equipment_m3/equip_m3_chin_dip_assist.svg" alt="M3-1020" /></div>
+                <div>
+                  <div class="txt-sm txt-bold">Máy xà đơn / xà kép trợ lực M3-1020</div>
+                  <div class="txt-xs">Máy Realleader M3 · Lưng, Tay sau</div>
                 </div>
               </div>
               <span class="pill pill-success">Sẵn sàng</span>
@@ -928,7 +941,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <div class="card-liquid" style="padding:13px;">
             <div class="row-between">
               <div class="row" style="gap:11px;">
-                <div class="quick-ico"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_treadmill.svg" alt="Treadmill" /></div>
+                <div class="quick-ico" style="width:48px;height:48px;"><img class="ico-md" src="../../meta-gym/assets/svg/catalog/equip_treadmill.svg" alt="Treadmill" /></div>
                 <div>
                   <div class="txt-sm txt-bold">Technogym Artis Run</div>
                   <div class="txt-xs">Khu Cardio · Đốt mỡ &amp; Sức bền</div>
@@ -962,23 +975,22 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
               <div class="mg-eyebrow">HƯỚNG DẪN THIẾT BỊ</div>
-              <div class="mg-title">Cable Crossover Dual</div>
+              <div class="mg-title">Máy ép ngực / vai sau M3-1017</div>
             </div>
           </div>
 
           <div class="card-warm-glass">
             <div class="row" style="gap:12px;margin-bottom:10px;">
-              <div class="quick-ico" style="width:52px;height:52px;border-radius:16px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cable Crossover" /></div>
+              <div class="quick-ico" style="width:60px;height:60px;border-radius:16px;"><img style="width:36px;height:36px;" src="../../meta-gym/assets/svg/equipment_m3/equip_m3_pec_fly_rear_delt.svg" alt="M3-1017" /></div>
               <div style="flex:1;">
-                <div style="font-size:16px;font-weight:800;">Cable Crossover Dual</div>
-                <div class="txt-xs">Khu Máy Cáp · Tầng 2 · Tải tối đa 120 kg</div>
+                <div style="font-size:16px;font-weight:800;">Máy ép ngực / vai sau M3-1017</div>
+                <div class="txt-xs">Máy Realleader M3 · Khối tạ xếp</div>
                 <div style="margin-top:6px;"><span class="pill pill-success">● Sẵn sàng sử dụng</span></div>
               </div>
             </div>
             <div class="row" style="flex-wrap:wrap;gap:6px;">
-              <span class="pill pill-orange">Ngực giữa</span>
-              <span class="pill pill-muted">Vai trước</span>
-              <span class="pill pill-muted">Tay sau</span>
+              <span class="pill pill-orange">Ngực</span>
+              <span class="pill pill-muted">Vai sau</span>
             </div>
           </div>
 
@@ -987,9 +999,9 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <img class="ico-sm" src="../../meta-gym/assets/svg/catalog/exercise_step_guide.svg" alt="Hướng dẫn" />
               <strong style="font-size:14px;">Hướng dẫn sử dụng từng bước</strong>
             </div>
-            <div class="txt-xs" style="line-height:1.55;margin-bottom:8px;"><strong style="color:var(--primary);">Bước 1:</strong> Chỉnh chốt ròng rọc hai bên ngang tầm vai và cài mức tạ phù hợp.</div>
-            <div class="txt-xs" style="line-height:1.55;margin-bottom:8px;"><strong style="color:var(--primary);">Bước 2:</strong> Bước nhẹ một chân lên trước, giữ lưng thẳng và hơi gập khuỷu tay.</div>
-            <div class="txt-xs" style="line-height:1.55;"><strong style="color:var(--primary);">Bước 3:</strong> Ép hai tay về phía trước ngực, siết cơ 1 giây rồi trả chậm có kiểm soát.</div>
+            <div class="txt-xs" style="line-height:1.55;margin-bottom:8px;"><strong style="color:var(--primary);">Bước 1:</strong> Chỉnh độ cao ghế và góc tay đòn tương ứng bài ép ngực hoặc vai sau.</div>
+            <div class="txt-xs" style="line-height:1.55;margin-bottom:8px;"><strong style="color:var(--primary);">Bước 2:</strong> Giữ lưng áp sát đệm, kéo hoặc ép tay đòn mượt mà theo cung tròn.</div>
+            <div class="txt-xs" style="line-height:1.55;"><strong style="color:var(--primary);">Bước 3:</strong> Siết cơ 1 giây ở điểm đỉnh trước khi thả tạ chậm về vị trí mở.</div>
           </div>
 
           <div class="card-solid" style="padding:14px;">
@@ -998,7 +1010,7 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
               <strong style="font-size:14px;">Lưu ý an toàn</strong>
             </div>
             <div class="txt-xs" style="line-height:1.5;">
-              Kiểm tra chốt tạ đã cắm chặt trước khi kéo; không thả rơi tạ tự do gây đứt dây cáp.
+              Khóa chốt biên độ tay đòn chắc chắn trước khi lên tạ nặng; không thả tạ rơi tự do.
             </div>
           </div>
         </div>

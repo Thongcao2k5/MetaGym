@@ -1,0 +1,46 @@
+[
+  {
+    "path": "meta-gym/assets/svg/equipment_video/equip_video_pec_deck_fly.svg",
+    "name": "equip_video_pec_deck_fly",
+    "cat": "equipment_video",
+    "label": "Máy ép ngực",
+    "model": "Pec deck",
+    "muscles": "Ngực",
+    "source": "https://www.exerciseanimatic.com/product-page/pec-deck-fly-machine-flies",
+    "videoFile": "pec_deck_fly_480p.mp4",
+    "referenceKey": "pec_deck_fly"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_video/equip_video_reverse_machine_fly.svg",
+    "name": "equip_video_reverse_machine_fly",
+    "cat": "equipment_video",
+    "label": "Máy mở vai sau",
+    "model": "Reverse fly",
+    "muscles": "Vai sau",
+    "source": "https://www.exerciseanimatic.com/product-page/reverse-machine-fly-1",
+    "videoFile": "reverse_machine_fly_480p.mp4",
+    "referenceKey": "reverse_machine_fly"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_video/equip_video_seated_leg_curl.svg",
+    "name": "equip_video_seated_leg_curl",
+    "cat": "equipment_video",
+    "label": "Máy cuốn đùi sau ngồi",
+    "model": "Seated leg curl",
+    "muscles": "Đùi sau",
+    "source": "https://www.exerciseanimatic.com/product-page/seated-leg-curl-machine",
+    "videoFile": "seated_leg_curl_480p.mp4",
+    "referenceKey": "seated_leg_curl"
+  },
+  {
+    "path": "meta-gym/assets/svg/equipment_video/equip_video_assisted_pull_up.svg",
+    "name": "equip_video_assisted_pull_up",
+    "cat": "equipment_video",
+    "label": "Máy kéo xà trợ lực",
+    "model": "Assisted pull-up",
+    "muscles": "Lưng · Tay trước",
+    "source": "https://www.exerciseanimatic.com/product-page/assisted-pull-up-normal-grip",
+    "videoFile": "assisted_pull_up_480p.mp4",
+    "referenceKey": "assisted_pull_up"
+  }
+]

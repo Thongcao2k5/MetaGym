@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/app_router.dart';
@@ -8,6 +9,7 @@ import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_glass_scaffold.dart';
+import 'package:meta_gym_app/features/public/presentation/system_states_page.dart';
 import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -171,31 +173,53 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    void clearErrorsOnEdit(String _) {
+      if (auth.fieldErrors.isNotEmpty || auth.errorMessage != null) {
+        auth.clearErrors();
+      }
+    }
+
     final formBody = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Chào mừng trở lại',
-          textAlign: TextAlign.left,
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontSize: 23,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-            height: 1.2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Đăng nhập để tiếp tục lịch tập và kết nối cùng Coach của bạn.',
-          textAlign: TextAlign.left,
-          style: TextStyle(
-            color: palette.textWarmMuted,
-            fontSize: 12.5,
-            height: 1.4,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chào mừng trở lại',
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Đăng nhập để tiếp tục lịch tập cùng Meta Kong & Coach.',
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: 14,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Image.asset(
+              'assets/images/mascot/meta_kong_hero.webp',
+              width: 62,
+              height: 62,
+              fit: BoxFit.contain,
+              semanticLabel: 'Meta Kong chào mừng',
+            ),
+          ],
         ),
         const SizedBox(height: 14),
         AuthGlassField(
@@ -209,6 +233,7 @@ class _LoginPageState extends State<LoginPage> {
           textInputAction: TextInputAction.next,
           autofillHints: const [AutofillHints.email],
           errorText: auth.fieldErrors['email'],
+          onChanged: clearErrorsOnEdit,
         ),
         const SizedBox(height: 12),
         AuthGlassField(
@@ -223,6 +248,7 @@ class _LoginPageState extends State<LoginPage> {
           onSubmitted: auth.isSubmitting ? null : (_) => _submit(auth),
           autofillHints: const [AutofillHints.password],
           errorText: auth.fieldErrors['password'],
+          onChanged: clearErrorsOnEdit,
           suffixIcon: IconButton(
             key: const Key('login-toggle-password'),
             tooltip: _obscurePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
@@ -253,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
                   ? null
                   : () => setState(() => _rememberMe = !_rememberMe),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
+                constraints: const BoxConstraints(minHeight: 48),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Row(
@@ -270,16 +296,12 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           color: _rememberMe
                               ? MetaGymTheme.brandOrange
-                              : (isLight
-                                    ? palette.metricPanelBg
-                                    : const Color(0x88181513)),
+                              : palette.metricPanelBg,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: _rememberMe
                                 ? MetaGymTheme.brandOrange
-                                : (isLight
-                                      ? palette.borderSolid
-                                      : MetaGymWarmGlassTokens.cardBorder),
+                                : palette.borderSolid,
                           ),
                         ),
                         child: _rememberMe
@@ -295,7 +317,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Ghi nhớ đăng nhập',
                         style: TextStyle(
                           color: palette.textPrimary,
-                          fontSize: 12.5,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -314,12 +336,12 @@ class _LoginPageState extends State<LoginPage> {
               style: TextButton.styleFrom(
                 foregroundColor: palette.reflection,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(44, 44),
+                minimumSize: const Size(48, 48),
                 tapTargetSize: MaterialTapTargetSize.padded,
               ),
               child: const Text(
                 'Quên mật khẩu?',
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -368,83 +390,105 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
         const SizedBox(height: 8),
-        Row(
+        ExpansionTile(
+          key: const Key('login-demo-disclosure'),
+          title: Text(
+            'Tài khoản demo',
+            style: TextStyle(fontSize: 12, color: palette.textSecondary),
+          ),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: 8),
+          shape: const Border(),
+          collapsedShape: const Border(),
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('login-demo-member'),
-                onPressed: auth.isSubmitting
-                    ? null
-                    : () {
-                        _emailController.text = LocalDemoAccounts.memberEmail;
-                        _passwordController.text =
-                            LocalDemoAccounts.demoPassword;
-                        _submit(auth);
-                      },
-                icon: const Icon(Icons.person_rounded, size: 16),
-                label: const Text(
-                  'Demo Hội viên',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('login-demo-member'),
+                    onPressed: auth.isSubmitting
+                        ? null
+                        : () {
+                            _emailController.text =
+                                LocalDemoAccounts.memberEmail;
+                            _passwordController.text =
+                                LocalDemoAccounts.demoPassword;
+                            _submit(auth);
+                          },
+                    icon: const MetaGymSvgIcon(MetaGymIcons.settingPersonalInfo, size: 16, fallbackIcon: Icons.person_rounded),
+                    label: const Text(
+                      'Demo Hội viên',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: palette.textPrimary,
+                      backgroundColor: palette.metricPanelBg,
+                      side: const BorderSide(color: Color(0x66FF5E36)),
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: palette.textPrimary,
-                  backgroundColor: isLight
-                      ? palette.surfaceSolid
-                      : const Color(0x66181513),
-                  side: BorderSide(
-                    color: palette.primaryText.withValues(alpha: 0.45),
-                  ),
-                  minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('login-demo-coach'),
+                    onPressed: auth.isSubmitting
+                        ? null
+                        : () {
+                            _emailController.text =
+                                LocalDemoAccounts.coachEmail;
+                            _passwordController.text =
+                                LocalDemoAccounts.demoPassword;
+                            _submit(auth);
+                          },
+                    icon: const MetaGymSvgIcon(MetaGymIcons.equipBodyweight, size: 16, fallbackIcon: Icons.sports_gymnastics_rounded),
+                    label: const Text(
+                      'Demo HLV',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: palette.textPrimary,
+                      backgroundColor: palette.metricPanelBg,
+                      side: BorderSide(
+                        color: palette.info.withValues(alpha: 0.45),
+                      ),
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('login-demo-coach'),
-                onPressed: auth.isSubmitting
-                    ? null
-                    : () {
-                        _emailController.text = LocalDemoAccounts.coachEmail;
-                        _passwordController.text =
-                            LocalDemoAccounts.demoPassword;
-                        _submit(auth);
-                      },
-                icon: const Icon(Icons.sports_gymnastics_rounded, size: 16),
-                label: const Text(
-                  'Demo HLV',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: palette.textPrimary,
-                  backgroundColor: isLight
-                      ? palette.surfaceSolid
-                      : const Color(0x66181513),
-                  side: BorderSide(
-                    color: palette.info.withValues(alpha: 0.45),
-                  ),
-                  minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+            if (kDebugMode)
+              TextButton.icon(
+                key: const Key('login-system-states'),
+                onPressed: () =>
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SystemStatesPage(),
+                      ),
+                    ),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 18, fallbackIcon: Icons.info_outline_rounded),
+                label: const Text('Xem trạng thái hệ thống'),
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -452,7 +496,7 @@ class _LoginPageState extends State<LoginPage> {
           TextSpan(
             style: TextStyle(
               color: palette.textSecondary,
-              fontSize: 11.5,
+              fontSize: 12,
               height: 1.45,
             ),
             children: [
@@ -545,7 +589,7 @@ class _BiometricButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     return SizedBox(
-      height: 44,
+      height: 48,
       child: OutlinedButton(
         key: buttonKey,
         onPressed: onTap,
@@ -572,7 +616,7 @@ class _BiometricButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: palette.textPrimary,
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),

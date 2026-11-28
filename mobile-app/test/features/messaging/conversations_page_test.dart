@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:meta_gym_app/features/messaging/domain/chat_message.dart';
@@ -539,6 +540,64 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  for (final isLight in [false, true]) {
+    testWidgets(
+      'Tab 4 Warm Smoked-Glass Featured Coach & chat bubbles render cleanly at 375x812 1.3x (${isLight ? "Light" : "Dark"})',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final service = _MultiConversationFixture(const [
+          Conversation(
+            id: 'conv-coach',
+            relationshipId: 'relationship-1',
+            memberId: 'member-1',
+            coachId: 'coach-1',
+            coachName: 'Lê Hoàng Nam',
+            status: 'ACTIVE',
+            unreadCount: 2,
+            lastMessageAt: '2026-11-27T10:45:00Z',
+            lastMessageType: 'TEXT',
+            lastMessageContent: 'Tối nay 18h tập Upper Body nhé!',
+          ),
+        ]);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: isLight ? MetaGymTheme.light : MetaGymTheme.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(1.3),
+              ),
+              child: child!,
+            ),
+            home: ConversationsPage(
+              service: service,
+              currentUserId: 'member-1',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Tin nhắn'), findsOneWidget);
+        expect(find.text('COACH CÁ NHÂN'), findsOneWidget);
+        expect(find.text('Lê Hoàng Nam'), findsOneWidget);
+        expect(find.text('2 tin chưa đọc'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.text('Lê Hoàng Nam'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ConversationDetailPage), findsOneWidget);
+        expect(find.text('Đang hoạt động · Coach 1:1'), findsOneWidget);
+        expect(find.text('Tin nhắn cũ'), findsOneWidget);
+        expect(find.text('Gửi'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }
 
 class _ImageFixture implements ProgressPhotoPicker {

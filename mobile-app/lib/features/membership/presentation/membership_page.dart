@@ -137,6 +137,7 @@ class _MembershipPageState extends State<MembershipPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final controller = context.watch<MembershipController>();
     final memberName = _resolveMemberName(context);
     final now = DateTime.now();
@@ -157,8 +158,6 @@ class _MembershipPageState extends State<MembershipPage> {
         controller.pendingPayment == null &&
         controller.plans.isNotEmpty;
 
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     return Scaffold(
       backgroundColor: palette.canvas,
       body: Stack(
@@ -174,10 +173,10 @@ class _MembershipPageState extends State<MembershipPage> {
                       : 'HỘI VIÊN & ƯU ĐÃI',
                   title: isEmptySelectionMode ? 'Chọn gói tập' : 'Gói tập',
                   actions: isEmptySelectionMode
-                      ? const [
+                      ? [
                           MembershipStatusPill(
                             label: 'Chưa có gói',
-                            color: Color(0xFFA8B1C2),
+                            color: palette.textSecondary,
                           ),
                         ]
                       : const [],
@@ -207,9 +206,7 @@ class _MembershipPageState extends State<MembershipPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
-                          backgroundColor: isLight
-                              ? palette.surfaceSolid
-                              : const Color(0xFF2B2622),
+                          backgroundColor: palette.surfaceSolid,
                           onRefresh: () => controller.load(),
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(16, 2, 16, 36),
@@ -241,9 +238,8 @@ class _MembershipPageState extends State<MembershipPage> {
                                                 'ACTIVE'
                                             ? 'Hiệu lực'
                                             : primaryMembership.label,
-                                        color: membershipStatusColorFor(
+                                        color: membershipStatusColor(
                                           primaryMembership.status,
-                                          palette,
                                         ),
                                       )
                                     : null,
@@ -405,7 +401,7 @@ class _PendingCheckoutBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: palette.warning.withValues(alpha: isLight ? 0.12 : 0.17),
+        color: palette.warning.withValues(alpha: isLight ? 0.10 : 0.18),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: palette.warning.withValues(alpha: 0.45)),
       ),
@@ -418,14 +414,10 @@ class _PendingCheckoutBanner extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: palette.warning.withValues(alpha: 0.2),
+                  color: palette.warning.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(
-                  Icons.hourglass_top_rounded,
-                  color: palette.warning,
-                  size: 19,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.stateLoading, size: 19, fallbackIcon: Icons.hourglass_top_rounded),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -449,7 +441,7 @@ class _PendingCheckoutBanner extends StatelessWidget {
             'Bạn đang có giao dịch ${payment.planName ?? 'gói tập'} '
             'chưa hoàn tất qua ${formatPaymentMethodLabel(payment.method)}.',
             style: TextStyle(
-              color: isLight ? palette.textPrimary : const Color(0xFFFDE3B2),
+              color: isLight ? palette.textSecondary : const Color(0xFFFDE3B2),
               fontSize: 12.5,
               height: 1.4,
             ),
@@ -509,7 +501,7 @@ class _ScheduledMembershipBanner extends StatelessWidget {
           const SizedBox(width: 8),
           MembershipStatusPill(
             label: membership.label,
-            color: membershipStatusColorFor(membership.status, palette),
+            color: membershipStatusColor(membership.status),
           ),
         ],
       ),
@@ -829,13 +821,6 @@ class _MembershipPlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
-    final badgeColor = meta.badgeColor == MetaGymTheme.progressGreen
-        ? palette.success
-        : meta.badgeColor == MetaGymTheme.reflectionBlue
-        ? palette.reflection
-        : meta.badgeColor == MetaGymTheme.brandOrange
-        ? palette.primaryText
-        : palette.textSecondary;
     final description = (plan.description ?? '').trim().isNotEmpty
         ? plan.description!.trim()
         : resolveMembershipTierInfo(
@@ -848,22 +833,19 @@ class _MembershipPlanCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isLight ? palette.surfaceSolid : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: meta.borderColor, width: 1.15),
-        boxShadow: isLight
-            ? const [
-                BoxShadow(
-                  color: Color(0x140F172A),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ]
-            : const [
-                BoxShadow(
-                  color: Color(0x45000000),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
+        border: Border.all(
+          color: isLight ? palette.warmGlassBorder : meta.borderColor,
+          width: 1.15,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isLight
+                ? const Color(0x140F172A)
+                : const Color(0x45000000),
+            blurRadius: isLight ? 14 : 18,
+            offset: Offset(0, isLight ? 4 : 8),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
@@ -895,16 +877,18 @@ class _MembershipPlanCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: badgeColor.withValues(alpha: 0.16),
+                        color: meta.badgeColor.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: badgeColor.withValues(alpha: 0.42),
+                          color: meta.badgeColor.withValues(alpha: 0.42),
                         ),
                       ),
                       child: Text(
                         meta.badgeLabel,
                         style: TextStyle(
-                          color: badgeColor,
+                          color: isLight
+                              ? palette.textPrimary
+                              : meta.badgeColor,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -978,7 +962,7 @@ class _MembershipPlanCard extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: palette.textPrimary,
                         backgroundColor: isLight
-                            ? palette.metricPanelBg
+                            ? palette.surfaceRaised
                             : const Color(0x16FFFFFF),
                         side: BorderSide(
                           color: isLight
@@ -1014,7 +998,7 @@ class _HistoryMembershipTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final color = membershipStatusColorFor(membership.status, palette);
+    final color = membershipStatusColor(membership.status);
     final label = membership.status == 'EXPIRED'
         ? 'Đã hết hạn'
         : membership.label;

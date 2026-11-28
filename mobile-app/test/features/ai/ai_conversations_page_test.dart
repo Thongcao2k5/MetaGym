@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_message.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
+import 'package:meta_gym_app/features/ai/presentation/ai_messages_page.dart';
 
 void main() {
   test('parses AI conversation owned by the current API session', () {
@@ -153,6 +155,71 @@ void main() {
     expect(service.requestIds[0], isNot(service.requestIds[1]));
     expect(find.text('Tập nhẹ hôm nay.'), findsOneWidget);
   });
+
+  for (final isLight in [false, true]) {
+    testWidgets(
+      'AI Companion hero, quick prompt chip, and alternating chat bubbles render cleanly at 375x812 1.3x (${isLight ? "Light" : "Dark"})',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final service = _AiFixture(
+          presetMessages: const [
+            AiMessage(
+              id: 'u-1',
+              role: 'USER',
+              content: 'Tối nay mình tập Upper Body xong ăn thêm gì?',
+              status: 'COMPLETED',
+              createdAt: '2026-11-27T11:00:00Z',
+            ),
+            AiMessage(
+              id: 'a-1',
+              role: 'ASSISTANT',
+              content: 'Sau tập chỉ cần thêm 20–25g đạm từ Whey hoặc ức gà.',
+              status: 'COMPLETED',
+              createdAt: '2026-11-27T11:01:00Z',
+            ),
+          ],
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: isLight ? MetaGymTheme.light : MetaGymTheme.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(1.3),
+              ),
+              child: child!,
+            ),
+            home: AiConversationsPage(service: service),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Trợ lý AI'), findsOneWidget);
+        expect(find.text('Meta Kong · Trợ lý AI Meta Gym'), findsOneWidget);
+        expect(find.text('Tạo hội thoại'), findsOneWidget);
+        expect(find.text('Gợi ý bữa phụ 25g đạm'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.text('Gợi ý bữa phụ 25g đạm'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AiMessagesPage), findsOneWidget);
+        expect(find.text('Trợ lý AI Meta Gym'), findsNWidgets(2));
+        expect(
+          find.text('Tối nay mình tập Upper Body xong ăn thêm gì?'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Sau tập chỉ cần thêm 20–25g đạm từ Whey hoặc ức gà.'),
+          findsOneWidget,
+        );
+        expect(find.text('Gợi ý bữa phụ 25g đạm'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }
 
 class _AiFixture implements AiService {
@@ -162,12 +229,14 @@ class _AiFixture implements AiService {
     this.processing = false,
     this.providerUnavailable = false,
     this.failedResultOnce = false,
+    this.presetMessages = const [],
   });
   final bool failFirst;
   final bool failAnswerOnce;
   final bool processing;
   final bool providerUnavailable;
   final bool failedResultOnce;
+  final List<AiMessage> presetMessages;
   AiConversation? conversation;
   bool deleted = false;
   int loads = 0;
@@ -175,7 +244,7 @@ class _AiFixture implements AiService {
 
   @override
   Future<List<AiMessage>> getMessages(String conversationId, int page) async =>
-      [];
+      presetMessages;
 
   @override
   Future<AiAnswerResult> sendQuestion(

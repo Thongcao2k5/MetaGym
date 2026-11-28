@@ -2,9 +2,12 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class ChatMessageImage extends StatefulWidget {
   const ChatMessageImage({
@@ -86,34 +89,36 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
     );
   }
 
-  Widget _buildErrorBox(String message) {
+  Widget _buildErrorBox(BuildContext context, String message) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       width: 210,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0x44000000),
+        color: isLight ? palette.metricPanelBg : const Color(0x44000000),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        border: Border.all(
+          color: isLight
+              ? palette.borderSolid
+              : Colors.white.withValues(alpha: 0.14),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.broken_image_outlined,
-            color: Colors.white.withValues(alpha: 0.72),
-            size: 26,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.stateBrokenImage, size: 26, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.broken_image_outlined),
           const SizedBox(height: 6),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: TextStyle(color: palette.textPrimary, fontSize: 12),
           ),
           const SizedBox(height: 6),
           TextButton(
             onPressed: _load,
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFE6FE48),
+              foregroundColor: palette.primaryText,
               minimumSize: const Size(0, 48),
               padding: const EdgeInsets.symmetric(horizontal: 10),
             ),
@@ -126,12 +131,14 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     if (_loading) {
       return Container(
         width: 210,
         height: 180,
         decoration: BoxDecoration(
-          color: const Color(0x33000000),
+          color: isLight ? palette.metricPanelBg : const Color(0x33000000),
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
@@ -140,13 +147,13 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.2,
-            color: Color(0xFFE6FE48),
+            color: MetaGymTheme.primary,
           ),
         ),
       );
     }
     if (_error != null) {
-      return _buildErrorBox(_error!);
+      return _buildErrorBox(context, _error!);
     }
     if (_url case final url?) {
       return GestureDetector(
@@ -167,20 +174,22 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
                   return Container(
                     width: 220,
                     height: 190,
-                    color: const Color(0x33000000),
+                    color: isLight
+                        ? palette.metricPanelBg
+                        : const Color(0x33000000),
                     alignment: Alignment.center,
                     child: const SizedBox(
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.2,
-                        color: Color(0xFFE6FE48),
+                        color: MetaGymTheme.primary,
                       ),
                     ),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) =>
-                    _buildErrorBox('Ảnh lỗi hoặc URL đã hết hạn.'),
+                    _buildErrorBox(context, 'Ảnh lỗi hoặc URL đã hết hạn.'),
               ),
               Positioned(
                 right: 8,
@@ -198,11 +207,7 @@ class _ChatMessageImageState extends State<ChatMessageImage> {
                           color: Colors.white.withValues(alpha: 0.2),
                         ),
                       ),
-                      child: const Icon(
-                        Icons.zoom_out_map_rounded,
-                        size: 15,
-                        color: Colors.white,
-                      ),
+                      child: const MetaGymSvgIcon(MetaGymIcons.commonExpandCollapse, size: 15, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.zoom_out_map_rounded),
                     ),
                   ),
                 ),
@@ -265,146 +270,146 @@ class _FullscreenChatImagePageState extends State<_FullscreenChatImagePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xF5060608),
-      body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Positioned.fill(
-              top: 68,
-              bottom: 12,
-              left: 12,
-              right: 12,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).maybePop(),
-                onDoubleTapDown: (details) => _doubleTapDetails = details,
-                onDoubleTap: _handleDoubleTap,
-                child: InteractiveViewer(
-                  transformationController: _transformController,
-                  minScale: 1,
-                  maxScale: 4.5,
-                  child: Center(
-                    child: Image.network(
-                      widget.imageUrl,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return const Center(
-                          child: SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Color(0xFFE6FE48),
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.broken_image_outlined,
-                                color: Colors.white70,
-                                size: 40,
-                              ),
-                              const SizedBox(height: 10),
-                              const Text(
-                                'Không thể tải ảnh phóng to.',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const MetaGymBackground(),
+          SafeArea(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned.fill(
+                  top: 68,
+                  bottom: 12,
+                  left: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).maybePop(),
+                    onDoubleTapDown: (details) => _doubleTapDetails = details,
+                    onDoubleTap: _handleDoubleTap,
+                    child: InteractiveViewer(
+                      transformationController: _transformController,
+                      minScale: 1,
+                      maxScale: 4.5,
+                      child: Center(
+                        child: Image.network(
+                          widget.imageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: MetaGymTheme.primary,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).maybePop();
-                                  widget.onRetryUrl();
-                                },
-                                child: const Text('Tải lại ảnh'),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const MetaGymSvgIcon(MetaGymIcons.stateBrokenImage, size: 40, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.broken_image_outlined),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'Không thể tải ảnh phóng to.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).maybePop();
+                                      widget.onRetryUrl();
+                                    },
+                                    child: const Text('Tải lại ảnh'),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xAA0E1117),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.14),
-                              ),
-                            ),
-                            child: Text(
-                              'Chụm 2 ngón hoặc chạm đúp để phóng to',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.86),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xAA0E1117),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.14),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Chụm 2 ngón hoặc chạm đúp để phóng to',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.86),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    const Spacer(),
-                    ClipOval(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xAA0E1117),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.16),
-                            ),
-                          ),
-                          child: IconButton(
-                            key: const Key('fullscreen-image-close-button'),
-                            tooltip: 'Đóng',
-                            onPressed: () => Navigator.of(context).maybePop(),
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white,
+                        const Spacer(),
+                        ClipOval(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xAA0E1117),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                ),
+                              ),
+                              child: IconButton(
+                                key: const Key('fullscreen-image-close-button'),
+                                tooltip: 'Đóng',
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(),
+                                icon: const MetaGymSvgIcon(MetaGymIcons.commonClose, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.close_rounded),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

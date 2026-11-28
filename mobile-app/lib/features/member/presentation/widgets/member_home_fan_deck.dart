@@ -261,11 +261,7 @@ class _MemberHomeFanDeckState extends State<MemberHomeFanDeck> {
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.star_rounded,
-                          size: 13,
-                          color: palette.primaryText,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.socialStarRating, size: 13, fallbackIcon: Icons.star_rounded),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(

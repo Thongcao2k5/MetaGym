@@ -100,7 +100,9 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: isLight ? palette.borderSolid : const Color(0x52FFFFFF),
+                color: isLight
+                    ? palette.borderSolid
+                    : const Color(0x52FFFFFF),
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -112,7 +114,7 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: MetaGymTheme.brandOrange.withValues(alpha: 0.42),
@@ -153,10 +155,7 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
               IconButton(
                 tooltip: 'Đóng',
                 onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(
-                  Icons.close_rounded,
-                  color: palette.textSecondary,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonClose, fallbackIcon: Icons.close_rounded),
               ),
             ],
           ),
@@ -174,7 +173,7 @@ class _MetaPointsRedeemSheet extends StatelessWidget {
       ),
     );
 
-    if (disableAnimations) {
+    if (disableAnimations || isLight) {
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
         child: content,
@@ -212,14 +211,12 @@ class _RewardTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: isLight ? palette.metricPanelBg : const Color(0xC42B2622),
+        color: isLight ? palette.surfaceRaised : const Color(0xC42B2622),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: canAfford
-              ? (isLight ? palette.borderSolid : const Color(0xA3A79D92))
-              : (isLight
-                    ? palette.borderSolid.withValues(alpha: 0.5)
-                    : const Color(0x40A79D92)),
+              ? palette.warmGlassBorder
+              : palette.borderSolid.withValues(alpha: 0.55),
         ),
       ),
       child: Row(
@@ -283,7 +280,7 @@ class _RewardTile extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: MetaGymTheme.brandOrange,
                 disabledBackgroundColor: isLight
-                    ? palette.borderSolid.withValues(alpha: 0.45)
+                    ? const Color(0xFFDCE4EE)
                     : const Color(0x33FFFFFF),
                 foregroundColor: Colors.white,
                 disabledForegroundColor: palette.textSecondary,

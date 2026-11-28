@@ -145,19 +145,6 @@ const List<ExploreArticleItem> kMemberExploreArticles = [
   ),
 ];
 
-Color _adaptiveCategoryColor(
-  ExploreArticleItem article,
-  MetaGymPalette palette,
-) {
-  if (article.categoryColor == MetaGymTheme.progressGreen) {
-    return palette.success;
-  }
-  if (article.categoryColor == MetaGymTheme.brandOrange) {
-    return palette.primaryText;
-  }
-  return article.categoryColor;
-}
-
 /// Trang danh sách bài viết kiến thức & dinh dưỡng đồng bộ Warm Smoked Glass.
 class MemberExploreListPage extends StatelessWidget {
   const MemberExploreListPage({super.key});
@@ -165,7 +152,6 @@ class MemberExploreListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-
     return Scaffold(
       backgroundColor: palette.canvas,
       body: Stack(
@@ -222,10 +208,10 @@ class MemberExploreListPage extends StatelessWidget {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final article = kMemberExploreArticles[index];
-                      final categoryColor = _adaptiveCategoryColor(
-                        article,
-                        palette,
-                      );
+                      final badgeColor =
+                          article.type == ExploreArticleType.gymIntroduction
+                          ? palette.success
+                          : palette.primaryText;
                       return MetaGymGlassCard(
                         solid: false,
                         onTap: () {
@@ -249,20 +235,20 @@ class MemberExploreListPage extends StatelessWidget {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: categoryColor.withValues(
-                                      alpha: 0.16,
+                                    color: badgeColor.withValues(
+                                      alpha: 0.14,
                                     ),
                                     borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                      color: categoryColor.withValues(
-                                        alpha: 0.42,
+                                      color: badgeColor.withValues(
+                                        alpha: 0.40,
                                       ),
                                     ),
                                   ),
                                   child: Text(
                                     article.categoryLabel,
                                     style: TextStyle(
-                                      color: categoryColor,
+                                      color: badgeColor,
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -331,9 +317,9 @@ class _MemberExploreArticleDetailPageState
   bool _bookmarked = false;
 
   void _toggleBookmark() {
-    setState(() => _bookmarked = !_bookmarked);
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    setState(() => _bookmarked = !_bookmarked);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -402,7 +388,9 @@ class _MemberExploreArticleDetailPageState
   Widget build(BuildContext context) {
     final article = widget.article;
     final palette = MetaGymTheme.paletteOf(context);
-    final categoryColor = _adaptiveCategoryColor(article, palette);
+    final badgeColor = article.type == ExploreArticleType.gymIntroduction
+        ? palette.success
+        : palette.primaryText;
 
     return Scaffold(
       backgroundColor: palette.canvas,
@@ -498,20 +486,20 @@ class _MemberExploreArticleDetailPageState
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: categoryColor.withValues(
-                                      alpha: 0.16,
+                                    color: badgeColor.withValues(
+                                      alpha: 0.14,
                                     ),
                                     borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                      color: categoryColor.withValues(
-                                        alpha: 0.45,
+                                      color: badgeColor.withValues(
+                                        alpha: 0.42,
                                       ),
                                     ),
                                   ),
                                   child: Text(
                                     article.categoryLabel,
                                     style: TextStyle(
-                                      color: categoryColor,
+                                      color: badgeColor,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -679,7 +667,7 @@ class _MemberExploreArticleDetailPageState
                                         Text(
                                           article.practiceTipBody,
                                           style: TextStyle(
-                                            color: palette.textWarmMuted,
+                                            color: palette.textPrimary,
                                             fontSize: 12.2,
                                             height: 1.42,
                                           ),

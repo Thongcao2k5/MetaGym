@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from '../users/users.routes.js';
+import { dispatchNotification } from '../../services/notification-dispatcher.js';
 
 const uuid = z.uuid();
 const paging = z.strictObject({
@@ -32,7 +33,7 @@ const callUserJoins = `LEFT JOIN users caller ON caller.id = c.caller_id
 
 const ringWindow = "interval '45 seconds'";
 
-export function createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime }) {
+export function createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime, fcm }) {
   const router = Router();
   const issueToken = liveKit?.issueToken ?? callTokenProvider;
   router.use('/calls', createAuthentication({ database, jwtSecret }));
@@ -85,18 +86,42 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider, live
     }
     const params = [request.params.callId, request.authUser.id];
     try {
+      let timedOut = false;
       if (liveKit) {
-        await database.query(
+        const missed = await database.query(
           `UPDATE call_logs SET status = 'MISSED', ended_at = statement_timestamp()
            WHERE id = $1 AND (caller_id = $2 OR receiver_id = $2)
-             AND status = 'RINGING' AND initiated_at <= statement_timestamp() - ${ringWindow}`, params,
+             AND status = 'RINGING' AND initiated_at <= statement_timestamp() - ${ringWindow}
+           RETURNING id`, params,
         );
+        timedOut = missed.rowCount > 0;
       }
       const { rows: [call] } = await database.query(
         `SELECT ${callSelect} FROM call_logs c ${callUserJoins}
          WHERE c.id = $1 AND (c.caller_id = $2 OR c.receiver_id = $2)`, params,
       );
       if (!call) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy cuộc gọi');
+      if (timedOut) {
+        const receiverRole = await database
+          .query('SELECT role FROM users WHERE id = $1', [call.receiver_id])
+          .catch(() => ({ rows: [] }));
+        const isCoachReceiver = receiverRole.rows[0]?.role === 'COACH';
+        void dispatchNotification({
+          database,
+          realtime,
+          fcm,
+          userId: call.receiver_id,
+          kind: 'MISSED_CALL',
+          category: 'MESSAGE',
+          subjectId: call.id,
+          title: 'Cuộc gọi nhỡ',
+          body: call.caller_name
+            ? `Bạn có một cuộc gọi nhỡ từ ${call.caller_name}.`
+            : 'Bạn có một cuộc gọi nhỡ.',
+          actionRoute: isCoachReceiver ? '/coach/features/calls' : '/member/features/calls',
+          metadata: { callId: call.id, callerId: call.caller_id, callType: call.call_type },
+        }).catch(() => {});
+      }
       return response.json({ data: view(call) });
     } catch { return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được cuộc gọi'); }
   });
@@ -150,8 +175,30 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider, live
           receiverId, parsed.data.callType, parsed.data.live ? 'RINGING' : 'CREATED'],
       );
       await client.query('COMMIT');
-      if (parsed.data.live) void realtime?.publish(receiverId, 'incoming_call', {});
-      return response.status(201).json({ data: view(result.rows[0]) });
+      const createdCall = result.rows[0];
+      if (parsed.data.live) {
+        void realtime?.publish(receiverId, 'incoming_call', {});
+        void dispatchNotification({
+          database,
+          realtime: null,
+          fcm,
+          userId: receiverId,
+          kind: 'INCOMING_CALL',
+          category: 'MESSAGE',
+          subjectId: createdCall.id,
+          title: 'Cuộc gọi đến',
+          body: `${createdCall.caller_name || 'Meta Gym'} đang gọi ${parsed.data.callType === 'VIDEO' ? 'video' : 'thoại'} cho bạn`,
+          actionRoute: request.authUser.role === 'COACH' ? '/member/features/calls' : '/coach/features/calls',
+          metadata: {
+            callId: createdCall.id,
+            callerId: request.authUser.id,
+            callType: parsed.data.callType,
+          },
+          insert: false,
+          highPriority: true,
+        }).catch(() => {});
+      }
+      return response.status(201).json({ data: view(createdCall) });
     } catch {
       await client.query('ROLLBACK').catch(() => {});
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tạo được cuộc gọi');
@@ -220,11 +267,39 @@ export function createCallsRouter({ database, jwtSecret, callTokenProvider, live
           parsed.data.failureReason ?? null, row.id],
       );
       await client.query('COMMIT');
+      const updatedCall = result.rows[0];
+      if (status === 'MISSED') {
+        void (async () => {
+          const receiverRole = await database
+            .query('SELECT role FROM users WHERE id = $1', [updatedCall.receiver_id])
+            .catch(() => ({ rows: [] }));
+          const isCoachReceiver = receiverRole.rows[0]?.role === 'COACH';
+          await dispatchNotification({
+            database,
+            realtime,
+            fcm,
+            userId: updatedCall.receiver_id,
+            kind: 'MISSED_CALL',
+            category: 'MESSAGE',
+            subjectId: updatedCall.id,
+            title: 'Cuộc gọi nhỡ',
+            body: updatedCall.caller_name
+              ? `Bạn có một cuộc gọi nhỡ từ ${updatedCall.caller_name}.`
+              : 'Bạn có một cuộc gọi nhỡ.',
+            actionRoute: isCoachReceiver ? '/coach/features/calls' : '/member/features/calls',
+            metadata: {
+              callId: updatedCall.id,
+              callerId: updatedCall.caller_id,
+              callType: updatedCall.call_type,
+            },
+          });
+        })().catch(() => {});
+      }
       if (endedAt && row.provider_call_id && liveKit) {
         void liveKit.closeRoom(row.provider_call_id, [row.caller_id, row.receiver_id])
           .catch(() => console.error('Failed to close LiveKit room for call', row.id));
       }
-      return response.json({ data: view(result.rows[0]) });
+      return response.json({ data: view(updatedCall) });
     } catch {
       await client.query('ROLLBACK').catch(() => {});
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không đổi được trạng thái cuộc gọi');

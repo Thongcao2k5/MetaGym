@@ -5,6 +5,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_glass_scaffold.dart';
 import 'package:meta_gym_app/features/profile/presentation/password_reset_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -39,9 +41,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final reset = context.watch<PasswordResetController>();
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final reset = context.watch<PasswordResetController>();
     final (
       title,
       subtitle,
@@ -144,7 +145,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     subtitle,
                     textAlign: TextAlign.left,
                     style: TextStyle(
-                      color: palette.textWarmMuted,
+                      color: palette.textSecondary,
                       fontSize: 13,
                       height: 1.45,
                     ),
@@ -191,15 +192,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 () =>
                                     _obscureNewPassword = !_obscureNewPassword,
                               ),
-                              icon: Icon(
-                                _obscureNewPassword
+                              icon: MetaGymResolvedIcon(_obscureNewPassword
                                     ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                size: 20,
-                                color: isLight
-                                    ? palette.textSecondary
-                                    : const Color(0xFFD9CFC1),
-                              ),
+                                    : Icons.visibility_off_outlined, size: 20, fallbackColor: palette.textWarmMuted),
                             )
                           : null,
                     )
@@ -217,11 +212,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: palette.success,
-                            size: 20,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_rounded),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -292,9 +283,9 @@ class _ResetStepProgress extends StatelessWidget {
               ? palette.success
               : isActive
               ? MetaGymTheme.brandOrange
-              : (isLight
-                    ? palette.borderSolid
-                    : Colors.white.withValues(alpha: 0.14));
+              : isLight
+              ? palette.borderSolid
+              : Colors.white.withValues(alpha: 0.14);
           final labelColor = isCompleted || isActive
               ? palette.textPrimary
               : palette.textSecondary;
@@ -322,11 +313,7 @@ class _ResetStepProgress extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isCompleted) ...[
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 12,
-                          color: palette.success,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 12, fallbackIcon: Icons.check_circle_rounded),
                         const SizedBox(width: 4),
                       ],
                       Flexible(

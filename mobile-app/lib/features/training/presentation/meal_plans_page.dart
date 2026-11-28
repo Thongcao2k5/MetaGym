@@ -6,6 +6,8 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 const _meals = {'BREAKFAST': 'Sáng', 'LUNCH': 'Trưa', 'DINNER': 'Tối'};
 
@@ -83,6 +85,9 @@ class _MealPlansPageState extends State<MealPlansPage> {
     });
   }
 
+  MetaGymPalette get _palette => MetaGymTheme.paletteOf(context);
+  MetaGymColors get _colors => MetaGymColors.of(context);
+
   Future<void> _add() async {
     var day = 1;
     var meal = 'BREAKFAST';
@@ -93,22 +98,13 @@ class _MealPlansPageState extends State<MealPlansPage> {
       builder: (dialog) => StatefulBuilder(
         builder: (context, update) {
           final palette = MetaGymTheme.paletteOf(context);
-          final isLight = MetaGymTheme.isLightPalette(context);
-          final dropdownBg = isLight
-              ? palette.surfaceSolid
-              : const Color(0xFF2B2622);
+          final colors = MetaGymColors.of(context);
           return AlertDialog(
-            backgroundColor: isLight
-                ? palette.surfaceSolid
-                : const Color(0xFF24201D),
+            backgroundColor: colors.overlayGlass,
             surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
-              side: BorderSide(
-                color: isLight
-                    ? palette.borderSolid
-                    : MetaGymWarmGlassTokens.cardBorder,
-              ),
+              side: BorderSide(color: colors.overlayGlassBorder),
             ),
             title: Text(
               'Thêm món',
@@ -124,7 +120,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                 children: [
                   DropdownButtonFormField<int>(
                     initialValue: day,
-                    dropdownColor: dropdownBg,
+                    dropdownColor: colors.surface,
                     style: TextStyle(color: palette.textPrimary),
                     decoration: _dialogInputDecoration('Ngày'),
                     items: [
@@ -136,7 +132,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: meal,
-                    dropdownColor: dropdownBg,
+                    dropdownColor: colors.surface,
                     style: TextStyle(color: palette.textPrimary),
                     decoration: _dialogInputDecoration('Bữa'),
                     items: [
@@ -151,7 +147,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     isExpanded: true,
-                    dropdownColor: dropdownBg,
+                    dropdownColor: colors.surface,
                     style: TextStyle(color: palette.textPrimary),
                     decoration: _dialogInputDecoration('Thực phẩm'),
                     items: [
@@ -165,8 +161,8 @@ class _MealPlansPageState extends State<MealPlansPage> {
                         ),
                     ],
                     onChanged: (value) => update(
-                      () =>
-                          food = _foods.firstWhere((row) => row['id'] == value),
+                      () => food =
+                          _foods.firstWhere((row) => row['id'] == value),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -187,7 +183,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
               TextButton(
                 onPressed: () => Navigator.pop(dialog),
                 style: TextButton.styleFrom(
-                  foregroundColor: palette.textWarmMuted,
+                  foregroundColor: palette.textSecondary,
                   minimumSize: const Size(64, 48),
                 ),
                 child: const Text('Đóng'),
@@ -226,10 +222,10 @@ class _MealPlansPageState extends State<MealPlansPage> {
   }
 
   InputDecoration _dialogInputDecoration(String label) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: palette.textWarmMuted, fontSize: 13),
+      labelStyle: TextStyle(color: palette.textSecondary, fontSize: 13),
       filled: true,
       fillColor: palette.metricPanelBg,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -275,10 +271,8 @@ class _MealPlansPageState extends State<MealPlansPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final dividerColor = isLight ? palette.borderSolid : const Color(0x40A79D92);
-    final bodyColor = isLight ? palette.textSecondary : const Color(0xFFE4DAD1);
+    final palette = _palette;
+    final colors = _colors;
     final canPop = Navigator.of(context).canPop();
     return Scaffold(
       backgroundColor: palette.canvas,
@@ -332,9 +326,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
           const MetaGymBackground(),
           RefreshIndicator(
             color: MetaGymTheme.primary,
-            backgroundColor: isLight
-                ? palette.surfaceSolid
-                : const Color(0xFF282320),
+            backgroundColor: colors.surface,
             onRefresh: () => _run(_load),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -350,9 +342,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: LinearProgressIndicator(
                       color: MetaGymTheme.primary,
-                      backgroundColor: isLight
-                          ? const Color(0xFFE2E8F0)
-                          : const Color(0x5426221F),
+                      backgroundColor: palette.surfaceRaised,
                     ),
                   ),
                 if (_error != null)
@@ -360,31 +350,21 @@ class _MealPlansPageState extends State<MealPlansPage> {
                     margin: const EdgeInsets.only(bottom: 14),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isLight
-                          ? palette.error.withValues(alpha: 0.1)
-                          : const Color(0xFF24161A),
+                      color: palette.error.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isLight
-                            ? palette.error.withValues(alpha: 0.4)
-                            : const Color(0xFF642B32),
+                        color: palette.error.withValues(alpha: 0.42),
                       ),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          color: palette.error,
-                          size: 20,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             _error!,
                             style: TextStyle(
-                              color: isLight
-                                  ? palette.error
-                                  : const Color(0xFFFFB2B6),
+                              color: palette.error,
                               fontSize: 13.5,
                             ),
                           ),
@@ -399,17 +379,11 @@ class _MealPlansPageState extends State<MealPlansPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.restaurant_menu_rounded,
-                              color: palette.success,
-                              size: 19,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 19, fallbackIcon: Icons.restaurant_menu_rounded),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Thiết lập thực đơn 7 ngày',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: palette.textPrimary,
                                   fontSize: 16,
@@ -437,40 +411,46 @@ class _MealPlansPageState extends State<MealPlansPage> {
                             child: Text(
                               'Danh mục chưa có thực phẩm đang sử dụng.',
                               style: TextStyle(
-                                color: palette.textWarmMuted,
+                                color: palette.textSecondary,
                                 fontSize: 13,
                               ),
                             ),
                           ),
                         for (final (index, item) in _items.indexed) ...[
-                          Divider(color: dividerColor, height: 14),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              item['foodName'] as String,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14.5,
+                          Divider(
+                            color: palette.borderSolid.withValues(alpha: 0.7),
+                            height: 14,
+                          ),
+                          Material(
+                            type: MaterialType.transparency,
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                item['foodName'] as String,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14.5,
+                                ),
                               ),
-                            ),
-                            subtitle: Text(
-                              '${_day(item['day'] as int)} · ${_meals[item['meal']]} · ${_details(item)}',
-                              style: TextStyle(
-                                color: palette.textWarmMuted,
-                                fontSize: 12.5,
-                                fontFeatures: MetaGymTheme.tabularFigures,
+                              subtitle: Text(
+                                '${_day(item['day'] as int)} · ${_meals[item['meal']]} · ${_details(item)}',
+                                style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: 12.5,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
                               ),
-                            ),
-                            trailing: IconButton(
-                              tooltip: 'Bỏ món',
-                              icon: Icon(
-                                Icons.delete_outline_rounded,
-                                color: palette.error,
+                              trailing: IconButton(
+                                tooltip: 'Bỏ món',
+                                icon: MetaGymSvgIcon(
+                                  MetaGymIcons.commonDelete,
+                                  fallbackIcon: Icons.delete_outline_rounded,
+                                ),
+                                onPressed: _busy
+                                    ? null
+                                    : () => setState(() => _items.removeAt(index)),
                               ),
-                              onPressed: _busy
-                                  ? null
-                                  : () => setState(() => _items.removeAt(index)),
                             ),
                           ),
                         ],
@@ -484,19 +464,12 @@ class _MealPlansPageState extends State<MealPlansPage> {
                             foregroundColor: palette.textPrimary,
                             backgroundColor: palette.metricPanelBg,
                             minimumSize: const Size.fromHeight(48),
-                            side: BorderSide(
-                              color: isLight
-                                  ? palette.borderSolid
-                                  : MetaGymWarmGlassTokens.cardBorder,
-                            ),
+                            side: BorderSide(color: palette.metricPanelBorder),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          icon: Icon(
-                            Icons.add_rounded,
-                            color: palette.success,
-                          ),
+                          icon: MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
                           label: const Text(
                             'Thêm món',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -513,7 +486,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          icon: const Icon(Icons.check_rounded, size: 19),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 19, fallbackIcon: Icons.check_rounded),
                           label: const Text(
                             'Lưu thực đơn',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -528,11 +501,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.restaurant_menu_outlined,
-                            color: palette.reflection,
-                            size: 26,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 26, fallbackIcon: Icons.restaurant_menu_outlined),
                           const SizedBox(height: 10),
                           Text(
                             'Chưa có thực đơn từ Coach.',
@@ -546,7 +515,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                           Text(
                             'Khi Coach thiết kế thực đơn 7 ngày cho bạn, chi tiết từng bữa ăn và lượng calo sẽ hiển thị tại đây.',
                             style: TextStyle(
-                              color: bodyColor,
+                              color: palette.textSecondary,
                               fontSize: 13.5,
                               height: 1.45,
                             ),
@@ -583,57 +552,62 @@ class _MealPlansPageState extends State<MealPlansPage> {
   }
 
   Widget _buildPlanTile(CoachRecord plan, {required bool isCurrent}) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     final badgeColor = isCurrent ? palette.success : palette.reflection;
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(top: 6, bottom: 6),
-        initiallyExpanded: isCurrent,
-        iconColor: palette.textPrimary,
-        collapsedIconColor: palette.textWarmMuted,
-        title: Text(
-          plan['title'] as String,
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
+    return Material(
+      type: MaterialType.transparency,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(top: 6, bottom: 6),
+          initiallyExpanded: isCurrent,
+          iconColor: palette.textPrimary,
+          collapsedIconColor: palette.textSecondary,
+          title: Text(
+            plan['title'] as String,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: badgeColor.withValues(alpha: 0.45)),
-                ),
-                child: Text(
-                  isCurrent ? 'Hiện tại' : 'Lịch sử',
-                  style: TextStyle(
-                    color: badgeColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: badgeColor.withValues(alpha: 0.42),
+                    ),
+                  ),
+                  child: Text(
+                    isCurrent ? 'Hiện tại' : 'Lịch sử',
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          children: _planContent(plan),
         ),
-        children: _planContent(plan),
       ),
     );
   }
 
   List<Widget> _planContent(CoachRecord plan) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final dividerColor = isLight ? palette.borderSolid : const Color(0x40A79D92);
-    final bodyColor = isLight ? palette.textSecondary : const Color(0xFFE4DAD1);
+    final palette = _palette;
     final items = (plan['items'] as List? ?? const []).cast<CoachRecord>();
     if (items.isEmpty) {
       return [
@@ -649,7 +623,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
           child: Text(
             plan['content'] as String? ?? 'Chưa có món',
             style: TextStyle(
-              color: bodyColor,
+              color: palette.textSecondary,
               fontSize: 13.5,
               height: 1.45,
             ),
@@ -666,24 +640,31 @@ class _MealPlansPageState extends State<MealPlansPage> {
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: palette.metricPanelBorder),
           ),
-          child: Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              tilePadding: const EdgeInsets.symmetric(horizontal: 14),
-              childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              iconColor: palette.success,
-              collapsedIconColor: palette.textWarmMuted,
-              title: Text(
-                _day(day),
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
+          child: Material(
+            type: MaterialType.transparency,
+            borderRadius: BorderRadius.circular(15),
+            clipBehavior: Clip.antiAlias,
+            child: Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+                childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                iconColor: palette.success,
+                collapsedIconColor: palette.textSecondary,
+                title: Text(
+                  _day(day),
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              children: [
+                children: [
                 for (final meal in _meals.entries) ...[
-                  Divider(color: dividerColor, height: 14),
+                  Divider(
+                    color: palette.borderSolid.withValues(alpha: 0.7),
+                    height: 14,
+                  ),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -706,7 +687,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                         child: Text(
                           'Chưa có món',
                           style: TextStyle(
-                            color: palette.textWarmMuted,
+                            color: palette.textSecondary,
                             fontSize: 12.5,
                           ),
                         ),
@@ -733,7 +714,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
                           Text(
                             _details(item),
                             style: TextStyle(
-                              color: palette.textWarmMuted,
+                              color: palette.textSecondary,
                               fontSize: 12.5,
                               fontFeatures: MetaGymTheme.tabularFigures,
                             ),
@@ -746,6 +727,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
             ),
           ),
         ),
+      ),
     ];
   }
 
@@ -753,19 +735,13 @@ class _MealPlansPageState extends State<MealPlansPage> {
     required Widget child,
     EdgeInsetsGeometry padding = const EdgeInsets.all(16),
   }) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = _colors;
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: isLight ? palette.surfaceSolid : MetaGymWarmGlassTokens.cardFill,
+        color: colors.liquidGlass,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isLight
-              ? palette.borderSolid
-              : MetaGymWarmGlassTokens.cardBorder,
-          width: 1.1,
-        ),
+        border: Border.all(color: colors.liquidGlassBorder, width: 1.1),
       ),
       child: child,
     );

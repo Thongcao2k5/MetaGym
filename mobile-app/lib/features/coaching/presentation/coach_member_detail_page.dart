@@ -11,6 +11,8 @@ import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart'
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/coaching/presentation/early_termination_widgets.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachMemberDetailPage extends StatefulWidget {
   const CoachMemberDetailPage({
@@ -212,6 +214,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final canPop = Navigator.of(context).canPop();
     final member = _member;
     final hasApiClient = optionalProvider<ApiClient>(context) != null;
@@ -296,7 +299,9 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: palette.surfaceRaised,
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -391,10 +396,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.add_rounded,
-                                      size: 18,
-                                    ),
+                                    icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 18, fallbackIcon: Icons.add_rounded),
                                     label: const Text('Gửi thành quả'),
                                   ),
                                 ],
@@ -406,11 +408,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.emoji_events_outlined,
-                                      color: palette.textWarmMuted,
-                                      size: 20,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.rewardTrophy, size: 20, fallbackIcon: Icons.emoji_events_outlined),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
@@ -452,10 +450,7 @@ class _CoachMemberDetailPageState extends State<CoachMemberDetailPage> {
                                           horizontal: 12,
                                         ),
                                       ),
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 18,
-                                      ),
+                                      icon: const MetaGymSvgIcon(MetaGymIcons.commonDelete, size: 18, fallbackIcon: Icons.delete_outline_rounded),
                                       label: const Text('Xóa thành quả'),
                                     ),
                                   ),
@@ -568,11 +563,7 @@ class _HealthDeclarationCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.monitor_heart_outlined,
-                color: palette.primaryText,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.statsHeartRate, size: 20, fallbackIcon: Icons.monitor_heart_outlined),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -628,13 +619,12 @@ class _HealthInfoLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
         style: TextStyle(
-          color: isLight ? palette.textPrimary : const Color(0xFFE4DAD1),
+          color: palette.textPrimary,
           fontSize: 13.5,
           height: 1.45,
           fontFeatures: MetaGymTheme.tabularFigures,
@@ -652,8 +642,8 @@ InputDecoration _adaptiveInputDecoration(
   final palette = MetaGymTheme.paletteOf(context);
   return InputDecoration(
     labelText: label,
-    labelStyle: TextStyle(color: palette.textWarmMuted, fontSize: 13),
-    counterStyle: TextStyle(color: palette.textWarmMuted, fontSize: 11.5),
+    labelStyle: TextStyle(color: palette.textSecondary, fontSize: 13),
+    counterStyle: TextStyle(color: palette.textSecondary, fontSize: 11.5),
     filled: true,
     fillColor: palette.metricPanelBg,
     errorText: errorText,
@@ -816,9 +806,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     return AlertDialog(
-      backgroundColor: isLight
-          ? palette.surfaceSolid
-          : const Color(0xF0241F1B),
+      backgroundColor: isLight ? palette.surfaceSolid : const Color(0xF0241F1B),
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(
@@ -1017,7 +1005,7 @@ class _CreateOutcomeDialogState extends State<_CreateOutcomeDialog> {
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            foregroundColor: palette.textSecondary,
+            foregroundColor: palette.textWarmMuted,
             minimumSize: const Size(48, 48),
           ),
           child: const Text('Hủy'),
@@ -1062,9 +1050,7 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     return AlertDialog(
-      backgroundColor: isLight
-          ? palette.surfaceSolid
-          : const Color(0xF0241F1B),
+      backgroundColor: isLight ? palette.surfaceSolid : const Color(0xF0241F1B),
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(
@@ -1099,7 +1085,7 @@ class _TerminationRequestDialogState extends State<_TerminationRequestDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            foregroundColor: palette.textSecondary,
+            foregroundColor: palette.textWarmMuted,
             minimumSize: const Size(48, 48),
           ),
           child: const Text('Quay lại'),

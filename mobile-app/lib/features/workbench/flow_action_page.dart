@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 
 import 'flow_action.dart';
@@ -135,9 +136,13 @@ class _FlowActionPageState extends State<FlowActionPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(widget.action.title)),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
+    body: Stack(
+      fit: StackFit.expand,
       children: [
+        const Positioned.fill(child: MetaGymBackground()),
+        ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
         SelectableText('${widget.action.method} ${widget.action.path}'),
         const SizedBox(height: 16),
         for (final entry in _ids.entries) ...[
@@ -196,6 +201,8 @@ class _FlowActionPageState extends State<FlowActionPage> {
           if (_empty) const Text('Chưa có dữ liệu.'),
           SelectableText(_response!, key: const Key('flow-response')),
         ],
+          ],
+        ),
       ],
     ),
   );

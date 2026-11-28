@@ -5,6 +5,8 @@ import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_muscle_anatomy_tile.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 DateTime _gymTime(DateTime time) => time.toUtc().add(const Duration(hours: 7));
 
@@ -157,9 +159,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                                   ? (isLight
                                         ? palette.primaryText
                                         : const Color(0xFFFF9B82))
-                                  : (isLight
-                                        ? palette.textSecondary
-                                        : const Color(0xFFE4DAD1)),
+                                  : palette.textWarmMuted,
                               fontSize: 12,
                               height: 1.25,
                               fontWeight: FontWeight.w700,
@@ -197,11 +197,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.menu_book_rounded,
-                            size: 13,
-                            color: palette.primaryText,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.actionCurriculum, size: 13, fallbackIcon: Icons.menu_book_rounded),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
@@ -209,20 +205,14 @@ class CoachMemberBookingCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isLight
-                                    ? palette.textPrimary
-                                    : const Color(0xFFE4DAD1),
+                                color: palette.textPrimary,
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 14,
-                            color: palette.textWarmMuted,
-                          ),
+                          MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 14, fallbackIcon: Icons.chevron_right_rounded),
                         ],
                       ),
                     ),
@@ -258,19 +248,17 @@ class CoachMemberBookingCard extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 2.5),
                           color: isUpcoming
-                              ? MetaGymTheme.brandOrange.withValues(
-                                  alpha: isLight ? 0.14 : 0.22,
-                                )
-                              : (isLight
-                                    ? palette.surfaceRaised
-                                    : const Color(0x28FFFFFF)),
+                              ? palette.chipActiveBg
+                              : isLight
+                              ? palette.surfaceRaised
+                              : const Color(0x28FFFFFF),
                           alignment: Alignment.center,
                           child: Text(
                             weekdayBadge,
                             style: TextStyle(
                               color: isUpcoming
                                   ? palette.primaryText
-                                  : palette.textWarmMuted,
+                                  : palette.textSecondary,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.4,
@@ -312,13 +300,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: Icon(
-                        Icons.fitness_center_rounded,
-                        color: isUpcoming
-                            ? palette.primaryText
-                            : palette.textWarmMuted,
-                        size: 10,
-                      ),
+                      child: MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 10, fallbackIcon: Icons.fitness_center_rounded),
                     ),
                   ),
                 ],
@@ -373,15 +355,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(
-                          Icons.schedule_rounded,
-                          size: 12.5,
-                          color: _isToday
-                              ? (isLight
-                                    ? palette.primaryText
-                                    : const Color(0xFFFF9B82))
-                              : palette.textWarmMuted,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.timeClock, size: 12.5, fallbackIcon: Icons.schedule_rounded),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
@@ -419,7 +393,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: isLight
-                    ? [const Color(0xFFFFF4EF), palette.surfaceSolid]
+                    ? const [Color(0xFFFFF5F2), Color(0xFFFFFFFF)]
                     : const [Color(0xD8442C23), Color(0xC82B2622)],
                 stops: const [0, 0.58],
               )
@@ -431,35 +405,38 @@ class CoachMemberBookingCard extends StatelessWidget {
               : (isLight ? palette.borderSolid : const Color(0xA3A79D92)),
           width: 1.1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isLight
-                ? const Color(0x140F172A)
-                : const Color(0x4A000000),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: isLight
+            ? const [
+                BoxShadow(
+                  color: Color(0x0F0F172A),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : const [
+                BoxShadow(
+                  color: Color(0x4A000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
       ),
       child: Material(
         type: MaterialType.transparency,
         child: Stack(
           children: [
-            Positioned(
-              top: 0,
-              left: 18,
-              right: 18,
-              child: IgnorePointer(
-                child: SizedBox(
-                  height: 1,
-                  child: ColoredBox(
-                    color: isLight
-                        ? palette.glassHighlight
-                        : const Color(0x70FFF6EA),
+            if (!isLight)
+              const Positioned(
+                top: 0,
+                left: 18,
+                right: 18,
+                child: IgnorePointer(
+                  child: SizedBox(
+                    height: 1,
+                    child: ColoredBox(color: Color(0x70FFF6EA)),
                   ),
                 ),
               ),
-            ),
             if (_isToday)
               Positioned(
                 left: 0,
@@ -493,9 +470,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                     Text(
                       'Lý do: $reason',
                       style: TextStyle(
-                        color: isLight
-                            ? palette.textSecondary
-                            : const Color(0xFFE4DAD1),
+                        color: palette.textSecondary,
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
                       ),
@@ -517,7 +492,9 @@ class CoachMemberBookingCard extends StatelessWidget {
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size(0, 42),
                               tapTargetSize: MaterialTapTargetSize.padded,
-                              backgroundColor: palette.metricPanelBg,
+                              backgroundColor: isLight
+                                  ? palette.error.withValues(alpha: 0.08)
+                                  : const Color(0x80211E1C),
                               side: BorderSide(
                                 color: palette.error.withValues(alpha: 0.55),
                               ),
@@ -563,11 +540,7 @@ class CoachMemberBookingCard extends StatelessWidget {
                                 ),
                               ),
                               onPressed: busy ? null : onReschedule,
-                              icon: Icon(
-                                Icons.schedule_rounded,
-                                size: 15,
-                                color: palette.primaryText,
-                              ),
+                              icon: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 15, fallbackIcon: Icons.schedule_rounded),
                               label: Text(
                                 'Đổi giờ',
                                 style: TextStyle(

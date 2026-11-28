@@ -15,6 +15,7 @@ class MetaGymRealtime {
   final SessionController _session;
   final _messages = StreamController<String>.broadcast();
   final _calls = StreamController<void>.broadcast();
+  final _notifications = StreamController<Map<String, dynamic>>.broadcast();
   SupabaseClient? _client;
   Timer? _renewal;
   String? _userId;
@@ -22,6 +23,7 @@ class MetaGymRealtime {
 
   Stream<String> get messages => _messages.stream;
   Stream<void> get calls => _calls.stream;
+  Stream<Map<String, dynamic>> get notifications => _notifications.stream;
 
   void _syncSession() {
     final user = _session.user;
@@ -85,6 +87,14 @@ class MetaGymRealtime {
                 if (generation == _generation) _calls.add(null);
               },
             )
+            .onBroadcast(
+              event: 'notification',
+              callback: (payload) {
+                if (generation == _generation) {
+                  _notifications.add(Map<String, dynamic>.from(payload));
+                }
+              },
+            )
             .subscribe();
       }
       if (generation == _generation) {
@@ -107,5 +117,6 @@ class MetaGymRealtime {
     _reset();
     unawaited(_messages.close());
     unawaited(_calls.close());
+    unawaited(_notifications.close());
   }
 }

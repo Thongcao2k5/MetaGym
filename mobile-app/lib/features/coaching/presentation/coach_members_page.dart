@@ -9,6 +9,8 @@ import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/coaching/presentation/early_termination_widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachMembersPage extends StatefulWidget {
   const CoachMembersPage({this.service, super.key});
@@ -115,6 +117,7 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final canPop = Navigator.of(context).canPop();
     final pendingTerminations = _requests.where((item) => item.isOpen).length;
 
@@ -176,7 +179,9 @@ class _CoachMembersPageState extends State<CoachMembersPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: palette.surfaceRaised,
+                    backgroundColor: isLight
+                        ? palette.surfaceSolid
+                        : const Color(0xFF282320),
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -424,11 +429,7 @@ class _MemberRowCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: palette.textWarmMuted,
-            size: 20,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
         ],
       ),
     );
@@ -463,7 +464,7 @@ class _EmptySectionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: palette.textWarmMuted, size: 20),
+            child: MetaGymResolvedIcon(icon, size: 20, fallbackColor: palette.textWarmMuted),
           ),
           const SizedBox(width: 12),
           Expanded(

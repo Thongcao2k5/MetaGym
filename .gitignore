@@ -29,3 +29,6 @@ windows/
 
 # Generated code-analysis cache
 graphify-out/
+
+# Local preview catalog videos (watermarked previews - do not commit)
+mobile-app/assets/videos/catalog/*.mp4

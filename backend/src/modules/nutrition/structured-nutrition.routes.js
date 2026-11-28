@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from '../users/users.routes.js';
+import { dispatchNotification } from '../../services/notification-dispatcher.js';
 
 const uuid = z.uuid();
 const food = z.strictObject({
@@ -65,7 +66,7 @@ async function renderPlan(db, row) {
   })) };
 }
 
-export function createStructuredNutritionRouter({ database, jwtSecret }) {
+export function createStructuredNutritionRouter({ database, jwtSecret, realtime, fcm }) {
   const router = Router();
   router.use(['/nutrition-foods', '/admin/nutrition-foods', '/meal-plans', '/coach/meal-plans'],
     createAuthentication({ database, jwtSecret }));
@@ -332,6 +333,18 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
         );
       }
       await client.query('COMMIT');
+      void dispatchNotification({
+        database,
+        realtime,
+        fcm,
+        userId: memberId,
+        kind: 'NUTRITION_UPDATED',
+        category: 'TRAINING',
+        subjectId: id,
+        title: 'Coach đã cập nhật thực đơn',
+        body: `Thực đơn "${title}" đã sẵn sàng trong mục Dinh dưỡng.`,
+        actionRoute: '/member/features/nutrition',
+      }).catch(() => {});
       return response.json({ data: { id, title, items: savedItems } });
     } catch {
       await client.query('ROLLBACK').catch(() => {});

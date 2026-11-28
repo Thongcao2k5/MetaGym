@@ -10,6 +10,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum CoachingPillTone { green, amber, coral, info, neutral }
 
@@ -290,7 +292,7 @@ class CoachingPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12.5, color: fg),
+            MetaGymResolvedIcon(icon!, size: 12.5, fallbackColor: fg),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -519,7 +521,7 @@ class CoachingErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded, color: colors.error, size: 20),
+          MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -797,11 +799,7 @@ class _OutcomePhotoTile extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.person_outline_rounded,
-            color: colors.textWarmMuted,
-            size: 26,
-          ),
+          MetaGymSvgIcon(MetaGymIcons.settingPersonalInfo, size: 26, fallbackIcon: Icons.person_outline_rounded),
           const SizedBox(height: 6),
           Text(
             '$label · tùy chọn',

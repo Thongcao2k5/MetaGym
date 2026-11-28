@@ -11,6 +11,15 @@ class GymProfile {
 
   factory GymProfile.fromJson(Object? value) {
     final json = Map<String, dynamic>.from(value as Map);
+    final rawHours = json['openingHours'];
+    final Map<String, dynamic> parsedHours;
+    if (rawHours is Map) {
+      parsedHours = Map<String, dynamic>.from(rawHours);
+    } else if (rawHours is String && rawHours.trim().isNotEmpty) {
+      parsedHours = {'Giờ mở cửa': rawHours.trim()};
+    } else {
+      parsedHours = const {};
+    }
     return GymProfile(
       name: json['name'] as String,
       address: json['address'] as String,
@@ -18,9 +27,7 @@ class GymProfile {
       phone: json['phone'] as String?,
       email: json['email'] as String?,
       rules: json['rules'] as String?,
-      openingHours: Map<String, dynamic>.from(
-        json['openingHours'] as Map? ?? const {},
-      ),
+      openingHours: parsedHours,
     );
   }
 

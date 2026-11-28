@@ -9,8 +9,8 @@ BEGIN
     FROM pg_tables
    WHERE schemaname = 'public';
 
-  IF table_count <> 55 THEN
-    RAISE EXCEPTION 'Expected 55 public tables, found %', table_count;
+  IF table_count <> 75 THEN
+    RAISE EXCEPTION 'Expected 75 public tables, found %', table_count;
   END IF;
 END
 $$;
@@ -35,7 +35,13 @@ DECLARE
     'gym_checkin_code', 'gym_visits', 'member_self_training_days',
     'coach_outcome_cases', 'nutrition_guide_revisions',
     'member_nutrition_days', 'coach_lock_incidents',
-    'simulated_refunds', 'payment_adjustments'
+    'simulated_refunds', 'payment_adjustments',
+    'roles', 'storage_providers', 'folders', 'images', 'image_variants',
+    'albums', 'album_images', 'tags', 'image_tags', 'share_links',
+    'api_keys', 'api_logs', 'image_views', 'system_settings',
+    'staff_profiles', 'vouchers', 'voucher_redemptions',
+    'user_device_tokens', 'user_notification_preferences',
+    'admin_notification_broadcasts'
   ];
   missing_tables text[];
 BEGIN
@@ -66,7 +72,7 @@ DECLARE
     'ck_coach_package_code_format', 'ck_coach_entitlement_origin',
     'ex_coach_weekly_slot_overlap', 'uq_coach_hold_request',
     'fk_coach_entitlement_relationship', 'ex_coach_booking_overlap',
-    'uq_member_self_training_day', 'ck_coach_outcome_different_pair',
+    'ck_coach_outcome_different_pair',
     'uq_member_membership_owner', 'fk_payment_renewed_membership',
     'ck_payments_vnpay_confirmation', 'ck_payments_momo_confirmation',
     'ck_payments_zalopay_confirmation', 'uq_simulated_refund_idempotency',
@@ -184,7 +190,8 @@ DECLARE
     'ix_simulated_refunds_created_at',
     'ix_payment_adjustments_created_at',
     'ix_termination_disputed_created',
-    'ix_nutrition_foods_name_lower'
+    'ix_nutrition_foods_name_lower',
+    'ix_member_self_training_days_member_date_time'
   ];
   missing_indexes text[];
 BEGIN

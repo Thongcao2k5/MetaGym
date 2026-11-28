@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/muscle_anatomy_tile.dart';
+import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_workout_service.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// One Coach-authored calendar day of the active curriculum.
 /// Synchronized with Futuristic Performance Glass / Warm Smoked Glass.
@@ -73,9 +78,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final bodyColor = isLight ? palette.textSecondary : const Color(0xFFE4DAD1);
-    final dividerColor = isLight ? palette.borderSolid : const Color(0x40A79D92);
+    final colors = MetaGymColors.of(context);
     final date = widget.day.scheduledDate;
     final dateLabel = date != null && date.length == 10
         ? '${date.substring(8, 10)}/${date.substring(5, 7)}/${date.substring(0, 4)}'
@@ -193,10 +196,10 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.16),
+                                  color: statusColor.withValues(alpha: 0.14),
                                   borderRadius: BorderRadius.circular(999),
                                   border: Border.all(
-                                    color: statusColor.withValues(alpha: 0.45),
+                                    color: statusColor.withValues(alpha: 0.42),
                                   ),
                                 ),
                                 child: Text(
@@ -226,7 +229,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                         child: Text(
                           widget.day.notes!,
                           style: TextStyle(
-                            color: bodyColor,
+                            color: palette.textSecondary,
                             fontSize: 13,
                             height: 1.45,
                           ),
@@ -250,10 +253,12 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
               ),
               const SizedBox(height: 16),
               _section(
+                colors: colors,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _heading(
+                      context,
                       Icons.fitness_center_rounded,
                       'Lịch tập',
                       color: palette.primaryText,
@@ -271,7 +276,10 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                       for (final (index, exercise)
                           in widget.day.exercises.indexed) ...[
                         if (index > 0)
-                          Divider(color: dividerColor, height: 20),
+                          Divider(
+                            color: palette.borderSolid.withValues(alpha: 0.7),
+                            height: 20,
+                          ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -328,7 +336,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                                     Text(
                                       exercise.notes!,
                                       style: TextStyle(
-                                        color: bodyColor,
+                                        color: palette.textSecondary,
                                         fontSize: 13,
                                         height: 1.4,
                                       ),
@@ -345,10 +353,12 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
               ),
               const SizedBox(height: 16),
               _section(
+                colors: colors,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _heading(
+                      context,
                       Icons.restaurant_menu_rounded,
                       'Lịch ăn',
                       color: palette.success,
@@ -365,7 +375,10 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                     else
                       for (final (index, meal) in widget.day.meals.indexed) ...[
                         if (index > 0)
-                          Divider(color: dividerColor, height: 20),
+                          Divider(
+                            color: palette.borderSolid.withValues(alpha: 0.7),
+                            height: 20,
+                          ),
                         Text(
                           '${meal.typeLabel}${meal.scheduledTime == null ? '' : ' · ${meal.scheduledTime}'}',
                           style: TextStyle(
@@ -389,7 +402,7 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                           Text(
                             meal.notes!,
                             style: TextStyle(
-                              color: bodyColor,
+                              color: palette.textSecondary,
                               fontSize: 13,
                               height: 1.4,
                             ),
@@ -402,10 +415,12 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
               if (widget.session?.status == 'COMPLETED') ...[
                 const SizedBox(height: 16),
                 _section(
+                  colors: colors,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _heading(
+                        context,
                         Icons.rate_review_outlined,
                         'Nhận xét của Coach',
                         color: palette.reflection,
@@ -440,6 +455,34 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
                   ),
                 ),
               ],
+              if (_hasJournalService(context)) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  key: const Key('day-plan-open-journal'),
+                  onPressed: () => MetaGymNavigation.pushOnce<void>(
+                    context,
+                    MetaGymPageRoute(builder: (_) => const MemberJournalPage()),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.textPrimary,
+                    backgroundColor: colors.liquidGlass,
+                    minimumSize: const Size.fromHeight(48),
+                    side: BorderSide(color: colors.liquidGlassBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: const MetaGymSvgIcon(
+                    MetaGymIcons.statsReport,
+                    size: 18,
+                    fallbackIcon: Icons.edit_note_rounded,
+                  ),
+                  label: const Text(
+                    'Ghi nhật ký sau buổi tập',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ],
           ),
         ],
@@ -447,11 +490,25 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
     );
   }
 
-  Widget _heading(IconData icon, String label, {required Color color}) {
+  bool _hasJournalService(BuildContext context) {
+    try {
+      context.read<MemberJournalService>();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Widget _heading(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    required Color color,
+  }) {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, size: 19, color: color),
+        MetaGymResolvedIcon(icon, size: 19, fallbackColor: color),
         const SizedBox(width: 8),
         Text(
           label,
@@ -465,22 +522,16 @@ class _MemberDayPlanPageState extends State<MemberDayPlanPage> {
     );
   }
 
-  Widget _section({required Widget child}) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isLight ? palette.surfaceSolid : MetaGymWarmGlassTokens.cardFill,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isLight
-              ? palette.borderSolid
-              : MetaGymWarmGlassTokens.cardBorder,
-          width: 1.1,
-        ),
-      ),
-      child: child,
-    );
-  }
+  Widget _section({
+    required MetaGymColors colors,
+    required Widget child,
+  }) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: colors.liquidGlass,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: colors.liquidGlassBorder, width: 1.1),
+    ),
+    child: child,
+  );
 }

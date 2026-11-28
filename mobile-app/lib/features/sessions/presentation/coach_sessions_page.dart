@@ -8,6 +8,8 @@ import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum _CoachSessionTab { all, scheduled, history }
 
@@ -130,9 +132,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                   ? 'Đánh dấu hoàn thành?'
                   : 'Đánh dấu hội viên vắng?',
               style: TextStyle(
-                color: isLight
-                    ? palette.textSecondary
-                    : const Color(0xFFE4DAD1),
+                color: palette.textPrimary,
                 fontSize: 14,
                 height: 1.45,
               ),
@@ -141,7 +141,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               TextButton(
                 style: TextButton.styleFrom(
                   minimumSize: const Size(64, 48),
-                  foregroundColor: palette.textSecondary,
+                  foregroundColor: palette.textWarmMuted,
                 ),
                 onPressed: () => Navigator.pop(dialogContext, false),
                 child: const Text('Đóng'),
@@ -338,14 +338,10 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.primary.withValues(alpha: 0.18),
+                  color: MetaGymTheme.primary.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.calendar_month_rounded,
-                  color: palette.primaryText,
-                  size: 22,
-                ),
+                child: MetaGymSvgIcon(MetaGymIcons.workoutPlanCalendar, size: 22, fallbackIcon: Icons.calendar_month_rounded),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -453,7 +449,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
               child: Text(
                 notes,
                 style: TextStyle(
-                  color: isLight ? palette.textPrimary : const Color(0xFFE4DAD1),
+                  color: palette.textPrimary,
                   fontSize: 12.5,
                   height: 1.4,
                 ),
@@ -496,7 +492,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
                         color: isLight
-                            ? palette.success.withValues(alpha: 0.45)
+                            ? palette.success.withValues(alpha: 0.40)
                             : const Color(0xFF216F4B),
                       ),
                     ),
@@ -521,7 +517,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
                         color: isLight
-                            ? palette.warning.withValues(alpha: 0.45)
+                            ? palette.warning.withValues(alpha: 0.40)
                             : const Color(0xFF815423),
                       ),
                     ),
@@ -534,7 +530,9 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                 ),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: palette.metricPanelBg,
+                    backgroundColor: isLight
+                        ? palette.error.withValues(alpha: 0.08)
+                        : const Color(0x80211E1C),
                     foregroundColor: palette.error,
                     minimumSize: const Size(48, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -573,6 +571,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
+    final isLight = MetaGymTheme.isLightPalette(context);
     final visibleSessions = _filteredSessions();
     final canCreate =
         widget.coachBooking == null &&
@@ -590,7 +589,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
               onPressed: () => _edit(),
-              icon: const Icon(Icons.add_rounded),
+              icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.add_rounded),
               label: const Text(
                 'Tạo buổi tập',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -618,7 +617,9 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.primary,
-                          backgroundColor: palette.surfaceRaised,
+                          backgroundColor: isLight
+                              ? palette.surfaceSolid
+                              : const Color(0xFF2B2622),
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -659,11 +660,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                             color: palette.metricPanelBorder,
                                           ),
                                         ),
-                                        child: Icon(
-                                          Icons.event_busy_rounded,
-                                          color: palette.textWarmMuted,
-                                          size: 26,
-                                        ),
+                                        child: MetaGymSvgIcon(MetaGymIcons.actionCoachBlockSlot, size: 26, fallbackIcon: Icons.event_busy_rounded),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
@@ -697,11 +694,7 @@ class _CoachSessionsPageState extends State<CoachSessionsPage> {
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.fitness_center_rounded,
-                                        color: palette.primaryText,
-                                        size: 17,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 17, fallbackIcon: Icons.fitness_center_rounded),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -761,7 +754,7 @@ class _SessionTabButton extends StatelessWidget {
     final isLight = MetaGymTheme.isLightPalette(context);
     return Material(
       color: active
-          ? (isLight ? palette.chipActiveBg : const Color(0xFF472C22))
+          ? (isLight ? MetaGymTheme.brandOrange : const Color(0xFF472C22))
           : Colors.transparent,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
@@ -775,7 +768,7 @@ class _SessionTabButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: active
+              border: active && !isLight
                   ? Border.all(color: MetaGymTheme.brandOrange, width: 1.2)
                   : null,
             ),
@@ -784,9 +777,7 @@ class _SessionTabButton extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: active
-                    ? (isLight ? palette.primaryText : Colors.white)
-                    : palette.textWarmMuted,
+                color: active ? Colors.white : palette.textWarmMuted,
                 fontSize: 12.5,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -820,9 +811,7 @@ class _CancellationDialogState extends State<_CancellationDialog> {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     return AlertDialog(
-      backgroundColor: isLight
-          ? palette.surfaceSolid
-          : const Color(0xF0241F1B),
+      backgroundColor: isLight ? palette.surfaceSolid : const Color(0xF0241F1B),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
@@ -871,7 +860,7 @@ class _CancellationDialogState extends State<_CancellationDialog> {
         TextButton(
           style: TextButton.styleFrom(
             minimumSize: const Size(64, 48),
-            foregroundColor: palette.textSecondary,
+            foregroundColor: palette.textWarmMuted,
           ),
           onPressed: () => Navigator.pop(context),
           child: const Text('Đóng'),
@@ -950,7 +939,8 @@ class _SessionFormPageState extends State<_SessionFormPage> {
     super.dispose();
   }
 
-  InputDecoration _fieldDecoration({
+  InputDecoration _fieldDecoration(
+    BuildContext context, {
     required String label,
     String? hint,
     IconData? icon,
@@ -960,12 +950,10 @@ class _SessionFormPageState extends State<_SessionFormPage> {
       labelText: label,
       hintText: hint,
       labelStyle: TextStyle(color: palette.textWarmMuted),
-      hintStyle: TextStyle(
-        color: palette.textSecondary.withValues(alpha: 0.72),
-      ),
+      hintStyle: TextStyle(color: palette.textSecondary),
       prefixIcon: icon == null
           ? null
-          : Icon(icon, size: 19, color: palette.textWarmMuted),
+          : MetaGymResolvedIcon(icon, size: 19, fallbackColor: palette.textWarmMuted),
       filled: true,
       fillColor: palette.metricPanelBg,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -1118,6 +1106,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                   fontSize: 14,
                                 ),
                                 decoration: _fieldDecoration(
+                                  context,
                                   label: 'Hội viên',
                                   icon: Icons.person_outline_rounded,
                                 ),
@@ -1145,6 +1134,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                 color: palette.textPrimary,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Tên buổi tập',
                                 hint: 'VD: Tập chân & Core',
                                 icon: Icons.fitness_center_rounded,
@@ -1160,6 +1150,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Bắt đầu (dd/MM/yyyy HH:mm)',
                                 hint: '24/10/2026 08:00',
                                 icon: Icons.schedule_rounded,
@@ -1175,6 +1166,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Kết thúc (tùy chọn)',
                                 hint: '24/10/2026 09:00',
                                 icon: Icons.timer_off_outlined,
@@ -1189,6 +1181,7 @@ class _SessionFormPageState extends State<_SessionFormPage> {
                                 color: palette.textPrimary,
                               ),
                               decoration: _fieldDecoration(
+                                context,
                                 label: 'Ghi chú',
                                 hint:
                                     'Yêu cầu khởi động hoặc lưu ý chấn thương…',

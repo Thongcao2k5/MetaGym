@@ -25,4 +25,14 @@ void main() {
     expect(equipment.targetMuscles, ['Chân']);
     expect(equipment.safetyNotes, 'Giữ tay vịn');
   });
+
+  test('decodes string openingHours safely', () {
+    final gym = GymProfile.fromJson({
+      'name': 'Meta Gym Flagship Center',
+      'address': 'Quận 1',
+      'openingHours': '05:30 - 22:30 (Hàng ngày)',
+    });
+
+    expect(gym.openingHours['Giờ mở cửa'], '05:30 - 22:30 (Hàng ngày)');
+  });
 }

@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from '../users/users.routes.js';
+import { dispatchNotification } from '../../services/notification-dispatcher.js';
 
 const uuid = z.uuid();
 const date = z.iso.date();
@@ -175,7 +176,7 @@ async function replaceDays(client, planId, days) {
   }
 }
 
-export function createTrainingRouter({ database, jwtSecret }) {
+export function createTrainingRouter({ database, jwtSecret, realtime, fcm }) {
   const router = Router();
   router.use(createAuthentication({ database, jwtSecret }));
 
@@ -284,6 +285,18 @@ export function createTrainingRouter({ database, jwtSecret }) {
       await replaceDays(client, id, days);
       const plan = await loadPlan(client, id);
       await client.query('COMMIT');
+      void dispatchNotification({
+        database,
+        realtime,
+        fcm,
+        userId: memberId,
+        kind: 'TRAINING_PLAN_UPDATED',
+        category: 'TRAINING',
+        subjectId: id,
+        title: 'Coach đã cập nhật giáo trình tập',
+        body: `Giáo trình "${title}" vừa được cập nhật. Mở mục Tập luyện để xem chi tiết.`,
+        actionRoute: '/member/features/training',
+      }).catch(() => {});
       return response.json({ data: plan });
     } catch (error) {
       await client.query('ROLLBACK').catch(() => {});
@@ -445,6 +458,18 @@ export function createTrainingRouter({ database, jwtSecret }) {
         `UPDATE training_plans SET status = 'ACTIVE', published_at = now() WHERE id = $1`, [row.id],
       );
       await client.query('COMMIT');
+      void dispatchNotification({
+        database,
+        realtime,
+        fcm,
+        userId: row.member_id,
+        kind: 'TRAINING_PLAN_UPDATED',
+        category: 'TRAINING',
+        subjectId: row.id,
+        title: 'Coach đã cập nhật giáo trình tập',
+        body: `Giáo trình "${row.title}" vừa được công bố. Mở mục Tập luyện để xem chi tiết.`,
+        actionRoute: '/member/features/training',
+      }).catch(() => {});
       return response.json({ data: await loadPlan(database, row.id) });
     } catch {
       await client.query('ROLLBACK').catch(() => {});
