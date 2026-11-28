@@ -4,6 +4,7 @@ import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_3d_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
@@ -68,12 +69,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!MetaGymTheme.isFlutterTestEnvironment) {
-      precacheImage(
-        MetaGymBackground.assetFor(context),
-        context,
-      ).catchError((_) {});
-    }
+    MetaGymBackground.precache(context);
     if (!_initialized) {
       _initialized = true;
       _loadFrame3Data();
@@ -860,7 +856,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   }
 
   // ===========================================================================
-  // 2. QUICK ACTIONS: FOUR EQUAL NAVIGATION TILES (SVG)
+  // 2. QUICK ACTIONS: FOUR EQUAL NAVIGATION TILES (3D ICONS)
   // ===========================================================================
   Widget _buildQuickActionDock() {
     return Row(
@@ -869,7 +865,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Lịch tập',
             icon: Icons.calendar_today_rounded,
-            svgAsset: MetaGymIcons.actionSchedule,
+            icon3dAsset: MetaGym3dIcons.actionSchedule,
             onTap: () => _pushAndReload('/member/features/sessions'),
           ),
         ),
@@ -878,7 +874,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Giáo trình',
             icon: Icons.description_outlined,
-            svgAsset: MetaGymIcons.actionCurriculum,
+            icon3dAsset: MetaGym3dIcons.actionCurriculum,
             onTap: () => _pushAndReload('/member/features/training'),
           ),
         ),
@@ -887,7 +883,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Dinh dưỡng',
             icon: Icons.spa_outlined,
-            svgAsset: MetaGymIcons.actionNutrition,
+            icon3dAsset: MetaGym3dIcons.actionNutrition,
             onTap: () => _pushAndReload('/member/features/nutrition'),
           ),
         ),
@@ -896,7 +892,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
           child: _buildQuickActionButton(
             label: 'Coach',
             icon: Icons.groups_outlined,
-            svgAsset: MetaGymIcons.actionCoach,
+            icon3dAsset: MetaGym3dIcons.actionCoach,
             onTap: () => _pushAndReload(
               _hasCoach || _hasPendingCoachRequest
                   ? '/member/features/my-coach'
@@ -911,7 +907,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   Widget _buildQuickActionButton({
     required String label,
     required IconData icon,
-    required String svgAsset,
+    required String icon3dAsset,
     required VoidCallback onTap,
   }) {
     final palette = MetaGymTheme.paletteOf(context);
@@ -929,8 +925,8 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              MetaGymSvgIcon(svgAsset, size: 26, fallbackIcon: icon),
-              const SizedBox(height: 4),
+              MetaGym3dIcon(icon3dAsset, size: 34, fallbackIcon: icon),
+              const SizedBox(height: 3),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(

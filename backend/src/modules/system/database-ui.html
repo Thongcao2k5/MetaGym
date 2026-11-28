@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meta Gym — Database Studio</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #161d26;
+      --surface-2: #1d2633;
+      --surface-hover: #243040;
+      --border: #2a3748;
+      --text: #e6edf3;
+      --muted: #8b9bb0;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --radius: 8px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button:hover:not(:disabled) { background: var(--surface-hover); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+    }
+
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+
+    input[type="text"], input[type="password"], input[type="search"], select, textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
+    /* Login View */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+    .login-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 14px;
+    }
+    .login-card h1 { margin: 0; font-size: 18px; }
+    .login-sub { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .field input { width: 100%; }
+    .login-error {
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    /* App Shell */
+    .app-shell {
+      display: none;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .app-shell.active { display: flex; }
+
+    .sidebar {
+      width: 260px;
+      min-width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .sidebar-title strong { font-size: 14px; letter-spacing: 0.2px; }
+    .sidebar-search { width: 100%; }
+
+    .table-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .table-item {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .table-item:hover { background: var(--surface-2); }
+    .table-item.active {
+      background: rgba(59, 130, 246, 0.16);
+      border-color: rgba(59, 130, 246, 0.45);
+      color: #93c5fd;
+    }
+    .table-name {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .table-count {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 1px 6px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Main Panel */
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+    }
+    .topbar {
+      padding: 12px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .current-table-title {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .badge-pk {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #fcd34d;
+    }
+    .badge-fk {
+      background: rgba(6, 182, 212, 0.14);
+      border-color: rgba(6, 182, 212, 0.4);
+      color: #67e8f9;
+    }
+    .tabs {
+      display: inline-flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+    }
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .tab-btn.active {
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .toolbar {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--bg);
+    }
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .grid-wrap {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+    table.data-grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    table.data-grid th, table.data-grid td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid rgba(42, 55, 72, 0.45);
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    table.data-grid thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface);
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #cbd5e1;
+      user-select: none;
+      cursor: pointer;
+    }
+    table.data-grid thead th:hover { background: var(--surface-2); }
+    table.data-grid thead th.actions-col,
+    table.data-grid tbody td.actions-col {
+      position: sticky;
+      right: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      border-right: none;
+      cursor: default;
+      width: 1%;
+    }
+    table.data-grid tbody tr:hover td { background: rgba(36, 48, 64, 0.55); }
+    table.data-grid tbody tr:hover td.actions-col { background: var(--surface-2); }
+
+    .cell-null { color: var(--muted); font-style: italic; font-family: var(--mono); }
+    .cell-bool-true { color: #86efac; font-family: var(--mono); font-weight: 600; }
+    .cell-bool-false { color: #fca5a5; font-family: var(--mono); font-weight: 600; }
+    .cell-mono { font-family: var(--mono); }
+    .row-actions { display: flex; gap: 6px; }
+
+    .empty-state {
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .footer-bar {
+      padding: 10px 18px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .pager { display: flex; align-items: center; gap: 8px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 50;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: 100%;
+      max-width: 640px;
+      max-height: 88vh;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+    .modal-sm { max-width: 440px; }
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 { margin: 0; font-size: 15px; }
+    .modal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .form-row {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(42, 55, 72, 0.5);
+    }
+    .form-row:last-child { border-bottom: none; margin-bottom: 0; }
+    .form-row-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .form-col-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .form-col-meta {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .null-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .form-control { width: 100%; font-family: var(--mono); }
+    textarea.form-control { min-height: 74px; resize: vertical; }
+    .modal-error {
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    /* Toast */
+    .toast-wrap {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      max-width: 360px;
+    }
+    .toast.success { border-left: 3px solid var(--success); }
+    .toast.error { border-left: 3px solid var(--danger); }
+  </style>
+</head>
+<body>
+  <!-- Login View -->
+  <div id="loginView" class="login-wrap">
+    <form id="loginForm" class="login-card">
+      <div class="login-brand">
+        <div class="brand-icon">DB</div>
+        <h1>Meta Gym Database</h1>
+      </div>
+      <p class="login-sub">Đăng nhập tài khoản dev để xem, thêm, sửa, xóa dữ liệu bảng.</p>
+      <div id="loginError" class="login-error"></div>
+      <div class="field">
+        <label for="usernameInput">Tài khoản</label>
+        <input id="usernameInput" type="text" autocomplete="username" placeholder="admin" required />
+      </div>
+      <div class="field">
+        <label for="passwordInput">Mật khẩu</label>
+        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="••••••" required />
+      </div>
+      <button id="loginSubmitBtn" type="submit" class="btn-primary" style="width:100%; padding:9px;">
+        Đăng nhập
+      </button>
+    </form>
+  </div>
+
+  <!-- Main Workspace -->
+  <div id="appShell" class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <strong>Meta Gym DB</strong>
+          <button id="refreshTablesBtn" class="btn-sm" title="Tải lại danh sách bảng">↻</button>
+        </div>
+        <input id="tableFilterInput" class="sidebar-search" type="search" placeholder="Lọc tên bảng..." />
+      </div>
+      <div id="tableList" class="table-list"></div>
+      <div class="sidebar-footer">
+        <span id="currentUserLabel">admin</span>
+        <button id="logoutBtn" class="btn-sm">Đăng xuất</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2 id="currentTableTitle" class="current-table-title">Chọn một bảng</h2>
+          <span id="rowTotalBadge" class="badge" style="display:none;">0 dòng</span>
+          <div id="viewTabs" class="tabs" style="display:none;">
+            <button class="tab-btn active" data-tab="browse">Dữ liệu</button>
+            <button class="tab-btn" data-tab="structure">Cấu trúc</button>
+          </div>
+        </div>
+        <div class="toolbar-group">
+          <button id="addRowBtn" class="btn-primary" style="display:none;">+ Thêm dòng</button>
+        </div>
+      </div>
+
+      <div id="browseToolbar" class="toolbar" style="display:none;">
+        <div class="toolbar-group">
+          <input id="rowSearchInput" type="search" placeholder="Tìm kiếm trong bảng..." style="width:260px;" />
+          <button id="searchBtn">Tìm</button>
+          <button id="clearSearchBtn" style="display:none;">Xóa lọc</button>
+        </div>
+        <div class="toolbar-group">
+          <label for="pageSizeSelect" style="color:var(--muted); font-size:12px;">Hiển thị:</label>
+          <select id="pageSizeSelect">
+            <option value="15">15</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <button id="refreshRowsBtn">Tải lại</button>
+        </div>
+      </div>
+
+      <div id="gridWrap" class="grid-wrap">
+        <div class="empty-state">Chọn một bảng ở cột bên trái để xem và chỉnh sửa dữ liệu.</div>
+      </div>
+
+      <div id="footerBar" class="footer-bar" style="display:none;">
+        <span id="rangeInfo"></span>
+        <div class="pager">
+          <button id="prevPageBtn" class="btn-sm">← Trước</button>
+          <span id="pageInfo">Trang 1 / 1</span>
+          <button id="nextPageBtn" class="btn-sm">Sau →</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Insert / Edit Row Modal -->
+  <div id="rowModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="rowModalTitle">Thêm dòng mới</h3>
+        <button id="closeRowModalBtn" class="btn-sm">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="rowModalError" class="modal-error"></div>
+        <form id="rowForm"></form>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelRowModalBtn" type="button">Hủy</button>
+        <button id="saveRowBtn" type="button" class="btn-primary">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal-backdrop">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Xác nhận xóa dòng</h3>
+        <button id="closeDeleteModalBtn" class="btn-sm">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="deleteModalError" class="modal-error"></div>
+        <p style="margin-top:0;">Bạn có chắc chắn muốn xóa bản ghi này không? Thao tác này không thể hoàn tác.</p>
+        <pre id="deletePkPreview" style="background:var(--bg); padding:10px; border-radius:6px; border:1px solid var(--border); font-family:var(--mono); font-size:12px; overflow:auto;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelDeleteBtn" type="button">Hủy</button>
+        <button id="confirmDeleteBtn" type="button" class="btn-danger">Xác nhận xóa</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <script>
+    const API_BASE = '/database/api';
+    const state = {
+      user: null,
+      tables: [],
+      tableFilter: '',
+      activeTable: null,
+      activeTab: 'browse',
+      columns: [],
+      primaryKeys: [],
+      rows: [],
+      page: 1,
+      pageSize: 25,
+      total: 0,
+      totalPages: 1,
+      search: '',
+      sortBy: '',
+      sortDir: 'asc',
+      editingRow: null,
+      deletingRow: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function showToast(message, type = 'success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = message;
+      $('toastWrap').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    async function apiFetch(path, options = {}) {
+      const response = await fetch(`${API_BASE}${path}`, {
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options,
+      });
+      const json = await response.json().catch(() => ({}));
+      if (response.status === 401 && path !== '/login') {
+        showLoginView();
+        throw new Error(json?.error?.message || 'Phiên đăng nhập đã hết hạn');
+      }
+      if (!response.ok) {
+        const err = new Error(json?.error?.message || `Lỗi ${response.status}`);
+        err.detail = json?.error?.detail || null;
+        throw err;
+      }
+      return json.data;
+    }
+
+    function showLoginView() {
+      state.user = null;
+      $('appShell').classList.remove('active');
+      $('loginView').style.display = 'flex';
+      $('usernameInput').focus();
+    }
+
+    function showAppView(username) {
+      state.user = username;
+      $('currentUserLabel').textContent = username;
+      $('loginView').style.display = 'none';
+      $('appShell').classList.add('active');
+    }
+
+    async function initSession() {
+      try {
+        const data = await apiFetch('/me');
+        showAppView(data.username);
+        await loadTables();
+      } catch {
+        showLoginView();
+      }
+    }
+
+    async function loadTables() {
+      const data = await apiFetch('/tables');
+      state.tables = data.tables || [];
+      renderTableList();
+      if (!state.activeTable && state.tables.length > 0) {
+        selectTable(state.tables[0].name);
+      }
+    }
+
+    function renderTableList() {
+      const filter = state.tableFilter.toLowerCase();
+      const filtered = state.tables.filter((t) => t.name.toLowerCase().includes(filter));
+      if (filtered.length === 0) {
+        $('tableList').innerHTML = '<div class="empty-state" style="padding:24px 10px;">Không có bảng nào</div>';
+        return;
+      }
+      $('tableList').innerHTML = filtered.map((t) => `
+        <button class="table-item ${state.activeTable === t.name ? 'active' : ''}" data-table="${escapeHtml(t.name)}">
+          <span class="table-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</span>
+          <span class="table-count">${t.rowEstimate}</span>
+        </button>
+      `).join('');
+
+      $('tableList').querySelectorAll('.table-item').forEach((btn) => {
+        btn.addEventListener('click', () => selectTable(btn.dataset.table));
+      });
+    }
+
+    async function selectTable(tableName) {
+      state.activeTable = tableName;
+      state.page = 1;
+      state.search = '';
+      state.sortBy = '';
+      state.sortDir = 'asc';
+      $('rowSearchInput').value = '';
+      $('clearSearchBtn').style.display = 'none';
+      $('currentTableTitle').textContent = tableName;
+      $('viewTabs').style.display = 'inline-flex';
+      $('addRowBtn').style.display = 'inline-block';
+      $('rowTotalBadge').style.display = 'inline-flex';
+      renderTableList();
+      await loadActiveTableView();
+    }
+
+    async function loadActiveTableView() {
+      if (!state.activeTable) return;
+      if (state.activeTab === 'browse') {
+        $('browseToolbar').style.display = 'flex';
+        $('footerBar').style.display = 'flex';
+        await loadRows();
+      } else {
+        $('browseToolbar').style.display = 'none';
+        $('footerBar').style.display = 'none';
+        await loadSchema();
+      }
+    }
+
+    async function loadRows() {
+      $('gridWrap').innerHTML = '<div class="empty-state">Đang tải dữ liệu...</div>';
+      const qs = new URLSearchParams({
+        page: String(state.page),
+        pageSize: String(state.pageSize),
+        search: state.search,
+        sortBy: state.sortBy,
+        sortDir: state.sortDir,
+      });
+      try {
+        const data = await apiFetch(`/tables/${encodeURIComponent(state.activeTable)}/rows?${qs}`);
+        state.columns = data.columns;
+        state.primaryKeys = data.primaryKeys;
+        state.rows = data.rows;
+        state.total = data.pagination.total;
+        state.totalPages = data.pagination.totalPages;
+        $('rowTotalBadge').textContent = `${state.total} dòng`;
+        renderDataGrid();
+        renderPagination();
+      } catch (err) {
+        $('gridWrap').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    async function loadSchema() {
+      $('gridWrap').innerHTML = '<div class="empty-state">Đang tải cấu trúc bảng...</div>';
+      try {
+        const data = await apiFetch(`/tables/${encodeURIComponent(state.activeTable)}/schema`);
+        state.columns = data.columns;
+        state.primaryKeys = data.primaryKeys;
+        renderStructureTable();
+      } catch (err) {
+        $('gridWrap').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function formatCell(value) {
+      if (value === null || value === undefined) {
+        return '<span class="cell-null">NULL</span>';
+      }
+      if (typeof value === 'boolean') {
+        return `<span class="${value ? 'cell-bool-true' : 'cell-bool-false'}">${value}</span>`;
+      }
+      if (typeof value === 'object') {
+        const str = JSON.stringify(value);
+        return `<span class="cell-mono" title="${escapeHtml(str)}">${escapeHtml(str)}</span>`;
+      }
+      const str = String(value);
+      return `<span title="${escapeHtml(str)}">${escapeHtml(str)}</span>`;
+    }
+
+    function renderDataGrid() {
+      if (state.columns.length === 0) {
+        $('gridWrap').innerHTML = '<div class="empty-state">Bảng chưa có cột nào.</div>';
+        return;
+      }
+
+      const hasPk = state.primaryKeys.length > 0;
+      const headCells = state.columns.map((col) => {
+        const isSorted = state.sortBy === col.name;
+        const arrow = isSorted ? (state.sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+        const pkTag = col.isPrimaryKey ? ' <span class="badge badge-pk">PK</span>' : '';
+        const fkTag = col.foreignKey ? ` <span class="badge badge-fk" title="-> ${escapeHtml(col.foreignKey.table)}.${escapeHtml(col.foreignKey.column)}">FK</span>` : '';
+        return `<th data-col="${escapeHtml(col.name)}">${escapeHtml(col.name)}${pkTag}${fkTag}${arrow}</th>`;
+      }).join('');
+
+      const bodyRows = state.rows.length === 0
+        ? `<tr><td colspan="${state.columns.length + 1}" class="empty-state">Không có bản ghi nào.</td></tr>`
+        : state.rows.map((row, idx) => {
+            const cells = state.columns.map((col) => `<td>${formatCell(row[col.name])}</td>`).join('');
+            const disabledAttr = hasPk ? '' : 'disabled title="Bảng không có khóa chính"';
+            return `
+              <tr>
+                ${cells}
+                <td class="actions-col">
+                  <div class="row-actions">
+                    <button class="btn-sm edit-row-btn" data-idx="${idx}" ${disabledAttr}>Sửa</button>
+                    <button class="btn-sm btn-danger delete-row-btn" data-idx="${idx}" ${disabledAttr}>Xóa</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+      $('gridWrap').innerHTML = `
+        <table class="data-grid">
+          <thead>
+            <tr>
+              ${headCells}
+              <th class="actions-col">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      `;
+
+      $('gridWrap').querySelectorAll('thead th[data-col]').forEach((th) => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          if (state.sortBy === col) {
+            state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+          } else {
+            state.sortBy = col;
+            state.sortDir = 'asc';
+          }
+          state.page = 1;
+          loadRows();
+        });
+      });
+
+      $('gridWrap').querySelectorAll('.edit-row-btn').forEach((btn) => {
+        btn.addEventListener('click', () => openRowModal(state.rows[Number(btn.dataset.idx)]));
+      });
+      $('gridWrap').querySelectorAll('.delete-row-btn').forEach((btn) => {
+        btn.addEventListener('click', () => openDeleteModal(state.rows[Number(btn.dataset.idx)]));
+      });
+    }
+
+    function renderStructureTable() {
+      const rowsHtml = state.columns.map((col) => `
+        <tr>
+          <td class="cell-mono">${escapeHtml(col.name)}</td>
+          <td class="cell-mono">${escapeHtml(col.dataType)}${col.maxLength ? `(${col.maxLength})` : ''}</td>
+          <td>${col.nullable ? 'YES' : 'NO'}</td>
+          <td class="cell-mono">${col.defaultValue ? escapeHtml(col.defaultValue) : '<span class="cell-null">NULL</span>'}</td>
+          <td>
+            ${col.isPrimaryKey ? '<span class="badge badge-pk">PRIMARY KEY</span> ' : ''}
+            ${col.foreignKey ? `<span class="badge badge-fk">FK → ${escapeHtml(col.foreignKey.table)}.${escapeHtml(col.foreignKey.column)}</span>` : ''}
+            ${col.enumValues ? `<span class="badge">ENUM(${escapeHtml(col.enumValues.join(', '))})</span>` : ''}
+          </td>
+        </tr>
+      `).join('');
+
+      $('gridWrap').innerHTML = `
+        <table class="data-grid">
+          <thead>
+            <tr>
+              <th>Tên cột</th>
+              <th>Kiểu dữ liệu</th>
+              <th>Nullable</th>
+              <th>Mặc định</th>
+              <th>Ràng buộc</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      `;
+    }
+
+    function renderPagination() {
+      const start = state.total === 0 ? 0 : (state.page - 1) * state.pageSize + 1;
+      const end = Math.min(state.total, state.page * state.pageSize);
+      $('rangeInfo').textContent = `Hiển thị ${start}–${end} trên tổng ${state.total} bản ghi`;
+      $('pageInfo').textContent = `Trang ${state.page} / ${state.totalPages}`;
+      $('prevPageBtn').disabled = state.page <= 1;
+      $('nextPageBtn').disabled = state.page >= state.totalPages;
+    }
+
+    function openRowModal(row = null) {
+      state.editingRow = row;
+      const isEdit = Boolean(row);
+      $('rowModalTitle').textContent = isEdit
+        ? `Chỉnh sửa dòng — ${state.activeTable}`
+        : `Thêm dòng mới — ${state.activeTable}`;
+      $('rowModalError').style.display = 'none';
+
+      $('rowForm').innerHTML = state.columns.map((col) => {
+        const val = isEdit ? row[col.name] : undefined;
+        const isNull = isEdit && val === null;
+        const hasDefault = Boolean(col.defaultValue) || col.isIdentity;
+        const badges = [
+          col.isPrimaryKey ? '<span class="badge badge-pk">PK</span>' : '',
+          !col.nullable ? '<span class="badge">NOT NULL</span>' : '',
+          hasDefault ? '<span class="badge">DEFAULT</span>' : '',
+        ].join(' ');
+
+        const nullToggleHtml = col.nullable
+          ? `<label class="null-toggle"><input type="checkbox" class="null-check" data-col="${escapeHtml(col.name)}" ${isNull ? 'checked' : ''} /> NULL</label>`
+          : '';
+
+        let inputHtml = '';
+        const disabledStr = isNull ? 'disabled' : '';
+        const placeholder = !isEdit && hasDefault ? 'Bỏ trống để dùng mặc định DB' : '';
+
+        if (col.dataType === 'boolean') {
+          const strVal = val === true ? 'true' : (val === false ? 'false' : '');
+          inputHtml = `
+            <select class="form-control field-input" data-col="${escapeHtml(col.name)}" ${disabledStr}>
+              <option value="">-- Chọn --</option>
+              <option value="true" ${strVal === 'true' ? 'selected' : ''}>true</option>
+              <option value="false" ${strVal === 'false' ? 'selected' : ''}>false</option>
+            </select>
+          `;
+        } else if (col.enumValues && col.enumValues.length > 0) {
+          const options = col.enumValues.map((ev) =>
+            `<option value="${escapeHtml(ev)}" ${val === ev ? 'selected' : ''}>${escapeHtml(ev)}</option>`
+          ).join('');
+          inputHtml = `
+            <select class="form-control field-input" data-col="${escapeHtml(col.name)}" ${disabledStr}>
+              <option value="">-- Chọn --</option>
+              ${options}
+            </select>
+          `;
+        } else if (col.dataType === 'json' || col.dataType === 'jsonb' || col.dataType === 'text') {
+          const textVal = val === null || val === undefined
+            ? ''
+            : (typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val));
+          inputHtml = `<textarea class="form-control field-input" data-col="${escapeHtml(col.name)}" placeholder="${escapeHtml(placeholder)}" ${disabledStr}>${escapeHtml(textVal)}</textarea>`;
+        } else {
+          const strVal = val === null || val === undefined ? '' : String(val);
+          inputHtml = `<input type="text" class="form-control field-input" data-col="${escapeHtml(col.name)}" value="${escapeHtml(strVal)}" placeholder="${escapeHtml(placeholder)}" ${disabledStr} />`;
+        }
+
+        return `
+          <div class="form-row">
+            <div class="form-row-head">
+              <div class="form-col-label">
+                <span>${escapeHtml(col.name)}</span>
+                ${badges}
+                <span class="form-col-meta">${escapeHtml(col.dataType)}</span>
+              </div>
+              ${nullToggleHtml}
+            </div>
+            ${inputHtml}
+          </div>
+        `;
+      }).join('');
+
+      $('rowForm').querySelectorAll('.null-check').forEach((chk) => {
+        chk.addEventListener('change', () => {
+          const input = $('rowForm').querySelector(`.field-input[data-col="${CSS.escape(chk.dataset.col)}"]`);
+          if (input) input.disabled = chk.checked;
+        });
+      });
+
+      $('rowModal').classList.add('open');
+    }
+
+    function closeRowModal() {
+      $('rowModal').classList.remove('open');
+      state.editingRow = null;
+    }
+
+    async function saveRow() {
+      const isEdit = Boolean(state.editingRow);
+      const values = {};
+
+      for (const col of state.columns) {
+        const nullCheck = $('rowForm').querySelector(`.null-check[data-col="${CSS.escape(col.name)}"]`);
+        const input = $('rowForm').querySelector(`.field-input[data-col="${CSS.escape(col.name)}"]`);
+        if (!input) continue;
+
+        if (nullCheck && nullCheck.checked) {
+          values[col.name] = null;
+          continue;
+        }
+
+        const raw = input.value;
+        const hasDefault = Boolean(col.defaultValue) || col.isIdentity;
+        if (!isEdit && raw === '' && (hasDefault || col.nullable)) {
+          continue;
+        }
+
+        if (col.dataType === 'boolean') {
+          if (raw === '') {
+            if (col.nullable) values[col.name] = null;
+          } else {
+            values[col.name] = raw === 'true';
+          }
+        } else {
+          values[col.name] = raw;
+        }
+      }
+
+      $('saveRowBtn').disabled = true;
+      $('rowModalError').style.display = 'none';
+
+      try {
+        if (isEdit) {
+          const primaryKey = {};
+          for (const pk of state.primaryKeys) {
+            primaryKey[pk] = state.editingRow[pk];
+          }
+          await apiFetch(`/tables/${encodeURIComponent(state.activeTable)}/rows`, {
+            method: 'PATCH',
+            body: JSON.stringify({ primaryKey, values }),
+          });
+          showToast('Đã cập nhật bản ghi thành công');
+        } else {
+          await apiFetch(`/tables/${encodeURIComponent(state.activeTable)}/rows`, {
+            method: 'POST',
+            body: JSON.stringify({ values }),
+          });
+          showToast('Đã thêm bản ghi mới thành công');
+        }
+        closeRowModal();
+        await loadRows();
+        await loadTables();
+      } catch (err) {
+        $('rowModalError').textContent = err.detail ? `${err.message}\n${err.detail}` : err.message;
+        $('rowModalError').style.display = 'block';
+      } finally {
+        $('saveRowBtn').disabled = false;
+      }
+    }
+
+    function openDeleteModal(row) {
+      state.deletingRow = row;
+      const pkObj = {};
+      for (const pk of state.primaryKeys) {
+        pkObj[pk] = row[pk];
+      }
+      $('deletePkPreview').textContent = JSON.stringify(pkObj, null, 2);
+      $('deleteModalError').style.display = 'none';
+      $('deleteModal').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+      $('deleteModal').classList.remove('open');
+      state.deletingRow = null;
+    }
+
+    async function confirmDeleteRow() {
+      if (!state.deletingRow) return;
+      const primaryKey = {};
+      for (const pk of state.primaryKeys) {
+        primaryKey[pk] = state.deletingRow[pk];
+      }
+
+      $('confirmDeleteBtn').disabled = true;
+      $('deleteModalError').style.display = 'none';
+      try {
+        await apiFetch(`/tables/${encodeURIComponent(state.activeTable)}/rows`, {
+          method: 'DELETE',
+          body: JSON.stringify({ primaryKey }),
+        });
+        showToast('Đã xóa bản ghi');
+        closeDeleteModal();
+        await loadRows();
+        await loadTables();
+      } catch (err) {
+        $('deleteModalError').textContent = err.detail ? `${err.message}\n${err.detail}` : err.message;
+        $('deleteModalError').style.display = 'block';
+      } finally {
+        $('confirmDeleteBtn').disabled = false;
+      }
+    }
+
+    // Event bindings
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('loginError').style.display = 'none';
+      $('loginSubmitBtn').disabled = true;
+      try {
+        const data = await apiFetch('/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            username: $('usernameInput').value.trim(),
+            password: $('passwordInput').value,
+          }),
+        });
+        $('passwordInput').value = '';
+        showAppView(data.username);
+        await loadTables();
+      } catch (err) {
+        $('loginError').textContent = err.message;
+        $('loginError').style.display = 'block';
+      } finally {
+        $('loginSubmitBtn').disabled = false;
+      }
+    });
+
+    $('logoutBtn').addEventListener('click', async () => {
+      await apiFetch('/logout', { method: 'POST' }).catch(() => {});
+      state.activeTable = null;
+      showLoginView();
+    });
+
+    $('refreshTablesBtn').addEventListener('click', loadTables);
+    $('tableFilterInput').addEventListener('input', (e) => {
+      state.tableFilter = e.target.value;
+      renderTableList();
+    });
+
+    $('viewTabs').querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $('viewTabs').querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.activeTab = btn.dataset.tab;
+        loadActiveTableView();
+      });
+    });
+
+    $('searchBtn').addEventListener('click', () => {
+      state.search = $('rowSearchInput').value.trim();
+      state.page = 1;
+      $('clearSearchBtn').style.display = state.search ? 'inline-block' : 'none';
+      loadRows();
+    });
+    $('rowSearchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('searchBtn').click();
+    });
+    $('clearSearchBtn').addEventListener('click', () => {
+      $('rowSearchInput').value = '';
+      state.search = '';
+      state.page = 1;
+      $('clearSearchBtn').style.display = 'none';
+      loadRows();
+    });
+
+    $('pageSizeSelect').addEventListener('change', (e) => {
+      state.pageSize = Number(e.target.value);
+      state.page = 1;
+      loadRows();
+    });
+    $('refreshRowsBtn').addEventListener('click', loadRows);
+    $('prevPageBtn').addEventListener('click', () => {
+      if (state.page > 1) { state.page--; loadRows(); }
+    });
+    $('nextPageBtn').addEventListener('click', () => {
+      if (state.page < state.totalPages) { state.page++; loadRows(); }
+    });
+
+    $('addRowBtn').addEventListener('click', () => openRowModal(null));
+    $('closeRowModalBtn').addEventListener('click', closeRowModal);
+    $('cancelRowModalBtn').addEventListener('click', closeRowModal);
+    $('saveRowBtn').addEventListener('click', saveRow);
+
+    $('closeDeleteModalBtn').addEventListener('click', closeDeleteModal);
+    $('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+    $('confirmDeleteBtn').addEventListener('click', confirmDeleteRow);
+
+    initSession();
+  </script>
+</body>
+</html>

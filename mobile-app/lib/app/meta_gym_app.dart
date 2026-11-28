@@ -7,6 +7,7 @@ import 'package:meta_gym_app/core/network/metagym_realtime.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/theme_mode_controller.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_responsive_scale.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
@@ -322,12 +323,14 @@ class _MetaGymAppState extends State<MetaGymApp> {
                     child: child,
                   )
                 : child;
-            return InAppNotificationListener(
-              navigatorKey: _navigatorKey,
-              controller: _notificationsController,
-              session: _sessionController,
-              router: _router,
-              child: wrappedCalls,
+            return MetaGymResponsiveScale(
+              child: InAppNotificationListener(
+                navigatorKey: _navigatorKey,
+                controller: _notificationsController,
+                session: _sessionController,
+                router: _router,
+                child: wrappedCalls,
+              ),
             );
           },
         ),

@@ -57,6 +57,8 @@ tags:
     description: Trợ lý AI hội thoại (`ai_conversations`, `ai_messages`)
   - name: Media
     description: Tải lên và cấp quyền truy cập ảnh (`media_assets`)
+  - name: Image Server
+    description: Quản lý thư viện ảnh, chỉnh sửa biến thể, album, thư mục, chia sẻ và API Key (`images`, `image_variants`, `folders`, `albums`, `tags`, `share_links`, `api_keys`, `system_settings`)
 
 components:
   securitySchemes:
@@ -64,6 +66,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
 
   parameters:
     PageParam:
@@ -2444,3 +2450,236 @@ paths:
       responses:
         '200':
           description: URL truy cập ảnh
+
+  /images/upload:
+    post:
+      tags: [Image Server]
+      summary: Tải lên một hoặc nhiều ảnh (multipart/form-data)
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '201':
+          description: Đã xử lý ảnh, tạo thumbnail và lưu metadata
+
+  /images/import-url:
+    post:
+      tags: [Image Server]
+      summary: Nhập ảnh từ URL công khai an toàn (chống SSRF)
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '201':
+          description: Đã nhập ảnh thành công
+
+  /images:
+    get:
+      tags: [Image Server]
+      summary: Danh sách hình ảnh có lọc, tìm kiếm và phân trang
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Danh sách ảnh
+
+  /images/{id}:
+    get:
+      tags: [Image Server]
+      summary: Chi tiết ảnh kèm variants, tags, EXIF và SHA-256 hash
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Thông tin chi tiết ảnh
+    patch:
+      tags: [Image Server]
+      summary: Cập nhật tên, mô tả, visibility, thư mục hoặc tags
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã cập nhật
+    delete:
+      tags: [Image Server]
+      summary: Xóa mềm hoặc xóa vĩnh viễn ảnh (?permanent=true)
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã xóa ảnh
+
+  /images/{id}/transform:
+    post:
+      tags: [Image Server]
+      summary: Chỉnh sửa ảnh không phá hủy bản gốc (crop, resize, rotate, flip, format, quality)
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Đã lưu biến thể mới trong image_variants
+
+  /folders:
+    get:
+      tags: [Image Server]
+      summary: Danh sách và cây thư mục
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Cây thư mục
+    post:
+      tags: [Image Server]
+      summary: Tạo thư mục mới
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '201':
+          description: Đã tạo thư mục
+
+  /albums:
+    get:
+      tags: [Image Server]
+      summary: Danh sách album
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Danh sách album
+    post:
+      tags: [Image Server]
+      summary: Tạo album mới
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '201':
+          description: Đã tạo album
+
+  /tags:
+    get:
+      tags: [Image Server]
+      summary: Danh sách tags
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Danh sách tags
+
+  /shares:
+    get:
+      tags: [Image Server]
+      summary: Danh sách liên kết chia sẻ
+      responses:
+        '200':
+          description: Danh sách share links
+    post:
+      tags: [Image Server]
+      summary: Tạo liên kết chia sẻ có thời hạn/mật khẩu
+      responses:
+        '201':
+          description: Đã tạo liên kết chia sẻ
+
+  /public/shares/{token}:
+    get:
+      tags: [Image Server]
+      summary: Truy cập liên kết chia sẻ công khai
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thông tin ảnh hoặc album được chia sẻ
+
+  /api-keys:
+    get:
+      tags: [Image Server]
+      summary: Danh sách API Keys (chỉ trả key_prefix)
+      responses:
+        '200':
+          description: Danh sách API Keys
+    post:
+      tags: [Image Server]
+      summary: Tạo API Key mới (chỉ hiển thị full key 1 lần)
+      responses:
+        '201':
+          description: Đã tạo API Key
+
+  /stats:
+    get:
+      tags: [Image Server]
+      summary: Thống kê tổng quan Image Server
+      responses:
+        '200':
+          description: Số liệu tổng quan
+
+  /analytics/overview:
+    get:
+      tags: [Image Server]
+      summary: Phân tích lượt xem thật vs bot, bandwidth và API status codes
+      responses:
+        '200':
+          description: Dữ liệu analytics
+
+  /admin/storage/summary:
+    get:
+      tags: [Image Server]
+      summary: Thống kê dung lượng lưu trữ và quota người dùng
+      responses:
+        '200':
+          description: Thông tin lưu trữ
+
+  /admin/settings:
+    get:
+      tags: [Image Server]
+      summary: Lấy cấu hình hệ thống Image Server
+      responses:
+        '200':
+          description: Cấu hình hiện hành
+    patch:
+      tags: [Image Server]
+      summary: Cập nhật cấu hình hệ thống Image Server
+      responses:
+        '200':
+          description: Đã lưu cấu hình

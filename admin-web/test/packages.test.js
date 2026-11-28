@@ -266,3 +266,181 @@ test('T10 Coach Entitlements tab supports ACTIVE/QUEUED/ENDED + frozenOnly filte
   assert.equal(last.search.includes('frozenOnly=true'), true);
   assert.equal(env.location.hash.includes('frozenOnly=true'), true);
 });
+
+test('T10 Gym Plans renders 2-sided card thumbnails, 3 card highlights, and edits card media & highlights cleanly', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/plans', token: 'tok' });
+  setToken('tok');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  const uploadedMediaId = '44444444-4444-4444-8444-444444444444';
+  const requests = [];
+  let plan = {
+    id: 'plan-gold',
+    name: 'Gói Pro 6 Tháng',
+    description: 'Ưu đãi gói Vàng',
+    price: 2600000,
+    durationDays: 180,
+    status: 'ACTIVE',
+    cardTier: 'GOLD',
+    frontMediaId: '11111111-1111-4111-8111-111111111111',
+    backMediaId: '22222222-2222-4222-8222-222222222222',
+    frontImageUrl: '/api/v1/media/public/11111111-1111-4111-8111-111111111111?v=1',
+    frontThumbnailUrl: '/api/v1/media/public/11111111-1111-4111-8111-111111111111?size=120&v=1',
+    backImageUrl: '/api/v1/media/public/22222222-2222-4222-8222-222222222222?v=2',
+    backThumbnailUrl: '/api/v1/media/public/22222222-2222-4222-8222-222222222222?size=120&v=2',
+    cardHighlights: [
+      'Thẻ Vàng NFC · Khăn tập mỗi ngày',
+      'Miễn phí đo InBody hàng tháng',
+      'Giảm 5% phí Coach · Tặng 2 buổi PT 1:1',
+    ],
+    activeMembershipCount: 5,
+    scheduledMembershipCount: 1,
+  };
+
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.pathname === '/api/v1/admin/membership-plans' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [plan], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    if (parsed.pathname === '/api/v1/media/images' && options.method === 'POST') {
+      requests.push({
+        path: parsed.pathname,
+        method: 'POST',
+        purpose: options.headers['x-image-purpose'],
+      });
+      return jsonResponse({
+        data: {
+          id: uploadedMediaId,
+          publicUrl: `/api/v1/media/public/${uploadedMediaId}?v=${uploadedMediaId}`,
+          thumbnailUrl: `/api/v1/media/public/${uploadedMediaId}?size=120&v=${uploadedMediaId}`,
+        },
+      }, 201);
+    }
+    if (parsed.pathname === '/api/v1/admin/membership-plans/plan-gold' && options.method === 'PATCH') {
+      const body = JSON.parse(options.body);
+      requests.push({ path: parsed.pathname, method: 'PATCH', body });
+      plan = { ...plan, ...body };
+      return jsonResponse({ data: plan });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderPlansPage({ root: env.root, params: new URLSearchParams(), shell: makeShell(env.root) });
+
+  assert.equal(env.root.innerHTML.includes('Hạng Vàng'), true);
+  assert.equal(env.root.innerHTML.includes('Thẻ Vàng NFC · Khăn tập mỗi ngày'), true);
+  assert.equal(env.root.innerHTML.includes('Miễn phí đo InBody hàng tháng'), true);
+  assert.equal(env.root.innerHTML.includes('Giảm 5% phí Coach · Tặng 2 buổi PT 1:1'), true);
+  assert.equal(env.root.querySelectorAll('.plan-card-thumb').length, 2);
+
+  // Open 2-sided card modal
+  env.root.querySelector('.view-plan-cards').click();
+  await flush();
+  assert.equal(env.modalOverlay.hidden, false);
+  assert.equal(env.modalDialog.innerHTML.includes('Mặt trước (Dọc)'), true);
+  assert.equal(env.modalDialog.innerHTML.includes('Mặt sau (Ngang)'), true);
+  env.modalDialog.querySelector('[data-close-modal]').click();
+  await flush();
+
+  // Open edit modal, upload new front card image, remove back card image, and update highlight line 1
+  env.root.querySelector('.edit-plan').click();
+  await flush();
+  assert.equal(env.modalOverlay.hidden, false);
+
+  env.modalDialog.querySelector('[data-slot-upload="front"]').click();
+  const fileInput = env.modalDialog.querySelector('#plan-card-file-input');
+  Object.defineProperty(fileInput, 'files', {
+    configurable: true,
+    value: [{
+      name: 'gold-front.webp',
+      type: 'image/webp',
+      size: 12000,
+      arrayBuffer: async () => new Uint8Array([82, 73, 70, 70]).buffer,
+    }],
+  });
+  fileInput.dispatchEvent({ type: 'change' });
+  await flush();
+
+  env.modalDialog.querySelector('[data-slot-remove="back"]').click();
+  env.modalDialog.querySelector('#plan-hl-1').value = 'Thẻ Vàng NFC · Tập full dịch vụ';
+  env.modalDialog.querySelector('#plan-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  const uploadReq = requests.find((r) => r.path === '/api/v1/media/images');
+  assert.equal(uploadReq?.purpose, 'PACKAGE');
+  const patchReq = requests.find((r) => r.method === 'PATCH');
+  assert.equal(patchReq.body.cardTier, 'GOLD');
+  assert.equal(patchReq.body.frontMediaId, uploadedMediaId);
+  assert.equal(patchReq.body.backMediaId, null);
+  assert.deepEqual(patchReq.body.cardHighlights, [
+    'Thẻ Vàng NFC · Tập full dịch vụ',
+    'Miễn phí đo InBody hàng tháng',
+    'Giảm 5% phí Coach · Tặng 2 buổi PT 1:1',
+  ]);
+});
+
+test('T10 Gym Plans sale window renders phase badges, validates end >= start, and converts GMT+7 to ISO UTC', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/plans', token: 'tok' });
+  setToken('tok');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  const requests = [];
+  let plan = {
+    id: 'plan-tet',
+    name: 'Gói Ưu Đãi Đợt Mở Bán',
+    description: 'Mở bán theo đợt',
+    price: 990000,
+    durationDays: 60,
+    status: 'ACTIVE',
+    salesStartAt: '2026-12-01T01:00:00.000Z',
+    salesEndAt: '2026-12-15T16:59:00.000Z',
+    salePhase: 'UPCOMING',
+    isOnSale: false,
+    cardTier: 'SILVER',
+    cardHighlights: ['Mở bán giới hạn', 'Ưu đãi hội viên sớm', 'Giữ nguyên quyền lợi'],
+    activeMembershipCount: 0,
+    scheduledMembershipCount: 0,
+  };
+
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.pathname === '/api/v1/admin/membership-plans' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [plan], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    if (parsed.pathname === '/api/v1/admin/membership-plans/plan-tet' && options.method === 'PATCH') {
+      const body = JSON.parse(options.body);
+      requests.push(body);
+      plan = { ...plan, ...body, salePhase: 'ON_SALE', isOnSale: true };
+      return jsonResponse({ data: plan });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderPlansPage({ root: env.root, params: new URLSearchParams(), shell: makeShell(env.root) });
+
+  assert.equal(env.root.innerHTML.includes('Sắp mở bán'), true);
+  assert.equal(env.root.innerHTML.includes('01/12/2026'), true);
+
+  env.root.querySelector('.edit-plan').click();
+  await flush();
+  assert.equal(env.modalDialog.querySelector('[name="salesStartAt"]').value, '2026-12-01T08:00');
+  assert.equal(env.modalDialog.querySelector('[name="salesEndAt"]').value, '2026-12-15T23:59');
+
+  // Invalid range (end < start) blocked inline
+  env.modalDialog.querySelector('[name="salesStartAt"]').value = '2026-12-20T09:00';
+  env.modalDialog.querySelector('[name="salesEndAt"]').value = '2026-12-10T18:00';
+  env.modalDialog.querySelector('#plan-form').dispatchEvent({ type: 'submit' });
+  await flush();
+  assert.equal(requests.length, 0);
+  assert.equal(env.modalDialog.innerHTML.includes('Thời điểm kết thúc mở bán phải sau hoặc bằng thời điểm bắt đầu'), true);
+
+  // Fix valid range -> submits UTC ISO converted from GMT+7
+  env.modalDialog.querySelector('[name="salesStartAt"]').value = '2026-11-28T08:00';
+  env.modalDialog.querySelector('[name="salesEndAt"]').value = '2026-12-10T23:59';
+  env.modalDialog.querySelector('#plan-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].salesStartAt, '2026-11-28T01:00:00.000Z');
+  assert.equal(requests[0].salesEndAt, '2026-12-10T16:59:00.000Z');
+});

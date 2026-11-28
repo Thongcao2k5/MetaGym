@@ -7,6 +7,7 @@ import 'package:meta_gym_app/app/feature_navigation.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_3d_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/ai/presentation/ai_conversations_page.dart';
@@ -101,12 +102,7 @@ class _CoachHomePageState extends State<CoachHomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!MetaGymTheme.isFlutterTestEnvironment) {
-      precacheImage(
-        MetaGymBackground.assetFor(context),
-        context,
-      ).catchError((_) {});
-    }
+    MetaGymBackground.precache(context);
     if (!_initialized) {
       _initialized = true;
       _loadCoachData();
@@ -1294,6 +1290,7 @@ class _CoachDashboardView extends StatelessWidget {
         Expanded(
           child: _CoachQuickActionTile(
             icon: Icons.description_outlined,
+            icon3dAsset: MetaGym3dIcons.actionCurriculum,
             label: 'Giáo trình',
             useSolidFallback: useSolidGlassFallback,
             onTap: () => onPushRoute('/coach/features/training'),
@@ -1303,6 +1300,7 @@ class _CoachDashboardView extends StatelessWidget {
         Expanded(
           child: _CoachQuickActionTile(
             icon: Icons.spa_outlined,
+            icon3dAsset: MetaGym3dIcons.actionNutrition,
             label: 'Dinh dưỡng',
             useSolidFallback: useSolidGlassFallback,
             onTap: () => onPushRoute('/coach/features/nutrition'),
@@ -1312,6 +1310,7 @@ class _CoachDashboardView extends StatelessWidget {
         Expanded(
           child: _CoachQuickActionTile(
             icon: Icons.calendar_today_rounded,
+            icon3dAsset: MetaGym3dIcons.actionSchedule,
             label: 'Lịch tập',
             useSolidFallback: useSolidGlassFallback,
             onTap: () => onPushRoute('/coach/features/sessions'),
@@ -2989,12 +2988,14 @@ class _CoachWorkHubViewState extends State<_CoachWorkHubView> {
 class _CoachQuickActionTile extends StatelessWidget {
   const _CoachQuickActionTile({
     required this.icon,
+    this.icon3dAsset,
     required this.label,
     required this.onTap,
     required this.useSolidFallback,
   });
 
   final IconData icon;
+  final String? icon3dAsset;
   final String label;
   final VoidCallback onTap;
   final bool useSolidFallback;
@@ -3044,15 +3045,24 @@ class _CoachQuickActionTile extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 74),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 6,
-                  vertical: 10,
+                  vertical: icon3dAsset != null ? 7 : 10,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    MetaGymResolvedIcon(icon, size: 22, fallbackColor: palette.primaryText),
-                    const SizedBox(height: 6),
+                    if (icon3dAsset != null) ...[
+                      MetaGym3dIcon(icon3dAsset!, size: 34, fallbackIcon: icon),
+                      const SizedBox(height: 4),
+                    ] else ...[
+                      MetaGymResolvedIcon(
+                        icon,
+                        size: 22,
+                        fallbackColor: palette.primaryText,
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                     Text(
                       label,
                       maxLines: 1,

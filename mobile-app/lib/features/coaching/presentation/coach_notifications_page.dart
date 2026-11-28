@@ -97,7 +97,11 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       _loading = ctrl.isLoading;
       _loadError = ctrl.error;
       if (_records.isEmpty && !_loading) {
-        ctrl.refresh(initial: true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && identical(_controller, ctrl)) {
+            ctrl.refresh(initial: true);
+          }
+        });
       }
       return;
     }

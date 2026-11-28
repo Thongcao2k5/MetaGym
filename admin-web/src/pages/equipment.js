@@ -77,6 +77,7 @@ async function uploadPublicImage(file, purpose) {
 
 export async function renderEquipmentPage({ root, params, shell }) {
   const tab = params?.get('tab') === 'exercises' ? 'exercises' : 'equipment';
+  const section = tab === 'exercises' ? 'exercises' : 'equipment';
   const search = params?.get('search') || '';
   const statusFilter = params?.get('status') || '';
   const categoryFilter = params?.get('category') || '';
@@ -88,11 +89,6 @@ export async function renderEquipmentPage({ root, params, shell }) {
   const hasFilter = tab === 'equipment'
     ? Boolean(search || statusFilter || categoryFilter)
     : Boolean(search || statusFilter || difficultyFilter || equipmentIdFilter);
-
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Thiết bị và thư viện bài tập">
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'equipment'}" data-cat-tab="equipment">Thiết bị phòng tập</button>
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'exercises'}" data-cat-tab="exercises">Thư viện bài tập (exercises)</button>
-  </div>`;
 
   const buildFilterHtml = (allEquipment = [], canExport = false) => (tab === 'equipment'
     ? `<form class="filter-bar" id="cat-filter-form">
@@ -112,9 +108,9 @@ export async function renderEquipmentPage({ root, params, shell }) {
       <input type="search" id="cat-search" class="form-control filter-grow" placeholder="Tìm tên bài tập, mô tả hoặc tên thiết bị…" value="${esc(search)}" aria-label="Tìm bài tập" />
       <select id="cat-difficulty" class="form-select filter-fixed" aria-label="Lọc độ khó bài tập">
         <option value="" ${!difficultyFilter ? 'selected' : ''}>Tất cả độ khó</option>
-        <option value="BEGINNER" ${difficultyFilter === 'BEGINNER' ? 'selected' : ''}>Cơ bản (BEGINNER)</option>
-        <option value="INTERMEDIATE" ${difficultyFilter === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình (INTERMEDIATE)</option>
-        <option value="ADVANCED" ${difficultyFilter === 'ADVANCED' ? 'selected' : ''}>Nâng cao (ADVANCED)</option>
+        <option value="BEGINNER" ${difficultyFilter === 'BEGINNER' ? 'selected' : ''}>Cơ bản</option>
+        <option value="INTERMEDIATE" ${difficultyFilter === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình</option>
+        <option value="ADVANCED" ${difficultyFilter === 'ADVANCED' ? 'selected' : ''}>Nâng cao</option>
       </select>
       <select id="cat-equipment" class="form-select filter-fixed" aria-label="Lọc theo thiết bị liên kết">
         <option value="" ${!equipmentIdFilter ? 'selected' : ''}>Tất cả thiết bị</option>
@@ -134,9 +130,9 @@ export async function renderEquipmentPage({ root, params, shell }) {
   const topbarActionsHtml = `<button type="button" class="btn btn-primary" id="create-item">${icon('plus', 16)} ${tab === 'equipment' ? 'Thêm thiết bị' : 'Thêm bài tập'}</button>`;
 
   shell({
-    section: 'equipment',
+    section,
     topbarActionsHtml,
-    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml([], false)}${renderTableSkeleton(5)}</div>`,
+    contentHtml: `<div class="stack-20">${buildFilterHtml([], false)}${renderTableSkeleton(5)}</div>`,
   });
 
   const reloadWith = (patch = {}) => {
@@ -252,19 +248,19 @@ export async function renderEquipmentPage({ root, params, shell }) {
             align: 'right',
             render: (row) => `<div class="cell-actions">
               ${renderActionButton({
-                iconName: 'eye',
-                label: 'Xem trước công khai',
-                className: 'preview-eq',
-                permission: 'catalog:read',
-                attrs: `data-id="${esc(row.id)}"`,
-              })}
+              iconName: 'eye',
+              label: 'Xem trước công khai',
+              className: 'preview-eq',
+              permission: 'catalog:read',
+              attrs: `data-id="${esc(row.id)}"`,
+            })}
               ${renderActionButton({
-                iconName: 'edit',
-                label: 'Sửa thiết bị',
-                className: 'edit-eq',
-                permission: 'catalog:update',
-                attrs: `data-id="${esc(row.id)}"`,
-              })}
+              iconName: 'edit',
+              label: 'Sửa thiết bị',
+              className: 'edit-eq',
+              permission: 'catalog:update',
+              attrs: `data-id="${esc(row.id)}"`,
+            })}
             </div>`,
           },
         ],
@@ -306,12 +302,12 @@ export async function renderEquipmentPage({ root, params, shell }) {
             align: 'right',
             render: (row) => `<div class="cell-actions">
               ${renderActionButton({
-                iconName: 'edit',
-                label: 'Sửa bài tập',
-                className: 'edit-ex',
-                permission: 'catalog:update',
-                attrs: `data-id="${esc(row.id)}"`,
-              })}
+              iconName: 'edit',
+              label: 'Sửa bài tập',
+              className: 'edit-ex',
+              permission: 'catalog:update',
+              attrs: `data-id="${esc(row.id)}"`,
+            })}
             </div>`,
           },
         ],
@@ -332,27 +328,14 @@ export async function renderEquipmentPage({ root, params, shell }) {
       });
 
     const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
       ${buildFilterHtml(allEquipment, rows.length > 0)}
       ${tableHtml}
     </div>`;
 
     shell({
-      section: 'equipment',
+      section,
       contentHtml,
       topbarActionsHtml,
-    });
-
-    root.querySelectorAll('[data-cat-tab]').forEach((btn) => {
-      btn.onclick = () => reloadWith({
-        tab: btn.dataset.catTab,
-        search: '',
-        status: '',
-        category: '',
-        difficulty: '',
-        equipmentId: '',
-        page: 1,
-      });
     });
 
     const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
@@ -586,7 +569,7 @@ export async function renderEquipmentPage({ root, params, shell }) {
               <div class="field"><label class="field-label" for="ex-eq">Thiết bị liên kết</label><select id="ex-eq" class="form-select" name="equipmentId"><option value="">Không gắn thiết bị</option>${allEquipment.map((e) => `<option value="${esc(e.id)}" ${row?.equipmentId === e.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
             </div>
             <div class="grid-2">
-              <div class="field"><label class="field-label" for="ex-diff">Độ khó</label><select id="ex-diff" class="form-select" name="difficulty"><option value="">Chưa chọn</option><option value="BEGINNER" ${row?.difficulty === 'BEGINNER' ? 'selected' : ''}>Cơ bản (BEGINNER)</option><option value="INTERMEDIATE" ${row?.difficulty === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình (INTERMEDIATE)</option><option value="ADVANCED" ${row?.difficulty === 'ADVANCED' ? 'selected' : ''}>Nâng cao (ADVANCED)</option></select></div>
+              <div class="field"><label class="field-label" for="ex-diff">Độ khó</label><select id="ex-diff" class="form-select" name="difficulty"><option value="">Chưa chọn</option><option value="BEGINNER" ${row?.difficulty === 'BEGINNER' ? 'selected' : ''}>Cơ bản</option><option value="INTERMEDIATE" ${row?.difficulty === 'INTERMEDIATE' ? 'selected' : ''}>Trung bình</option><option value="ADVANCED" ${row?.difficulty === 'ADVANCED' ? 'selected' : ''}>Nâng cao</option></select></div>
               <div class="field"><label class="field-label" for="ex-status">Trạng thái</label><select id="ex-status" class="form-select" name="status"><option value="ACTIVE" ${row?.status !== 'HIDDEN' ? 'selected' : ''}>Hiển thị</option><option value="HIDDEN" ${row?.status === 'HIDDEN' ? 'selected' : ''}>Ẩn</option></select></div>
             </div>
             <div class="field"><label class="field-label" for="ex-muscles">Nhóm cơ mục tiêu (phân tách bằng dấu phẩy)</label><input id="ex-muscles" class="form-control" name="targetMuscles" value="${esc((row?.targetMuscles || []).join(', '))}" placeholder="Ví dụ: Ngực, Vai trước, Tay sau" /></div>
@@ -696,7 +679,7 @@ export async function renderEquipmentPage({ root, params, shell }) {
     });
   } catch (error) {
     shell({
-      section: 'equipment',
+      section,
       topbarActionsHtml,
       contentHtml: renderErrorState({ title: 'Không tải được thiết bị & bài tập', message: error.message }),
     });

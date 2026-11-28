@@ -82,7 +82,14 @@ void main() {
       );
       addTearDown(controller.dispose);
 
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+      final deadline = DateTime.now().add(const Duration(seconds: 2));
+      while ((controller.isLoading ||
+              controller.items.isEmpty ||
+              !fcmSpy.synced ||
+              localSpy.dailySyncCount == 0) &&
+          DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
 
       expect(controller.items.length, 3);
       expect(controller.unreadCount, 2);

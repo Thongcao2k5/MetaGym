@@ -11,23 +11,27 @@ class ThemeModeController extends ChangeNotifier {
   ThemeModeController({
     ThemeMode initialMode = ThemeMode.dark,
     FlutterSecureStorage? storage,
+    bool? persist,
   }) : _themeMode = initialMode,
-       _storage = storage ?? const FlutterSecureStorage();
+       _storage = storage ?? const FlutterSecureStorage(),
+       _persist = persist ?? !MetaGymTheme.isFlutterTestEnvironment;
 
-  static const String _storageKey = 'meta_gym.theme_mode';
+  static const String storageKey = 'meta_gym.theme_mode';
 
   final FlutterSecureStorage _storage;
+  final bool _persist;
   ThemeMode _themeMode;
 
   ThemeMode get themeMode => _themeMode;
   bool get isLightMode => _themeMode == ThemeMode.light;
+  bool get isLight => isLightMode;
   bool get isDarkMode => _themeMode != ThemeMode.light;
 
   /// Đọc chế độ hiển thị đã lưu trước đó (nếu có).
   Future<void> restore() async {
-    if (MetaGymTheme.isFlutterTestEnvironment) return;
+    if (!_persist) return;
     try {
-      final raw = await _storage.read(key: _storageKey);
+      final raw = await _storage.read(key: storageKey);
       if (raw == 'light' && _themeMode != ThemeMode.light) {
         _themeMode = ThemeMode.light;
         _syncSystemUiOverlay();
@@ -54,13 +58,15 @@ class ThemeModeController extends ChangeNotifier {
     _syncSystemUiOverlay();
     notifyListeners();
 
-    if (MetaGymTheme.isFlutterTestEnvironment) return;
+    if (!_persist) return;
     try {
       await _storage.write(
-        key: _storageKey,
+        key: storageKey,
         value: normalized == ThemeMode.light ? 'light' : 'dark',
       );
-    } catch (_) {}
+    } catch (_) {
+      // Non-fatal: in-memory state is already updated.
+    }
   }
 
   /// Bật nhanh chế độ Sáng (`true`) hoặc Tối (`false`).

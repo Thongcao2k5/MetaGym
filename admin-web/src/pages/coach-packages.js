@@ -166,17 +166,13 @@ function openCoachPackageModal(row, onSaved) {
 
 export async function renderCoachPackagesPage({ root, params, shell }) {
   const tab = params?.get('tab') === 'entitlements' ? 'entitlements' : 'catalog';
+  const section = tab === 'entitlements' ? 'coach-entitlements' : 'coach-packages';
   const search = params?.get('search') || '';
   const statusFilter = params?.get('status') || '';
   const frozenOnly = params?.get('frozenOnly') === 'true';
   const page = Math.max(1, Number(params?.get('page')) || 1);
   const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const hasFilter = Boolean(search || statusFilter || frozenOnly);
-
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý gói Coach">
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'catalog'}" data-cp-tab="catalog">Danh mục gói Coach</button>
-    <button type="button" class="meta-tab-btn" role="tab" aria-selected="${tab === 'entitlements'}" data-cp-tab="entitlements">Quyền lợi gói Coach</button>
-  </div>`;
 
   const buildFilterHtml = (canExport = false) => (tab === 'catalog'
     ? `<form class="filter-bar" id="cp-filter-form">
@@ -209,12 +205,14 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
       </button>
     </form>`);
 
-  const topbarActionsHtml = `<button type="button" class="btn btn-primary" id="create-cp">${icon('plus', 16)} Tạo gói Coach</button>`;
+  const topbarActionsHtml = tab === 'catalog'
+    ? `<button type="button" class="btn btn-primary" id="create-cp">${icon('plus', 16)} Tạo gói Coach</button>`
+    : '';
 
   shell({
-    section: 'coach-packages',
+    section,
     topbarActionsHtml,
-    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml(false)}${renderTableSkeleton(5)}</div>`,
+    contentHtml: `<div class="stack-20">${buildFilterHtml(false)}${renderTableSkeleton(5)}</div>`,
   });
 
   const reloadWith = (patch = {}) => {
@@ -391,19 +389,14 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
       });
 
     const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
       ${buildFilterHtml(rows.length > 0)}
       ${tableHtml}
     </div>`;
 
     shell({
-      section: 'coach-packages',
+      section,
       contentHtml,
       topbarActionsHtml,
-    });
-
-    root.querySelectorAll('[data-cp-tab]').forEach((btn) => {
-      btn.onclick = () => reloadWith({ tab: btn.dataset.cpTab, search: '', status: '', frozenOnly: false, page: 1 });
     });
 
     const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
@@ -502,7 +495,7 @@ export async function renderCoachPackagesPage({ root, params, shell }) {
     });
   } catch (error) {
     shell({
-      section: 'coach-packages',
+      section,
       topbarActionsHtml,
       contentHtml: renderErrorState({
         title: tab === 'entitlements' ? 'Không tải được quyền lợi gói Coach' : 'Không tải được danh mục gói Coach',

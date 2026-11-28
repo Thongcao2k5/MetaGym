@@ -78,11 +78,21 @@ export function notice(text, kind = 'success') {
         : kind === 'info' ? 'banner-info' : 'banner-success';
     const iconName = kind === 'danger' || kind === 'warn' || kind === 'warning' ? 'alert'
       : kind === 'info' ? 'info' : 'check';
-    box.innerHTML = `<div class="meta-banner ${cls} mb-3" role="${kind === 'danger' ? 'alert' : 'status'}">
-      <div class="banner-body">
+    box.innerHTML = `<div class="meta-banner ${cls} mb-3" role="${kind === 'danger' ? 'alert' : 'status'}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div class="banner-body" style="flex:1;">
         <span class="banner-icon">${icon(iconName, 18)}</span>
         <div><p class="banner-title mb-0">${esc(text)}</p></div>
       </div>
+      <button type="button" class="btn btn-ghost btn-icon btn-sm" data-notice-close aria-label="Đóng" style="margin-left:auto; width:28px; height:28px; min-height:28px; padding:0; flex-shrink:0;">
+        ${icon('close', 14) || '✕'}
+      </button>
     </div>`;
+    const closeBtn = box.querySelector?.('[data-notice-close]');
+    if (closeBtn) closeBtn.onclick = () => { box.innerHTML = ''; };
+    if (typeof setTimeout === 'function') {
+      setTimeout(() => {
+        if (box?.querySelector?.('.meta-banner')) box.innerHTML = '';
+      }, 8000);
+    }
   }
 }

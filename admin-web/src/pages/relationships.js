@@ -337,6 +337,7 @@ function openAdjudicationModal(row, decision, onDone) {
 export async function renderRelationshipsPage({ root, params, shell }) {
   const rawTab = params?.get('tab') || 'list';
   const tab = ['list', 'terminations', 'transfers'].includes(rawTab) ? rawTab : 'list';
+  const section = tab === 'terminations' ? 'terminations' : tab === 'transfers' ? 'coach-transfers' : 'relationships';
   const page = Math.max(1, Number(params?.get('page')) || 1);
   const pageSize = Math.max(1, Number(params?.get('pageSize')) || 10);
   const search = params?.get('search') || '';
@@ -350,12 +351,6 @@ export async function renderRelationshipsPage({ root, params, shell }) {
     : tab === 'terminations'
       ? Boolean(search || statusFilter)
       : Boolean(search || fromDate || toDate);
-
-  const tabsHtml = `<div class="meta-tabs" role="tablist" aria-label="Quản lý quan hệ và kết thúc sớm">
-    <button type="button" class="meta-tab-btn${tab === 'list' ? ' active' : ''}" role="tab" aria-selected="${tab === 'list'}" data-rel-tab="list">Quan hệ Member–Coach</button>
-    <button type="button" class="meta-tab-btn${tab === 'terminations' ? ' active' : ''}" role="tab" aria-selected="${tab === 'terminations'}" data-rel-tab="terminations">Kết thúc sớm & Tranh chấp (D5)</button>
-    <button type="button" class="meta-tab-btn${tab === 'transfers' ? ' active' : ''}" role="tab" aria-selected="${tab === 'transfers'}" data-rel-tab="transfers">Lịch sử chuyển Coach</button>
-  </div>`;
 
   const listFilterCount = [statusFilter, pauseReasonFilter].filter(Boolean).length;
   const termFilterCount = [statusFilter].filter(Boolean).length;
@@ -425,10 +420,10 @@ export async function renderRelationshipsPage({ root, params, shell }) {
     </form>`;
   };
 
-  // Keep .meta-tabs and .filter-bar mounted during loading (guidelines §2)
+  // Keep .filter-bar mounted during loading (guidelines §2)
   shell({
-    section: 'relationships',
-    contentHtml: `<div class="stack-20">${tabsHtml}${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
+    section,
+    contentHtml: `<div class="stack-20">${buildFilterHtml(false)}${renderTableSkeleton(6)}</div>`,
   });
 
   const reloadWith = (patch = {}) => {
@@ -570,7 +565,6 @@ export async function renderRelationshipsPage({ root, params, shell }) {
         });
 
       const contentHtml = `<div class="stack-20">
-        ${tabsHtml}
         ${buildFilterHtml(rows.length > 0)}
         ${renderDataTable({
           columns,
@@ -586,7 +580,7 @@ export async function renderRelationshipsPage({ root, params, shell }) {
         })}
       </div>`;
 
-      shell({ section: 'relationships', contentHtml });
+      shell({ section, contentHtml });
 
       wireRelCommonHandlers({
         root,
@@ -697,7 +691,6 @@ export async function renderRelationshipsPage({ root, params, shell }) {
         });
 
       const contentHtml = `<div class="stack-20">
-        ${tabsHtml}
         ${buildFilterHtml(rows.length > 0)}
         ${renderDataTable({
           columns,
@@ -713,7 +706,7 @@ export async function renderRelationshipsPage({ root, params, shell }) {
         })}
       </div>`;
 
-      shell({ section: 'relationships', contentHtml });
+      shell({ section, contentHtml });
 
       wireRelCommonHandlers({
         root,
@@ -853,7 +846,6 @@ export async function renderRelationshipsPage({ root, params, shell }) {
       });
 
     const contentHtml = `<div class="stack-20">
-      ${tabsHtml}
       ${buildFilterHtml(rows.length > 0)}
       ${renderDataTable({
         columns,
@@ -869,7 +861,7 @@ export async function renderRelationshipsPage({ root, params, shell }) {
       })}
     </div>`;
 
-    shell({ section: 'relationships', contentHtml });
+    shell({ section, contentHtml });
 
     wireRelCommonHandlers({
       root,
@@ -924,11 +916,8 @@ export async function renderRelationshipsPage({ root, params, shell }) {
     });
   } catch (error) {
     shell({
-      section: 'relationships',
-      contentHtml: `<div class="stack-20">${tabsHtml}${renderErrorState({ title: 'Không tải được dữ liệu quan hệ', message: error?.message || 'Lỗi kết nối máy chủ' })}</div>`,
-    });
-    root.querySelectorAll('[data-rel-tab]').forEach((btn) => {
-      btn.onclick = () => reloadWith({ tab: btn.dataset.relTab, page: 1 });
+      section,
+      contentHtml: `<div class="stack-20">${renderErrorState({ title: 'Không tải được dữ liệu quan hệ', message: error?.message || 'Lỗi kết nối máy chủ' })}</div>`,
     });
     const retry = root.querySelector('#retry-load-btn');
     if (retry) retry.onclick = () => renderRelationshipsPage({ root, params, shell });
@@ -936,13 +925,6 @@ export async function renderRelationshipsPage({ root, params, shell }) {
 }
 
 function wireRelCommonHandlers({ root, tab, rows, pagination, prefix, reloadWith, onOpenFilterModal, onExport }) {
-  root.querySelectorAll('[data-rel-tab]').forEach((btn) => {
-    btn.onclick = () => {
-      const nextTab = btn.dataset.relTab;
-      if (nextTab && nextTab !== tab) reloadWith({ tab: nextTab, page: 1 });
-    };
-  });
-
   const debouncedSearch = debounce(() => reloadWith({ page: 1 }), 280);
   const searchInput = root.querySelector('#rel-search');
   if (searchInput) searchInput.oninput = () => debouncedSearch();

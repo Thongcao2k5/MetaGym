@@ -36,9 +36,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           <!-- _buildQuickActionDock: Học viên, Giáo trình, Dinh dưỡng, Lịch tập -->
           <div class="quick-dock">
             <div class="quick-tile"><img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_members.svg" alt="Học viên" /><div class="quick-lbl">Học viên</div></div>
-            <div class="quick-tile"><img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_coach_plans.svg" alt="Giáo trình" /><div class="quick-lbl">Giáo trình</div></div>
-            <div class="quick-tile"><img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Dinh dưỡng" /><div class="quick-lbl">Dinh dưỡng</div></div>
-            <div class="quick-tile"><img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_coach_sessions.svg" alt="Lịch tập" /><div class="quick-lbl">Lịch tập</div></div>
+            <div class="quick-tile"><img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_curriculum_3d.webp" alt="Giáo trình" /><div class="quick-lbl">Giáo trình</div></div>
+            <div class="quick-tile"><img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_nutrition_3d.webp" alt="Dinh dưỡng" /><div class="quick-lbl">Dinh dưỡng</div></div>
+            <div class="quick-tile"><img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_schedule_3d.webp" alt="Lịch tập" /><div class="quick-lbl">Lịch tập</div></div>
           </div>
 
           <!-- _buildHeroSummaryCard -->

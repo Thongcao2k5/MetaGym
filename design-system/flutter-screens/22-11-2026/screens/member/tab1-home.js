@@ -36,19 +36,19 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           <!-- _buildQuickActionDock: 4 nút squircle đối xứng -->
           <div class="quick-dock">
             <div class="quick-tile">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_schedule.svg" alt="Lịch tập" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_schedule_3d.webp" alt="Lịch tập" />
               <div class="quick-lbl">Lịch tập</div>
             </div>
             <div class="quick-tile">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_curriculum.svg" alt="Giáo trình" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_curriculum_3d.webp" alt="Giáo trình" />
               <div class="quick-lbl">Giáo trình</div>
             </div>
             <div class="quick-tile">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Dinh dưỡng" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_nutrition_3d.webp" alt="Dinh dưỡng" />
               <div class="quick-lbl">Dinh dưỡng</div>
             </div>
             <div class="quick-tile">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_coach.svg" alt="Coach" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/action_coach_3d.webp" alt="Coach" />
               <div class="quick-lbl">Coach</div>
             </div>
           </div>
@@ -165,19 +165,19 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
           </div>
           <div class="explore-4grid">
             <div class="explore-tile" data-go="member-gym-equipment">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Thiết bị" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/equip_machine_3d.webp" alt="Thiết bị" />
               <div class="explore-lbl">Thiết bị</div>
             </div>
             <div class="explore-tile" data-go="member-gym-visits">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/states/checkin_badge.svg" alt="Điểm danh" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/checkin_badge_3d.webp" alt="Điểm danh" />
               <div class="explore-lbl">Điểm danh</div>
             </div>
             <div class="explore-tile" data-go="member-measurement">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/progress/body_weight_scale.svg" alt="Chỉ số" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/body_weight_scale_3d.webp" alt="Chỉ số" />
               <div class="explore-lbl">Chỉ số</div>
             </div>
             <div class="explore-tile" data-go="member-coach-selection">
-              <img class="ico-dock" src="../../meta-gym/assets/svg/coaching/coach_pkg_1on1.svg" alt="Coach" />
+              <img class="ico-dock ico-3d" src="../../meta-gym/assets/images/icons_3d/coach_search_3d.webp" alt="Coach" />
               <div class="explore-lbl">Coach</div>
             </div>
           </div>

@@ -3,41 +3,63 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import { createAuthRouter } from './routes/auth.routes.js';
-import { createAdminAuditRouter } from './routes/admin-audit.routes.js';
-import { createAdminUsersRouter } from './routes/admin-users.routes.js';
-import { createHealthRouter } from './routes/health.routes.js';
-import { createUsersRouter } from './routes/users.routes.js';
-import { createMembershipPlansRouter } from './routes/membership-plans.routes.js';
-import { createCoachPackagesRouter } from './routes/coach-packages.routes.js';
-import { createCoachScheduleRouter } from './routes/coach-schedule.routes.js';
-import { createCoachPaymentHoldsRouter } from './routes/coach-payment-holds.routes.js';
-import { createCoachBookingsRouter } from './routes/coach-bookings.routes.js';
-import { createPaymentsRouter, createVnpayCallbacksRouter, createMomoCallbacksRouter,
-  createZalopayCallbacksRouter } from './routes/payments.routes.js';
-import { createCoachingRouter } from './routes/coaching.routes.js';
-import { createCoachIncidentsRouter } from './routes/coach-incidents.routes.js';
-import { createCoachOutcomesRouter } from './routes/coach-outcomes.routes.js';
-import { createCatalogRouter } from './routes/catalog.routes.js';
-import { createTrainingRouter } from './routes/training.routes.js';
-import { retireLegacyWrites } from './routes/legacy-v1.routes.js';
-import { createStructuredNutritionRouter } from './routes/structured-nutrition.routes.js';
-import { createSessionsRouter } from './routes/sessions.routes.js';
-import { createMessagingRouter } from './routes/messaging.routes.js';
+import { createAuthRouter, createPasswordResetsRouter } from './modules/auth/index.js';
+import {
+  createUsersRouter,
+  createAdminUsersRouter,
+  createAdminAuditRouter,
+  createStaffRouter,
+} from './modules/users/index.js';
+import {
+  createCoachingRouter,
+  createCoachPackagesRouter,
+  createCoachScheduleRouter,
+  createCoachCalendarRouter,
+  createCoachPaymentHoldsRouter,
+  createCoachBookingsRouter,
+  createCoachIncidentsRouter,
+  createCoachOutcomesRouter,
+} from './modules/coaching/index.js';
+import { createMembershipPlansRouter, createGymVisitsRouter } from './modules/memberships/index.js';
+import {
+  createPaymentsRouter,
+  createVnpayCallbacksRouter,
+  createMomoCallbacksRouter,
+  createZalopayCallbacksRouter,
+  createVouchersRouter,
+} from './modules/payments/index.js';
+import {
+  createMediaRouter,
+  createImagesRouter,
+  createImageCollectionsRouter,
+  createImageAdminRouter,
+} from './modules/media/index.js';
+import {
+  createTrainingRouter,
+  createMemberSelfTrainingRouter,
+  createCatalogRouter,
+} from './modules/training/index.js';
+import {
+  createStructuredNutritionRouter,
+  createMemberNutritionRouter,
+} from './modules/nutrition/index.js';
+import { createProgressRouter, createJournalRouter } from './modules/tracking/index.js';
+import {
+  createMessagingRouter,
+  createCallsRouter,
+  createSessionsRouter,
+  createAiConversationsRouter,
+} from './modules/communication/index.js';
+import {
+  createHealthRouter,
+  createDashboardRouter,
+  createDatabaseUiRouter,
+  createDocsRouter,
+  createSystemInfoRouter,
+  retireLegacyWrites,
+} from './modules/system/index.js';
 import { createRealtimeRouter } from './config/realtime.js';
 import { createNotificationsRouter } from './routes/notifications.routes.js';
-import { createMemberNutritionRouter } from './routes/member-nutrition.routes.js';
-import { createProgressRouter } from './routes/progress.routes.js';
-import { createJournalRouter } from './routes/journal.routes.js';
-import { createMemberSelfTrainingRouter } from './routes/member-self-training.routes.js';
-import { createGymVisitsRouter } from './routes/gym-visits.routes.js';
-import { createDashboardRouter } from './routes/dashboard.routes.js';
-import { createAiConversationsRouter } from './routes/ai-conversations.routes.js';
-import { createCallsRouter } from './routes/calls.routes.js';
-import { createDocsRouter } from './routes/docs.routes.js';
-import { createDatabaseUiRouter } from './routes/database-ui.routes.js';
-import { createPasswordResetsRouter } from './routes/password-resets.routes.js';
-import { createMediaRouter } from './routes/media.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
 
 const JWT_SECRET_PLACEHOLDER =
@@ -140,10 +162,17 @@ export function createApp({
   app.use('/api/v1/payments/zalopay', createZalopayCallbacksRouter({ database, zalopay }));
   app.use('/api/v1', createPasswordResetsRouter({ database, sendPasswordResetCode }));
   app.use('/api/v1', createMediaRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createSystemInfoRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createVouchersRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createImagesRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createImageCollectionsRouter({ database, jwtSecret, imageStorage }));
+  app.use('/api/v1', createImageAdminRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1/users', createUsersRouter({ database, jwtSecret, imageStorage }));
-  app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
+  app.use('/api/v1/admin', createStaffRouter({ database, jwtSecret }));
+  app.use('/api/v1/admin', createCoachCalendarRouter({ database, jwtSecret }));
+  app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1', createAdminAuditRouter({ database, jwtSecret }));
-  app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
+  app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret, imageStorage }));
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPaymentHoldsRouter({ database, jwtSecret }));

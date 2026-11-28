@@ -7,6 +7,21 @@ const SECTION_ALIASES = {
   notifications: 'notification',
   design: 'design-system',
   'ui-kit': 'design-system',
+  images: 'media-library',
+  library: 'media-library',
+  sharing: 'media-sharing',
+  'api-keys': 'media-sharing',
+  storage: 'media-analytics',
+  analytics: 'media-analytics',
+  settings: 'media-settings',
+  system: 'system-info',
+  nhansu: 'staff',
+  'staff-positions': 'staff',
+  positions: 'staff',
+  voucher: 'vouchers',
+  promo: 'vouchers',
+  schedule: 'coach-schedule',
+  calendar: 'coach-schedule',
 };
 
 export function normalizeSection(rawSection) {

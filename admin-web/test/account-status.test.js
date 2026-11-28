@@ -393,3 +393,498 @@ test('Admin dashboard không hiển thị thẻ Yêu cầu chọn Coach', async 
   assert.equal(env.root.innerHTML.includes('Yêu cầu chọn Coach'), false);
   assert.equal(env.root.innerHTML.includes('Gói Gym đang sử dụng'), true);
 });
+
+test('Member Edit Modal validates fullName/email/phone inline, blocks unchanged submit, and sends PATCH with normalized fields', async () => {
+  const { env, requests } = await setupAccounts({ role: 'MEMBER', initialStatus: 'ACTIVE' });
+
+  env.root.querySelector('.edit').click();
+  await flush();
+
+  const dlg = env.modalDialog;
+  assert.equal(dlg.innerHTML.includes('name="memberLimit"'), false);
+  assert.equal(dlg.innerHTML.includes('healthNotes'), false);
+
+  const nameInput = dlg.querySelector('[name="fullName"]');
+  const emailInput = dlg.querySelector('[name="email"]');
+  const phoneInput = dlg.querySelector('[name="phone"]');
+  const form = dlg.querySelector('#account-form');
+
+  assert.equal(nameInput.value, 'Member Test');
+  assert.equal(emailInput.value, 'member@test.local');
+  assert.equal(phoneInput.value, '0900000000');
+
+  // Unchanged submit does not send PATCH
+  form.dispatchEvent({ type: 'submit' });
+  await flush();
+  assert.equal(requests.some((r) => r.method === 'PATCH'), false);
+  assert.equal(dlg.innerHTML.includes('Chưa có thay đổi nào để lưu'), true);
+
+  // Invalid email & phone show inline errors and block PATCH
+  emailInput.value = 'invalid-email';
+  phoneInput.value = '1234';
+  form.dispatchEvent({ type: 'submit' });
+  await flush();
+  assert.equal(requests.some((r) => r.method === 'PATCH'), false);
+  assert.equal(dlg.querySelector('#edit-email-error').textContent.includes('không hợp lệ'), true);
+  assert.equal(dlg.querySelector('#edit-phone-error').textContent.includes('8–15 chữ số'), true);
+  assert.equal(emailInput.getAttribute('aria-invalid'), 'true');
+  assert.equal(phoneInput.getAttribute('aria-invalid'), 'true');
+
+  // Input event clears inline error
+  emailInput.value = '  Member.Updated@Test.Local ';
+  emailInput.dispatchEvent({ type: 'input' });
+  assert.equal(dlg.querySelector('#edit-email-error').textContent, '');
+  assert.equal(emailInput.getAttribute('aria-invalid'), null);
+
+  // Valid update clearing phone to null
+  nameInput.value = '  Nguyễn Minh Anh  ';
+  phoneInput.value = '   ';
+  form.dispatchEvent({ type: 'submit' });
+  await flush();
+
+  const patch = requests.find((r) => r.method === 'PATCH' && r.path === '/api/v1/admin/users/member-test-id');
+  assert.ok(patch);
+  assert.deepEqual(patch.body, {
+    fullName: 'Nguyễn Minh Anh',
+    email: 'member.updated@test.local',
+    phone: null,
+  });
+  assert.equal(env.modalOverlay.hidden, true);
+});
+
+test('Member Edit Modal preserves inputs and displays inline email error on 409 EMAIL_ALREADY_EXISTS', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/members', token: 'test-admin-token' });
+  setToken('test-admin-token');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  let member = {
+    id: 'member-409',
+    fullName: 'Lê Thị Hoa',
+    email: 'hoa@metagym.vn',
+    phone: '0901234567',
+    role: 'MEMBER',
+    status: 'ACTIVE',
+  };
+  let failOnce = true;
+
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    const body = options.body ? JSON.parse(options.body) : undefined;
+    if (parsed.pathname === '/api/v1/admin/users' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [member], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    if (parsed.pathname === '/api/v1/admin/users/member-409' && options.method === 'PATCH') {
+      if (failOnce) {
+        failOnce = false;
+        return jsonResponse({
+          error: {
+            code: 'EMAIL_ALREADY_EXISTS',
+            message: 'Email đã được sử dụng',
+            details: { fields: { email: ['Email này đã tồn tại trên hệ thống'] } },
+          },
+        }, 409);
+      }
+      member = { ...member, ...body };
+      return jsonResponse({ data: member });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderAccountsPage({
+    root: env.root,
+    role: 'MEMBER',
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Admin' }, ...opts }),
+  });
+
+  env.root.querySelector('.edit').click();
+  await flush();
+
+  const emailInput = env.modalDialog.querySelector('[name="email"]');
+  const phoneInput = env.modalDialog.querySelector('[name="phone"]');
+  emailInput.value = 'taken@metagym.vn';
+  phoneInput.value = '+84 912 345 678';
+  env.modalDialog.querySelector('#account-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(env.modalOverlay.hidden, false, 'Modal must stay open on 409');
+  assert.equal(emailInput.value, 'taken@metagym.vn', 'Preserves email on 409');
+  assert.equal(phoneInput.value, '+84 912 345 678', 'Preserves phone on 409');
+  assert.equal(env.modalDialog.querySelector('#edit-email-error').textContent, 'Email này đã tồn tại trên hệ thống');
+  assert.equal(env.modalDialog.innerHTML.includes('Email đã được sử dụng'), true);
+
+  emailInput.value = 'hoa.new@metagym.vn';
+  env.modalDialog.querySelector('#account-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(env.modalOverlay.hidden, true);
+  assert.equal(env.root.innerHTML.includes('hoa.new@metagym.vn'), true);
+});
+
+test('Member Edit Modal supports Avatar removal and editing full member_profiles DB fields with T18 privacy guard', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/members', token: 'test-admin-token' });
+  setToken('test-admin-token');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  const member = {
+    id: 'member-full-db',
+    fullName: 'Hoàng Thùy Linh',
+    email: 'linh@metagym.vn',
+    phone: '0909888999',
+    avatarMediaId: 'media-avatar-111',
+    avatarUrl: '/api/v1/users/member-full-db/avatar',
+    role: 'MEMBER',
+    status: 'ACTIVE',
+    dateOfBirth: '1998-12-25',
+    gender: 'FEMALE',
+    heightCm: 165,
+    fitnessGoal: 'Giữ dáng và tăng thể lực',
+    experienceLevel: 'BEGINNER',
+    activityLevel: 'MODERATE',
+    dietaryPreferences: 'Ăn ít tinh bột',
+  };
+
+  let patchSent = null;
+
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    const body = options.body ? JSON.parse(options.body) : undefined;
+    if (parsed.pathname === '/api/v1/admin/users' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [member], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    if (parsed.pathname === '/api/v1/admin/users/member-full-db' && options.method === 'PATCH') {
+      patchSent = body;
+      return jsonResponse({ data: { ...member, ...body } });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderAccountsPage({
+    root: env.root,
+    role: 'MEMBER',
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Admin' }, ...opts }),
+  });
+
+  // Table displays real avatar image
+  assert.equal(env.root.innerHTML.includes('/api/v1/users/member-full-db/avatar'), true);
+
+  env.root.querySelector('.edit').click();
+  await flush();
+
+  const dlg = env.modalDialog;
+  // T18 Privacy compliance: NO health or injury notes anywhere
+  assert.equal(dlg.innerHTML.includes('healthNotes'), false);
+  assert.equal(dlg.innerHTML.includes('injuryNotes'), false);
+
+  // Avatar UI elements
+  const removeAvatarBtn = dlg.querySelector('#btn-remove-avatar');
+  const pickAvatarBtn = dlg.querySelector('#btn-pick-avatar');
+  assert.ok(removeAvatarBtn);
+  assert.ok(pickAvatarBtn);
+  assert.equal(removeAvatarBtn.style.display !== 'none', true);
+
+  // Profile fields exist and are populated
+  const genderInput = dlg.querySelector('[name="gender"]');
+  const dobInput = dlg.querySelector('[name="dateOfBirth"]');
+  const heightInput = dlg.querySelector('[name="heightCm"]');
+  const goalInput = dlg.querySelector('[name="fitnessGoal"]');
+  const expInput = dlg.querySelector('[name="experienceLevel"]');
+  const actInput = dlg.querySelector('[name="activityLevel"]');
+  const dietInput = dlg.querySelector('[name="dietaryPreferences"]');
+
+  assert.equal(genderInput.value, 'FEMALE');
+  assert.equal(dobInput.value, '1998-12-25');
+  assert.equal(heightInput.value, '165');
+  assert.equal(goalInput.value, 'Giữ dáng và tăng thể lực');
+  assert.equal(expInput.value, 'BEGINNER');
+  assert.equal(actInput.value, 'MODERATE');
+  assert.equal(dietInput.value, 'Ăn ít tinh bột');
+
+  // Trigger avatar removal
+  removeAvatarBtn.click();
+  assert.equal(removeAvatarBtn.style.display, 'none');
+
+  // Mutate profile fields
+  heightInput.value = '167';
+  goalInput.value = 'Tăng cơ toàn diện và chạy 10km';
+  expInput.value = 'INTERMEDIATE';
+
+  // Submit modal
+  dlg.querySelector('#account-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.ok(patchSent, 'PATCH request must be sent');
+  assert.equal(patchSent.avatarMediaId, null, 'Must request removal of avatarMediaId');
+  assert.equal(patchSent.heightCm, 167);
+  assert.equal(patchSent.fitnessGoal, 'Tăng cơ toàn diện và chạy 10km');
+  assert.equal(patchSent.experienceLevel, 'INTERMEDIATE');
+  assert.equal(env.modalOverlay.hidden, true);
+});
+
+test('Member Edit Modal uploads avatar file via uploadRaw and saves successfully', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/members', token: 'test-admin-token' });
+  setToken('test-admin-token');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  const member = {
+    id: 'member-upload-avatar',
+    fullName: 'Nguyễn Trung Hậu',
+    email: 'nthau.22022006@gmail.com',
+    phone: '0901234567',
+    avatarMediaId: null,
+    avatarUrl: null,
+    role: 'MEMBER',
+    status: 'ACTIVE',
+    profile: {
+      dateOfBirth: '2000-02-22',
+      gender: 'MALE',
+      heightCm: 170,
+      fitnessGoal: 'Giảm mỡ',
+      experienceLevel: 'BEGINNER',
+      activityLevel: 'LIGHT',
+      dietaryPreferences: 'Eat clean',
+    },
+  };
+
+  let avatarUploaded = false;
+
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.pathname === '/api/v1/admin/users' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [member], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    if (parsed.pathname === '/api/v1/admin/users/member-upload-avatar/avatar' && options.method === 'POST') {
+      avatarUploaded = true;
+      assert.equal(options.headers?.Authorization, 'Bearer test-admin-token');
+      return jsonResponse({ data: { ...member, avatarMediaId: 'new-media-id-123' } });
+    }
+    if (parsed.pathname === '/api/v1/admin/users/member-upload-avatar' && options.method === 'PATCH') {
+      let body;
+      try { body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body; } catch {}
+      return jsonResponse({ data: { ...member, ...body } });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderAccountsPage({
+    root: env.root,
+    role: 'MEMBER',
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Admin' }, ...opts }),
+  });
+  await flush();
+
+  env.root.querySelector('.edit').click();
+  await flush();
+
+  const dlg = env.modalDialog;
+  const fileInput = dlg.querySelector('#edit-avatar-file');
+  assert.ok(fileInput);
+
+  // Simulate file selection
+  const fakeFile = new Blob(['fake-image-bytes'], { type: 'image/jpeg' });
+  fakeFile.name = 'avatar.jpg';
+  fileInput.dispatchEvent({ type: 'change', target: { files: [fakeFile] } });
+  await flush();
+
+  // Confirm crop in the cropper modal
+  const cropperApplyBtn = env.document.querySelector('[data-cropper-apply]');
+  assert.ok(cropperApplyBtn, 'Cropper modal Apply button must exist');
+  cropperApplyBtn.click();
+  await flush();
+
+  // Submit modal form
+  dlg.querySelector('#account-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.equal(avatarUploaded, true, 'Avatar file must be uploaded to server');
+  assert.equal(env.modalOverlay.hidden, true, 'Modal should be closed on success');
+});
+
+test('Member Edit Modal renders compact avatar dropdown button, toggles menu, and opens Image Viewer on demand', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/members', token: 'test-admin-token' });
+  setToken('test-admin-token');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  const member = {
+    id: 'member-view-avatar',
+    fullName: 'Nguyễn Trung Hậu',
+    email: 'nthau.22022006@gmail.com',
+    phone: '0901234567',
+    avatarMediaId: 'media-avatar-999',
+    avatarUrl: '/api/v1/users/member-view-avatar/avatar',
+    role: 'MEMBER',
+    status: 'ACTIVE',
+    profile: {
+      dateOfBirth: '2000-02-22',
+      gender: 'MALE',
+      heightCm: 170,
+      fitnessGoal: 'Giảm mỡ',
+      experienceLevel: 'BEGINNER',
+      activityLevel: 'LIGHT',
+      dietaryPreferences: 'Eat clean',
+    },
+  };
+
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.pathname === '/api/v1/admin/users' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [member], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderAccountsPage({
+    root: env.root,
+    role: 'MEMBER',
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Admin' }, ...opts }),
+  });
+  await flush();
+
+  // 1. Table row avatar has data-view-avatar and clicking opens Image Viewer
+  const tableAvatar = env.root.querySelector('[data-view-avatar]');
+  assert.ok(tableAvatar, 'Table avatar should have data-view-avatar');
+  tableAvatar.click();
+  await flush();
+
+  let viewerOverlay = env.document.getElementById('meta-image-viewer-overlay');
+  assert.ok(viewerOverlay, 'Image Viewer overlay should exist in DOM');
+  assert.equal(viewerOverlay.hidden, false, 'Viewer overlay should be visible');
+  assert.equal(viewerOverlay.innerHTML.includes('Nguyễn Trung Hậu'), true);
+
+  // Close viewer
+  viewerOverlay.querySelector('[data-viewer-close]').click();
+  assert.equal(viewerOverlay.hidden, true, 'Viewer overlay should be hidden on close');
+
+  // 2. Open Member Edit Modal
+  env.root.querySelector('.edit').click();
+  await flush();
+
+  const dlg = env.modalDialog;
+
+  // Single collapsed dropdown button exists
+  const dropdownBtn = dlg.querySelector('#btn-avatar-dropdown');
+  const dropdownMenu = dlg.querySelector('#avatar-dropdown-menu');
+  assert.ok(dropdownBtn, 'Compact avatar dropdown button must exist');
+  assert.ok(dropdownMenu, 'Avatar dropdown menu must exist');
+  assert.equal(dropdownMenu.hidden, true, 'Dropdown menu should be initially hidden');
+  assert.equal(dropdownBtn.getAttribute('aria-expanded'), 'false');
+
+  // Click dropdown button to toggle open
+  dropdownBtn.click();
+  assert.equal(dropdownMenu.hidden, false, 'Dropdown menu should be open');
+  assert.equal(dropdownBtn.getAttribute('aria-expanded'), 'true');
+
+  // All actions are grouped into this dropdown menu
+  const viewItem = dlg.querySelector('#btn-view-avatar');
+  const pickItem = dlg.querySelector('#btn-pick-avatar');
+  const cropItem = dlg.querySelector('#btn-crop-avatar');
+  const removeItem = dlg.querySelector('#btn-remove-avatar');
+
+  assert.ok(viewItem, 'View avatar item must exist in menu');
+  assert.ok(pickItem, 'Upload avatar item must exist in menu');
+  assert.ok(cropItem, 'Crop avatar item must exist in menu');
+  assert.ok(removeItem, 'Remove avatar item must exist in menu');
+
+  // Clicking "Xem ảnh phóng to" inside menu opens Image Viewer
+  viewItem.click();
+  await flush();
+
+  assert.equal(dropdownMenu.hidden, true, 'Dropdown menu should close after action click');
+  viewerOverlay = env.document.getElementById('meta-image-viewer-overlay');
+  assert.equal(viewerOverlay.hidden, false, 'Viewer overlay should be opened from dropdown menu');
+  assert.equal(viewerOverlay.innerHTML.includes('/api/v1/users/member-view-avatar/avatar'), true);
+
+  // Close viewer
+  viewerOverlay.querySelector('[data-viewer-close]').click();
+  assert.equal(viewerOverlay.hidden, true);
+
+  // Clicking the avatar preview circle directly also opens Image Viewer
+  const previewWrap = dlg.querySelector('#avatar-preview-wrap');
+  assert.ok(previewWrap);
+  previewWrap.click();
+  await flush();
+  assert.equal(viewerOverlay.hidden, false, 'Direct avatar preview click should open Image Viewer');
+  viewerOverlay.querySelector('[data-viewer-close]').click();
+});
+
+test('Coach Edit Modal updates avatar removal, email, phone, and coach_profiles fields without memberLimit input', async () => {
+  const env = createDomEnvironment({ hash: '#/admin/coaches', token: 'test-admin-token' });
+  setToken('test-admin-token');
+  setCurrentUser({ id: 'adm-1', role: 'ADMIN', fullName: 'Admin' });
+
+  const coach = {
+    id: 'coach-edit-1',
+    fullName: 'Lê Hoàng Nam',
+    email: 'nam.coach@metagym.vn',
+    phone: '0912345678',
+    avatarMediaId: 'coach-av-1',
+    avatarUrl: '/api/v1/users/coach-edit-1/avatar',
+    role: 'COACH',
+    status: 'ACTIVE',
+    usedSlots: 3,
+    memberLimit: 8,
+    experienceYears: 4,
+    qualifications: 'PT Quốc gia',
+    specialties: ['Tăng cơ'],
+    availabilityNote: 'Thứ 2 – Thứ 6',
+    biography: 'HLV cá nhân.',
+  };
+
+  let patchSent = null;
+  globalThis.fetch = async (url, options = {}) => {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.pathname === '/api/v1/admin/users' && (!options.method || options.method === 'GET')) {
+      return jsonResponse({ data: [coach], pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 } });
+    }
+    if (parsed.pathname === '/api/v1/admin/users/coach-edit-1' && options.method === 'PATCH') {
+      patchSent = JSON.parse(options.body);
+      Object.assign(coach, patchSent);
+      if (patchSent.avatarMediaId === null) coach.avatarUrl = null;
+      return jsonResponse({ data: coach });
+    }
+    throw new Error(`Unexpected ${options.method || 'GET'} ${parsed.pathname}`);
+  };
+
+  await renderAccountsPage({
+    root: env.root,
+    role: 'COACH',
+    params: new URLSearchParams(),
+    shell: (opts) => renderShell({ root: env.root, user: { fullName: 'Admin' }, ...opts }),
+  });
+
+  env.root.querySelector('.edit').click();
+  await flush();
+
+  const dlg = env.modalDialog;
+  assert.equal(dlg.querySelector('[name="memberLimit"]'), null, 'Coach edit modal must NEVER expose editable memberLimit');
+  assert.equal(dlg.innerHTML.includes('Cập nhật Huấn luyện viên: Lê Hoàng Nam'), true);
+
+  dlg.querySelector('#btn-remove-avatar').click();
+  dlg.querySelector('[name="fullName"]').value = 'Lê Hoàng Nam Pro';
+  dlg.querySelector('[name="email"]').value = 'nam.pro@metagym.vn';
+  dlg.querySelector('[name="phone"]').value = '0987654321';
+  dlg.querySelector('[name="experienceYears"]').value = '6';
+  dlg.querySelector('[name="qualifications"]').value = 'NASM-CPT, Rehab Specialist';
+  dlg.querySelector('[name="specialties"]').value = 'Tăng cơ, Giảm mỡ, Calisthenics';
+  dlg.querySelector('[name="availabilityNote"]').value = 'Thứ 2 – Thứ 7 · 06:00 – 21:00';
+  dlg.querySelector('[name="biography"]').value = '6 năm huấn luyện vận động viên và thể hình.';
+
+  dlg.querySelector('#account-form').dispatchEvent({ type: 'submit' });
+  await flush();
+
+  assert.deepEqual(patchSent, {
+    fullName: 'Lê Hoàng Nam Pro',
+    email: 'nam.pro@metagym.vn',
+    phone: '0987654321',
+    avatarMediaId: null,
+    experienceYears: 6,
+    qualifications: 'NASM-CPT, Rehab Specialist',
+    specialties: ['Tăng cơ', 'Giảm mỡ', 'Calisthenics'],
+    availabilityNote: 'Thứ 2 – Thứ 7 · 06:00 – 21:00',
+    biography: '6 năm huấn luyện vận động viên và thể hình.',
+  });
+  assert.equal(env.modalOverlay.hidden, true);
+});

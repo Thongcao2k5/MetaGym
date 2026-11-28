@@ -157,6 +157,7 @@ async function openPaymentDetailDrawer(paymentId, fallbackRow, onReversed) {
         <div class="impact-row"><span class="impact-key">Gói Gym (Snapshot)</span><span class="impact-val">${esc(payment.planName)} (${esc(payment.durationDays)} ngày)</span></div>
         <div class="impact-row"><span class="impact-key">Kênh thanh toán</span><span class="impact-val">${esc(methodLabel(payment.method))}</span></div>
         <div class="impact-row"><span class="impact-key">Số tiền</span><span class="impact-val tabular" style="font-size:16px">${vnd(payment.amount)}</span></div>
+        ${payment.voucherCode ? `<div class="impact-row"><span class="impact-key">Voucher áp dụng</span><span class="impact-val tabular"><code class="voucher-code-pill">${esc(payment.voucherCode)}</code> (-${vnd(payment.discountAmount || 0)} từ ${vnd(payment.originalAmount || payment.amount)})</span></div>` : ''}
         <div class="impact-row"><span class="impact-key">Trạng thái</span><span class="impact-val">${statusBadge(payment.status)}</span></div>
         <div class="impact-row"><span class="impact-key">Thời điểm tạo (VN)</span><span class="impact-val tabular">${formatDateTimeVN(payment.createdAt, { withSeconds: true })}</span></div>
         ${payment.confirmedAt ? `<div class="impact-row"><span class="impact-key">Xác nhận lúc (VN)</span><span class="impact-val tabular">${formatDateTimeVN(payment.confirmedAt, { withSeconds: true })}</span></div>` : ''}
@@ -307,15 +308,20 @@ export async function renderPaymentsPage({ root, params, shell }) {
       totalItems: rows.length,
       totalPages: Math.max(1, Math.ceil(rows.length / pageSize)),
     };
-    const activePlans = (plansRes?.data || []).filter((p) => p.status === 'ACTIVE');
+    const activePlans = (plansRes?.data || []).filter((p) => p.status === 'ACTIVE' && p.isOnSale !== false);
     let memberOptions = initialMembersRes?.data || [];
     const totalActiveMembers = Number(initialMembersRes?.pagination?.totalItems ?? memberOptions.length);
 
     let selectedMember = null;
     let selectedPlan = activePlans[0] || null;
+    let appliedVoucher = null;
     const frontDeskIdem = createIdempotencyManager();
 
-    const getSelectionSignature = () => (selectedMember && selectedPlan ? `${selectedMember.id}:${selectedPlan.id}` : '');
+    const getSelectionSignature = () => {
+      if (!selectedMember || !selectedPlan) return '';
+      const vCode = appliedVoucher?.voucher?.code || '';
+      return vCode ? `${selectedMember.id}:${selectedPlan.id}:${vCode}` : `${selectedMember.id}:${selectedPlan.id}`;
+    };
     const getActiveKey = () => {
       const sig = getSelectionSignature();
       return sig ? frontDeskIdem.getKey(sig) : 'Chưa chọn đủ hội viên & gói';
@@ -323,6 +329,7 @@ export async function renderPaymentsPage({ root, params, shell }) {
 
     const renderFrontDeskPreviewHtml = () => {
       const key = getActiveKey();
+      const payableAmount = appliedVoucher ? Number(appliedVoucher.finalAmount) : Number(selectedPlan?.price || 0);
       if (!selectedMember || !selectedPlan) {
         return `<div class="impact-box">
           <div class="impact-row"><span class="impact-key">Hội viên</span><span class="impact-val">${selectedMember ? esc(selectedMember.fullName) : 'Chưa chọn hội viên'}</span></div>
@@ -339,9 +346,10 @@ export async function renderPaymentsPage({ root, params, shell }) {
         <div class="impact-row"><span class="impact-key">Gói Gym chọn</span><span class="impact-val">${esc(selectedPlan.name)} (${esc(selectedPlan.durationDays)} ngày)</span></div>
         <div class="impact-row"><span class="impact-key">Trạng thái dự kiến</span><span class="impact-val">${statusBadge(outcome.status)}</span></div>
         <div class="impact-row"><span class="impact-key">Hiệu lực dự kiến (VN)</span><span class="impact-val tabular">${esc(outcome.label)}</span></div>
+        ${appliedVoucher ? `<div class="impact-row"><span class="impact-key">Voucher áp dụng</span><span class="impact-val tabular"><code class="voucher-code-pill">${esc(appliedVoucher.voucher.code)}</code> (-${vnd(appliedVoucher.discountAmount)})</span></div>` : ''}
         <div class="impact-row"><span class="impact-key">Idempotency-Key</span><span class="impact-val tabular" id="fd-idem-display" style="font-size:11.5px;color:var(--meta-reflection)">${esc(key)}</span></div>
         <div class="impact-divider"></div>
-        <div class="impact-row"><span class="impact-key">Số tiền thu tại quầy</span><span class="impact-val tabular" style="font-size:20px;color:var(--meta-success)">${vnd(selectedPlan.price)}</span></div>
+        <div class="impact-row"><span class="impact-key">Số tiền thu tại quầy</span><span class="impact-val tabular" style="font-size:20px;color:var(--meta-success)">${vnd(payableAmount)}</span></div>
         <button type="button" class="btn btn-primary" id="fd-confirm-btn" style="width:100%;margin-top:4px">${icon('check', 16)} Xác nhận thu tiền gói Gym</button>
       </div>`;
     };
@@ -489,6 +497,15 @@ export async function renderPaymentsPage({ root, params, shell }) {
                   : '<option value="">Không có gói Gym nào đang mở bán</option>'}
               </select>
             </div>
+
+            <div class="field">
+              <label class="field-label" for="fd-voucher-code">Mã Voucher (tùy chọn)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="fd-voucher-code" class="form-control" placeholder="VD: METAGYM150K, TANGBI20" style="text-transform:uppercase;font-family:monospace;font-weight:700" />
+                <button type="button" class="btn btn-graphite btn-sm" id="fd-apply-voucher" style="white-space:nowrap">${icon('tag', 15)} Áp dụng</button>
+              </div>
+              <span class="field-hint" id="fd-voucher-feedback">Bỏ trống nếu thu theo nguyên giá niêm yết.</span>
+            </div>
           </div>
 
           <div id="fd-preview-box">${renderFrontDeskPreviewHtml()}</div>
@@ -537,22 +554,66 @@ export async function renderPaymentsPage({ root, params, shell }) {
             confirmIcon: 'check',
             onConfirm: async () => {
               const requestKey = frontDeskIdem.getKey(sig);
+              const postBody = { memberId: selectedMember.id, planId: selectedPlan.id };
+              if (appliedVoucher?.voucher?.code) postBody.voucherCode = appliedVoucher.voucher.code;
               const res = await api(
                 '/admin/front-desk-payments',
                 'POST',
-                { memberId: selectedMember.id, planId: selectedPlan.id },
+                postBody,
                 requestKey,
               );
               frontDeskIdem.reset();
               const txCode = res?.data?.payment?.transactionCode || '';
               const msStatus = res?.data?.membership?.status || outcome.status;
+              const paidAmt = res?.data?.payment?.amount ?? payableAmount;
               await reloadWith({ page: 1 });
-              notice(`Đã ghi nhận giao dịch ${txCode} (${vnd(selectedPlan.price)}) · Gói Gym ${msStatus}.`);
+              notice(`Đã ghi nhận giao dịch ${txCode} (${vnd(paidAmt)}) · Gói Gym ${msStatus}.`);
             },
           });
         };
       }
     };
+
+    const voucherInput = root.querySelector('#fd-voucher-code');
+    const applyVoucherBtn = root.querySelector('#fd-apply-voucher');
+    const voucherFeedback = root.querySelector('#fd-voucher-feedback');
+
+    if (applyVoucherBtn && voucherInput) {
+      applyVoucherBtn.onclick = async () => {
+        const code = voucherInput.value.trim().toUpperCase();
+        if (!code) {
+          appliedVoucher = null;
+          if (voucherFeedback) voucherFeedback.textContent = 'Bỏ trống nếu thu theo nguyên giá niêm yết.';
+          syncPreview();
+          return;
+        }
+        if (!selectedPlan) {
+          toast('Vui lòng chọn gói Gym trước khi áp dụng Voucher.', 'warn');
+          return;
+        }
+        applyVoucherBtn.disabled = true;
+        try {
+          const res = await api('/vouchers/preview', 'POST', {
+            code,
+            planId: selectedPlan.id,
+            scope: 'GYM_PLAN',
+            ...(selectedMember ? { memberId: selectedMember.id } : {}),
+          });
+          appliedVoucher = res?.data || null;
+          if (voucherFeedback && appliedVoucher) {
+            voucherFeedback.textContent = `Đã áp dụng ${appliedVoucher.voucher.code}: giảm ${vnd(appliedVoucher.discountAmount)} (còn ${vnd(appliedVoucher.finalAmount)}).`;
+          }
+          syncPreview();
+        } catch (err) {
+          appliedVoucher = null;
+          if (voucherFeedback) voucherFeedback.textContent = err.message;
+          toast(err.message, 'danger');
+          syncPreview();
+        } finally {
+          applyVoucherBtn.disabled = false;
+        }
+      };
+    }
 
     const bindComboOptions = () => {
       listbox?.querySelectorAll('[data-pick-member]').forEach((btn) => {

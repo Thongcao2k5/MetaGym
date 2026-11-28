@@ -7,56 +7,77 @@ import 'package:meta_gym_app/core/theme/meta_gym_icon_mapper.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
-/// Architectural background and scrim from the approved Auth HTML preview.
+/// Nền kiến trúc Meta Gym (Architectural Spatial Light Ribbons) đồng bộ
+/// DESIGN.md cho cả chế độ Tối (`bg_app_dark.webp`) và Sáng (`bg_app_light.webp`).
 class MetaGymBackground extends StatelessWidget {
   const MetaGymBackground({this.useSolidFallback = false, super.key});
 
   final bool useSolidFallback;
 
-  static const darkAsset = AssetImage('assets/images/bg_app_dark.webp');
-  static const lightAsset = AssetImage('assets/images/bg_app_light.webp');
+  static const AssetImage darkBackgroundAsset = AssetImage(
+    'assets/images/backgrounds/bg_app_dark.webp',
+  );
+  static const AssetImage lightBackgroundAsset = AssetImage(
+    'assets/images/backgrounds/bg_app_light.webp',
+  );
+
+  /// Alias giữ tương thích ngược với các chỗ gọi cũ.
+  static const AssetImage darkAsset = darkBackgroundAsset;
+  static const AssetImage lightAsset = lightBackgroundAsset;
+  static const AssetImage bannerAsset = darkBackgroundAsset;
 
   static AssetImage assetFor(BuildContext context) =>
       MetaGymTheme.isLightPalette(context) ? lightAsset : darkAsset;
 
+  static void precache(BuildContext context) {
+    if (MetaGymTheme.isFlutterTestEnvironment) return;
+    precacheImage(darkBackgroundAsset, context).catchError((_) {});
+    precacheImage(lightBackgroundAsset, context).catchError((_) {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (useSolidFallback) {
-      return IgnorePointer(
-        child: ColoredBox(color: MetaGymTheme.paletteOf(context).canvas),
-      );
-    }
     final isLight = MetaGymTheme.isLightPalette(context);
-    return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image(
-            image: isLight ? lightAsset : darkAsset,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) =>
-                ColoredBox(color: MetaGymTheme.paletteOf(context).canvas),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isLight
-                    ? const [
-                        Color(0x0AECF1F8),
-                        Color(0x05E4EBF4),
-                        Color(0x0FDCE4EF),
-                      ]
-                    : const [
-                        Color(0x140F1115),
-                        Color(0x0A0F1115),
-                        Color(0x240B0D12),
-                      ],
+    final palette = MetaGymTheme.paletteOf(context);
+    if (useSolidFallback) {
+      return IgnorePointer(child: ColoredBox(color: palette.canvas));
+    }
+
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: ColoredBox(
+          color: palette.canvas,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image(
+                image: isLight ? lightAsset : darkAsset,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => ColoredBox(color: palette.canvas),
               ),
-            ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isLight
+                        ? const [
+                            Color(0x0AECF1F8),
+                            Color(0x05E4EBF4),
+                            Color(0x0FDCE4EF),
+                          ]
+                        : const [
+                            Color(0x140F1115),
+                            Color(0x0A0F1115),
+                            Color(0x240B0D12),
+                          ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -120,24 +141,7 @@ class MetaGymHeroGlassCard extends StatelessWidget {
               ]
             : null,
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 20,
-            right: 20,
-            top: 0,
-            child: SizedBox(
-              height: 1,
-              child: ColoredBox(
-                color: isLight
-                    ? palette.glassHighlight
-                    : MetaGymWarmGlassTokens.heroHighlight,
-              ),
-            ),
-          ),
-          Padding(padding: padding, child: child),
-        ],
-      ),
+      child: Padding(padding: padding, child: child),
     );
 
     final Widget wrapped = enableBlur
@@ -265,23 +269,7 @@ class MetaGymGlassCard extends StatelessWidget {
       ),
       child: Material(
         type: MaterialType.transparency,
-        child: Stack(
-          children: [
-            if (!isSolidSurface && !isLight)
-              const Positioned(
-                top: 0,
-                left: 18,
-                right: 18,
-                child: SizedBox(
-                  height: 1,
-                  child: ColoredBox(
-                    color: MetaGymWarmGlassTokens.cardHighlight,
-                  ),
-                ),
-              ),
-            interactiveContent,
-          ],
-        ),
+        child: interactiveContent,
       ),
     );
 

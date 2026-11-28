@@ -33,9 +33,11 @@ test('T8 Static Gate: ZERO native confirm()/prompt()/alert() and ZERO backdrop-f
     const raw = readFileSync(file, 'utf8');
     const codeOnly = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
     assert.equal(/\b(?:window\.)?(?:confirm|prompt|alert)\s*\(/.test(codeOnly), false, `Forbidden native dialog in ${file}`);
+    assert.equal(/\bmeta-tabs?\b|\bmeta-tab-btn\b/.test(raw), false, `Forbidden meta-tabs class in ${file}`);
   }
 
   const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.equal(/\bmeta-tabs?\b|\bmeta-tab-btn\b/.test(css), false, 'style.css must not contain meta-tabs styles');
   assert.equal(/backdrop-filter\s*:\s*blur/i.test(css), false, 'style.css must not use backdrop-filter blur on Admin surfaces');
   assert.equal(css.includes('#0F1115'), true, 'Must include Dark Graphite canvas #0F1115');
   assert.equal(css.includes('#181B22'), true, 'Must include Solid Card #181B22');
@@ -352,4 +354,68 @@ test('Dashboard supports 7/30/60/90 quick ranges and period comparison with card
   env.root.querySelector('#dash-compare-btn').click();
   await flush();
   assert.equal(env.root.querySelectorAll('.kpi-trend').length, 0);
+});
+
+test('Sidebar renders dedicated links for all promoted sections and marks the active item with aria-current="page"', () => {
+  const promoted = [
+    ['simulated-refunds', '#/admin/incidents?tab=refunds'],
+    ['terminations', '#/admin/relationships?tab=terminations'],
+    ['coach-transfers', '#/admin/relationships?tab=transfers'],
+    ['plan-entitlements', '#/admin/plans?tab=entitlements'],
+    ['coach-entitlements', '#/admin/coach-packages?tab=entitlements'],
+    ['exercises', '#/admin/equipment?tab=exercises'],
+  ];
+
+  for (const [section, expectedHref] of promoted) {
+    const env = createDomEnvironment({ hash: expectedHref, token: 'tok' });
+    renderShell({
+      root: env.root,
+      section,
+      user: { fullName: 'Meta Admin', email: 'admin@metagym.vn' },
+      contentHtml: '<p>ok</p>',
+    });
+    for (const [, href] of promoted) {
+      assert.ok(env.root.querySelector(`a.meta-nav-item[href="${href}"]`), `Sidebar must include ${href}`);
+    }
+    const activeLink = env.root.querySelector(`a.meta-nav-item[href="${expectedHref}"]`);
+    assert.equal(activeLink.classList.contains('active'), true, `${section} link must have .active`);
+    assert.equal(activeLink.getAttribute('aria-current'), 'page', `${section} link must have aria-current="page"`);
+  }
+});
+
+test('Header Command Grid button opens full admin functions grid modal with instant search', () => {
+  const env = createDomEnvironment({ hash: '#/admin/dashboard', token: 'tok' });
+  renderShell({
+    root: env.root,
+    section: 'dashboard',
+    user: { role: 'ADMIN', fullName: 'Meta Admin', email: 'admin@metagym.vn' },
+    contentHtml: '<p>ok</p>',
+    badges: { incidents: 3, disputes: 1 },
+  });
+
+  const gridBtn = env.root.querySelector('#open-command-grid-btn');
+  assert.ok(gridBtn, 'Header must include Command Grid button');
+  assert.equal(gridBtn.innerHTML.includes('Bảng điều khiển'), true);
+
+  gridBtn.click();
+  assert.equal(env.modalOverlay.hidden, false);
+  const cards = env.modalDialog.querySelectorAll('.cmd-grid-card');
+  assert.ok(cards.length >= 20, 'Command Grid must render all functional cards');
+  assert.equal(env.modalDialog.innerHTML.includes('Voucher khuyến mãi'), true);
+  assert.equal(env.modalDialog.innerHTML.includes('Nhân sự &amp; Vị trí nhân viên'), true);
+
+  const search = env.modalDialog.querySelector('#cmd-grid-search');
+  search.value = 'voucher';
+  search.dispatchEvent({ type: 'input' });
+  const voucherMatches = env.modalDialog.querySelectorAll('.cmd-grid-card');
+  assert.equal(voucherMatches.length, 2, 'Should match both Voucher khuyến mãi and POS desc mentioning voucher');
+
+  search.value = 'khuyến mãi';
+  search.dispatchEvent({ type: 'input' });
+  const filteredCards = env.modalDialog.querySelectorAll('.cmd-grid-card');
+  assert.equal(filteredCards.length, 1);
+  assert.equal(filteredCards[0].getAttribute('href'), '#/admin/vouchers');
+
+  filteredCards[0].click();
+  assert.equal(env.modalOverlay.hidden, true, 'Clicking a grid card must close modal');
 });

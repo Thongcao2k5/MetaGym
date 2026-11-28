@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_3d_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
@@ -72,7 +73,7 @@ class MemberHomeExploreGrid extends StatelessWidget {
             Expanded(
               child: _ExploreTile(
                 label: 'Thiết bị',
-                svgAsset: MetaGymIcons.equipMachine,
+                icon3dAsset: MetaGym3dIcons.equipMachine,
                 fallbackIcon: Icons.fitness_center_outlined,
                 onTap: onOpenEquipment,
               ),
@@ -81,7 +82,7 @@ class MemberHomeExploreGrid extends StatelessWidget {
             Expanded(
               child: _ExploreTile(
                 label: 'Điểm danh',
-                svgAsset: MetaGymIcons.checkinBadge,
+                icon3dAsset: MetaGym3dIcons.checkinBadge,
                 fallbackIcon: Icons.qr_code_scanner_rounded,
                 onTap: onOpenVisits,
               ),
@@ -90,7 +91,7 @@ class MemberHomeExploreGrid extends StatelessWidget {
             Expanded(
               child: _ExploreTile(
                 label: 'Chỉ số',
-                svgAsset: MetaGymIcons.bodyWeightScale,
+                icon3dAsset: MetaGym3dIcons.bodyWeightScale,
                 fallbackIcon: Icons.monitor_weight_outlined,
                 onTap: onOpenMeasurements,
               ),
@@ -99,7 +100,7 @@ class MemberHomeExploreGrid extends StatelessWidget {
             Expanded(
               child: _ExploreTile(
                 label: 'Coach',
-                svgAsset: MetaGymIcons.coachPkg1on1,
+                icon3dAsset: MetaGym3dIcons.coachSearch,
                 fallbackIcon: Icons.groups_outlined,
                 onTap: onOpenCoach,
               ),
@@ -114,13 +115,13 @@ class MemberHomeExploreGrid extends StatelessWidget {
 class _ExploreTile extends StatelessWidget {
   const _ExploreTile({
     required this.label,
-    required this.svgAsset,
+    required this.icon3dAsset,
     required this.fallbackIcon,
     required this.onTap,
   });
 
   final String label;
-  final String svgAsset;
+  final String icon3dAsset;
   final IconData fallbackIcon;
   final VoidCallback onTap;
 
@@ -138,8 +139,8 @@ class _ExploreTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            MetaGymSvgIcon(svgAsset, size: 28, fallbackIcon: fallbackIcon),
-            const SizedBox(height: 5),
+            MetaGym3dIcon(icon3dAsset, size: 36, fallbackIcon: fallbackIcon),
+            const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(

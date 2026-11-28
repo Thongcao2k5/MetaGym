@@ -73,22 +73,8 @@ class _TerminationReasonDialogState extends State<TerminationReasonDialog> {
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          if (!isLight)
-            Positioned(
-              left: 22,
-              right: 22,
-              top: 0,
-              child: IgnorePointer(
-                child: SizedBox(
-                  height: 1,
-                  child: ColoredBox(color: colors.warmGlassHighlight),
-                ),
-              ),
-            ),
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -289,8 +275,6 @@ class _TerminationReasonDialogState extends State<TerminationReasonDialog> {
               ],
             ),
           ),
-        ],
-      ),
     );
 
     return Dialog(
