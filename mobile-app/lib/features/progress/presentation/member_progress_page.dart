@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
@@ -20,6 +21,7 @@ class MemberProgressPage extends StatefulWidget {
 
 class _MemberProgressPageState extends State<MemberProgressPage> {
   MemberProgressService? _service;
+  SyncRevisionBinding? _syncBinding;
   ProgressSummary? _summary;
   List<WeightPoint> _points = const [];
   List<ProgressComment> _comments = const [];
@@ -30,8 +32,17 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
   String? _error;
 
   @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted && !_loading) _load(silent: true);
+    });
     if (_service != null) return;
     _service = widget.service ?? context.read<MemberProgressService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -39,31 +50,36 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
     });
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _summary = null;
-      _points = const [];
-      _comments = const [];
-    });
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _summary = null;
+        _points = const [];
+        _comments = const [];
+      });
+    }
     try {
-      final summary = await _service!.getSummary();
-      final points = await _service!.getCharts(from: _from, to: _to);
-      final comments = await _service!.getComments();
+      final results = await Future.wait<Object?>([
+        _service!.getSummary(),
+        _service!.getCharts(from: _from, to: _to),
+        _service!.getComments(),
+      ]);
       if (mounted) {
         setState(() {
-          _summary = summary;
-          _points = points;
-          _comments = comments;
+          _summary = results[0] as ProgressSummary;
+          _points = results[1] as List<WeightPoint>;
+          _comments = results[2] as List<ProgressComment>;
+          _error = null;
         });
       }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!silent && mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải được tiến độ.');
+      if (!silent && mounted) setState(() => _error = 'Không tải được tiến độ.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 

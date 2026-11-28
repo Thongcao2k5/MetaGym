@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/navigation/meta_gym_navigation.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
+import 'package:meta_gym_app/core/network/offline_sync_manager.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
@@ -32,6 +33,7 @@ class MemberMeasurementPage extends StatefulWidget {
 
 class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
   MemberMeasurementService? _service;
+  SyncRevisionBinding? _syncBinding;
   List<BodyMeasurement> _items = const [];
   int _page = 0;
   bool _hasMore = false;
@@ -39,8 +41,17 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
   String? _error;
 
   @override
+  void dispose() {
+    _syncBinding?.dispose();
+    super.dispose();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncBinding ??= bindApiCacheSync(context, () {
+      if (mounted && !_loading) _load(silent: true);
+    });
     if (_service != null) return;
     _service = widget.service ?? context.read<MemberMeasurementService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -55,13 +66,15 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
     return 174.0;
   }
 
-  Future<void> _load({bool more = false}) async {
+  Future<void> _load({bool more = false, bool silent = false}) async {
     if (more && (!_hasMore || _loading)) return;
     final targetPage = more ? _page + 1 : 1;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final next = await _service!.getPage(targetPage);
       if (mounted) {
@@ -69,14 +82,15 @@ class _MemberMeasurementPageState extends State<MemberMeasurementPage> {
           _items = more ? [..._items, ...next] : next;
           _page = targetPage;
           _hasMore = next.length == 20;
+          _error = null;
         });
       }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (!silent && mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Không tải được số đo.');
+      if (!silent && mounted) setState(() => _error = 'Không tải được số đo.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 

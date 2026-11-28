@@ -16,6 +16,7 @@ import 'package:meta_gym_app/core/widgets/meta_gym_responsive_scale.dart';
 import 'package:meta_gym_app/core/widgets/offline_cache_banner.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
+import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/catalog/data/catalog_api.dart';
@@ -49,6 +50,7 @@ import 'package:meta_gym_app/features/training/data/member_training_service.dart
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/data/coach_nutrition_service.dart';
+import 'package:meta_gym_app/features/training/data/nutrition_tracking_api.dart';
 import 'package:provider/provider.dart';
 
 class MetaGymApp extends StatefulWidget {
@@ -279,10 +281,25 @@ class _MetaGymAppState extends State<MetaGymApp> {
         _apiCacheStatus.isDeviceOffline) {
       return;
     }
+    final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final todayVn =
+        '${vnNow.year.toString().padLeft(4, '0')}-'
+        '${vnNow.month.toString().padLeft(2, '0')}-'
+        '${vnNow.day.toString().padLeft(2, '0')}';
+    final isMember = _sessionController.user?.role == UserRole.member;
+    final nutritionApi = NutritionTrackingApi(_apiClient);
+
     await Future.wait<void>([
       _catalogService.getGymProfile().then((_) {}).catchError((_) {}),
       _catalogService.getEquipment().then((_) {}).catchError((_) {}),
       _catalogService.getExercises().then((_) {}).catchError((_) {}),
+      if (isMember) ...[
+        nutritionApi.day(todayVn).then((_) {}).catchError((_) {}),
+        nutritionApi.foods().then((_) {}).catchError((_) {}),
+        _memberJournalService.getPage(1).then((_) {}).catchError((_) {}),
+        _memberMeasurementService.getPage(1).then((_) {}).catchError((_) {}),
+        _memberProgressService.getSummary().then((_) {}).catchError((_) {}),
+      ],
     ]);
   }
 
