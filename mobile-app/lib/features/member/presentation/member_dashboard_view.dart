@@ -20,6 +20,10 @@ import 'package:meta_gym_app/features/progress/data/member_journal_service.dart'
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/sessions/data/member_sessions_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
+import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
+import 'package:meta_gym_app/features/notifications/domain/notification_models.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notification_router.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
 import 'package:meta_gym_app/features/sessions/domain/training_session.dart';
 import 'package:meta_gym_app/features/training/data/member_nutrition_service.dart';
 import 'package:meta_gym_app/features/training/data/member_training_service.dart';
@@ -158,6 +162,17 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         if (sessionsService is MemberSessionsApi) {
           final bookings = await CoachV2Api(sessionsService.client)
               .list('/coach-bookings');
+          if (mounted) {
+            try {
+              final notifCtrl = Provider.of<NotificationsController>(
+                context,
+                listen: false,
+              );
+              await notifCtrl.syncUpcomingBookings(bookings);
+            } on ProviderNotFoundException {
+              // Optional when dashboard is rendered in isolation.
+            }
+          }
           sessions = [
             ...sessions,
             for (final booking in bookings)
@@ -294,13 +309,7 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
         ],
       );
     }
-    final now = DateTime.now();
-    final date =
-        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    for (final day in _activePlan?.days ?? const <TrainingDay>[]) {
-      if (day.scheduledDate == date) return day;
-    }
-    return null;
+    return _activePlan?.dayForDate(DateTime.now());
   }
 
   Future<void> _pushAndReload(String route) async {
@@ -599,49 +608,66 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
             ),
           ),
           const SizedBox(width: 8),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              MetaGymCircleIconButton(
-                icon: Icons.notifications_none_rounded,
-                svgAsset: MetaGymIcons.settingNotificationsBell,
-                tooltip: 'Thông báo',
-                onTap: () => _showHomeNotificationsSheet(context),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: IgnorePointer(
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: isLight
-                            ? palette.surfaceSolid
-                            : MetaGymTheme.scaffoldBackground,
-                        width: 2,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: MetaGymTheme.tabularFigures,
-                      ),
-                    ),
+          Builder(
+            builder: (bellCtx) {
+              NotificationsController? notificationsCtrl;
+              try {
+                notificationsCtrl = Provider.of<NotificationsController>(
+                  bellCtx,
+                );
+              } on ProviderNotFoundException {
+                notificationsCtrl = null;
+              }
+              final unreadCount = notificationsCtrl?.unreadCount ?? 0;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  MetaGymCircleIconButton(
+                    key: const Key('member-home-bell-btn'),
+                    icon: Icons.notifications_none_rounded,
+                    svgAsset: MetaGymIcons.settingNotificationsBell,
+                    tooltip: 'Thông báo',
+                    onTap: () => _showHomeNotificationsSheet(bellCtx),
                   ),
-                ),
-              ),
-            ],
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: IgnorePointer(
+                        child: Container(
+                          key: const Key('member-home-bell-badge'),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(
+                            color: MetaGymTheme.brandOrange,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: isLight
+                                  ? palette.surfaceSolid
+                                  : MetaGymTheme.scaffoldBackground,
+                              width: 2,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              height: 1.0,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -651,85 +677,185 @@ class _MemberDashboardViewState extends State<MemberDashboardView> {
   void _showHomeNotificationsSheet(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    NotificationsController? controller;
+    try {
+      controller = Provider.of<NotificationsController>(context, listen: false);
+    } on ProviderNotFoundException {
+      controller = null;
+    }
+    SessionController? sessionCtrl;
+    try {
+      sessionCtrl = Provider.of<SessionController>(context, listen: false);
+    } on ProviderNotFoundException {
+      sessionCtrl = null;
+    }
+    if (controller != null && controller.items.isEmpty && !controller.isLoading) {
+      controller.refresh(initial: true);
+    }
+
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       backgroundColor: isLight
           ? palette.surfaceSolid
           : MetaGymTheme.overlayGlass,
-      builder: (sheetCtx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Thông báo mới',
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              MetaGymGlassCard(
-                solid: true,
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (sheetCtx) {
+        final previewItems = (controller?.items ?? const <AppNotification>[])
+            .take(4)
+            .toList();
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      'Nhắc lịch PT 1:1 hôm nay lúc 18:00',
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
+                    Expanded(
+                      child: Text(
+                        'Thông báo mới',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Coach Lê Hoàng Nam đã chuẩn bị bài Ngực & Tay sau. Nhớ khởi động trước 10 phút.',
+                    if ((controller?.unreadCount ?? 0) > 0)
+                      TextButton(
+                        onPressed: () => controller?.markAllRead(),
+                        child: Text(
+                          'Đọc tất cả',
+                          style: TextStyle(
+                            color: palette.primaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (previewItems.isEmpty)
+                  MetaGymGlassCard(
+                    solid: true,
+                    padding: const EdgeInsets.all(14),
+                    child: Text(
+                      'Bạn chưa có thông báo mới. Các nhắc lịch tập, thực đơn và tin nhắn sẽ hiển thị tại đây.',
                       style: TextStyle(
                         color: palette.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
+                        fontSize: 13,
+                        height: 1.45,
+                      ),
+                    ),
+                  )
+                else
+                  for (var i = 0; i < previewItems.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    MetaGymGlassCard(
+                      solid: true,
+                      padding: const EdgeInsets.all(12),
+                      borderColor: previewItems[i].isUnread
+                          ? MetaGymTheme.brandOrange.withValues(alpha: 0.45)
+                          : null,
+                      onTap: () async {
+                        final item = previewItems[i];
+                        Navigator.of(sheetCtx).pop();
+                        if (item.isUnread && item.id.isNotEmpty) {
+                          controller?.markRead(item.id);
+                        }
+                        if (context.mounted) {
+                          await openNotificationTarget(
+                            context,
+                            item,
+                            role: sessionCtrl?.user?.role,
+                          );
+                        }
+                      },
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (previewItems[i].isUnread)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.only(top: 5, right: 8),
+                              decoration: const BoxDecoration(
+                                color: MetaGymTheme.brandOrange,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  previewItems[i].title ?? 'Thông báo mới',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if ((previewItems[i].body ?? '').isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    previewItems[i].body!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 12,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              MetaGymGlassCard(
-                solid: true,
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Giáo trình 8 tuần đã được cập nhật',
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    key: const Key('member-home-view-all-notifs-btn'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MetaGymTheme.brandOrange,
+                      foregroundColor: MetaGymTheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          MetaGymTheme.radiusInput,
+                        ),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(sheetCtx).pop();
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => const CoachNotificationsPage(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Xem tất cả thông báo',
                       style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Thực đơn 2.400 kcal và mức tạ tuần mới đã sẵn sàng trong mục Tập luyện.',
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { createApp } from './app.js';
 import { createDatabasePool } from './config/database.js';
 import { createRealtimeFromEnv } from './config/realtime.js';
+import { createFcmFromEnv } from './config/fcm.js';
 import { createLiveKitFromEnv } from './config/livekit.js';
 import { createVnpayFromEnv } from './config/vnpay.js';
 import { createMomoFromEnv } from './config/momo.js';
@@ -35,6 +36,12 @@ try {
 } catch {
   console.error('Kiểm tra cấu hình merchant của ZaloPay Sandbox.');
 }
+let fcm;
+try {
+  fcm = createFcmFromEnv();
+} catch {
+  console.error('Kiểm tra cấu hình Firebase Cloud Messaging (FCM_PROJECT_ID, FCM_CLIENT_EMAIL, FCM_PRIVATE_KEY).');
+}
 const app = createApp({
   database,
   enableCoachWorkflows: process.env.ENABLE_COACH_WORKFLOWS === 'true',
@@ -46,6 +53,7 @@ const app = createApp({
   zalopay,
   preferredPaymentGateway: process.env.PAYMENT_GATEWAY,
   realtime: createRealtimeFromEnv(),
+  fcm,
   imageStorage,
   sendPasswordResetCode: createPasswordResetSenderFromEnv(),
   aiResponder: createAiResponderFromEnv(),

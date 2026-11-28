@@ -7,6 +7,8 @@ import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/presentation/live_call_page.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
+import 'package:provider/provider.dart';
 
 class IncomingCallListener extends StatefulWidget {
   const IncomingCallListener({
@@ -56,6 +58,13 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
           navigator == null ||
           LiveCallPage.isOpen(navigator)) {
         return;
+      }
+      // Prefer the unified InAppNotificationListener banner when mounted.
+      try {
+        Provider.of<NotificationsController>(context, listen: false);
+        return;
+      } on ProviderNotFoundException {
+        // Fallback when running without NotificationsController in isolated harnesses.
       }
       ScaffoldMessenger.maybeOf(context)
           ?.showSnackBar(const SnackBar(content: Text('Bạn có tin nhắn mới.')));

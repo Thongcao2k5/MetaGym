@@ -549,10 +549,15 @@ window.METAGYM_SCREENS.member = (window.METAGYM_SCREENS.member || []).concat([
             <button class="btn-primary">Xem lịch với Coach</button>
           </div>
 
-          <!-- 3 Lối vào nhanh từ member_coaching_page.dart -->
+          <!-- Lối vào nhanh từ member_coaching_page.dart -->
           <div class="card-liquid" style="padding:4px 14px;">
             <div class="row-between" style="padding:11px 0;">
-              <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/quick_actions/action_curriculum.svg" alt="Giáo trình" /><div><div class="txt-sm txt-bold">Giáo trình</div><div class="txt-xs">Tập luyện và dinh dưỡng</div></div></div>
+              <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/quick_actions/action_curriculum.svg" alt="Giáo trình tập luyện" /><div><div class="txt-sm txt-bold">Giáo trình tập luyện</div><div class="txt-xs">Lịch tập &amp; bài tập từ Coach</div></div></div>
+              <span class="txt-xs">›</span>
+            </div>
+            <div class="divider" style="margin:0;"></div>
+            <div class="row-between" style="padding:11px 0;">
+              <div class="row"><img class="ico-sm" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Thực đơn &amp; Dinh dưỡng" /><div><div class="txt-sm txt-bold">Thực đơn &amp; Dinh dưỡng</div><div class="txt-xs">Thực đơn 7 ngày &amp; calo từ Coach</div></div></div>
               <span class="txt-xs">›</span>
             </div>
             <div class="divider" style="margin:0;"></div>

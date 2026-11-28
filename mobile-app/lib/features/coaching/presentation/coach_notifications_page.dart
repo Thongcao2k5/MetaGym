@@ -7,11 +7,23 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/notifications/domain/notification_models.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notification_router.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
-enum _NotificationFilter { all, unread, session, package }
+enum _NotificationFilter {
+  all,
+  unread,
+  session,
+  package,
+  training,
+  message,
+  system,
+}
 
 /// Màn hình **5.10 Thông báo** đồng bộ `tab5-profile-sub.js` (`member-notifications`)
 /// và chuẩn Warm Smoked Liquid Glass (Dark + Light Daylight Studio).
@@ -28,6 +40,7 @@ class CoachNotificationsPage extends StatefulWidget {
 class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   ApiClient? _client;
   CoachV2Api? _api;
+  NotificationsController? _controller;
   bool _initialized = false;
   bool _loading = true;
   bool _saving = false;
@@ -39,28 +52,56 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final ctrl = optionalProvider<NotificationsController>(context);
     final client = widget.apiClient ?? optionalProvider<ApiClient>(context);
-    if (_initialized && identical(client, _client)) return;
-    _bindClient(client);
+    if (_initialized &&
+        identical(ctrl, _controller) &&
+        identical(client, _client)) {
+      return;
+    }
+    _bindDependencies(ctrl, client);
   }
 
   @override
   void didUpdateWidget(covariant CoachNotificationsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.apiClient != widget.apiClient) {
+      final ctrl = optionalProvider<NotificationsController>(context);
       final client = widget.apiClient ?? optionalProvider<ApiClient>(context);
-      if (!identical(client, _client)) {
-        _bindClient(client);
+      if (!identical(ctrl, _controller) || !identical(client, _client)) {
+        _bindDependencies(ctrl, client);
       }
     }
   }
 
-  void _bindClient(ApiClient? client) {
+  void _onControllerChanged() {
+    if (!mounted || _controller == null) return;
+    setState(() {
+      _records = _controller!.items.map((e) => e.toRecord()).toList();
+      _loading = _controller!.isLoading;
+      _loadError = _controller!.error;
+    });
+  }
+
+  void _bindDependencies(NotificationsController? ctrl, ApiClient? client) {
+    _controller?.removeListener(_onControllerChanged);
     _initialized = true;
+    _controller = ctrl;
     _client = client;
-    _records = const [];
     _actionError = null;
     _filter = _NotificationFilter.all;
+    if (ctrl != null) {
+      _api = null;
+      ctrl.addListener(_onControllerChanged);
+      _records = ctrl.items.map((e) => e.toRecord()).toList();
+      _loading = ctrl.isLoading;
+      _loadError = ctrl.error;
+      if (_records.isEmpty && !_loading) {
+        ctrl.refresh(initial: true);
+      }
+      return;
+    }
+    _records = const [];
     if (client != null) {
       _api = CoachV2Api(client);
       _loading = true;
@@ -71,6 +112,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       _loading = false;
       _loadError = 'Không tải được thông báo.';
     }
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_onControllerChanged);
+    super.dispose();
   }
 
   DateTime _nowVietnam() {
@@ -132,6 +179,11 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   }
 
   Future<void> _load({bool initial = false}) async {
+    final ctrl = _controller;
+    if (ctrl != null) {
+      await ctrl.refresh(initial: initial);
+      return;
+    }
     final api = _api;
     if (api == null) return;
     if (initial || _records.isEmpty) {
@@ -184,6 +236,22 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   }
 
   Future<void> _read(CoachRecord item) async {
+    final ctrl = _controller;
+    if (ctrl != null) {
+      final id = item['id']?.toString();
+      if (_isUnread(item) && id != null && id.isNotEmpty) {
+        await ctrl.markRead(id);
+      }
+      if (mounted) {
+        final role = optionalProvider<SessionController>(context)?.user?.role;
+        await openNotificationTarget(
+          context,
+          AppNotification.fromJson(item),
+          role: role,
+        );
+      }
+      return;
+    }
     final api = _api;
     if (api == null || _saving || !_isUnread(item) || item['id'] == null) {
       return;
@@ -207,6 +275,14 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
   }
 
   Future<void> _markAllAsRead() async {
+    final ctrl = _controller;
+    if (ctrl != null) {
+      await ctrl.markAllRead();
+      if (mounted) {
+        showCoachingSnackBar(context, 'Đã đánh dấu tất cả thông báo đã đọc.');
+      }
+      return;
+    }
     final api = _api;
     final unreadItems = _records
         .where((item) => _isUnread(item) && item['id'] != null)
@@ -262,7 +338,12 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     'CANCELLED' => 'Lịch tập đã hủy hoặc thay đổi',
     'NO_SHOW' => 'Buổi tập ghi nhận vắng mặt',
     'RESCHEDULED' => 'Lịch tập đã được dời giờ',
+    'TRAINING_PLAN_UPDATED' => 'Coach đã cập nhật giáo trình tập',
     'NUTRITION_UPDATED' || 'MEAL_PLAN_UPDATED' => 'Coach đã cập nhật thực đơn',
+    'NEW_MESSAGE' => 'Bạn có tin nhắn mới',
+    'MISSED_CALL' => 'Cuộc gọi nhỡ',
+    'INCOMING_CALL' => 'Cuộc gọi đến',
+    'ADMIN_BROADCAST' => 'Thông báo từ Meta Gym',
     'PACKAGE_ACTIVE' => 'Gói Coach đã kích hoạt',
     'PACKAGE_QUEUED' => 'Gói Coach đang chờ kích hoạt',
     'PACKAGE_EXTENDED' => 'Gói Coach được thêm 7 ngày',
@@ -296,8 +377,14 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       'CANCELLED' => 'Một buổi tập với Coach đã hủy hoặc thay đổi. Bạn có thể đặt lại khung giờ phù hợp.',
       'NO_SHOW' => 'Buổi tập đã qua giờ hẹn và được ghi nhận vắng mặt theo quy định gói tập.',
       'RESCHEDULED' => 'Khung giờ buổi tập 1:1 vừa được cập nhật. Xem chi tiết trong mục Lịch hẹn.',
+      'TRAINING_PLAN_UPDATED' =>
+        'Giáo trình tập luyện mới đã sẵn sàng trong mục Tập luyện.',
       'NUTRITION_UPDATED' || 'MEAL_PLAN_UPDATED' =>
         'Thực đơn dinh dưỡng cá nhân hóa đã sẵn sàng trong mục Dinh dưỡng.',
+      'NEW_MESSAGE' => 'Mở mục Tin nhắn để xem và phản hồi ngay.',
+      'MISSED_CALL' => 'Bạn có một cuộc gọi nhỡ. Mở mục Cuộc gọi để xem chi tiết.',
+      'INCOMING_CALL' => 'Bạn có cuộc gọi đến trên Meta Gym.',
+      'ADMIN_BROADCAST' => 'Hệ thống Meta Gym vừa gửi một thông báo mới dành cho bạn.',
       'PACKAGE_ACTIVE' => 'Gói huấn luyện 1:1 đã kích hoạt. Bạn có thể bắt đầu đặt lịch tập cùng Coach.',
       'PACKAGE_QUEUED' => 'Gói mới đã được xếp hàng và sẽ tự kích hoạt ngay sau khi gói hiện tại kết thúc.',
       'PACKAGE_EXTENDED' =>
@@ -343,6 +430,11 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
     'MEMBER_UNLOCKED_RESTORED' ||
     'TERMINATION_ADMIN_APPROVED' => MetaGymIcons.stateSuccess,
     'NUTRITION_UPDATED' || 'MEAL_PLAN_UPDATED' => MetaGymIcons.actionNutrition,
+    'TRAINING_PLAN_UPDATED' => MetaGymIcons.actionCurriculum,
+    'NEW_MESSAGE' => MetaGymIcons.commNotificationUnread,
+    'MISSED_CALL' => MetaGymIcons.stateWarning,
+    'INCOMING_CALL' => MetaGymIcons.settingNotificationsBell,
+    'ADMIN_BROADCAST' => MetaGymIcons.stateInfo,
     'PACKAGE_ACTIVE' => MetaGymIcons.paymentSuccess,
     'PACKAGE_QUEUED' => MetaGymIcons.membershipScheduled,
     'PACKAGE_EXTENDED' => MetaGymIcons.stateUpdate,
@@ -407,6 +499,7 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
 
   bool _matchesFilter(CoachRecord item) {
     final kind = (item['kind'] as String? ?? '').toUpperCase();
+    final category = (item['category'] as String? ?? '').toUpperCase();
     return switch (_filter) {
       _NotificationFilter.all => true,
       _NotificationFilter.unread => _isUnread(item),
@@ -422,8 +515,25 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
             kind.startsWith('MEMBER_') ||
             kind.startsWith('TERMINATION_') ||
             kind == 'SIMULATED_REFUND_COMPLETED' ||
+            (_controller == null &&
+                (kind == 'NUTRITION_UPDATED' || kind == 'MEAL_PLAN_UPDATED')),
+      _NotificationFilter.training =>
+        category == 'TRAINING' ||
+            kind == 'TRAINING_PLAN_UPDATED' ||
             kind == 'NUTRITION_UPDATED' ||
             kind == 'MEAL_PLAN_UPDATED',
+      _NotificationFilter.message =>
+        category == 'MESSAGE' ||
+            kind == 'NEW_MESSAGE' ||
+            kind == 'MISSED_CALL' ||
+            kind == 'INCOMING_CALL',
+      _NotificationFilter.system =>
+        category == 'SYSTEM' ||
+            kind == 'ADMIN_BROADCAST' ||
+            kind == 'COACH_LOCKED' ||
+            kind == 'COACH_UNLOCKED_RESTORED' ||
+            kind == 'MEMBER_LOCKED' ||
+            kind == 'MEMBER_UNLOCKED_RESTORED',
     };
   }
 
@@ -480,7 +590,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Thông báo Coach',
+                  _controller != null
+                      ? 'Tất cả cập nhật & nhắc lịch'
+                      : 'Thông báo Coach',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -562,6 +674,23 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
         'Gói Coach',
         const Key('notif-filter-package'),
       ),
+      if (_controller != null) ...[
+        (
+          _NotificationFilter.training,
+          'Tập & Dinh dưỡng',
+          const Key('notif-filter-training'),
+        ),
+        (
+          _NotificationFilter.message,
+          'Tin nhắn & Gọi',
+          const Key('notif-filter-message'),
+        ),
+        (
+          _NotificationFilter.system,
+          'Hệ thống',
+          const Key('notif-filter-system'),
+        ),
+      ],
     ];
 
     return Padding(
@@ -689,7 +818,9 @@ class _CoachNotificationsPageState extends State<CoachNotificationsPage> {
       borderColor: unread
           ? MetaGymTheme.brandOrange.withValues(alpha: isLight ? 0.50 : 0.48)
           : null,
-      onTap: unread && !_saving ? () => _read(item) : null,
+      onTap: (unread || _controller != null) && !_saving
+          ? () => _read(item)
+          : null,
       child: Opacity(
         opacity: unread ? 1.0 : (isLight ? 0.88 : 0.84),
         child: Row(

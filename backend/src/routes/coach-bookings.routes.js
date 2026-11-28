@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { hasCoachCapacity } from '../services/coach-capacity.js';
+import { notifyExistingUserNotifications } from '../services/notification-dispatcher.js';
 import { createAuthentication } from './users.routes.js';
 
 const timestamp = z.iso.datetime({ offset: true });
@@ -45,7 +46,68 @@ function reject(status, code, message) {
   throw Object.assign(new Error(message), { status, code });
 }
 
+const REST_DAY_TITLE_PATTERN =
+  /nghỉ|phục hồi|hồi phục|\brest\b|recovery|off\s*day/i;
+
+function isRestOrRecoveryDayRow(day) {
+  if (!day) return true;
+  if (Number(day.exercise_count ?? 0) <= 0) return true;
+  return REST_DAY_TITLE_PATTERN.test(day.title || '');
+}
+
+async function isRestOrRecoveryDateForMember(
+  client,
+  memberId,
+  isoDate,
+  isoWeekday,
+) {
+  const { rows: days } = await client.query(
+    `SELECT d.day_number,
+            to_char(d.scheduled_date, 'YYYY-MM-DD') AS scheduled_date,
+            d.title,
+            COUNT(e.id)::int AS exercise_count
+     FROM training_plans p
+     JOIN training_plan_days d ON d.plan_id = p.id
+     LEFT JOIN training_plan_exercises e ON e.plan_day_id = d.id
+     WHERE p.member_id = $1 AND p.status = 'ACTIVE'
+     GROUP BY d.id, d.day_number, d.scheduled_date, d.title
+     ORDER BY d.day_number`,
+    [memberId],
+  );
+  if (!days.length) return false;
+
+  let matched = days.find((d) => d.scheduled_date === isoDate);
+  if (!matched) {
+    matched = days.find((d) => {
+      if (d.scheduled_date) {
+        const dt = new Date(`${d.scheduled_date}T00:00:00Z`);
+        const wd = dt.getUTCDay() || 7;
+        return wd === isoWeekday;
+      }
+      return (((d.day_number - 1) % 7) + 1) === isoWeekday;
+    });
+  }
+  return isRestOrRecoveryDayRow(matched);
+}
+
 async function createBooking(client, entitlement, startsAt) {
+  const { rows: [bookingTime] } = await client.query(
+    `SELECT to_char($1::timestamptz AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS local_date,
+            EXTRACT(ISODOW FROM $1::timestamptz AT TIME ZONE 'Asia/Ho_Chi_Minh')::int AS iso_weekday`,
+    [startsAt],
+  );
+  if (bookingTime && await isRestOrRecoveryDateForMember(
+    client,
+    entitlement.member_id,
+    bookingTime.local_date,
+    bookingTime.iso_weekday,
+  )) {
+    reject(
+      409,
+      'REST_DAY_BOOKING_NOT_ALLOWED',
+      'Ngày đã chọn là ngày nghỉ ngơi hồi phục. Lịch hẹn với Coach bắt buộc phải là ngày tập luyện.',
+    );
+  }
   const { rows: [slot] } = await client.query(
     `WITH desired AS (
        SELECT $1::timestamptz AS ts, $1::timestamptz AT TIME ZONE 'Asia/Ho_Chi_Minh' AS local
@@ -125,7 +187,7 @@ async function charge(client, entitlementId, actorId) {
   }
 }
 
-export function createCoachBookingsRouter({ database, jwtSecret }) {
+export function createCoachBookingsRouter({ database, jwtSecret, realtime, fcm }) {
   const router = Router();
   router.use(['/coach-bookings', '/coach-entitlements', '/coach-notifications'],
     createAuthentication({ database, jwtSecret }));
@@ -198,6 +260,10 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
     if (!parsed.success) return error(response, 422, 'VALIDATION_ERROR', 'Gói hoặc ngày tập không hợp lệ');
     return transact(database, response, async (client) => {
       const { entitlementId, date, bookingId } = parsed.data;
+      const isoWeekday = new Date(`${date}T00:00:00Z`).getUTCDay() || 7;
+      if (await isRestOrRecoveryDateForMember(client, request.authUser.id, date, isoWeekday)) {
+        return { data: [] };
+      }
       const { rows } = await client.query(
         `WITH replacement AS (
            SELECT id, starts_at, starts_at < statement_timestamp() + interval '12 hours' AS late
@@ -297,7 +363,9 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
     if (request.authUser.role !== 'MEMBER') return error(response, 403, 'FORBIDDEN', 'Chỉ Member được đặt lịch');
     const parsed = z.strictObject({ entitlementId: uuid, startsAt: timestamp }).safeParse(request.body);
     if (!parsed.success) return error(response, 422, 'VALIDATION_ERROR', 'Gói hoặc giờ tập không hợp lệ');
-    return transact(database, response, async (client) => {
+    const startedAt = new Date(Date.now() - 2000).toISOString();
+    let coachIdToNotify = null;
+    const result = await transact(database, response, async (client) => {
       const memberId = request.authUser.id;
       const { entitlementId, startsAt } = parsed.data;
       const { rows: [identity] } = await client.query(
@@ -305,11 +373,22 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
         [entitlementId, memberId],
       );
       if (!identity) reject(404, 'NOT_FOUND', 'Không tìm thấy gói Coach');
+      coachIdToNotify = identity.coach_id;
       await lockCoach(client, identity.coach_id);
       const entitlement = await lockEntitlement(client, entitlementId, memberId);
       const booking = await createBooking(client, entitlement, startsAt);
       return { status: 201, data: view(booking) };
     });
+    if (coachIdToNotify && (realtime || fcm)) {
+      void notifyExistingUserNotifications({
+        database,
+        realtime,
+        fcm,
+        userIds: [coachIdToNotify],
+        sinceEventAt: startedAt,
+      });
+    }
+    return result;
   });
 
   router.patch('/coach-bookings/:id', async (request, response) => {
@@ -329,13 +408,16 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
     if ((action === 'RESCHEDULE' && !startsAt) || (action === 'CANCEL' && isCoach && !reason)) {
       return error(response, 422, 'VALIDATION_ERROR', 'Cần nhập giờ mới hoặc lý do hủy');
     }
-    return transact(database, response, async (client) => {
+    const startedAt = new Date(Date.now() - 2000).toISOString();
+    let notifyTargets = [];
+    const result = await transact(database, response, async (client) => {
       const actorId = request.authUser.id;
       const { rows: [identity] } = await client.query(
         'SELECT * FROM coach_bookings WHERE id = $1 AND (member_id = $2 OR coach_id = $2)',
         [id.data, actorId],
       );
       if (!identity) reject(404, 'NOT_FOUND', 'Không tìm thấy lịch Coach');
+      notifyTargets = [identity.member_id, identity.coach_id].filter((uid) => uid && uid !== actorId);
       await lockCoach(client, identity.coach_id);
       await client.query(
         `SELECT r.id FROM coach_relationships r JOIN coach_entitlements e ON e.relationship_id = r.id
@@ -372,6 +454,16 @@ export function createCoachBookingsRouter({ database, jwtSecret }) {
       const replacement = await createBooking(client, entitlement, startsAt);
       return { data: view(replacement) };
     });
+    if (notifyTargets.length && (realtime || fcm)) {
+      void notifyExistingUserNotifications({
+        database,
+        realtime,
+        fcm,
+        userIds: notifyTargets,
+        sinceEventAt: startedAt,
+      });
+    }
+    return result;
   });
   return router;
 }

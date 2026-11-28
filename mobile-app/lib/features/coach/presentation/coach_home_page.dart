@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import 'package:meta_gym_app/features/coaching/presentation/coach_member_detail_
 import 'package:meta_gym_app/features/coaching/presentation/coach_notifications_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_offers_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/profile/presentation/profile_page.dart';
 import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart';
@@ -341,8 +343,9 @@ class _CoachHomePageState extends State<CoachHomePage> {
   }
 
   Future<void> _openNotificationsPage() async {
+    final notificationsCtrl = _tryReadProvider<NotificationsController>(context);
     final api = _tryReadProvider<ApiClient>(context);
-    if (api == null || !_snapshot.hasLiveApi) {
+    if (notificationsCtrl == null && (api == null || !_snapshot.hasLiveApi)) {
       showCoachingSnackBar(
         context,
         'Thông báo Coach đồng bộ trực tiếp khi kết nối máy chủ.',
@@ -352,7 +355,11 @@ class _CoachHomePageState extends State<CoachHomePage> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (_) => const CoachNotificationsPage()),
     );
-    if (mounted) await _loadCoachData();
+    if (!mounted) return;
+    if (notificationsCtrl != null) {
+      unawaited(notificationsCtrl.refresh());
+    }
+    await _loadCoachData();
   }
 
   Future<void> _openOffersPage() async {
@@ -3515,6 +3522,13 @@ class _CoachNotificationIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
+    NotificationsController? notificationsCtrl;
+    try {
+      notificationsCtrl = Provider.of<NotificationsController>(context);
+    } on ProviderNotFoundException {
+      notificationsCtrl = null;
+    }
+    final effectiveUnread = notificationsCtrl?.unreadCount ?? unreadCount;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -3523,7 +3537,7 @@ class _CoachNotificationIconButton extends StatelessWidget {
           tooltip: 'Thông báo Coach',
           onTap: onTap,
         ),
-        if (unreadCount > 0)
+        if (effectiveUnread > 0)
           Positioned(
             right: -2,
             top: -2,
@@ -3538,7 +3552,7 @@ class _CoachNotificationIconButton extends StatelessWidget {
                   border: Border.all(color: palette.canvas, width: 2),
                 ),
                 child: Text(
-                  unreadCount > 9 ? '9+' : '$unreadCount',
+                  effectiveUnread > 9 ? '9+' : '$effectiveUnread',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 9.5,

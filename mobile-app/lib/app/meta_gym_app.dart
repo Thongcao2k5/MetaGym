@@ -23,6 +23,9 @@ import 'package:meta_gym_app/features/membership/presentation/membership_control
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/presentation/incoming_call_listener.dart';
+import 'package:meta_gym_app/features/notifications/data/notifications_api.dart';
+import 'package:meta_gym_app/features/notifications/presentation/in_app_notification_listener.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/profile/data/profile_api.dart';
 import 'package:meta_gym_app/features/profile/data/profile_service.dart';
@@ -68,6 +71,7 @@ class MetaGymApp extends StatefulWidget {
     this.messagingService,
     this.callsService,
     this.aiService,
+    this.notificationsController,
     this.themeModeController,
   });
 
@@ -95,6 +99,7 @@ class MetaGymApp extends StatefulWidget {
   final MessagingService? messagingService;
   final CallsService? callsService;
   final AiService? aiService;
+  final NotificationsController? notificationsController;
   final ThemeModeController? themeModeController;
 
   @override
@@ -132,6 +137,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final MessagingService _messagingService;
   late final CallsService _callsService;
   late final AiService _aiService;
+  late final NotificationsController _notificationsController;
+  late final bool _ownsNotificationsController;
   late final GoRouter _router;
   MetaGymRealtime? _realtime;
   final _navigatorKey = GlobalKey<NavigatorState>();
@@ -212,6 +219,14 @@ class _MetaGymAppState extends State<MetaGymApp> {
     if (widget.sessionController == null) {
       _realtime = MetaGymRealtime(_apiClient, _sessionController);
     }
+    _ownsNotificationsController = widget.notificationsController == null;
+    _notificationsController =
+        widget.notificationsController ??
+        NotificationsController(
+          api: NotificationsApi(_apiClient),
+          session: _sessionController,
+          realtime: _realtime,
+        );
     _router = createAppRouter(
       sessionController: _sessionController,
       navigatorKey: _navigatorKey,
@@ -221,6 +236,9 @@ class _MetaGymAppState extends State<MetaGymApp> {
 
   @override
   void dispose() {
+    if (_ownsNotificationsController) {
+      _notificationsController.dispose();
+    }
     _realtime?.dispose();
     _router.dispose();
     _authController.dispose();
@@ -279,6 +297,9 @@ class _MetaGymAppState extends State<MetaGymApp> {
         ChangeNotifierProvider<ThemeModeController>.value(
           value: _themeModeController,
         ),
+        ChangeNotifierProvider<NotificationsController>.value(
+          value: _notificationsController,
+        ),
       ],
       child: ListenableBuilder(
         listenable: _themeModeController,
@@ -290,16 +311,23 @@ class _MetaGymAppState extends State<MetaGymApp> {
           themeMode: _themeModeController.themeMode,
           routerConfig: _router,
           builder: (context, child) {
+            if (child == null) return const SizedBox.shrink();
             final api = _callsService;
-            if (child == null || api is! CallsApi) {
-              return child ?? const SizedBox.shrink();
-            }
-            return IncomingCallListener(
+            final wrappedCalls = api is CallsApi
+                ? IncomingCallListener(
+                    navigatorKey: _navigatorKey,
+                    session: _sessionController,
+                    api: api,
+                    realtime: _realtime,
+                    child: child,
+                  )
+                : child;
+            return InAppNotificationListener(
               navigatorKey: _navigatorKey,
+              controller: _notificationsController,
               session: _sessionController,
-              api: api,
-              realtime: _realtime,
-              child: child,
+              router: _router,
+              child: wrappedCalls,
             );
           },
         ),
