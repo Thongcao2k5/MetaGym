@@ -276,8 +276,8 @@ function renderLegalTab({ tabId, bodyEl, sysData, onSaved }) {
 
 function openHomeIconModal({ item, existingItems, onSaveAll }) {
   let currentMediaId = item?.mediaId || null;
-  let currentPreviewUrl = item?.thumbnailUrl || item?.imageUrl || (currentMediaId ? publicMediaUrl(currentMediaId, { thumb: true }) : '');
-  let currentFullUrl = item?.imageUrl || (currentMediaId ? publicMediaUrl(currentMediaId) : '');
+  let currentPreviewUrl = publicMediaUrl(item?.thumbnailUrl || item?.imageUrl || currentMediaId, { thumb: !item?.thumbnailUrl });
+  let currentFullUrl = publicMediaUrl(item?.imageUrl || currentMediaId);
   const isNew = !item;
 
   const renderIconPreviewHtml = () => (currentPreviewUrl

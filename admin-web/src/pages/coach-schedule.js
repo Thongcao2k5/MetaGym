@@ -1,4 +1,4 @@
-import { api, buildQuery } from '../services/api.js';
+import { api, buildQuery, resolveApiAssetUrl } from '../services/api.js';
 import { esc, formatDateVN, initials } from '../components/format.js';
 import { icon } from '../components/icons.js';
 import { openDrawer } from '../components/drawer.js';
@@ -60,9 +60,10 @@ const PERIOD_META = Object.freeze({
 
 function renderCoachAvatar(name, avatarUrl, size = 30) {
   const label = esc(initials(name, 'HLV'));
-  if (avatarUrl) {
+  const resolvedUrl = resolveApiAssetUrl(avatarUrl);
+  if (resolvedUrl) {
     return `<span class="cs-avatar" style="width:${size}px;height:${size}px">
-      <img src="${esc(avatarUrl)}" alt="" loading="lazy" decoding="async" />
+      <img src="${esc(resolvedUrl)}" alt="" loading="lazy" decoding="async" />
     </span>`;
   }
   return `<span class="cs-avatar is-monogram" style="width:${size}px;height:${size}px">${label}</span>`;

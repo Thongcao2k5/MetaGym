@@ -1,4 +1,4 @@
-import { api, buildQuery, uploadRaw } from '../services/api.js';
+import { api, buildQuery, resolveApiAssetUrl, uploadRaw } from '../services/api.js';
 import { debounce, esc, formatDateTimeVN, vnd } from '../components/format.js';
 import { icon } from '../components/icons.js';
 import { renderDataTable } from '../components/data-table.js';
@@ -118,7 +118,7 @@ export async function renderVouchersPage({ root, params, shell }) {
         status: 'ACTIVE',
       };
 
-      const initialUrl = item.imageUrl || (item.imageMediaId ? `/api/v1/media/public/${item.imageMediaId}?v=${item.imageMediaId}` : '');
+      const initialUrl = resolveApiAssetUrl(item.imageUrl) || (item.imageMediaId ? resolveApiAssetUrl(`/api/v1/media/public/${item.imageMediaId}?v=${item.imageMediaId}`) : '');
 
       openModal({
         maxWidth: '960px',
@@ -469,9 +469,12 @@ export async function renderVouchersPage({ root, params, shell }) {
           columns: [
             {
               label: 'Voucher & Hình ảnh',
-              render: (row) => `<div class="voucher-row-cell">
-                ${row.imageThumbnailUrl
-                  ? `<img src="${esc(row.imageThumbnailUrl)}" alt="${esc(row.code)}" class="voucher-thumb-img" loading="lazy" decoding="async" data-view-img="${esc(row.imageUrl || row.imageThumbnailUrl)}" data-view-title="${esc(row.code)}" />`
+              render: (row) => {
+                const thumbSrc = resolveApiAssetUrl(row.imageThumbnailUrl);
+                const fullSrc = resolveApiAssetUrl(row.imageUrl || row.imageThumbnailUrl);
+                return `<div class="voucher-row-cell">
+                ${thumbSrc
+                  ? `<img src="${esc(thumbSrc)}" alt="${esc(row.code)}" class="voucher-thumb-img" loading="lazy" decoding="async" data-view-img="${esc(fullSrc)}" data-view-title="${esc(row.code)}" />`
                   : `<span class="voucher-thumb-placeholder">${icon('tag', 18)}</span>`}
                 <div>
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -480,7 +483,8 @@ export async function renderVouchersPage({ root, params, shell }) {
                   </div>
                   ${row.description ? `<span class="person-sub">${esc(row.description)}</span>` : ''}
                 </div>
-              </div>`,
+              </div>`;
+              },
             },
             {
               label: 'Mức giảm',

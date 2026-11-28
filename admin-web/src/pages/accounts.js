@@ -1,4 +1,4 @@
-import { api, buildQuery, uploadRaw } from '../services/api.js';
+import { api, buildQuery, resolveApiAssetUrl, uploadRaw } from '../services/api.js';
 import {
   debounce,
   esc,
@@ -98,8 +98,9 @@ function renderSelectOptions(labelMap, selectedValue) {
 }
 
 function resolveAvatarUrl(url, mediaId, { size = null } = {}) {
-  if (!url) return '';
-  const [base, query] = url.split('?');
+  const resolved = resolveApiAssetUrl(url);
+  if (!resolved) return '';
+  const [base, query] = resolved.split('?');
   const params = new URLSearchParams(query || '');
   if (size) params.set('size', size);
   if (mediaId && !params.has('v')) params.set('v', mediaId);

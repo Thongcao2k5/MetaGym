@@ -86,6 +86,16 @@ function createFakeEquipmentDb({ adminId }) {
       return { rows: [], rowCount: 0 };
     }
 
+    if (q.startsWith('SELECT storage_key, mime_type FROM media_assets WHERE id = $1')) {
+      const [id, allowedPurposes] = params;
+      const row = mediaAssets.get(id);
+      if (row && row.status === 'READY' && row.access_scope === 'PUBLIC'
+        && (!allowedPurposes || allowedPurposes.includes(row.purpose))) {
+        return { rows: [{ storage_key: row.storage_key, mime_type: row.mime_type }], rowCount: 1 };
+      }
+      return { rows: [], rowCount: 0 };
+    }
+
     if (q.startsWith('SELECT id, storage_key, purpose FROM media_assets WHERE id = $1')) {
       const [id, purpose] = params;
       const row = mediaAssets.get(id);
@@ -246,7 +256,11 @@ test('Equipment supports iconKey, SYSTEM_ICON WebP upload, public iconUrl, and D
     assert.equal(created.iconUrl, `/api/v1/media/public/${iconMediaId}?v=${iconMediaId}`);
     assert.equal(created.iconThumbnailUrl, `/api/v1/media/public/${iconMediaId}?size=120&v=${iconMediaId}`);
 
-    // 3. Public GET /equipment exposes icon fields cleanly
+    // 3. Public GET /equipment exposes icon fields cleanly and public media allows cross-origin embedding
+    const mediaPubRes = await fetch(`${baseUrl}/media/public/${iconMediaId}`);
+    assert.equal(mediaPubRes.status, 200);
+    assert.equal(mediaPubRes.headers.get('cross-origin-resource-policy'), 'cross-origin');
+
     const pubRes = await fetch(`${baseUrl}/equipment`);
     assert.equal(pubRes.status, 200);
     const pubItem = (await pubRes.json()).data[0];

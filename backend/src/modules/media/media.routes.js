@@ -25,7 +25,7 @@ import {
 const uuid = z.uuid();
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
-const PUBLIC_PURPOSES = ['GYM', 'EQUIPMENT', 'PACKAGE', 'SYSTEM_ICON', 'VOUCHER'];
+const PUBLIC_PURPOSES = ['AVATAR', 'GYM', 'EQUIPMENT', 'PACKAGE', 'SYSTEM_ICON', 'VOUCHER'];
 const WEBP_THUMB_PURPOSES = new Set(['PACKAGE', 'SYSTEM_ICON', 'VOUCHER']);
 const ALLOWED_VIDEO_MIMES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 

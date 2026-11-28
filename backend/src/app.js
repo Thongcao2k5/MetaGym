@@ -124,7 +124,7 @@ export function createApp({
 
   const app = express();
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors({ origin: corsOrigin }));
   app.use(express.json());
   app.use(morgan((tokens, request, response) =>

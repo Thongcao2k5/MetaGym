@@ -32,6 +32,24 @@ export function getApiBaseUrl() {
   return apiBase;
 }
 
+/**
+ * Resolves a backend-returned API asset path (e.g. `/api/v1/media/...` or `/api/v1/users/.../avatar`)
+ * against the configured `getApiBaseUrl()` so cross-origin Admin hosts (Cloudflare Pages / localhost)
+ * load images from the actual backend server instead of their own origin.
+ */
+export function resolveApiAssetUrl(pathOrUrl) {
+  if (!pathOrUrl) return '';
+  const raw = String(pathOrUrl).trim();
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:') || raw.startsWith('blob:')) {
+    return raw;
+  }
+  if (raw.startsWith('/api/v1')) {
+    return `${apiBase}${raw.slice('/api/v1'.length)}`;
+  }
+  return raw;
+}
+
 export function configureApi({ baseUrl, onUnauthorized } = {}) {
   if (typeof baseUrl === 'string') apiBase = baseUrl.replace(/\/$/, '');
   if (typeof onUnauthorized === 'function' || onUnauthorized === null) {
