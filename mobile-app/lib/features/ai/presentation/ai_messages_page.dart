@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_conversation.dart';
 import 'package:meta_gym_app/features/ai/domain/ai_message.dart';
@@ -9,20 +10,38 @@ import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
+const _aiQuickSuggestions = <String>[
+  'Gợi ý bữa phụ 25g đạm',
+  'Chỉnh form Bench Press',
+  'Lịch phục hồi vai',
+];
+
+String _formatAiMessageTime(String raw) {
+  final parsed = DateTime.tryParse(raw.trim());
+  if (parsed == null) return raw;
+  final local = parsed.toLocal();
+  final hh = local.hour.toString().padLeft(2, '0');
+  final mm = local.minute.toString().padLeft(2, '0');
+  return '$hh:$mm';
+}
+
 class AiMessagesPage extends StatefulWidget {
   const AiMessagesPage({
     required this.service,
     required this.conversation,
+    this.initialPrompt,
     super.key,
   });
   final AiService service;
   final AiConversation conversation;
+  final String? initialPrompt;
   @override
   State<AiMessagesPage> createState() => _AiMessagesPageState();
 }
 
 class _AiMessagesPageState extends State<AiMessagesPage> {
   final _question = TextEditingController();
+  final _scrollController = ScrollController();
   List<AiMessage> _messages = const [];
   bool _loading = true;
   bool _loadingMore = false;
@@ -38,6 +57,9 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialPrompt != null && widget.initialPrompt!.trim().isNotEmpty) {
+      _question.text = widget.initialPrompt!.trim();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
     });
@@ -46,6 +68,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
   @override
   void dispose() {
     _question.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -162,6 +185,20 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
         _pendingContent = null;
         _pendingRequestId = null;
       });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        final reduced = MediaQuery.disableAnimationsOf(context);
+        final target = _scrollController.position.maxScrollExtent;
+        if (reduced) {
+          _scrollController.jumpTo(target);
+        } else {
+          _scrollController.animateTo(
+            target,
+            duration: MetaGymTheme.localStateDuration,
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
     } on ApiException catch (error) {
       if (mounted) {
         setState(() {
@@ -187,18 +224,20 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    final canPop = Navigator.of(context).canPop();
     return Scaffold(
       backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leadingWidth: 72,
-        leading: Navigator.of(context).canPop()
+        leadingWidth: canPop ? 72 : null,
+        leading: canPop
             ? Padding(
                 padding: const EdgeInsets.only(left: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: MetaGymCircleIconButton(
+                    svgAsset: MetaGymIcons.commonBack,
                     icon: Icons.arrow_back_rounded,
                     tooltip: 'Quay lại',
                     onTap: () => Navigator.of(context).maybePop(),
@@ -206,15 +245,32 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                 ),
               )
             : null,
-        titleSpacing: Navigator.of(context).canPop() ? 8 : 16,
-        title: Text(
-          widget.conversation.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
+        titleSpacing: canPop ? 8 : 16,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.conversation.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'Trợ lý AI Meta Gym',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.primaryText,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -228,6 +284,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
             children: [
               Expanded(
                 child: ListView(
+                  controller: _scrollController,
                   padding: EdgeInsets.fromLTRB(
                     16,
                     MediaQuery.paddingOf(context).top + kToolbarHeight + 12,
@@ -236,31 +293,78 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                   ),
                   children: [
                     MetaGymGlassCard(
+                      solid: false,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
+                        horizontal: 12,
                         vertical: 10,
                       ),
                       child: Row(
                         children: [
-                          MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 18, fallbackIcon: Icons.info_outline_rounded),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Nội dung AI chỉ để tham khảo; không thay thế tư vấn y tế hoặc huấn luyện cá nhân.',
-                              style: TextStyle(
-                                color: palette.textWarmMuted,
-                                fontSize: 11.5,
+                          Image.asset(
+                            'assets/images/mascot/meta_kong_hero.webp',
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, _, _) => Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: isLight
+                                    ? const Color(0xFFFFEBE3)
+                                    : const Color(0xFF222834),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: MetaGymTheme.primary.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                ),
                               ),
+                              alignment: Alignment.center,
+                              child: const MetaGymSvgIcon(
+                                MetaGymIcons.navAiEmblem,
+                                size: 22,
+                                fallbackIcon: Icons.auto_awesome_rounded,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Meta Kong · Trợ lý AI Meta Gym',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: palette.primaryText,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Nội dung AI chỉ để tham khảo; không thay thế tư vấn y tế hoặc huấn luyện cá nhân.',
+                                  style: TextStyle(
+                                    color: palette.textWarmMuted,
+                                    fontSize: 12,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     if (_loading)
                       const Center(
-                        child: CircularProgressIndicator(
-                          color: MetaGymTheme.primary,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 28),
+                          child: CircularProgressIndicator(
+                            color: MetaGymTheme.primary,
+                          ),
                         ),
                       )
                     else ...[
@@ -280,7 +384,11 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                           ),
                           child: Row(
                             children: [
-                              MetaGymSvgIcon(MetaGymIcons.stateError, size: 18, fallbackIcon: Icons.error_outline_rounded),
+                              const MetaGymSvgIcon(
+                                MetaGymIcons.stateError,
+                                size: 18,
+                                fallbackIcon: Icons.error_outline_rounded,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -289,6 +397,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                                     color: isLight
                                         ? palette.error
                                         : const Color(0xFFFFB2B6),
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
@@ -310,77 +419,20 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                       ],
                       if (_messages.isEmpty && _error == null)
                         MetaGymGlassCard(
+                          solid: false,
                           padding: const EdgeInsets.all(24),
                           child: Center(
                             child: Text(
                               'Chưa có câu hỏi nào.',
-                              style: TextStyle(color: palette.textWarmMuted),
+                              style: TextStyle(
+                                color: palette.textWarmMuted,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ),
                       for (final message in _messages)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: message.role == 'ASSISTANT'
-                                ? (isLight
-                                      ? palette.surfaceSolid
-                                      : const Color(0xC42B2622))
-                                : (isLight
-                                      ? palette.metricPanelBg
-                                      : const Color(0x80211E1C)),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: message.role == 'ASSISTANT'
-                                  ? (isLight
-                                        ? const Color(0x66D9431E)
-                                        : const Color(0x88FF5E36))
-                                  : (isLight
-                                        ? palette.borderSolid
-                                        : const Color(0x9A8C8176)),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  MetaGymResolvedIcon(message.role == 'ASSISTANT'
-                                        ? Icons.auto_awesome_rounded
-                                        : Icons.person_rounded, size: 16, fallbackColor: message.role == 'ASSISTANT'
-                                        ? palette.primaryText
-                                        : palette.reflection),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    message.role == 'ASSISTANT'
-                                        ? 'Trợ lý AI'
-                                        : 'Bạn',
-                                    style: TextStyle(
-                                      color: message.role == 'ASSISTANT'
-                                          ? palette.primaryText
-                                          : palette.textPrimary,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                message.role == 'ASSISTANT' &&
-                                        message.status != 'COMPLETED'
-                                    ? 'Phản hồi chưa hoàn tất.'
-                                    : message.content,
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontSize: 14,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildAiChatBubble(context, message, palette, isLight),
                       if (_hasMore)
                         TextButton(
                           style: TextButton.styleFrom(
@@ -397,22 +449,25 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
                 decoration: BoxDecoration(
                   color: isLight
-                      ? const Color(0xF5FFFFFF)
-                      : const Color(0xF0241F1B),
+                      ? const Color(0xF5F5F7FA)
+                      : const Color(0xF2171412),
                   border: Border(
                     top: BorderSide(
                       color: isLight
                           ? palette.borderSolid
-                          : const Color(0xA3A79D92),
+                          : const Color(0x52A79D92),
+                      width: 0.9,
                     ),
                   ),
                 ),
                 child: SafeArea(
                   top: false,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (_sendError != null)
                         Padding(
@@ -423,6 +478,7 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                               color: isLight
                                   ? palette.error
                                   : const Color(0xFFFFB2B6),
+                              fontSize: 13,
                             ),
                           ),
                         ),
@@ -431,46 +487,104 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
                             _notice!,
-                            style: TextStyle(color: palette.textWarmMuted),
+                            style: TextStyle(
+                              color: palette.textWarmMuted,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       if ((_sendError != null || _notice != null) &&
                           _question.text.trim().isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(48, 48),
-                            ),
-                            onPressed: _sending ? null : _send,
-                            child: Text(
-                              'Thử lại câu hỏi',
-                              style: TextStyle(color: palette.primaryText),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(48, 48),
+                              ),
+                              onPressed: _sending ? null : _send,
+                              child: Text(
+                                'Thử lại câu hỏi',
+                                style: TextStyle(color: palette.primaryText),
+                              ),
                             ),
                           ),
                         ),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final (idx, tip)
+                                in _aiQuickSuggestions.indexed) ...[
+                              if (idx > 0) const SizedBox(width: 8),
+                              MetaGymTap(
+                                onTap: _sending
+                                    ? null
+                                    : () {
+                                        _question.text = tip;
+                                        _question.selection =
+                                            TextSelection.collapsed(
+                                              offset: tip.length,
+                                            );
+                                      },
+                                borderRadius: BorderRadius.circular(999),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 11,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isLight
+                                        ? palette.surfaceSolid
+                                        : const Color(0xA6231F1C),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: isLight
+                                          ? palette.borderSolid
+                                          : const Color(0x52A79D92),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    tip,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
                             child: TextField(
                               controller: _question,
                               maxLength: 10000,
-                              maxLines: 2,
+                              minLines: 1,
+                              maxLines: 3,
                               style: TextStyle(
                                 color: palette.textPrimary,
+                                fontSize: 14,
                               ),
                               decoration: InputDecoration(
-                                labelText: 'Câu hỏi',
+                                hintText: 'Nhập câu hỏi cho Trợ lý AI...',
                                 counterText: '',
-                                labelStyle: TextStyle(
-                                  color: palette.textWarmMuted,
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  color: palette.primaryText,
-                                  fontWeight: FontWeight.w600,
+                                hintStyle: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: 13.5,
                                 ),
                                 filled: true,
                                 fillColor: palette.metricPanelBg,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide(
@@ -499,12 +613,25 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                               backgroundColor: MetaGymTheme.primary,
                               foregroundColor: Colors.white,
                               minimumSize: const Size(80, 48),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
                             onPressed: _sending ? null : _send,
-                            child: Text(_sending ? 'Đang hỏi…' : 'Hỏi AI'),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                _sending ? 'Đang hỏi…' : 'Hỏi AI',
+                                maxLines: 1,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -513,6 +640,174 @@ class _AiMessagesPageState extends State<AiMessagesPage> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAiChatBubble(
+    BuildContext context,
+    AiMessage message,
+    MetaGymPalette palette,
+    bool isLight,
+  ) {
+    final isAi = message.role == 'ASSISTANT';
+    final maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.80;
+    final formattedTime = _formatAiMessageTime(message.createdAt);
+    final bodyText = isAi && message.status != 'COMPLETED'
+        ? 'Phản hồi chưa hoàn tất.'
+        : message.content;
+
+    if (!isAi) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: MetaGymTheme.primary,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      topRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                      bottomRight: Radius.circular(4),
+                    ),
+                    boxShadow: isLight
+                        ? null
+                        : const [
+                            BoxShadow(
+                              color: Color(0x3DFF5E36),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: Text(
+                    bodyText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+                if (formattedTime.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    formattedTime,
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: 12,
+                      fontFeatures: MetaGymTheme.tabularFigures,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: isLight ? const Color(0xFFFFEBE3) : const Color(0xFF222834),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: MetaGymTheme.primary.withValues(
+                  alpha: isLight ? 0.42 : 0.45,
+                ),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const MetaGymSvgIcon(
+              MetaGymIcons.navAiEmblem,
+              size: 18,
+              fallbackIcon: Icons.auto_awesome_rounded,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 11,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isLight
+                          ? palette.surfaceSolid
+                          : const Color(0xD426211D),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(18),
+                        topRight: Radius.circular(18),
+                        bottomLeft: Radius.circular(4),
+                        bottomRight: Radius.circular(18),
+                      ),
+                      border: Border.all(
+                        color: MetaGymTheme.primary.withValues(
+                          alpha: isLight ? 0.28 : 0.34,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Trợ lý AI Meta Gym',
+                          style: TextStyle(
+                            color: palette.primaryText,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          bodyText,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 14,
+                            height: 1.48,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (formattedTime.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      formattedTime,
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontSize: 12,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ],
       ),

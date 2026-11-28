@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:meta_gym_app/features/progress/data/member_progress_service.dart';
 import 'package:meta_gym_app/features/progress/domain/journal_entry.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
+import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_photo.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 
@@ -325,6 +329,73 @@ void main() {
     ]);
     await tester.pump(const Duration(seconds: 3));
   });
+
+  for (final entry in [('dark', AppTheme.dark), ('light', AppTheme.light)]) {
+    testWidgets(
+      'weight chart time-range selector switches ranges without overflow (${entry.$1}, 375px @ 1.3x)',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final progress = _ProgressFixture();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: entry.$2,
+            home: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(375, 812),
+                textScaler: TextScaler.linear(1.3),
+              ),
+              child: MemberJournalPage(
+                service: _JournalFixture(),
+                membershipService: const _MembershipFixture(true),
+                photoService: _PhotoFixture(),
+                progressService: progress,
+                picker: _PickerFixture(),
+                todayOverride: fixedToday,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Số đo & biểu đồ'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Biểu đồ cân nặng'), findsOneWidget);
+        expect(find.text('72.0 → 70.5'), findsOneWidget);
+        expect(find.text('8 tuần'), findsOneWidget);
+        expect(find.text('30 ngày'), findsOneWidget);
+        expect(find.text('Toàn bộ'), findsOneWidget);
+
+        await tester.ensureVisible(
+          find.byKey(const Key('journal-chart-range-30 ngày')),
+        );
+        await tester.tap(find.byKey(const Key('journal-chart-range-30 ngày')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          progress.lastFrom,
+          fixedToday.subtract(const Duration(days: 29)),
+        );
+
+        await tester.tap(find.byKey(const Key('journal-chart-range-Toàn bộ')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(progress.lastFrom, isNull);
+
+        await tester.tap(find.byKey(const Key('journal-chart-range-8 tuần')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          progress.lastFrom,
+          fixedToday.subtract(const Duration(days: 55)),
+        );
+      },
+    );
+  }
 }
 
 class _JournalFixture implements MemberJournalService {
@@ -423,4 +494,35 @@ class _PhotoFixture implements MemberPhotoService {
 class _PickerFixture implements ProgressPhotoPicker {
   @override
   Future<SelectedProgressImage?> pick() async => null;
+}
+
+class _ProgressFixture implements MemberProgressService {
+  DateTime? lastFrom;
+  DateTime? lastTo;
+
+  @override
+  Future<ProgressSummary> getSummary() async => const ProgressSummary(
+    workoutCount: 12,
+    mealCount: 24,
+    progressPhotoCount: 2,
+    latestMeasurement: WeightPoint(
+      measuredAt: '2026-11-13T08:00:00Z',
+      weightKg: 70.5,
+      bodyFatPercent: 16.2,
+    ),
+  );
+
+  @override
+  Future<List<WeightPoint>> getCharts({DateTime? from, DateTime? to}) async {
+    lastFrom = from;
+    lastTo = to;
+    return const [
+      WeightPoint(measuredAt: '2026-10-01T08:00:00Z', weightKg: 72.0),
+      WeightPoint(measuredAt: '2026-10-20T08:00:00Z', weightKg: 71.2),
+      WeightPoint(measuredAt: '2026-11-13T08:00:00Z', weightKg: 70.5),
+    ];
+  }
+
+  @override
+  Future<List<ProgressComment>> getComments() async => const [];
 }

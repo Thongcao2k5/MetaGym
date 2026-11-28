@@ -243,7 +243,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     if (_progressService == null) return;
     try {
       final points = await _fetchChartRange(range);
-      if (mounted) setState(() => _weightPoints = points);
+      if (mounted && _chartRange == range) {
+        setState(() => _weightPoints = points);
+      }
     } catch (_) {}
   }
 
@@ -2522,7 +2524,6 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   Widget _buildProgressTab() {
     final palette = _palette;
-    final colors = _colors;
     final latestMeasure = _measurements.isNotEmpty ? _measurements.first : null;
     final latestWeight =
         latestMeasure?.weightKg ?? _summary?.latestMeasurement?.weightKg;
@@ -2770,71 +2771,120 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const MetaGymSvgIcon(
-                        MetaGymIcons.statsChartLine,
-                        size: 17,
-                        fallbackIcon: Icons.show_chart_rounded,
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        'Biểu đồ cân nặng',
-                        style: TextStyle(
-                          color: palette.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const MetaGymSvgIcon(
+                          MetaGymIcons.statsChartLine,
+                          size: 18,
+                          fallbackIcon: Icons.show_chart_rounded,
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (trendRange != null) ...[
-                        Text(
-                          trendRange,
-                          style: TextStyle(
-                            color: palette.success,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            fontFeatures: MetaGymTheme.tabularFigures,
+                        const SizedBox(width: 7),
+                        Flexible(
+                          child: Text(
+                            'Biểu đồ cân nặng',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
                       ],
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _chartRange,
-                          dropdownColor: colors.surface,
-                          style: TextStyle(
-                            color: palette.primaryText,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          items: const ['8 tuần', '30 ngày', 'Toàn bộ']
-                              .map(
-                                (label) => DropdownMenuItem(
-                                  value: label,
-                                  child: Text(label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) _changeChartRange(value);
-                          },
+                    ),
+                  ),
+                  if (trendRange != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: palette.success.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: palette.success.withValues(alpha: 0.34),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Text(
+                        trendRange,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.success,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
+              const SizedBox(height: 4),
               Text(
                 'Thay đổi theo những lần bạn nhập số đo',
-                style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                style: TextStyle(color: palette.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: palette.metricPanelBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: palette.metricPanelBorder),
+                ),
+                child: Row(
+                  children: [
+                    for (final label in const ['8 tuần', '30 ngày', 'Toàn bộ'])
+                      Expanded(
+                        child: Semantics(
+                          button: true,
+                          selected: _chartRange == label,
+                          child: MetaGymTap(
+                            key: Key('journal-chart-range-$label'),
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => _changeChartRange(label),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              constraints: const BoxConstraints(minHeight: 38),
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _chartRange == label
+                                    ? MetaGymTheme.brandOrange
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _chartRange == label
+                                      ? Colors.white
+                                      : palette.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: _chartRange == label
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
               if (_weightPoints.length < 2)
@@ -2906,7 +2956,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                                       value.toStringAsFixed(0),
                                       style: TextStyle(
                                         color: palette.textSecondary,
-                                        fontSize: 10,
+                                        fontSize: 11,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
                                       ),
                                     );
                                   },
@@ -2943,7 +2995,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                                           : DateFormat('d/M').format(d),
                                       style: TextStyle(
                                         color: palette.textSecondary,
-                                        fontSize: 10,
+                                        fontSize: 11,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
                                       ),
                                     );
                                   },
@@ -3011,16 +3065,20 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Số đo cơ thể',
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Text(
+                      'Số đo cơ thể',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   TextButton(
                     onPressed: () {
                       final router = GoRouter.maybeOf(context);
