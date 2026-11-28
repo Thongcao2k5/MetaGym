@@ -7,7 +7,12 @@ import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
+import 'package:meta_gym_app/features/membership/domain/loyalty_models.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_controller.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_history_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_my_rewards_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_rewards_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_checkout_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
@@ -36,21 +41,46 @@ class MembershipPage extends StatefulWidget {
 class _MembershipPageState extends State<MembershipPage> {
   int _metaPoints = 1240;
 
+  LoyaltyController? _readLoyalty(BuildContext context) {
+    try {
+      return context.read<LoyaltyController>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  LoyaltyController? _watchLoyalty(BuildContext context) {
+    try {
+      return context.watch<LoyaltyController>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final controller = context.read<MembershipController>();
+      final loyalty = _readLoyalty(context);
       final paymentId = widget.paymentReturnId;
       final method = widget.paymentReturnMethod;
       if (paymentId != null &&
           method != null &&
           await controller.resumeOnlinePayment(paymentId, method: method)) {
-        if (mounted) await _openCheckout(const MembershipCheckoutPage());
+        if (mounted) {
+          await loyalty?.refreshSummaryAndRewards();
+          if (mounted) await _openCheckout(const MembershipCheckoutPage());
+        }
         return;
       }
-      if (mounted) await controller.load();
+      if (mounted) {
+        await Future.wait<void>([
+          controller.load(),
+          if (loyalty != null) loyalty.loadAll(),
+        ]);
+      }
     });
   }
 
@@ -63,17 +93,56 @@ class _MembershipPageState extends State<MembershipPage> {
 
   Future<void> _openCheckout(MembershipCheckoutPage page) async {
     final controller = context.read<MembershipController>();
+    final loyalty = _readLoyalty(context);
     await MetaGymNavigation.pushOnce<void>(
       context,
       MetaGymPageRoute<void>(builder: (_) => page),
     );
-    if (mounted && controller.pendingPayment == null) await controller.load();
+    if (mounted && controller.pendingPayment == null) {
+      await Future.wait<void>([
+        controller.load(),
+        if (loyalty != null) loyalty.refreshSummaryAndRewards(),
+      ]);
+    }
   }
 
   Future<void> _openHistory() => MetaGymNavigation.pushOnce<void>(
     context,
     MetaGymPageRoute<void>(builder: (_) => const PaymentHistoryPage()),
   );
+
+  Future<void> _openLoyaltyRewards() async {
+    final loyalty = _readLoyalty(context);
+    if (loyalty == null) {
+      await _openRedeemPoints();
+      return;
+    }
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute<void>(builder: (_) => const LoyaltyRewardsPage()),
+    );
+  }
+
+  Future<void> _openLoyaltyMyRewards() async {
+    final loyalty = _readLoyalty(context);
+    if (loyalty == null) return;
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute<void>(builder: (_) => const LoyaltyMyRewardsPage()),
+    );
+  }
+
+  Future<void> _openLoyaltyHistory() async {
+    final loyalty = _readLoyalty(context);
+    if (loyalty == null) {
+      await _openHistory();
+      return;
+    }
+    await MetaGymNavigation.pushOnce<void>(
+      context,
+      MetaGymPageRoute<void>(builder: (_) => const LoyaltyHistoryPage()),
+    );
+  }
 
   Future<void> _openRedeemPoints() async {
     final reward = await showMetaPointsRedeemSheet(
@@ -133,7 +202,10 @@ class _MembershipPageState extends State<MembershipPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
     final controller = context.watch<MembershipController>();
+    final loyaltyController = _watchLoyalty(context);
+    final loyaltySummary = loyaltyController?.summary;
     final memberName = _resolveMemberName(context);
     final now = DateTime.now();
 
@@ -144,9 +216,11 @@ class _MembershipPageState extends State<MembershipPage> {
     final secondaryMemberships = controller.memberships
         .where((m) => m.id != primaryMembership?.id)
         .toList();
-    final primaryTier = primaryMembership != null
-        ? resolveMembershipTierInfo(planName: primaryMembership.planName)
-        : null;
+    final primaryTier = loyaltySummary != null
+        ? loyaltySummary.toMembershipTierInfo()
+        : (primaryMembership != null
+            ? resolveMembershipTierInfo(planName: primaryMembership.planName)
+            : null);
 
     final isEmptySelectionMode =
         primaryMembership == null &&
@@ -154,7 +228,7 @@ class _MembershipPageState extends State<MembershipPage> {
         controller.plans.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: MetaGymTheme.scaffoldBackground,
+      backgroundColor: palette.canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -174,7 +248,15 @@ class _MembershipPageState extends State<MembershipPage> {
                             color: Color(0xFFA8B1C2),
                           ),
                         ]
-                      : const [],
+                      : [
+                          MetaGymCircleIconButton(
+                            key: const Key('membership-loyalty-history-btn'),
+                            svgAsset: MetaGymIcons.workoutHistory,
+                            icon: Icons.history_rounded,
+                            tooltip: 'Lịch sử điểm',
+                            onTap: _openLoyaltyHistory,
+                          ),
+                        ],
                 ),
                 Expanded(
                   child: controller.isLoading && controller.plans.isEmpty
@@ -188,7 +270,13 @@ class _MembershipPageState extends State<MembershipPage> {
                           plans: controller.plans,
                           busy: controller.isLoading,
                           onSelectPlan: _reviewPurchase,
-                          onRefresh: () => controller.load(),
+                          onRefresh: () async {
+                            await Future.wait<void>([
+                              controller.load(),
+                              if (loyaltyController != null)
+                                loyaltyController.loadAll(),
+                            ]);
+                          },
                           topBanners: [
                             if (controller.errorMessage case final error?)
                               MembershipErrorCard(
@@ -201,8 +289,14 @@ class _MembershipPageState extends State<MembershipPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
-                          backgroundColor: const Color(0xFF2B2622),
-                          onRefresh: () => controller.load(),
+                          backgroundColor: palette.surfaceSolid,
+                          onRefresh: () async {
+                            await Future.wait<void>([
+                              controller.load(),
+                              if (loyaltyController != null)
+                                loyaltyController.loadAll(),
+                            ]);
+                          },
                           child: ListView(
                             padding: const EdgeInsets.fromLTRB(16, 2, 16, 36),
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -247,6 +341,7 @@ class _MembershipPageState extends State<MembershipPage> {
                                   memberName: memberName,
                                   now: now,
                                   busy: controller.isLoading,
+                                  tierOverride: primaryTier,
                                   onRenew: controller.plans.isEmpty
                                       ? null
                                       : () {
@@ -258,33 +353,50 @@ class _MembershipPageState extends State<MembershipPage> {
                                             _reviewPurchase(target);
                                           }
                                         },
-                                  onRedeemPoints: _openRedeemPoints,
                                 ),
                                 for (final extra in secondaryMemberships)
                                   _ScheduledMembershipBanner(membership: extra),
 
                                 // 2. VÍ ĐIỂM META POINTS & TIẾN ĐỘ NÂNG HẠNG
                                 MetaPointsWalletCard(
-                                  points: _metaPoints,
+                                  points: loyaltySummary?.availablePoints ??
+                                      _metaPoints,
+                                  tierPoints: loyaltySummary?.tierPoints,
+                                  remainingToNextTier:
+                                      loyaltySummary?.remainingToNextTier,
+                                  progressFraction:
+                                      loyaltySummary?.progressFraction,
+                                  unusedRedemptionsCount:
+                                      loyaltySummary?.unusedRedemptionsCount ??
+                                          0,
                                   tier: primaryTier!,
-                                  onRedeemTap: _openRedeemPoints,
+                                  onRedeemTap: _openLoyaltyRewards,
+                                  onMyRewardsTap: loyaltyController != null
+                                      ? _openLoyaltyMyRewards
+                                      : null,
+                                  onTierInfoTap: loyaltySummary != null
+                                      ? () => showLoyaltyTiersSheet(
+                                            context,
+                                            summary: loyaltySummary,
+                                          )
+                                      : null,
                                 ),
 
                                 // 3. ƯU ĐÃI HẠNG THẺ ĐANG ÁP DỤNG
                                 ActiveTierPerksCard(tier: primaryTier),
                               ],
 
-                              // 4. NÂNG CẤP HẠNG THẺ (CAROUSEL VUỐT NGANG)
+                              // 4. NÂNG CẤP GÓI TẬP (CAROUSEL VUỐT NGANG)
                               if (controller.pendingPayment == null) ...[
                                 const SizedBox(height: 2),
                                 MembershipSectionHeader(
                                   svgAsset: MetaGymIcons.premiumCrown,
-                                  title: 'Nâng cấp hạng thẻ',
+                                  title: 'Nâng cấp gói tập',
                                   trailing: controller.plans.isNotEmpty
                                       ? Text(
-                                          'Vuốt ngang · ${controller.plans.length} hạng',
-                                          style: const TextStyle(
-                                            color: MetaGymTheme.textSecondary,
+                                          'Vuốt ngang · ${controller.plans.length} gói',
+                                          style: TextStyle(
+                                            color: palette.textSecondary,
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
                                             fontFeatures:
@@ -907,7 +1019,19 @@ class _MembershipPlanCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
+                Text(
+                  '+${formatLoyaltyPoints(bonusPointsForPlanDuration(plan.durationDays))} điểm Meta Points thưởng',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: MetaGymTheme.brandOrange,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Text(
                   description,
                   maxLines: 3,

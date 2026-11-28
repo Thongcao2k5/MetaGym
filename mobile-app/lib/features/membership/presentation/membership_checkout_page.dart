@@ -9,7 +9,9 @@ import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/membership/domain/loyalty_models.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
 import 'package:meta_gym_app/features/membership/presentation/widgets/membership_tier_widgets.dart';
@@ -46,6 +48,10 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _applyPreselectedLoyaltyVoucher();
+    });
     _statusPoll = Timer.periodic(
       const Duration(seconds: 4),
       (timer) => _refreshOnlinePaymentIfPending(
@@ -54,12 +60,55 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
     );
   }
 
+  void _applyPreselectedLoyaltyVoucher() {
+    if (!_reviewing || _appliedVoucher != null) return;
+    final loyalty = _readLoyalty(context);
+    final selected = loyalty?.selectedCheckoutVoucher;
+    if (selected == null || !selected.canApplyAtCheckout) return;
+    setState(() {
+      _appliedVoucher = _CheckoutVoucher(
+        code: selected.voucherCode,
+        discount: selected.discountAmount,
+      );
+      _voucherController.text = selected.voucherCode;
+      _voucherMessage =
+          'Đã tự động áp dụng "${selected.title}" (-${formatMembershipMoney(selected.discountAmount)}).';
+    });
+  }
+
+  Future<void> _confirmMockPayment(MembershipController controller) async {
+    await controller.confirmPayment();
+    if (!mounted) return;
+    if (controller.purchaseResult != null ||
+        controller.checkoutPayment?.status == 'SUCCESS') {
+      final loyalty = _readLoyalty(context);
+      loyalty?.clearSelectedCheckoutVoucher();
+      unawaited(loyalty?.refreshSummaryAndRewards());
+    }
+  }
+
   @override
   void dispose() {
     _statusPoll.cancel();
     _voucherController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  LoyaltyController? _readLoyalty(BuildContext context) {
+    try {
+      return context.read<LoyaltyController>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  LoyaltyController? _watchLoyalty(BuildContext context) {
+    try {
+      return context.watch<LoyaltyController>();
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 
   void _applyVoucherInput() {
@@ -72,6 +121,21 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
       return;
     }
     FocusScope.of(context).unfocus();
+    final vouchers = _readLoyalty(context)?.usableCheckoutVouchers ?? const [];
+    final matched = vouchers
+        .where((v) => v.voucherCode.toUpperCase() == code)
+        .firstOrNull;
+    if (matched != null) {
+      setState(() {
+        _appliedVoucher = _CheckoutVoucher(
+          code: matched.voucherCode,
+          discount: matched.discountAmount,
+        );
+        _voucherMessage =
+            'Đã áp dụng "${matched.title}" (-${formatMembershipMoney(matched.discountAmount)}).';
+      });
+      return;
+    }
     setState(() {
       _appliedVoucher = null;
       _voucherMessage =
@@ -382,7 +446,7 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                               icon: Icons.verified_rounded,
                               onPressed: busy
                                   ? null
-                                  : controller.confirmPayment,
+                                  : () => _confirmMockPayment(controller),
                             ),
                           ],
                           if (controller.checkoutService != null) ...[
@@ -564,6 +628,9 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                           controller: _voucherController,
                           appliedVoucher: _appliedVoucher,
                           message: _voucherMessage,
+                          availableVouchers:
+                              _watchLoyalty(context)?.usableCheckoutVouchers ??
+                              const [],
                           onApplyInput: _applyVoucherInput,
                           onSelectVoucher: _selectVoucher,
                         ),
@@ -718,6 +785,12 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                                     ? 'Hạn mới dự kiến'
                                     : 'Hết hạn dự kiến',
                                 value: formatMembershipDate(quote.endDate),
+                              ),
+                              _SummaryPriceRow(
+                                label: 'Meta Points thưởng',
+                                value:
+                                    '+${formatLoyaltyPoints(bonusPointsForPlanDuration(plan.durationDays))} điểm',
+                                valueColor: MetaGymTheme.progressGreen,
                               ),
                               if (_appliedVoucher != null && discount > 0)
                                 _SummaryPriceRow(
@@ -945,7 +1018,11 @@ class _MembershipCheckoutPageState extends State<MembershipCheckoutPage>
                         onPressed: busy
                             ? null
                             : () async {
-                                if (await controller.buy(plan) && mounted) {
+                                if (await controller.buy(
+                                      plan,
+                                      voucherCode: _appliedVoucher?.code,
+                                    ) &&
+                                    mounted) {
                                   setState(() => _reviewing = false);
                                   final order = controller.pendingPayment;
                                   if (order?.paymentUrl != null &&
@@ -1035,6 +1112,7 @@ class _LuxuryPromoCodeCard extends StatelessWidget {
     required this.message,
     required this.onApplyInput,
     required this.onSelectVoucher,
+    this.availableVouchers = const [],
   });
 
   final TextEditingController controller;
@@ -1042,6 +1120,7 @@ class _LuxuryPromoCodeCard extends StatelessWidget {
   final String? message;
   final VoidCallback onApplyInput;
   final ValueChanged<_CheckoutVoucher?> onSelectVoucher;
+  final List<LoyaltyRedemption> availableVouchers;
 
   @override
   Widget build(BuildContext context) {
@@ -1191,6 +1270,55 @@ class _LuxuryPromoCodeCard extends StatelessWidget {
                 ],
               ),
             ),
+
+            if (availableVouchers.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final v in availableVouchers) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ActionChip(
+                          avatar: const Icon(
+                            Icons.confirmation_number_outlined,
+                            size: 14,
+                            color: MetaGymTheme.brandOrange,
+                          ),
+                          label: Text(
+                            '${v.voucherCode} (-${formatMembershipMoney(v.discountAmount)})',
+                            style: const TextStyle(
+                              color: MetaGymTheme.textPrimary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                          backgroundColor:
+                              appliedVoucher?.code == v.voucherCode
+                              ? MetaGymTheme.brandOrange.withValues(alpha: 0.25)
+                              : const Color(0x24FFFFFF),
+                          side: BorderSide(
+                            color: appliedVoucher?.code == v.voucherCode
+                                ? MetaGymTheme.brandOrange
+                                : const Color(0x45FFF6EA),
+                          ),
+                          onPressed: () => onSelectVoucher(
+                            appliedVoucher?.code == v.voucherCode
+                                ? null
+                                : _CheckoutVoucher(
+                                    code: v.voucherCode,
+                                    discount: v.discountAmount,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
 
             if (message != null) ...[
               const SizedBox(height: 8),

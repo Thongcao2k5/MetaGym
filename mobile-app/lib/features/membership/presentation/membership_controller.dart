@@ -110,7 +110,7 @@ class MembershipController extends ChangeNotifier {
     }
   }
 
-  Future<bool> buy(MembershipPlan plan) async {
+  Future<bool> buy(MembershipPlan plan, {String? voucherCode}) async {
     if (isLoading || pendingPayment != null) return false;
     final generation = _generation;
     isLoading = true;
@@ -119,18 +119,35 @@ class MembershipController extends ChangeNotifier {
     checkoutPayment = null;
     notifyListeners();
     try {
-      final payment = await _service.createPayment(
-        planId: plan.id,
-        idempotencyKey: _purchaseKeys.putIfAbsent(
-          plan.id,
-          () =>
-              'flutter-${plan.id}-${DateTime.now().microsecondsSinceEpoch}-${_purchaseSequence++}',
-        ),
+      final normalizedVoucher = voucherCode?.trim().toUpperCase();
+      final keyBucket = (normalizedVoucher != null && normalizedVoucher.isNotEmpty)
+          ? '${plan.id}:$normalizedVoucher'
+          : plan.id;
+      final idempotencyKey = _purchaseKeys.putIfAbsent(
+        keyBucket,
+        () =>
+            'flutter-${plan.id}-${DateTime.now().microsecondsSinceEpoch}-${_purchaseSequence++}',
       );
+      final voucherSvc = switch (_service) {
+        final MembershipVoucherPaymentService s => s,
+        _ => null,
+      };
+      final payment = voucherSvc != null &&
+              normalizedVoucher != null &&
+              normalizedVoucher.isNotEmpty
+          ? await voucherSvc.createPaymentWithVoucher(
+              planId: plan.id,
+              idempotencyKey: idempotencyKey,
+              voucherCode: normalizedVoucher,
+            )
+          : await _service.createPayment(
+              planId: plan.id,
+              idempotencyKey: idempotencyKey,
+            );
       if (generation != _generation) return false;
       pendingPayment = payment.status == 'PENDING' ? payment : null;
       checkoutPayment = payment;
-      _purchaseKeys.remove(plan.id);
+      _purchaseKeys.remove(keyBucket);
       return true;
     } on ApiException catch (error) {
       if (generation == _generation) errorMessage = error.message;

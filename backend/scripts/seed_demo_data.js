@@ -198,6 +198,89 @@ async function seed() {
       UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP - INTERVAL '2 hours 45 minutes' WHERE id = $1;
     `, [convId]);
 
+    // 8. Loyalty & Meta Points (Demo Member: Nguyễn Minh Quân - Vàng)
+    console.log('8. Khởi tạo Loyalty & Meta Points (1.240 điểm khả dụng / 2.150 điểm xét hạng)...');
+    await client.query(`
+      INSERT INTO loyalty_accounts (member_id, available_points, tier_points)
+      VALUES ($1, 1240, 2150)
+      ON CONFLICT (member_id) DO UPDATE SET
+        available_points = EXCLUDED.available_points,
+        tier_points = EXCLUDED.tier_points;
+    `, [MEMBER_ID]);
+
+    await client.query(`
+      INSERT INTO loyalty_redemptions (
+        id, member_id, reward_id, reward_code_snapshot, category_snapshot,
+        title_snapshot, points_spent, discount_amount_snapshot, voucher_code,
+        requires_staff_confirm, condition_text, status, idempotency_key,
+        redeemed_at, expires_at, used_at
+      )
+      VALUES
+        (
+          '90000000-0000-4000-8000-000000000201', $1,
+          'a0000000-0000-4000-8000-000000000002', 'rw-inbody', 'SERVICE',
+          'Một lần đo InBody', 400, 0, 'MG-DEMO-INBODY1', true,
+          'Cần nhân viên lễ tân hoặc Huấn luyện viên xác nhận khi sử dụng tại câu lạc bộ.',
+          'UNUSED', 'seed-demo-redemption-1',
+          CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP + INTERVAL '22 days', NULL
+        ),
+        (
+          '90000000-0000-4000-8000-000000000202', $1,
+          'a0000000-0000-4000-8000-000000000001', 'rw-voucher-100', 'VOUCHER',
+          'Voucher giảm 100.000đ', 300, 100000, 'MG-DEMO-VOUCHER1', false,
+          'Dùng mã này khi gia hạn gói tập phòng gym hoặc xác nhận tại quầy.',
+          'USED', 'seed-demo-redemption-2',
+          CURRENT_TIMESTAMP - INTERVAL '54 days', CURRENT_TIMESTAMP - INTERVAL '24 days',
+          CURRENT_TIMESTAMP - INTERVAL '40 days'
+        ),
+        (
+          '90000000-0000-4000-8000-000000000203', $1,
+          'a0000000-0000-4000-8000-000000000003', 'rw-pt-trial', 'SERVICE',
+          'Một buổi PT trải nghiệm', 900, 0, 'MG-DEMO-PTTRIAL', true,
+          'Cần nhân viên/HLV xác nhận khi còn hiệu lực. Đã quá hạn sử dụng.',
+          'EXPIRED', 'seed-demo-redemption-3',
+          CURRENT_TIMESTAMP - INTERVAL '110 days', CURRENT_TIMESTAMP - INTERVAL '80 days', NULL
+        )
+      ON CONFLICT (id) DO NOTHING;
+    `, [MEMBER_ID]);
+
+    await client.query(`
+      INSERT INTO loyalty_point_transactions (
+        id, member_id, tx_type, points_delta, tier_points_delta,
+        title, detail, reference_type, reference_id, status_label, created_at
+      )
+      VALUES
+        (
+          '90000000-0000-4000-8000-000000000301', $1, 'EARN', 1500, 1500,
+          'Cộng điểm khi đăng ký gói Nâng cao kỳ trước',
+          'Đăng ký gói tập · Ghi nhận điểm tích lũy xét hạng',
+          'SEED', '90000000-0000-4000-8000-000000000301', 'Thành công',
+          CURRENT_TIMESTAMP - INTERVAL '160 days'
+        ),
+        (
+          '90000000-0000-4000-8000-000000000302', $1, 'EARN', 650, 650,
+          'Cộng điểm khi gia hạn gói tập',
+          'Gia hạn Gói Tiêu chuẩn 6 tháng · Cộng vào khả dụng & xét hạng',
+          'SEED', '90000000-0000-4000-8000-000000000302', 'Thành công',
+          CURRENT_TIMESTAMP - INTERVAL '72 days'
+        ),
+        (
+          '90000000-0000-4000-8000-000000000303', $1, 'ADJUST', 190, 0,
+          'Hoàn điểm điều chỉnh giao dịch quầy',
+          'Điều chỉnh hoàn điểm khả dụng từ yêu cầu đổi dịch vụ trước đó',
+          'SEED', '90000000-0000-4000-8000-000000000303', 'Đã hoàn điểm',
+          CURRENT_TIMESTAMP - INTERVAL '35 days'
+        ),
+        (
+          '90000000-0000-4000-8000-000000000304', $1, 'SPEND', -400, 0,
+          'Trừ điểm đổi ưu đãi: Một lần đo InBody',
+          'Chỉ trừ Điểm khả dụng · Giữ nguyên Điểm xét hạng',
+          'REWARD_REDEMPTION', '90000000-0000-4000-8000-000000000201', 'Đã đổi ưu đãi',
+          CURRENT_TIMESTAMP - INTERVAL '8 days'
+        )
+      ON CONFLICT (id) DO NOTHING;
+    `, [MEMBER_ID]);
+
     await client.query('COMMIT');
     console.log('✅ KHỞI TẠO DỮ LIỆU MẪU THÀNH CÔNG RỰC RỠ!');
   } catch (error) {

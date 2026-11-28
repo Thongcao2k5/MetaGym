@@ -43,7 +43,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               <img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_coach_plans.svg" alt="Giáo trình" />
               <div class="quick-lbl">Giáo trình</div>
             </div>
-            <div class="quick-tile" data-go="coach-meal-plan">
+            <div class="quick-tile" data-go="coach-nutrition">
               <img class="ico-dock" src="../../meta-gym/assets/svg/quick_actions/action_nutrition.svg" alt="Dinh dưỡng" />
               <div class="quick-lbl">Dinh dưỡng</div>
             </div>
@@ -450,7 +450,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
             </div>
             <div class="grid-3" style="gap:8px;">
               <button type="button" class="btn-secondary" data-go="coach-member-plans" style="height:38px;font-size:12px;padding:0 6px;">Giáo trình</button>
-              <button type="button" class="btn-secondary" data-go="coach-meal-plan" style="height:38px;font-size:12px;padding:0 6px;">Thực đơn</button>
+              <button type="button" class="btn-secondary" data-go="coach-meal-plan" style="height:38px;font-size:12px;padding:0 6px;">Dinh dưỡng</button>
               <button type="button" class="btn-primary" data-go="coach-chat-detail" style="height:38px;font-size:12px;padding:0 6px;">Nhắn tin</button>
             </div>
           </div>

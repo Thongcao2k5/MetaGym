@@ -27,7 +27,7 @@ abstract final class OfflineDemoControl {
 
   static _LocalDemoStore? _sharedStore;
   static const _storage = FlutterSecureStorage();
-  static const _storageKey = 'meta_gym_local_demo_state_v8';
+  static const _storageKey = 'meta_gym_local_demo_state_v9';
 
   static String modeLabel(DemoUiStateMode value) => switch (value) {
     DemoUiStateMode.normal => 'Bình thường',
@@ -304,6 +304,42 @@ class LocalDemoInterceptor extends Interceptor {
       }
     }
 
+    // 3d. Loyalty API routes with full validation & error parity (403/409/422)
+    if (path.startsWith('/loyalty/')) {
+      final body = options.data is Map
+          ? Map<String, dynamic>.from(options.data as Map)
+          : const <String, dynamic>{};
+      final idempKey = options.headers['idempotency-key']?.toString().trim();
+      final result = _handleLoyalty(
+        method: method,
+        path: path,
+        query: options.queryParameters,
+        body: body,
+        idempotencyKey: idempKey,
+        store: store,
+        isCoach: isCoach,
+      );
+      if (result != null) {
+        if (result.$3 != null) {
+          return handler.reject(
+            DioException(
+              requestOptions: options,
+              type: DioExceptionType.badResponse,
+              response: Response<Object?>(
+                requestOptions: options,
+                statusCode: result.$2,
+                data: {'error': result.$3},
+              ),
+            ),
+          );
+        }
+        if (method != 'GET') {
+          await _persist(store);
+        }
+        return _ok(handler, options, result.$1, statusCode: result.$2);
+      }
+    }
+
     final handled = _dispatch(
       method: method,
       path: path,
@@ -328,6 +364,9 @@ class LocalDemoInterceptor extends Interceptor {
       '/memberships/me',
       '/memberships/me/history',
       '/payments/me',
+      '/loyalty/rewards',
+      '/loyalty/redemptions/me',
+      '/loyalty/transactions/me',
       '/relationships/me/history',
       '/coach-requests/me',
       '/early-termination-requests/me',
@@ -393,6 +432,108 @@ class LocalDemoInterceptor extends Interceptor {
         'plan': null,
         'entries': const <Object?>[],
       };
+    }
+    if (path == '/loyalty/me') {
+      return _LocalDemoStore.buildLoyaltySummaryMap(
+        availablePoints: 0,
+        tierPoints: 0,
+        unusedRedemptionsCount: 0,
+      );
+    }
+    return null;
+  }
+
+  (Object?, int, Map<String, dynamic>?)? _handleLoyalty({
+    required String method,
+    required String path,
+    required Map<String, dynamic> query,
+    required Map<String, dynamic> body,
+    required String? idempotencyKey,
+    required _LocalDemoStore store,
+    required bool isCoach,
+  }) {
+    if (path == '/loyalty/me' && method == 'GET') {
+      if (isCoach) {
+        return (
+          null,
+          403,
+          const {
+            'code': 'FORBIDDEN',
+            'message': 'Chỉ Hội viên được xem thông tin Meta Points',
+          },
+        );
+      }
+      return (store.loyaltySummary(), 200, null);
+    }
+    if (path == '/loyalty/rewards' && method == 'GET') {
+      final category = (query['category'] as String? ?? 'ALL').toUpperCase();
+      final list = category == 'ALL'
+          ? store.loyaltyRewards
+          : store.loyaltyRewards
+                .where((r) => (r['category'] as String?) == category)
+                .toList();
+      return (list, 200, null);
+    }
+    if (path == '/loyalty/redemptions/me' && method == 'GET') {
+      if (isCoach) {
+        return (
+          null,
+          403,
+          const {
+            'code': 'FORBIDDEN',
+            'message': 'Chỉ Hội viên được xem ưu đãi đã đổi',
+          },
+        );
+      }
+      final status = (query['status'] as String? ?? 'ALL').toUpperCase();
+      final list = status == 'ALL'
+          ? store.loyaltyRedemptions
+          : store.loyaltyRedemptions
+                .where((r) => (r['status'] as String?) == status)
+                .toList();
+      return (list, 200, null);
+    }
+    if (path == '/loyalty/redemptions' && method == 'POST') {
+      if (isCoach) {
+        return (
+          null,
+          403,
+          const {
+            'code': 'FORBIDDEN',
+            'message': 'Chỉ Hội viên được đổi ưu đãi',
+          },
+        );
+      }
+      final rewardId = (body['rewardId'] as String? ?? '').trim();
+      return store.redeemLoyaltyReward(
+        rewardId: rewardId,
+        idempotencyKey: idempotencyKey,
+      );
+    }
+    if (path.startsWith('/loyalty/redemptions/') &&
+        path.endsWith('/use') &&
+        method == 'POST') {
+      final id = Uri.decodeComponent(path.split('/')[3]);
+      return store.markLoyaltyRedemptionUsed(id);
+    }
+    if (path == '/loyalty/transactions/me' && method == 'GET') {
+      if (isCoach) {
+        return (
+          null,
+          403,
+          const {
+            'code': 'FORBIDDEN',
+            'message': 'Chỉ Hội viên được xem lịch sử điểm',
+          },
+        );
+      }
+      final type = (query['type'] as String? ?? 'ALL').toUpperCase();
+      final list = type == 'ALL'
+          ? store.loyaltyTransactions
+          : store.loyaltyTransactions
+                .where((t) => (t['txType'] as String?) == type)
+                .toList();
+      return (list, 200, null);
     }
     return null;
   }
@@ -478,16 +619,39 @@ class LocalDemoInterceptor extends Interceptor {
     }
     if (path == '/payments' && method == 'POST') {
       final planId = body['planId'] as String?;
+      final voucherCode = (body['voucherCode'] as String?)?.trim().toUpperCase();
       final plan = store.membershipPlans.firstWhere(
         (item) => item['id'] == planId,
         orElse: () => store.membershipPlans.first,
       );
+      final rawPrice = (plan['price'] as num?)?.toInt() ?? 0;
+      var discountAmount = 0;
+      String? voucherRedemptionId;
+      if (voucherCode != null && voucherCode.isNotEmpty) {
+        final matchedVoucher = store.loyaltyRedemptions.where((r) {
+          return r['status'] == 'UNUSED' &&
+              (r['voucherCode'] as String?)?.toUpperCase() == voucherCode &&
+              r['category'] == 'VOUCHER' &&
+              ((r['discountAmount'] as num?)?.toInt() ?? 0) > 0;
+        }).firstOrNull;
+        if (matchedVoucher != null) {
+          voucherRedemptionId = matchedVoucher['id'] as String?;
+          final rawDiscount =
+              (matchedVoucher['discountAmount'] as num?)?.toInt() ?? 0;
+          discountAmount = rawDiscount.clamp(
+            0,
+            rawPrice > 1000 ? rawPrice - 1000 : 0,
+          );
+        }
+      }
       final paymentId = 'pay-demo-${DateTime.now().millisecondsSinceEpoch}';
       final created = <String, dynamic>{
         'id': paymentId,
         'status': 'PENDING',
         'planName': plan['name'],
-        'amount': plan['price'],
+        'amount': (rawPrice - discountAmount).clamp(0, rawPrice),
+        'discountAmount': discountAmount,
+        'loyaltyRedemptionId': ?voucherRedemptionId,
         'method': 'VNPAY',
         'qrPayload': 'VNPAY-METAGYM:$paymentId',
         'transactionCode': 'MG-DEMO-${paymentId.substring(paymentId.length - 4)}',
@@ -1165,6 +1329,10 @@ class _LocalDemoStore {
     required this.coachTrainingPlans,
     required this.coachMealPlans,
     required this.calls,
+    required this.loyaltyAccount,
+    required this.loyaltyRewards,
+    required this.loyaltyRedemptions,
+    required this.loyaltyTransactions,
   });
 
   final List<Map<String, dynamic>> accounts;
@@ -1203,6 +1371,10 @@ class _LocalDemoStore {
   final Map<String, List<Map<String, dynamic>>> coachTrainingPlans;
   final Map<String, Map<String, dynamic>> coachMealPlans;
   final List<Map<String, dynamic>> calls;
+  final Map<String, dynamic> loyaltyAccount;
+  final List<Map<String, dynamic>> loyaltyRewards;
+  final List<Map<String, dynamic>> loyaltyRedemptions;
+  final List<Map<String, dynamic>> loyaltyTransactions;
 
   static DateTime _vnNow() =>
       DateTime.now().toUtc().add(const Duration(hours: 7));
@@ -2635,6 +2807,10 @@ class _LocalDemoStore {
           'id': 'meal-plan-demo-001',
           'title': 'Thực đơn Tăng Cơ Nạc 2.400 kcal',
           'status': 'ACTIVE',
+          'notes':
+              '• Ưu tiên chế biến hấp, luộc hoặc áp chảo ít dầu.\n'
+              '• Uống đủ 2.5 - 3.0 lít nước mỗi ngày.\n'
+              '• Bổ sung Whey Isolate trong vòng 45 phút sau buổi tập.',
           'items': [
             for (var day = 1; day <= 7; day++) ...[
               {
@@ -2727,6 +2903,245 @@ class _LocalDemoStore {
           'initiatedAt': now.subtract(const Duration(days: 2)).toIso8601String(),
           'durationSeconds': 0,
           'failureReason': 'Không bắt máy',
+        },
+      ],
+      loyaltyAccount: {
+        'availablePoints': 1240,
+        'tierPoints': 2150,
+      },
+      loyaltyRewards: [
+        {
+          'id': 'a0000000-0000-4000-8000-000000000006',
+          'code': 'rw-free-7days',
+          'category': 'SERVICE',
+          'title': 'Tặng +7 ngày tập miễn phí',
+          'description':
+              'Áp dụng thẳng ngay khi đổi: tự động cộng thêm 7 ngày vào hạn thẻ hội viên đang hoạt động.',
+          'pointsCost': 250,
+          'discountAmount': 0,
+          'bonusDays': 7,
+          'requiresStaffConfirm': false,
+          'stockRemaining': null,
+          'isOutOfStock': false,
+          'validDays': 30,
+          'terms': [
+            'Áp dụng tự động ngay khi xác nhận đổi — cộng thẳng +7 ngày vào thẻ tập hiện tại.',
+            'Không cần nhập mã, không cần đi qua bước thanh toán.',
+            'Đổi ưu đãi chỉ trừ Điểm khả dụng, giữ nguyên Điểm xét hạng.',
+          ],
+          'status': 'ACTIVE',
+        },
+        {
+          'id': 'a0000000-0000-4000-8000-000000000001',
+          'code': 'rw-voucher-100',
+          'category': 'VOUCHER',
+          'title': 'Voucher giảm 100.000đ',
+          'description':
+              'Giảm trực tiếp 100.000đ khi gia hạn gói tập phòng gym hoặc áp dụng tại quầy.',
+          'pointsCost': 300,
+          'discountAmount': 100000,
+          'requiresStaffConfirm': false,
+          'stockRemaining': null,
+          'isOutOfStock': false,
+          'validDays': 30,
+          'terms': [
+            'Áp dụng 1 lần khi gia hạn hoặc đăng ký gói tập tại Meta Gym.',
+            'Đổi ưu đãi chỉ trừ Điểm khả dụng, giữ nguyên Điểm xét hạng.',
+            'Không quy đổi thành tiền mặt.',
+          ],
+          'status': 'ACTIVE',
+        },
+        {
+          'id': 'a0000000-0000-4000-8000-000000000002',
+          'code': 'rw-inbody',
+          'category': 'SERVICE',
+          'title': 'Một lần đo InBody',
+          'description':
+              'Phân tích tỷ lệ cơ, mỡ và nước cơ thể tại khu vực đo chỉ số của câu lạc bộ.',
+          'pointsCost': 400,
+          'discountAmount': 0,
+          'requiresStaffConfirm': true,
+          'stockRemaining': null,
+          'isOutOfStock': false,
+          'validDays': 30,
+          'terms': [
+            'Cần nhân viên tại quầy xác nhận trước khi thực hiện đo InBody.',
+            'Áp dụng 1 lượt cho chính chủ tài khoản trong thời hạn hiệu lực.',
+            'Khuyến nghị nhịn ăn nhẹ 2 giờ trước khi đo để số liệu ổn định.',
+          ],
+          'status': 'ACTIVE',
+        },
+        {
+          'id': 'a0000000-0000-4000-8000-000000000003',
+          'code': 'rw-pt-trial',
+          'category': 'SERVICE',
+          'title': 'Một buổi PT trải nghiệm',
+          'description':
+              'Một buổi tập 1:1 cùng Huấn luyện viên Meta Gym để đánh giá kỹ thuật và tư thế.',
+          'pointsCost': 900,
+          'discountAmount': 0,
+          'requiresStaffConfirm': true,
+          'stockRemaining': null,
+          'isOutOfStock': false,
+          'validDays': 30,
+          'terms': [
+            'Cần nhân viên lễ tân hoặc Huấn luyện viên xác nhận khung giờ tập phù hợp.',
+            'Áp dụng cho 1 hội viên chính chủ theo thông tin tài khoản.',
+            'Đổi ưu đãi không làm giảm Điểm xét hạng.',
+          ],
+          'status': 'ACTIVE',
+        },
+        {
+          'id': 'a0000000-0000-4000-8000-000000000004',
+          'code': 'rw-vip-perk',
+          'category': 'VOUCHER',
+          'title': 'Ưu đãi cao cấp',
+          'description':
+              'Gói đặc quyền nâng cấp trải nghiệm và voucher dịch vụ cao cấp tại Meta Gym.',
+          'pointsCost': 1500,
+          'discountAmount': 300000,
+          'requiresStaffConfirm': true,
+          'stockRemaining': null,
+          'isOutOfStock': false,
+          'validDays': 45,
+          'terms': [
+            'Áp dụng tại quầy dịch vụ với xác nhận của nhân viên phụ trách.',
+            'Không áp dụng cộng dồn với các chương trình giảm giá khác.',
+          ],
+          'status': 'ACTIVE',
+        },
+        {
+          'id': 'a0000000-0000-4000-8000-000000000005',
+          'code': 'rw-sold-out',
+          'category': 'VOUCHER',
+          'title': 'Quà tặng bình giữ nhiệt Meta Gym',
+          'description':
+              'Quà tặng lưu niệm phiên bản giới hạn tại quầy lễ tân câu lạc bộ.',
+          'pointsCost': 600,
+          'discountAmount': 0,
+          'requiresStaffConfirm': true,
+          'stockRemaining': 0,
+          'isOutOfStock': true,
+          'validDays': 30,
+          'terms': [
+            'Nhận trực tiếp tại quầy khi đợt phát hành có hàng trở lại.',
+          ],
+          'status': 'ACTIVE',
+        },
+      ],
+      loyaltyRedemptions: [
+        {
+          'id': 'red-demo-001',
+          'rewardId': 'a0000000-0000-4000-8000-000000000002',
+          'rewardCode': 'rw-inbody',
+          'category': 'SERVICE',
+          'title': 'Một lần đo InBody',
+          'pointsSpent': 400,
+          'discountAmount': 0,
+          'voucherCode': 'MG-INBODY26',
+          'requiresStaffConfirm': true,
+          'conditionText':
+              'Cần nhân viên lễ tân hoặc Huấn luyện viên xác nhận khi sử dụng tại câu lạc bộ.',
+          'status': 'UNUSED',
+          'redeemedAt': now.subtract(const Duration(days: 5)).toIso8601String(),
+          'expiresAt': now.add(const Duration(days: 25)).toIso8601String(),
+          'usedAt': null,
+        },
+        {
+          'id': 'red-demo-002',
+          'rewardId': 'a0000000-0000-4000-8000-000000000001',
+          'rewardCode': 'rw-voucher-100',
+          'category': 'VOUCHER',
+          'title': 'Voucher giảm 100.000đ',
+          'pointsSpent': 300,
+          'discountAmount': 100000,
+          'voucherCode': 'MG-VCH100K',
+          'requiresStaffConfirm': false,
+          'conditionText':
+              'Đã áp dụng trừ 100.000đ cho giao dịch gia hạn gói tập.',
+          'status': 'USED',
+          'redeemedAt': now.subtract(const Duration(days: 45)).toIso8601String(),
+          'expiresAt': now.subtract(const Duration(days: 15)).toIso8601String(),
+          'usedAt': now.subtract(const Duration(days: 32)).toIso8601String(),
+        },
+        {
+          'id': 'red-demo-003',
+          'rewardId': 'a0000000-0000-4000-8000-000000000003',
+          'rewardCode': 'rw-pt-trial',
+          'category': 'SERVICE',
+          'title': 'Một buổi PT trải nghiệm',
+          'pointsSpent': 900,
+          'discountAmount': 0,
+          'voucherCode': 'MG-PTTRIAL0',
+          'requiresStaffConfirm': true,
+          'conditionText':
+              'Cần nhân viên/HLV xác nhận khi còn hiệu lực. Đã quá hạn sử dụng.',
+          'status': 'EXPIRED',
+          'redeemedAt': now.subtract(const Duration(days: 90)).toIso8601String(),
+          'expiresAt': now.subtract(const Duration(days: 60)).toIso8601String(),
+          'usedAt': null,
+        },
+      ],
+      loyaltyTransactions: [
+        {
+          'id': 'ltx-demo-005',
+          'txType': 'SPEND',
+          'pointsDelta': -400,
+          'tierPointsDelta': 0,
+          'title': 'Trừ điểm đổi ưu đãi: Một lần đo InBody',
+          'detail': 'Chỉ trừ Điểm khả dụng · Giữ nguyên Điểm xét hạng',
+          'referenceType': 'REWARD_REDEMPTION',
+          'referenceId': 'red-demo-001',
+          'statusLabel': 'Đã đổi ưu đãi',
+          'createdAt': now.subtract(const Duration(days: 5)).toIso8601String(),
+        },
+        {
+          'id': 'ltx-demo-004',
+          'txType': 'ADJUST',
+          'pointsDelta': 190,
+          'tierPointsDelta': 0,
+          'title': 'Hoàn điểm điều chỉnh giao dịch tại quầy',
+          'detail': 'Hoàn điểm vào số dư khả dụng do điều chỉnh dịch vụ',
+          'referenceType': 'ADMIN_ADJUSTMENT',
+          'referenceId': null,
+          'statusLabel': 'Đã hoàn điểm',
+          'createdAt': now.subtract(const Duration(days: 18)).toIso8601String(),
+        },
+        {
+          'id': 'ltx-demo-003',
+          'txType': 'EARN',
+          'pointsDelta': 650,
+          'tierPointsDelta': 650,
+          'title': 'Cộng điểm khi gia hạn gói tập',
+          'detail': 'Gói Tiêu chuẩn · 6 tháng · Cộng vào khả dụng & xét hạng',
+          'referenceType': 'MEMBERSHIP_PAYMENT',
+          'referenceId': 'pay-demo-001',
+          'statusLabel': 'Thành công',
+          'createdAt': now.subtract(const Duration(days: 32)).toIso8601String(),
+        },
+        {
+          'id': 'ltx-demo-002',
+          'txType': 'SPEND',
+          'pointsDelta': -300,
+          'tierPointsDelta': 0,
+          'title': 'Trừ điểm đổi ưu đãi: Voucher giảm 100.000đ',
+          'detail': 'Chỉ trừ Điểm khả dụng · Giữ nguyên Điểm xét hạng',
+          'referenceType': 'REWARD_REDEMPTION',
+          'referenceId': 'red-demo-002',
+          'statusLabel': 'Đã đổi ưu đãi',
+          'createdAt': now.subtract(const Duration(days: 45)).toIso8601String(),
+        },
+        {
+          'id': 'ltx-demo-001',
+          'txType': 'EARN',
+          'pointsDelta': 1500,
+          'tierPointsDelta': 1500,
+          'title': 'Cộng điểm khi đăng ký gói nâng cao kỳ trước',
+          'detail': 'Đăng ký gói tập · Cộng vào khả dụng & xét hạng',
+          'referenceType': 'MEMBERSHIP_PAYMENT',
+          'referenceId': 'pay-demo-000',
+          'statusLabel': 'Thành công',
+          'createdAt': now.subtract(const Duration(days: 65)).toIso8601String(),
         },
       ],
     );
@@ -2964,6 +3379,8 @@ class _LocalDemoStore {
     final plan = findTrainingPlanById(planId);
     if (body['title'] is String) plan['title'] = body['title'];
     if (body.containsKey('goal')) plan['goal'] = body['goal'];
+    if (body.containsKey('startDate')) plan['startDate'] = body['startDate'];
+    if (body.containsKey('endDate')) plan['endDate'] = body['endDate'];
     if (body.containsKey('notes')) plan['notes'] = body['notes'];
     if (body['days'] is List) {
       plan['days'] = _normalizeDays(body['days']);
@@ -3001,10 +3418,15 @@ class _LocalDemoStore {
         'kcalPer100g': item['kcalPer100g'] ?? food?['kcalPer100g'] ?? 100,
       };
     }).toList();
-    final existingId = coachMealPlans[memberId]?['id'] as String?;
+    final existing = coachMealPlans[memberId];
+    final existingId = existing?['id'] as String?;
+    final String? notes = body.containsKey('notes')
+        ? (body['notes'] as String?)?.trim()
+        : existing?['notes'] as String?;
     final saved = <String, dynamic>{
       'id': existingId ?? 'mp-demo-${DateTime.now().millisecondsSinceEpoch}',
       'title': body['title'] ?? 'Thực đơn 7 ngày Coach thiết kế',
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
       'status': 'ACTIVE',
       'items': savedItems,
     };
@@ -3021,13 +3443,41 @@ class _LocalDemoStore {
 
   Map<String, dynamic> addCheckIn() {
     final now = DateTime.now();
+    final todayStr = _isoDate(now);
+    final alreadyEarnedToday = loyaltyTransactions.any(
+      (tx) =>
+          tx['referenceType'] == 'GYM_CHECKIN' &&
+          (tx['createdAt'] as String? ?? '').startsWith(todayStr),
+    );
     final visit = <String, dynamic>{
-      'day': _isoDate(now),
+      'day': todayStr,
       'checkedInAt': now.toIso8601String(),
       'gymName': 'Meta Gym Flagship Center',
       'gymAddress': '123 Nguyễn Thị Minh Khai, Quận 1, TP.HCM',
     };
     gymVisits.insert(0, visit);
+    if (!alreadyEarnedToday) {
+      final summary = loyaltySummary();
+      final mult = (summary['pointsMultiplier'] as num?)?.toDouble() ?? 1.0;
+      final pts = (10 * mult).round().clamp(10, 100);
+      loyaltyAccount['availablePoints'] =
+          ((loyaltyAccount['availablePoints'] as num?)?.toInt() ?? 0) + pts;
+      loyaltyAccount['tierPoints'] =
+          ((loyaltyAccount['tierPoints'] as num?)?.toInt() ?? 0) + pts;
+      loyaltyTransactions.insert(0, {
+        'id': 'ltx-checkin-${now.millisecondsSinceEpoch}',
+        'txType': 'EARN',
+        'pointsDelta': pts,
+        'tierPointsDelta': pts,
+        'title': 'Cộng điểm check-in phòng tập',
+        'detail': 'Hệ số ${summary['tierLabel']} (×${mult.toStringAsFixed(1)}) · Mỗi ngày 1 lần',
+        'referenceType': 'GYM_CHECKIN',
+        'referenceId': null,
+        'statusLabel': 'Thành công',
+        'createdAt': now.toIso8601String(),
+      });
+      visit['loyaltyPointsEarned'] = pts;
+    }
     return visit;
   }
 
@@ -3349,7 +3799,333 @@ class _LocalDemoStore {
       ..clear()
       ..addAll(updated);
     membershipHistory.insert(0, Map<String, dynamic>.from(updated));
+    final voucherRedemptionId = payment['loyaltyRedemptionId'] as String?;
+    if (voucherRedemptionId != null) {
+      for (final red in loyaltyRedemptions) {
+        if (red['id'] == voucherRedemptionId && red['status'] == 'UNUSED') {
+          red['status'] = 'USED';
+          red['usedAt'] = now.toIso8601String();
+        }
+      }
+    }
+    final bonusPts = duration >= 1000
+        ? 5000
+        : duration >= 300
+        ? 1500
+        : duration >= 150
+        ? 650
+        : duration >= 60
+        ? 250
+        : 100;
+    loyaltyAccount['availablePoints'] =
+        ((loyaltyAccount['availablePoints'] as num?)?.toInt() ?? 0) + bonusPts;
+    loyaltyAccount['tierPoints'] =
+        ((loyaltyAccount['tierPoints'] as num?)?.toInt() ?? 0) + bonusPts;
+    loyaltyTransactions.insert(0, {
+      'id': 'ltx-pay-${now.millisecondsSinceEpoch}',
+      'txType': 'EARN',
+      'pointsDelta': bonusPts,
+      'tierPointsDelta': bonusPts,
+      'title': 'Cộng điểm khi đăng ký / gia hạn gói tập',
+      'detail': '$planName · Cộng vào khả dụng & xét hạng',
+      'referenceType': 'MEMBERSHIP_PAYMENT',
+      'referenceId': payment['id'],
+      'statusLabel': 'Thành công',
+      'createdAt': now.toIso8601String(),
+    });
     return {'payment': payment, 'membership': activeMembership};
+  }
+
+  static const List<Map<String, dynamic>> _kLoyaltyTiers = [
+    {
+      'code': 'BRONZE',
+      'name': 'Đồng',
+      'tierLabel': 'Hạng Đồng',
+      'minPoints': 0,
+      'coachDiscountPercent': 0,
+      'pointsMultiplier': 1.0,
+      'inBodyLabel': 'Trả phí lẻ',
+      'tagline': 'Khởi đầu hành trình tập luyện tại Meta Gym',
+      'perks': [
+        'Check-in QR/NFC không chạm tại phòng tập',
+        'Tích điểm khả dụng & xét hạng khi đăng ký gói hoặc check-in',
+        'Truy cập danh mục ưu đãi thành viên cơ bản',
+      ],
+    },
+    {
+      'code': 'SILVER',
+      'name': 'Bạc',
+      'tierLabel': 'Hạng Bạc',
+      'minPoints': 800,
+      'coachDiscountPercent': 3,
+      'pointsMultiplier': 1.2,
+      'inBodyLabel': '1 lần / quý',
+      'tagline': 'Tăng nhịp ổn định cùng đặc quyền InBody & ưu đãi Coach',
+      'perks': [
+        'Giảm tự động 3% mọi gói Coach 1:1',
+        'Hệ số tích điểm check-in ×1.2',
+        'Đo chỉ số InBody chuyên sâu 1 lần / quý',
+      ],
+    },
+    {
+      'code': 'GOLD',
+      'name': 'Vàng',
+      'tierLabel': 'Hạng Vàng',
+      'minPoints': 2000,
+      'coachDiscountPercent': 5,
+      'pointsMultiplier': 1.5,
+      'inBodyLabel': 'Miễn phí / tháng',
+      'tagline': 'Hội viên gắn bó với ưu đãi Coach 1:1 và InBody định kỳ',
+      'perks': [
+        'Giảm tự động 5% mọi gói Coach 1:1',
+        'Đo chỉ số InBody chuyên sâu miễn phí hàng tháng',
+        'Hệ số tích điểm check-in ×1.5 & mở khóa ưu đãi Vàng',
+      ],
+    },
+    {
+      'code': 'DIAMOND',
+      'name': 'Kim Cương',
+      'tierLabel': 'Hạng Kim Cương',
+      'minPoints': 6000,
+      'coachDiscountPercent': 10,
+      'pointsMultiplier': 2.0,
+      'inBodyLabel': 'Không giới hạn',
+      'tagline': 'Hạng cao nhất dành cho hội viên đồng hành bền vững cùng Meta Gym',
+      'perks': [
+        'Giảm tự động 10% mọi gói Coach 1:1',
+        'Đo chỉ số InBody chuyên sâu không giới hạn',
+        'Hệ số tích điểm check-in ×2.0 & ưu tiên chăm sóc câu lạc bộ',
+      ],
+    },
+  ];
+
+  static Map<String, dynamic> buildLoyaltySummaryMap({
+    required int availablePoints,
+    required int tierPoints,
+    required int unusedRedemptionsCount,
+  }) {
+    var currentIdx = 0;
+    for (var i = 0; i < _kLoyaltyTiers.length; i++) {
+      if (tierPoints >= (_kLoyaltyTiers[i]['minPoints'] as int)) {
+        currentIdx = i;
+      }
+    }
+    final current = _kLoyaltyTiers[currentIdx];
+    final next = currentIdx < _kLoyaltyTiers.length - 1
+        ? _kLoyaltyTiers[currentIdx + 1]
+        : null;
+    final remaining = next != null
+        ? ((next['minPoints'] as int) - tierPoints).clamp(0, 999999)
+        : 0;
+    var progress = 1.0;
+    if (next != null) {
+      final span = ((next['minPoints'] as int) - (current['minPoints'] as int))
+          .clamp(1, 999999);
+      progress = ((tierPoints - (current['minPoints'] as int)) / span)
+          .clamp(0.0, 1.0);
+    }
+    return {
+      'availablePoints': availablePoints,
+      'tierPoints': tierPoints,
+      'tier': current['code'],
+      'tierName': current['name'],
+      'tierLabel': current['tierLabel'],
+      'nextTier': next?['code'],
+      'nextTierName': next?['name'],
+      'nextTierLabel': next?['tierLabel'],
+      'nextTierMinPoints': next?['minPoints'],
+      'remainingToNextTier': remaining,
+      'progressFraction': progress,
+      'coachDiscountPercent': current['coachDiscountPercent'],
+      'pointsMultiplier': current['pointsMultiplier'],
+      'inBodyLabel': current['inBodyLabel'],
+      'perks': current['perks'],
+      'unusedRedemptionsCount': unusedRedemptionsCount,
+      'tiers': _kLoyaltyTiers,
+    };
+  }
+
+  Map<String, dynamic> loyaltySummary() {
+    final unusedCount = loyaltyRedemptions
+        .where((r) => r['status'] == 'UNUSED')
+        .length;
+    return buildLoyaltySummaryMap(
+      availablePoints: (loyaltyAccount['availablePoints'] as num?)?.toInt() ?? 0,
+      tierPoints: (loyaltyAccount['tierPoints'] as num?)?.toInt() ?? 0,
+      unusedRedemptionsCount: unusedCount,
+    );
+  }
+
+  (Object?, int, Map<String, dynamic>?) redeemLoyaltyReward({
+    required String rewardId,
+    String? idempotencyKey,
+  }) {
+    if (idempotencyKey != null && idempotencyKey.isNotEmpty) {
+      final prior = loyaltyRedemptions
+          .where((r) => r['idempotencyKey'] == idempotencyKey)
+          .firstOrNull;
+      if (prior != null) {
+        final tx = loyaltyTransactions
+            .where((t) => t['referenceId'] == prior['id'])
+            .firstOrNull;
+        return (
+          {
+            'redemption': prior,
+            'transaction': tx,
+            'summary': loyaltySummary(),
+          },
+          200,
+          null,
+        );
+      }
+    }
+
+    final reward = loyaltyRewards
+        .where((r) => r['id'] == rewardId && r['status'] == 'ACTIVE')
+        .firstOrNull;
+    if (reward == null) {
+      return (
+        null,
+        404,
+        const {
+          'code': 'NOT_FOUND',
+          'message': 'Không tìm thấy ưu đãi đang mở đổi',
+        },
+      );
+    }
+    final stock = (reward['stockRemaining'] as num?)?.toInt();
+    if (reward['isOutOfStock'] == true || (stock != null && stock <= 0)) {
+      return (
+        null,
+        409,
+        const {
+          'code': 'REWARD_OUT_OF_STOCK',
+          'message': 'Ưu đãi này đã hết lượt đổi trong đợt hiện tại',
+        },
+      );
+    }
+    final cost = (reward['pointsCost'] as num?)?.toInt() ?? 0;
+    final available = (loyaltyAccount['availablePoints'] as num?)?.toInt() ?? 0;
+    if (available < cost) {
+      final missing = cost - available;
+      return (
+        null,
+        409,
+        {
+          'code': 'INSUFFICIENT_POINTS',
+          'message': 'Còn thiếu $missing điểm khả dụng để đổi ưu đãi này',
+        },
+      );
+    }
+
+    // Deduct availablePoints ONLY; tierPoints NEVER drops on reward redemption.
+    loyaltyAccount['availablePoints'] = available - cost;
+    if (stock != null) {
+      final nextStock = (stock - 1).clamp(0, 999999);
+      reward['stockRemaining'] = nextStock;
+      reward['isOutOfStock'] = nextStock <= 0;
+    }
+
+    final now = DateTime.now();
+    final redemptionId = 'red-demo-${now.millisecondsSinceEpoch}';
+    final suffix = (now.millisecondsSinceEpoch % 1000000)
+        .toRadixString(16)
+        .toUpperCase()
+        .padLeft(5, '0');
+    final requiresStaff = reward['requiresStaffConfirm'] == true;
+    final bonusDays = (reward['bonusDays'] as num?)?.toInt() ?? 0;
+    var appliedDirectNote = '';
+    if (bonusDays > 0) {
+      final parsedEnd =
+          DateTime.tryParse((activeMembership['endDate'] as String?) ?? '') ??
+          now;
+      final extended = parsedEnd.add(Duration(days: bonusDays));
+      final extendedIso = _isoDate(extended);
+      activeMembership['endDate'] = extendedIso;
+      for (final item in membershipHistory) {
+        if (item['id'] == activeMembership['id'] ||
+            item['status'] == 'ACTIVE') {
+          item['endDate'] = extendedIso;
+        }
+      }
+      appliedDirectNote =
+          'Đã tự động cộng +$bonusDays ngày vào thẻ tập hiện tại (hạn mới: $extendedIso).';
+    }
+    final isInstantApplied = bonusDays > 0;
+    final redemption = <String, dynamic>{
+      'id': redemptionId,
+      'rewardId': reward['id'],
+      'rewardCode': reward['code'],
+      'category': reward['category'],
+      'title': reward['title'],
+      'pointsSpent': cost,
+      'discountAmount': reward['discountAmount'] ?? 0,
+      'voucherCode': 'MG-$suffix',
+      'requiresStaffConfirm': requiresStaff,
+      'conditionText': isInstantApplied
+          ? appliedDirectNote
+          : requiresStaff
+          ? 'Cần nhân viên lễ tân hoặc Huấn luyện viên xác nhận khi sử dụng tại câu lạc bộ.'
+          : 'Tự động áp dụng giảm giá khi bạn chọn thanh toán gia hạn/mua gói tập.',
+      'status': isInstantApplied ? 'USED' : 'UNUSED',
+      if (idempotencyKey != null && idempotencyKey.isNotEmpty)
+        'idempotencyKey': idempotencyKey,
+      'redeemedAt': now.toIso8601String(),
+      'expiresAt': now
+          .add(Duration(days: (reward['validDays'] as num?)?.toInt() ?? 30))
+          .toIso8601String(),
+      'usedAt': isInstantApplied ? now.toIso8601String() : null,
+    };
+    loyaltyRedemptions.insert(0, redemption);
+
+    final tx = <String, dynamic>{
+      'id': 'ltx-spend-${now.millisecondsSinceEpoch}',
+      'txType': 'SPEND',
+      'pointsDelta': -cost,
+      'tierPointsDelta': 0,
+      'title': 'Trừ điểm đổi ưu đãi: ${reward['title']}',
+      'detail': 'Chỉ trừ Điểm khả dụng · Giữ nguyên Điểm xét hạng',
+      'referenceType': 'REWARD_REDEMPTION',
+      'referenceId': redemptionId,
+      'statusLabel': 'Đã đổi ưu đãi',
+      'createdAt': now.toIso8601String(),
+    };
+    loyaltyTransactions.insert(0, tx);
+
+    return (
+      {
+        'redemption': redemption,
+        'transaction': tx,
+        'summary': loyaltySummary(),
+      },
+      201,
+      null,
+    );
+  }
+
+  (Object?, int, Map<String, dynamic>?) markLoyaltyRedemptionUsed(String id) {
+    final red = loyaltyRedemptions.where((r) => r['id'] == id).firstOrNull;
+    if (red == null) {
+      return (
+        null,
+        404,
+        const {'code': 'NOT_FOUND', 'message': 'Không tìm thấy ưu đãi đã đổi'},
+      );
+    }
+    if (red['requiresStaffConfirm'] == true) {
+      return (
+        null,
+        403,
+        const {
+          'code': 'STAFF_CONFIRM_REQUIRED',
+          'message':
+              'Ưu đãi dịch vụ cần nhân viên lễ tân hoặc Huấn luyện viên xác nhận tại quầy',
+        },
+      );
+    }
+    red['status'] = 'USED';
+    red['usedAt'] = DateTime.now().toIso8601String();
+    return (red, 200, null);
   }
 
   Map<String, dynamic> createCoachRequest(
@@ -3938,6 +4714,10 @@ class _LocalDemoStore {
     'coachTrainingPlans': coachTrainingPlans,
     'coachMealPlans': coachMealPlans,
     'calls': calls,
+    'loyaltyAccount': loyaltyAccount,
+    'loyaltyRewards': loyaltyRewards,
+    'loyaltyRedemptions': loyaltyRedemptions,
+    'loyaltyTransactions': loyaltyTransactions,
   };
 
   factory _LocalDemoStore.fromJson(Map<String, dynamic> json) {
@@ -4017,6 +4797,12 @@ class _LocalDemoStore {
           readMapList('coachTrainingPlans') ?? base.coachTrainingPlans,
       coachMealPlans: readNestedMap('coachMealPlans') ?? base.coachMealPlans,
       calls: readList('calls') ?? base.calls,
+      loyaltyAccount: readMap('loyaltyAccount') ?? base.loyaltyAccount,
+      loyaltyRewards: readList('loyaltyRewards') ?? base.loyaltyRewards,
+      loyaltyRedemptions:
+          readList('loyaltyRedemptions') ?? base.loyaltyRedemptions,
+      loyaltyTransactions:
+          readList('loyaltyTransactions') ?? base.loyaltyTransactions,
     );
   }
 }

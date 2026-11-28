@@ -1,11 +1,11 @@
-// Meta Gym Flutter Mockups — COACH / 3. Trợ lý AI, 4. Tin nhắn & 5. Hồ sơ Coach
+// Meta Gym Flutter Mockups — COACH / 5. Trợ lý AI, 6. Tin nhắn & Cuộc gọi, 7. Hồ sơ Coach
 window.METAGYM_SCREENS = window.METAGYM_SCREENS || {};
 window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   {
     id: 'coach-ai',
-    group: 'coach-tab4-ai',
-    groupLabel: '4. Trợ lý AI',
-    title: '4.1 Trợ lý AI Coach',
+    group: 'coach-tab5-ai',
+    groupLabel: '5. Trợ lý AI',
+    title: '5.1 Trợ lý AI Coach',
     shortFile: 'ai_messages_page.dart (Coach)',
     flutterFile: 'mobile-app/lib/features/ai/presentation/ai_messages_page.dart',
     tag: 'P1 • AI Huấn luyện',
@@ -108,9 +108,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   },
   {
     id: 'coach-conversations',
-    group: 'coach-tab5-messages',
-    groupLabel: '5. Tin nhắn & Cuộc gọi',
-    title: '5.1 Tin nhắn học viên',
+    group: 'coach-tab6-messages',
+    groupLabel: '6. Tin nhắn &amp; Cuộc gọi',
+    title: '6.1 Tin nhắn học viên',
     shortFile: 'conversations_page.dart (Coach)',
     flutterFile: 'mobile-app/lib/features/messaging/presentation/conversations_page.dart',
     tag: 'P1 • Chat học viên',
@@ -220,9 +220,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   },
   {
     id: 'coach-chat-detail',
-    group: 'coach-tab5-messages',
-    groupLabel: '5. Tin nhắn & Cuộc gọi',
-    title: '5.2 Chi tiết tin nhắn (Coach ↔ HV)',
+    group: 'coach-tab6-messages',
+    groupLabel: '6. Tin nhắn &amp; Cuộc gọi',
+    title: '6.2 Chi tiết tin nhắn (Coach ↔ HV)',
     shortFile: 'chat_detail_page.dart (Coach)',
     flutterFile: 'mobile-app/lib/features/messaging/presentation/chat_detail_page.dart',
     tag: 'P1 • Chat 1:1',
@@ -316,9 +316,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   },
   {
     id: 'coach-calls',
-    group: 'coach-tab5-messages',
-    groupLabel: '5. Tin nhắn & Cuộc gọi',
-    title: '5.3 Cuộc gọi 1:1 (CallsPage)',
+    group: 'coach-tab6-messages',
+    groupLabel: '6. Tin nhắn &amp; Cuộc gọi',
+    title: '6.3 Cuộc gọi 1:1 (CallsPage)',
     shortFile: 'calls_page.dart (Coach)',
     flutterFile: 'mobile-app/lib/features/calls/presentation/calls_page.dart',
     tag: 'P1 • /calls backend',
@@ -435,9 +435,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   },
   {
     id: 'coach-profile',
-    group: 'coach-tab6-profile',
-    groupLabel: '6. Hồ sơ Coach',
-    title: '6.1 Hồ sơ Huấn luyện viên',
+    group: 'coach-tab7-profile',
+    groupLabel: '7. Hồ sơ Coach',
+    title: '7.1 Hồ sơ Huấn luyện viên',
     shortFile: 'profile_page.dart (Coach)',
     flutterFile: 'mobile-app/lib/features/profile/presentation/profile_page.dart',
     tag: 'P0 • Hồ sơ Coach',
@@ -501,7 +501,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               <div class="accordion-row" data-go="coach-members"><span>Hội viên đang phụ trách (6/8)</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="coach-sessions"><span>Lịch dạy &amp; buổi hẹn</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="coach-training"><span>Giáo án tập luyện</span><span class="txt-xs">›</span></div>
-              <div class="accordion-row" data-go="coach-meal-plan"><span>Thực đơn 7 ngày</span><span class="txt-xs">›</span></div>
+              <div class="accordion-row" data-go="coach-nutrition"><span>Dinh dưỡng &amp; Thực đơn</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="coach-booking-history"><span>Lịch sử buổi dạy</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="coach-calls"><span>Cuộc gọi 1:1 học viên</span><span class="txt-xs">›</span></div>
               <div class="accordion-row" data-go="member-gym-equipment"><span>Phòng gym &amp; Thiết bị</span><span class="txt-xs">›</span></div>
@@ -582,9 +582,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   },
   {
     id: 'coach-pro-profile',
-    group: 'coach-tab6-profile',
-    groupLabel: '6. Hồ sơ Coach',
-    title: '6.2 Chuyên môn &amp; Bằng cấp Coach',
+    group: 'coach-tab7-profile',
+    groupLabel: '7. Hồ sơ Coach',
+    title: '7.2 Chuyên môn &amp; Bằng cấp Coach',
     shortFile: 'profile_secondary_pages.dart (Coach)',
     flutterFile: 'mobile-app/lib/features/profile/presentation/widgets/profile_secondary_pages.dart',
     tag: 'P1 • Hồ sơ chuyên môn',

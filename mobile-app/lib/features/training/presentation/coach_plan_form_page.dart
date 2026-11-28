@@ -38,6 +38,8 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
   late final TextEditingController _title;
   late final TextEditingController _goal;
   late final List<_DayDraft> _days;
+  DateTime? _startDate;
+  DateTime? _endDate;
   int _selectedDayIndex = 0;
   List<CatalogItem> _catalog = const [];
   Set<String> _activeExerciseIds = const {};
@@ -50,6 +52,12 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
     super.initState();
     _title = TextEditingController(text: widget.plan?.title);
     _goal = TextEditingController(text: widget.plan?.goal);
+    _startDate = widget.plan?.startDate == null
+        ? null
+        : DateTime.tryParse(widget.plan!.startDate!);
+    _endDate = widget.plan?.endDate == null
+        ? null
+        : DateTime.tryParse(widget.plan!.endDate!);
     _days = widget.plan == null || widget.plan!.days.isEmpty
         ? [_DayDraft()]
         : widget.plan!.days.map(_DayDraft.fromPlan).toList();
@@ -100,6 +108,11 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
 
   (int? dayIndex, String? message) _validateWithDay() {
     if (_title.text.trim().isEmpty) return (null, 'Vui lòng nhập tiêu đề.');
+    if (_startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!)) {
+      return (null, 'Ngày kết thúc phải sau ngày bắt đầu.');
+    }
     if (_days.isEmpty) return (null, 'Cần ít nhất một ngày tập.');
     if (_catalog.isEmpty) return (null, 'Chưa có bài tập để chọn.');
     for (var i = 0; i < _days.length; i++) {
@@ -127,6 +140,11 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
         if (exercise.sets.text.trim().isNotEmpty &&
             (int.tryParse(exercise.sets.text.trim()) ?? 0) <= 0) {
           return (i, 'Số hiệp phải là số dương.');
+        }
+        final restRaw = exercise.rest.text.trim();
+        final restVal = int.tryParse(restRaw);
+        if (restRaw.isNotEmpty && (restVal == null || restVal < 0)) {
+          return (i, 'Thời gian nghỉ phải là số nguyên không âm.');
         }
       }
       if (day.meals.isEmpty) return (i, 'Mỗi ngày cần ít nhất một bữa ăn.');
@@ -156,11 +174,11 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       '${date.day.toString().padLeft(2, '0')}/'
       '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
-  Future<void> _selectDayDate(int dayIndex) async {
+  Future<DateTime?> _pickDate(DateTime? initial) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final picked = await showDatePicker(
+    return showDatePicker(
       context: context,
-      initialDate: _days[dayIndex].scheduledDate ?? DateTime.now(),
+      initialDate: initial ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       builder: (context, child) {
@@ -182,14 +200,35 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
         );
       },
     );
+  }
+
+  Future<void> _selectDayDate(int dayIndex) async {
+    final picked = await _pickDate(_days[dayIndex].scheduledDate);
     if (picked != null && mounted) {
       setState(() => _days[dayIndex].scheduledDate = picked);
+    }
+  }
+
+  Future<void> _selectPlanDate({required bool isStart}) async {
+    final picked = await _pickDate(
+      isStart ? _startDate : (_endDate ?? _startDate),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        if (isStart) {
+          _startDate = picked;
+        } else {
+          _endDate = picked;
+        }
+      });
     }
   }
 
   Map<String, Object?> _payload() => {
     'title': _title.text.trim(),
     'goal': _goal.text.trim().isEmpty ? null : _goal.text.trim(),
+    'startDate': _startDate == null ? null : _formatDate(_startDate!),
+    'endDate': _endDate == null ? null : _formatDate(_endDate!),
     'days': [
       for (var dayIndex = 0; dayIndex < _days.length; dayIndex++)
         {
@@ -221,10 +260,16 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                 'durationSeconds': int.tryParse(
                   _days[dayIndex].exercises[exerciseIndex].duration.text.trim(),
                 ),
-                'restSeconds':
-                    _days[dayIndex].exercises[exerciseIndex].restSeconds,
+                'restSeconds': int.tryParse(
+                  _days[dayIndex].exercises[exerciseIndex].rest.text.trim(),
+                ),
                 'weightGuidance':
-                    _days[dayIndex].exercises[exerciseIndex].weightGuidance,
+                    _days[dayIndex].exercises[exerciseIndex].weight.text
+                        .trim()
+                        .isEmpty
+                    ? null
+                    : _days[dayIndex].exercises[exerciseIndex].weight.text
+                          .trim(),
                 'notes': _days[dayIndex].exercises[exerciseIndex].notes,
               },
           ],
@@ -298,6 +343,8 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
       id: widget.plan?.id ?? 'preview',
       title: _title.text.trim(),
       goal: _goal.text.trim(),
+      startDate: _startDate == null ? null : _formatDate(_startDate!),
+      endDate: _endDate == null ? null : _formatDate(_endDate!),
       status: 'DRAFT',
       version: widget.plan?.version ?? 1,
       days: [
@@ -333,6 +380,16 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                     _days[dayIndex].exercises[exerciseIndex].duration.text
                         .trim(),
                   ),
+                  restSeconds: int.tryParse(
+                    _days[dayIndex].exercises[exerciseIndex].rest.text.trim(),
+                  ),
+                  weightGuidance:
+                      _days[dayIndex].exercises[exerciseIndex].weight.text
+                          .trim()
+                          .isEmpty
+                      ? null
+                      : _days[dayIndex].exercises[exerciseIndex].weight.text
+                            .trim(),
                 ),
             ],
             meals: [
@@ -844,6 +901,146 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
                                             'VD: Tăng cơ và ổn định kỹ thuật',
                                       ),
                                     ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: MetaGymTap(
+                                            key: const Key('plan-start-date'),
+                                            onTap: _busy
+                                                ? null
+                                                : () => _selectPlanDate(
+                                                    isStart: true,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              MetaGymTheme.radiusInput,
+                                            ),
+                                            child: Container(
+                                              constraints: const BoxConstraints(
+                                                minHeight: 48,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: colors.metricPanelBg,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      MetaGymTheme.radiusInput,
+                                                    ),
+                                                border: Border.all(
+                                                  color:
+                                                      colors.metricPanelBorder,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    'Ngày bắt đầu',
+                                                    style: TextStyle(
+                                                      color:
+                                                          colors.textSecondary,
+                                                      fontSize: 11,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    _startDate == null
+                                                        ? 'Tùy chọn'
+                                                        : _displayDate(
+                                                            _startDate!,
+                                                          ),
+                                                    style: TextStyle(
+                                                      color: _startDate == null
+                                                          ? colors.textSecondary
+                                                          : colors.textPrimary,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontFeatures: MetaGymTheme
+                                                          .tabularFigures,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: MetaGymTap(
+                                            key: const Key('plan-end-date'),
+                                            onTap: _busy
+                                                ? null
+                                                : () => _selectPlanDate(
+                                                    isStart: false,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              MetaGymTheme.radiusInput,
+                                            ),
+                                            child: Container(
+                                              constraints: const BoxConstraints(
+                                                minHeight: 48,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: colors.metricPanelBg,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      MetaGymTheme.radiusInput,
+                                                    ),
+                                                border: Border.all(
+                                                  color:
+                                                      colors.metricPanelBorder,
+                                                ),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    'Ngày kết thúc',
+                                                    style: TextStyle(
+                                                      color:
+                                                          colors.textSecondary,
+                                                      fontSize: 11,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    _endDate == null
+                                                        ? 'Tùy chọn'
+                                                        : _displayDate(
+                                                            _endDate!,
+                                                          ),
+                                                    style: TextStyle(
+                                                      color: _endDate == null
+                                                          ? colors.textSecondary
+                                                          : colors.textPrimary,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontFeatures: MetaGymTheme
+                                                          .tabularFigures,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1315,6 +1512,38 @@ class _CoachPlanFormPageState extends State<CoachPlanFormPage> {
               labelText: 'Thời lượng (giây)',
             ),
           ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: Key('exercise-rest-$dayIndex-$exerciseIndex'),
+                  controller: draft.rest,
+                  keyboardType: TextInputType.number,
+                  style: _fieldTextStyle(colors),
+                  decoration: _inputDecoration(
+                    colors,
+                    labelText: 'Nghỉ (giây)',
+                    hintText: 'VD: 90',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  key: Key('exercise-weight-$dayIndex-$exerciseIndex'),
+                  controller: draft.weight,
+                  maxLength: 100,
+                  style: _fieldTextStyle(colors),
+                  decoration: _inputDecoration(
+                    colors,
+                    labelText: 'Mức tạ gợi ý',
+                    hintText: 'VD: 60kg',
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1460,9 +1689,9 @@ class _FormDayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: radius,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 40),
+          constraints: const BoxConstraints(minHeight: 44),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
             child: Text(
               label,
               maxLines: 1,
@@ -1586,30 +1815,34 @@ class _ExerciseDraft {
   _ExerciseDraft()
     : sets = TextEditingController(),
       reps = TextEditingController(),
-      duration = TextEditingController();
+      duration = TextEditingController(),
+      rest = TextEditingController(),
+      weight = TextEditingController();
 
   _ExerciseDraft.fromPlan(TrainingExercise exercise)
     : exerciseId = exercise.exerciseId,
-      restSeconds = exercise.restSeconds,
-      weightGuidance = exercise.weightGuidance,
       notes = exercise.notes,
       sets = TextEditingController(text: exercise.sets?.toString()),
       reps = TextEditingController(text: exercise.reps),
       duration = TextEditingController(
         text: exercise.durationSeconds?.toString(),
-      );
+      ),
+      rest = TextEditingController(text: exercise.restSeconds?.toString()),
+      weight = TextEditingController(text: exercise.weightGuidance);
 
   String? exerciseId;
-  int? restSeconds;
-  String? weightGuidance;
   String? notes;
   final TextEditingController sets;
   final TextEditingController reps;
   final TextEditingController duration;
+  final TextEditingController rest;
+  final TextEditingController weight;
 
   void dispose() {
     sets.dispose();
     reps.dispose();
     duration.dispose();
+    rest.dispose();
+    weight.dispose();
   }
 }

@@ -1,4 +1,4 @@
-// Meta Gym Flutter Mockups — COACH / 2. Lịch dạy & 3. Giáo án tập luyện (Tách riêng biệt)
+// Meta Gym Flutter Mockups — COACH / 2. Lịch dạy & 3. Giáo án tập luyện (Tách riêng khỏi Dinh dưỡng)
 window.METAGYM_SCREENS = window.METAGYM_SCREENS || {};
 window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   // ===========================================================================
@@ -551,16 +551,16 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   },
 
   // ===========================================================================
-  // 3. GIÁO ÁN & THỰC ĐƠN (CHUNG BƯỚC CHỌN HV · TÁCH RIÊNG TRANG TẬP & ĂN)
+  // 3. GIÁO ÁN TẬP LUYỆN (TÁCH RIÊNG HOÀN TOÀN KHỎI DINH DƯỠNG)
   // ===========================================================================
   {
     id: 'coach-training',
     group: 'coach-tab3-training',
-    groupLabel: '3. Giáo án &amp; Thực đơn',
-    title: '3.1 Chọn hội viên (Tập &amp; Dinh dưỡng)',
-    shortFile: 'coach_training_page.dart + coach_nutrition_page.dart',
+    groupLabel: '3. Giáo án tập luyện',
+    title: '3.1 Chọn hội viên tập luyện',
+    shortFile: 'coach_training_page.dart',
     flutterFile: 'mobile-app/lib/features/training/presentation/coach_training_page.dart',
-    tag: 'P0 • Bước 1: Chọn HV',
+    tag: 'P0 • Tập luyện (Bước 1)',
     tagClass: 'p0',
     status: 'Đang review',
     html: `
@@ -573,9 +573,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           <div class="mg-header">
             <div class="circle-btn"><img class="ico-md" src="../../meta-gym/assets/svg/setting/common_back.svg" alt="Quay lại" /></div>
             <div class="mg-header-text">
-              <div class="mg-eyebrow">GIÁO ÁN &amp; THỰC ĐƠN</div>
-              <div class="mg-title">Chọn hội viên</div>
-              <div class="txt-xs" style="color:var(--text-warm-muted);">Mở riêng Giáo trình tập hoặc Thực đơn 7 ngày</div>
+              <div class="mg-eyebrow">GIÁO ÁN TẬP LUYỆN</div>
+              <div class="mg-title">Chọn hội viên tập luyện</div>
+              <div class="txt-xs" style="color:var(--text-warm-muted);">Quản lý giáo trình bài tập &amp; tiến độ từng học viên</div>
             </div>
           </div>
 
@@ -583,109 +583,109 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
             <div class="row-between" style="margin-bottom:10px;">
               <div class="row" style="gap:8px;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/quick_actions/action_coach_plans.svg" alt="Giáo án" />
-                <strong class="txt-sm">Tổng quan phụ trách</strong>
+                <strong class="txt-sm">Tổng quan giáo án tập</strong>
               </div>
-              <span class="pill pill-success tnum">6 HV đang theo</span>
+              <span class="pill pill-orange tnum">6 HV đang theo</span>
             </div>
             <div class="grid-3">
               <div class="metric-box" style="text-align:center;padding:8px 4px;">
                 <div class="tnum txt-bold txt-orange" style="font-size:20px;">5</div>
-                <div class="txt-xs">Giáo trình tập</div>
-              </div>
-              <div class="metric-box" style="text-align:center;padding:8px 4px;">
-                <div class="tnum txt-bold txt-green" style="font-size:20px;">5</div>
-                <div class="txt-xs">Thực đơn 7 ngày</div>
+                <div class="txt-xs">Đang áp dụng</div>
               </div>
               <div class="metric-box" style="text-align:center;padding:8px 4px;">
                 <div class="tnum txt-bold txt-warn" style="font-size:20px;">1</div>
-                <div class="txt-xs">Chờ thiết lập</div>
+                <div class="txt-xs">Chưa có lịch</div>
+              </div>
+              <div class="metric-box" style="text-align:center;padding:8px 4px;">
+                <div class="tnum txt-bold txt-green" style="font-size:20px;">62</div>
+                <div class="txt-xs">Bài tập giao</div>
               </div>
             </div>
           </div>
 
           <div class="input-box" style="margin-bottom:12px;">
             <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_search.svg" alt="Tìm" />
-            <span style="flex:1;color:var(--text-secondary);">Tìm hội viên theo tên hoặc mục tiêu...</span>
+            <span style="flex:1;color:var(--text-secondary);">Tìm hội viên hoặc tên giáo trình...</span>
           </div>
 
           <div class="filter-row">
-            <div class="filter-pill active" data-filter-cat="all">Tất cả (4)</div>
-            <div class="filter-pill" data-filter-cat="complete">Đủ cả hai (3)</div>
-            <div class="filter-pill" data-filter-cat="pending">Chờ thiết lập (1)</div>
+            <div class="filter-pill active" data-filter-cat="all" style="min-height:44px;display:inline-flex;align-items:center;">Tất cả (4)</div>
+            <div class="filter-pill" data-filter-cat="has-plan" style="min-height:44px;display:inline-flex;align-items:center;">Đã có giáo án (3)</div>
+            <div class="filter-pill" data-filter-cat="no-plan" style="min-height:44px;display:inline-flex;align-items:center;">Chưa có giáo án (1)</div>
           </div>
 
           <div class="sec-head" style="margin-top:6px;">
-            <h3>Danh sách hội viên</h3>
-            <span class="txt-xs">Chọn mục cần thiết lập</span>
+            <h3>Hội viên tập luyện</h3>
+            <span class="txt-xs">Chạm để mở giáo trình tập</span>
           </div>
 
-          <div class="card-liquid featured" data-filter-item="complete" style="padding:13px;">
-            <div class="row" style="gap:11px;margin-bottom:10px;">
+          <div class="card-solid" data-filter-item="has-plan" data-go="coach-member-plans" style="padding:13px;border-color:rgba(255,94,54,0.45);cursor:pointer;">
+            <div class="row" style="gap:11px;margin-bottom:8px;">
               <div class="avatar-member" style="width:42px;height:42px;font-size:14px;">MQ</div>
               <div style="flex:1;min-width:0;">
                 <div class="row-between" style="gap:6px;">
                   <strong class="txt-sm">Nguyễn Minh Quân</strong>
-                  <span class="pill pill-success">Hiệu lực</span>
+                  <span class="pill pill-success">Đang áp dụng</span>
                 </div>
-                <div class="txt-xs tnum" style="margin-top:2px;">Tập: 4 ngày (18 bài) · Ăn: ~2.185 kcal/ngày</div>
-                <div class="txt-xs" style="color:var(--warning);margin-top:2px;">Lưu ý: Nhắc kỹ thuật vai phải</div>
+                <div class="txt-xs tnum" style="margin-top:2px;">Upper / Lower Split · 4 ngày/tuần · 18 bài tập</div>
+                <div class="txt-xs tnum" style="color:var(--warning);margin-top:2px;">Lưu ý vai phải · Tiến độ: Tuần 3/4 (9/16 buổi)</div>
               </div>
             </div>
-            <div class="grid-2" style="gap:8px;">
-              <button type="button" class="btn-secondary" data-go="coach-member-plans" style="height:38px;font-size:12px;padding:0 8px;border-color:rgba(255,94,54,0.45);color:var(--primary);">Giáo trình tập ›</button>
-              <button type="button" class="btn-secondary" data-go="coach-meal-plan" style="height:38px;font-size:12px;padding:0 8px;border-color:rgba(46,204,113,0.45);color:var(--success);">Thực đơn 7 ngày ›</button>
+            <div class="prog-track" style="height:4px;margin-bottom:9px;"><div class="prog-fill" style="width:56%;"></div></div>
+            <div class="row-between">
+              <span class="txt-xs tnum" style="color:var(--text-warm-muted);">Cập nhật gần nhất: Hôm qua</span>
+              <span class="txt-orange txt-xs txt-bold">Mở giáo trình tập ›</span>
             </div>
           </div>
 
-          <div class="card-liquid" data-filter-item="complete" style="padding:13px;">
-            <div class="row" style="gap:11px;margin-bottom:10px;">
+          <div class="card-solid" data-filter-item="has-plan" data-go="coach-member-plans" style="padding:13px;cursor:pointer;">
+            <div class="row" style="gap:11px;margin-bottom:8px;">
               <div class="avatar-member" style="width:42px;height:42px;font-size:14px;background:linear-gradient(135deg,#2ECC71,#1D63B8);">TV</div>
               <div style="flex:1;min-width:0;">
                 <div class="row-between" style="gap:6px;">
                   <strong class="txt-sm">Trần Thảo Vy</strong>
-                  <span class="pill pill-success">Hiệu lực</span>
+                  <span class="pill pill-success">Đang áp dụng</span>
                 </div>
-                <div class="txt-xs tnum" style="margin-top:2px;">Tập: Glutes &amp; Core (12 bài) · Ăn: ~1.550 kcal</div>
+                <div class="txt-xs tnum" style="margin-top:2px;">Glutes &amp; Core · 3 ngày/tuần · 12 bài tập</div>
               </div>
             </div>
-            <div class="grid-2" style="gap:8px;">
-              <button type="button" class="btn-secondary" data-go="coach-member-plans" style="height:38px;font-size:12px;padding:0 8px;">Giáo trình tập ›</button>
-              <button type="button" class="btn-secondary" data-go="coach-meal-plan" style="height:38px;font-size:12px;padding:0 8px;">Thực đơn 7 ngày ›</button>
+            <div class="prog-track" style="height:4px;margin-bottom:8px;"><div class="prog-fill" style="width:68%;"></div></div>
+            <div class="row-between">
+              <span class="txt-xs tnum">Tuần 4/6 · Đạt 92% hoàn thành</span>
+              <span class="txt-orange txt-xs txt-bold">Mở giáo trình ›</span>
             </div>
           </div>
 
-          <div class="card-liquid" data-filter-item="complete" style="padding:13px;">
-            <div class="row" style="gap:11px;margin-bottom:10px;">
+          <div class="card-solid" data-filter-item="has-plan" data-go="coach-member-plans" style="padding:13px;cursor:pointer;">
+            <div class="row" style="gap:11px;margin-bottom:8px;">
               <div class="avatar-member" style="width:42px;height:42px;font-size:14px;background:linear-gradient(135deg,#F39C12,#D9431E);">PB</div>
               <div style="flex:1;min-width:0;">
                 <div class="row-between" style="gap:6px;">
                   <strong class="txt-sm">Phạm Quốc Bảo</strong>
-                  <span class="pill pill-success">Hiệu lực</span>
+                  <span class="pill pill-success">Đang áp dụng</span>
                 </div>
-                <div class="txt-xs tnum" style="margin-top:2px;">Tập: Powerbuilding (16 bài) · Ăn: ~2.850 kcal</div>
+                <div class="txt-xs tnum" style="margin-top:2px;">Powerbuilding · 4 ngày/tuần · 16 bài tập</div>
               </div>
             </div>
-            <div class="grid-2" style="gap:8px;">
-              <button type="button" class="btn-secondary" data-go="coach-member-plans" style="height:38px;font-size:12px;padding:0 8px;">Giáo trình tập ›</button>
-              <button type="button" class="btn-secondary" data-go="coach-meal-plan" style="height:38px;font-size:12px;padding:0 8px;">Thực đơn 7 ngày ›</button>
+            <div class="prog-track" style="height:4px;margin-bottom:8px;"><div class="prog-fill orange" style="width:82%;"></div></div>
+            <div class="row-between">
+              <span class="txt-xs tnum">Tuần 5/6 · Sức mạnh tăng +12%</span>
+              <span class="txt-orange txt-xs txt-bold">Mở giáo trình ›</span>
             </div>
           </div>
 
-          <div class="card-liquid" data-filter-item="pending" style="padding:13px;">
-            <div class="row" style="gap:11px;margin-bottom:10px;">
+          <div class="card-solid" data-filter-item="no-plan" data-go="coach-plan-form" style="padding:13px;border-color:rgba(243,156,18,0.45);cursor:pointer;">
+            <div class="row" style="gap:11px;margin-bottom:9px;">
               <div class="avatar-member" style="width:42px;height:42px;font-size:14px;background:linear-gradient(135deg,#6B7280,#374151);">KL</div>
               <div style="flex:1;min-width:0;">
                 <div class="row-between" style="gap:6px;">
                   <strong class="txt-sm">Đỗ Khánh Linh</strong>
-                  <span class="pill pill-muted">Chưa thiết lập</span>
+                  <span class="pill pill-warning">Chưa có giáo án</span>
                 </div>
-                <div class="txt-xs tnum" style="margin-top:2px;">Chưa có giáo trình tập &amp; chưa có thực đơn</div>
+                <div class="txt-xs tnum" style="margin-top:2px;">Hội viên mới · Mục tiêu: Săn chắc toàn thân 3 buổi/tuần</div>
               </div>
             </div>
-            <div class="grid-2" style="gap:8px;">
-              <button type="button" class="btn-secondary" data-go="coach-member-plans" style="height:38px;font-size:12px;padding:0 8px;">+ Giáo trình tập</button>
-              <button type="button" class="btn-secondary" data-go="coach-meal-plan" style="height:38px;font-size:12px;padding:0 8px;">+ Thực đơn 7 ngày</button>
-            </div>
+            <button type="button" class="btn-primary" style="height:44px;font-size:14px;" data-go="coach-plan-form">+ Tạo giáo trình tập luyện</button>
           </div>
         </div>
       </div>
@@ -694,7 +694,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   {
     id: 'coach-member-plans',
     group: 'coach-tab3-training',
-    groupLabel: '3. Giáo án & Thực đơn',
+    groupLabel: '3. Giáo án tập luyện',
     title: '3.2 Danh sách giáo trình tập',
     shortFile: 'coach_training_page.dart (_MemberPlansPage)',
     flutterFile: 'mobile-app/lib/features/training/presentation/coach_training_page.dart',
@@ -738,9 +738,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           </div>
 
           <div class="filter-row">
-            <div class="filter-pill active" data-filter-cat="all">Tất cả (2)</div>
-            <div class="filter-pill" data-filter-cat="active">Đang áp dụng (1)</div>
-            <div class="filter-pill" data-filter-cat="archived">Lưu trữ (1)</div>
+            <div class="filter-pill active" data-filter-cat="all" style="min-height:44px;display:inline-flex;align-items:center;">Tất cả (2)</div>
+            <div class="filter-pill" data-filter-cat="active" style="min-height:44px;display:inline-flex;align-items:center;">Đang áp dụng (1)</div>
+            <div class="filter-pill" data-filter-cat="archived" style="min-height:44px;display:inline-flex;align-items:center;">Lưu trữ (1)</div>
           </div>
 
           <div class="sec-head" style="margin-top:6px;">
@@ -749,7 +749,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           </div>
 
           <!-- Giáo trình 1: Đang áp dụng -->
-          <div class="card-liquid featured" data-filter-item="active" data-go="coach-plan-detail" style="padding:14px;cursor:pointer;">
+          <div class="card-solid" data-filter-item="active" data-go="coach-plan-detail" style="padding:14px;border-color:rgba(46,204,113,0.48);cursor:pointer;">
             <div class="row-between" style="margin-bottom:6px;">
               <span class="pill pill-success">Đang áp dụng</span>
               <span class="txt-xs tnum">Phiên bản #3</span>
@@ -768,7 +768,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           </div>
 
           <!-- Giáo trình 2: Lưu trữ -->
-          <div class="card-liquid" data-filter-item="archived" data-go="coach-plan-detail" style="padding:14px;opacity:0.86;cursor:pointer;">
+          <div class="card-solid" data-filter-item="archived" data-go="coach-plan-detail" style="padding:14px;opacity:0.86;cursor:pointer;">
             <div class="row-between" style="margin-bottom:6px;">
               <span class="pill pill-muted">Lưu trữ</span>
               <span class="txt-xs tnum">Phiên bản #2</span>
@@ -787,7 +787,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   {
     id: 'coach-plan-detail',
     group: 'coach-tab3-training',
-    groupLabel: '3. Giáo án & Thực đơn',
+    groupLabel: '3. Giáo án tập luyện',
     title: '3.3 Chi tiết giáo trình tập',
     shortFile: 'coach_plan_detail_page.dart',
     flutterFile: 'mobile-app/lib/features/training/presentation/coach_plan_detail_page.dart',
@@ -837,15 +837,15 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           </div>
 
           <div class="filter-row">
-            <div class="filter-pill active" data-state-btn="day1">Ngày 1 · Push</div>
-            <div class="filter-pill" data-state-btn="day2">Ngày 2 · Pull</div>
-            <div class="filter-pill" data-state-btn="day3">Ngày 3 · Legs</div>
-            <div class="filter-pill" data-state-btn="day4">Ngày 4 · Upper</div>
+            <div class="filter-pill active" data-state-btn="day1" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 1 · Push</div>
+            <div class="filter-pill" data-state-btn="day2" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 2 · Pull</div>
+            <div class="filter-pill" data-state-btn="day3" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 3 · Legs</div>
+            <div class="filter-pill" data-state-btn="day4" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 4 · Upper</div>
           </div>
 
           <!-- Ngày 1: Push -->
           <div data-state-pane="day1">
-            <div class="card-liquid" style="padding:11px 13px;border-color:rgba(255,159,67,0.38);">
+            <div class="card-solid" style="padding:11px 13px;border-color:rgba(255,159,67,0.38);">
               <div class="row" style="gap:8px;align-items:flex-start;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_warmup.svg" alt="Khởi động" />
                 <div style="flex:1;min-width:0;">
@@ -855,15 +855,15 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               </div>
             </div>
             <div class="sec-head" style="margin-top:4px;"><h3>Bài tập Ngày 1 (4 bài)</h3><span class="txt-xs tnum">~60 phút · Nghỉ 60–120s</span></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tạ đơn" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">1. Incline Dumbbell Press</strong><span class="pill pill-orange">Ngực trên</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 8–10 lần · Nghỉ 90s · Gợi ý 22 kg/tay</div><div class="txt-xs" style="color:var(--text-warm-muted);margin-top:4px;line-height:1.4;">Kiểm soát pha hạ tạ 3 giây, giữ khuỷu tay 45° tránh ép khớp vai.</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thanh đòn" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">2. Flat Barbell Bench Press</strong><span class="pill pill-muted">Ngực giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 6–8 lần · Nghỉ 120s · Gợi ý 60 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Máy cáp" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">3. Cable Lateral Raise</strong><span class="pill pill-muted">Vai giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 12–15 lần · Nghỉ 60s · Tạ cáp 7,5 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy tập" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">4. Rope Triceps Pushdown</strong><span class="pill pill-muted">Tay sau</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12 lần · Nghỉ 60s · Mức tạ 25 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tạ đơn" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">1. Incline Dumbbell Press</strong><span class="pill pill-orange">Ngực trên</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 8–10 lần · Nghỉ 90s · Gợi ý 22 kg/tay</div><div class="txt-xs" style="color:var(--text-warm-muted);margin-top:4px;line-height:1.4;">Kiểm soát pha hạ tạ 3 giây, giữ khuỷu tay 45° tránh ép khớp vai.</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thanh đòn" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">2. Flat Barbell Bench Press</strong><span class="pill pill-muted">Ngực giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 6–8 lần · Nghỉ 120s · Gợi ý 60 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Máy cáp" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">3. Cable Lateral Raise</strong><span class="pill pill-muted">Vai giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 12–15 lần · Nghỉ 60s · Tạ cáp 7,5 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;align-items:flex-start;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy tập" /><div style="flex:1;min-width:0;"><div class="row-between" style="gap:6px;"><strong class="txt-sm">4. Rope Triceps Pushdown</strong><span class="pill pill-muted">Tay sau</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12 lần · Nghỉ 60s · Mức tạ 25 kg</div></div></div></div>
           </div>
 
           <!-- Ngày 2: Pull -->
           <div data-state-pane="day2" style="display:none;">
-            <div class="card-liquid" style="padding:11px 13px;border-color:rgba(46,204,113,0.38);">
+            <div class="card-solid" style="padding:11px 13px;border-color:rgba(46,204,113,0.38);">
               <div class="row" style="gap:8px;align-items:flex-start;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_warmup.svg" alt="Khởi động" />
                 <div style="flex:1;min-width:0;">
@@ -873,15 +873,15 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               </div>
             </div>
             <div class="sec-head" style="margin-top:4px;"><h3>Bài tập Ngày 2 (4 bài)</h3><span class="txt-xs tnum">~60 phút · Nghỉ 60–90s</span></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cáp" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">1. Wide-Grip Lat Pulldown</strong><span class="pill pill-success">Lưng xô</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10–12 lần · Nghỉ 90s · Mức tạ 55 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">2. Seated Cable Row</strong><span class="pill pill-muted">Lưng giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10 lần · Nghỉ 90s · Mức tạ 50 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cáp" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">3. Rope Face Pull</strong><span class="pill pill-muted">Vai sau</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 15 lần · Nghỉ 60s · Tốt cho khớp vai</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tạ đơn" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">4. Incline Dumbbell Curl</strong><span class="pill pill-muted">Tay trước</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12 lần · Nghỉ 60s · 12 kg/tay</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cáp" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">1. Wide-Grip Lat Pulldown</strong><span class="pill pill-success">Lưng xô</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10–12 lần · Nghỉ 90s · Mức tạ 55 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">2. Seated Cable Row</strong><span class="pill pill-muted">Lưng giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10 lần · Nghỉ 90s · Mức tạ 50 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cáp" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">3. Rope Face Pull</strong><span class="pill pill-muted">Vai sau</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 15 lần · Nghỉ 60s · Tốt cho khớp vai</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tạ đơn" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">4. Incline Dumbbell Curl</strong><span class="pill pill-muted">Tay trước</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12 lần · Nghỉ 60s · 12 kg/tay</div></div></div></div>
           </div>
 
           <!-- Ngày 3: Legs -->
           <div data-state-pane="day3" style="display:none;">
-            <div class="card-liquid" style="padding:11px 13px;border-color:rgba(112,174,232,0.38);">
+            <div class="card-solid" style="padding:11px 13px;border-color:rgba(112,174,232,0.38);">
               <div class="row" style="gap:8px;align-items:flex-start;">
                 <img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_warmup.svg" alt="Khởi động" />
                 <div style="flex:1;min-width:0;">
@@ -891,18 +891,18 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               </div>
             </div>
             <div class="sec-head" style="margin-top:4px;"><h3>Bài tập Ngày 3 (4 bài)</h3><span class="txt-xs tnum">~65 phút · Nghỉ 90–120s</span></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">1. 45° Leg Press</strong><span class="pill pill-orange">Đùi trước</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10–12 lần · Nghỉ 120s · 140 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thanh đòn" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">2. Romanian Deadlift (RDL)</strong><span class="pill pill-muted">Đùi sau · Mông</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 8–10 lần · Nghỉ 120s · 70 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">3. Leg Extension</strong><span class="pill pill-muted">Đùi trước</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12–15 lần · Nghỉ 60s · 45 kg</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">4. Seated Calf Raise</strong><span class="pill pill-muted">Bắp chân</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 15 lần · Nghỉ 45s · 35 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">1. 45° Leg Press</strong><span class="pill pill-orange">Đùi trước</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10–12 lần · Nghỉ 120s · 140 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_barbell.svg" alt="Thanh đòn" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">2. Romanian Deadlift (RDL)</strong><span class="pill pill-muted">Đùi sau · Mông</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 8–10 lần · Nghỉ 120s · 70 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">3. Leg Extension</strong><span class="pill pill-muted">Đùi trước</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12–15 lần · Nghỉ 60s · 45 kg</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">4. Seated Calf Raise</strong><span class="pill pill-muted">Bắp chân</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 15 lần · Nghỉ 45s · 35 kg</div></div></div></div>
           </div>
 
           <!-- Ngày 4: Upper -->
           <div data-state-pane="day4" style="display:none;">
             <div class="sec-head" style="margin-top:4px;"><h3>Bài tập Ngày 4 · Upper Balance (3 bài)</h3><span class="txt-xs tnum">~55 phút</span></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">1. Machine Shoulder Press</strong><span class="pill pill-orange">Vai</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10 lần · Nghỉ 90s · An toàn khớp vai</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tạ đơn" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">2. Chest-Supported DB Row</strong><span class="pill pill-muted">Lưng</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10–12 lần · Nghỉ 90s · 20 kg/tay</div></div></div></div>
-            <div class="card-liquid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cáp" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">3. Cable Chest Fly</strong><span class="pill pill-muted">Ngực giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12–15 lần · Nghỉ 60s</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_machine.svg" alt="Máy" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">1. Machine Shoulder Press</strong><span class="pill pill-orange">Vai</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10 lần · Nghỉ 90s · An toàn khớp vai</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_dumbbell.svg" alt="Tạ đơn" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">2. Chest-Supported DB Row</strong><span class="pill pill-muted">Lưng</span></div><div class="txt-xs tnum" style="margin-top:3px;">4 hiệp · 10–12 lần · Nghỉ 90s · 20 kg/tay</div></div></div></div>
+            <div class="card-solid" style="padding:13px;"><div class="row" style="gap:10px;"><img class="ico-lg" src="../../meta-gym/assets/svg/catalog/equip_cable.svg" alt="Cáp" /><div style="flex:1;min-width:0;"><div class="row-between"><strong class="txt-sm">3. Cable Chest Fly</strong><span class="pill pill-muted">Ngực giữa</span></div><div class="txt-xs tnum" style="margin-top:3px;">3 hiệp · 12–15 lần · Nghỉ 60s</div></div></div></div>
           </div>
         </div>
 
@@ -915,7 +915,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
   {
     id: 'coach-plan-form',
     group: 'coach-tab3-training',
-    groupLabel: '3. Giáo án & Thực đơn',
+    groupLabel: '3. Giáo án tập luyện',
     title: '3.4 Tạo / Sửa giáo trình tập',
     shortFile: 'coach_plan_form_page.dart',
     flutterFile: 'mobile-app/lib/features/training/presentation/coach_plan_form_page.dart',
@@ -970,13 +970,13 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           </div>
 
           <div class="filter-row">
-            <div class="filter-pill active" data-state-btn="fday1">Ngày 1 · Push</div>
-            <div class="filter-pill" data-state-btn="fday2">Ngày 2 · Pull</div>
-            <div class="filter-pill" data-state-btn="fday3">Ngày 3 · Legs</div>
-            <div class="filter-pill" data-coach-toast="Đã thêm Ngày 4 · Upper Body">+ Thêm ngày</div>
+            <div class="filter-pill active" data-state-btn="fday1" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 1 · Push</div>
+            <div class="filter-pill" data-state-btn="fday2" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 2 · Pull</div>
+            <div class="filter-pill" data-state-btn="fday3" style="min-height:44px;display:inline-flex;align-items:center;">Ngày 3 · Legs</div>
+            <div class="filter-pill" data-coach-toast="Đã thêm Ngày 4 · Upper Body" style="min-height:44px;display:inline-flex;align-items:center;">+ Thêm ngày</div>
           </div>
 
-          <div class="card-liquid" data-state-pane="fday1" style="padding:14px;">
+          <div class="card-solid" data-state-pane="fday1" style="padding:14px;">
             <div class="field" style="margin-bottom:10px;">
               <label>Nhóm cơ &amp; trọng tâm Ngày 1</label>
               <div class="input-box">Ngực trên · Vai trước &amp; giữa · Tay sau (~60 phút)</div>
@@ -985,7 +985,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
             <div class="metric-box" style="margin-bottom:8px;">
               <div class="row-between" style="margin-bottom:6px;gap:6px;">
                 <strong class="txt-sm">1. Incline Dumbbell Press</strong>
-                <button type="button" style="background:none;border:none;padding:2px;cursor:pointer;" data-coach-toast="Đã xóa bài tập khỏi Ngày 1">
+                <button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 1" aria-label="Xóa bài tập">
                   <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" />
                 </button>
               </div>
@@ -1000,7 +1000,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
             <div class="metric-box" style="margin-bottom:8px;">
               <div class="row-between" style="margin-bottom:6px;gap:6px;">
                 <strong class="txt-sm">2. Cable Lateral Raise</strong>
-                <button type="button" style="background:none;border:none;padding:2px;cursor:pointer;" data-coach-toast="Đã xóa bài tập khỏi Ngày 1">
+                <button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 1" aria-label="Xóa bài tập">
                   <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" />
                 </button>
               </div>
@@ -1015,7 +1015,7 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
             <div class="metric-box" style="margin-bottom:10px;">
               <div class="row-between" style="margin-bottom:6px;gap:6px;">
                 <strong class="txt-sm">3. Rope Triceps Pushdown</strong>
-                <button type="button" style="background:none;border:none;padding:2px;cursor:pointer;" data-coach-toast="Đã xóa bài tập khỏi Ngày 1">
+                <button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 1" aria-label="Xóa bài tập">
                   <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" />
                 </button>
               </div>
@@ -1027,30 +1027,30 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               </div>
             </div>
 
-            <button type="button" class="btn-secondary" style="height:40px;font-size:14px;gap:6px;" data-open-coach-modal="add-exercise">
+            <button type="button" class="btn-secondary" style="height:44px;font-size:14px;gap:6px;" data-open-coach-modal="add-exercise">
               <img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_add_exercise.svg" alt="Thêm bài" />
               <span>+ Thêm bài tập từ danh mục</span>
             </button>
           </div>
 
-          <div class="card-liquid" data-state-pane="fday2" style="display:none;padding:14px;">
+          <div class="card-solid" data-state-pane="fday2" style="display:none;padding:14px;">
             <div class="field" style="margin-bottom:10px;">
               <label>Nhóm cơ &amp; trọng tâm Ngày 2</label>
               <div class="input-box">Lưng xô · Lưng giữa · Vai sau · Tay trước</div>
             </div>
-            <div class="metric-box" style="margin-bottom:8px;"><div class="row-between" style="margin-bottom:6px;"><strong class="txt-sm">1. Wide-Grip Lat Pulldown</strong><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">4 hiệp</span><span class="pill pill-muted tnum">10–12 lần</span><span class="pill pill-orange tnum">55 kg</span></div></div>
-            <div class="metric-box" style="margin-bottom:10px;"><div class="row-between" style="margin-bottom:6px;"><strong class="txt-sm">2. Seated Cable Row</strong><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">4 hiệp</span><span class="pill pill-muted tnum">10 lần</span><span class="pill pill-orange tnum">50 kg</span></div></div>
-            <button type="button" class="btn-secondary" style="height:40px;font-size:14px;gap:6px;" data-open-coach-modal="add-exercise"><img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_add_exercise.svg" alt="Thêm" /><span>+ Thêm bài tập Ngày 2</span></button>
+            <div class="metric-box" style="margin-bottom:8px;"><div class="row-between" style="margin-bottom:6px;gap:6px;"><strong class="txt-sm">1. Wide-Grip Lat Pulldown</strong><button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 2" aria-label="Xóa bài tập"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></button></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">4 hiệp</span><span class="pill pill-muted tnum">10–12 lần</span><span class="pill pill-orange tnum">55 kg</span></div></div>
+            <div class="metric-box" style="margin-bottom:10px;"><div class="row-between" style="margin-bottom:6px;gap:6px;"><strong class="txt-sm">2. Seated Cable Row</strong><button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 2" aria-label="Xóa bài tập"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></button></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">4 hiệp</span><span class="pill pill-muted tnum">10 lần</span><span class="pill pill-orange tnum">50 kg</span></div></div>
+            <button type="button" class="btn-secondary" style="height:44px;font-size:14px;gap:6px;" data-open-coach-modal="add-exercise"><img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_add_exercise.svg" alt="Thêm" /><span>+ Thêm bài tập Ngày 2</span></button>
           </div>
 
-          <div class="card-liquid" data-state-pane="fday3" style="display:none;padding:14px;">
+          <div class="card-solid" data-state-pane="fday3" style="display:none;padding:14px;">
             <div class="field" style="margin-bottom:10px;">
               <label>Nhóm cơ &amp; trọng tâm Ngày 3</label>
               <div class="input-box">Thân dưới · Đùi trước · Đùi sau · Bắp chuối</div>
             </div>
-            <div class="metric-box" style="margin-bottom:8px;"><div class="row-between" style="margin-bottom:6px;"><strong class="txt-sm">1. 45° Leg Press</strong><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">4 hiệp</span><span class="pill pill-muted tnum">10–12 lần</span><span class="pill pill-orange tnum">140 kg</span></div></div>
-            <div class="metric-box" style="margin-bottom:10px;"><div class="row-between" style="margin-bottom:6px;"><strong class="txt-sm">2. Romanian Deadlift (RDL)</strong><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">3 hiệp</span><span class="pill pill-muted tnum">8–10 lần</span><span class="pill pill-orange tnum">70 kg</span></div></div>
-            <button type="button" class="btn-secondary" style="height:40px;font-size:14px;gap:6px;" data-open-coach-modal="add-exercise"><img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_add_exercise.svg" alt="Thêm" /><span>+ Thêm bài tập Ngày 3</span></button>
+            <div class="metric-box" style="margin-bottom:8px;"><div class="row-between" style="margin-bottom:6px;gap:6px;"><strong class="txt-sm">1. 45° Leg Press</strong><button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 3" aria-label="Xóa bài tập"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></button></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">4 hiệp</span><span class="pill pill-muted tnum">10–12 lần</span><span class="pill pill-orange tnum">140 kg</span></div></div>
+            <div class="metric-box" style="margin-bottom:10px;"><div class="row-between" style="margin-bottom:6px;gap:6px;"><strong class="txt-sm">2. Romanian Deadlift (RDL)</strong><button type="button" style="background:none;border:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" data-coach-toast="Đã xóa bài tập khỏi Ngày 3" aria-label="Xóa bài tập"><img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_delete.svg" alt="Xóa" /></button></div><div class="row" style="gap:6px;"><span class="pill pill-muted tnum">3 hiệp</span><span class="pill pill-muted tnum">8–10 lần</span><span class="pill pill-orange tnum">70 kg</span></div></div>
+            <button type="button" class="btn-secondary" style="height:44px;font-size:14px;gap:6px;" data-open-coach-modal="add-exercise"><img class="ico-sm" src="../../meta-gym/assets/svg/workout/workout_add_exercise.svg" alt="Thêm" /><span>+ Thêm bài tập Ngày 3</span></button>
           </div>
         </div>
 
@@ -1063,9 +1063,9 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
           <div class="qr-sheet" style="text-align:left;">
             <div class="row-between" style="margin-bottom:10px;">
               <div style="font-size:16px;font-weight:800;">Thêm bài tập · Ngày 1</div>
-              <button type="button" class="circle-btn" style="width:32px;height:32px;font-size:14px;" data-close-coach-modal>✕</button>
+              <button type="button" class="circle-btn" style="width:44px;height:44px;font-size:15px;" data-close-coach-modal aria-label="Đóng">✕</button>
             </div>
-            <div class="input-box" style="margin-bottom:10px;height:40px;">
+            <div class="input-box" style="margin-bottom:10px;height:44px;">
               <img class="ico-sm" src="../../meta-gym/assets/svg/setting/common_search.svg" alt="Tìm" />
               <span style="flex:1;color:var(--text-secondary);">Tìm bài tập (VD: Chest Fly, Dip...)</span>
             </div>
@@ -1082,8 +1082,8 @@ window.METAGYM_SCREENS.coach = (window.METAGYM_SCREENS.coach || []).concat([
               </div>
             </div>
             <div class="grid-2" style="gap:8px;">
-              <div class="field" style="margin-bottom:0;"><label>Số hiệp</label><div class="input-box tnum" style="height:40px;">3 hiệp</div></div>
-              <div class="field" style="margin-bottom:0;"><label>Số lần (Reps)</label><div class="input-box tnum" style="height:40px;">12–15 lần</div></div>
+              <div class="field" style="margin-bottom:0;"><label>Số hiệp</label><div class="input-box tnum" style="height:44px;">3 hiệp</div></div>
+              <div class="field" style="margin-bottom:0;"><label>Số lần (Reps)</label><div class="input-box tnum" style="height:44px;">12–15 lần</div></div>
             </div>
           </div>
         </div>

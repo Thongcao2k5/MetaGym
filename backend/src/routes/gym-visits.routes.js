@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { awardGymCheckinPoints } from '../services/loyalty.js';
 import { createAuthentication } from './users.routes.js';
 
 const monthQuery = z.strictObject({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) });
@@ -121,11 +122,19 @@ export function createGymVisitsRouter({ database, jwtSecret }) {
          RETURNING id, visit_day::text AS day, checked_in_at, gym_name, gym_address`,
         [randomUUID(), request.authUser.id],
       );
+      if (!visit) {
+        await client.query('ROLLBACK');
+        return fail(response, 503, 'GYM_NOT_CONFIGURED', 'Chưa cấu hình phòng gym');
+      }
+      const loyalty = await awardGymCheckinPoints(client, {
+        memberId: request.authUser.id,
+        visitId: visit.id,
+      });
       await client.query('COMMIT');
-      if (!visit) return fail(response, 503, 'GYM_NOT_CONFIGURED', 'Chưa cấu hình phòng gym');
       return response.status(201).json({ data: { id: visit.id, day: visit.day,
         checkedInAt: visit.checked_in_at, gymName: visit.gym_name,
-        gymAddress: visit.gym_address } });
+        gymAddress: visit.gym_address,
+        ...(loyalty?.pointsEarned ? { loyaltyPointsEarned: loyalty.pointsEarned } : {}) } });
     } catch {
       if (client) await client.query('ROLLBACK').catch(() => {});
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không ghi được lượt đến gym');

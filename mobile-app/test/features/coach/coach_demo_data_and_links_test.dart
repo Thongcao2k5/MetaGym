@@ -17,6 +17,7 @@ import 'package:meta_gym_app/features/sessions/data/coach_sessions_service.dart'
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_history_page.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_sessions_page.dart';
 import 'package:meta_gym_app/features/training/data/coach_training_service.dart';
+import 'package:meta_gym_app/features/training/presentation/coach_nutrition_page.dart';
 import 'package:meta_gym_app/features/training/presentation/coach_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/meal_plans_page.dart';
 import 'package:provider/provider.dart';
@@ -164,7 +165,7 @@ void main() {
   });
 
   group('Coach UI links and data rendering', () {
-    testWidgets('CoachTrainingPage loads live demo members and opens member plans & meal plans cleanly', (tester) async {
+    testWidgets('CoachTrainingPage & CoachNutritionPage load separated demo flows and navigate cleanly', (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -179,10 +180,11 @@ void main() {
       await flushAsyncAndPump(tester);
 
       expect(find.text('Máy chủ trả về dữ liệu không đúng định dạng.'), findsNothing);
+      expect(find.text('GIÁO ÁN TẬP LUYỆN'), findsOneWidget);
       expect(find.text('Nguyễn Minh Quân'), findsOneWidget);
       expect(find.text('Trần Bảo Ngọc'), findsOneWidget);
-      expect(find.text('Đủ cả hai (1)'), findsOneWidget);
-      expect(find.text('Chờ thiết lập (1)'), findsOneWidget);
+      expect(find.text('Đã có giáo án (2)'), findsOneWidget);
+      expect(find.text('Chưa có giáo án (0)'), findsOneWidget);
 
       final openTrainingBtn = find.byKey(
         const Key('hub-open-training-10000000-0000-4000-8000-000000000003'),
@@ -199,6 +201,33 @@ void main() {
       await tester.tap(find.byKey(const Key('member-plans-header-nutrition')));
       await flushAsyncAndPump(tester);
       expect(find.byType(MealPlansPage), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.pumpWidget(
+        _wrapWithProviders(
+          const CoachNutritionPage(structured: true),
+          client: ctx.client,
+        ),
+      );
+      await flushAsyncAndPump(tester);
+
+      expect(find.text('DINH DƯỠNG HUẤN LUYỆN'), findsOneWidget);
+      expect(find.text('Đã có thực đơn (1)'), findsOneWidget);
+      expect(find.text('Chưa có thực đơn (1)'), findsOneWidget);
+
+      final openMealBtn = find.byKey(
+        const Key('nutrition-open-meal-10000000-0000-4000-8000-000000000003'),
+      );
+      await tester.scrollUntilVisible(
+        openMealBtn,
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(openMealBtn);
+      await flushAsyncAndPump(tester);
+      expect(find.byType(MealPlansPage), findsOneWidget);
+      expect(find.text('Nguyên tắc & Ghi chú ăn uống'), findsOneWidget);
     });
 
     testWidgets('CoachMemberDetailPage links Giáo trình, Thực đơn and Lịch dạy', (tester) async {

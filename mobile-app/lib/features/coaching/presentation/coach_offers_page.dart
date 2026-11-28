@@ -12,6 +12,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/member_health_declaration_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:provider/provider.dart';
@@ -984,9 +985,23 @@ class _CoachOffersPageState extends State<CoachOffersPage> {
     final selectedOffer = _offers.isNotEmpty
         ? _offers[_selectedOfferIndex]
         : null;
-    final tierPerk = _activeMembership != null
-        ? _MembershipTierPerk.fromMembership(_activeMembership!)
-        : null;
+    LoyaltyController? loyaltyController;
+    try {
+      loyaltyController = context.watch<LoyaltyController>();
+    } on ProviderNotFoundException {
+      loyaltyController = null;
+    }
+    final loyaltySummary = loyaltyController?.summary;
+    final tierPerk = loyaltySummary != null && _activeMembership != null
+        ? _MembershipTierPerk(
+            tierLabel: loyaltySummary.tierLabel,
+            discountPercent: loyaltySummary.coachDiscountPercent,
+            pointsMultiplier:
+                '×${loyaltySummary.pointsMultiplier.toStringAsFixed(1)}',
+          )
+        : (_activeMembership != null
+            ? _MembershipTierPerk.fromMembership(_activeMembership!)
+            : null);
     final popularIdx = _offers.length > 1 ? _popularOfferIndex(_offers) : -1;
     final canCheckout =
         !_busy &&

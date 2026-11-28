@@ -21,3 +21,11 @@ abstract interface class MembershipCheckoutService {
 abstract interface class MembershipOnlinePaymentService {
   Future<Payment> reconcileOnlinePayment(String id, {required String method});
 }
+
+abstract interface class MembershipVoucherPaymentService {
+  Future<Payment> createPaymentWithVoucher({
+    required String planId,
+    required String idempotencyKey,
+    String? voucherCode,
+  });
+}

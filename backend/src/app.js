@@ -9,6 +9,7 @@ import { createAdminUsersRouter } from './routes/admin-users.routes.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
 import { createMembershipPlansRouter } from './routes/membership-plans.routes.js';
+import { createLoyaltyRouter } from './routes/loyalty.routes.js';
 import { createCoachPackagesRouter } from './routes/coach-packages.routes.js';
 import { createCoachScheduleRouter } from './routes/coach-schedule.routes.js';
 import { createCoachPaymentHoldsRouter } from './routes/coach-payment-holds.routes.js';
@@ -142,6 +143,7 @@ export function createApp({
   app.use('/api/v1/admin', createAdminUsersRouter({ database, jwtSecret }));
   app.use('/api/v1', createAdminAuditRouter({ database, jwtSecret }));
   app.use('/api/v1', createMembershipPlansRouter({ database, jwtSecret }));
+  app.use('/api/v1', createLoyaltyRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPaymentHoldsRouter({ database, jwtSecret }));

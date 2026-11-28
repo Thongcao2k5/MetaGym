@@ -7,6 +7,7 @@ import 'package:meta_gym_app/features/ai/data/ai_service.dart';
 import 'package:meta_gym_app/features/auth/data/auth_api.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
+import 'package:meta_gym_app/features/membership/data/loyalty_api.dart';
 import 'package:meta_gym_app/features/membership/data/membership_api.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
@@ -107,6 +108,43 @@ void main() {
         expect(roomAccess.token, 'local-demo-livekit-token');
         final ended = await callsApi.updateStatus(createdCall.id, 'ENDED');
         expect(ended.status, 'ENDED');
+
+        // Loyalty Meta Points offline (tách Điểm khả dụng vs Điểm xét hạng)
+        final loyaltyApi = LoyaltyApi(client);
+        final summaryBefore = await loyaltyApi.getSummary();
+        expect(summaryBefore.availablePoints, greaterThan(0));
+        expect(summaryBefore.tierPoints, greaterThanOrEqualTo(2150));
+        final rewards = await loyaltyApi.getRewards();
+        expect(rewards.length, 6);
+        final freeDays = rewards.firstWhere((r) => r.code == 'rw-free-7days');
+        final membershipsBefore = await membershipApi.getCurrentMemberships();
+        final endBefore = DateTime.parse(membershipsBefore.first.endDate);
+        final freeDaysRes = await loyaltyApi.redeemReward(
+          rewardId: freeDays.id,
+          idempotencyKey: 'idem-loyalty-free-7days',
+        );
+        expect(freeDaysRes.redemption.status, 'USED');
+        final membershipsAfter = await membershipApi.getCurrentMemberships();
+        final endAfter = DateTime.parse(membershipsAfter.first.endDate);
+        expect(endAfter.difference(endBefore).inDays, 7);
+
+        final voucher = rewards.firstWhere((r) => r.code == 'rw-voucher-100');
+        final redeemRes = await loyaltyApi.redeemReward(
+          rewardId: voucher.id,
+          idempotencyKey: 'idem-loyalty-offline-1',
+        );
+        expect(
+          redeemRes.summary.availablePoints,
+          freeDaysRes.summary.availablePoints - voucher.pointsCost,
+        );
+        expect(redeemRes.summary.tierPoints, summaryBefore.tierPoints);
+        final redemptions = await loyaltyApi.getMyRedemptions();
+        expect(
+          redemptions.any((r) => r.id == redeemRes.redemption.id),
+          isTrue,
+        );
+        final txList = await loyaltyApi.getTransactions(type: 'SPEND');
+        expect(txList.isNotEmpty, isTrue);
       },
     );
 

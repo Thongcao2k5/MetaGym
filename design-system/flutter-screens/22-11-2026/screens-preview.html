@@ -34,6 +34,7 @@
         <span class="ctrl-divider desktop-only-ctrl"></span>
         <button class="ctrl-btn desktop-only-ctrl" id="btn-430" title="iPhone 14 Pro Max — 430×932pt">14PRM</button>
         <button class="ctrl-btn active desktop-only-ctrl" id="btn-393" title="iPhone 14 Pro — 393×852pt">14PR</button>
+        <button class="ctrl-btn desktop-only-ctrl" id="btn-375" title="iPhone Compact — 375×812pt">375px</button>
         <span class="ctrl-divider"></span>
         <button class="ctrl-btn ctrl-icon-btn" id="btn-theme" title="Chuyển Chế độ Sáng / Tối"
           aria-label="Chuyển Chế độ Sáng / Tối">
@@ -52,10 +53,11 @@
   <!-- PROTOTYPE BREADCRUMB BAR (Only visible in UX Flow Prototype Mode) -->
   <div class="proto-bar" id="proto-bar">
     <div class="proto-trail" id="proto-trail"></div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="ctrl-btn" id="proto-start-auth">Từ Splash</button>
       <button class="ctrl-btn" id="proto-start-member">Trang chủ HV</button>
       <button class="ctrl-btn" id="proto-start-coach">Trang chủ Coach</button>
+      <button class="ctrl-btn" id="proto-start-loyalty">Từ Loyalty</button>
     </div>
   </div>
 
@@ -68,6 +70,8 @@
           id="cnt-member">0</span></button>
       <button class="role-tab" role="tab" data-tab="coach">Huấn luyện viên (Coach) <span class="tab-count"
           id="cnt-coach">0</span></button>
+      <button class="role-tab" role="tab" data-tab="loyalty">Loyalty · Meta Points <span class="tab-count"
+          id="cnt-loyalty">0</span></button>
       <button class="role-tab" role="tab" data-tab="notes">Ghi chú <span class="tab-count"
           id="cnt-notes">0</span></button>
     </div>
@@ -81,6 +85,7 @@
     <div class="tab-panel" data-panel="auth"></div>
     <div class="tab-panel active" data-panel="member"></div>
     <div class="tab-panel" data-panel="coach"></div>
+    <div class="tab-panel" data-panel="loyalty"></div>
     <div class="tab-panel" data-panel="notes"></div>
   </main>
 
@@ -116,10 +121,11 @@
   <script src="./screens/member/tab4-messages.js?v=20261124c"></script>
   <script src="./screens/member/tab5-profile.js?v=20261126c"></script>
   <script src="./screens/member/tab5-profile-sub.js?v=20261126c"></script>
-  <script src="./screens/coach/core.js?v=20261126f"></script>
-  <script src="./screens/coach/detail.js?v=20261126f"></script>
-  <script src="./screens/coach/nutrition.js?v=20261126f"></script>
-  <script src="./screens/coach/workspace.js?v=20261126f"></script>
+  <script src="./screens/member/loyalty.js?v=20261128a"></script>
+  <script src="./screens/coach/core.js?v=20261127b"></script>
+  <script src="./screens/coach/detail.js?v=20261127b"></script>
+  <script src="./screens/coach/nutrition.js?v=20261127b"></script>
+  <script src="./screens/coach/workspace.js?v=20261127b"></script>
   <script src="./screens/notes.js?v=20261124g"></script>
 
   <script>
@@ -131,7 +137,7 @@
     let flowHistory = ['member-home'];
 
     // 1. Render all panels
-    ['auth', 'member', 'coach'].forEach(role => {
+    ['auth', 'member', 'coach', 'loyalty'].forEach(role => {
       const list = registry[role] || [];
       const countEl = document.getElementById('cnt-' + role);
       if (countEl) countEl.textContent = list.length;
@@ -156,6 +162,9 @@
         if (src && !src.includes('?v=')) img.setAttribute('src', src + '?v=20261124svg3');
       });
     });
+    if (typeof window.initMetaGymLoyalty === 'function') {
+      window.initMetaGymLoyalty(document);
+    }
 
     // 1b. Render Tab 4: Ghi chú (Application Requirements Notes — Expandable with Tech Suggestions)
     (function renderNotesPanel() {
@@ -315,10 +324,16 @@
       'coach-member-plans': 'coach-training',
       'coach-plan-detail': 'coach-member-plans',
       'coach-plan-form': 'coach-member-plans',
-      'coach-meal-plan': 'coach-training',
+      'coach-nutrition': 'coach-home',
+      'coach-meal-plan': 'coach-nutrition',
       'coach-calls': 'coach-conversations',
       'coach-chat-detail': 'coach-conversations',
-      'coach-pro-profile': 'coach-profile'
+      'coach-pro-profile': 'coach-profile',
+      'loyalty-overview': 'member-home',
+      'loyalty-rewards': 'loyalty-overview',
+      'loyalty-reward-detail': 'loyalty-rewards',
+      'loyalty-my-rewards': 'loyalty-overview',
+      'loyalty-history': 'loyalty-overview'
     };
 
     function bindTextLink(slot, selector, textContains, targetId) {
@@ -436,7 +451,7 @@
         } else if (id === 'coach-home') {
           bindTextLink(slot, '.quick-tile', 'Học viên', 'coach-members');
           bindTextLink(slot, '.quick-tile', 'Giáo trình', 'coach-training');
-          bindTextLink(slot, '.quick-tile', 'Dinh dưỡng', 'coach-meal-plan');
+          bindTextLink(slot, '.quick-tile', 'Dinh dưỡng', 'coach-nutrition');
           bindTextLink(slot, '.quick-tile', 'Lịch dạy', 'coach-sessions');
           bindTextLink(slot, '.row-between', 'Hội viên của tôi', 'coach-members');
         }
@@ -1030,6 +1045,16 @@
         applyGroupFilter(activeRole);
       });
     });
+    (function initTabFromUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search || '');
+        const reqTab = (params.get('tab') || (window.location.hash || '').replace(/^#/, '')).trim();
+        if (reqTab) {
+          const targetTab = document.querySelector('.role-tab[data-tab="' + reqTab + '"]');
+          if (targetTab) targetTab.click();
+        }
+      } catch (_) { }
+    })();
     renderSubFilters(activeRole);
 
     // 5. Studio Toolbar Controls
@@ -1049,7 +1074,7 @@
       mobileAssist?.classList.remove('open');
 
       if (protoMode) {
-        const startId = activeRole === 'auth' ? 'auth-splash' : (activeRole === 'coach' ? 'coach-home' : 'member-home');
+        const startId = activeRole === 'auth' ? 'auth-splash' : (activeRole === 'coach' ? 'coach-home' : (activeRole === 'loyalty' ? 'loyalty-overview' : 'member-home'));
         flowHistory = [startId];
         navigateToScreen(startId, true);
         if (isMobileVw) {
@@ -1104,13 +1129,16 @@
     document.getElementById('proto-start-auth').addEventListener('click', () => { flowHistory = ['auth-splash']; navigateToScreen('auth-splash', true); });
     document.getElementById('proto-start-member').addEventListener('click', () => { flowHistory = ['member-home']; navigateToScreen('member-home', true); });
     document.getElementById('proto-start-coach').addEventListener('click', () => { flowHistory = ['coach-home']; navigateToScreen('coach-home', true); });
+    document.getElementById('proto-start-loyalty')?.addEventListener('click', () => { flowHistory = ['loyalty-overview']; navigateToScreen('loyalty-overview', true); });
 
     const btn430 = document.getElementById('btn-430');
     const btn393 = document.getElementById('btn-393');
+    const btn375 = document.getElementById('btn-375');
     let activeDevicePreset = '393';
     function updateMobilePhoneZoom() {
       const vw = document.documentElement.clientWidth || window.innerWidth;
-      const frameW = (activeDevicePreset === '430' ? 430 : 393) + 12;
+      const presetW = activeDevicePreset === '430' ? 430 : (activeDevicePreset === '375' ? 375 : 393);
+      const frameW = presetW + 12;
       const availW = vw - 20;
       if (vw <= 540 && availW < frameW) {
         const z = Math.max(0.68, Math.min(0.96, +(availW / frameW).toFixed(3)));
@@ -1120,8 +1148,9 @@
       }
     }
     function applyDevicePreset(preset) {
-      activeDevicePreset = preset === '430' ? '430' : '393';
+      activeDevicePreset = preset === '430' ? '430' : (preset === '375' ? '375' : '393');
       const root = document.documentElement.style;
+      [btn430, btn393, btn375].forEach(b => b?.classList.remove('active'));
       if (activeDevicePreset === '430') {
         // Exact iPhone 14 Pro Max logical spec: 430x932pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
         root.setProperty('--device-width', '430px');
@@ -1130,7 +1159,16 @@
         root.setProperty('--island-w', '126px');
         root.setProperty('--island-h', '37px');
         root.setProperty('--status-h', '59px');
-        btn430?.classList.add('active'); btn393?.classList.remove('active');
+        btn430?.classList.add('active');
+      } else if (activeDevicePreset === '375') {
+        // Compact mobile viewport: 375x812pt
+        root.setProperty('--device-width', '375px');
+        root.setProperty('--device-height', '812px');
+        root.setProperty('--device-radius', '47px');
+        root.setProperty('--island-w', '112px');
+        root.setProperty('--island-h', '32px');
+        root.setProperty('--status-h', '54px');
+        btn375?.classList.add('active');
       } else {
         // Exact iPhone 14 Pro logical spec: 393x852pt, R=55pt, Dynamic Island 126x37pt, SafeTop 59pt
         root.setProperty('--device-width', '393px');
@@ -1139,12 +1177,13 @@
         root.setProperty('--island-w', '126px');
         root.setProperty('--island-h', '37px');
         root.setProperty('--status-h', '59px');
-        btn393?.classList.add('active'); btn430?.classList.remove('active');
+        btn393?.classList.add('active');
       }
       updateMobilePhoneZoom();
     }
     btn430?.addEventListener('click', () => applyDevicePreset('430'));
     btn393?.addEventListener('click', () => applyDevicePreset('393'));
+    btn375?.addEventListener('click', () => applyDevicePreset('375'));
     window.addEventListener('resize', updateMobilePhoneZoom);
     window.addEventListener('orientationchange', updateMobilePhoneZoom);
     applyDevicePreset('393');

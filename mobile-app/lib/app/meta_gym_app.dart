@@ -17,8 +17,11 @@ import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart
 import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
 import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
+import 'package:meta_gym_app/features/membership/data/loyalty_api.dart';
+import 'package:meta_gym_app/features/membership/data/loyalty_service.dart';
 import 'package:meta_gym_app/features/membership/data/membership_api.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_controller.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/calls/data/calls_service.dart';
@@ -50,6 +53,7 @@ class MetaGymApp extends StatefulWidget {
     this.profileService,
     this.catalogService,
     this.membershipService,
+    this.loyaltyService,
     this.coachSelectionService,
     this.coachRequestsService,
     this.coachMembersService,
@@ -76,6 +80,7 @@ class MetaGymApp extends StatefulWidget {
   final ProfileService? profileService;
   final CatalogService? catalogService;
   final MembershipService? membershipService;
+  final LoyaltyService? loyaltyService;
   final CoachSelectionService? coachSelectionService;
   final CoachRequestsService? coachRequestsService;
   final CoachMembersService? coachMembersService;
@@ -111,6 +116,8 @@ class _MetaGymAppState extends State<MetaGymApp> {
   late final CatalogService _catalogService;
   late final MembershipService _membershipService;
   late final MembershipController _membershipController;
+  late final LoyaltyService _loyaltyService;
+  late final LoyaltyController _loyaltyController;
   late final CoachSelectionService _coachSelectionService;
   late final CoachRequestsService _coachRequestsService;
   late final CoachMembersService _coachMembersService;
@@ -171,6 +178,11 @@ class _MetaGymAppState extends State<MetaGymApp> {
       _membershipService,
       session: _sessionController,
     );
+    _loyaltyService = widget.loyaltyService ?? LoyaltyApi(_apiClient);
+    _loyaltyController = LoyaltyController(
+      _loyaltyService,
+      session: _sessionController,
+    );
     _coachSelectionService =
         widget.coachSelectionService ?? CoachSelectionApi(_apiClient);
     _coachRequestsService =
@@ -223,6 +235,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
     _profileController.dispose();
     _passwordResetController.dispose();
     _membershipController.dispose();
+    _loyaltyController.dispose();
     super.dispose();
   }
 
@@ -244,6 +257,7 @@ class _MetaGymAppState extends State<MetaGymApp> {
         ),
         Provider<CatalogService>.value(value: _catalogService),
         Provider<MembershipService>.value(value: _membershipService),
+        Provider<LoyaltyService>.value(value: _loyaltyService),
         Provider<CoachSelectionService>.value(value: _coachSelectionService),
         Provider<CoachRequestsService>.value(value: _coachRequestsService),
         Provider<CoachMembersService>.value(value: _coachMembersService),
@@ -266,6 +280,9 @@ class _MetaGymAppState extends State<MetaGymApp> {
         Provider<AiService>.value(value: _aiService),
         ChangeNotifierProvider<MembershipController>.value(
           value: _membershipController,
+        ),
+        ChangeNotifierProvider<LoyaltyController>.value(
+          value: _loyaltyController,
         ),
         ChangeNotifierProvider<SessionController>.value(
           value: _sessionController,

@@ -62,6 +62,7 @@ class Payment {
     this.qrPayload,
     this.planName,
     this.amount,
+    this.discountAmount = 0,
     this.method,
     this.transactionCode,
     this.createdAt,
@@ -78,6 +79,7 @@ class Payment {
       qrPayload: json['qrPayload'] as String?,
       planName: json['planName'] as String?,
       amount: json['amount'] as num?,
+      discountAmount: (json['discountAmount'] as num?)?.toInt() ?? 0,
       method: json['method'] as String?,
       transactionCode: json['transactionCode'] as String?,
       createdAt: json['createdAt'] as String?,
@@ -92,6 +94,7 @@ class Payment {
   final String? qrPayload;
   final String? planName;
   final num? amount;
+  final int discountAmount;
   final String? method;
   final String? transactionCode;
   final String? createdAt;

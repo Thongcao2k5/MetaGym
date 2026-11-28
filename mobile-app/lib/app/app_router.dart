@@ -18,6 +18,9 @@ import 'package:meta_gym_app/features/coaching/presentation/member_coaching_page
 import 'package:meta_gym_app/features/legal/presentation/privacy_policy_page.dart';
 import 'package:meta_gym_app/features/legal/presentation/terms_of_service_page.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_history_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_my_rewards_page.dart';
+import 'package:meta_gym_app/features/membership/presentation/loyalty_rewards_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/payment_history_page.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_page.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
@@ -50,6 +53,9 @@ abstract final class AppRoutes {
   static const profile = '/profile';
   static const memberHome = '/member';
   static const membership = '/member/features/membership';
+  static const loyaltyRewards = '/member/features/loyalty/rewards';
+  static const loyaltyMyRewards = '/member/features/loyalty/my-rewards';
+  static const loyaltyHistory = '/member/features/loyalty/history';
   static const coachHome = '/coach';
   static const memberWorkbench = '/member/test-flows';
   static const coachWorkbench = '/coach/test-flows';
@@ -111,11 +117,17 @@ GoRouter createAppRouter({
         return returnLocation;
       }
       const sharedProtectedRoutes = {AppRoutes.profile};
+      const memberLoyaltyRoutes = {
+        AppRoutes.loyaltyRewards,
+        AppRoutes.loyaltyMyRewards,
+        AppRoutes.loyaltyHistory,
+      };
       if (state.matchedLocation == home ||
           (home == AppRoutes.memberHome &&
-              memberDestinations.any(
-                (item) => item.path == state.matchedLocation,
-              )) ||
+              (memberDestinations.any(
+                    (item) => item.path == state.matchedLocation,
+                  ) ||
+                  memberLoyaltyRoutes.contains(state.matchedLocation))) ||
           (home == AppRoutes.coachHome &&
               coachDestinations.any(
                 (item) => item.path == state.matchedLocation,
@@ -275,6 +287,30 @@ GoRouter createAppRouter({
                 : throw StateError('Thiếu trang Member: ${destination.path}'),
           ),
         ),
+      GoRoute(
+        path: AppRoutes.loyaltyRewards,
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const LoyaltyRewardsPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.loyaltyMyRewards,
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const LoyaltyMyRewardsPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.loyaltyHistory,
+        pageBuilder: (context, state) => _featureTransitionPage(
+          key: state.pageKey,
+          context: context,
+          child: const LoyaltyHistoryPage(),
+        ),
+      ),
       for (final destination in coachDestinations)
         GoRoute(
           path: destination.path,

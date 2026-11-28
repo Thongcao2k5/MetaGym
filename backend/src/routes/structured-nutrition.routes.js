@@ -28,13 +28,35 @@ function escapeLike(value) {
 }
 const plan = z.strictObject({
   title: z.string().trim().min(1).max(150),
+  notes: z.string().trim().max(4000).nullable().optional(),
   items: z.array(z.strictObject({
     day: z.number().int().min(1).max(7),
-    meal: z.enum(['BREAKFAST', 'LUNCH', 'DINNER']),
+    meal: z.enum(['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK']),
     foodId: uuid,
     grams: z.number().int().min(1).max(10000),
   })).max(210),
 });
+
+const NOTES_START = '[NGUYÊN TẮC ĂN UỐNG]\n';
+const NOTES_END = '\n[CHI TIẾT THỰC ĐƠN]\n';
+
+function extractPlanNotes(content) {
+  if (typeof content !== 'string' || !content.startsWith(NOTES_START)) {
+    return null;
+  }
+  const endIdx = content.indexOf(NOTES_END, NOTES_START.length);
+  const raw = endIdx < 0
+    ? content.slice(NOTES_START.length)
+    : content.slice(NOTES_START.length, endIdx);
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function buildPlanContent(itemSummary, notes) {
+  const trimmed = typeof notes === 'string' ? notes.trim() : '';
+  if (!trimmed) return itemSummary;
+  return `${NOTES_START}${trimmed}${NOTES_END}${itemSummary}`;
+}
 
 function fail(response, status, message) {
   return response.status(status).json({ error: { code: ({
@@ -52,14 +74,15 @@ async function activeAdmin(client, user) {
 }
 
 async function renderPlan(db, row) {
-  if (row.meal_items == null) return { ...row, items: [] };
-  if (row.status === 'ARCHIVED') return { ...row, items: row.meal_items };
+  const notes = extractPlanNotes(row.content);
+  if (row.meal_items == null) return { ...row, notes, items: [] };
+  if (row.status === 'ARCHIVED') return { ...row, notes, items: row.meal_items };
   const ids = [...new Set(row.meal_items.map(({ foodId }) => foodId))];
   const { rows } = await db.query(
     'SELECT id, name, kcal_per_100g::float8 AS kcal FROM nutrition_foods WHERE id = ANY($1::uuid[])', [ids],
   );
   const foods = new Map(rows.map((entry) => [entry.id, entry]));
-  return { ...row, items: row.meal_items.map((item) => ({
+  return { ...row, notes, items: row.meal_items.map((item) => ({
     ...item, foodName: foods.get(item.foodId)?.name ?? item.foodName,
     kcalPer100g: foods.get(item.foodId)?.kcal ?? item.kcalPer100g,
   })) };
@@ -289,10 +312,10 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
         return fail(response, 403, 'Hội viên chưa có quan hệ đang hoạt động với Coach');
       }
       const { rows: [current] } = await client.query(
-        "SELECT id, meal_items FROM nutrition_guides WHERE relationship_id = $1 AND status = 'ACTIVE' FOR UPDATE",
+        "SELECT id, content, meal_items FROM nutrition_guides WHERE relationship_id = $1 AND status = 'ACTIVE' FOR UPDATE",
         [relationship.id],
       );
-      const { title, items } = parsed.data;
+      const { title, notes, items } = parsed.data;
       const ids = [...new Set(items.map(({ foodId }) => foodId))];
       const { rows } = await client.query(
         `SELECT id, name, active, kcal_per_100g::float8 AS kcal
@@ -311,9 +334,13 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
         await client.query('ROLLBACK');
         return fail(response, 422, 'Có thực phẩm đã ngừng sử dụng hoặc không tồn tại');
       }
-      const labels = { BREAKFAST: 'Sáng', LUNCH: 'Trưa', DINNER: 'Tối' };
-      const content = savedItems.map((item) =>
+      const labels = { BREAKFAST: 'Sáng', LUNCH: 'Trưa', DINNER: 'Tối', SNACK: 'Phụ' };
+      const itemSummary = savedItems.map((item) =>
         `Ngày ${item.day} · ${labels[item.meal]} · ${item.foodName} ${item.grams} g`).join('\n') || 'Chưa có món';
+      const resolvedNotes = notes === undefined
+        ? extractPlanNotes(current?.content)
+        : (notes?.trim() || null);
+      const content = buildPlanContent(itemSummary, resolvedNotes);
       const json = JSON.stringify(savedItems);
       const id = current?.id ?? randomUUID();
       if (current) {
@@ -332,7 +359,7 @@ export function createStructuredNutritionRouter({ database, jwtSecret }) {
         );
       }
       await client.query('COMMIT');
-      return response.json({ data: { id, title, items: savedItems } });
+      return response.json({ data: { id, title, notes: resolvedNotes, items: savedItems } });
     } catch {
       await client.query('ROLLBACK').catch(() => {});
       return fail(response, 500, 'Không lưu được thực đơn');

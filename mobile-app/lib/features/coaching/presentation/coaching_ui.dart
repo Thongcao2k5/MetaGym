@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_action_button.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_outcome_models.dart';
 import 'package:provider/provider.dart';
@@ -848,6 +850,234 @@ class _OutcomePhotoTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Ô chỉ số tóm tắt dùng chung trong Hero card của các màn danh sách hội viên Coach.
+class CoachingSummaryMetricTile extends StatelessWidget {
+  const CoachingSummaryMetricTile({
+    required this.value,
+    required this.label,
+    required this.valueColor,
+    super.key,
+  });
+
+  final String value;
+  final String label;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    return MetaGymMetricPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                color: valueColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Chip lọc trạng thái >= 44px dùng chung cho Training & Nutrition Coach.
+class CoachingFilterChip extends StatelessWidget {
+  const CoachingFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.accentColor,
+    super.key,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final accent = accentColor ?? MetaGymTheme.brandOrange;
+    final selectedText = accentColor == null
+        ? (isLight ? colors.primaryText : colors.chipActiveText)
+        : accent;
+    final radius = BorderRadius.circular(999);
+
+    return Material(
+      color: selected
+          ? (isLight
+                ? accent.withValues(alpha: 0.14)
+                : (accentColor == null
+                      ? colors.chipActiveBg
+                      : accent.withValues(alpha: 0.18)))
+          : colors.metricPanelBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(
+          color: selected ? accent : colors.metricPanelBorder,
+          width: selected ? 1.2 : 1.0,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: MetaGymTap(
+        onTap: onTap,
+        borderRadius: radius,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected ? selectedText : colors.textSecondary,
+                fontSize: 12.5,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ô tìm kiếm hội viên đồng nhất token nền đặc, viền 1px, chạm thoải mái.
+class CoachingMemberSearchField extends StatelessWidget {
+  const CoachingMemberSearchField({
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+    this.fieldKey,
+    super.key,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final Key? fieldKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    return TextField(
+      key: fieldKey,
+      controller: controller,
+      onChanged: onChanged,
+      style: TextStyle(color: colors.textPrimary, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: colors.textSecondary, fontSize: 13.5),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.all(12),
+          child: MetaGymIcon(
+            MetaGymIcons.commonSearch,
+            size: 18,
+            color: colors.textSecondary,
+          ),
+        ),
+        filled: true,
+        fillColor: colors.metricPanelBg,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          borderSide: BorderSide(color: colors.metricPanelBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          borderSide: BorderSide(color: colors.metricPanelBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          borderSide: const BorderSide(
+            color: MetaGymTheme.brandOrange,
+            width: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Nút CTA phụ >= 44px trong card hội viên Coach.
+class CoachingCardActionChip extends StatelessWidget {
+  const CoachingCardActionChip({
+    required this.label,
+    required this.accentColor,
+    required this.borderColor,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final Color accentColor;
+  final Color borderColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetaGymColors.of(context);
+    final radius = BorderRadius.circular(12);
+    return Material(
+      color: colors.metricPanelBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: borderColor, width: 1.0),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: MetaGymTap(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                color: accentColor,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

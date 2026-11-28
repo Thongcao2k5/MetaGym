@@ -119,9 +119,9 @@ void main() {
     (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
   );
 
-  group('Coach Group 3 (3.1 - 3.5) Preview Sync & Dark/Light Matrix', () {
+  group('Coach Group 3 & 4 (3.1 - 3.4 & 4.1 - 4.2) Preview Sync & Dark/Light Matrix', () {
     testWidgets(
-      '3.1 CoachTrainingPage & CoachNutritionPage(structured: true) share unified hub across Dark/Light & search/filter',
+      '3.1 CoachTrainingPage is Training-only (no Nutrition overlap) across Dark/Light & search/filter',
       (tester) async {
         final adapter = _Group3CoachApiAdapter();
         final api = ApiClient.withAdapter(
@@ -135,24 +135,25 @@ void main() {
             value: api,
             child: CoachTrainingPage(service: CoachTrainingApi(api)),
           ),
-          label: '3.1 CoachTrainingPage Hub',
+          label: '3.1 CoachTrainingPage',
           verifyPerViewport: (isDark) async {
-            expect(find.text('GIÁO ÁN & THỰC ĐƠN'), findsOneWidget);
-            expect(find.text('Chọn hội viên'), findsOneWidget);
-            expect(find.text('Tổng quan phụ trách'), findsOneWidget);
-            expect(find.text('Giáo trình tập'), findsOneWidget);
-            expect(find.text('Thực đơn 7 ngày'), findsOneWidget);
-            expect(find.text('Chờ thiết lập'), findsOneWidget);
+            expect(find.text('GIÁO ÁN TẬP LUYỆN'), findsOneWidget);
+            expect(find.text('Chọn hội viên tập luyện'), findsOneWidget);
+            expect(find.text('Tổng quan giáo án tập'), findsOneWidget);
+            expect(find.text('Chưa có lịch'), findsOneWidget);
+            expect(find.text('Bài tập giao'), findsOneWidget);
+            expect(find.text('GIÁO ÁN & THỰC ĐƠN'), findsNothing);
             await tester.scrollUntilVisible(
               find.text('Nguyễn Minh Quân'),
               180,
               scrollable: verticalScrollable().first,
             );
             expect(find.text('Nguyễn Minh Quân'), findsOneWidget);
+            expect(find.byKey(const Key('hub-open-meal-m-1')), findsNothing);
           },
         );
 
-        // Search, Filter & Both Navigation Shortcuts at 390x844
+        // Search, Filter & Navigation to 3.2 at 390x844
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -171,7 +172,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Filter: Chờ thiết lập (Đỗ Khánh Linh)
+        // Filter: Chưa có giáo án (Đỗ Khánh Linh)
         await tester.tap(find.byKey(const Key('hub-filter-pending')));
         await tester.pumpAndSettle();
         expect(find.text('Đỗ Khánh Linh'), findsOneWidget);
@@ -192,16 +193,46 @@ void main() {
         await tester.tap(find.byKey(const Key('hub-open-training-m-1')));
         await tester.pumpAndSettle();
         expect(find.byType(CoachMemberPlansPage), findsOneWidget);
-        await tester.tap(find.byTooltip('Quay lại'));
-        await tester.pumpAndSettle();
+      },
+    );
 
-        // Open 3.5 Thực đơn 7 ngày directly from unified 3.1 card
-        await tester.tap(find.byKey(const Key('hub-open-meal-m-1')));
-        await tester.pumpAndSettle();
-        expect(find.byType(MealPlansPage), findsOneWidget);
-        expect(find.text('Thiết kế thực đơn'), findsOneWidget);
+    testWidgets(
+      '4.1 CoachNutritionPage(structured: true) is Nutrition-only across Dark/Light & opens 4.2 MealPlansPage',
+      (tester) async {
+        final adapter = _Group3CoachApiAdapter();
+        final api = ApiClient.withAdapter(
+          config: ApiConfig.fromValues(environment: 'local'),
+          adapter: adapter,
+        );
 
-        // Unified CoachNutritionPage(structured: true) also shows 3.1 hub
+        await pumpViewportMatrix(
+          tester,
+          () => Provider<ApiClient>.value(
+            value: api,
+            child: const CoachNutritionPage(structured: true),
+          ),
+          label: '4.1 CoachNutritionPage',
+          verifyPerViewport: (isDark) async {
+            expect(find.text('DINH DƯỠNG HUẤN LUYỆN'), findsOneWidget);
+            expect(find.text('Dinh dưỡng học viên'), findsOneWidget);
+            expect(find.text('Tổng quan dinh dưỡng'), findsOneWidget);
+            expect(find.text('Có thực đơn'), findsOneWidget);
+            expect(find.text('TB kcal/ngày'), findsOneWidget);
+            expect(find.text('GIÁO ÁN TẬP LUYỆN'), findsNothing);
+            await tester.scrollUntilVisible(
+              find.text('Nguyễn Minh Quân'),
+              180,
+              scrollable: verticalScrollable().first,
+            );
+            expect(find.text('Nguyễn Minh Quân'), findsOneWidget);
+          },
+        );
+
+        // Search, Filter & Navigation to 4.2 at 390x844
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
         await tester.pumpWidget(
@@ -215,11 +246,26 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text('GIÁO ÁN & THỰC ĐƠN'), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('nutrition-filter-no-meal')));
+        await tester.pumpAndSettle();
+        expect(find.text('Đỗ Khánh Linh'), findsOneWidget);
+        expect(find.text('Nguyễn Minh Quân'), findsNothing);
+
+        await tester.tap(find.byKey(const Key('nutrition-filter-all')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('nutrition-member-search')),
+          'Quân',
+        );
+        await tester.pumpAndSettle();
         expect(find.text('Nguyễn Minh Quân'), findsOneWidget);
-        await tester.tap(find.byKey(const Key('hub-open-meal-m-1')));
+
+        await tester.tap(find.byKey(const Key('nutrition-open-meal-m-1')));
         await tester.pumpAndSettle();
         expect(find.byType(MealPlansPage), findsOneWidget);
+        expect(find.text('Thiết kế thực đơn'), findsOneWidget);
+        expect(find.text('Nguyên tắc & Ghi chú ăn uống'), findsOneWidget);
       },
     );
 
@@ -335,13 +381,18 @@ void main() {
           verifyPerViewport: (isDark) async {
             expect(find.text('Cập nhật giáo trình tập'), findsOneWidget);
             expect(find.text('Thông tin giáo trình'), findsOneWidget);
-            expect(find.text('Cấu trúc ngày & bài tập'), findsOneWidget);
             final formScroll = find
                 .descendant(
                   of: find.byKey(const Key('coach-plan-form-list')),
                   matching: find.byType(Scrollable),
                 )
                 .first;
+            await tester.scrollUntilVisible(
+              find.text('Cấu trúc ngày & bài tập'),
+              180,
+              scrollable: formScroll,
+            );
+            expect(find.text('Cấu trúc ngày & bài tập'), findsOneWidget);
             await tester.scrollUntilVisible(
               find.text('Lưu giáo trình'),
               220,
@@ -395,6 +446,18 @@ void main() {
 
         expect(find.text('Cable Chest Fly'), findsWidgets);
 
+        final restField = find.byKey(const Key('exercise-rest-0-0'));
+        await tester.scrollUntilVisible(
+          restField,
+          160,
+          scrollable: formScroll,
+        );
+        await tester.enterText(restField, '75');
+        await tester.enterText(
+          find.byKey(const Key('exercise-weight-0-0')),
+          '24 kg/tay',
+        );
+
         await tester.scrollUntilVisible(
           find.text('Lưu giáo trình'),
           200,
@@ -405,11 +468,18 @@ void main() {
         await tester.tap(find.text('Lưu giáo trình'));
         await tester.pumpAndSettle();
         expect(adapter.savedTrainingCurrentCount, 1);
+        expect(adapter.lastTrainingPayload?['startDate'], '2026-11-10');
+        expect(adapter.lastTrainingPayload?['endDate'], '2026-12-08');
+        final savedDays = adapter.lastTrainingPayload?['days'] as List;
+        final savedFirstEx =
+            (savedDays.first as Map)['exercises'].first as Map;
+        expect(savedFirstEx['restSeconds'], 75);
+        expect(savedFirstEx['weightGuidance'], '24 kg/tay');
       },
     );
 
     testWidgets(
-      '3.5 MealPlansPage renders Coach & Member views across Dark/Light 375/768/landscape',
+      '4.2 MealPlansPage renders Coach & Member views with Nguyên tắc ăn uống across Dark/Light 375/768/landscape',
       (tester) async {
         await pumpViewportMatrix(
           tester,
@@ -419,7 +489,7 @@ void main() {
             editable: true,
             previewMode: true,
           ),
-          label: '3.5 MealPlansPage Coach',
+          label: '4.2 MealPlansPage Coach',
           verifyPerViewport: (isDark) async {
             expect(find.text('Thiết kế thực đơn'), findsOneWidget);
             expect(find.text('Chế độ Coach'), findsOneWidget);
@@ -427,11 +497,11 @@ void main() {
             expect(find.text('Sáng · Trưa · Tối'), findsOneWidget);
             expect(find.text('Ngày T2 – CN'), findsOneWidget);
             await tester.scrollUntilVisible(
-              find.text('Ức gà áp chảo'),
+              find.text('Nguyên tắc & Ghi chú ăn uống'),
               160,
               scrollable: verticalScrollable().first,
             );
-            expect(find.text('Ức gà áp chảo'), findsOneWidget);
+            expect(find.text('Nguyên tắc & Ghi chú ăn uống'), findsOneWidget);
           },
         );
 
@@ -441,17 +511,62 @@ void main() {
             editable: false,
             previewMode: true,
           ),
-          label: '3.5 MealPlansPage Member',
+          label: '4.2 MealPlansPage Member',
           verifyPerViewport: (isDark) async {
             expect(find.text('Thực đơn 7 ngày'), findsOneWidget);
             expect(find.text('Đang áp dụng'), findsOneWidget);
             await tester.scrollUntilVisible(
-              find.text('Ức gà áp chảo'),
+              find.text('Nguyên tắc & Ghi chú ăn uống'),
               160,
               scrollable: verticalScrollable().first,
             );
-            expect(find.text('Ức gà áp chảo'), findsOneWidget);
+            expect(find.text('Nguyên tắc & Ghi chú ăn uống'), findsOneWidget);
           },
+        );
+
+        // Verify live backend save of 'notes' & reload via adapter
+        final adapter = _Group3CoachApiAdapter();
+        final api = ApiClient.withAdapter(
+          config: ApiConfig.fromValues(environment: 'local'),
+          adapter: adapter,
+        );
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.pumpWidget(
+          wrapScreen(
+            MealPlansPage(
+              memberId: 'm-1',
+              memberName: 'Nguyễn Minh Quân',
+              editable: true,
+              apiClient: api,
+            ),
+            theme: MetaGymTheme.dark,
+            textScale: 1.0,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final notesBtn = find.byKey(const Key('meal-edit-notes-btn'));
+        await tester.scrollUntilVisible(
+          notesBtn,
+          160,
+          scrollable: verticalScrollable().first,
+        );
+        await tester.tap(notesBtn);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('meal-notes-input')),
+          'Uống tối thiểu 3L nước mỗi ngày.',
+        );
+        await tester.tap(find.byKey(const Key('meal-save-notes-btn')));
+        await tester.pumpAndSettle();
+        expect(
+          adapter.lastMealPlanPayload?['notes'],
+          'Uống tối thiểu 3L nước mỗi ngày.',
         );
       },
     );
@@ -460,6 +575,8 @@ void main() {
 
 class _Group3CoachApiAdapter implements HttpClientAdapter {
   int savedTrainingCurrentCount = 0;
+  Map<String, dynamic>? lastTrainingPayload;
+  Map<String, dynamic>? lastMealPlanPayload;
 
   @override
   Future<ResponseBody> fetch(
@@ -470,11 +587,24 @@ class _Group3CoachApiAdapter implements HttpClientAdapter {
     if (options.method == 'PUT' &&
         options.path == '/coach/members/m-1/training-plans/current') {
       savedTrainingCurrentCount++;
+      final raw = options.data;
+      if (raw is Map) {
+        lastTrainingPayload = Map<String, dynamic>.from(raw);
+      }
       return _json(_activePlanJson());
     }
     if (options.method == 'PUT' &&
         options.path.startsWith('/coach/meal-plans/')) {
-      return _json({'id': 'mp-1', 'title': 'Thực đơn Tuần 4', 'items': []});
+      final raw = options.data;
+      if (raw is Map) {
+        lastMealPlanPayload = Map<String, dynamic>.from(raw);
+      }
+      return _json({
+        'id': 'mp-1',
+        'title': lastMealPlanPayload?['title'] ?? 'Thực đơn Tuần 4',
+        'notes': lastMealPlanPayload?['notes'],
+        'items': lastMealPlanPayload?['items'] ?? [],
+      });
     }
 
     final Object data = switch (options.path) {
@@ -522,6 +652,7 @@ class _Group3CoachApiAdapter implements HttpClientAdapter {
       '/coach/meal-plans/m-1' => {
         'id': 'mp-1',
         'title': 'Thực đơn Tăng cơ · Tuần 4',
+        'notes': lastMealPlanPayload?['notes'] ?? 'Uống tối thiểu 2,5 lít nước/ngày.',
         'status': 'ACTIVE',
         'items': [
           {

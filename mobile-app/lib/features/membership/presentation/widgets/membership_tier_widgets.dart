@@ -7,6 +7,7 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
+import 'package:meta_gym_app/features/membership/domain/loyalty_models.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
 
@@ -133,7 +134,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
     required this.now,
     required this.busy,
     required this.onRenew,
-    required this.onRedeemPoints,
+    this.onRedeemPoints,
+    this.tierOverride,
     super.key,
   });
 
@@ -142,11 +144,14 @@ class ActiveMembershipNfcSection extends StatelessWidget {
   final DateTime now;
   final bool busy;
   final VoidCallback? onRenew;
-  final VoidCallback onRedeemPoints;
+  final VoidCallback? onRedeemPoints;
+  final MembershipTierInfo? tierOverride;
 
   @override
   Widget build(BuildContext context) {
-    final tier = resolveMembershipTierInfo(planName: membership.planName);
+    final palette = MetaGymTheme.paletteOf(context);
+    final tier =
+        tierOverride ?? resolveMembershipTierInfo(planName: membership.planName);
     final remaining = membership.remainingDays(now);
     final dateRange =
         '${formatMembershipDate(membership.startDate)} → '
@@ -157,7 +162,7 @@ class ActiveMembershipNfcSection extends StatelessWidget {
       children: [
         _FlippableActiveMembershipCard(tier: tier),
 
-        // Thẻ tóm tắt quyền lợi & 2 nút hành động
+        // Thẻ tóm tắt gói tập đang dùng & nút Gia hạn
         MetaGymGlassCard(
           solid: false,
           margin: const EdgeInsets.only(bottom: 7),
@@ -176,8 +181,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                           membership.planName ?? membership.label,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textPrimary,
+                          style: TextStyle(
+                            color: palette.textPrimary,
                             fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.2,
@@ -190,8 +195,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                               : dateRange,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: MetaGymTheme.textSecondary,
+                          style: TextStyle(
+                            color: palette.textSecondary,
                             fontSize: 11.5,
                             height: 1.25,
                             fontWeight: FontWeight.w500,
@@ -219,8 +224,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                       ),
                       child: Text(
                         'Còn $remaining ngày',
-                        style: const TextStyle(
-                          color: MetaGymTheme.brandOrange,
+                        style: TextStyle(
+                          color: palette.primaryText,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           fontFeatures: MetaGymTheme.tabularFigures,
@@ -233,8 +238,8 @@ class ActiveMembershipNfcSection extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 tier.summaryPerks,
-                style: const TextStyle(
-                  color: Color(0xFFD5CCBF),
+                style: TextStyle(
+                  color: palette.textWarmMuted,
                   fontSize: 11.5,
                   height: 1.3,
                 ),
@@ -244,7 +249,7 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 42,
+                      height: 44,
                       child: FilledButton(
                         onPressed: busy ? null : onRenew,
                         style: FilledButton.styleFrom(
@@ -270,37 +275,39 @@ class ActiveMembershipNfcSection extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 42,
-                      child: OutlinedButton(
-                        onPressed: onRedeemPoints,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: MetaGymTheme.textPrimary,
-                          backgroundColor: const Color(0x18FFFFFF),
-                          side: const BorderSide(
-                            color: Color(0x45FFF6EA),
-                            width: 1,
+                  if (onRedeemPoints != null) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton(
+                          onPressed: onRedeemPoints,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: palette.textPrimary,
+                            backgroundColor: palette.metricPanelBg,
+                            side: BorderSide(
+                              color: palette.metricPanelBorder,
+                              width: 1,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.padded,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          tapTargetSize: MaterialTapTargetSize.padded,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Đổi điểm ưu đãi',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
+                          child: const Text(
+                            'Đổi điểm ưu đãi',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],
@@ -311,34 +318,50 @@ class ActiveMembershipNfcSection extends StatelessWidget {
   }
 }
 
-/// Khối 2: Ví điểm Meta Points & Tiến độ nâng hạng.
+/// Khối 2: Ví điểm Meta Points (tách Điểm khả dụng & Điểm xét hạng) + lối vào Ưu đãi.
 class MetaPointsWalletCard extends StatelessWidget {
   const MetaPointsWalletCard({
     required this.points,
     required this.tier,
     required this.onRedeemTap,
+    this.tierPoints,
+    this.remainingToNextTier,
+    this.progressFraction,
+    this.unusedRedemptionsCount = 0,
+    this.onMyRewardsTap,
+    this.onTierInfoTap,
     super.key,
   });
 
   final int points;
+  final int? tierPoints;
+  final int? remainingToNextTier;
+  final double? progressFraction;
+  final int unusedRedemptionsCount;
   final MembershipTierInfo tier;
   final VoidCallback onRedeemTap;
+  final VoidCallback? onMyRewardsTap;
+  final VoidCallback? onTierInfoTap;
 
   @override
   Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    final effectiveTierPoints = tierPoints ?? points;
     final target = tier.nextTierTargetPoints;
-    final progress = (points / target).clamp(0.06, 1.0);
-    final remainingToNext = (target - points).clamp(0, target);
+    final computedProgress =
+        progressFraction ?? (effectiveTierPoints / target).clamp(0.06, 1.0);
+    final remaining =
+        remainingToNextTier ?? (target - effectiveTierPoints).clamp(0, target);
     final progressText = tier.nextTierLabel == null
         ? 'Đã đạt hạng cao nhất · Tích điểm đổi quà VIP'
-        : remainingToNext == 0
+        : remaining == 0
         ? 'Đủ điểm nâng lên ${tier.nextTierLabel}'
-        : 'Còn ${_formatPts(remainingToNext)} điểm lên ${tier.nextTierLabel}';
+        : 'Còn ${_formatPts(remaining)} điểm lên ${tier.nextTierLabel}';
 
     return MetaGymGlassCard(
       solid: false,
       margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -346,69 +369,46 @@ class MetaPointsWalletCard extends StatelessWidget {
             children: [
               const MetaGymSvgIcon(
                 MetaGymIcons.streakFlame,
-                size: 17,
+                size: 18,
               ),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Meta Points',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: MetaGymTheme.textPrimary,
-                    fontSize: 13.5,
+                    color: palette.textPrimary,
+                    fontSize: 15,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-              Text(
-                '${_formatPts(points)} điểm',
-                style: const TextStyle(
-                  color: MetaGymTheme.brandOrange,
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: MetaGymTheme.tabularFigures,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 4,
-              backgroundColor: const Color(0x28FFFFFF),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                MetaGymTheme.brandOrange,
-              ),
-            ),
-          ),
-          const SizedBox(height: 5),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  progressText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: MetaGymTheme.textSecondary,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    fontFeatures: MetaGymTheme.tabularFigures,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
               InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: onRedeemTap,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                key: const Key('loyalty-tier-info-pill'),
+                borderRadius: BorderRadius.circular(999),
+                onTap: onTierInfoTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tier.accentColor.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: tier.accentColor.withValues(alpha: 0.45),
+                    ),
+                  ),
                   child: Text(
-                    'Đổi quà ›',
+                    onTierInfoTap != null
+                        ? '${tier.tierLabel} ›'
+                        : tier.tierLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: MetaGymTheme.brandOrange,
-                      fontSize: 12,
+                      color: tier.accentColor,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -416,10 +416,333 @@ class MetaPointsWalletCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          // 2 cột tách bạch: Điểm khả dụng vs Điểm xét hạng
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.metricPanelBg,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: palette.metricPanelBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Điểm khả dụng',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_formatPts(points)} điểm',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.primaryText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          'Dùng để đổi ưu đãi',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.metricPanelBg,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: palette.metricPanelBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Điểm xét hạng',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_formatPts(effectiveTierPoints)} điểm',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: MetaGymTheme.tabularFigures,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          'Không giảm khi đổi quà',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: computedProgress.clamp(0.05, 1.0),
+              minHeight: 5,
+              backgroundColor: palette.borderSolid.withValues(alpha: 0.55),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                MetaGymTheme.brandOrange,
+              ),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            progressText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              fontFeatures: MetaGymTheme.tabularFigures,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: FilledButton(
+                    key: const Key('membership-redeem-rewards-btn'),
+                    onPressed: onRedeemTap,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MetaGymTheme.brandOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Đổi ưu đãi',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (onMyRewardsTap != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: OutlinedButton(
+                      key: const Key('membership-my-rewards-btn'),
+                      onPressed: onMyRewardsTap,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: palette.textPrimary,
+                        backgroundColor: palette.metricPanelBg,
+                        side: BorderSide(color: palette.metricPanelBorder),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        unusedRedemptionsCount > 0
+                            ? 'Ưu đãi ($unusedRedemptionsCount)'
+                            : 'Ưu đãi của tôi',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
   }
+}
+
+/// Modal xem nhanh 4 Hạng thành viên & Ngưỡng điểm xét hạng (không cần trang riêng trùng lặp).
+Future<void> showLoyaltyTiersSheet(
+  BuildContext context, {
+  required LoyaltySummary summary,
+}) {
+  final palette = MetaGymTheme.paletteOf(context);
+  final isLight = MetaGymTheme.isLightPalette(context);
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: false,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 24, 12, 12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+        decoration: BoxDecoration(
+          color: isLight ? palette.surfaceSolid : const Color(0xFF1F1C1A),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isLight
+                ? palette.borderSolid
+                : MetaGymWarmGlassTokens.cardBorder,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '4 Hạng thành viên Meta Gym',
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Đóng',
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    icon: Icon(Icons.close_rounded, color: palette.textPrimary),
+                  ),
+                ],
+              ),
+              Text(
+                'Hạng được xét theo Điểm xét hạng tích lũy (${_formatPts(summary.tierPoints)} điểm). Đổi ưu đãi không làm giảm Điểm xét hạng.',
+                style: TextStyle(
+                  color: palette.textSecondary,
+                  fontSize: 13,
+                  height: 1.4,
+                  fontFeatures: MetaGymTheme.tabularFigures,
+                ),
+              ),
+              const SizedBox(height: 12),
+              for (final spec in summary.tiers) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: spec.code == summary.tier
+                        ? spec.accentColor.withValues(alpha: 0.12)
+                        : palette.surfaceRaised,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: spec.code == summary.tier
+                          ? spec.accentColor.withValues(alpha: 0.65)
+                          : palette.borderSolid,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              spec.tierLabel,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Từ ${_formatPts(spec.minPoints)} điểm · Coach ${spec.coachDiscountPercent > 0 ? '-${spec.coachDiscountPercent}%' : '0%'} · ×${spec.pointsMultiplier.toStringAsFixed(1)} điểm',
+                              style: TextStyle(
+                                color: palette.textSecondary,
+                                fontSize: 12,
+                                fontFeatures: MetaGymTheme.tabularFigures,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      MembershipStatusPill(
+                        label: spec.code == summary.tier
+                            ? 'Hiện tại'
+                            : summary.tierPoints >= spec.minPoints
+                            ? 'Đã đạt'
+                            : 'Chưa đạt',
+                        color: spec.code == summary.tier
+                            ? spec.accentColor
+                            : summary.tierPoints >= spec.minPoints
+                            ? palette.success
+                            : palette.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// Khối 3: Ưu đãi đặc quyền theo hạng thẻ đang áp dụng.

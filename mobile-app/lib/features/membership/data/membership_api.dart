@@ -6,7 +6,8 @@ class MembershipApi
     implements
         MembershipService,
         MembershipCheckoutService,
-        MembershipOnlinePaymentService {
+        MembershipOnlinePaymentService,
+        MembershipVoucherPaymentService {
   const MembershipApi(this._client);
 
   final ApiClient _client;
@@ -26,13 +27,31 @@ class MembershipApi
   Future<Payment> createPayment({
     required String planId,
     required String idempotencyKey,
-  }) async => (await _client.post<Payment>(
-    '/payments',
-    headers: {'idempotency-key': idempotencyKey},
-    body: {'planId': planId, 'method': 'ZALOPAY'},
-    receiveTimeout: const Duration(seconds: 40),
-    decode: Payment.fromJson,
-  )).data;
+  }) => createPaymentWithVoucher(
+    planId: planId,
+    idempotencyKey: idempotencyKey,
+  );
+
+  @override
+  Future<Payment> createPaymentWithVoucher({
+    required String planId,
+    required String idempotencyKey,
+    String? voucherCode,
+  }) async {
+    final trimmedVoucher = voucherCode?.trim().toUpperCase();
+    return (await _client.post<Payment>(
+      '/payments',
+      headers: {'idempotency-key': idempotencyKey},
+      body: {
+        'planId': planId,
+        'method': 'ZALOPAY',
+        if (trimmedVoucher != null && trimmedVoucher.isNotEmpty)
+          'voucherCode': trimmedVoucher,
+      },
+      receiveTimeout: const Duration(seconds: 40),
+      decode: Payment.fromJson,
+    )).data;
+  }
 
   @override
   Future<PurchaseResult> confirmMockPayment(String paymentId) async =>

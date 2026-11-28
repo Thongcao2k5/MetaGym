@@ -167,7 +167,6 @@ void main() {
       expect(find.text('Hiệu lực'), findsOneWidget);
       expect(find.text('Mặt sau · Lật'), findsOneWidget);
       expect(find.text('Gia hạn thẻ'), findsOneWidget);
-      expect(find.text('Đổi điểm ưu đãi'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('active-membership-flip-card')));
       await tester.pumpAndSettle();
@@ -189,7 +188,7 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Meta Points'), findsOneWidget);
-      expect(find.text('1.240 điểm'), findsOneWidget);
+      expect(find.text('1.240 điểm'), findsWidgets);
 
       await tester.scrollUntilVisible(
         find.text('Ưu đãi Hạng Vàng đang áp dụng'),
@@ -200,11 +199,11 @@ void main() {
       expect(find.text('3 đặc quyền'), findsOneWidget);
 
       await tester.scrollUntilVisible(
-        find.text('Nâng cấp hạng thẻ'),
+        find.text('Nâng cấp gói tập'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Nâng cấp hạng thẻ'), findsOneWidget);
+      expect(find.text('Nâng cấp gói tập'), findsOneWidget);
       expect(find.text('Kim Cương VIP'), findsOneWidget);
 
       await tester.scrollUntilVisible(
@@ -214,18 +213,22 @@ void main() {
       );
       expect(find.text('Lịch sử gói'), findsOneWidget);
 
-      // Mở modal đổi điểm Meta Points và đổi voucher 300 điểm
+      // Mở luồng đổi điểm (fallback modal khi không có LoyaltyController provider) và đổi voucher 300 điểm
       await tester.scrollUntilVisible(
-        find.text('Đổi quà ›'),
-        -200,
+        find.byKey(const Key('membership-redeem-rewards-btn')),
+        -150,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text('Đổi quà ›'));
+      await tester.ensureVisible(
+        find.byKey(const Key('membership-redeem-rewards-btn')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('membership-redeem-rewards-btn')));
       await tester.pumpAndSettle();
       expect(find.text('Đổi điểm Meta Points'), findsOneWidget);
       await tester.tap(find.text('Đổi ngay').first);
       await tester.pumpAndSettle();
-      expect(find.text('940 điểm'), findsOneWidget);
+      expect(find.text('940 điểm'), findsWidgets);
     },
   );
 

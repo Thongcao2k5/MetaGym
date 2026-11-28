@@ -5,11 +5,14 @@ import { z } from 'zod';
 
 import { vnpayAmount } from '../config/vnpay.js';
 import { zalopayReference } from '../config/zalopay.js';
+import { awardLoyaltyPoints, bonusPointsForPlanDuration } from '../services/loyalty.js';
 import { createAuthentication } from './users.routes.js';
 
 const uuid = z.uuid();
 const paymentIntentSchema = z.strictObject({
-  planId: uuid, method: z.enum(['ZALOPAY', 'MOMO', 'VNPAY', 'MOCK_QR']).default('MOCK_QR'),
+  planId: uuid,
+  method: z.enum(['ZALOPAY', 'MOMO', 'VNPAY', 'MOCK_QR']).default('MOCK_QR'),
+  voucherCode: z.string().trim().min(1).max(40).optional(),
 });
 const gatewayPrefixes = { VNPAY: 'vnpay', MOMO: 'momo', ZALOPAY: 'zalopay' };
 
@@ -22,7 +25,9 @@ function publicPayment(row) {
     id: row.id, memberId: row.member_id, planId: row.plan_id,
     planName: row.plan_name_snapshot,
     durationDays: row.duration_days_snapshot,
-    amount: Number(row.amount), method: row.method, status: row.status,
+    amount: Number(row.amount),
+    discountAmount: Number(row.discount_amount ?? 0),
+    method: row.method, status: row.status,
     transactionCode: row.transaction_code,
     ...(row.renewed_membership_id ? { membershipId: row.renewed_membership_id } : {}),
     ...(row.method === 'MOCK_QR' && row.status === 'PENDING'
@@ -34,8 +39,8 @@ function publicPayment(row) {
 function checkoutPayment(row, vnpay, ip) {
   const url = row.status !== 'PENDING' ? undefined
     : row.method === 'ZALOPAY' ? row.zalopay_checkout_url
-    : row.method === 'MOMO' ? row.momo_checkout_url
-    : row.method === 'VNPAY' ? vnpay?.checkoutUrl(row, ip) : undefined;
+      : row.method === 'MOMO' ? row.momo_checkout_url
+        : row.method === 'VNPAY' ? vnpay?.checkoutUrl(row, ip) : undefined;
   return { ...publicPayment(row), ...(url ? { paymentUrl: url } : {}) };
 }
 
@@ -81,20 +86,20 @@ function adjustmentView(row, newMembershipStatus) {
 function adminPaymentView(row, eligibility) {
   const adjustment = row.adj_id
     ? adjustmentView({
-        id: row.adj_id,
-        payment_id: row.id,
-        adjustment_type: row.adj_type,
-        reversed_amount: row.adj_reversed_amount,
-        affected_membership_id: row.adj_affected_membership_id,
-        previous_membership_status: row.adj_previous_membership_status,
-        current_membership_status: row.linked_membership_status,
-        previous_end_date: row.adj_previous_end_date,
-        restored_end_date: row.adj_restored_end_date,
-        reason: row.adj_reason,
-        created_by: row.adj_created_by,
-        created_by_name: row.adj_created_by_name,
-        created_at: row.adj_created_at,
-      })
+      id: row.adj_id,
+      payment_id: row.id,
+      adjustment_type: row.adj_type,
+      reversed_amount: row.adj_reversed_amount,
+      affected_membership_id: row.adj_affected_membership_id,
+      previous_membership_status: row.adj_previous_membership_status,
+      current_membership_status: row.linked_membership_status,
+      previous_end_date: row.adj_previous_end_date,
+      restored_end_date: row.adj_restored_end_date,
+      reason: row.adj_reason,
+      created_by: row.adj_created_by,
+      created_by_name: row.adj_created_by_name,
+      created_at: row.adj_created_at,
+    })
     : null;
   return {
     id: row.id,
@@ -411,7 +416,7 @@ async function applyGatewayResult(database, gatewayResult, method) {
     if (payment.status !== 'PENDING') {
       await client.query('COMMIT');
       if (gatewayResult.result === 'SUCCESS' &&
-          (payment.status !== 'SUCCESS' || payment[prefix + '_transaction_no'] !== gatewayResult.transactionNo)) {
+        (payment.status !== 'SUCCESS' || payment[prefix + '_transaction_no'] !== gatewayResult.transactionNo)) {
         return '99';
       }
       return '02';
@@ -428,14 +433,14 @@ async function applyGatewayResult(database, gatewayResult, method) {
          ${prefix}_response_code = $5 ${statusUpdate}
        WHERE id = $1 RETURNING *`,
       [payment.id, gatewayResult.result, succeeded ? null : `${method} Sandbox: ${gatewayResult.responseCode}`,
-        succeeded ? gatewayResult.transactionNo : null, gatewayResult.responseCode,
+      succeeded ? gatewayResult.transactionNo : null, gatewayResult.responseCode,
         succeeded, ...(vnPay ? [gatewayResult.providerStatus] : [])],
     );
     if (succeeded) await applyMembershipPayment(client, updated);
     await client.query('COMMIT');
     return '00';
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => {});
+    await client.query('ROLLBACK').catch(() => { });
     throw error;
   } finally { client.release(); }
 }
@@ -530,27 +535,27 @@ export function createVnpayCallbacksRouter({ database, vnpay }) {
 }
 
 function sendGatewayReturn(response, payment, webReturnUrl, gatewayName, hintKey) {
-      const title = returnMessages[payment.status];
-      const hint = hintKey + '=' + encodeURIComponent(payment.id);
-      const appUrl = 'intent://payment-return/member/features/membership?' +
-        hint + '#Intent;scheme=metagym;package=com.metagym.meta_gym_app;end';
-      const webUrl = webReturnUrl ? new URL(webReturnUrl) : null;
-      if (webUrl?.hash) {
-        const route = new URL(webUrl.hash.slice(1), webUrl.origin);
-        route.searchParams.set(hintKey, payment.id);
-        webUrl.hash = route.pathname + route.search;
-      } else if (webUrl) {
-        webUrl.searchParams.set(hintKey, payment.id);
-      }
-      return response.type('html').send(
-        `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  const title = returnMessages[payment.status];
+  const hint = hintKey + '=' + encodeURIComponent(payment.id);
+  const appUrl = 'intent://payment-return/member/features/membership?' +
+    hint + '#Intent;scheme=metagym;package=com.metagym.meta_gym_app;end';
+  const webUrl = webReturnUrl ? new URL(webReturnUrl) : null;
+  if (webUrl?.hash) {
+    const route = new URL(webUrl.hash.slice(1), webUrl.origin);
+    route.searchParams.set(hintKey, payment.id);
+    webUrl.hash = route.pathname + route.search;
+  } else if (webUrl) {
+    webUrl.searchParams.set(hintKey, payment.id);
+  }
+  return response.type('html').send(
+    `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
          <title>MetaGym · ${gatewayName} Sandbox</title><main><h1>${payment.status === 'PENDING'
-           ? `Đang chờ ${gatewayName} xác nhận` : title}</h1>
+      ? `Đang chờ ${gatewayName} xác nhận` : title}</h1>
          <p>Quay về MetaGym để xem trạng thái mới nhất của giao dịch.</p>
          <p><a href="${escapeAttribute(appUrl)}">Mở ứng dụng MetaGym</a></p>
          ${webUrl ? `<p><a href="${escapeAttribute(webUrl.href)}">Mở MetaGym Web</a></p>`
-           : '<p>Nếu bạn trả tiền từ MetaGym Web, mở lại MetaGym và vào Gói tập hoặc Lịch sử thanh toán.</p>'}</main></html>`,
-      );
+      : '<p>Nếu bạn trả tiền từ MetaGym Web, mở lại MetaGym và vào Gói tập hoặc Lịch sử thanh toán.</p>'}</main></html>`,
+  );
 }
 
 export function createMomoCallbacksRouter({ database, momo }) {
@@ -637,8 +642,12 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       if (!plan) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy gói tập đang bán');
       const { startDate, endDate, renewalMembershipId } =
         await membershipDates(database, request.authUser.id, plan.duration_days);
-      return response.json({ data: { price: Number(plan.price), durationDays: plan.duration_days,
-        startDate, endDate, isRenewal: Boolean(renewalMembershipId) } });
+      return response.json({
+        data: {
+          price: Number(plan.price), durationDays: plan.duration_days,
+          startDate, endDate, isRenewal: Boolean(renewalMembershipId)
+        }
+      });
     } catch {
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tải được thông tin mua gói');
     }
@@ -694,8 +703,10 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
         client = null;
         const prior = previous.rows[0];
         return prior.request_hash === hash
-          ? response.json({ data: checkoutPayment(
-            await startRemoteCheckout(database, gateways[method], prior), vnpay, request.ip) })
+          ? response.json({
+            data: checkoutPayment(
+              await startRemoteCheckout(database, gateways[method], prior), vnpay, request.ip)
+          })
           : fail(response, 422, 'IDEMPOTENCY_KEY_CONFLICT', 'Khóa đã dùng với nội dung khác');
       }
       if (Object.hasOwn(gateways, method)) {
@@ -717,7 +728,37 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
         return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy gói tập đang bán');
       }
       const p = plan.rows[0];
-      if (method === 'ZALOPAY' && (!Number.isSafeInteger(Number(p.price)) || Number(p.price) <= 0)) {
+      let voucherRedemptionId = null;
+      let loyaltyDiscount = 0;
+      if (normalizedVoucher) {
+        const { rows: [redemption] } = await client.query(
+          `SELECT id, category_snapshot, discount_amount_snapshot, status, expires_at
+           FROM loyalty_redemptions
+           WHERE member_id = $1 AND voucher_code = $2
+           FOR UPDATE`,
+          [request.authUser.id, normalizedVoucher],
+        );
+        if (!redemption || redemption.status !== 'UNUSED' || new Date(redemption.expires_at).getTime() < Date.now()) {
+          await client.query('ROLLBACK');
+          return fail(response, 422, 'INVALID_VOUCHER', 'Mã ưu đãi không tồn tại, đã dùng hoặc đã hết hạn.');
+        }
+        if (redemption.category_snapshot !== 'VOUCHER' || Number(redemption.discount_amount_snapshot) <= 0) {
+          await client.query('ROLLBACK');
+          return fail(response, 422, 'INVALID_VOUCHER', 'Ưu đãi này không hỗ trợ trừ trực tiếp trên hóa đơn.');
+        }
+        const inUse = await client.query(
+          `SELECT 1 FROM payments WHERE loyalty_redemption_id = $1 AND status = 'PENDING' LIMIT 1`,
+          [redemption.id],
+        );
+        if (inUse.rowCount) {
+          await client.query('ROLLBACK');
+          return fail(response, 409, 'VOUCHER_IN_USE', 'Mã ưu đãi này đang được gắn với một giao dịch chờ thanh toán khác.');
+        }
+        voucherRedemptionId = redemption.id;
+        loyaltyDiscount = Math.min(Math.max(0, Number(p.price) - 1000), Number(redemption.discount_amount_snapshot));
+      }
+      const payableAmount = Math.max(0, Number(p.price) - loyaltyDiscount);
+      if (method === 'ZALOPAY' && (!Number.isSafeInteger(payableAmount) || payableAmount <= 0)) {
         await client.query('ROLLBACK');
         return fail(response, 422, 'ZALOPAY_INVALID_AMOUNT', 'Giá gói này không hợp lệ cho ZaloPay Sandbox.');
       }
@@ -732,7 +773,7 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       const id = randomUUID();
       const code = method === 'ZALOPAY' ? zalopayReference(id)
         : method === 'MOMO' ? `MM${id.replaceAll('-', '')}`
-        : method === 'VNPAY' ? `MG${id.replaceAll('-', '')}` : `MG-${id.slice(0, 18)}`;
+          : method === 'VNPAY' ? `MG${id.replaceAll('-', '')}` : `MG-${id.slice(0, 18)}`;
       await client.query(
         `INSERT INTO payments
          (id, member_id, plan_id, plan_name_snapshot, duration_days_snapshot,
@@ -746,10 +787,12 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       await client.query('COMMIT');
       client.release();
       client = null;
-      return response.status(201).json({ data: checkoutPayment(
-        await startRemoteCheckout(database, gateways[method], payment), vnpay, request.ip) });
+      return response.status(201).json({
+        data: checkoutPayment(
+          await startRemoteCheckout(database, gateways[method], payment), vnpay, request.ip)
+      });
     } catch {
-      await client?.query('ROLLBACK').catch(() => {});
+      await client?.query('ROLLBACK').catch(() => { });
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không tạo được thanh toán');
     } finally { client?.release(); }
   });
@@ -774,9 +817,11 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       if (payment.status === 'SUCCESS') {
         const membership = await membershipForPayment(client, payment);
         await client.query('COMMIT');
-        return response.json({ data: {
-          payment: publicPayment(payment), membership,
-        } });
+        return response.json({
+          data: {
+            payment: publicPayment(payment), membership,
+          }
+        });
       }
       if (payment.status !== 'PENDING') {
         await client.query('ROLLBACK');
@@ -790,11 +835,13 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       if (!updated.rows.length) throw new Error('Payment state changed');
       const membership = await applyMembershipPayment(client, updated.rows[0]);
       await client.query('COMMIT');
-      return response.json({ data: {
-        payment: publicPayment(updated.rows[0]), membership,
-      } });
+      return response.json({
+        data: {
+          payment: publicPayment(updated.rows[0]), membership,
+        }
+      });
     } catch {
-      await client.query('ROLLBACK').catch(() => {});
+      await client.query('ROLLBACK').catch(() => { });
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không xác nhận được thanh toán');
     } finally { client.release(); }
   });
@@ -956,10 +1003,12 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
         }
         const membership = await membershipForPayment(client, previous.rows[0]);
         await client.query('COMMIT');
-        return response.json({ data: {
-          payment: publicPayment(previous.rows[0]),
-          membership,
-        } });
+        return response.json({
+          data: {
+            payment: publicPayment(previous.rows[0]),
+            membership,
+          }
+        });
       }
       const member = await client.query(
         `SELECT id FROM users WHERE id = $1 AND role = 'MEMBER' AND status = 'ACTIVE'
@@ -993,14 +1042,16 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
          VALUES ($1, $2, 'FRONT_DESK_PAYMENT_CONFIRMED', 'PAYMENT', $3,
                  'Front desk payment confirmed', $4)`,
         [randomUUID(), request.authUser.id, id,
-          JSON.stringify({ memberId: parsed.data.memberId, planId: p.id })],
+        JSON.stringify({ memberId: parsed.data.memberId, planId: p.id })],
       );
       await client.query('COMMIT');
-      return response.status(201).json({ data: {
-        payment: publicPayment(inserted.rows[0]), membership,
-      } });
+      return response.status(201).json({
+        data: {
+          payment: publicPayment(inserted.rows[0]), membership,
+        }
+      });
     } catch {
-      await client.query('ROLLBACK').catch(() => {});
+      await client.query('ROLLBACK').catch(() => { });
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không ghi nhận được thanh toán');
     } finally { client.release(); }
   });
@@ -1045,12 +1096,12 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
          VALUES ($1, $2, 'PAYMENT_DECIDED', 'PAYMENT', $3,
                  'Payment marked failed or cancelled', $4)`,
         [randomUUID(), request.authUser.id, payment.id,
-          JSON.stringify({ status: parsed.data.status, reason: parsed.data.reason })],
+        JSON.stringify({ status: parsed.data.status, reason: parsed.data.reason })],
       );
       await client.query('COMMIT');
       return response.json({ data: publicPayment(updated.rows[0]) });
     } catch {
-      await client.query('ROLLBACK').catch(() => {});
+      await client.query('ROLLBACK').catch(() => { });
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không cập nhật được giao dịch');
     } finally { client.release(); }
   });
@@ -1155,11 +1206,11 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       for (const row of rowsRes.rows) {
         const linkedMembership = row.linked_membership_id
           ? {
-              id: row.linked_membership_id,
-              start_date: row.linked_membership_start_date,
-              end_date: row.linked_membership_end_date,
-              status: row.linked_membership_status,
-            }
+            id: row.linked_membership_id,
+            start_date: row.linked_membership_start_date,
+            end_date: row.linked_membership_end_date,
+            status: row.linked_membership_status,
+          }
           : null;
         const eligibility = await evaluateVoidReversal(database, row, linkedMembership, todayVn);
         data.push(adminPaymentView(row, eligibility));
@@ -1224,17 +1275,17 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
       if (!row) return fail(response, 404, 'NOT_FOUND', 'Không tìm thấy giao dịch');
       const linkedMembership = row.linked_membership_id
         ? {
-            id: row.linked_membership_id,
-            member_id: row.member_id,
-            plan_id: row.linked_membership_plan_id,
-            source_payment_id: row.linked_membership_source_payment_id,
-            start_date: row.linked_membership_start_date,
-            end_date: row.linked_membership_end_date,
-            status: row.linked_membership_status,
-            activated_at: row.linked_membership_activated_at,
-            expired_at: row.linked_membership_expired_at,
-            plan_name_snapshot: row.linked_membership_plan_name,
-          }
+          id: row.linked_membership_id,
+          member_id: row.member_id,
+          plan_id: row.linked_membership_plan_id,
+          source_payment_id: row.linked_membership_source_payment_id,
+          start_date: row.linked_membership_start_date,
+          end_date: row.linked_membership_end_date,
+          status: row.linked_membership_status,
+          activated_at: row.linked_membership_activated_at,
+          expired_at: row.linked_membership_expired_at,
+          plan_name_snapshot: row.linked_membership_plan_name,
+        }
         : null;
       const eligibility = await evaluateVoidReversal(database, row, linkedMembership, todayVn);
       return response.json({
@@ -1451,7 +1502,7 @@ export function createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay
         },
       });
     } catch {
-      await client.query('ROLLBACK').catch(() => {});
+      await client.query('ROLLBACK').catch(() => { });
       return fail(response, 500, 'INTERNAL_SERVER_ERROR', 'Không thể đảo giao dịch tại quầy');
     } finally { client.release(); }
   });

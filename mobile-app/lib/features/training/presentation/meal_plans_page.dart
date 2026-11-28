@@ -69,6 +69,7 @@ class MealPlansPage extends StatefulWidget {
 
 class _MealPlansPageState extends State<MealPlansPage> {
   final TextEditingController _title = TextEditingController();
+  final TextEditingController _notes = TextEditingController();
   ApiClient? _client;
   CoachV2Api? _api;
   bool _initialized = false;
@@ -83,6 +84,23 @@ class _MealPlansPageState extends State<MealPlansPage> {
   bool _loaded = false;
 
   String get _path => '/coach/meal-plans/${widget.memberId}';
+
+  String? _extractNotes(CoachRecord plan) {
+    final direct = plan['notes'];
+    if (direct is String && direct.trim().isNotEmpty) {
+      return direct.trim();
+    }
+    final content = plan['content'];
+    if (content is! String) return null;
+    const start = '[NGUYÊN TẮC ĂN UỐNG]\n';
+    const end = '\n[CHI TIẾT THỰC ĐƠN]\n';
+    if (!content.startsWith(start)) return null;
+    final endIdx = content.indexOf(end, start.length);
+    final raw = endIdx < 0
+        ? (start.length >= content.length ? '' : content.substring(start.length))
+        : content.substring(start.length, endIdx);
+    return raw.trim().isEmpty ? null : raw.trim();
+  }
 
   @override
   void didChangeDependencies() {
@@ -119,6 +137,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
   @override
   void dispose() {
     _title.dispose();
+    _notes.dispose();
     super.dispose();
   }
 
@@ -133,6 +152,9 @@ class _MealPlansPageState extends State<MealPlansPage> {
     {
       'id': 'mp-demo-1',
       'title': 'Thực đơn Tăng cơ giảm mỡ · Tuần 4',
+      'notes':
+          '• Uống tối thiểu 2,5 lít nước mỗi ngày · Cân thực phẩm trước khi nấu.\n'
+          '• Bổ sung Whey Isolate trong vòng 45 phút sau buổi tập.',
       'status': 'ACTIVE',
       'items': [
         {
@@ -179,6 +201,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
       _selectedPlanIndex = 0;
       if (widget.editable && plans.isNotEmpty) {
         _title.text = plans.first['title'] as String? ?? '';
+        _notes.text = _extractNotes(plans.first) ?? '';
         _items = (plans.first['items'] as List? ?? const [])
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
@@ -485,8 +508,10 @@ class _MealPlansPageState extends State<MealPlansPage> {
       }
       return;
     }
+    final cleanNotes = _notes.text.trim();
     await _api!.put(_path, {
       'title': title,
+      'notes': cleanNotes.isEmpty ? null : cleanNotes,
       'items': [
         for (final item in _items)
           {
@@ -500,6 +525,194 @@ class _MealPlansPageState extends State<MealPlansPage> {
       showCoachingSnackBar(context, 'Đã lưu thực đơn.');
     }
   });
+
+  Future<void> _editNotes() async {
+    final colors = MetaGymColors.of(context);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    var draftText = _notes.text;
+
+    final updated = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isLight ? colors.surface : colors.overlayGlass,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(MetaGymTheme.radiusGlassDock),
+        ),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            MediaQuery.viewInsetsOf(sheetCtx).bottom + 18,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Nguyên tắc & Ghi chú ăn uống',
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  MetaGymCircleIconButton(
+                    svgAsset: MetaGymIcons.commonClose,
+                    icon: Icons.close_rounded,
+                    tooltip: 'Đóng',
+                    onTap: () => Navigator.pop(sheetCtx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                key: const Key('meal-notes-input'),
+                initialValue: draftText,
+                onChanged: (value) => draftText = value,
+                maxLines: 5,
+                maxLength: 4000,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+                decoration: _fieldDecoration(
+                  colors,
+                  'Hướng dẫn lượng nước, gia vị, sau tập…',
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: CoachingSecondaryButton(
+                      label: 'Hủy',
+                      onPressed: () => Navigator.pop(sheetCtx),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      key: const Key('meal-save-notes-btn'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.primary,
+                        foregroundColor: MetaGymTheme.onPrimary,
+                        minimumSize: const Size(88, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            MetaGymTheme.radiusInput,
+                          ),
+                        ),
+                      ),
+                      onPressed: () =>
+                          Navigator.pop(sheetCtx, draftText.trim()),
+                      child: const Text(
+                        'Áp dụng ghi chú',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (updated == null || !mounted) return;
+    setState(() => _notes.text = updated);
+    if (_title.text.trim().isNotEmpty) {
+      await _save();
+    } else if (mounted) {
+      showCoachingSnackBar(
+        context,
+        'Đã cập nhật ghi chú. Hãy nhập tên thực đơn rồi bấm Lưu thực đơn.',
+      );
+    }
+  }
+
+  Widget _buildPrinciplesCard(
+    MetaGymColors colors, {
+    required String? notes,
+    required bool editable,
+  }) {
+    final clean = notes?.trim() ?? '';
+    return MetaGymGlassCard(
+      solid: widget.useSolidGlassFallback,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              MetaGymIcon(
+                MetaGymIcons.nutritionWater,
+                size: 18,
+                color: colors.info,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Nguyên tắc & Ghi chú ăn uống',
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (editable)
+                MetaGymTap(
+                  key: const Key('meal-edit-notes-btn'),
+                  onTap: _busy ? null : _editNotes,
+                  borderRadius: BorderRadius.circular(10),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: Text(
+                        'Sửa ghi chú ›',
+                        style: TextStyle(
+                          color: colors.primaryText,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            clean.isNotEmpty
+                ? clean
+                : 'Chưa có ghi chú riêng (lượng nước, cách chế biến, lưu ý dị ứng…).',
+            style: TextStyle(
+              color: clean.isNotEmpty
+                  ? colors.textWarmMuted
+                  : colors.textSecondary,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _details(CoachRecord item) {
     final kcalPer100 = (item['kcalPer100g'] as num?) ?? 0;
@@ -801,6 +1014,7 @@ class _MealPlansPageState extends State<MealPlansPage> {
           ],
         ),
       ),
+      _buildPrinciplesCard(colors, notes: _notes.text, editable: true),
       ..._buildDaySelectorAndMeals(
         colors: colors,
         isLight: isLight,
@@ -974,6 +1188,9 @@ class _MealPlansPageState extends State<MealPlansPage> {
           ],
         ),
       ),
+      if (_extractNotes(selectedPlan) case final memberNotes?
+          when memberNotes.isNotEmpty)
+        _buildPrinciplesCard(colors, notes: memberNotes, editable: false),
       if (planItems.isEmpty)
         MetaGymGlassCard(
           solid: widget.useSolidGlassFallback,
@@ -1054,17 +1271,22 @@ class _MealPlansPageState extends State<MealPlansPage> {
                     ? null
                     : _add,
                 borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  child: Text(
-                    'Thêm món (${_dayShort(_selectedDay)})',
-                    style: TextStyle(
-                      color: colors.primaryText,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Thêm món (${_dayShort(_selectedDay)})',
+                        style: TextStyle(
+                          color: colors.primaryText,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1284,9 +1506,9 @@ class _MealDayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: radius,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 44, minHeight: 40),
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
