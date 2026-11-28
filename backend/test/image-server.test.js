@@ -13,7 +13,13 @@ import { hashApiKey } from '../src/middleware/image-server-auth.js';
 import { processUploadedImage, transformImage } from '../src/services/image-processor.js';
 import { assertSafeRemoteUrl, detectImageType, isBotUserAgent, sanitizeSvg } from '../src/services/image-validation.js';
 import { createLocalImageStorage } from '../src/storage/local-image-storage.js';
-import { assertValidStorageKey, isValidStorageKey } from '../src/storage/storage-key.js';
+import {
+  assertValidStorageKey,
+  buildAvatarStorageKeys,
+  buildLibraryStorageKey,
+  buildMediaStorageKey,
+  isValidStorageKey,
+} from '../src/storage/storage-key.js';
 
 const JWT_SECRET = 'image-server-integration-test-secret-32chars';
 
@@ -21,6 +27,15 @@ test('Storage key validation accepts legacy bare UUID and folder/uuid.ext while 
   assert.equal(isValidStorageKey('f47ac10b-58cc-4372-a567-0e02b2c3d479'), true);
   assert.equal(isValidStorageKey('original/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp'), true);
   assert.equal(isValidStorageKey('thumbnails/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp'), true);
+  assert.equal(isValidStorageKey('users/avatars/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp'), true);
+  assert.equal(isValidStorageKey('users/avatars/thumbs/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp'), true);
+  assert.deepEqual(buildAvatarStorageKeys('f47ac10b-58cc-4372-a567-0e02b2c3d479'), {
+    storageKey: 'users/avatars/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp',
+    thumbKey: 'users/avatars/thumbs/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp',
+  });
+  assert.equal(buildMediaStorageKey('GYM', 'f47ac10b-58cc-4372-a567-0e02b2c3d479', 'jpeg'), 'gym/f47ac10b-58cc-4372-a567-0e02b2c3d479.jpg');
+  assert.equal(buildMediaStorageKey('COACH_OUTCOME', 'f47ac10b-58cc-4372-a567-0e02b2c3d479', 'png'), 'coaching/outcomes/f47ac10b-58cc-4372-a567-0e02b2c3d479.png');
+  assert.equal(buildLibraryStorageKey('original', 'f47ac10b-58cc-4372-a567-0e02b2c3d479', 'webp'), 'library/original/f47ac10b-58cc-4372-a567-0e02b2c3d479.webp');
 
   assert.equal(isValidStorageKey('../f47ac10b-58cc-4372-a567-0e02b2c3d479'), false);
   assert.equal(isValidStorageKey('original/../../secret.png'), false);

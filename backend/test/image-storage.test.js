@@ -116,3 +116,51 @@ test('image storage configuration rejects incomplete Supabase settings', () => {
     /SUPABASE_URL, SUPABASE_SECRET_KEY and SUPABASE_STORAGE_BUCKET/,
   );
 });
+
+test('Supabase image storage list() traverses nested domain folders recursively', async () => {
+  const tree = {
+    '': [
+      { name: 'users', id: null },
+      { name: 'gym', id: null },
+    ],
+    users: [
+      { name: 'avatars', id: null },
+    ],
+    'users/avatars': [
+      { name: 'a.webp', id: 'f1' },
+      { name: 'thumbs', id: null },
+    ],
+    'users/avatars/thumbs': [
+      { name: 'a.webp', id: 'f2' },
+    ],
+    gym: [
+      { name: 'cover.jpg', id: 'f3' },
+    ],
+  };
+
+  const storage = createSupabaseImageStorage({
+    url: 'https://project.supabase.co',
+    secretKey: 'sb_secret_test',
+    bucket: 'meta-gym-media',
+    createClient: () => ({
+      storage: {
+        from: () => ({
+          list: async (dir) => ({ data: tree[dir] ?? [], error: null }),
+        }),
+      },
+    }),
+  });
+
+  const allKeys = await storage.list();
+  assert.deepEqual(allKeys.sort(), [
+    'gym/cover.jpg',
+    'users/avatars/a.webp',
+    'users/avatars/thumbs/a.webp',
+  ]);
+
+  const avatarKeys = await storage.list('users/avatars/');
+  assert.deepEqual(avatarKeys.sort(), [
+    'users/avatars/a.webp',
+    'users/avatars/thumbs/a.webp',
+  ]);
+});

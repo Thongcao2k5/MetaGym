@@ -2,7 +2,46 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 import { assertValidStorageKey } from './storage-key.js';
 
-const KNOWN_PREFIXES = ['', 'original', 'thumbnails', 'variants', 'avatars', 'equipment', 'exercises', 'gym', 'misc'];
+async function traverseStorage(objects, prefix = '') {
+  const rootDir = prefix ? prefix.replace(/\/$/, '') : '';
+  const queue = [rootDir];
+  const visited = new Set();
+  const entries = [];
+
+  while (queue.length > 0) {
+    const dir = queue.shift();
+    if (visited.has(dir)) continue;
+    visited.add(dir);
+
+    let offset = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await objects.list(dir, { limit: pageSize, offset });
+      if (error || !Array.isArray(data) || data.length === 0) break;
+
+      for (const item of data) {
+        if (!item?.name) continue;
+        const fullKey = dir ? `${dir}/${item.name}` : item.name;
+        if (item.id === null) {
+          queue.push(fullKey);
+        } else if (!prefix || fullKey.startsWith(prefix)) {
+          entries.push({
+            key: fullKey,
+            name: item.name,
+            sizeBytes: Number(item.metadata?.size ?? item.metadata?.contentLength ?? 0),
+            mimeType: item.metadata?.mimetype || null,
+            createdAt: item.created_at || null,
+            updatedAt: item.updated_at || null,
+          });
+        }
+      }
+
+      if (data.length < pageSize) break;
+      offset += data.length;
+    }
+  }
+  return entries;
+}
 
 /**
  * Creates a Supabase Storage adapter for private bucket object operations.
@@ -27,6 +66,7 @@ export function createSupabaseImageStorage({
 
   return {
     providerType: 'supabase',
+    bucket,
     async put(key, bytes, mimeType) {
       assertValidStorageKey(key);
       const { error } = await objects.upload(key, bytes, {
@@ -48,19 +88,12 @@ export function createSupabaseImageStorage({
       const { error } = await objects.remove([key]);
       if (error) throw new Error('Supabase Storage cleanup failed', { cause: error });
     },
+    async listDetailed(prefix = '') {
+      return traverseStorage(objects, prefix);
+    },
     async list(prefix = '') {
-      const prefixes = prefix ? [prefix.replace(/\/$/, '')] : KNOWN_PREFIXES;
-      const keys = new Set();
-      for (const dir of prefixes) {
-        const { data, error } = await objects.list(dir, { limit: 1000 });
-        if (error || !Array.isArray(data)) continue;
-        for (const item of data) {
-          if (!item?.name || item.id === null) continue;
-          const key = dir ? `${dir}/${item.name}` : item.name;
-          if (!prefix || key.startsWith(prefix)) keys.add(key);
-        }
-      }
-      return [...keys];
+      const entries = await traverseStorage(objects, prefix);
+      return entries.map((e) => e.key);
     },
     async healthCheck() {
       const { error } = await objects.list('', { limit: 1 });
