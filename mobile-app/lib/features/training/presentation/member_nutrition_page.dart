@@ -6,7 +6,9 @@ import 'package:meta_gym_app/features/training/data/member_nutrition_service.dar
 import 'package:meta_gym_app/features/training/domain/nutrition_models.dart';
 import 'package:provider/provider.dart';
 
-import 'meal_plans_page.dart';
+import 'member_coach_nutrition_page.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class MemberNutritionPage extends StatefulWidget {
   const MemberNutritionPage({this.service, this.structured = false, super.key});
@@ -67,12 +69,10 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
   @override
   Widget build(BuildContext context) {
     if (widget.structured && _service is MemberNutritionApi) {
-      return const MealPlansPage();
+      return const MemberCoachNutritionPage();
     }
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final bodyColor = isLight ? palette.textSecondary : const Color(0xFFE4DAD1);
-    final dividerColor = isLight ? palette.borderSolid : const Color(0x40A79D92);
+    final colors = MetaGymColors.of(context);
     final canPop = Navigator.of(context).canPop();
     return Scaffold(
       backgroundColor: palette.canvas,
@@ -121,9 +121,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: isLight
-                        ? palette.surfaceSolid
-                        : const Color(0xFF282320),
+                    backgroundColor: colors.surface,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -134,31 +132,21 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: isLight
-                                  ? palette.error.withValues(alpha: 0.1)
-                                  : const Color(0xFF24161A),
+                              color: palette.error.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isLight
-                                    ? palette.error.withValues(alpha: 0.4)
-                                    : const Color(0xFF642B32),
+                                color: palette.error.withValues(alpha: 0.42),
                               ),
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.error_outline_rounded,
-                                  color: palette.error,
-                                  size: 20,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     _error!,
                                     style: TextStyle(
-                                      color: isLight
-                                          ? palette.error
-                                          : const Color(0xFFFFB2B6),
+                                      color: palette.error,
                                       fontSize: 13.5,
                                     ),
                                   ),
@@ -178,7 +166,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                               label: const Text(
                                 'Thử lại',
                                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -190,11 +178,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                             padding: const EdgeInsets.only(bottom: 12, top: 4),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.restaurant_menu_rounded,
-                                  color: palette.primaryText,
-                                  size: 20,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 20, fallbackIcon: Icons.restaurant_menu_rounded),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Hiện hành',
@@ -212,14 +196,11 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                               padding: const EdgeInsets.all(16),
                               child: ListTile(
                                 contentPadding: EdgeInsets.zero,
-                                leading: Icon(
-                                  Icons.no_meals_outlined,
-                                  color: palette.textWarmMuted,
-                                ),
+                                leading: MetaGymSvgIcon(MetaGymIcons.emptyNutrition, fallbackIcon: Icons.no_meals_outlined),
                                 title: Text(
                                   'Bạn chưa có hướng dẫn dinh dưỡng.',
                                   style: TextStyle(
-                                    color: bodyColor,
+                                    color: palette.textSecondary,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -237,7 +218,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
                                           color: palette.success.withValues(
-                                            alpha: 0.18,
+                                            alpha: 0.14,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             12,
@@ -248,11 +229,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                             ),
                                           ),
                                         ),
-                                        child: Icon(
-                                          Icons.eco_outlined,
-                                          color: palette.success,
-                                          size: 24,
-                                        ),
+                                        child: MetaGymSvgIcon(MetaGymIcons.actionNutrition, size: 24, fallbackIcon: Icons.eco_outlined),
                                       ),
                                       const SizedBox(width: 14),
                                       Expanded(
@@ -294,7 +271,11 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  Divider(color: dividerColor),
+                                  Divider(
+                                    color: palette.borderSolid.withValues(
+                                      alpha: 0.7,
+                                    ),
+                                  ),
                                   const SizedBox(height: 10),
                                   Text(
                                     _active!.content,
@@ -312,11 +293,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.history_rounded,
-                                  color: palette.reflection,
-                                  size: 20,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.workoutHistory, size: 20, fallbackIcon: Icons.history_rounded),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Lịch sử',
@@ -334,14 +311,11 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                               padding: const EdgeInsets.all(16),
                               child: ListTile(
                                 contentPadding: EdgeInsets.zero,
-                                leading: Icon(
-                                  Icons.history_toggle_off_rounded,
-                                  color: palette.textWarmMuted,
-                                ),
+                                leading: MetaGymSvgIcon(MetaGymIcons.timeClock, fallbackIcon: Icons.history_toggle_off_rounded),
                                 title: Text(
                                   'Chưa có hướng dẫn cũ.',
                                   style: TextStyle(
-                                    color: bodyColor,
+                                    color: palette.textSecondary,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -388,7 +362,7 @@ class _MemberNutritionPageState extends State<MemberNutritionPage> {
                                           child: Text(
                                             guide.content,
                                             style: TextStyle(
-                                              color: bodyColor,
+                                              color: palette.textSecondary,
                                               fontSize: 14,
                                               height: 1.45,
                                             ),

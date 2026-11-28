@@ -4,6 +4,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_v2_api.dart';
 import 'package:meta_gym_app/features/sessions/presentation/coach_booking_card.dart';
 import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Dedicated history view for Member's completed and cancelled Coach sessions.
 class CoachBookingHistoryPage extends StatelessWidget {
@@ -96,7 +98,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                                     Text(
                                       'Đã hoàn thành',
                                       style: TextStyle(
-                                        color: palette.textWarmMuted,
+                                        color: palette.textSecondary,
                                         fontSize: 11.5,
                                       ),
                                     ),
@@ -124,7 +126,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                                     Text(
                                       'Đã hủy / Khác',
                                       style: TextStyle(
-                                        color: palette.textWarmMuted,
+                                        color: palette.textSecondary,
                                         fontSize: 11.5,
                                       ),
                                     ),
@@ -150,11 +152,7 @@ class CoachBookingHistoryPage extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.history_rounded,
-                              color: palette.primaryText,
-                              size: 18,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.workoutHistory, size: 18, fallbackIcon: Icons.history_rounded),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(

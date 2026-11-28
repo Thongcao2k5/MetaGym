@@ -4,6 +4,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { createAuthentication } from '../users/users.routes.js';
+import { dispatchNotification } from '../../services/notification-dispatcher.js';
 
 const uuid = z.uuid();
 const paging = z.strictObject({
@@ -45,7 +46,7 @@ async function conversation(database, relationshipId, userId, lock = false) {
   return found.rows[0];
 }
 
-export function createMessagingRouter({ database, jwtSecret, realtime }) {
+export function createMessagingRouter({ database, jwtSecret, realtime, fcm }) {
   const router = Router();
   router.use(createAuthentication({ database, jwtSecret }));
   router.use('/conversations', (request, response, next) =>
@@ -294,7 +295,35 @@ export function createMessagingRouter({ database, jwtSecret, realtime }) {
         [result.rows[0].sent_at, found.id]);
       await client.query('COMMIT');
       const recipient = found.member_id === request.authUser.id ? found.coach_id : found.member_id;
+      const recipientIsCoach = recipient === found.coach_id;
       void realtime?.publish(recipient, 'message', { conversationId: found.id });
+      void (async () => {
+        const senderQuery = await database
+          .query('SELECT full_name FROM users WHERE id = $1', [request.authUser.id])
+          .catch(() => ({ rows: [] }));
+        const senderName = senderQuery.rows[0]?.full_name?.trim();
+        const previewBody = data.messageType === 'IMAGE'
+          ? 'Đã gửi một hình ảnh.'
+          : (data.content ?? '').length > 90
+            ? `${data.content.slice(0, 87)}...`
+            : data.content;
+        await dispatchNotification({
+          database,
+          realtime,
+          fcm,
+          userId: recipient,
+          kind: 'NEW_MESSAGE',
+          category: 'MESSAGE',
+          subjectId: found.id,
+          title: senderName ? `Tin nhắn mới từ ${senderName}` : 'Bạn có tin nhắn mới',
+          body: previewBody || 'Mở mục Tin nhắn để xem và phản hồi ngay.',
+          actionRoute: recipientIsCoach ? '/coach/features/messages' : '/member/features/messages',
+          metadata: {
+            conversationId: found.id,
+            senderId: request.authUser.id,
+          },
+        });
+      })().catch(() => {});
       return response.status(201).json({ data: view(result.rows[0]) });
     } catch {
       await client.query('ROLLBACK').catch(() => {});

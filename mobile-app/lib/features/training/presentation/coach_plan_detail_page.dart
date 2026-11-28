@@ -76,66 +76,57 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
 
   Future<void> _publish() async {
     if (_busy || _plan?.status != 'DRAFT') return;
+    final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     final confirmed = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
-      barrierColor: const Color(0xB8040609),
-      builder: (dialogContext) {
-        final palette = MetaGymTheme.paletteOf(dialogContext);
-        final isLight = MetaGymTheme.isLightPalette(dialogContext);
-        return AlertDialog(
-          backgroundColor: isLight
-              ? palette.surfaceSolid
-              : const Color(0xF0241F1B),
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
-            side: BorderSide(
-              color: isLight
-                  ? palette.borderSolid
-                  : MetaGymWarmGlassTokens.cardBorder,
-              width: 1.1,
-            ),
+      barrierColor: colors.scrim,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colors.overlayGlass,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusGlassDock),
+          side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
+        ),
+        title: Text(
+          'Công bố giáo trình?',
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
           ),
-          title: Text(
-            'Công bố giáo trình?',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+        ),
+        content: Text(
+          'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
+          style: TextStyle(
+            color: palette.textSecondary,
+            fontSize: 14,
+            height: 1.45,
           ),
-          content: Text(
-            'Member sẽ thấy bản này; bản đang dùng chuyển vào lịch sử.',
-            style: TextStyle(
-              color: palette.textWarmMuted,
-              fontSize: 14,
-              height: 1.45,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            style: TextButton.styleFrom(
+              foregroundColor: palette.textSecondary,
+              minimumSize: const Size(48, 48),
             ),
+            child: const Text('Quay lại'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              style: TextButton.styleFrom(
-                foregroundColor: palette.textWarmMuted,
-                minimumSize: const Size(48, 48),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: MetaGymTheme.primary,
+              foregroundColor: MetaGymTheme.onPrimary,
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
               ),
-              child: const Text('Quay lại'),
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: MetaGymTheme.primary,
-                foregroundColor: MetaGymTheme.onPrimary,
-                minimumSize: const Size(48, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-                ),
-              ),
-              child: const Text('Xác nhận công bố'),
-            ),
-          ],
-        );
-      },
+            child: const Text('Xác nhận công bố'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true || !mounted || _plan?.status != 'DRAFT') return;
     setState(() {
@@ -165,7 +156,8 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final plan = _plan;
     final canEditActive =
         plan != null &&
@@ -181,7 +173,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
     final canPop = Navigator.of(context).canPop();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
@@ -244,9 +236,7 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   Expanded(
                     child: RefreshIndicator(
                       color: MetaGymTheme.primary,
-                      backgroundColor: isLight
-                          ? palette.surfaceSolid
-                          : const Color(0xFF282320),
+                      backgroundColor: colors.surface,
                       onRefresh: _load,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -273,15 +263,9 @@ class _CoachPlanDetailPageState extends State<CoachPlanDetailPage> {
                   if (showBottomBar)
                     Container(
                       decoration: BoxDecoration(
-                        color: isLight
-                            ? palette.surfaceSolid
-                            : const Color(0xF0241F1B),
+                        color: colors.overlayGlass,
                         border: Border(
-                          top: BorderSide(
-                            color: isLight
-                                ? palette.borderSolid
-                                : MetaGymWarmGlassTokens.cardBorder,
-                          ),
+                          top: BorderSide(color: colors.overlayGlassBorder),
                         ),
                       ),
                       child: SafeArea(

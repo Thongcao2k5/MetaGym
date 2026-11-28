@@ -8,6 +8,8 @@ import 'package:meta_gym_app/features/progress/data/member_progress_service.dart
 import 'package:meta_gym_app/features/progress/domain/progress_comment.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class MemberProgressPage extends StatefulWidget {
   const MemberProgressPage({this.service, super.key});
@@ -81,8 +83,9 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
 
   Future<void> _chooseRange() async {
     final now = DateTime.now();
-    final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final palette = MetaGymTheme.paletteOf(context);
     final range = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2000),
@@ -97,25 +100,20 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
               ? ColorScheme.light(
                   primary: MetaGymTheme.brandOrange,
                   onPrimary: Colors.white,
-                  surface: palette.surfaceSolid,
+                  surface: colors.surface,
                   onSurface: palette.textPrimary,
                 )
-              : const ColorScheme.dark(
+              : ColorScheme.dark(
                   primary: MetaGymTheme.brandOrange,
                   onPrimary: Colors.white,
-                  surface: Color(0xFF2B2622),
-                  onSurface: Color(0xFFF7F9FC),
+                  surface: const Color(0xFF2B2622),
+                  onSurface: palette.textPrimary,
                 ),
           dialogTheme: DialogThemeData(
-            backgroundColor: isLight
-                ? palette.surfaceSolid
-                : const Color(0xF0241F1B),
+            backgroundColor: colors.overlayGlass,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
-              side: BorderSide(
-                color: isLight ? palette.borderSolid : const Color(0xA3A79D92),
-                width: 1.1,
-              ),
+              side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
             ),
           ),
         ),
@@ -134,6 +132,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
+    final colors = MetaGymColors.of(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final canPop = Navigator.of(context).canPop();
     final topInset = MediaQuery.paddingOf(context).top + kToolbarHeight + 12;
@@ -179,9 +178,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                 )
               : RefreshIndicator(
                   color: MetaGymTheme.brandOrange,
-                  backgroundColor: isLight
-                      ? palette.surfaceSolid
-                      : const Color(0xFF282320),
+                  backgroundColor: colors.surface,
                   onRefresh: _load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -197,31 +194,21 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isLight
-                                ? palette.error.withValues(alpha: 0.1)
-                                : const Color(0xFF24161A),
+                            color: palette.error.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isLight
-                                  ? palette.error.withValues(alpha: 0.35)
-                                  : const Color(0xFF642B32),
+                              color: palette.error.withValues(alpha: 0.42),
                             ),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                color: palette.error,
-                                size: 20,
-                              ),
+                              MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _error!,
                                   style: TextStyle(
-                                    color: isLight
-                                        ? palette.error
-                                        : const Color(0xFFFFB2B6),
+                                    color: palette.error,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -260,11 +247,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.fitness_center,
-                                      color: MetaGymTheme.brandOrange,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.equipDumbbell, size: 18, fallbackIcon: Icons.fitness_center),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Buổi tập: ${summary.workoutCount}',
@@ -275,11 +258,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                       ),
                                     ),
                                     const Spacer(),
-                                    Icon(
-                                      Icons.restaurant,
-                                      color: palette.success,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 18, fallbackIcon: Icons.restaurant),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Bữa ăn: ${summary.mealCount}',
@@ -294,11 +273,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.photo_camera,
-                                      color: palette.reflection,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonCamera, size: 18, fallbackIcon: Icons.photo_camera),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Ảnh tiến trình: ${summary.progressPhotoCount}',
@@ -313,11 +288,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.monitor_weight,
-                                      color: palette.warning,
-                                      size: 18,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.bodyWeightScale, size: 18, fallbackIcon: Icons.monitor_weight),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -361,42 +332,36 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                               ChoiceChip(
                                 label: Text(label),
                                 selected: _period == label,
-                                selectedColor: palette.chipActiveBg,
-                                backgroundColor: isLight
-                                    ? palette.surfaceSolid
-                                    : const Color(0xC42B2622),
+                                selectedColor: isLight
+                                    ? palette.chipActiveBg
+                                    : const Color(0xFF493025),
+                                backgroundColor: colors.liquidGlass,
                                 surfaceTintColor: Colors.transparent,
-                                checkmarkColor: MetaGymTheme.brandOrange,
+                                checkmarkColor: palette.primaryText,
                                 labelStyle: TextStyle(
                                   color: _period == label
                                       ? palette.chipActiveText
-                                      : palette.textWarmMuted,
+                                      : palette.textSecondary,
                                   fontWeight: FontWeight.w700,
                                 ),
                                 side: BorderSide(
                                   color: _period == label
                                       ? MetaGymTheme.brandOrange
-                                      : (isLight
-                                            ? palette.borderSolid
-                                            : const Color(0xA3A79D92)),
+                                      : colors.liquidGlassBorder,
                                   width: 1.1,
                                 ),
                                 onSelected: (_) => _selectPeriod(label),
                               ),
                             ActionChip(
                               label: const Text('Chọn khoảng ngày'),
-                              backgroundColor: isLight
-                                  ? palette.surfaceSolid
-                                  : const Color(0xC42B2622),
+                              backgroundColor: colors.liquidGlass,
                               surfaceTintColor: Colors.transparent,
                               labelStyle: TextStyle(
-                                color: palette.textWarmMuted,
+                                color: palette.textSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
                               side: BorderSide(
-                                color: isLight
-                                    ? palette.borderSolid
-                                    : const Color(0xA3A79D92),
+                                color: colors.liquidGlassBorder,
                                 width: 1.1,
                               ),
                               onPressed: _chooseRange,
@@ -411,7 +376,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                             child: Text(
                               '${DateFormat('dd/MM/yyyy').format(_from!)} – ${DateFormat('dd/MM/yyyy').format(_to!)}',
                               style: TextStyle(
-                                color: palette.textWarmMuted,
+                                color: palette.textSecondary,
                                 fontSize: 13,
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
@@ -422,13 +387,10 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                           MetaGymGlassCard(
                             padding: const EdgeInsets.all(16),
                             child: ListTile(
-                              leading: Icon(
-                                Icons.query_stats,
-                                color: palette.textSecondary,
-                              ),
+                              leading: MetaGymSvgIcon(MetaGymIcons.statsChartLine, fallbackIcon: Icons.query_stats),
                               title: Text(
                                 'Chưa có số đo để vẽ biểu đồ.',
-                                style: TextStyle(color: palette.textWarmMuted),
+                                style: TextStyle(color: palette.textSecondary),
                               ),
                             ),
                           )
@@ -448,10 +410,8 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                         drawVerticalLine: false,
                                         getDrawingHorizontalLine: (value) =>
                                             FlLine(
-                                              color: isLight
-                                                  ? palette.borderSolid
-                                                        .withValues(alpha: 0.6)
-                                                  : const Color(0x2EADA295),
+                                              color: palette.borderSolid
+                                                  .withValues(alpha: 0.7),
                                               strokeWidth: 1,
                                             ),
                                       ),
@@ -511,11 +471,9 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                 ),
                                 const SizedBox(height: 8),
                                 Divider(
-                                  color: isLight
-                                      ? palette.borderSolid.withValues(
-                                          alpha: 0.6,
-                                        )
-                                      : const Color(0x2EADA295),
+                                  color: palette.borderSolid.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                                 for (final point in _points)
                                   ListTile(
@@ -523,11 +481,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 4,
                                     ),
-                                    leading: const Icon(
-                                      Icons.scale,
-                                      color: MetaGymTheme.brandOrange,
-                                      size: 18,
-                                    ),
+                                    leading: MetaGymSvgIcon(MetaGymIcons.bodyWeightScale, size: 18, fallbackIcon: Icons.scale),
                                     title: Text(
                                       '${point.weightKg} kg',
                                       style: TextStyle(
@@ -544,7 +498,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                             .toLocal(),
                                       ),
                                       style: TextStyle(
-                                        color: palette.textWarmMuted,
+                                        color: palette.textSecondary,
                                         fontSize: 12,
                                         fontFeatures:
                                             MetaGymTheme.tabularFigures,
@@ -562,12 +516,9 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                             data: Theme.of(context)
                                 .copyWith(dividerColor: Colors.transparent),
                             child: ExpansionTile(
-                              iconColor: MetaGymTheme.brandOrange,
-                              collapsedIconColor: palette.textWarmMuted,
-                              leading: const Icon(
-                                Icons.comment,
-                                color: MetaGymTheme.brandOrange,
-                              ),
+                              iconColor: palette.primaryText,
+                              collapsedIconColor: palette.textSecondary,
+                              leading: MetaGymSvgIcon(MetaGymIcons.commChat, fallbackIcon: Icons.comment),
                               title: Text(
                                 'Nhận xét của Coach',
                                 style: TextStyle(
@@ -582,7 +533,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                         title: Text(
                                           'Chưa có nhận xét.',
                                           style: TextStyle(
-                                            color: palette.textWarmMuted,
+                                            color: palette.textSecondary,
                                           ),
                                         ),
                                       ),
@@ -603,7 +554,7 @@ class _MemberProgressPageState extends State<MemberProgressPage> {
                                                   .toLocal(),
                                             ),
                                             style: TextStyle(
-                                              color: palette.textWarmMuted,
+                                              color: palette.textSecondary,
                                               fontSize: 12,
                                               fontFeatures:
                                                   MetaGymTheme.tabularFigures,

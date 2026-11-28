@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/app/app_router.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/auth/data/auth_service.dart';
 import 'package:meta_gym_app/features/auth/domain/auth_models.dart';
 import 'package:meta_gym_app/features/auth/presentation/auth_controller.dart';
@@ -18,6 +20,77 @@ import 'package:meta_gym_app/features/public/presentation/app_loading_page.dart'
 import 'package:provider/provider.dart';
 
 void main() {
+  testWidgets('Login clears stale field errors when the user edits a field', (
+    tester,
+  ) async {
+    final session = SessionController(
+      _MemoryTokenStorage(),
+      (_) async => throw UnimplementedError(),
+      preferenceStorage: _MemoryPrefStorage(),
+    );
+    final auth = AuthController(_FakeAuthService(), session);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: auth,
+        child: const MaterialApp(home: LoginPage()),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(const Key('login-submit')));
+    await tester.tap(find.byKey(const Key('login-submit')));
+    await tester.pumpAndSettle();
+    expect(auth.fieldErrors, isNotEmpty);
+    await tester.enterText(
+      find.byKey(const Key('login-password')),
+      'Updated9!',
+    );
+    await tester.pump();
+    expect(auth.fieldErrors, isEmpty);
+  });
+
+  testWidgets('Login demo accounts stay available behind the demo disclosure', (
+    tester,
+  ) async {
+    final session = SessionController(
+      _MemoryTokenStorage(),
+      (_) async => throw UnimplementedError(),
+      preferenceStorage: _MemoryPrefStorage(),
+    );
+    final auth = AuthController(_FakeAuthService(), session);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: auth,
+        child: const MaterialApp(home: LoginPage()),
+      ),
+    );
+    expect(find.byKey(const Key('login-demo-member')), findsNothing);
+    final demo = find.text('Tài khoản demo');
+    await tester.ensureVisible(demo);
+    await tester.tap(demo);
+    await tester.pumpAndSettle();
+    final member = find.byKey(const Key('login-demo-member'));
+    await tester.ensureVisible(member);
+    await tester.tap(member);
+    await tester.pumpAndSettle();
+    expect(session.status, SessionStatus.authenticated);
+    expect(session.user?.email, 'minhquan@metagym.vn');
+  });
+
+  testWidgets('Splash keeps its version footer at the bottom on a phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      const MaterialApp(home: AppLoadingPage(debugProgressOverride: 1)),
+    );
+    await tester.pumpAndSettle();
+    final version = find.text('Meta Gym v1.0.0 · Build 2026.11');
+    expect(tester.getBottomLeft(version).dy, greaterThan(740));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('AppLoadingPage renders lifting arm animation and brand title', (
     tester,
   ) async {
@@ -103,7 +176,12 @@ void main() {
       'StrongPass9',
     );
     await tester.pump();
-    expect(find.byIcon(Icons.check_circle_rounded), findsNWidgets(4));
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.stateSuccess,
+      ),
+      findsNWidgets(4),
+    );
   });
 
   testWidgets(

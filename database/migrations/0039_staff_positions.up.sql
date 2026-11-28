@@ -69,6 +69,15 @@ UPDATE users
    SET role_id = '00000000-0000-4000-8000-000000000106'::uuid
  WHERE role = 'COACH';
 
-REVOKE ALL ON staff_profiles FROM anon, authenticated;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON staff_profiles FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON staff_profiles FROM authenticated;
+  END IF;
+END
+$$;
 
 COMMIT;

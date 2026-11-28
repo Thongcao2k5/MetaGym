@@ -17,6 +17,7 @@ import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/messaging/data/messaging_service.dart';
 import 'package:meta_gym_app/features/messaging/presentation/conversations_page.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.8 Chi tiết Coach** đồng bộ `tab5-profile-sub.js` (`member-coach-detail`)
 /// và chuẩn Warm Smoked Liquid Glass (Dark + Light Daylight Studio).
@@ -670,10 +671,7 @@ class _CoachDetailPageState extends State<CoachDetailPage> {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                    ),
+                                    icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                                     label: const Text(
                                       'Thử lại',
                                       style: TextStyle(

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meta_gym_app/core/config/api_config.dart';
 import 'package:meta_gym_app/core/network/api_client.dart';
+import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/features/training/presentation/meal_plans_page.dart';
 import 'package:provider/provider.dart';
 
@@ -26,31 +27,47 @@ void main() {
       await tester.pumpWidget(
         Provider<ApiClient>.value(
           value: api,
-          child: const MaterialApp(
-            home: MealPlansPage(memberId: 'member-1', editable: true),
+          child: MaterialApp(
+            theme: MetaGymTheme.dark,
+            home: const MealPlansPage(memberId: 'member-1', editable: true),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Thiết kế thực đơn'), findsOneWidget);
-      expect(find.text('Chế độ Coach'), findsOneWidget);
-
-      await tester.tap(find.text('T2'));
-      await tester.pumpAndSettle();
+      expect(find.text('Thực đơn'), findsOneWidget);
+      expect(find.text('Thiết lập thực đơn 7 ngày'), findsOneWidget);
       expect(find.text('Ức gà áp chảo'), findsOneWidget);
 
-      await tester.tap(find.textContaining('Thêm món ('));
+      await tester.ensureVisible(find.text('Thêm món'));
+      await tester.tap(find.text('Thêm món'));
       await tester.pumpAndSettle();
-      expect(find.text('Thêm món vào thực đơn'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
 
-      await tester.enterText(find.byType(TextFormField).last, '200');
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Thực phẩm'),
+        ),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Thêm món'));
+      await tester.tap(find.text('Ức gà áp chảo').last);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextFormField),
+        ),
+        '200',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Thêm'));
       await tester.pumpAndSettle();
 
       expect(find.text('Ức gà áp chảo'), findsNWidgets(2));
 
+      await tester.ensureVisible(find.text('Lưu thực đơn'));
       await tester.tap(find.text('Lưu thực đơn'));
       await tester.pumpAndSettle();
 
@@ -74,16 +91,22 @@ void main() {
     await tester.pumpWidget(
       Provider<ApiClient>.value(
         value: api,
-        child: const MaterialApp(home: MealPlansPage()),
+        child: MaterialApp(
+          theme: MetaGymTheme.dark,
+          home: const MealPlansPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Thực đơn 7 ngày'), findsOneWidget);
-    expect(find.text('Đang áp dụng'), findsOneWidget);
-    await tester.tap(find.text('T2'));
+    expect(find.text('Thực đơn'), findsOneWidget);
+    expect(find.text('Thực đơn tăng cơ'), findsOneWidget);
+    expect(find.text('Hiện tại'), findsOneWidget);
+    await tester.ensureVisible(find.text('Thứ 2'));
+    await tester.tap(find.text('Thứ 2'));
     await tester.pumpAndSettle();
     expect(find.text('Ức gà áp chảo'), findsOneWidget);
+    expect(find.text('150 g · 248 kcal'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

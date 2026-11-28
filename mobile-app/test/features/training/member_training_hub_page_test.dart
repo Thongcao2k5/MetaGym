@@ -15,10 +15,16 @@ import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dar
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_controller.dart';
+import 'package:meta_gym_app/features/sessions/presentation/coach_booking_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/member_journal_page.dart';
 import 'package:meta_gym_app/features/training/data/member_self_training_api.dart';
+import 'package:meta_gym_app/features/training/data/member_training_service.dart';
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
+import 'package:meta_gym_app/features/training/domain/training_models.dart';
+import 'package:meta_gym_app/features/training/presentation/member_day_plan_page.dart';
 import 'package:meta_gym_app/features/training/presentation/member_training_hub_page.dart';
+import 'package:meta_gym_app/features/training/presentation/member_training_page.dart';
 import 'package:meta_gym_app/features/training/presentation/nutrition_tracking_page.dart';
 import 'package:provider/provider.dart';
 
@@ -170,6 +176,7 @@ void main() {
               startDate: pastIso(5),
               endDate: futureIso(10),
               status: 'ACTIVE',
+              planName: 'Gói Vàng 6 tháng',
             ),
           ],
         ),
@@ -351,6 +358,7 @@ void main() {
           startDate: pastIso(2),
           endDate: futureIso(28),
           status: 'ACTIVE',
+          planName: 'Gói Vàng 6 tháng',
         ),
       ],
     );
@@ -383,6 +391,200 @@ void main() {
     expect(find.text('Thử lại'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'Bắt đầu tập opens MemberDayPlanPage when Coach plan has today workout and does not open journal',
+    (tester) async {
+      setPhoneViewport(tester);
+      final vnNow = DateTime.now().toUtc().add(const Duration(hours: 7));
+      final todayVnStr =
+          '${vnNow.year.toString().padLeft(4, '0')}-'
+          '${vnNow.month.toString().padLeft(2, '0')}-'
+          '${vnNow.day.toString().padLeft(2, '0')}';
+
+      final membership = MembershipController(
+        _FakeMembershipService(
+          memberships: [
+            Membership(
+              id: 'mem-1',
+              startDate: pastIso(5),
+              endDate: futureIso(10),
+              status: 'ACTIVE',
+              planName: 'Gói Vàng 6 tháng',
+            ),
+          ],
+        ),
+      );
+      final coaching = _FakeCoachingService(
+        relationship: const MemberCoachRelationship(
+          id: 'rel-1',
+          coachId: 'coach-1',
+          coachName: 'Lê Hoàng Nam',
+          status: 'ACTIVE',
+        ),
+      );
+      final training = _FakeTrainingService(
+        plan: TrainingPlan(
+          id: 'plan-1',
+          title: 'Lộ Trình Tăng Cơ',
+          status: 'ACTIVE',
+          version: 1,
+          days: [
+            TrainingDay(
+              dayNumber: vnNow.weekday,
+              title: 'Ngực & Tay sau hôm nay',
+              scheduledDate: todayVnStr,
+              exercises: const [
+                TrainingExercise(
+                  exerciseId: 'ex-1',
+                  exerciseName: 'Barbell Bench Press',
+                  displayOrder: 1,
+                  sets: 4,
+                  reps: '8-10',
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetaGymTheme.dark,
+          home: MemberTrainingHubPage(
+            membershipController: membership,
+            coachingService: coaching,
+            trainingService: training,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ngực & Tay sau hôm nay'), findsOneWidget);
+      expect(find.text('Bắt đầu tập →'), findsOneWidget);
+
+      await tester.tap(find.text('Bắt đầu tập →'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MemberDayPlanPage), findsOneWidget);
+      expect(find.byType(MemberJournalPage), findsNothing);
+      expect(find.text('Barbell Bench Press'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Bắt đầu tập falls back to MemberTrainingPage when active Coach has no plan and Lịch Coach opens CoachBookingPage',
+    (tester) async {
+      setPhoneViewport(tester);
+      final client = ApiClient.withAdapter(
+        config: ApiConfig.fromValues(environment: 'local'),
+        adapter: _CoachBookingEmptyAdapter(),
+      );
+      final membership = MembershipController(
+        _FakeMembershipService(
+          memberships: [
+            Membership(
+              id: 'mem-1',
+              startDate: pastIso(5),
+              endDate: futureIso(10),
+              status: 'ACTIVE',
+              planName: 'Gói Vàng 6 tháng',
+            ),
+          ],
+        ),
+      );
+      final coaching = _FakeCoachingService(
+        relationship: const MemberCoachRelationship(
+          id: 'rel-1',
+          coachId: 'coach-1',
+          status: 'ACTIVE',
+        ),
+        coachNames: const {'coach-1': 'Lê Hoàng Nam'},
+      );
+      final training = _FakeTrainingService();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: client),
+            Provider<MemberCoachingService>.value(value: coaching),
+            Provider<MemberTrainingService>.value(value: training),
+          ],
+          child: MaterialApp(
+            theme: MetaGymTheme.dark,
+            home: MemberTrainingHubPage(
+              membershipController: membership,
+              coachingService: coaching,
+              trainingService: training,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Bắt đầu tập →'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MemberTrainingPage), findsOneWidget);
+      expect(find.byType(MemberJournalPage), findsNothing);
+
+      Navigator.of(tester.element(find.byType(MemberTrainingPage))).pop();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lịch Coach'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CoachBookingPage), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'renders dynamic membership tier badge and GÓI TẬP fallback when planName is null',
+    (tester) async {
+      setPhoneViewport(tester);
+
+      Future<void> pumpWithPlanName(String? planName) async {
+        final membership = MembershipController(
+          _FakeMembershipService(
+            memberships: [
+              Membership(
+                id: 'mem-tier',
+                startDate: pastIso(3),
+                endDate: futureIso(27),
+                status: 'ACTIVE',
+                planName: planName,
+              ),
+            ],
+          ),
+        );
+        await tester.pumpWidget(
+          KeyedSubtree(
+            key: ValueKey(planName ?? '__null__'),
+            child: wrapPage(
+              membershipController: membership,
+              coachingService: _FakeCoachingService(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await pumpWithPlanName('Gói Kim Cương 12 tháng');
+      expect(find.text('HẠNG KIM CƯƠNG'), findsOneWidget);
+      expect(find.text('HẠNG VÀNG'), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await pumpWithPlanName('Gói Bạc 3 tháng');
+      expect(find.text('HẠNG BẠC'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await pumpWithPlanName(null);
+      expect(find.text('GÓI TẬP'), findsOneWidget);
+      expect(find.text('HẠNG ĐỒNG'), findsNothing);
+      expect(find.text('HẠNG VÀNG'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _FakeMembershipService implements MembershipService {
@@ -529,6 +731,44 @@ class _NutritionAdapter implements HttpClientAdapter {
       Headers.contentTypeHeader: [Headers.jsonContentType],
     },
   );
+  @override
+  void close({bool force = false}) {}
+}
+
+class _FakeTrainingService implements MemberTrainingService {
+  _FakeTrainingService({this.plan});
+
+  final TrainingPlan? plan;
+
+  @override
+  Future<TrainingPlan?> getActive() async => plan;
+
+  @override
+  Future<List<TrainingPlan>> getHistory() async => const [];
+
+  @override
+  Future<TrainingPlan> getPlan(String id) => throw UnimplementedError();
+}
+
+class _CoachBookingEmptyAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final payload = options.path == '/training-plans/me/active'
+        ? '{"data":null}'
+        : '{"data":[]}';
+    return ResponseBody.fromString(
+      payload,
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
   @override
   void close({bool force = false}) {}
 }

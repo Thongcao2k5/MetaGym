@@ -27,6 +27,7 @@ import 'package:meta_gym_app/features/profile/presentation/widgets/training_prof
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.1 Hồ sơ** đồng bộ bản preview `tab5-profile.js` (`member-profile`),
 /// `DESIGN.md` và Lõi Design System Dark + Light:
@@ -96,7 +97,10 @@ class _ProfilePageState extends State<ProfilePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!MetaGymTheme.isFlutterTestEnvironment) {
-      precacheImage(MetaGymBackground.bannerAsset, context).catchError((_) {});
+      precacheImage(
+        MetaGymBackground.assetFor(context),
+        context,
+      ).catchError((_) {});
     }
     if (_initialized) return;
     _initialized = true;
@@ -514,7 +518,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // 1. Hero Profile Card (Level 2 Warm Smoked-Glass khớp preview 5.1)
                   _buildHeroProfileCard(colors),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
+
+                  // 1b. Chuyển nhanh chế độ Tối / Sáng toàn ứng dụng ngay tại trang Hồ sơ
+                  _buildAppearanceModeCard(colors),
+                  const SizedBox(height: 12),
 
                   // 2. Ba nhóm Accordion Solid Level 1 (80/20 rule) khớp tab5-profile.js
                   ProfileAccordionCard(
@@ -705,10 +713,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           alignment: Alignment.center,
-                          child: const MetaGymIcon(
+                          child: MetaGymIcon(
                             MetaGymIcons.commonCamera,
                             size: 13,
-                            color: MetaGymTheme.onPrimary,
+                            color: colors.textPrimary,
                             adaptForLightMode: false,
                             excludeFromSemantics: true,
                           ),
@@ -811,14 +819,150 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.textSecondary,
-                size: 20,
-              ),
+              MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAppearanceModeCard(MetaGymColors colors) {
+    final themeController = context.watch<ThemeModeController?>();
+    final isLightMode =
+        themeController?.isLightMode ??
+        (Theme.of(context).brightness == Brightness.light);
+
+    Future<void> selectMode(bool nextIsLight) async {
+      if (isLightMode == nextIsLight) return;
+      if (themeController != null) {
+        await themeController.setLightMode(nextIsLight);
+      }
+      if (!mounted) return;
+      _showToast(
+        nextIsLight
+            ? 'Đã chuyển sang giao diện Sáng'
+            : 'Đã chuyển sang giao diện Tối',
+      );
+    }
+
+    Widget buildOption({
+      required Key key,
+      required String label,
+      required bool selected,
+      required VoidCallback onTap,
+    }) {
+      return Semantics(
+        button: true,
+        selected: selected,
+        label: 'Chế độ giao diện $label',
+        child: InkWell(
+          key: key,
+          borderRadius: BorderRadius.circular(MetaGymTheme.radiusFull),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : MetaGymTheme.pressDuration,
+            constraints: const BoxConstraints(minWidth: 52, minHeight: 34),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? MetaGymTheme.brandOrange : Colors.transparent,
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusFull),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? MetaGymTheme.onPrimary : colors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return MetaGymGlassCard(
+      solid: false,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: colors.metricPanelBg,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: colors.metricPanelBorder),
+            ),
+            alignment: Alignment.center,
+            child: const MetaGymIcon(
+              MetaGymIcons.settingThemeAppearance,
+              size: MetaGymIconSize.sm,
+              excludeFromSemantics: true,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Giao diện hiển thị',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isLightMode
+                      ? 'Sáng · Daylight Studio'
+                      : 'Tối · Performance Glass',
+                  key: const Key('profile-theme-mode-desc'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.textSecondary, fontSize: 11.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            key: const Key('profile-theme-mode-switch'),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: colors.metricPanelBg,
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusFull),
+              border: Border.all(color: colors.metricPanelBorder),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                buildOption(
+                  key: const Key('profile-theme-mode-dark'),
+                  label: 'Tối',
+                  selected: !isLightMode,
+                  onTap: () => selectMode(false),
+                ),
+                const SizedBox(width: 3),
+                buildOption(
+                  key: const Key('profile-theme-mode-light'),
+                  label: 'Sáng',
+                  selected: isLightMode,
+                  onTap: () => selectMode(true),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -835,11 +979,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.science_rounded,
-                    color: MetaGymTheme.brandOrange,
-                    size: 18,
-                  ),
+                  const MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 18, fallbackIcon: Icons.science_rounded),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -928,7 +1068,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     await _reloadProfile();
                     _showToast('Đã đặt lại toàn bộ dữ liệu mẫu offline.');
                   },
-                  icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.restart_alt_rounded),
                   label: const Text('Đặt lại dữ liệu mẫu gốc'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colors.textPrimary,
@@ -1209,10 +1349,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _openAppSettingsPage() async {
-    ThemeModeController? themeController;
-    try {
-      themeController = context.read<ThemeModeController>();
-    } catch (_) {}
+    final themeController = context.read<ThemeModeController?>();
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => AppSettingsDetailPage(
@@ -1221,7 +1358,9 @@ class _ProfilePageState extends State<ProfilePage> {
           reminderTime: _reminderTime,
           onThemeModeChanged: themeController == null
               ? null
-              : (mode) => themeController!.setThemeMode(mode),
+              : (mode) {
+                  themeController.setThemeMode(mode);
+                },
           onSave: (unit, reminderEnabled, time) {
             setState(() {
               _unitSystem = unit;

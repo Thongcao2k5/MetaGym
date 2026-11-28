@@ -7,6 +7,8 @@ import 'package:meta_gym_app/features/calls/data/calls_service.dart';
 import 'package:meta_gym_app/features/calls/domain/call_log.dart';
 import 'package:meta_gym_app/features/messaging/domain/conversation.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 AppBar _buildCallsAppBar(BuildContext context, String title) {
   final palette = MetaGymTheme.paletteOf(context);
@@ -41,11 +43,14 @@ AppBar _buildCallsAppBar(BuildContext context, String title) {
   );
 }
 
-InputDecoration _warmCallsInputDecoration(BuildContext context, String label) {
+InputDecoration _warmCallsInputDecoration(
+  BuildContext context,
+  String label,
+) {
   final palette = MetaGymTheme.paletteOf(context);
   return InputDecoration(
     labelText: label,
-    labelStyle: TextStyle(color: palette.textWarmMuted),
+    labelStyle: TextStyle(color: palette.textSecondary),
     filled: true,
     fillColor: palette.metricPanelBg,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -213,11 +218,7 @@ class _CallsPageState extends State<CallsPage> {
                         padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: palette.reflection,
-                              size: 20,
-                            ),
+                            MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 20, fallbackIcon: Icons.info_outline_rounded),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -239,22 +240,18 @@ class _CallsPageState extends State<CallsPage> {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: isLight
-                                ? palette.error.withValues(alpha: 0.08)
+                                ? palette.error.withValues(alpha: 0.10)
                                 : const Color(0xFF24161A),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isLight
-                                  ? palette.error.withValues(alpha: 0.35)
+                                  ? palette.error.withValues(alpha: 0.45)
                                   : const Color(0xFF642B32),
                             ),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                color: palette.error,
-                                size: 20,
-                              ),
+                              MetaGymSvgIcon(MetaGymIcons.stateError, size: 20, fallbackIcon: Icons.error_outline_rounded),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -283,10 +280,7 @@ class _CallsPageState extends State<CallsPage> {
                         MetaGymGlassCard(
                           padding: const EdgeInsets.all(16),
                           child: ListTile(
-                            leading: Icon(
-                              Icons.link_off_rounded,
-                              color: palette.textWarmMuted,
-                            ),
+                            leading: MetaGymSvgIcon(MetaGymIcons.stateOffline, fallbackIcon: Icons.link_off_rounded),
                             title: Text(
                               'Chưa có quan hệ hoạt động để tạo cuộc gọi.',
                               style: TextStyle(color: palette.textWarmMuted),
@@ -304,7 +298,9 @@ class _CallsPageState extends State<CallsPage> {
                                 dropdownColor: isLight
                                     ? palette.surfaceSolid
                                     : const Color(0xFF2B2622),
-                                style: TextStyle(color: palette.textPrimary),
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                ),
                                 decoration: _warmCallsInputDecoration(
                                   context,
                                   'Quan hệ',
@@ -328,7 +324,9 @@ class _CallsPageState extends State<CallsPage> {
                                 dropdownColor: isLight
                                     ? palette.surfaceSolid
                                     : const Color(0xFF2B2622),
-                                style: TextStyle(color: palette.textPrimary),
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                ),
                                 decoration: _warmCallsInputDecoration(
                                   context,
                                   'Loại cuộc gọi',
@@ -377,10 +375,7 @@ class _CallsPageState extends State<CallsPage> {
                         MetaGymGlassCard(
                           padding: const EdgeInsets.all(16),
                           child: ListTile(
-                            leading: const Icon(
-                              Icons.call_outlined,
-                              color: MetaGymTheme.brandOrange,
-                            ),
+                            leading: MetaGymSvgIcon(MetaGymIcons.callAudioBadge, fallbackIcon: Icons.call_outlined),
                             title: Text(
                               'Chưa có cuộc gọi nào.',
                               style: TextStyle(
@@ -409,13 +404,9 @@ class _CallsPageState extends State<CallsPage> {
                                   color: palette.metricPanelBorder,
                                 ),
                               ),
-                              child: Icon(
-                                call.callType == 'VIDEO'
+                              child: MetaGymResolvedIcon(call.callType == 'VIDEO'
                                     ? Icons.videocam_outlined
-                                    : Icons.call_outlined,
-                                color: MetaGymTheme.brandOrange,
-                                size: 20,
-                              ),
+                                    : Icons.call_outlined, size: 20, fallbackColor: palette.primaryText),
                             ),
                             title: Text(
                               '${call.typeLabel} · ${call.statusLabel}',
@@ -432,10 +423,7 @@ class _CallsPageState extends State<CallsPage> {
                                 fontFeatures: MetaGymTheme.tabularFigures,
                               ),
                             ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                              color: palette.textWarmMuted,
-                            ),
+                            trailing: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right),
                             onTap: () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute<void>(
@@ -509,7 +497,8 @@ class _CallDetailPageState extends State<CallDetailPage> {
     }
   }
 
-  Widget _warmActionOutlinedButton({
+  Widget _warmActionOutlinedButton(
+    BuildContext context, {
     required String label,
     required VoidCallback? onPressed,
   }) {
@@ -559,7 +548,10 @@ class _CallDetailPageState extends State<CallDetailPage> {
                 padding: const EdgeInsets.all(14),
                 child: Text(
                   'Chỉ hiển thị metadata. Chưa có RTC để kết nối âm thanh/video.',
-                  style: TextStyle(color: palette.textWarmMuted, fontSize: 12.5),
+                  style: TextStyle(
+                    color: palette.textWarmMuted,
+                    fontSize: 12.5,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -641,12 +633,12 @@ class _CallDetailPageState extends State<CallDetailPage> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isLight
-                        ? palette.error.withValues(alpha: 0.08)
+                        ? palette.error.withValues(alpha: 0.10)
                         : const Color(0xFF24161A),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isLight
-                          ? palette.error.withValues(alpha: 0.35)
+                          ? palette.error.withValues(alpha: 0.45)
                           : const Color(0xFF642B32),
                     ),
                   ),
@@ -662,24 +654,29 @@ class _CallDetailPageState extends State<CallDetailPage> {
               if (_call.status == 'CREATED' || _call.status == 'RINGING') ...[
                 if (_call.status == 'CREATED')
                   _warmActionOutlinedButton(
+                    context,
                     label: 'Đánh dấu đổ chuông',
                     onPressed: _saving ? null : () => _update('RINGING'),
                   ),
                 if (receiver)
                   _warmActionOutlinedButton(
+                    context,
                     label: 'Đánh dấu từ chối',
                     onPressed: _saving ? null : () => _update('REJECTED'),
                   ),
                 if (receiver && _call.status == 'RINGING')
                   _warmActionOutlinedButton(
+                    context,
                     label: 'Đánh dấu bắt máy',
                     onPressed: _saving ? null : () => _update('ANSWERED'),
                   ),
                 _warmActionOutlinedButton(
+                  context,
                   label: 'Đánh dấu nhỡ',
                   onPressed: _saving ? null : () => _update('MISSED'),
                 ),
                 _warmActionOutlinedButton(
+                  context,
                   label: 'Đánh dấu lỗi kết nối',
                   onPressed: _saving
                       ? null

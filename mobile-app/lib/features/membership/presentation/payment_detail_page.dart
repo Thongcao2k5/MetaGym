@@ -7,6 +7,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/membership/data/payment_history_service.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class PaymentDetailPage extends StatefulWidget {
   const PaymentDetailPage({
@@ -57,10 +59,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
     final payment = _payment;
     return Scaffold(
-      backgroundColor: palette.canvas,
+      backgroundColor: MetaGymTheme.paletteOf(context).canvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -107,9 +108,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                       children: [
                                         MembershipStatusPill(
                                           label: payment.statusLabel,
-                                          color: membershipStatusColorFor(
+                                          color: membershipStatusColor(
                                             payment.status,
-                                            palette,
                                           ),
                                         ),
                                         if (payment.method != null)
@@ -118,7 +118,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                               payment.method!,
                                             ),
                                             style: TextStyle(
-                                              color: palette.reflection,
+                                              color: MetaGymTheme.paletteOf(
+                                                context,
+                                              ).reflection,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -130,7 +132,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                       Text(
                                         formatMembershipMoney(payment.amount!),
                                         style: TextStyle(
-                                          color: palette.textPrimary,
+                                          color: MetaGymTheme.paletteOf(
+                                            context,
+                                          ).textPrimary,
                                           fontSize: 30,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: -0.4,
@@ -143,7 +147,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                     Text(
                                       payment.planName ?? 'Không có tên gói',
                                       style: TextStyle(
-                                        color: palette.textWarmMuted,
+                                        color: MetaGymTheme.paletteOf(
+                                          context,
+                                        ).textWarmMuted,
                                         fontSize: 14.5,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -274,11 +280,7 @@ class _DetailRow extends StatelessWidget {
                       child: SizedBox(
                         width: 44,
                         height: 44,
-                        child: Icon(
-                          Icons.copy_rounded,
-                          size: 17,
-                          color: palette.reflection,
-                        ),
+                        child: MetaGymSvgIcon(MetaGymIcons.commonCopy, size: 17, fallbackIcon: Icons.copy_rounded),
                       ),
                     ),
                   ),

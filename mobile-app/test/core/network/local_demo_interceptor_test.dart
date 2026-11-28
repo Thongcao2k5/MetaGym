@@ -56,8 +56,9 @@ void main() {
           '/training-plans/me/active',
           decode: TrainingPlan.fromJson,
         )).data;
-        expect(plan.days.length, 3);
+        expect(plan.days.length, 7);
         expect(plan.days.first.exercises.isNotEmpty, isTrue);
+        expect(plan.days.last.isRestOrRecovery, isTrue);
 
         final visitsApi = GymVisitsApi(client);
         final before = await visitsApi.getMonth(DateTime.now());

@@ -8,6 +8,8 @@ import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/features/membership/domain/membership_models.dart';
 import 'package:meta_gym_app/features/membership/presentation/membership_ui.dart';
 import 'package:meta_gym_app/features/membership/presentation/widgets/membership_tier_widgets.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class _EmptyWalletTierSpec {
   const _EmptyWalletTierSpec({
@@ -208,11 +210,6 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final spec = _kEmptyWalletTiers[_activeIndex];
-    final badgeColor = spec.badgeColor == MetaGymTheme.brandOrange
-        ? palette.primaryText
-        : spec.badgeColor == MetaGymTheme.progressGreen
-        ? palette.success
-        : palette.textSecondary;
     final matchedPlan = _resolvePlanForTier(spec);
     final displayTitle = matchedPlan?.name ?? spec.defaultTitle;
     final displayPrice = matchedPlan?.price ?? spec.defaultPrice;
@@ -242,9 +239,7 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
         Expanded(
           child: RefreshIndicator(
             color: MetaGymTheme.brandOrange,
-            backgroundColor: isLight
-                ? palette.surfaceSolid
-                : const Color(0xFF2B2622),
+            backgroundColor: palette.surfaceSolid,
             onRefresh: widget.onRefresh,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 24),
@@ -270,11 +265,7 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                         width: 40,
                         height: 40,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.workspace_premium_rounded,
-                          color: Color(0xFFF5B041),
-                          size: 26,
-                        ),
+                        errorBuilder: (_, _, _) => const MetaGymSvgIcon(MetaGymIcons.premiumCrown, size: 26, fallbackIcon: Icons.workspace_premium_rounded),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -312,7 +303,9 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: palette.chipActiveBg,
+                          color: MetaGymTheme.brandOrange.withValues(
+                            alpha: 0.14,
+                          ),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -333,14 +326,10 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                   padding: const EdgeInsets.all(3),
                   margin: const EdgeInsets.only(bottom: 7),
                   decoration: BoxDecoration(
-                    color: isLight
-                        ? palette.metricPanelBg
-                        : const Color(0x991C1917),
+                    color: palette.metricPanelBg,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isLight
-                          ? palette.metricPanelBorder
-                          : const Color(0x55A79D92),
+                      color: palette.metricPanelBorder,
                       width: 0.9,
                     ),
                   ),
@@ -443,9 +432,9 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                               decoration: BoxDecoration(
                                 color: i == _activeIndex
                                     ? MetaGymTheme.brandOrange
-                                    : (isLight
-                                          ? palette.borderSolid
-                                          : const Color(0x55FFFFFF)),
+                                    : palette.textSecondary.withValues(
+                                        alpha: 0.35,
+                                      ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                             ),
@@ -473,32 +462,24 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                             ),
                             decoration: BoxDecoration(
                               color: _centerFlipped
-                                  ? palette.chipActiveBg
-                                  : (isLight
-                                        ? palette.surfaceSolid
-                                        : const Color(0x88181513)),
+                                  ? MetaGymTheme.brandOrange.withValues(
+                                      alpha: 0.14,
+                                    )
+                                  : palette.metricPanelBg,
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
                                 color: _centerFlipped
                                     ? MetaGymTheme.brandOrange.withValues(
                                         alpha: 0.7,
                                       )
-                                    : (isLight
-                                          ? palette.borderSolid
-                                          : const Color(0x45FFF6EA)),
+                                    : palette.metricPanelBorder,
                                 width: 0.9,
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.flip_rounded,
-                                  size: 12.5,
-                                  color: _centerFlipped
-                                      ? palette.primaryText
-                                      : palette.textSecondary,
-                                ),
+                                MetaGymSvgIcon(MetaGymIcons.mediaRotate, size: 12.5, fallbackIcon: Icons.flip_rounded),
                                 const SizedBox(width: 4),
                                 Text(
                                   _centerFlipped
@@ -555,16 +536,18 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: badgeColor.withValues(alpha: 0.16),
+                              color: spec.badgeColor.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
-                                color: badgeColor.withValues(alpha: 0.45),
+                                color: spec.badgeColor.withValues(alpha: 0.45),
                               ),
                             ),
                             child: Text(
                               spec.badgeLabel,
                               style: TextStyle(
-                                color: badgeColor,
+                                color: isLight
+                                    ? palette.textPrimary
+                                    : spec.badgeColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -651,12 +634,12 @@ class _MembershipEmptyDeckViewState extends State<MembershipEmptyDeckView> {
         Container(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
           decoration: BoxDecoration(
-            color: isLight ? palette.surfaceSolid : const Color(0xE615181F),
+            color: isLight
+                ? palette.surfaceSolid.withValues(alpha: 0.96)
+                : const Color(0xE615181F),
             border: Border(
               top: BorderSide(
-                color: isLight
-                    ? palette.borderSolid
-                    : const Color(0x26FFF6EA),
+                color: isLight ? palette.borderSolid : const Color(0x26FFF6EA),
                 width: 1,
               ),
             ),
@@ -713,8 +696,10 @@ class _WalletTabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final textColor = active ? palette.chipActiveText : palette.textSecondary;
-    final starColor = showStar ? const Color(0xFFF5B041) : textColor;
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final textColor = active
+        ? (isLight ? palette.primaryText : MetaGymTheme.textPrimary)
+        : palette.textSecondary;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -723,7 +708,11 @@ class _WalletTabButton extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? palette.chipActiveBg : Colors.transparent,
+          color: active
+              ? (isLight
+                    ? MetaGymTheme.brandOrange.withValues(alpha: 0.14)
+                    : const Color(0x28FF5E36))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: active
               ? Border.all(
@@ -750,7 +739,7 @@ class _WalletTabButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 2),
-                  Icon(Icons.star_rounded, size: 12, color: starColor),
+                  MetaGymSvgIcon(MetaGymIcons.socialStarRating, size: 12, fallbackIcon: Icons.star_rounded),
                 ],
               )
             : Text(
@@ -805,11 +794,7 @@ class _EmptyFanStage extends StatelessWidget {
   Widget _cardErrorFallback() => Container(
     color: const Color(0xFF1F232C),
     alignment: Alignment.center,
-    child: const Icon(
-      Icons.credit_card_rounded,
-      color: MetaGymTheme.textSecondary,
-      size: 38,
-    ),
+    child: const MetaGymSvgIcon(MetaGymIcons.premiumPaymentCard, size: 38, fallbackIcon: Icons.credit_card_rounded),
   );
 
   @override
@@ -1028,11 +1013,7 @@ class _EmptyPerkRow extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(
-          Icons.check_rounded,
-          size: 14,
-          color: palette.success,
-        ),
+        MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 14, fallbackIcon: Icons.check_rounded),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -1139,11 +1120,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                     width: 36,
                     height: 36,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Icon(
-                      Icons.workspace_premium_rounded,
-                      color: Color(0xFFF5B041),
-                      size: 24,
-                    ),
+                    errorBuilder: (_, _, _) => const MetaGymSvgIcon(MetaGymIcons.premiumCrown, size: 24, fallbackIcon: Icons.workspace_premium_rounded),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1189,7 +1166,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                       height: 36,
                       decoration: BoxDecoration(
                         color: isLight
-                            ? palette.metricPanelBg
+                            ? palette.surfaceRaised
                             : const Color(0x8824201D),
                         shape: BoxShape.circle,
                         border: Border.all(
@@ -1200,11 +1177,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                         ),
                       ),
                       alignment: Alignment.center,
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: palette.textPrimary,
-                      ),
+                      child: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
                     ),
                   ),
                 ),
@@ -1226,11 +1199,7 @@ class _VipPromotionsSheet extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 1.5),
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 14,
-                      color: palette.textSecondary,
-                    ),
+                    child: MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 14, fallbackIcon: Icons.info_outline_rounded),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -1251,7 +1220,7 @@ class _VipPromotionsSheet extends StatelessWidget {
       ),
     );
 
-    if (disableAnimations) {
+    if (disableAnimations || isLight) {
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
         child: content,
@@ -1278,11 +1247,6 @@ class _VipPromotionsSheet extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
     final spec = _kEmptyWalletTiers[idx];
-    final badgeColor = spec.badgeColor == MetaGymTheme.brandOrange
-        ? palette.primaryText
-        : spec.badgeColor == MetaGymTheme.progressGreen
-        ? palette.success
-        : palette.textSecondary;
     final plan = resolvePlan(spec);
     final title = plan?.name ?? spec.defaultTitle;
     final price = formatMembershipMoney(plan?.price ?? spec.defaultPrice);
@@ -1303,19 +1267,17 @@ class _VipPromotionsSheet extends StatelessWidget {
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isLight
-                  ? [
-                      accent.withValues(alpha: isFeatured ? 0.12 : 0.06),
-                      palette.metricPanelBg,
-                    ]
-                  : [
+            color: isLight ? palette.surfaceRaised : null,
+            gradient: isLight
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
                       accent.withValues(alpha: isFeatured ? 0.14 : 0.08),
                       const Color(0xD6231F1C),
                     ],
-            ),
+                  ),
             border: Border.all(
               color: borderColor,
               width: isCurrentChoice || isFeatured ? 1.2 : 1.0,
@@ -1408,16 +1370,16 @@ class _VipPromotionsSheet extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.16),
+                      color: spec.badgeColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: badgeColor.withValues(alpha: 0.45),
+                        color: spec.badgeColor.withValues(alpha: 0.45),
                       ),
                     ),
                     child: Text(
                       spec.badgeLabel,
                       style: TextStyle(
-                        color: badgeColor,
+                        color: isLight ? palette.textPrimary : spec.badgeColor,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1459,11 +1421,7 @@ class _VipPromotionsSheet extends StatelessWidget {
               // Row 3: Bonus highlight + Single-primary CTA
               Row(
                 children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 14,
-                    color: palette.warning,
-                  ),
+                  MetaGymSvgIcon(MetaGymIcons.navAiEmblem, size: 14, fallbackIcon: Icons.auto_awesome_rounded),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -1510,7 +1468,7 @@ class _VipPromotionsSheet extends StatelessWidget {
         key: key,
         onPressed: () => Navigator.of(context).pop(idx),
         style: OutlinedButton.styleFrom(
-          backgroundColor: palette.success.withValues(alpha: 0.16),
+          backgroundColor: palette.success.withValues(alpha: 0.14),
           foregroundColor: palette.success,
           side: BorderSide(
             color: palette.success.withValues(alpha: 0.55),
@@ -1601,7 +1559,7 @@ class _PromoPerkChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12.5, color: color),
+          MetaGymResolvedIcon(icon, size: 12.5, fallbackColor: color),
           const SizedBox(width: 4.5),
           Text(
             label,

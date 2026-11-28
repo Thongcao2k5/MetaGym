@@ -123,7 +123,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   ({String title, String pillLabel, Color pillColor}) _resolveCoachBentoState(
     DateTime now,
     Payment? latestCoachInvoice,
-    MetaGymPalette palette,
   ) {
     final activeEntitlement = _coachEntitlements.where((pack) {
       final status = pack['status'] as String?;
@@ -144,7 +143,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             ? planName
             : (latestCoachInvoice?.planName ?? 'Gói Coach 1:1'),
         pillLabel: 'Còn $remaining buổi',
-        pillColor: palette.primaryText,
+        pillColor: MetaGymTheme.brandOrange,
       );
     }
 
@@ -156,14 +155,14 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       final remaining =
           (latestEntitlement['remainingSessions'] as num?)?.toInt() ?? 0;
       final (label, color) = rel == 'PAUSED'
-          ? ('Tạm ngưng', palette.warning)
+          ? ('Tạm ngưng', MetaGymTheme.warningAmber)
           : _isEntitlementExpired(latestEntitlement, now)
-          ? ('Hết hạn', palette.textSecondary)
+          ? ('Hết hạn', const Color(0xFFA8B1C2))
           : (status == 'ACTIVE' && remaining <= 0)
-          ? ('Hết lượt', palette.textSecondary)
+          ? ('Hết lượt', const Color(0xFFA8B1C2))
           : status == 'QUEUED'
-          ? ('Chờ kích hoạt', palette.reflection)
-          : ('Đã kết thúc', palette.textSecondary);
+          ? ('Chờ kích hoạt', MetaGymTheme.reflectionBlue)
+          : ('Đã kết thúc', const Color(0xFFA8B1C2));
       return (
         title: (planName != null && planName.isNotEmpty)
             ? planName
@@ -177,14 +176,14 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       return (
         title: latestCoachInvoice.planName ?? 'Gói Coach 1:1',
         pillLabel: 'Xem lịch Coach',
-        pillColor: palette.textSecondary,
+        pillColor: const Color(0xFFA8B1C2),
       );
     }
 
     return (
       title: 'Chưa đăng ký',
       pillLabel: 'Tìm Coach',
-      pillColor: palette.textSecondary,
+      pillColor: const Color(0xFFA8B1C2),
     );
   }
 
@@ -205,7 +204,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     final now = DateTime.now();
     final active = _memberships
         .where((item) => item.status == 'ACTIVE')
@@ -217,11 +215,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     final primaryActive = active.firstOrNull;
     final remainingDays = primaryActive?.remainingDays(now);
     final latestCoachInvoice = _payments.where(_isCoachPayment).firstOrNull;
-    final coachBento = _resolveCoachBentoState(
-      now,
-      latestCoachInvoice,
-      palette,
-    );
+    final coachBento = _resolveCoachBentoState(now, latestCoachInvoice);
 
     return Scaffold(
       backgroundColor: palette.canvas,
@@ -253,9 +247,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                         )
                       : RefreshIndicator(
                           color: MetaGymTheme.brandOrange,
-                          backgroundColor: isLight
-                              ? palette.surfaceSolid
-                              : const Color(0xFF2B2622),
+                          backgroundColor: palette.surfaceSolid,
                           onRefresh: _load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -335,14 +327,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                 padding: const EdgeInsets.all(3),
                                 margin: const EdgeInsets.only(bottom: 10),
                                 decoration: BoxDecoration(
-                                  color: isLight
-                                      ? palette.metricPanelBg
-                                      : const Color(0xB8211E1C),
+                                  color: palette.metricPanelBg,
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: isLight
-                                        ? palette.metricPanelBorder
-                                        : const Color(0x9A8C8176),
+                                    color: palette.metricPanelBorder,
                                     width: 1.0,
                                   ),
                                 ),
@@ -469,25 +457,21 @@ class _ActiveServiceBentoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: accentBorder
-              ? const Color(0x88FF8A5B)
-              : (isLight ? palette.borderSolid : const Color(0xA3A79D92)),
+              ? (isLight
+                    ? MetaGymTheme.brandOrange.withValues(alpha: 0.55)
+                    : const Color(0x88FF8A5B))
+              : palette.warmGlassBorder,
           width: 1.1,
         ),
-        boxShadow: isLight
-            ? const [
-                BoxShadow(
-                  color: Color(0x140F172A),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ]
-            : const [
-                BoxShadow(
-                  color: Color(0x40000000),
-                  blurRadius: 16,
-                  offset: Offset(0, 8),
-                ),
-              ],
+        boxShadow: [
+          BoxShadow(
+            color: isLight
+                ? const Color(0x120F172A)
+                : const Color(0x40000000),
+            blurRadius: isLight ? 12 : 16,
+            offset: Offset(0, isLight ? 4 : 8),
+          ),
+        ],
       ),
       child: MetaGymTap(
         borderRadius: BorderRadius.circular(18),
@@ -525,7 +509,7 @@ class _ActiveServiceBentoCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: pillColor.withValues(alpha: 0.16),
+                  color: pillColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: pillColor.withValues(alpha: 0.42)),
                 ),
@@ -606,7 +590,7 @@ class _PaymentInvoiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
-    final statusColor = membershipStatusColorFor(payment.status, palette);
+    final statusColor = membershipStatusColor(payment.status);
     final dateText = payment.createdAt != null
         ? formatMembershipDate(payment.createdAt!)
         : null;
@@ -713,7 +697,7 @@ class _PaymentInvoiceCard extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.16),
+                      color: badgeColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
                         color: badgeColor.withValues(alpha: 0.42),
@@ -758,14 +742,10 @@ class _ScheduledPeriodTile extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: palette.reflection.withValues(alpha: 0.16),
+              color: palette.reflection.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(
-              Icons.schedule_rounded,
-              color: palette.reflection,
-              size: 19,
-            ),
+            child: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 19, fallbackIcon: Icons.schedule_rounded),
           ),
           const SizedBox(width: 12),
           Expanded(

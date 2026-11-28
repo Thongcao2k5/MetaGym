@@ -50,7 +50,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: palette.primaryText,
-                                fontSize: 10.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.4,
                               ),
@@ -62,7 +62,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: palette.textPrimary,
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.3,
                               ),
@@ -75,7 +75,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                 ),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
                     children: [
                       MetaGymHeroGlassCard(
                         padding: const EdgeInsets.symmetric(
@@ -120,7 +120,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                                   Text(
                                     'Cập nhật 01/11/2026 · Tuân thủ Nghị định 13/2023',
                                     style: TextStyle(
-                                      color: palette.textSecondary,
+                                      color: palette.textWarmMuted,
                                       fontSize: 12,
                                       fontFeatures: MetaGymTheme.tabularFigures,
                                     ),
@@ -142,20 +142,17 @@ class PrivacyPolicyPage extends StatelessWidget {
                       const SizedBox(height: 10),
                       const _PrivacySectionCard(
                         title: '2. Chia sẻ dữ liệu với Coach',
-                        body:
-                            'Chỉ số cơ thể và nhật ký dinh dưỡng chỉ được chia sẻ với Huấn luyện viên đang trực tiếp phụ trách bạn. Bạn có thể bật hoặc tắt quyền này bất kỳ lúc nào tại Hồ sơ → Quyền riêng tư.',
+                        body: 'Chỉ số cơ thể và nhật ký dinh dưỡng chỉ được chia sẻ với Huấn luyện viên đang trực tiếp phụ trách bạn. Bạn có thể bật hoặc tắt quyền này bất kỳ lúc nào tại Hồ sơ → Quyền riêng tư.',
                       ),
                       const SizedBox(height: 10),
                       const _PrivacySectionCard(
                         title: '3. Bảo mật Sinh trắc học (Face ID / Vân tay)',
-                        body:
-                            'Dữ liệu khuôn mặt và vân tay chỉ được xử lý cục bộ trong vùng bảo mật phần cứng (Secure Enclave / Keystore) trên điện thoại của bạn. Meta Gym không bao giờ thu thập hay lưu trữ lên máy chủ.',
+                        body: 'Dữ liệu khuôn mặt và vân tay chỉ được xử lý cục bộ trong vùng bảo mật phần cứng (Secure Enclave / Keystore) trên điện thoại của bạn. Meta Gym không bao giờ thu thập hay lưu trữ lên máy chủ.',
                       ),
                       const SizedBox(height: 10),
                       const _PrivacySectionCard(
                         title: '4. Quyền kiểm soát & Xóa dữ liệu',
-                        body:
-                            'Bạn có quyền xem, tải xuống bản sao dữ liệu hoặc yêu cầu xóa vĩnh viễn tài khoản trong vòng 7 ngày làm việc qua privacy@metagym.vn.',
+                        body: 'Bạn có quyền xem, tải xuống bản sao dữ liệu hoặc yêu cầu xóa vĩnh viễn tài khoản trong vòng 7 ngày làm việc qua privacy@metagym.vn.',
                       ),
                     ],
                   ),
@@ -191,7 +188,7 @@ class _PrivacySectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     return MetaGymGlassCard(
-      solid: true,
+      solid: false,
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +197,7 @@ class _PrivacySectionCard extends StatelessWidget {
             title,
             style: TextStyle(
               color: palette.textPrimary,
-              fontSize: 13.5,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               height: 1.35,
             ),
@@ -209,8 +206,8 @@ class _PrivacySectionCard extends StatelessWidget {
           Text(
             body,
             style: TextStyle(
-              color: palette.textSecondary,
-              fontSize: 12.5,
+              color: palette.textWarmMuted,
+              fontSize: 14,
               height: 1.6,
             ),
           ),

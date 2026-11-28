@@ -71,7 +71,12 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    void clearErrorsOnEdit(String _) {
+      if (auth.fieldErrors.isNotEmpty || auth.errorMessage != null) {
+        auth.clearErrors();
+      }
+    }
+
     final formBody = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,12 +97,12 @@ class _RegisterPageState extends State<RegisterPage> {
           'Khởi tạo hồ sơ cá nhân để đặt lịch PT 1:1 và theo dõi chỉ số cơ thể.',
           textAlign: TextAlign.left,
           style: TextStyle(
-            color: palette.textWarmMuted,
-            fontSize: 12.5,
-            height: 1.45,
+            color: palette.textSecondary,
+            fontSize: 14,
+            height: 1.35,
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         AuthGlassField(
           fieldKey: const Key('register-name'),
           controller: _nameController,
@@ -109,8 +114,9 @@ class _RegisterPageState extends State<RegisterPage> {
           textInputAction: TextInputAction.next,
           autofillHints: const [AutofillHints.name],
           errorText: auth.fieldErrors['fullName'],
+          onChanged: clearErrorsOnEdit,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         AuthGlassField(
           fieldKey: const Key('register-email'),
           controller: _emailController,
@@ -122,8 +128,9 @@ class _RegisterPageState extends State<RegisterPage> {
           textInputAction: TextInputAction.next,
           autofillHints: const [AutofillHints.email],
           errorText: auth.fieldErrors['email'],
+          onChanged: clearErrorsOnEdit,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         AuthGlassField(
           fieldKey: const Key('register-password'),
           controller: _passwordController,
@@ -136,7 +143,10 @@ class _RegisterPageState extends State<RegisterPage> {
           onSubmitted: auth.isSubmitting ? null : (_) => _submit(auth),
           autofillHints: const [AutofillHints.newPassword],
           errorText: auth.fieldErrors['password'],
-          onChanged: (value) => setState(() => _passwordInput = value),
+          onChanged: (value) {
+            clearErrorsOnEdit(value);
+            setState(() => _passwordInput = value);
+          },
           suffixIcon: IconButton(
             key: const Key('register-toggle-password'),
             tooltip: _obscurePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
@@ -153,85 +163,84 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _PasswordStrengthMeter(password: _passwordInput),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         InkWell(
           key: const Key('register-accept-terms'),
           borderRadius: BorderRadius.circular(10),
           onTap: auth.isSubmitting
               ? null
               : () => setState(() => _acceptedTerms = !_acceptedTerms),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 18,
-                  height: 18,
-                  margin: const EdgeInsets.only(top: 2),
-                  decoration: BoxDecoration(
-                    color: _acceptedTerms
-                        ? MetaGymTheme.brandOrange
-                        : (isLight
-                              ? palette.metricPanelBg
-                              : const Color(0x88181513)),
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 18,
+                    height: 18,
+                    margin: const EdgeInsets.only(top: 2),
+                    decoration: BoxDecoration(
                       color: _acceptedTerms
                           ? MetaGymTheme.brandOrange
-                          : (isLight
-                                ? palette.borderSolid
-                                : MetaGymWarmGlassTokens.cardBorder),
-                    ),
-                  ),
-                  child: _acceptedTerms
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 13,
-                          color: Colors.white,
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 12,
-                        height: 1.45,
+                          : palette.metricPanelBg,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: _acceptedTerms
+                            ? MetaGymTheme.brandOrange
+                            : palette.borderSolid,
                       ),
-                      children: [
-                        const TextSpan(text: 'Tôi đồng ý với '),
-                        TextSpan(
-                          text: 'Điều khoản sử dụng',
-                          recognizer: _termsTap,
-                          style: TextStyle(
-                            color: palette.reflection,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
+                    ),
+                    child: _acceptedTerms
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 13,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: 12,
+                          height: 1.45,
+                        ),
+                        children: [
+                          const TextSpan(text: 'Tôi đồng ý với '),
+                          TextSpan(
+                            text: 'Điều khoản sử dụng',
+                            recognizer: _termsTap,
+                            style: TextStyle(
+                              color: palette.reflection,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        ),
-                        const TextSpan(text: ' và '),
-                        TextSpan(
-                          text: 'Chính sách bảo mật',
-                          recognizer: _privacyTap,
-                          style: TextStyle(
-                            color: palette.reflection,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
+                          const TextSpan(text: ' và '),
+                          TextSpan(
+                            text: 'Chính sách bảo mật',
+                            recognizer: _privacyTap,
+                            style: TextStyle(
+                              color: palette.reflection,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        ),
-                        const TextSpan(
-                          text: ' dữ liệu sức khỏe của Meta Gym.',
-                        ),
-                      ],
+                          const TextSpan(
+                            text: ' dữ liệu sức khỏe của Meta Gym.',
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -242,7 +251,7 @@ class _RegisterPageState extends State<RegisterPage> {
             message: auth.errorMessage!,
           ),
         ],
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         AuthPrimaryButton(
           buttonKey: const Key('register-submit'),
           isLoading: auth.isSubmitting,
@@ -288,6 +297,9 @@ class _PasswordStrengthMeter extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     final isLight = MetaGymTheme.isLightPalette(context);
+    final inactiveBar = isLight
+        ? const Color(0xFFDCE4EE)
+        : Colors.white.withValues(alpha: 0.14);
     final hasLength = password.length >= 8;
     final hasUpper = RegExp('[A-Z]').hasMatch(password);
     final hasLower = RegExp('[a-z]').hasMatch(password);
@@ -300,22 +312,18 @@ class _PasswordStrengthMeter extends StatelessWidget {
       hasDigit,
     ].where((met) => met).length;
 
-    final inactiveBarColor = isLight
-        ? palette.borderSolid
-        : Colors.white.withValues(alpha: 0.14);
-
     final Color barColor = switch (score) {
       4 => palette.success,
       3 => palette.warning,
-      >= 1 => palette.primaryText,
-      _ => inactiveBarColor,
+      >= 1 => MetaGymTheme.brandOrange,
+      _ => inactiveBar,
     };
 
     final (statusLabel, statusColor) = switch (score) {
       4 => ('Đạt chuẩn', palette.success),
       3 => ('Khá tốt', palette.warning),
       >= 1 => ('Cần bổ sung', palette.primaryText),
-      _ => ('4 điều kiện', palette.textWarmMuted),
+      _ => ('4 điều kiện', palette.textSecondary),
     };
 
     final barDuration =
@@ -326,7 +334,7 @@ class _PasswordStrengthMeter extends StatelessWidget {
 
     return Container(
       key: const Key('register-password-strength'),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
       decoration: BoxDecoration(
         color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
@@ -376,7 +384,7 @@ class _PasswordStrengthMeter extends StatelessWidget {
                   height: 4,
                   margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
                   decoration: BoxDecoration(
-                    color: active ? barColor : inactiveBarColor,
+                    color: active ? barColor : inactiveBar,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -426,11 +434,7 @@ class _RuleBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          met ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-          size: 14,
-          color: color,
-        ),
+        MetaGymResolvedIcon(met ? Icons.check_circle_rounded : Icons.radio_button_unchecked, size: 14, fallbackColor: color),
         const SizedBox(width: 6),
         Flexible(
           child: Text(

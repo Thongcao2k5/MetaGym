@@ -7,8 +7,12 @@ import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_icon.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
+import 'package:meta_gym_app/features/notifications/domain/notification_models.dart';
+import 'package:meta_gym_app/features/notifications/presentation/notifications_controller.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/profile_shared_widgets.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Trang Hồ sơ chuyên môn dành cho Huấn luyện viên (đồng bộ Core Design System).
 class CoachProfileDetailPage extends StatefulWidget {
@@ -638,11 +642,7 @@ class _SecurityAccountDetailPageState extends State<SecurityAccountDetailPage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          color: colors.error,
-                          size: 18,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.stateError, size: 18, fallbackIcon: Icons.error_outline_rounded),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -930,15 +930,11 @@ class _PrivacySettingsDetailPageState extends State<PrivacySettingsDetailPage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                _mode == option
+                              MetaGymResolvedIcon(_mode == option
                                     ? Icons.radio_button_checked_rounded
-                                    : Icons.radio_button_off_rounded,
-                                size: 20,
-                                color: _mode == option
+                                    : Icons.radio_button_off_rounded, size: 20, fallbackColor: _mode == option
                                     ? MetaGymTheme.brandOrange
-                                    : colors.textSecondary,
-                              ),
+                                    : colors.textSecondary),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -1024,6 +1020,12 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
   late bool _reminderEnabled = widget.workoutReminderEnabled;
   late String _time = widget.reminderTime;
   late bool _reduceBlur = widget.initialReduceBlur;
+  int _ptBeforeMinutes = 30;
+  bool _nutritionRemindersEnabled = true;
+  bool _coachUpdatesEnabled = true;
+  bool _messagesAndCallsEnabled = true;
+  bool _adminBroadcastsEnabled = true;
+  bool _prefsBound = false;
   bool _themeInitialized = false;
   bool _isLightMode = false;
 
@@ -1034,7 +1036,24 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
     '19:30',
   ];
 
+  static const List<(int, String)> _ptLeadOptions = <(int, String)>[
+    (0, 'Tắt'),
+    (15, '15 phút'),
+    (30, '30 phút'),
+    (60, '60 phút'),
+  ];
+
   bool get _isMetric => _unit != 'inch / lbs';
+
+  NotificationsController? _maybeNotificationsController(
+    BuildContext context,
+  ) {
+    try {
+      return Provider.of<NotificationsController>(context, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -1042,6 +1061,23 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
     if (!_themeInitialized) {
       _themeInitialized = true;
       _isLightMode = Theme.of(context).brightness == Brightness.light;
+    }
+    if (!_prefsBound) {
+      _prefsBound = true;
+      final ctrl = _maybeNotificationsController(context);
+      if (ctrl != null) {
+        final prefs = ctrl.preferences;
+        _reminderEnabled = prefs.workoutRemindersEnabled;
+        _time = _timeOptions.contains(prefs.reminderTime)
+            ? prefs.reminderTime
+            : _time;
+        _ptBeforeMinutes = prefs.ptBeforeMinutes;
+        _nutritionRemindersEnabled = prefs.nutritionRemindersEnabled;
+        _coachUpdatesEnabled = prefs.coachUpdatesEnabled;
+        _messagesAndCallsEnabled =
+            prefs.messagesEnabled && prefs.callsEnabled;
+        _adminBroadcastsEnabled = prefs.adminBroadcastsEnabled;
+      }
     }
   }
 
@@ -1284,6 +1320,101 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 14),
+                MetaGymGlassCard(
+                  solid: _reduceBlur,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, bottom: 8),
+                        child: Text(
+                          'Tùy chọn thông báo chi tiết',
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Nhắc trước buổi tập PT 1:1',
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final option in _ptLeadOptions)
+                            ProfileFilterPill(
+                              key: Key('app-settings-pt-lead-${option.$1}'),
+                              label: option.$2,
+                              compact: true,
+                              selected: _ptBeforeMinutes == option.$1,
+                              onTap: () =>
+                                  setState(() => _ptBeforeMinutes = option.$1),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _buildWarmDivider(colors),
+                      _SettingToggleRow(
+                        switchKey: const Key(
+                          'app-settings-nutrition-notif-toggle',
+                        ),
+                        svgIcon: MetaGymIcons.actionNutrition,
+                        title: 'Nhắc ghi dinh dưỡng & uống nước',
+                        subtitle: 'Nhắc nhẹ vào 12:00 và 18:30 mỗi ngày',
+                        value: _nutritionRemindersEnabled,
+                        onChanged: (v) =>
+                            setState(() => _nutritionRemindersEnabled = v),
+                      ),
+                      _buildWarmDivider(colors),
+                      _SettingToggleRow(
+                        switchKey: const Key('app-settings-coach-notif-toggle'),
+                        svgIcon: MetaGymIcons.actionCoach,
+                        title: 'Cập nhật từ Coach',
+                        subtitle: 'Lịch tập, giáo trình và thực đơn mới',
+                        value: _coachUpdatesEnabled,
+                        onChanged: (v) =>
+                            setState(() => _coachUpdatesEnabled = v),
+                      ),
+                      _buildWarmDivider(colors),
+                      _SettingToggleRow(
+                        switchKey: const Key(
+                          'app-settings-message-notif-toggle',
+                        ),
+                        svgIcon: MetaGymIcons.commNotificationUnread,
+                        title: 'Tin nhắn & Cuộc gọi',
+                        subtitle: 'Thông báo tin nhắn mới và cuộc gọi nhỡ',
+                        value: _messagesAndCallsEnabled,
+                        onChanged: (v) =>
+                            setState(() => _messagesAndCallsEnabled = v),
+                      ),
+                      _buildWarmDivider(colors),
+                      _SettingToggleRow(
+                        switchKey: const Key(
+                          'app-settings-system-notif-toggle',
+                        ),
+                        svgIcon: MetaGymIcons.stateInfo,
+                        title: 'Thông báo hệ thống',
+                        subtitle: 'Bảo trì, ưu đãi và cập nhật từ Meta Gym',
+                        value: _adminBroadcastsEnabled,
+                        onChanged: (v) =>
+                            setState(() => _adminBroadcastsEnabled = v),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             bottomBar: SizedBox(
@@ -1301,6 +1432,21 @@ class _AppSettingsDetailPageState extends State<AppSettingsDetailPage> {
                   ),
                 ),
                 onPressed: () {
+                  final ctrl = _maybeNotificationsController(themedContext);
+                  if (ctrl != null) {
+                    ctrl.updatePreferences(
+                      NotificationPreferences(
+                        workoutRemindersEnabled: _reminderEnabled,
+                        reminderTime: _time,
+                        ptBeforeMinutes: _ptBeforeMinutes,
+                        nutritionRemindersEnabled: _nutritionRemindersEnabled,
+                        coachUpdatesEnabled: _coachUpdatesEnabled,
+                        messagesEnabled: _messagesAndCallsEnabled,
+                        callsEnabled: _messagesAndCallsEnabled,
+                        adminBroadcastsEnabled: _adminBroadcastsEnabled,
+                      ),
+                    );
+                  }
                   widget.onSave(_unit, _reminderEnabled, _time);
                   final nav = Navigator.of(themedContext);
                   if (nav.canPop()) {
@@ -1971,11 +2117,7 @@ class _BiometricSetupDialogState extends State<_BiometricSetupDialog> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_verified) ...[
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: colors.success,
-                  size: 20,
-                ),
+                MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_rounded),
                 const SizedBox(width: 6),
               ],
               Flexible(
@@ -2263,11 +2405,7 @@ class _SupportChannelOptionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: highlighted ? colors.primaryText : colors.textSecondary,
-              size: 20,
-            ),
+            MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
           ],
         ),
       ),

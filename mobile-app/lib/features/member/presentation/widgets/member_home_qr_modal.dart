@@ -100,7 +100,9 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: palette.success.withValues(alpha: 0.14),
+                    color: palette.success.withValues(
+                      alpha: isLight ? 0.12 : 0.16,
+                    ),
                     borderRadius: BorderRadius.circular(
                       MetaGymTheme.radiusFull,
                     ),
@@ -157,6 +159,7 @@ class _MemberQrCheckinDialogState extends State<_MemberQrCheckinDialog> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
+              border: isLight ? Border.all(color: palette.borderSolid) : null,
             ),
             child: QrImageView(
               data: 'METAGYM:CHECKIN:${widget.memberCode}:$_sessionToken',

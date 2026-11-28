@@ -5,12 +5,13 @@ import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_schedule_calendar.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/progress/data/member_photo_service.dart';
 import 'package:provider/provider.dart';
 
 import '../data/nutrition_tracking_api.dart';
-import 'meal_plans_page.dart';
+import 'member_coach_nutrition_page.dart';
 
 const _meals = {
   'BREAKFAST': 'Bữa sáng',
@@ -51,6 +52,209 @@ String _encodeEntryNotes(String? customMealLabel, String notes) {
   return '$_customMealPrefix$cleanLabel]\n$cleanNotes';
 }
 
+const Map<String, ({double per100g, double perServing})>
+_kVietnameseFoodKcal = <String, ({double per100g, double perServing})>{
+  'com gao lut': (per100g: 112, perServing: 180),
+  'gao lut': (per100g: 112, perServing: 180),
+  'com trang': (per100g: 130, perServing: 200),
+  'com tam': (per100g: 165, perServing: 550),
+  'com ga': (per100g: 170, perServing: 520),
+  'com': (per100g: 130, perServing: 200),
+  'uc ga': (per100g: 165, perServing: 250),
+  'dui ga': (per100g: 195, perServing: 240),
+  'thit ga': (per100g: 180, perServing: 250),
+  'thit bo': (per100g: 250, perServing: 300),
+  'thit heo': (per100g: 242, perServing: 290),
+  'thit lon': (per100g: 242, perServing: 290),
+  'suon nuong': (per100g: 260, perServing: 320),
+  'ca hoi': (per100g: 208, perServing: 280),
+  'ca ngu': (per100g: 132, perServing: 180),
+  'ca basa': (per100g: 120, perServing: 180),
+  'ca thu': (per100g: 205, perServing: 260),
+  'tom': (per100g: 99, perServing: 140),
+  'muc': (per100g: 92, perServing: 140),
+  'trung ga': (per100g: 155, perServing: 78),
+  'trung vit': (per100g: 185, perServing: 130),
+  'trung': (per100g: 155, perServing: 78),
+  'pho bo': (per100g: 115, perServing: 450),
+  'pho ga': (per100g: 105, perServing: 400),
+  'pho': (per100g: 110, perServing: 430),
+  'bun bo': (per100g: 125, perServing: 520),
+  'bun cha': (per100g: 145, perServing: 500),
+  'bun rieu': (per100g: 105, perServing: 420),
+  'bun thit nuong': (per100g: 140, perServing: 480),
+  'bun': (per100g: 110, perServing: 220),
+  'hu tieu': (per100g: 115, perServing: 420),
+  'mien ga': (per100g: 95, perServing: 350),
+  'mi tom': (per100g: 450, perServing: 350),
+  'banh mi': (per100g: 265, perServing: 350),
+  'banh cuon': (per100g: 140, perServing: 320),
+  'xoi': (per100g: 210, perServing: 380),
+  'chao': (per100g: 70, perServing: 260),
+  'khoai lang': (per100g: 86, perServing: 130),
+  'yen mach': (per100g: 389, perServing: 155),
+  'chuoi': (per100g: 89, perServing: 105),
+  'tao': (per100g: 52, perServing: 95),
+  'qua bo': (per100g: 160, perServing: 240),
+  'trai bo': (per100g: 160, perServing: 240),
+  'sua tuoi': (per100g: 62, perServing: 150),
+  'sua dau nanh': (per100g: 54, perServing: 130),
+  'sua chua': (per100g: 65, perServing: 100),
+  'whey': (per100g: 400, perServing: 120),
+  'dau phu': (per100g: 76, perServing: 115),
+  'dau hu': (per100g: 76, perServing: 115),
+  'bong cai xanh': (per100g: 34, perServing: 50),
+  'salad': (per100g: 40, perServing: 120),
+  'rau xanh': (per100g: 25, perServing: 50),
+  'rau': (per100g: 25, perServing: 50),
+  'dau phong': (per100g: 567, perServing: 170),
+  'hanh nhan': (per100g: 579, perServing: 175),
+  'ca phe sua': (per100g: 110, perServing: 180),
+  'tra sua': (per100g: 95, perServing: 320),
+  'nuoc cam': (per100g: 45, perServing: 110),
+};
+
+const Set<String> _kServingUnits = <String>{
+  'phần',
+  'cái',
+  'quả',
+  'bát',
+  'tô',
+  'ly',
+  'muỗng',
+  'miếng',
+  'hộp',
+  'gói',
+  'chai',
+  'lon',
+  'ổ',
+  'dĩa',
+  'đĩa',
+  'chén',
+};
+
+String _normalizeFoodKey(String input) {
+  const accented =
+      'àáạảãâầấậẩẫăằắặẳẵ'
+      'ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ'
+      'èéẹẻẽêềếệểễ'
+      'ÈÉẸẺẼÊỀẾỆỂỄ'
+      'ìíịỉĩÌÍỊỈĨ'
+      'òóọỏõôồốộổỗơờớợởỡ'
+      'ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ'
+      'ùúụủũưừứựửữ'
+      'ÙÚỤỦŨƯỪỨỰỬỮ'
+      'ỳýỵỷỹỲÝỴỶỸ'
+      'đĐ';
+  const plain =
+      'aaaaaaaaaaaaaaaaa'
+      'aaaaaaaaaaaaaaaaa'
+      'eeeeeeeeeee'
+      'eeeeeeeeeee'
+      'iiiiiiiiii'
+      'ooooooooooooooooo'
+      'ooooooooooooooooo'
+      'uuuuuuuuuuu'
+      'uuuuuuuuuuu'
+      'yyyyyyyyyy'
+      'dd';
+  final buffer = StringBuffer();
+  for (final rune in input.trim().runes) {
+    final ch = String.fromCharCode(rune);
+    final idx = accented.indexOf(ch);
+    buffer.write(idx >= 0 ? plain[idx] : ch.toLowerCase());
+  }
+  return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+/// Ước tính lượng calo (kcal) cho món ăn người dùng tự nhập dựa trên danh mục
+/// hiện có và bảng thực phẩm phổ biến. Trả về `null` nếu chưa đủ dữ liệu khớp.
+double? estimateCustomFoodKcal({
+  required String name,
+  required double quantity,
+  required String unit,
+  List<NutritionRecord> catalogFoods = const [],
+}) {
+  if (!quantity.isFinite || quantity < 0.01 || quantity > 10000) return null;
+  final normName = _normalizeFoodKey(name);
+  if (normName.isEmpty) return null;
+  final normUnit = unit.trim().toLowerCase();
+
+  if (normUnit == 'g' || normUnit == 'ml') {
+    String? bestCatalogKey;
+    double? bestPer100g;
+    for (final food in catalogFoods) {
+      final rawFoodName = (food['name'] ?? '').toString();
+      final normFood = _normalizeFoodKey(rawFoodName);
+      final per100g = food['kcalPer100g'];
+      if (normFood.isEmpty || per100g is! num || per100g <= 0) continue;
+      final matches =
+          normName == normFood ||
+          ' $normName '.contains(' $normFood ') ||
+          (normName.length >= 4 && normFood.contains(normName));
+      if (matches &&
+          (bestCatalogKey == null || normFood.length > bestCatalogKey.length)) {
+        bestCatalogKey = normFood;
+        bestPer100g = per100g.toDouble();
+      }
+    }
+    if (bestPer100g != null) {
+      return (bestPer100g * quantity) / 100.0;
+    }
+  }
+
+  String? bestKey;
+  ({double per100g, double perServing})? bestMatch;
+  final padded = ' $normName ';
+  for (final entry in _kVietnameseFoodKcal.entries) {
+    final kw = entry.key;
+    final matches =
+        normName == kw ||
+        padded.contains(' $kw ') ||
+        (kw.length >= 4 && normName.contains(kw));
+    if (matches && (bestKey == null || kw.length > bestKey.length)) {
+      bestKey = kw;
+      bestMatch = entry.value;
+    }
+  }
+  if (bestMatch == null) return null;
+
+  if (normUnit == 'g' || normUnit == 'ml') {
+    return (bestMatch.per100g * quantity) / 100.0;
+  }
+  if (_kServingUnits.contains(normUnit)) {
+    return bestMatch.perServing * quantity;
+  }
+  return null;
+}
+
+/// Lọc danh sách món từ danh mục theo từ khóa nhập (không phân biệt dấu),
+/// ưu tiên khớp tiền tố trước khi khớp giữa chuỗi.
+List<NutritionRecord> filterCatalogFoods(
+  String query,
+  List<NutritionRecord> catalogFoods, {
+  int limit = 5,
+}) {
+  final normQuery = _normalizeFoodKey(query);
+  if (normQuery.isEmpty || catalogFoods.isEmpty) return const [];
+  final prefixMatches = <NutritionRecord>[];
+  final containsMatches = <NutritionRecord>[];
+  for (final food in catalogFoods) {
+    final normName = _normalizeFoodKey((food['name'] ?? '').toString());
+    if (normName.isEmpty || !normName.contains(normQuery)) continue;
+    if (normName.startsWith(normQuery)) {
+      prefixMatches.add(food);
+    } else {
+      containsMatches.add(food);
+    }
+  }
+  int byName(NutritionRecord a, NutritionRecord b) =>
+      (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString());
+  prefixMatches.sort(byName);
+  containsMatches.sort(byName);
+  return [...prefixMatches, ...containsMatches].take(limit).toList();
+}
+
 ({String mealType, String? customLabel}) _resolveMealType(String rawInput) {
   final trimmed = rawInput.trim();
   final normalized = trimmed.toLowerCase();
@@ -75,23 +279,45 @@ String _encodeEntryNotes(String? customMealLabel, String notes) {
   return (mealType: 'SNACK', customLabel: trimmed);
 }
 
-// Warm Smoked Glass tokens synced with MetaGymGlassCard / MetaGymHeroGlassCard /
-// MetaGymMetricPanel & AuthGlassField.
-const _warmGlassBorder = Color(0xA3A79D92);
-const _warmCardBorder = Color(0x3DA79D92);
-const _warmRecessedFill = Color(0x80211E1C);
-const _warmRecessedFocusedFill = Color(0x9E28231F);
-const _warmRecessedBorder = Color(0x9A8C8176);
-const _warmDivider = Color(0x28A79D92);
-const _warmDropdownSurface = Color(0xFF28231F);
-const _warmDialogSurface = Color(0xF0241F1B);
-const _warmDockSurface = Color(0xE01A1715);
-const _warmDockBorder = Color(0x3DFFF6EA);
-const _warmTextPrimary = Color(0xFFF7F9FC);
-const _warmTextSecondary = Color(0xFFB8B0A8);
-const _warmLabelText = Color(0xFFD5CCBF);
-const _warmHintText = Color(0xA6C4BAAE);
-const _warmOrangeText = Color(0xFFFF7852);
+class _NutritionTokens {
+  const _NutritionTokens({
+    required this.isLight,
+    required this.palette,
+    required this.colors,
+  });
+
+  factory _NutritionTokens.of(BuildContext context) => _NutritionTokens(
+    isLight: MetaGymTheme.isLightPalette(context),
+    palette: MetaGymTheme.paletteOf(context),
+    colors: MetaGymColors.of(context),
+  );
+
+  final bool isLight;
+  final MetaGymPalette palette;
+  final MetaGymColors colors;
+
+  Color get glassBorder => colors.overlayGlassBorder;
+  Color get cardBorder => colors.liquidGlassBorder;
+  Color get recessedFill => palette.metricPanelBg;
+  Color get recessedFocusedFill =>
+      isLight ? const Color(0xFFE3EAF4) : const Color(0x9E28231F);
+  Color get recessedBorder => palette.metricPanelBorder;
+  Color get divider => palette.borderSolid.withValues(alpha: 0.7);
+  Color get dropdownSurface => colors.surface;
+  Color get dialogSurface => colors.overlayGlass;
+  Color get dockSurface => isLight ? colors.overlayGlass : const Color(0xE01A1715);
+  Color get dockBorder => isLight ? palette.borderSolid : const Color(0x3DFFF6EA);
+  Color get textPrimary => palette.textPrimary;
+  Color get textSecondary => palette.textSecondary;
+  Color get labelText => isLight ? palette.textSecondary : const Color(0xFFD5CCBF);
+  Color get hintText =>
+      isLight ? palette.textSecondary.withValues(alpha: 0.7) : const Color(0xA6C4BAAE);
+  Color get orangeText => isLight ? palette.primaryText : const Color(0xFFFF7852);
+  Color get success => palette.success;
+  Color get warning => palette.warning;
+  Color get error => palette.error;
+  Color get reflection => palette.reflection;
+}
 
 DateTime _vietnamToday() {
   final vn = DateTime.now().toUtc().add(const Duration(hours: 7));
@@ -104,43 +330,57 @@ TimeOfDay _vietnamNowTime() {
 }
 
 ThemeData _warmPickerTheme(BuildContext context) {
+  final t = _NutritionTokens.of(context);
   return Theme.of(context).copyWith(
-    colorScheme: const ColorScheme.dark(
-      primary: MetaGymTheme.brandOrange,
-      onPrimary: Colors.white,
-      surface: _warmDropdownSurface,
-      onSurface: _warmTextPrimary,
-      secondary: MetaGymTheme.reflectionBlue,
-      onSecondary: Color(0xFF071A2C),
-    ),
+    colorScheme: t.isLight
+        ? ColorScheme.light(
+            primary: MetaGymTheme.brandOrange,
+            onPrimary: Colors.white,
+            surface: t.dropdownSurface,
+            onSurface: t.textPrimary,
+            secondary: t.reflection,
+            onSecondary: Colors.white,
+          )
+        : ColorScheme.dark(
+            primary: MetaGymTheme.brandOrange,
+            onPrimary: Colors.white,
+            surface: const Color(0xFF28231F),
+            onSurface: t.textPrimary,
+            secondary: MetaGymTheme.reflectionBlue,
+            onSecondary: const Color(0xFF071A2C),
+          ),
     dialogTheme: DialogThemeData(
-      backgroundColor: _warmDialogSurface,
+      backgroundColor: t.dialogSurface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: const BorderSide(color: _warmGlassBorder, width: 1.1),
+        side: BorderSide(color: t.glassBorder, width: 1.1),
       ),
     ),
     datePickerTheme: DatePickerThemeData(
-      backgroundColor: _warmDialogSurface,
+      backgroundColor: t.dialogSurface,
       surfaceTintColor: Colors.transparent,
-      headerBackgroundColor: const Color(0xFF302924),
-      headerForegroundColor: _warmTextPrimary,
+      headerBackgroundColor: t.isLight
+          ? t.palette.surfaceRaised
+          : const Color(0xFF302924),
+      headerForegroundColor: t.textPrimary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: const BorderSide(color: _warmGlassBorder, width: 1.1),
+        side: BorderSide(color: t.glassBorder, width: 1.1),
       ),
     ),
     timePickerTheme: TimePickerThemeData(
-      backgroundColor: _warmDialogSurface,
-      dialBackgroundColor: const Color(0xFF302924),
-      hourMinuteColor: const Color(0x80211E1C),
-      hourMinuteTextColor: _warmTextPrimary,
-      dayPeriodColor: const Color(0x22FF5E36),
-      dayPeriodTextColor: _warmTextPrimary,
+      backgroundColor: t.dialogSurface,
+      dialBackgroundColor: t.isLight
+          ? t.palette.surfaceRaised
+          : const Color(0xFF302924),
+      hourMinuteColor: t.recessedFill,
+      hourMinuteTextColor: t.textPrimary,
+      dayPeriodColor: t.palette.chipActiveBg,
+      dayPeriodTextColor: t.textPrimary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: const BorderSide(color: _warmGlassBorder, width: 1.1),
+        side: BorderSide(color: t.glassBorder, width: 1.1),
       ),
     ),
   );
@@ -158,14 +398,13 @@ class NutritionTrackingPage extends StatefulWidget {
 class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
   late final NutritionTrackingApi _api;
   DateTime _date = _vietnamToday();
+  MetaGymCalendarMode _calendarMode = MetaGymCalendarMode.week;
+  final Map<String, int> _dayEntryCounts = {};
   NutritionRecord? _data;
   String? _error;
   bool _loading = true;
 
   String get _dateKey => DateFormat('yyyy-MM-dd').format(_date);
-
-  bool get _isToday =>
-      _dateKey == DateFormat('yyyy-MM-dd').format(_vietnamToday());
 
   @override
   void initState() {
@@ -182,7 +421,13 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     });
     try {
       final data = await _api.day(date);
-      if (mounted && date == _dateKey) setState(() => _data = data);
+      if (mounted && date == _dateKey) {
+        final count = (data['entries'] as List? ?? const []).length;
+        setState(() {
+          _data = data;
+          _dayEntryCounts[date] = count;
+        });
+      }
     } catch (error) {
       if (mounted && date == _dateKey) {
         setState(
@@ -196,43 +441,31 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     }
   }
 
-  Future<void> _shiftDate(int deltaDays) async {
+  Future<void> _selectCalendarDate(DateTime date) async {
     final today = _vietnamToday();
-    final next = DateTime(_date.year, _date.month, _date.day + deltaDays);
-    if (next.isAfter(today)) return;
+    final target = metaGymDateOnly(date);
+    if (target.isAfter(today) || metaGymIsoDate(target) == _dateKey) return;
     setState(() {
-      _date = next;
+      _date = target;
       _data = null;
     });
     await _load();
   }
 
-  Future<void> _pickDate() async {
-    final today = _vietnamToday();
-    final initial = _date.isAfter(today) ? today : _date;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2000),
-      lastDate: today,
-      builder: (context, child) =>
-          Theme(data: _warmPickerTheme(context), child: child!),
-    );
-    if (picked != null) {
-      final normalized = DateTime(picked.year, picked.month, picked.day);
-      setState(() {
-        _date = normalized;
-        _data = null;
-      });
-      await _load();
-    }
-  }
-
-  Future<void> _openForm({String? meal, NutritionRecord? entry}) async {
+  Future<void> _openForm({
+    String? meal,
+    String? initialMealLabel,
+    NutritionRecord? entry,
+  }) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            _EntryForm(api: _api, date: _dateKey, meal: meal, entry: entry),
+        builder: (_) => _EntryForm(
+          api: _api,
+          date: _dateKey,
+          meal: meal,
+          initialMealLabel: initialMealLabel,
+          entry: entry,
+        ),
       ),
     );
     if (saved == true) await _load();
@@ -262,128 +495,34 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     return buffer.toString();
   }
 
-  String _dayLabel() {
-    const weekdays = [
-      'Thứ Hai',
-      'Thứ Ba',
-      'Thứ Tư',
-      'Thứ Năm',
-      'Thứ Sáu',
-      'Thứ Bảy',
-      'Chủ nhật',
-    ];
-    final label = DateFormat('dd/MM/yyyy').format(_date);
-    return _isToday
-        ? 'Hôm nay · $label'
-        : '${weekdays[_date.weekday - 1]} · $label';
-  }
-
-  Widget _dateArrowButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback? onTap,
-  }) {
-    final enabled = onTap != null;
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            child: Center(
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: enabled ? const Color(0x40211E1C) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(11),
-                  border: enabled
-                      ? Border.all(color: const Color(0x40A79D92), width: 1)
-                      : null,
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: enabled ? _warmTextPrimary : const Color(0x45F7F9FC),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  _NutritionTokens get _t => _NutritionTokens.of(context);
 
   Widget _dateSelector() => MetaGymGlassCard(
     solid: false,
     borderRadius: BorderRadius.circular(MetaGymTheme.radiusCard),
-    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+    padding: const EdgeInsets.all(14),
     child: _dateNavigation(),
   );
 
-  Widget _dateNavigation() => Row(
-    key: const Key('nutrition-date-selector'),
-    children: [
-      _dateArrowButton(
-        icon: Icons.chevron_left_rounded,
-        tooltip: 'Ngày trước',
-        onTap: _loading ? null : () => _shiftDate(-1),
-      ),
-      Expanded(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-          onTap: _loading ? null : _pickDate,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.calendar_today_rounded,
-                    size: 16,
-                    color: MetaGymTheme.reflectionBlue,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.center,
-                      child: Text(
-                        _dayLabel(),
-                        maxLines: 1,
-                        style: const TextStyle(
-                          color: _warmTextPrimary,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: MetaGymTheme.tabularFigures,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: _warmTextSecondary,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      _dateArrowButton(
-        icon: Icons.chevron_right_rounded,
-        tooltip: 'Ngày sau',
-        onTap: (_loading || _isToday) ? null : () => _shiftDate(1),
-      ),
-    ],
-  );
+  Widget _dateNavigation() {
+    final t = _t;
+    final today = _vietnamToday();
+    return MetaGymScheduleCalendar(
+      wrapInHeroCard: false,
+      selectorKey: const Key('nutrition-date-selector'),
+      selectedDate: _date,
+      today: today,
+      maxDate: today,
+      mode: _calendarMode,
+      onModeChanged: (mode) => setState(() => _calendarMode = mode),
+      onSelectDate: (picked) {
+        if (!_loading) _selectCalendarDate(picked);
+      },
+      badgeCountForDay: (day) =>
+          (_dayEntryCounts[metaGymIsoDate(day)] ?? 0).clamp(0, 3),
+      badgeColorForDay: (_) => t.success,
+    );
+  }
 
   Widget _summary(
     List<NutritionRecord> entries,
@@ -391,21 +530,37 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     double kcal,
     bool canWrite,
   ) {
+    final t = _t;
     final isExpired = _data?['hasActiveMembership'] == false;
     final showNotice = isExpired || !canWrite;
+    final today = _vietnamToday();
     return MetaGymHeroGlassCard(
       key: const Key('nutrition-day-summary'),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _dateNavigation(),
-          const SizedBox(height: 6),
+          MetaGymScheduleCalendar(
+            wrapInHeroCard: false,
+            selectorKey: const Key('nutrition-date-selector'),
+            selectedDate: _date,
+            today: today,
+            maxDate: today,
+            mode: _calendarMode,
+            onModeChanged: (mode) => setState(() => _calendarMode = mode),
+            onSelectDate: (picked) {
+              if (!_loading) _selectCalendarDate(picked);
+            },
+            badgeCountForDay: (day) =>
+                (_dayEntryCounts[metaGymIsoDate(day)] ?? 0).clamp(0, 3),
+            badgeColorForDay: (_) => t.success,
+          ),
+          const SizedBox(height: 10),
           Container(
             key: const Key('nutrition-day-metrics'),
-            padding: const EdgeInsets.only(top: 6),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: _warmDivider)),
+            padding: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: t.divider)),
             ),
             child: IntrinsicHeight(
               child: Row(
@@ -416,7 +571,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       label: 'Tổng calo',
                       value: known.isEmpty ? '—' : '${_formatKcal(kcal)} kcal',
                       icon: Icons.bolt_rounded,
-                      color: MetaGymTheme.success,
+                      color: t.success,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -425,8 +580,8 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       label: 'Món đã ghi',
                       value: '${entries.length} món',
                       icon: Icons.restaurant_rounded,
-                      color: MetaGymTheme.reflectionBlue,
-                      valueColor: _warmTextPrimary,
+                      color: t.reflection,
+                      valueColor: t.textPrimary,
                     ),
                   ),
                 ],
@@ -434,41 +589,35 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
             ),
           ),
           if (showNotice) ...[
-            const Padding(
-              padding: EdgeInsets.only(top: 10, bottom: 8),
-              child: Divider(height: 1, thickness: 1, color: _warmDivider),
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 8),
+              child: Divider(height: 1, thickness: 1, color: t.divider),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
               decoration: BoxDecoration(
-                color: _warmRecessedFill,
+                color: t.recessedFill,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isExpired
-                      ? MetaGymTheme.warning.withValues(alpha: 0.42)
-                      : _warmDivider,
+                      ? t.warning.withValues(alpha: 0.42)
+                      : t.recessedBorder,
                   width: 1,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    isExpired
+                  MetaGymResolvedIcon(isExpired
                         ? Icons.lock_outline_rounded
-                        : Icons.history_toggle_off_rounded,
-                    size: 16,
-                    color: isExpired
-                        ? MetaGymTheme.warning
-                        : _warmTextSecondary,
-                  ),
+                        : Icons.history_toggle_off_rounded, size: 16, fallbackColor: isExpired ? t.warning : t.textSecondary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       isExpired
                           ? 'Gói Gym không còn hiệu lực · chỉ xem lịch sử.'
                           : 'Ngày đã qua · chỉ xem, không sửa hoặc xóa.',
-                      style: const TextStyle(
-                        color: _warmLabelText,
+                      style: TextStyle(
+                        color: t.labelText,
                         fontSize: 12.5,
                         height: 1.35,
                       ),
@@ -489,65 +638,70 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     required IconData icon,
     required Color color,
     Color? valueColor,
-  }) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-    decoration: BoxDecoration(
-      color: _warmRecessedFill,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: const Color(0x5C8C8176), width: 1),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13.5, color: color),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _warmTextSecondary,
-                  fontSize: 11.5,
-                  height: 1.15,
-                  fontWeight: FontWeight.w600,
+  }) {
+    final t = _t;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: t.recessedFill,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: t.recessedBorder, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MetaGymResolvedIcon(icon, size: 13.5, fallbackColor: color),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: t.textSecondary,
+                    fontSize: 11.5,
+                    height: 1.15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.center,
-          child: Text(
-            value,
-            maxLines: 1,
-            style: TextStyle(
-              color: value == '—' ? _warmTextSecondary : (valueColor ?? color),
-              fontSize: 19,
-              height: 1.15,
-              fontWeight: FontWeight.w800,
-              fontFeatures: MetaGymTheme.tabularFigures,
+            ],
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                color: value == '—' ? t.textSecondary : (valueColor ?? color),
+                fontSize: 19,
+                height: 1.15,
+                fontWeight: FontWeight.w800,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   void _openMealPlans() {
-    Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (_) => const MealPlansPage()));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const MemberCoachNutritionPage()),
+    );
   }
 
   Widget _coachSummary(Map? plan) {
+    final t = _t;
     final relationship = _data?['relationshipStatus'];
     final title = plan?['title'] as String?;
     final canOpenPlan = relationship != 'NONE' && !_loading;
@@ -558,12 +712,12 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
         ? 'Coach đang tạm ngưng.'
         : (title ?? 'Thực đơn sẽ hiện khi Coach công bố.');
     if (relationship == 'NONE' && plan == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Text(
           'Bạn có thể tự ghi món, không cần thực đơn.',
           style: TextStyle(
-            color: _warmTextSecondary,
+            color: t.textSecondary,
             fontSize: 12.5,
             height: 1.4,
           ),
@@ -571,9 +725,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
       );
     }
     final isActivePlan = title != null && relationship != 'PAUSED';
-    final statusColor = isActivePlan
-        ? MetaGymTheme.success
-        : MetaGymTheme.warning;
+    final statusColor = isActivePlan ? t.success : t.warning;
     final statusLabel = isActivePlan
         ? 'Đang áp dụng'
         : relationship == 'PAUSED'
@@ -593,9 +745,12 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0x28F5B041),
+                  color: t.warning.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0x66F5B041), width: 1),
+                  border: Border.all(
+                    color: t.warning.withValues(alpha: 0.38),
+                    width: 1,
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: const MetaGymSvgIcon(
@@ -616,8 +771,8 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                             titleLine,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _warmTextSecondary,
+                            style: TextStyle(
+                              color: t.textSecondary,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -630,7 +785,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                             vertical: 1.5,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.16),
+                            color: statusColor.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
                               color: statusColor.withValues(alpha: 0.42),
@@ -653,7 +808,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isActivePlan ? _warmTextPrimary : _warmLabelText,
+                        color: isActivePlan ? t.textPrimary : t.labelText,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         height: 1.25,
@@ -670,11 +825,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     minHeight: 48,
                   ),
                   onPressed: _openMealPlans,
-                  icon: const Icon(
-                    Icons.chevron_right_rounded,
-                    size: 22,
-                    color: _warmLabelText,
-                  ),
+                  icon: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 22, fallbackIcon: Icons.chevron_right_rounded),
                 ),
             ],
           ),
@@ -685,6 +836,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
   }
 
   Widget _comparisonNote() {
+    final t = _t;
     final comparisons = _data?['comparisons'] as Map?;
     if (comparisons == null || (_data?['entries'] as List? ?? []).isEmpty) {
       return const SizedBox.shrink();
@@ -699,21 +851,17 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
       padding: const EdgeInsets.only(top: 8),
       child: Column(
         children: [
-          const Divider(height: 1, thickness: 1, color: _warmDivider),
+          Divider(height: 1, thickness: 1, color: t.divider),
           const SizedBox(height: 7),
-          const Row(
+          Row(
             children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 15,
-                color: MetaGymTheme.reflectionBlue,
-              ),
-              SizedBox(width: 7),
+              MetaGymSvgIcon(MetaGymIcons.commonInfo, size: 15, fallbackIcon: Icons.info_outline_rounded),
+              const SizedBox(width: 7),
               Expanded(
                 child: Text(
                   'Đối chiếu cần món danh mục và khẩu phần gram.',
                   style: TextStyle(
-                    color: _warmLabelText,
+                    color: t.labelText,
                     fontSize: 12,
                     height: 1.3,
                   ),
@@ -726,28 +874,31 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     );
   }
 
-  (String, IconData, Color) _mealStyle(String meal) => switch (meal) {
-    'BREAKFAST' => (
-      MetaGymIcons.mealBreakfast,
-      Icons.wb_twilight_rounded,
-      MetaGymTheme.coachAvatarBackground,
-    ),
-    'LUNCH' => (
-      MetaGymIcons.mealLunch,
-      Icons.wb_sunny_rounded,
-      MetaGymTheme.success,
-    ),
-    'DINNER' => (
-      MetaGymIcons.mealDinner,
-      Icons.nights_stay_rounded,
-      MetaGymTheme.reflectionBlue,
-    ),
-    _ => (
-      MetaGymIcons.mealSnack,
-      Icons.local_cafe_rounded,
-      MetaGymTheme.brandOrange,
-    ),
-  };
+  (String, IconData, Color) _mealStyle(String meal) {
+    final t = _t;
+    return switch (meal) {
+      'BREAKFAST' => (
+        MetaGymIcons.mealBreakfast,
+        Icons.wb_twilight_rounded,
+        t.warning,
+      ),
+      'LUNCH' => (
+        MetaGymIcons.mealLunch,
+        Icons.wb_sunny_rounded,
+        t.success,
+      ),
+      'DINNER' => (
+        MetaGymIcons.mealDinner,
+        Icons.nights_stay_rounded,
+        t.reflection,
+      ),
+      _ => (
+        MetaGymIcons.mealSnack,
+        Icons.local_cafe_rounded,
+        t.orangeText,
+      ),
+    };
+  }
 
   Future<void> _onEditMealSection({
     required String mealType,
@@ -755,65 +906,106 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     required List<NutritionRecord> mealEntries,
   }) async {
     if (mealEntries.isEmpty) {
-      await _openForm(meal: mealType);
+      await _openForm(meal: mealType, initialMealLabel: title);
       return;
     }
     if (mealEntries.length == 1) {
-      await _openForm(meal: mealType, entry: mealEntries.first);
+      await _openForm(
+        meal: mealType,
+        initialMealLabel: title,
+        entry: mealEntries.first,
+      );
       return;
     }
-    final picked = await showModalBottomSheet<NutritionRecord>(
+    final t = _t;
+    final picked = await showModalBottomSheet<Object?>(
       context: context,
-      backgroundColor: _warmDialogSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        side: BorderSide(color: _warmCardBorder, width: 1),
+      backgroundColor: t.dialogSurface,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: t.cardBorder, width: 1),
       ),
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Chọn món cần sửa · $title',
-                style: const TextStyle(
-                  color: _warmTextPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+      builder: (sheetContext) {
+        final st = _NutritionTokens.of(sheetContext);
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Chọn món cần sửa · $title',
+                  style: TextStyle(
+                    color: st.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              for (final entry in mealEntries)
+                const SizedBox(height: 12),
+                for (final entry in mealEntries)
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    leading: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 18, fallbackIcon: Icons.edit_outlined),
+                    title: Text(
+                      '${entry['mealName'] ?? entry['foodName'] ?? 'Món ăn'}',
+                      style: TextStyle(
+                        color: st.textPrimary,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      [
+                        if (entry['quantity'] != null)
+                          '${_formatAmount(entry['quantity'])} ${entry['unit'] ?? ''}'
+                              .trim(),
+                        if ((entry['kcal'] ?? entry['calories']) != null)
+                          '${_formatAmount(entry['kcal'] ?? entry['calories'])} kcal',
+                      ].join(' · '),
+                      style: TextStyle(
+                        color: st.textSecondary,
+                        fontSize: 12,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                    onTap: () => Navigator.pop(sheetContext, entry),
+                  ),
+                const SizedBox(height: 4),
+                Divider(height: 1, thickness: 1, color: st.divider),
+                const SizedBox(height: 4),
                 ListTile(
+                  key: Key('nutrition-sheet-add-$mealType'),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  leading: const Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: _warmLabelText,
-                  ),
+                  leading: MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 20, fallbackIcon: Icons.add_circle_outline_rounded),
                   title: Text(
-                    '${entry['mealName'] ?? entry['foodName'] ?? 'Món ăn'}',
-                    style: const TextStyle(
-                      color: _warmTextPrimary,
+                    'Thêm món mới vào $title',
+                    style: TextStyle(
+                      color: st.orangeText,
                       fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  onTap: () => Navigator.pop(sheetContext, entry),
+                  onTap: () => Navigator.pop(sheetContext, 'ADD_NEW'),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
-    if (picked != null && mounted) {
-      await _openForm(meal: mealType, entry: picked);
+    if (!mounted || picked == null) return;
+    if (picked == 'ADD_NEW') {
+      await _openForm(meal: mealType, initialMealLabel: title);
+    } else if (picked is NutritionRecord) {
+      await _openForm(meal: mealType, initialMealLabel: title, entry: picked);
     }
   }
 
@@ -826,6 +1018,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     required Map? comparison,
     required bool canWrite,
   }) {
+    final t = _t;
     final (svgAsset, icon, accentColor) = _mealStyle(mealType);
     final editable = canWrite && !_loading;
     final matchedEntryIds = <String>{};
@@ -869,7 +1062,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.16),
+                  color: accentColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(11),
                   border: Border.all(
                     color: accentColor.withValues(alpha: 0.36),
@@ -889,8 +1082,8 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _warmTextPrimary,
+                      style: TextStyle(
+                        color: t.textPrimary,
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),
@@ -900,8 +1093,8 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                         '${mealEntries.length} món',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _warmTextSecondary,
+                        style: TextStyle(
+                          color: t.textSecondary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           fontFeatures: MetaGymTheme.tabularFigures,
@@ -910,7 +1103,41 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   ],
                 ),
               ),
-              if (editable)
+              if (editable) ...[
+                Tooltip(
+                  message: 'Thêm món vào $title',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: Key('nutrition-add-meal-$sectionKey'),
+                      onTap: () =>
+                          _openForm(meal: mealType, initialMealLabel: title),
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: t.palette.chipActiveBg,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: MetaGymTheme.brandOrange.withValues(
+                                  alpha: 0.45,
+                                ),
+                                width: 0.9,
+                              ),
+                            ),
+                            child: MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 19, fallbackIcon: Icons.add_rounded),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 Tooltip(
                   message: 'Sửa $title',
                   child: Material(
@@ -932,10 +1159,10 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                             height: 34,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: _warmRecessedFill,
+                              color: t.recessedFill,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: const Color(0x55A79D92),
+                                color: t.recessedBorder,
                                 width: 0.9,
                               ),
                             ),
@@ -950,16 +1177,16 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     ),
                   ),
                 ),
+              ],
             ],
           ),
           if (rows.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.only(top: 10),
-              child: Divider(height: 1, thickness: 1, color: _warmDivider),
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Divider(height: 1, thickness: 1, color: t.divider),
             ),
             for (var index = 0; index < rows.length; index++) ...[
-              if (index > 0)
-                const Divider(height: 1, thickness: 1, color: _warmDivider),
+              if (index > 0) Divider(height: 1, thickness: 1, color: t.divider),
               rows[index],
             ],
           ],
@@ -968,133 +1195,145 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     );
   }
 
-  Widget _emptyMealsCard(bool canWrite) => _surface(
-    key: const Key('nutrition-empty-meals'),
-    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
-    child: Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: const Color(0x20FF5E36),
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: const Color(0x45FF5E36)),
+  Widget _emptyMealsCard(bool canWrite) {
+    final t = _t;
+    return _surface(
+      key: const Key('nutrition-empty-meals'),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: t.palette.chipActiveBg,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(
+                color: MetaGymTheme.primary.withValues(alpha: 0.35),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const MetaGymSvgIcon(
+              MetaGymIcons.emptyNutrition,
+              size: 22,
+              fallbackIcon: Icons.restaurant_menu_rounded,
+            ),
           ),
-          alignment: Alignment.center,
-          child: const MetaGymSvgIcon(
-            MetaGymIcons.emptyNutrition,
-            size: 22,
-            fallbackIcon: Icons.restaurant_menu_rounded,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chưa có bữa ăn nào',
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  canWrite
+                      ? 'Nhấn "Ghi lại bữa ăn" bên dưới để thêm bữa trưa, meal trước tập hoặc bất kỳ bữa nào.'
+                      : 'Không có món ăn nào được ghi trong ngày này.',
+                  style: TextStyle(
+                    color: t.textSecondary,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+    );
+  }
+
+  Widget _plannedSuggestion(NutritionRecord item, {Map? difference}) {
+    final t = _t;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Text(
-                'Chưa có bữa ăn nào',
-                style: TextStyle(
-                  color: _warmTextPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: t.warning.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: t.warning.withValues(alpha: 0.36)),
+                ),
+                alignment: Alignment.center,
+                child: const MetaGymSvgIcon(
+                  MetaGymIcons.nutritionCoachPlan,
+                  size: 16,
+                  fallbackIcon: Icons.restaurant_menu_rounded,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                canWrite
-                    ? 'Nhấn "Ghi lại bữa ăn" bên dưới để thêm bữa trưa, meal trước tập hoặc bất kỳ bữa nào.'
-                    : 'Không có món ăn nào được ghi trong ngày này.',
-                style: const TextStyle(
-                  color: _warmTextSecondary,
-                  fontSize: 12.5,
-                  height: 1.4,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${item['foodName']} · ${item['grams']} g',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: t.labelText,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: t.warning.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: t.warning.withValues(alpha: 0.38),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  'Gợi ý',
+                  style: TextStyle(
+                    color: t.warning,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _plannedSuggestion(NutritionRecord item, {Map? difference}) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0x20F5B041),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: const Color(0x42F5B041)),
-              ),
-              alignment: Alignment.center,
-              child: const MetaGymSvgIcon(
-                MetaGymIcons.nutritionCoachPlan,
-                size: 16,
-                fallbackIcon: Icons.restaurant_menu_rounded,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
+          if (difference != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 38, top: 3),
               child: Text(
-                '${item['foodName']} · ${item['grams']} g',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _warmLabelText,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w500,
+                'Đã ghi ${_formatAmount(difference['actualGrams'])} g · lệch ${_deltaAmount(difference['deltaGrams'])} g',
+                style: TextStyle(
+                  color: t.textSecondary,
+                  fontSize: 12,
                   fontFeatures: MetaGymTheme.tabularFigures,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0x1AF5B041),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: const Color(0x45F5B041), width: 1),
-              ),
-              child: const Text(
-                'Gợi ý',
-                style: TextStyle(
-                  color: MetaGymTheme.coachAvatarBackground,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (difference != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 38, top: 3),
-            child: Text(
-              'Đã ghi ${_formatAmount(difference['actualGrams'])} g · lệch ${_deltaAmount(difference['deltaGrams'])} g',
-              style: const TextStyle(
-                color: _warmTextSecondary,
-                fontSize: 12,
-                fontFeatures: MetaGymTheme.tabularFigures,
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   Widget _mealEntry(
     NutritionRecord entry, {
     required Map? comparison,
     required bool canWrite,
   }) {
+    final t = _t;
     final difference = _differenceFor(comparison, entry);
     final mealName = (entry['mealName'] ?? entry['foodName'] ?? 'Món ăn')
         .toString();
@@ -1113,9 +1352,9 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: const Color(0x222ECC71),
+              color: t.success.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: const Color(0x452ECC71)),
+              border: Border.all(color: t.success.withValues(alpha: 0.38)),
             ),
             alignment: Alignment.center,
             child: const MetaGymSvgIcon(
@@ -1134,8 +1373,8 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                   amount.isEmpty ? mealName : '$mealName · $amount',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _warmTextPrimary,
+                  style: TextStyle(
+                    color: t.textPrimary,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w600,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -1145,18 +1384,18 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                 if (entryKcal != null)
                   Text(
                     '${_formatAmount(entryKcal)} kcal',
-                    style: const TextStyle(
-                      color: MetaGymTheme.success,
+                    style: TextStyle(
+                      color: t.success,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
                   )
                 else
-                  const Text(
+                  Text(
                     'Nhập thủ công',
                     style: TextStyle(
-                      color: _warmTextSecondary,
+                      color: t.textSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1167,8 +1406,8 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     'Gợi ý ${_formatAmount(difference['suggestedGrams'])} g · lệch ${_deltaAmount(difference['deltaGrams'])} g',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: _warmTextSecondary,
+                    style: TextStyle(
+                      color: t.textSecondary,
                       fontSize: 12,
                       fontFeatures: MetaGymTheme.tabularFigures,
                     ),
@@ -1177,14 +1416,33 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
               ],
             ),
           ),
+          if (canWrite) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: t.recessedFill,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: t.recessedBorder, width: 0.8),
+              ),
+              child: MetaGymSvgIcon(MetaGymIcons.commonEdit, size: 15, fallbackIcon: Icons.edit_outlined),
+            ),
+          ],
         ],
       ),
     );
     if (!canWrite) return content;
+    final parsedNotes = _parseEntryNotes(entry['notes'] as String?);
     return InkWell(
       key: Key('nutrition-entry-${entry['id']}'),
       borderRadius: BorderRadius.circular(12),
-      onTap: () => _openForm(meal: entry['mealType'] as String?, entry: entry),
+      onTap: () => _openForm(
+        meal: entry['mealType'] as String?,
+        initialMealLabel: parsedNotes.mealLabel,
+        entry: entry,
+      ),
       child: content,
     );
   }
@@ -1214,75 +1472,74 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     return '$prefix${_formatAmount(value.abs())}';
   }
 
-  Widget _errorStateCard() => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: _surface(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: MetaGymTheme.dangerCoral.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: MetaGymTheme.dangerCoral.withValues(alpha: 0.40),
+  Widget _errorStateCard() {
+    final t = _t;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: _surface(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: t.error.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: t.error.withValues(alpha: 0.40),
+                    ),
+                  ),
+                  child: MetaGymSvgIcon(MetaGymIcons.stateOffline, size: 20, fallbackIcon: Icons.cloud_off_rounded),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: t.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Kiểm tra kết nối mạng rồi thử tải lại.',
+                        style: TextStyle(
+                          color: t.textSecondary,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Icon(
-                  Icons.cloud_off_rounded,
-                  size: 20,
-                  color: MetaGymTheme.dangerCoral,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _error!,
-                      style: const TextStyle(
-                        color: _warmTextPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Kiểm tra kết nối mạng rồi thử tải lại.',
-                      style: TextStyle(
-                        color: _warmTextSecondary,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: _load,
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.brandOrange,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-              ),
+              ],
             ),
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Thử lại'),
-          ),
-        ],
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: _load,
+              style: FilledButton.styleFrom(
+                backgroundColor: MetaGymTheme.brandOrange,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
+              label: const Text('Thử lại'),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   List<
     ({
@@ -1376,6 +1633,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = _t;
     final entries = (_data?['entries'] as List? ?? []).cast<NutritionRecord>();
     final known = entries
         .where((e) => (e['kcal'] ?? e['calories']) != null)
@@ -1389,16 +1647,15 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
     final canWrite = _data?['canWrite'] == true;
     final mealGroups = _buildMealGroups(entries, items, plan);
     final showLogButton = !_loading && _error == null && canWrite;
-    final palette = MetaGymTheme.paletteOf(context);
     return Scaffold(
-      backgroundColor: palette.canvas,
+      backgroundColor: t.palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: palette.textPrimary,
+        foregroundColor: t.textPrimary,
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
@@ -1414,14 +1671,14 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
         titleSpacing: 8,
         title: const Text('Theo dõi dinh dưỡng'),
         titleTextStyle: Theme.of(context).textTheme.titleLarge
-            ?.copyWith(color: _warmTextPrimary, fontWeight: FontWeight.w700),
+            ?.copyWith(color: t.textPrimary, fontWeight: FontWeight.w700),
       ),
       bottomNavigationBar: showLogButton
           ? DecoratedBox(
-              decoration: const BoxDecoration(
-                color: _warmDockSurface,
+              decoration: BoxDecoration(
+                color: t.dockSurface,
                 border: Border(
-                  top: BorderSide(color: _warmDockBorder, width: 1),
+                  top: BorderSide(color: t.dockBorder, width: 1),
                 ),
               ),
               child: SafeArea(
@@ -1446,7 +1703,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  icon: const Icon(Icons.add_rounded, size: 20),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 20, fallbackIcon: Icons.add_rounded),
                   label: const Text('Ghi lại bữa ăn'),
                 ),
               ),
@@ -1459,7 +1716,7 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
           SafeArea(
             child: RefreshIndicator(
               onRefresh: _load,
-              backgroundColor: _warmDropdownSurface,
+              backgroundColor: t.dropdownSurface,
               color: MetaGymTheme.primary,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -1493,11 +1750,11 @@ class _NutritionTrackingPageState extends State<NutritionTrackingPage> {
                     const SizedBox(height: 10),
                     _coachSummary(plan),
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Nhật ký bữa ăn',
-                      key: Key('nutrition-meals-heading'),
+                      key: const Key('nutrition-meals-heading'),
                       style: TextStyle(
-                        color: _warmTextPrimary,
+                        color: t.textPrimary,
                         fontSize: 16.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.2,
@@ -1535,33 +1792,112 @@ class _EntryForm extends StatefulWidget {
     required this.api,
     required this.date,
     this.meal,
+    this.initialMealLabel,
     this.entry,
   });
 
   final NutritionTrackingApi api;
   final String date;
   final String? meal;
+  final String? initialMealLabel;
   final NutritionRecord? entry;
 
   @override
   State<_EntryForm> createState() => _EntryFormState();
 }
 
+class _DishDraft {
+  _DishDraft({
+    String name = '',
+    String quantity = '',
+    String customKcal = '',
+    this.foodId,
+    this.unit = 'g',
+  }) : name = TextEditingController(text: name),
+       quantity = TextEditingController(text: quantity),
+       customKcal = TextEditingController(text: customKcal);
+
+  final TextEditingController name;
+  final TextEditingController quantity;
+  final TextEditingController customKcal;
+  String? foodId;
+  String unit;
+  bool saved = false;
+
+  void dispose() {
+    name.dispose();
+    quantity.dispose();
+    customKcal.dispose();
+  }
+
+  double? parsedQuantity() {
+    final qty = double.tryParse(quantity.text.trim().replaceAll(',', '.'));
+    if (qty == null || !qty.isFinite || qty < 0.01 || qty > 10000) return null;
+    return qty;
+  }
+
+  double? parsedManualKcal() {
+    final raw = customKcal.text.trim().replaceAll(',', '.');
+    if (raw.isEmpty) return null;
+    final val = double.tryParse(raw);
+    if (val == null || !val.isFinite || val < 0 || val > 20000) return null;
+    return val;
+  }
+
+  double? autoEstimatedKcal(List<NutritionRecord> foods) {
+    final qty = parsedQuantity();
+    if (qty == null) return null;
+    if (foodId != null) {
+      if (unit != 'g') return null;
+      for (final item in foods) {
+        if (item['id'] == foodId) {
+          final per100g = item['kcalPer100g'];
+          if (per100g is num && per100g > 0) {
+            return (per100g.toDouble() * qty) / 100.0;
+          }
+          break;
+        }
+      }
+      return null;
+    }
+    return estimateCustomFoodKcal(
+      name: name.text,
+      quantity: qty,
+      unit: unit,
+      catalogFoods: foods,
+    );
+  }
+
+  double? resolvedKcal(List<NutritionRecord> foods) {
+    if (foodId != null) return autoEstimatedKcal(foods);
+    return parsedManualKcal() ?? autoEstimatedKcal(foods);
+  }
+
+  bool isAutoEstimated(List<NutritionRecord> foods) {
+    if (foodId != null) return false;
+    return parsedManualKcal() == null && autoEstimatedKcal(foods) != null;
+  }
+}
+
 class _EntryFormState extends State<_EntryForm> {
   final _form = GlobalKey<FormState>();
   final _mealLabel = TextEditingController();
-  final _name = TextEditingController();
-  final _quantity = TextEditingController();
   final _notes = TextEditingController();
+  final List<_DishDraft> _dishes = [];
   List<NutritionRecord> _foods = [];
-  String? _foodId;
-  String _unit = 'g';
   TimeOfDay _time = _vietnamNowTime();
   bool _saving = false;
   bool _foodError = false;
   SelectedProgressImage? _image;
   String? _uploadedImageId;
   String? _error;
+
+  static String _formatPlainNum(Object? value) {
+    if (value is! num) return '';
+    return value == value.roundToDouble()
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
+  }
 
   @override
   void initState() {
@@ -1572,12 +1908,22 @@ class _EntryFormState extends State<_EntryForm> {
       final rawMealType = entry['mealType'] as String? ?? widget.meal ?? '';
       _mealLabel.text =
           parsedNotes.mealLabel ?? (_meals[rawMealType] ?? rawMealType);
-      _name.text = (entry['mealName'] ?? entry['foodName'] ?? '').toString();
-      _quantity.text = '${entry['quantity'] ?? ''}';
       _notes.text = parsedNotes.notes;
-      _foodId = entry['foodId'] as String?;
+      final foodId = entry['foodId'] as String?;
       final rawUnit = (entry['unit'] as String? ?? '').trim();
-      _unit = rawUnit.isEmpty ? 'g' : rawUnit;
+      final unit = rawUnit.isEmpty ? 'g' : rawUnit;
+      final existingKcal = entry['kcal'] ?? entry['calories'];
+      _dishes.add(
+        _DishDraft(
+          name: (entry['mealName'] ?? entry['foodName'] ?? '').toString(),
+          quantity: '${entry['quantity'] ?? ''}',
+          customKcal: (foodId == null && existingKcal != null)
+              ? _formatPlainNum(existingKcal)
+              : '',
+          foodId: foodId,
+          unit: unit,
+        ),
+      );
       _uploadedImageId = entry['imageMediaId'] as String?;
       final eaten = DateTime.tryParse(entry['eatenAt'] as String? ?? '')
           ?.toUtc()
@@ -1585,8 +1931,14 @@ class _EntryFormState extends State<_EntryForm> {
       if (eaten != null) {
         _time = TimeOfDay(hour: eaten.hour, minute: eaten.minute);
       }
-    } else if (widget.meal != null && widget.meal!.isNotEmpty) {
-      _mealLabel.text = _meals[widget.meal!] ?? widget.meal!;
+    } else {
+      final label = (widget.initialMealLabel ?? '').trim();
+      if (label.isNotEmpty) {
+        _mealLabel.text = label;
+      } else if (widget.meal != null && widget.meal!.isNotEmpty) {
+        _mealLabel.text = _meals[widget.meal!] ?? widget.meal!;
+      }
+      _dishes.add(_DishDraft());
     }
     _loadFoods();
   }
@@ -1608,26 +1960,38 @@ class _EntryFormState extends State<_EntryForm> {
   @override
   void dispose() {
     _mealLabel.dispose();
-    _name.dispose();
-    _quantity.dispose();
     _notes.dispose();
+    for (final dish in _dishes) {
+      dish.dispose();
+    }
     super.dispose();
   }
 
-  double? get _estimatedKcal {
-    if (_foodId == null || _unit != 'g') return null;
-    NutritionRecord? food;
-    for (final item in _foods) {
-      if (item['id'] == _foodId) {
-        food = item;
-        break;
+  double? get _totalEstimatedKcal {
+    double total = 0;
+    var hasAny = false;
+    for (final dish in _dishes) {
+      final k = dish.resolvedKcal(_foods);
+      if (k != null) {
+        total += k;
+        hasAny = true;
       }
     }
-    final per100g = food?['kcalPer100g'];
-    if (per100g is! num || per100g <= 0) return null;
-    final qty = double.tryParse(_quantity.text.trim().replaceAll(',', '.'));
-    if (qty == null || !qty.isFinite || qty < 0.01 || qty > 10000) return null;
-    return (per100g.toDouble() * qty) / 100.0;
+    return hasAny ? total : null;
+  }
+
+  void _addAnotherDish() {
+    setState(() {
+      _dishes.add(_DishDraft());
+    });
+  }
+
+  void _removeDish(int index) {
+    if (_dishes.length <= 1) return;
+    setState(() {
+      final removed = _dishes.removeAt(index);
+      removed.dispose();
+    });
   }
 
   Future<void> _pickTime() async {
@@ -1674,20 +2038,35 @@ class _EntryFormState extends State<_EntryForm> {
         resolvedMeal.customLabel,
         _notes.text,
       );
-      final payload = <String, dynamic>{
-        'eatenAt': '${widget.date}T$time:00+07:00',
-        'mealType': resolvedMeal.mealType,
-        'mealName': _name.text.trim(),
-        'foodId': _foodId,
-        'imageMediaId': _uploadedImageId,
-        'quantity': double.parse(_quantity.text.replaceAll(',', '.')),
-        'unit': _unit,
-        'notes': encodedNotes,
-      };
+
+      Map<String, dynamic> buildPayload(_DishDraft dish) {
+        final resolvedKcal = dish.resolvedKcal(_foods);
+        return <String, dynamic>{
+          'eatenAt': '${widget.date}T$time:00+07:00',
+          'mealType': resolvedMeal.mealType,
+          'mealName': dish.name.text.trim(),
+          'foodId': dish.foodId,
+          'imageMediaId': _uploadedImageId,
+          'quantity': double.parse(dish.quantity.text.replaceAll(',', '.')),
+          'unit': dish.unit,
+          'notes': encodedNotes,
+          if (dish.foodId == null &&
+              (resolvedKcal != null || widget.entry != null))
+            'estimatedCalories': resolvedKcal?.round(),
+        };
+      }
+
       if (widget.entry == null) {
-        await widget.api.add(payload);
+        for (final dish in _dishes) {
+          if (dish.saved) continue;
+          await widget.api.add(buildPayload(dish));
+          dish.saved = true;
+        }
       } else {
-        await widget.api.update(widget.entry!['id'] as String, payload);
+        await widget.api.update(
+          widget.entry!['id'] as String,
+          buildPayload(_dishes.first),
+        );
       }
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
@@ -1703,57 +2082,62 @@ class _EntryFormState extends State<_EntryForm> {
     }
   }
 
+  _NutritionTokens get _t => _NutritionTokens.of(context);
+
   Future<void> _deleteEntry() async {
     final entry = widget.entry;
     if (entry == null || _saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialog) => AlertDialog(
-        backgroundColor: _warmDropdownSurface,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: _warmGlassBorder, width: 1.1),
-        ),
-        title: const Text(
-          'Xóa món đã ghi?',
-          style: TextStyle(
-            color: _warmTextPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+      builder: (dialog) {
+        final dt = _NutritionTokens.of(dialog);
+        return AlertDialog(
+          backgroundColor: dt.dialogSurface,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: dt.glassBorder, width: 1.1),
           ),
-        ),
-        content: Text(
-          (entry['mealName'] ?? entry['foodName'] ?? 'Món ăn').toString(),
-          style: const TextStyle(
-            color: _warmLabelText,
-            fontSize: 14.5,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              minimumSize: const Size(64, 48),
-              foregroundColor: _warmTextSecondary,
+          title: Text(
+            'Xóa món đã ghi?',
+            style: TextStyle(
+              color: dt.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
             ),
-            onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('Giữ lại'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.dangerCoral,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(96, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+          content: Text(
+            (entry['mealName'] ?? entry['foodName'] ?? 'Món ăn').toString(),
+            style: TextStyle(
+              color: dt.labelText,
+              fontSize: 14.5,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                minimumSize: const Size(64, 48),
+                foregroundColor: dt.textSecondary,
               ),
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Giữ lại'),
             ),
-            onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('Xóa món'),
-          ),
-        ],
-      ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: dt.error,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(96, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                ),
+              ),
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Xóa món'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
     setState(() {
@@ -1784,42 +2168,43 @@ class _EntryFormState extends State<_EntryForm> {
       vertical: 14,
     ),
   }) {
+    final t = _t;
     final radius = BorderRadius.circular(MetaGymTheme.radiusInput);
     return InputDecoration(
       labelText: labelText,
       alignLabelWithHint: alignLabelWithHint,
       filled: true,
-      fillColor: _warmRecessedFill,
-      hoverColor: _warmRecessedFocusedFill,
-      labelStyle: const TextStyle(
-        color: _warmLabelText,
+      fillColor: t.recessedFill,
+      hoverColor: t.recessedFocusedFill,
+      labelStyle: TextStyle(
+        color: t.labelText,
         fontSize: 13.5,
         fontWeight: FontWeight.w500,
       ),
       floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
         if (states.contains(WidgetState.error)) {
-          return const TextStyle(
-            color: MetaGymTheme.dangerCoral,
+          return TextStyle(
+            color: t.error,
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
           );
         }
         if (states.contains(WidgetState.focused)) {
-          return const TextStyle(
-            color: MetaGymTheme.brandOrange,
+          return TextStyle(
+            color: t.orangeText,
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
           );
         }
-        return const TextStyle(
-          color: _warmLabelText,
+        return TextStyle(
+          color: t.labelText,
           fontSize: 13.5,
           fontWeight: FontWeight.w600,
         );
       }),
-      hintStyle: const TextStyle(color: _warmHintText, fontSize: 13.5),
-      errorStyle: const TextStyle(
-        color: Color(0xFFFF8F96),
+      hintStyle: TextStyle(color: t.hintText, fontSize: 13.5),
+      errorStyle: TextStyle(
+        color: t.error,
         fontSize: 12,
         fontWeight: FontWeight.w500,
       ),
@@ -1827,15 +2212,18 @@ class _EntryFormState extends State<_EntryForm> {
       contentPadding: contentPadding,
       border: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: const BorderSide(color: _warmRecessedBorder, width: 1),
+        borderSide: BorderSide(color: t.recessedBorder, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: const BorderSide(color: _warmRecessedBorder, width: 1),
+        borderSide: BorderSide(color: t.recessedBorder, width: 1),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: const BorderSide(color: Color(0x528C8176), width: 1),
+        borderSide: BorderSide(
+          color: t.recessedBorder.withValues(alpha: 0.5),
+          width: 1,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: radius,
@@ -1846,108 +2234,558 @@ class _EntryFormState extends State<_EntryForm> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: const BorderSide(
-          color: MetaGymTheme.dangerCoral,
-          width: 1.2,
-        ),
+        borderSide: BorderSide(color: t.error, width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: const BorderSide(
-          color: MetaGymTheme.dangerCoral,
-          width: 1.6,
-        ),
+        borderSide: BorderSide(color: t.error, width: 1.6),
       ),
     );
   }
 
-  Widget _sectionHeader(String title, Color accentColor) => Row(
-    children: [
-      Container(
-        width: 3.5,
-        height: 18,
-        decoration: BoxDecoration(
-          color: accentColor,
-          borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-      const SizedBox(width: 9),
-      Expanded(
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: _warmTextPrimary,
-            fontSize: 15.5,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  Widget _errorBanner(String message) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-    decoration: BoxDecoration(
-      color: MetaGymTheme.dangerCoral.withValues(alpha: 0.16),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: MetaGymTheme.dangerCoral.withValues(alpha: 0.50),
-        width: 1,
-      ),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _sectionHeader(String title, Color accentColor) {
+    final t = _t;
+    return Row(
       children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 1),
-          child: Icon(
-            Icons.error_outline_rounded,
-            color: MetaGymTheme.dangerCoral,
-            size: 17,
+        Container(
+          width: 3.5,
+          height: 18,
+          decoration: BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(999),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 9),
         Expanded(
           child: Text(
-            message,
-            style: const TextStyle(
-              color: Color(0xFFFFD8DB),
-              fontSize: 12.5,
-              height: 1.35,
-              fontWeight: FontWeight.w500,
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: t.textPrimary,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
       ],
-    ),
-  );
+    );
+  }
+
+  Widget _errorBanner(String message) {
+    final t = _t;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: t.error.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: t.error.withValues(alpha: 0.45),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: MetaGymSvgIcon(MetaGymIcons.stateError, size: 17, fallbackIcon: Icons.error_outline_rounded),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: t.error,
+                fontSize: 12.5,
+                height: 1.35,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDishCard(int index, _DishDraft dish, _NutritionTokens t) {
+    NutritionRecord? selectedCatalogFood;
+    if (dish.foodId != null) {
+      for (final f in _foods) {
+        if (f['id'] == dish.foodId) {
+          selectedCatalogFood = f;
+          break;
+        }
+      }
+    }
+    const defaultUnits = ['g', 'ml', 'phần', 'cái', 'bát', 'ly'];
+    final unitOptions = <String>[
+      ...defaultUnits,
+      if (dish.unit.isNotEmpty && !defaultUnits.contains(dish.unit)) dish.unit,
+    ];
+    final autoKcal = dish.autoEstimatedKcal(_foods);
+    final resolvedKcal = dish.resolvedKcal(_foods);
+    final isAuto = dish.isAutoEstimated(_foods);
+    final showMultiHeader = widget.entry == null && _dishes.length > 1;
+    final suggestions = (dish.foodId == null && !_saving)
+        ? filterCatalogFoods(dish.name.text, _foods)
+        : const <NutritionRecord>[];
+
+    return MetaGymGlassCard(
+      key: Key('nutrition-dish-card-$index'),
+      solid: false,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _sectionHeader(
+                  showMultiHeader ? 'Món ${index + 1}' : 'Thông tin món ăn',
+                  MetaGymTheme.brandOrange,
+                ),
+              ),
+              if (showMultiHeader)
+                Tooltip(
+                  message: 'Xóa món ${index + 1}',
+                  child: IconButton(
+                    key: Key('nutrition-remove-dish-$index'),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    onPressed: _saving ? null : () => _removeDish(index),
+                    icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 20, fallbackIcon: Icons.close_rounded),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            key: Key('nutrition-dish-name-$index'),
+            controller: dish.name,
+            enabled: !_saving,
+            maxLength: 150,
+            cursorColor: MetaGymTheme.brandOrange,
+            style: TextStyle(
+              color: t.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+            buildCounter: (
+              _, {
+              required currentLength,
+              required isFocused,
+              required maxLength,
+            }) => null,
+            onChanged: (value) {
+              setState(() {
+                if (dish.foodId != null) {
+                  final expectedName =
+                      (selectedCatalogFood?['name'] ?? '').toString();
+                  if (value.trim() != expectedName.trim()) {
+                    dish.foodId = null;
+                  }
+                }
+              });
+            },
+            decoration: _warmInputDecoration(labelText: 'Tên món').copyWith(
+              hintText: 'Tìm trong danh mục hoặc nhập món tự do...',
+              prefixIcon: MetaGymSvgIcon(MetaGymIcons.commonSearch, size: 19, fallbackIcon: Icons.search_rounded),
+              suffixIcon: dish.name.text.isNotEmpty && !_saving
+                  ? IconButton(
+                      tooltip: 'Xóa tên món',
+                      onPressed: () {
+                        setState(() {
+                          dish.name.clear();
+                          dish.foodId = null;
+                        });
+                      },
+                      icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
+                    )
+                  : null,
+            ),
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Nhập tên món' : null,
+          ),
+          if (dish.foodId != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              key: Key('nutrition-selected-catalog-$index'),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: t.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: t.success.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  MetaGymSvgIcon(MetaGymIcons.authVerified, size: 16, fallbackIcon: Icons.verified_rounded),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      selectedCatalogFood?['kcalPer100g'] is num
+                          ? 'Món danh mục · ${_formatPlainNum(selectedCatalogFood!['kcalPer100g'])} kcal / 100g'
+                          : 'Món danh mục',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: t.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _saving
+                        ? null
+                        : () => setState(() => dish.foodId = null),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        'Nhập tự do',
+                        style: TextStyle(
+                          color: t.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              key: Key('nutrition-food-suggestions-$index'),
+              decoration: BoxDecoration(
+                color: t.dropdownSurface,
+                borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                border: Border.all(color: t.recessedBorder, width: 1),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var sIdx = 0; sIdx < suggestions.length; sIdx++) ...[
+                    if (sIdx > 0)
+                      Divider(height: 1, thickness: 1, color: t.divider),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: Key(
+                          'nutrition-food-suggestion-$index-${suggestions[sIdx]['id']}',
+                        ),
+                        onTap: () {
+                          final food = suggestions[sIdx];
+                          setState(() {
+                            dish.foodId = food['id'] as String;
+                            dish.name.text = food['name'] as String;
+                            dish.name.selection = TextSelection.collapsed(
+                              offset: dish.name.text.length,
+                            );
+                            dish.unit = 'g';
+                            dish.customKcal.clear();
+                          });
+                        },
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                MetaGymSvgIcon(MetaGymIcons.foodMeal, size: 16, fallbackIcon: Icons.restaurant_menu_rounded),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${suggestions[sIdx]['name'] ?? ''}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: t.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (suggestions[sIdx]['kcalPer100g'] is num) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_formatPlainNum(suggestions[sIdx]['kcalPer100g'])} kcal / 100g',
+                                    style: TextStyle(
+                                      color: t.success,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fontFeatures: MetaGymTheme.tabularFigures,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+          if (_foodError && index == 0) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _loadFoods,
+                style: TextButton.styleFrom(
+                  foregroundColor: t.warning,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  minimumSize: const Size(44, 44),
+                ),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 17, fallbackIcon: Icons.refresh_rounded),
+                label: const Text(
+                  'Danh mục tải lỗi · Thử lại; vẫn có thể nhập món tự do',
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextFormField(
+                  key: Key('nutrition-dish-qty-$index'),
+                  controller: dish.quantity,
+                  enabled: !_saving,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  cursorColor: MetaGymTheme.brandOrange,
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  decoration: _warmInputDecoration(
+                    labelText: 'Lượng thực tế',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                  ),
+                  validator: (v) {
+                    final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                    return n == null || !n.isFinite || n < 0.01 || n > 10000
+                        ? 'Nhập lượng từ 0,01 đến 10000'
+                        : null;
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  key: ValueKey('unit-$index-${dish.unit}'),
+                  initialValue: dish.unit,
+                  isExpanded: true,
+                  dropdownColor: t.dropdownSurface,
+                  borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+                  icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronDown, fallbackIcon: Icons.keyboard_arrow_down_rounded),
+                  iconEnabledColor: t.labelText,
+                  iconDisabledColor: t.labelText.withValues(alpha: 0.4),
+                  disabledHint: Text(
+                    dish.unit,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: MetaGymTheme.fontFamily,
+                      fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                      color: t.labelText,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: TextStyle(
+                    fontFamily: MetaGymTheme.fontFamily,
+                    fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                    color: t.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: _warmInputDecoration(
+                    labelText: 'Đơn vị',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                  ),
+                  selectedItemBuilder: (_) => [
+                    for (final unit in unitOptions)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          unit,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: MetaGymTheme.fontFamily,
+                            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
+                            color: (dish.foodId != null || _saving)
+                                ? t.labelText
+                                : t.textPrimary,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                  items: [
+                    for (final unit in unitOptions)
+                      DropdownMenuItem(
+                        value: unit,
+                        child: Text(
+                          unit,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: dish.foodId != null || _saving
+                      ? null
+                      : (v) => setState(() => dish.unit = v!),
+                ),
+              ),
+            ],
+          ),
+          if (dish.foodId == null) ...[
+            const SizedBox(height: 12),
+            TextFormField(
+              key: Key('nutrition-custom-kcal-$index'),
+              controller: dish.customKcal,
+              enabled: !_saving,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              cursorColor: MetaGymTheme.brandOrange,
+              style: TextStyle(
+                color: t.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFeatures: MetaGymTheme.tabularFigures,
+              ),
+              onChanged: (_) => setState(() {}),
+              decoration:
+                  _warmInputDecoration(
+                    labelText: 'Calo (kcal) · tùy chọn',
+                  ).copyWith(
+                    hintText: autoKcal != null
+                        ? 'Tự tính: ≈ ${autoKcal.round()} kcal (nhập để ghi đè)'
+                        : 'Nhập calo nếu biết (VD: 350)',
+                  ),
+              validator: (v) {
+                final trimmed = (v ?? '').trim();
+                if (trimmed.isEmpty) return null;
+                final n = double.tryParse(trimmed.replaceAll(',', '.'));
+                return n == null || !n.isFinite || n < 0 || n > 20000
+                    ? 'Nhập calo từ 0 đến 20000'
+                    : null;
+              },
+            ),
+          ],
+          if (resolvedKcal != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                key: index == 0
+                    ? const Key('nutrition-estimated-kcal')
+                    : Key('nutrition-estimated-kcal-$index'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: t.success.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: t.success.withValues(alpha: 0.38),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    MetaGymSvgIcon(MetaGymIcons.streakFlame, size: 16, fallbackIcon: Icons.bolt_rounded),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        isAuto
+                            ? 'Tự tính ≈ ${resolvedKcal.round()} kcal'
+                            : '≈ ${resolvedKcal.round()} kcal',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: t.success,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final t = _t;
     final pageTitle = widget.entry == null ? 'Ghi lại bữa ăn' : 'Sửa món ăn';
-    final estimatedKcal = _estimatedKcal;
-    final hasMatchedFood = _foods.any((f) => f['id'] == _foodId);
+    final totalEstimatedKcal = _totalEstimatedKcal;
     final hasPhoto =
         _image != null ||
         (_uploadedImageId != null && _uploadedImageId!.isNotEmpty);
-    const defaultUnits = ['g', 'ml', 'phần', 'cái'];
-    final unitOptions = <String>[
-      ...defaultUnits,
-      if (_unit.isNotEmpty && !defaultUnits.contains(_unit)) _unit,
-    ];
+    final saveButtonText = _saving
+        ? 'Đang lưu…'
+        : (widget.entry == null && _dishes.length > 1)
+        ? 'Lưu ${_dishes.length} món'
+        : 'Lưu món';
 
-    final palette = MetaGymTheme.paletteOf(context);
     return Scaffold(
-      backgroundColor: palette.canvas,
+      backgroundColor: t.palette.canvas,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: palette.textPrimary,
+        foregroundColor: t.textPrimary,
         leadingWidth: 72,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
@@ -1963,7 +2801,7 @@ class _EntryFormState extends State<_EntryForm> {
         titleSpacing: 8,
         title: Text(pageTitle),
         titleTextStyle: Theme.of(context).textTheme.titleLarge
-            ?.copyWith(color: _warmTextPrimary, fontWeight: FontWeight.w700),
+            ?.copyWith(color: t.textPrimary, fontWeight: FontWeight.w700),
         actions: [
           if (widget.entry != null)
             Padding(
@@ -1973,18 +2811,15 @@ class _EntryFormState extends State<_EntryForm> {
                 tooltip: 'Xóa món',
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 onPressed: _saving ? null : _deleteEntry,
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: MetaGymTheme.dangerCoral,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, fallbackIcon: Icons.delete_outline_rounded),
               ),
             ),
         ],
       ),
       bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: _warmDockSurface,
-          border: Border(top: BorderSide(color: _warmDockBorder, width: 1)),
+        decoration: BoxDecoration(
+          color: t.dockSurface,
+          border: Border(top: BorderSide(color: t.dockBorder, width: 1)),
         ),
         child: Padding(
           padding: EdgeInsets.only(
@@ -1997,6 +2832,36 @@ class _EntryFormState extends State<_EntryForm> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (widget.entry == null && _dishes.length > 1) ...[
+                  Row(
+                    key: const Key('nutrition-meal-total-banner'),
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tổng bữa (${_dishes.length} món)',
+                        style: TextStyle(
+                          color: t.labelText,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        totalEstimatedKcal != null
+                            ? '≈ ${totalEstimatedKcal.round()} kcal'
+                            : 'Chưa đủ dữ liệu calo',
+                        style: TextStyle(
+                          color: totalEstimatedKcal != null
+                              ? t.success
+                              : t.textSecondary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 if (_error != null) ...[
                   _errorBanner(_error!),
                   const SizedBox(height: 10),
@@ -2021,7 +2886,7 @@ class _EntryFormState extends State<_EntryForm> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  child: Text(_saving ? 'Đang lưu…' : 'Lưu món'),
+                  child: Text(saveButtonText),
                 ),
               ],
             ),
@@ -2047,10 +2912,7 @@ class _EntryFormState extends State<_EntryForm> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _sectionHeader(
-                          'Bữa ăn',
-                          MetaGymTheme.coachAvatarBackground,
-                        ),
+                        _sectionHeader('Bữa ăn', t.warning),
                         const SizedBox(height: 14),
                         TextFormField(
                           key: const Key('nutrition-meal-label-field'),
@@ -2058,8 +2920,8 @@ class _EntryFormState extends State<_EntryForm> {
                           enabled: !_saving,
                           maxLength: 60,
                           cursorColor: MetaGymTheme.brandOrange,
-                          style: const TextStyle(
-                            color: _warmTextPrimary,
+                          style: TextStyle(
+                            color: t.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -2096,21 +2958,21 @@ class _EntryFormState extends State<_EntryForm> {
                                         _mealLabel.text = preset;
                                       }),
                                 showCheckmark: false,
-                                backgroundColor: _warmRecessedFill,
-                                selectedColor: const Color(0x28FF5E36),
+                                backgroundColor: t.recessedFill,
+                                selectedColor: t.palette.chipActiveBg,
                                 side: BorderSide(
                                   color:
                                       _mealLabel.text.trim().toLowerCase() ==
                                           preset.toLowerCase()
                                       ? MetaGymTheme.brandOrange
-                                      : _warmCardBorder,
+                                      : t.cardBorder,
                                 ),
                                 labelStyle: TextStyle(
                                   color:
                                       _mealLabel.text.trim().toLowerCase() ==
                                           preset.toLowerCase()
-                                      ? _warmOrangeText
-                                      : _warmLabelText,
+                                      ? t.orangeText
+                                      : t.labelText,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -2124,316 +2986,59 @@ class _EntryFormState extends State<_EntryForm> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  MetaGymGlassCard(
-                    solid: false,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _sectionHeader(
-                          'Thông tin món ăn',
-                          MetaGymTheme.brandOrange,
-                        ),
-                        const SizedBox(height: 14),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(
-                            'food-${_foods.length}-${_foodId ?? ''}',
+                  for (var i = 0; i < _dishes.length; i++) ...[
+                    _buildDishCard(i, _dishes[i], t),
+                    const SizedBox(height: 12),
+                  ],
+                  if (widget.entry == null) ...[
+                    OutlinedButton.icon(
+                      key: const Key('nutrition-add-another-dish'),
+                      onPressed: _saving ? null : _addAnotherDish,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: t.orangeText,
+                        backgroundColor: t.recessedFill,
+                        side: BorderSide(
+                          color: MetaGymTheme.brandOrange.withValues(
+                            alpha: 0.48,
                           ),
-                          initialValue: _foodId,
-                          isExpanded: true,
-                          dropdownColor: _warmDropdownSurface,
+                        ),
+                        minimumSize: const Size.fromHeight(48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             MetaGymTheme.radiusInput,
                           ),
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          iconEnabledColor: _warmLabelText,
-                          iconDisabledColor: const Color(0x66D5CCBF),
-                          style: const TextStyle(
-                            fontFamily: MetaGymTheme.fontFamily,
-                            fontFamilyFallback: MetaGymTheme.fontFamilyFallback,
-                            color: _warmTextPrimary,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          decoration: _warmInputDecoration(
-                            labelText: 'Món từ danh mục (tùy chọn)',
-                          ),
-                          items: [
-                            const DropdownMenuItem(
-                              value: '',
-                              child: Text(
-                                'Nhập món tự do',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (_foodId != null && !hasMatchedFood)
-                              DropdownMenuItem(
-                                value: _foodId,
-                                child: Text(
-                                  _name.text,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            for (final food in _foods)
-                              DropdownMenuItem(
-                                value: food['id'] as String,
-                                child: Text(
-                                  food['name'] as String,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: _saving
-                              ? null
-                              : (value) => setState(() {
-                                  _foodId = value == '' ? null : value;
-                                  if (_foodId != null) {
-                                    final matched = _foods
-                                        .where((f) => f['id'] == value)
-                                        .firstOrNull;
-                                    if (matched != null) {
-                                      _name.text = matched['name'] as String;
-                                    }
-                                    _unit = 'g';
-                                  }
-                                }),
                         ),
-                        if (_foodError) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: _loadFoods,
-                              style: TextButton.styleFrom(
-                                foregroundColor: MetaGymTheme.warning,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 6,
-                                ),
-                                minimumSize: const Size(44, 44),
-                              ),
-                              icon: const Icon(Icons.refresh_rounded, size: 17),
-                              label: const Text(
-                                'Danh mục tải lỗi · Thử lại; vẫn có thể nhập món tự do',
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _name,
-                          readOnly: _foodId != null || _saving,
-                          maxLength: 150,
-                          cursorColor: MetaGymTheme.brandOrange,
-                          style: const TextStyle(
-                            color: _warmTextPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          buildCounter: (
-                            _, {
-                            required currentLength,
-                            required isFocused,
-                            required maxLength,
-                          }) => null,
-                          decoration: _warmInputDecoration(
-                            labelText: 'Tên món',
-                          ),
-                          validator: (v) => v == null || v.trim().isEmpty
-                              ? 'Nhập tên món'
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: TextFormField(
-                                controller: _quantity,
-                                enabled: !_saving,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                cursorColor: MetaGymTheme.brandOrange,
-                                style: const TextStyle(
-                                  color: _warmTextPrimary,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  fontFeatures: MetaGymTheme.tabularFigures,
-                                ),
-                                onChanged: (_) => setState(() {}),
-                                decoration: _warmInputDecoration(
-                                  labelText: 'Lượng thực tế',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 14,
-                                  ),
-                                ),
-                                validator: (v) {
-                                  final n = double.tryParse(
-                                    (v ?? '').replaceAll(',', '.'),
-                                  );
-                                  return n == null ||
-                                          !n.isFinite ||
-                                          n < 0.01 ||
-                                          n > 10000
-                                      ? 'Nhập lượng từ 0,01 đến 10000'
-                                      : null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              flex: 2,
-                              child: DropdownButtonFormField<String>(
-                                key: ValueKey('unit-$_unit'),
-                                initialValue: _unit,
-                                isExpanded: true,
-                                dropdownColor: _warmDropdownSurface,
-                                borderRadius: BorderRadius.circular(
-                                  MetaGymTheme.radiusInput,
-                                ),
-                                icon: const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                ),
-                                iconEnabledColor: _warmLabelText,
-                                iconDisabledColor: const Color(0x66D5CCBF),
-                                disabledHint: Text(
-                                  _unit,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontFamily: MetaGymTheme.fontFamily,
-                                    fontFamilyFallback:
-                                        MetaGymTheme.fontFamilyFallback,
-                                    color: _warmLabelText,
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: const TextStyle(
-                                  fontFamily: MetaGymTheme.fontFamily,
-                                  fontFamilyFallback:
-                                      MetaGymTheme.fontFamilyFallback,
-                                  color: _warmTextPrimary,
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: _warmInputDecoration(
-                                  labelText: 'Đơn vị',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 14,
-                                  ),
-                                ),
-                                selectedItemBuilder: (_) => [
-                                  for (final unit in unitOptions)
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        unit,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: MetaGymTheme.fontFamily,
-                                          fontFamilyFallback:
-                                              MetaGymTheme.fontFamilyFallback,
-                                          color: (_foodId != null || _saving)
-                                              ? _warmLabelText
-                                              : _warmTextPrimary,
-                                          fontSize: 14.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                                items: [
-                                  for (final unit in unitOptions)
-                                    DropdownMenuItem(
-                                      value: unit,
-                                      child: Text(
-                                        unit,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                ],
-                                onChanged: _foodId != null || _saving
-                                    ? null
-                                    : (v) => setState(() => _unit = v!),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (estimatedKcal != null) ...[
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              key: const Key('nutrition-estimated-kcal'),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0x1F2ECC71),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: const Color(0x4D2ECC71),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.bolt_rounded,
-                                    size: 16,
-                                    color: MetaGymTheme.success,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    '≈ ${estimatedKcal.round()} kcal',
-                                    style: const TextStyle(
-                                      color: MetaGymTheme.success,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      fontFeatures: MetaGymTheme.tabularFigures,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
+                      icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 19, fallbackIcon: Icons.add_rounded),
+                      label: const Text(
+                        'Thêm món vào bữa này',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
+                    const SizedBox(height: 14),
+                  ] else
+                    const SizedBox(height: 2),
                   MetaGymGlassCard(
                     solid: false,
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _sectionHeader(
-                          'Thời gian & ghi chú',
-                          MetaGymTheme.success,
-                        ),
+                        _sectionHeader('Thời gian & ghi chú', t.success),
                         const SizedBox(height: 14),
                         Material(
-                          color: _warmRecessedFill,
+                          color: t.recessedFill,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               MetaGymTheme.radiusInput,
                             ),
-                            side: const BorderSide(
-                              color: _warmRecessedBorder,
+                            side: BorderSide(
+                              color: t.recessedBorder,
                               width: 1,
                             ),
                           ),
@@ -2454,14 +3059,10 @@ class _EntryFormState extends State<_EntryForm> {
                                       width: 34,
                                       height: 34,
                                       decoration: BoxDecoration(
-                                        color: const Color(0x24FF5E36),
+                                        color: t.palette.chipActiveBg,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Icon(
-                                        Icons.schedule_rounded,
-                                        size: 18,
-                                        color: MetaGymTheme.brandOrange,
-                                      ),
+                                      child: MetaGymSvgIcon(MetaGymIcons.timeClock, size: 18, fallbackIcon: Icons.schedule_rounded),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -2470,12 +3071,12 @@ class _EntryFormState extends State<_EntryForm> {
                                             CrossAxisAlignment.start,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Text(
+                                          Text(
                                             'Giờ ăn',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: _warmTextSecondary,
+                                              color: t.textSecondary,
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -2484,8 +3085,8 @@ class _EntryFormState extends State<_EntryForm> {
                                             _time.format(context),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: _warmTextPrimary,
+                                            style: TextStyle(
+                                              color: t.textPrimary,
                                               fontSize: 14.5,
                                               fontWeight: FontWeight.w600,
                                               fontFeatures:
@@ -2495,11 +3096,7 @@ class _EntryFormState extends State<_EntryForm> {
                                         ],
                                       ),
                                     ),
-                                    const Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 20,
-                                      color: _warmTextSecondary,
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 20, fallbackIcon: Icons.chevron_right_rounded),
                                   ],
                                 ),
                               ),
@@ -2513,8 +3110,8 @@ class _EntryFormState extends State<_EntryForm> {
                           maxLines: 3,
                           maxLength: 5000,
                           cursorColor: MetaGymTheme.brandOrange,
-                          style: const TextStyle(
-                            color: _warmTextPrimary,
+                          style: TextStyle(
+                            color: t.textPrimary,
                             fontSize: 14.5,
                             height: 1.4,
                           ),
@@ -2531,13 +3128,13 @@ class _EntryFormState extends State<_EntryForm> {
                         ),
                         const SizedBox(height: 12),
                         Material(
-                          color: _warmRecessedFill,
+                          color: t.recessedFill,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               MetaGymTheme.radiusInput,
                             ),
-                            side: const BorderSide(
-                              color: _warmRecessedBorder,
+                            side: BorderSide(
+                              color: t.recessedBorder,
                               width: 1,
                             ),
                           ),
@@ -2558,14 +3155,10 @@ class _EntryFormState extends State<_EntryForm> {
                                       width: 34,
                                       height: 34,
                                       decoration: BoxDecoration(
-                                        color: const Color(0x24FF5E36),
+                                        color: t.palette.chipActiveBg,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Icon(
-                                        Icons.photo_outlined,
-                                        size: 18,
-                                        color: MetaGymTheme.brandOrange,
-                                      ),
+                                      child: MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 18, fallbackIcon: Icons.photo_outlined),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -2575,8 +3168,8 @@ class _EntryFormState extends State<_EntryForm> {
                                             : 'Thêm ảnh (tùy chọn)',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: _warmTextPrimary,
+                                        style: TextStyle(
+                                          color: t.textPrimary,
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -2591,26 +3184,14 @@ class _EntryFormState extends State<_EntryForm> {
                                           width: 38,
                                           height: 38,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => const Icon(
-                                            Icons.image_rounded,
-                                            size: 20,
-                                            color: MetaGymTheme.success,
-                                          ),
+                                          errorBuilder: (_, _, _) => MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.image_rounded),
                                         ),
                                       ),
                                     ] else if (hasPhoto) ...[
                                       const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.check_circle_outline_rounded,
-                                        size: 20,
-                                        color: MetaGymTheme.success,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.stateSuccess, size: 20, fallbackIcon: Icons.check_circle_outline_rounded),
                                     ] else
-                                      const Icon(
-                                        Icons.add_photo_alternate_outlined,
-                                        size: 20,
-                                        color: _warmTextSecondary,
-                                      ),
+                                      MetaGymSvgIcon(MetaGymIcons.mediaGallery, size: 20, fallbackIcon: Icons.add_photo_alternate_outlined),
                                   ],
                                 ),
                               ),

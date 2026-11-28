@@ -12,6 +12,8 @@ import 'package:meta_gym_app/features/training/data/member_self_training_api.dar
 import 'package:meta_gym_app/features/training/data/self_training_icon_store.dart';
 import 'package:meta_gym_app/features/training/domain/member_self_training_day.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 enum _CalendarMode { week, month }
 
@@ -67,16 +69,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   late DateTime _selected = _today;
   final _title = TextEditingController();
   final _notes = TextEditingController();
-  final Map<String, MemberSelfTrainingDay> _plans = {};
+  final Map<String, List<MemberSelfTrainingDay>> _plans = {};
   final Map<String, String> _iconKeys = {};
   final List<_ExerciseDraft> _exerciseDrafts = [];
+  final Set<String> _expandedSessionIds = {};
   String? _time;
   String? _selectedIconKey;
+  String? _editingSessionId;
   String? _error;
   bool _loading = true;
   bool _saving = false;
   bool _editing = false;
-  bool _expandedDetails = false;
   bool _ready = false;
   _CalendarMode _mode = _CalendarMode.week;
 
@@ -87,7 +90,15 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   bool get _canEdit => !_selected.isBefore(_today);
   String get _selectedKey => _key(_selected);
-  MemberSelfTrainingDay? get _plan => _plans[_selectedKey];
+  List<MemberSelfTrainingDay> get _dayPlans => _plans[_selectedKey] ?? const [];
+
+  void _sortDayPlans(List<MemberSelfTrainingDay> items) {
+    items.sort((a, b) {
+      final timeCmp = (a.startTime ?? '99:99').compareTo(b.startTime ?? '99:99');
+      if (timeCmp != 0) return timeCmp;
+      return a.id.compareTo(b.id);
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -171,10 +182,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       final plans = results[0] as List<MemberSelfTrainingDay>;
       final storedIcons = results[1] as Map<String, String>;
       if (!mounted) return;
+      final grouped = <String, List<MemberSelfTrainingDay>>{};
+      for (final plan in plans) {
+        grouped.putIfAbsent(plan.planDate, () => []).add(plan);
+      }
+      for (final entry in grouped.values) {
+        _sortDayPlans(entry);
+      }
       setState(() {
         _plans
           ..clear()
-          ..addEntries(plans.map((plan) => MapEntry(plan.planDate, plan)));
+          ..addAll(grouped);
         _iconKeys
           ..clear()
           ..addAll(storedIcons);
@@ -194,7 +212,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ? _selected.add(Duration(days: 7 * delta))
           : DateTime(_selected.year, _selected.month + delta);
       _editing = false;
-      _expandedDetails = false;
+      _editingSessionId = null;
+      _expandedSessionIds.clear();
     });
     _load();
   }
@@ -204,17 +223,20 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     setState(() {
       _mode = mode;
       _editing = false;
-      _expandedDetails = false;
+      _editingSessionId = null;
+      _expandedSessionIds.clear();
     });
     _load();
   }
 
-  void _startEditing() {
-    final plan = _plan;
+  void _startEditing([MemberSelfTrainingDay? plan]) {
     _title.text = plan?.title ?? '';
     _notes.text = plan?.notes ?? '';
     _time = plan?.startTime;
-    _selectedIconKey = _iconKeys[_selectedKey] ?? plan?.iconKey;
+    _editingSessionId = plan?.id;
+    _selectedIconKey = plan == null
+        ? null
+        : (_iconKeys[plan.id] ?? _iconKeys[plan.planDate] ?? plan.iconKey);
     _clearExerciseDrafts();
     if (plan != null && plan.exercises.isNotEmpty) {
       for (final exercise in plan.exercises) {
@@ -230,13 +252,15 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
     setState(() {
       _editing = true;
-      _expandedDetails = false;
     });
   }
 
+  MetaGymPalette get _palette => MetaGymTheme.paletteOf(context);
+  bool get _isLight => MetaGymTheme.isLightPalette(context);
+
   void _showWarmSnackBar(String message) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -248,52 +272,49 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          backgroundColor: isLight
-              ? palette.surfaceSolid
-              : const Color(0xF0241F1B),
+          backgroundColor: colors.overlayGlass,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
-            side: BorderSide(
-              color: isLight
-                  ? palette.borderSolid
-                  : MetaGymWarmGlassTokens.cardBorder,
-              width: 1.1,
-            ),
+            side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
           ),
         ),
       );
   }
 
   Future<void> _chooseTime() async {
-    final isLight = MetaGymTheme.isLightPalette(context);
     final parts = _time?.split(':');
+    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final palette = MetaGymTheme.paletteOf(context);
     final picked = await showTimePicker(
       context: context,
       initialTime: parts == null
           ? TimeOfDay.now()
           : TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
       builder: (context, child) => Theme(
-        data: isLight
-            ? MetaGymTheme.light
-            : Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.dark(
+        data: Theme.of(context).copyWith(
+          colorScheme: isLight
+              ? ColorScheme.light(
                   primary: MetaGymTheme.brandOrange,
                   onPrimary: Colors.white,
-                  surface: Color(0xFF2B2622),
-                  onSurface: Color(0xFFF7F9FC),
+                  surface: colors.surface,
+                  onSurface: palette.textPrimary,
+                )
+              : ColorScheme.dark(
+                  primary: MetaGymTheme.brandOrange,
+                  onPrimary: Colors.white,
+                  surface: const Color(0xFF2B2622),
+                  onSurface: palette.textPrimary,
                 ),
-                dialogTheme: DialogThemeData(
-                  backgroundColor: const Color(0xF0241F1B),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    side: const BorderSide(
-                      color: Color(0xA3A79D92),
-                      width: 1.1,
-                    ),
-                  ),
-                ),
-              ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: colors.overlayGlass,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
+            ),
+          ),
+        ),
         child: child!,
       ),
     );
@@ -371,32 +392,51 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
     setState(() => _saving = true);
     try {
-      final saved = await _api.save(
-        day: _selectedKey,
-        title: _title.text.trim(),
-        startTime: _time,
-        notes: _notes.text.trim(),
-        exercises: builtExercises,
-      );
-      await _iconStore.setIcon(_selectedKey, _selectedIconKey);
+      final saved = _editingSessionId == null
+          ? await _api.createSession(
+              day: _selectedKey,
+              title: _title.text.trim(),
+              startTime: _time,
+              notes: _notes.text.trim(),
+              exercises: builtExercises,
+            )
+          : await _api.updateSession(
+              id: _editingSessionId!,
+              title: _title.text.trim(),
+              startTime: _time,
+              notes: _notes.text.trim(),
+              exercises: builtExercises,
+            );
+      await _iconStore.setIcon(saved.id, _selectedIconKey);
       if (!mounted) return;
+      final normalized = MemberSelfTrainingDay(
+        id: saved.id,
+        planDate: saved.planDate,
+        title: saved.title,
+        startTime: saved.startTime,
+        notes: saved.notes,
+        iconKey: _selectedIconKey ?? saved.iconKey,
+        exercises: saved.exercises,
+      );
       setState(() {
-        _plans[_selectedKey] = MemberSelfTrainingDay(
-          id: saved.id,
-          planDate: saved.planDate,
-          title: saved.title,
-          startTime: saved.startTime,
-          notes: saved.notes,
-          iconKey: _selectedIconKey ?? saved.iconKey,
-          exercises: saved.exercises,
+        final dayList = List<MemberSelfTrainingDay>.from(
+          _plans[_selectedKey] ?? const [],
         );
-        if (_selectedIconKey == null || _selectedIconKey!.isEmpty) {
-          _iconKeys.remove(_selectedKey);
+        final existingIdx = dayList.indexWhere((item) => item.id == saved.id);
+        if (existingIdx >= 0) {
+          dayList[existingIdx] = normalized;
         } else {
-          _iconKeys[_selectedKey] = _selectedIconKey!;
+          dayList.add(normalized);
+        }
+        _sortDayPlans(dayList);
+        _plans[_selectedKey] = dayList;
+        if (_selectedIconKey == null || _selectedIconKey!.isEmpty) {
+          _iconKeys.remove(saved.id);
+        } else {
+          _iconKeys[saved.id] = _selectedIconKey!;
         }
         _editing = false;
-        _expandedDetails = false;
+        _editingSessionId = null;
       });
       _showWarmSnackBar('Đã lưu lịch tập.');
     } on ApiException catch (error) {
@@ -412,18 +452,26 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     }
   }
 
-  Future<void> _delete() async {
+  Future<void> _delete(MemberSelfTrainingDay plan) async {
     if (_saving) return;
     setState(() => _saving = true);
     try {
-      await _api.delete(_selectedKey);
-      await _iconStore.removeIcon(_selectedKey);
+      await _api.deleteSession(plan.id);
+      await _iconStore.removeIcon(plan.id);
       if (!mounted) return;
       setState(() {
-        _plans.remove(_selectedKey);
-        _iconKeys.remove(_selectedKey);
+        final dayList = List<MemberSelfTrainingDay>.from(
+          _plans[plan.planDate] ?? const [],
+        )..removeWhere((item) => item.id == plan.id);
+        if (dayList.isEmpty) {
+          _plans.remove(plan.planDate);
+        } else {
+          _plans[plan.planDate] = dayList;
+        }
+        _iconKeys.remove(plan.id);
+        _expandedSessionIds.remove(plan.id);
         _editing = false;
-        _expandedDetails = false;
+        _editingSessionId = null;
       });
     } catch (_) {
       if (mounted) {
@@ -436,7 +484,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     return Scaffold(
       backgroundColor: palette.canvas,
       extendBodyBehindAppBar: true,
@@ -459,11 +507,16 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ),
         ),
         titleSpacing: 8,
-        title: const Text(
+        title: Text(
           'Lịch tập của tôi',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
+      bottomNavigationBar: _bottomActionDock(),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -476,7 +529,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 16,
                 8,
                 16,
-                MediaQuery.paddingOf(context).bottom + 24,
+                MediaQuery.paddingOf(context).bottom + (_bottomActionDock() != null ? 104 : 24),
               ),
               children: [
                 _calendar(),
@@ -498,17 +551,13 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: palette.error.withValues(alpha: 0.16),
+                                color: palette.error.withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: palette.error.withValues(alpha: 0.42),
+                                  color: palette.error.withValues(alpha: 0.40),
                                 ),
                               ),
-                              child: Icon(
-                                Icons.cloud_off_rounded,
-                                size: 20,
-                                color: palette.error,
-                              ),
+                              child: MetaGymSvgIcon(MetaGymIcons.stateOffline, size: 20, fallbackIcon: Icons.cloud_off_rounded),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -537,7 +586,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                             ),
                           ),
                           onPressed: _load,
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                           label: const Text(
                             'Thử lại',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -547,13 +596,44 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                     ),
                   )
                 else ...[
-                  Text(
-                    _displayDate(_selected),
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _displayDate(_selected),
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (!_editing && _dayPlans.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: palette.chipActiveBg,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: MetaGymTheme.brandOrange.withValues(
+                                alpha: 0.45,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            '${_dayPlans.length} buổi tập',
+                            style: TextStyle(
+                              color: palette.primaryText,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   if (_editing) _editPanel() else _summaryPanel(),
@@ -567,8 +647,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _calendar() {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
     final days = _visibleDays;
     final period = _mode == _CalendarMode.week
         ? '${days.first.day.toString().padLeft(2, '0')}–'
@@ -584,7 +663,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 onPressed: () => _changePeriod(-1),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 color: palette.textPrimary,
-                icon: const Icon(Icons.chevron_left_rounded),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronLeft, fallbackIcon: Icons.chevron_left_rounded),
                 tooltip: 'Kỳ trước',
               ),
               Expanded(
@@ -601,7 +680,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 onPressed: () => _changePeriod(1),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 color: palette.textPrimary,
-                icon: const Icon(Icons.chevron_right_rounded),
+                icon: const MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                 tooltip: 'Kỳ sau',
               ),
             ],
@@ -624,9 +703,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                       day,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isLight
-                            ? palette.textSecondary
-                            : MetaGymWarmGlassTokens.subtitleMuted,
+                        color: palette.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -676,23 +753,19 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _modeButton(String label, _CalendarMode mode) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
+    final active = _mode == mode;
     return Expanded(
       child: OutlinedButton(
         onPressed: () => _switchMode(mode),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(48, 48),
-          backgroundColor: _mode == mode
-              ? (isLight ? palette.chipActiveBg : const Color(0xFF493025))
+          backgroundColor: active
+              ? (_isLight ? MetaGymTheme.primary : const Color(0xFF493025))
               : palette.metricPanelBg,
-          foregroundColor: _mode == mode
-              ? (isLight ? palette.primaryText : Colors.white)
-              : palette.textWarmMuted,
+          foregroundColor: active ? Colors.white : palette.textSecondary,
           side: BorderSide(
-            color: _mode == mode
-                ? MetaGymTheme.primary
-                : palette.metricPanelBorder,
+            color: active ? MetaGymTheme.primary : palette.metricPanelBorder,
           ),
         ),
         child: Text(label),
@@ -701,10 +774,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _dayCell(DateTime day, {required bool showNumber}) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     final key = _key(day);
     final selected = key == _selectedKey;
-    final hasPlan = _plans.containsKey(key);
+    final hasPlan = _plans[key]?.isNotEmpty ?? false;
     final outside = showNumber && day.month != _selected.month;
     return MetaGymTap(
       onTap: () {
@@ -713,7 +786,8 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
         setState(() {
           _selected = day;
           _editing = false;
-          _expandedDetails = false;
+          _editingSessionId = null;
+          _expandedSessionIds.clear();
         });
         if (_mode == _CalendarMode.month && monthChanged) _load();
       },
@@ -739,7 +813,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 color: selected
                     ? Colors.white
                     : outside
-                    ? palette.textSecondary.withValues(alpha: 0.65)
+                    ? palette.textSecondary.withValues(alpha: 0.6)
                     : palette.textPrimary,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -763,14 +837,55 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     );
   }
 
+  Widget? _bottomActionDock() {
+    if (_loading || _error != null || !_canEdit || _editing) return null;
+    final palette = _palette;
+    final colors = MetaGymColors.of(context);
+    final hasPlans = _dayPlans.isNotEmpty;
+    return Container(
+      decoration: BoxDecoration(
+        color: _isLight
+            ? colors.surface.withValues(alpha: 0.96)
+            : const Color(0xEC161920),
+        border: Border(
+          top: BorderSide(color: palette.borderSolid, width: 1),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      child: SafeArea(
+        top: false,
+        child: FilledButton.icon(
+          key: const Key('self-training-bottom-add-session'),
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.brandOrange,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          onPressed: _saving ? null : () => _startEditing(),
+          icon: const MetaGymSvgIcon(
+            MetaGymIcons.commonAdd,
+            size: 19,
+            color: Colors.white,
+            adaptForLightMode: false,
+            fallbackIcon: Icons.add_rounded,
+          ),
+          label: Text(hasPlans ? 'Thêm buổi tập mới' : 'Lên lịch tập'),
+        ),
+      ),
+    );
+  }
+
   Widget _summaryPanel() {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final subtleMuted = isLight
-        ? palette.textSecondary
-        : MetaGymWarmGlassTokens.subtitleMuted;
-    final plan = _plan;
-    if (plan == null) {
+    final palette = _palette;
+    final dayPlans = _dayPlans;
+    if (dayPlans.isEmpty) {
       return _panel(
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,36 +900,34 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Chọn bài tập và thời gian cho ngày này.',
-              style: TextStyle(color: subtleMuted),
+              _canEdit
+                  ? 'Nhấn nút Lên lịch tập bên dưới để tạo buổi tập cho ngày này.'
+                  : 'Không có lịch tập cho ngày này.',
+              style: TextStyle(color: palette.textSecondary),
             ),
-            if (_canEdit) ...[
-              const SizedBox(height: 14),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: MetaGymTheme.brandOrange,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(48, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      MetaGymTheme.radiusInput,
-                    ),
-                  ),
-                ),
-                onPressed: _startEditing,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Lên lịch tập'),
-              ),
-            ],
           ],
         ),
       );
     }
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < dayPlans.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          _sessionSummaryCard(dayPlans[i]),
+        ],
+      ],
+    );
+  }
+
+  Widget _sessionSummaryCard(MemberSelfTrainingDay plan) {
+    final palette = _palette;
+    final expanded = _expandedSessionIds.contains(plan.id);
     final focuses = resolveMuscleFocusSet(
       plan.title,
       exerciseNames: plan.exercises.map((e) => e.name).toList(),
-      explicitKey: _iconKeys[plan.planDate] ?? plan.iconKey,
+      explicitKey: _iconKeys[plan.id] ?? _iconKeys[plan.planDate] ?? plan.iconKey,
     );
     final totalSets = plan.exercises.fold<int>(
       0,
@@ -825,15 +938,21 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       '${plan.exercises.length} bài tập',
       if (totalSets > 0) '$totalSets set',
     ];
-    final dividerColor = isLight ? palette.borderSolid : const Color(0x14FFFFFF);
 
     return CoachingGraphiteCard(
+      key: Key('self-training-session-card-${plan.id}'),
       padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           MetaGymTap(
-            onTap: () => setState(() => _expandedDetails = !_expandedDetails),
+            onTap: () => setState(() {
+              if (expanded) {
+                _expandedSessionIds.remove(plan.id);
+              } else {
+                _expandedSessionIds.add(plan.id);
+              }
+            }),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -878,14 +997,10 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isLight
-                                      ? palette.surfaceRaised
-                                      : Colors.white.withValues(alpha: 0.05),
+                                  color: palette.metricPanelBg,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: isLight
-                                        ? palette.borderSolid
-                                        : Colors.white.withValues(alpha: 0.08),
+                                    color: palette.metricPanelBorder,
                                   ),
                                 ),
                                 child: Text(
@@ -893,9 +1008,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: isLight
-                                        ? palette.textSecondary
-                                        : const Color(0xFFC9D0DB),
+                                    color: palette.textSecondary,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -903,12 +1016,12 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                               ),
                             ),
                           const Spacer(),
-                          Icon(
-                            _expandedDetails
+                          MetaGymResolvedIcon(
+                            expanded
                                 ? Icons.keyboard_arrow_up_rounded
                                 : Icons.keyboard_arrow_down_rounded,
-                            color: palette.textSecondary,
                             size: 20,
+                            fallbackColor: palette.textSecondary,
                           ),
                         ],
                       ),
@@ -918,10 +1031,13 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               ],
             ),
           ),
-          if (_expandedDetails) ...[
+          if (expanded) ...[
             if (plan.exercises.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Divider(color: dividerColor, height: 1),
+              Divider(
+                color: palette.borderSolid.withValues(alpha: 0.7),
+                height: 1,
+              ),
               const SizedBox(height: 10),
               for (var index = 0; index < plan.exercises.length; index++) ...[
                 if (index > 0) const SizedBox(height: 8),
@@ -933,9 +1049,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               Text(
                 plan.notes,
                 style: TextStyle(
-                  color: isLight
-                      ? palette.textSecondary
-                      : const Color(0xFFE4DAD1),
+                  color: palette.textSecondary,
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -944,12 +1058,16 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
           ],
           if (_canEdit) ...[
             const SizedBox(height: 12),
-            Divider(color: dividerColor, height: 1),
+            Divider(
+              color: palette.borderSolid.withValues(alpha: 0.7),
+              height: 1,
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
+                    key: Key('self-training-edit-${plan.id}'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
                       backgroundColor: palette.metricPanelBg,
@@ -961,11 +1079,11 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                         borderRadius: BorderRadius.circular(11),
                       ),
                     ),
-                    onPressed: _startEditing,
-                    icon: Icon(
-                      Icons.edit_outlined,
+                    onPressed: () => _startEditing(plan),
+                    icon: MetaGymSvgIcon(
+                      MetaGymIcons.commonEdit,
                       size: 16,
-                      color: palette.primaryText,
+                      fallbackIcon: Icons.edit_outlined,
                     ),
                     label: const Text('Sửa lịch'),
                   ),
@@ -973,18 +1091,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
+                    key: Key('self-training-delete-${plan.id}'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(48, 48),
                       backgroundColor: palette.metricPanelBg,
-                      foregroundColor: isLight
-                          ? palette.error
-                          : const Color(0xFFE08C87),
+                      foregroundColor: palette.error,
                       side: BorderSide(color: palette.metricPanelBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(11),
                       ),
                     ),
-                    onPressed: _saving ? null : _delete,
+                    onPressed: _saving ? null : () => _delete(plan),
                     child: const Text('Xóa lịch'),
                   ),
                 ),
@@ -997,18 +1114,14 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _exerciseSummaryRow(int order, SelfTrainingExercise exercise) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
     final volume = exercise.volumeLabel;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
       decoration: BoxDecoration(
-        color: isLight ? palette.metricPanelBg : const Color(0x5A211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isLight ? palette.metricPanelBorder : const Color(0x45A79D92),
-          width: 0.9,
-        ),
+        border: Border.all(color: palette.metricPanelBorder, width: 0.9),
       ),
       child: Row(
         children: [
@@ -1017,7 +1130,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             height: 24,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+              color: palette.chipActiveBg,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
@@ -1026,7 +1139,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             child: Text(
               '$order',
               style: TextStyle(
-                color: isLight ? palette.primaryText : const Color(0xFFFF9676),
+                color: palette.primaryText,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 fontFeatures: MetaGymTheme.tabularFigures,
@@ -1051,16 +1164,17 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0x20FF5E36),
+                color: palette.chipActiveBg,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: const Color(0x52FF5E36), width: 0.9),
+                border: Border.all(
+                  color: MetaGymTheme.primary.withValues(alpha: 0.36),
+                  width: 0.9,
+                ),
               ),
               child: Text(
                 volume,
                 style: TextStyle(
-                  color: isLight
-                      ? palette.primaryText
-                      : const Color(0xFFFFB29B),
+                  color: palette.primaryText,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   fontFeatures: MetaGymTheme.tabularFigures,
@@ -1086,8 +1200,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
     String? hintText,
     EdgeInsetsGeometry? contentPadding,
   }) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(MetaGymTheme.radiusInput),
       borderSide: BorderSide(color: palette.metricPanelBorder),
@@ -1098,23 +1211,16 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
       filled: true,
       fillColor: palette.metricPanelBg,
       contentPadding: contentPadding,
-      labelStyle: TextStyle(color: palette.textWarmMuted),
+      labelStyle: TextStyle(color: palette.textSecondary),
       hintStyle: TextStyle(
-        color: isLight
-            ? palette.textSecondary.withValues(alpha: 0.72)
-            : const Color(0x8AC8C2BC),
+        color: palette.textSecondary.withValues(alpha: 0.7),
         fontSize: 13.5,
       ),
       floatingLabelStyle: TextStyle(
         color: palette.primaryText,
         fontWeight: FontWeight.w600,
       ),
-      counterStyle: TextStyle(
-        color: isLight
-            ? palette.textSecondary
-            : MetaGymWarmGlassTokens.subtitleMuted,
-        fontSize: 11,
-      ),
+      counterStyle: TextStyle(color: palette.textSecondary, fontSize: 11),
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
@@ -1128,18 +1234,14 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _exerciseDraftCard(int index, _ExerciseDraft draft) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
     return Container(
       key: ValueKey(draft.id),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
-        color: isLight ? palette.metricPanelBg : const Color(0x66211E1C),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isLight ? palette.metricPanelBorder : const Color(0x55A79D92),
-          width: 1,
-        ),
+        border: Border.all(color: palette.metricPanelBorder, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1149,7 +1251,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                  color: palette.chipActiveBg,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
                     color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
@@ -1158,9 +1260,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 child: Text(
                   'Bài #${index + 1}',
                   style: TextStyle(
-                    color: isLight
-                        ? palette.primaryText
-                        : const Color(0xFFFF9676),
+                    color: palette.primaryText,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     fontFeatures: MetaGymTheme.tabularFigures,
@@ -1175,11 +1275,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 onPressed: _saving
                     ? null
                     : () => _removeExerciseDraftRow(index),
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  size: 19,
-                  color: isLight ? palette.error : const Color(0xFFE08C87),
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonDelete, size: 19, fallbackIcon: Icons.delete_outline_rounded),
               ),
             ],
           ),
@@ -1276,7 +1372,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
   }
 
   Widget _editPanel() {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     return _panel(
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1311,10 +1407,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
                 ),
               ),
               onPressed: _chooseTime,
-              icon: Icon(
-                Icons.schedule_rounded,
-                color: palette.primaryText,
-              ),
+              icon: MetaGymSvgIcon(MetaGymIcons.timeClock, fallbackIcon: Icons.schedule_rounded),
               label: Text(_time == null ? 'Chọn giờ tập' : 'Bắt đầu $_time'),
             ),
           ),
@@ -1346,7 +1439,7 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               ),
             ),
             onPressed: _saving ? null : _addExerciseDraftRow,
-            icon: Icon(Icons.add_rounded, color: palette.primaryText),
+            icon: MetaGymSvgIcon(MetaGymIcons.commonAdd, fallbackIcon: Icons.add_rounded),
             label: const Text(
               'Thêm bài tập',
               style: TextStyle(fontWeight: FontWeight.w600),
@@ -1383,12 +1476,15 @@ class _MemberSelfTrainingPageState extends State<MemberSelfTrainingPage> {
               const SizedBox(width: 8),
               TextButton(
                 style: TextButton.styleFrom(
-                  foregroundColor: palette.textWarmMuted,
+                  foregroundColor: palette.textSecondary,
                   minimumSize: const Size(48, 48),
                 ),
                 onPressed: _saving
                     ? null
-                    : () => setState(() => _editing = false),
+                    : () => setState(() {
+                        _editing = false;
+                        _editingSessionId = null;
+                      }),
                 child: const Text('Hủy'),
               ),
             ],

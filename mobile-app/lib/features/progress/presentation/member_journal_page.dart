@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:meta_gym_app/core/network/api_exception.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_glass_surface.dart';
+import 'package:meta_gym_app/features/auth/presentation/session_controller.dart';
 import 'package:meta_gym_app/features/membership/data/membership_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_journal_service.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
@@ -20,6 +21,7 @@ import 'package:meta_gym_app/features/progress/domain/body_measurement.dart';
 import 'package:meta_gym_app/features/progress/domain/journal_entry.dart';
 import 'package:meta_gym_app/features/progress/domain/progress_models.dart';
 import 'package:meta_gym_app/features/progress/presentation/member_measurement_page.dart';
+import 'package:meta_gym_app/features/progress/presentation/widgets/journal_interactive_modals.dart';
 import 'package:provider/provider.dart';
 
 enum _JournalTab { journal, progress }
@@ -110,6 +112,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   _DayDraft? _draft;
   bool _toastVisible = false;
   Timer? _toastTimer;
+  int _modalSyncVersion = 0;
+  bool _isFemale = false;
 
   DateTime get _today {
     final now = widget.todayOverride ?? DateTime.now();
@@ -141,6 +145,12 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     _progressService =
         widget.progressService ?? _tryRead<MemberProgressService>();
     _picker = widget.picker ?? DeviceProgressPhotoPicker();
+    final profileGender = _tryRead<SessionController>()?.user?.profile['gender']
+        ?.toString()
+        .toUpperCase();
+    if (profileGender == 'FEMALE') {
+      _isFemale = true;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _load();
     });
@@ -233,7 +243,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     if (_progressService == null) return;
     try {
       final points = await _fetchChartRange(range);
-      if (mounted) setState(() => _weightPoints = points);
+      if (mounted && _chartRange == range) {
+        setState(() => _weightPoints = points);
+      }
     } catch (_) {}
   }
 
@@ -288,6 +300,80 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     setState(() {
       _selectedDate = DateTime(date.year, date.month, date.day);
       _openCard = null;
+      _saveError = null;
+    });
+  }
+
+  void _jumpToToday() => _selectDate(_today);
+
+  String _fmtDraftDouble(double value) => value == value.roundToDouble()
+      ? value.toInt().toString()
+      : value.toStringAsFixed(1);
+
+  Future<void> _openWeightBodyFatSheet(_DayDraft draft) async {
+    if (!_canEditSelectedDay || _saving) return;
+    final initialWeight =
+        double.tryParse(draft.weight.trim().replaceAll(',', '.'));
+    final initialFat =
+        double.tryParse(draft.bodyFat.trim().replaceAll(',', '.'));
+    final picked = await showWeightBodyFatPickerSheet(
+      context,
+      initialWeightKg: initialWeight,
+      initialBodyFatPercent: initialFat,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      draft.weight = _fmtDraftDouble(picked.weightKg);
+      draft.bodyFat = _fmtDraftDouble(picked.bodyFatPercent);
+      _modalSyncVersion++;
+      _saveError = null;
+    });
+  }
+
+  Future<void> _openTapeScannerSheet(_DayDraft draft, String part) async {
+    if (!_canEditSelectedDay || _saving) return;
+    final initialChest =
+        double.tryParse(draft.chest.trim().replaceAll(',', '.'));
+    final initialWaist =
+        double.tryParse(draft.waist.trim().replaceAll(',', '.'));
+    final initialHips =
+        double.tryParse(draft.hips.trim().replaceAll(',', '.'));
+    final picked = await showBodyTapeScannerSheet(
+      context,
+      initialChestCm: initialChest,
+      initialWaistCm: initialWaist,
+      initialHipsCm: initialHips,
+      initialPart: part,
+      initialIsFemale: _isFemale,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      draft.chest = _fmtDraftDouble(picked.chestCm);
+      draft.waist = _fmtDraftDouble(picked.waistCm);
+      draft.hips = _fmtDraftDouble(picked.hipsCm);
+      _modalSyncVersion++;
+      _saveError = null;
+    });
+  }
+
+  Future<void> _openAddPrSheet(_DayDraft draft) async {
+    if (!_canEditSelectedDay || _saving) return;
+    final picked = await showAddWorkoutPrSheet(context);
+    if (picked == null || !mounted) return;
+    setState(() {
+      final existingIdx = draft.achievements.indexWhere(
+        (item) =>
+            item.title.trim().toLowerCase() ==
+            picked.title.trim().toLowerCase(),
+      );
+      if (existingIdx >= 0) {
+        draft.achievements[existingIdx].result = picked.result;
+      } else {
+        draft.achievements.add(
+          _AchievementDraft(title: picked.title, result: picked.result),
+        );
+      }
+      _modalSyncVersion++;
       _saveError = null;
     });
   }
@@ -477,52 +563,53 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     }
   }
 
+  MetaGymPalette get _palette => MetaGymTheme.paletteOf(context);
+  MetaGymColors get _colors => MetaGymColors.of(context);
+  bool get _isLight => MetaGymTheme.isLightPalette(context);
+
   Future<void> _deleteEntry(JournalEntry entry) async {
     if (_saving) return;
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     final accepted = await MetaGymNavigation.showDialogOnce<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isLight
-            ? palette.surfaceSolid
-            : const Color(0xFF2B2622),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isLight ? palette.borderSolid : const Color(0xB7B3A99D),
-            width: 1.1,
+      builder: (context) {
+        final palette = MetaGymTheme.paletteOf(context);
+        final colors = MetaGymColors.of(context);
+        return AlertDialog(
+          backgroundColor: colors.overlayGlass,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: colors.overlayGlassBorder, width: 1.1),
           ),
-        ),
-        title: Text(
-          'Xóa nhật ký?',
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          'Nhật ký ngày ${_shortDate(_parseIsoDate(entry.journalDate) ?? _today)} sẽ bị xóa.',
-          style: TextStyle(color: palette.textWarmMuted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Giữ lại',
-              style: TextStyle(color: palette.textSecondary),
+          title: Text(
+            'Xóa nhật ký?',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.dangerCoral,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xóa'),
+          content: Text(
+            'Nhật ký ngày ${_shortDate(_parseIsoDate(entry.journalDate) ?? _today)} sẽ bị xóa.',
+            style: TextStyle(color: palette.textSecondary),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Giữ lại',
+                style: TextStyle(color: palette.textSecondary),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: palette.error,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xóa'),
+            ),
+          ],
+        );
+      },
     );
     if (accepted != true || !mounted) return;
     setState(() => _saving = true);
@@ -574,8 +661,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
+    final colors = _colors;
+    final isLight = _isLight;
     final showSaveBar =
         _tab == _JournalTab.journal &&
         _canEditSelectedDay &&
@@ -601,9 +689,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   child: RefreshIndicator(
                     onRefresh: _load,
                     color: MetaGymTheme.brandOrange,
-                    backgroundColor: isLight
-                        ? palette.surfaceSolid
-                        : const Color(0xFF2B2622),
+                    backgroundColor: colors.surface,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
@@ -651,7 +737,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               child: Container(
                 padding: EdgeInsets.fromLTRB(
                   16,
-                  12,
+                  14,
                   16,
                   14 + MediaQuery.paddingOf(context).bottom,
                 ),
@@ -660,40 +746,66 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: isLight
-                        ? [
-                            palette.canvas.withValues(alpha: 0.96),
-                            palette.canvas.withValues(alpha: 0.0),
+                        ? const [
+                            Color(0xFAE8EEF5),
+                            Color(0xCCE8EEF5),
+                            Color(0x00E8EEF5),
                           ]
-                        : const [Color(0xF5141315), Color(0x00141315)],
+                        : const [
+                            Color(0xFA141315),
+                            Color(0xCC141315),
+                            Color(0x00141315),
+                          ],
                   ),
                 ),
-                child: SizedBox(
-                  height: 48,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: MetaGymTheme.brandOrange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x45FF5E36),
+                        blurRadius: 18,
+                        offset: Offset(0, 6),
                       ),
-                    ),
-                    onPressed: _saving ? null : _saveToday,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
+                    ],
+                  ),
+                  child: SizedBox(
+                    height: 52,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MetaGymTheme.brandOrange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: _saving ? null : _saveToday,
+                      icon: _saving
+                          ? const SizedBox.shrink()
+                          : const MetaGymSvgIcon(
+                              MetaGymIcons.commonSave,
+                              size: 18,
                               color: Colors.white,
+                              adaptForLightMode: false,
+                              fallbackIcon: Icons.check_rounded,
                             ),
-                          )
-                        : const Text(
-                            'Lưu thay đổi',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
+                      label: _saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Lưu thay đổi',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                          ),
+                    ),
                   ),
                 ),
               ),
@@ -710,7 +822,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 ),
                 decoration: BoxDecoration(
                   color: isLight
-                      ? palette.surfaceSolid
+                      ? colors.overlayGlass
                       : const Color(0xEC143B2D),
                   borderRadius: BorderRadius.circular(13),
                   border: Border.all(
@@ -721,7 +833,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   'Đã lưu nhật ký hôm nay',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isLight ? palette.success : const Color(0xFFA4F4C4),
+                    color: isLight
+                        ? palette.success
+                        : const Color(0xFFA4F4C4),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -734,7 +848,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     final todayEntry = _isSelectedToday ? _entryForDate(_today) : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -753,22 +867,64 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
+                  'META GYM · NHẬT KÝ',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: palette.primaryText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
                   'Nhật ký tập luyện',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: palette.textPrimary,
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Hành trình và kết quả của bạn',
-                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
                 ),
               ],
             ),
           ),
+          if (_tab == _JournalTab.journal &&
+              !_isSelectedToday &&
+              !_loading) ...[
+            MetaGymTap(
+              key: const Key('journal-today-pill'),
+              borderRadius: BorderRadius.circular(999),
+              onTap: _jumpToToday,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 36),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: palette.chipActiveBg,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Text(
+                  'Hôm nay',
+                  style: TextStyle(
+                    color: palette.primaryText,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
           if (_tab == _JournalTab.journal &&
               _canWrite &&
               todayEntry != null) ...[
@@ -790,17 +946,13 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   Widget _buildSegmentedTabs() {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isLight ? palette.metricPanelBg : const Color(0x991C1917),
+        color: palette.metricPanelBg,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: isLight ? palette.metricPanelBorder : const Color(0x55A79D92),
-          width: 0.9,
-        ),
+        border: Border.all(color: palette.metricPanelBorder, width: 1.0),
       ),
       child: Row(
         children: [
@@ -825,7 +977,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   Widget _buildJournalTab() {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -837,17 +989,14 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               child: Text(
                 _dayHeaderTitle(_selectedDate),
                 style: TextStyle(
-                  color: palette.textWarmMuted,
+                  color: palette.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
             if (_isSelectedToday && _canWrite)
-              _statusPill(
-                label: 'Hôm nay',
-                color: palette.success,
-              )
+              _statusPill(label: 'Hôm nay', color: palette.success)
             else if (!_canWrite && _isSelectedToday)
               _statusPill(
                 label: 'Chỉ xem (hết hạn gói)',
@@ -869,9 +1018,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   Widget _statusPill({required String label, required Color color}) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.16),
+      color: color.withValues(alpha: 0.14),
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: color.withValues(alpha: 0.44)),
+      border: Border.all(color: color.withValues(alpha: 0.42)),
     ),
     child: Text(
       label,
@@ -884,8 +1033,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   );
 
   Widget _buildCalendarCard() {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final palette = _palette;
     final monthStart = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final gridStart = _calendarMode == _CalendarMode.week
         ? _weekMonday(_selectedDate)
@@ -899,9 +1047,8 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         ? 7
         : ((((monthStart.weekday - 1) + daysInMonth) / 7).ceil() * 7);
 
-    return MetaGymGlassCard(
-      solid: false,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
+    return MetaGymHeroGlassCard(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Column(
         children: [
           Row(
@@ -914,13 +1061,33 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 onTap: () => _movePeriod(-1),
               ),
               Expanded(
-                child: Text(
-                  _calendarTitleText(),
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _calendarMode == _CalendarMode.week
+                          ? 'LỊCH TUẦN'
+                          : 'LỊCH THÁNG',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.primaryText,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
+                      ),
+                    ),
+                    Text(
+                      _calendarTitleText(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               _CalendarNavButton(
@@ -934,15 +1101,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: isLight
-                      ? palette.metricPanelBg
-                      : const Color(0xFF211E1C),
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(
-                    color: isLight
-                        ? palette.metricPanelBorder
-                        : const Color(0x808C7766),
-                  ),
+                  color: palette.metricPanelBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: palette.metricPanelBorder),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -966,7 +1127,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             ],
           ),
           if (_calendarMode == _CalendarMode.month) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Row(
               children: _weekdayShort
                   .map(
@@ -976,7 +1137,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                           label,
                           style: TextStyle(
                             color: palette.textSecondary,
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -986,19 +1147,20 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   .toList(),
             ),
           ],
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           GridView.builder(
             padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              mainAxisExtent: 44,
+              mainAxisExtent: 46,
             ),
             itemCount: cellCount,
             itemBuilder: (context, index) {
               final date = gridStart.add(Duration(days: index));
               final selected = _isSameDay(date, _selectedDate);
+              final isTodayCell = _isSameDay(date, _today);
               final outsideMonth =
                   _calendarMode == _CalendarMode.month &&
                   date.month != _selectedDate.month;
@@ -1008,27 +1170,42 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   : '${date.day}';
 
               return MetaGymTap(
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(12),
                 onTap: () => _selectDate(date),
                 child: AnimatedContainer(
                   duration: MetaGymTheme.stateDurationOf(context),
                   curve: Curves.easeOutCubic,
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: selected
-                        ? MetaGymTheme.brandOrange
-                        : hasEntry
-                        ? palette.success.withValues(alpha: 0.14)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(11),
-                    border: selected
-                        ? null
-                        : hasEntry
-                        ? Border.all(
-                            color: palette.success.withValues(alpha: 0.4),
-                            width: 1,
+                    gradient: selected
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF6D48), Color(0xFFFF5E36)],
                           )
                         : null,
+                    color: selected
+                        ? null
+                        : hasEntry
+                        ? palette.success.withValues(alpha: 0.14)
+                        : palette.metricPanelBg.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(12),
+                    border: selected
+                        ? null
+                        : isTodayCell
+                        ? Border.all(
+                            color: MetaGymTheme.brandOrange.withValues(alpha: 0.72),
+                            width: 1.2,
+                          )
+                        : hasEntry
+                        ? Border.all(
+                            color: palette.success.withValues(alpha: 0.42),
+                            width: 1,
+                          )
+                        : Border.all(
+                            color: palette.borderSolid.withValues(alpha: 0.45),
+                            width: 0.8,
+                          ),
                     boxShadow: selected
                         ? const [
                             BoxShadow(
@@ -1051,12 +1228,14 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                               : hasEntry
                               ? palette.success
                               : outsideMonth
-                              ? palette.textSecondary.withValues(alpha: 0.55)
+                              ? palette.textSecondary.withValues(alpha: 0.5)
                               : palette.textPrimary,
-                          fontSize: 12,
+                          fontSize: 12.5,
                           height: 1.15,
                           fontWeight:
-                              selected || hasEntry || _calendarMode == _CalendarMode.week
+                              selected ||
+                                  hasEntry ||
+                                  _calendarMode == _CalendarMode.week
                               ? FontWeight.w700
                               : FontWeight.w500,
                           fontFeatures: MetaGymTheme.tabularFigures,
@@ -1064,12 +1243,12 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       ),
                       if (hasEntry)
                         Positioned(
-                          bottom: 3,
+                          bottom: 4,
                           child: AnimatedContainer(
                             duration: MetaGymTheme.stateDurationOf(context),
                             curve: Curves.easeOutCubic,
-                            width: 4,
-                            height: 4,
+                            width: 4.5,
+                            height: 4.5,
                             decoration: BoxDecoration(
                               color: selected ? Colors.white : palette.success,
                               shape: BoxShape.circle,
@@ -1117,6 +1296,12 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   waist: draft.waist,
                   hips: draft.hips,
                   interactive: editable,
+                  onTapWeightSheet: editable
+                      ? () => _openWeightBodyFatSheet(draft)
+                      : null,
+                  onTapTapeSheet: editable
+                      ? (part) => _openTapeScannerSheet(draft, part)
+                      : null,
                 ),
           const SizedBox(height: 10),
           editable && _openCard == _EditCard.achievements
@@ -1125,6 +1310,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   items: draft.achievements,
                   notes: draft.notes,
                   interactive: editable,
+                  onTapAddPr: editable ? () => _openAddPrSheet(draft) : null,
                 ),
         ],
       );
@@ -1133,20 +1319,40 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final entry = _entryForDate(_selectedDate);
     final measurement = _measurementForDate(_selectedDate);
     if (entry == null && measurement == null) {
-      final palette = MetaGymTheme.paletteOf(context);
+      final palette = _palette;
       return MetaGymGlassCard(
         solid: false,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: Text(
-          _selectedDate.isAfter(_today)
-              ? 'Chưa đến ngày này.'
-              : 'Ngày này chưa có nhật ký và đã khóa.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: palette.textSecondary,
-            fontSize: 12.5,
-            height: 1.5,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: palette.metricPanelBg,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: palette.metricPanelBorder),
+              ),
+              alignment: Alignment.center,
+              child: const MetaGymSvgIcon(
+                MetaGymIcons.emptyProgress,
+                size: 26,
+                fallbackIcon: Icons.lock_clock_outlined,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _selectedDate.isAfter(_today)
+                  ? 'Chưa đến ngày này.'
+                  : 'Ngày này chưa có nhật ký và đã khóa.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: palette.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -1188,7 +1394,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     required List<SelectedProgressImage> pendingImages,
     required bool interactive,
   }) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     final count = photoIds.length + pendingImages.length;
     return MetaGymGlassCard(
       solid: false,
@@ -1204,12 +1410,14 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             Row(
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0x20FF5E36),
+                    color: palette.chipActiveBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0x55FF5E36)),
+                    border: Border.all(
+                      color: MetaGymTheme.primary.withValues(alpha: 0.36),
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: const MetaGymSvgIcon(
@@ -1227,23 +1435,45 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         'Ảnh thành quả',
                         style: TextStyle(
                           color: palette.textPrimary,
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         interactive
-                            ? '$count ảnh đã lưu trong ngày · Chạm để sửa'
+                            ? '$count/3 ảnh đã lưu · Chạm để sửa'
                             : '$count ảnh đã lưu trong ngày',
                         style: TextStyle(
                           color: palette.textSecondary,
-                          fontSize: 11,
+                          fontSize: 11.5,
                         ),
                       ),
                     ],
                   ),
                 ),
+                if (interactive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.chipActiveBg,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
+                      ),
+                    ),
+                    child: Text(
+                      '+ Ảnh',
+                      style: TextStyle(
+                        color: palette.primaryText,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
               ],
             ),
             if (count > 0) ...[
@@ -1286,7 +1516,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   Widget _buildEditablePhotoCard(_DayDraft draft) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     final total = draft.totalPhotos;
     return MetaGymGlassCard(
       solid: false,
@@ -1300,9 +1530,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0x20FF5E36),
+                  color: palette.chipActiveBg,
                   borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: const Color(0x55FF5E36)),
+                  border: Border.all(
+                    color: MetaGymTheme.primary.withValues(alpha: 0.36),
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: const MetaGymSvgIcon(
@@ -1337,10 +1569,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               IconButton(
                 tooltip: 'Thu gọn ảnh thành quả',
                 onPressed: () => setState(() => _openCard = null),
-                icon: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: palette.primaryText,
-                ),
+                icon: MetaGymSvgIcon(MetaGymIcons.commonChevronUp, fallbackIcon: Icons.keyboard_arrow_up_rounded),
               ),
             ],
           ),
@@ -1363,20 +1592,16 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   onTap: _saving ? null : _pickPhoto,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0x10FF5E36),
+                      color: palette.chipActiveBg,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: palette.primaryText.withValues(alpha: 0.55),
+                        color: MetaGymTheme.primary.withValues(alpha: 0.45),
                       ),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.add_rounded,
-                          color: palette.primaryText,
-                          size: 24,
-                        ),
+                        MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 24, fallbackIcon: Icons.add_rounded),
                         const SizedBox(height: 2),
                         Text(
                           'Thêm ảnh',
@@ -1429,15 +1654,13 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: const Color(0xE8241F1B),
+                          color: const Color(0xCC181B22),
                           borderRadius: BorderRadius.circular(9),
-                          border: Border.all(color: const Color(0x95ADA295)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.45),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        child: const MetaGymSvgIcon(MetaGymIcons.commonClose, size: 16, color: Colors.white, adaptForLightMode: false, fallbackIcon: Icons.close_rounded),
                       ),
                     ),
                   ),
@@ -1457,110 +1680,289 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     required String waist,
     required String hips,
     required bool interactive,
+    VoidCallback? onTapWeightSheet,
+    ValueChanged<String>? onTapTapeSheet,
   }) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     String fmt(String raw, String unit) =>
         raw.trim().isEmpty ? '—' : '${raw.trim()}$unit';
+    final chestVal =
+        double.tryParse(chest.trim().replaceAll(',', '.')) ??
+        (_isFemale ? 88.0 : 98.0);
+    final waistVal =
+        double.tryParse(waist.trim().replaceAll(',', '.')) ??
+        (_isFemale ? 64.0 : 78.0);
+    final hipsVal =
+        double.tryParse(hips.trim().replaceAll(',', '.')) ?? 94.0;
+    final ratioText = _isFemale
+        ? 'WHR ${(waistVal / hipsVal.clamp(1.0, 300.0)).toStringAsFixed(2)}'
+        : 'V-Taper ${(chestVal / waistVal.clamp(1.0, 300.0)).toStringAsFixed(2)}';
 
     return MetaGymGlassCard(
       solid: false,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: MetaGymTap(
-        borderRadius: BorderRadius.circular(18),
-        onTap: interactive
-            ? () => setState(() => _openCard = _EditCard.measurements)
-            : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Chỉ số cơ thể',
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (interactive)
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MetaGymTap(
+            borderRadius: BorderRadius.circular(12),
+            onTap: interactive
+                ? () => setState(() => _openCard = _EditCard.measurements)
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: palette.chipActiveBg,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: MetaGymTheme.primary.withValues(alpha: 0.36),
+                      ),
                     ),
+                    alignment: Alignment.center,
+                    child: const MetaGymSvgIcon(
+                      MetaGymIcons.bodyMeasureTape,
+                      size: 18,
+                      fallbackIcon: Icons.straighten_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: Text(
-                      'Chạm để nhập',
+                      'Chỉ số cơ thể',
                       style: TextStyle(
-                        color: palette.primaryText,
-                        fontSize: 11,
+                        color: palette.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-              ],
+                  if (interactive)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: palette.chipActiveBg,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: MetaGymTheme.brandOrange.withValues(alpha: 0.36),
+                        ),
+                      ),
+                      child: Text(
+                        'Chạm để nhập',
+                        style: TextStyle(
+                          color: palette.primaryText,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-            const SizedBox(height: 9),
-            Row(
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _PrimaryMetricBox(
+                  key: const Key('journal-open-weight-modal'),
+                  label: 'Cân nặng',
+                  value: fmt(weight, ' kg'),
+                  interactive: interactive,
+                  onTap: onTapWeightSheet,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _PrimaryMetricBox(
+                  key: const Key('journal-open-fat-modal'),
+                  label: 'Body fat',
+                  value: fmt(bodyFat, '%'),
+                  interactive: interactive,
+                  onTap: onTapWeightSheet,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          MetaGymMetricPanel(
+            padding: const EdgeInsets.all(10),
+            onTap: interactive && onTapTapeSheet != null
+                ? () => onTapTapeSheet('chest')
+                : null,
+            child: Row(
               children: [
-                Expanded(
-                  child: _PrimaryMetricBox(
-                    label: 'Cân nặng',
-                    value: fmt(weight, ' kg'),
-                  ),
+                BodyAnatomyMeasureStage(
+                  width: 98,
+                  height: 142,
+                  borderRadius: 14,
+                  isFemale: _isFemale,
+                  chestCm: chestVal,
+                  waistCm: waistVal,
+                  hipsCm: hipsVal,
+                  showCallouts: false,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: _PrimaryMetricBox(
-                    label: 'Body fat',
-                    value: fmt(bodyFat, '%'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Dáng người 3 vòng',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: palette.surfaceRaised.withValues(
+                                alpha: 0.7,
+                              ),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: palette.metricPanelBorder,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _MiniGenderChip(
+                                  key: const Key('journal-gender-male'),
+                                  label: 'Nam',
+                                  active: !_isFemale,
+                                  onTap: () =>
+                                      setState(() => _isFemale = false),
+                                ),
+                                const SizedBox(width: 2),
+                                _MiniGenderChip(
+                                  key: const Key('journal-gender-female'),
+                                  label: 'Nữ',
+                                  active: _isFemale,
+                                  onTap: () =>
+                                      setState(() => _isFemale = true),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: palette.success.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: palette.success.withValues(alpha: 0.42),
+                              ),
+                            ),
+                            child: Text(
+                              ratioText,
+                              style: TextStyle(
+                                color: palette.success,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: MetaGymTheme.tabularFigures,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        interactive
+                            ? 'Chạm hình hoặc số đo để kéo thước 3 vòng'
+                            : 'Mô phỏng hình thể theo số đo đã lưu',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: 11.5,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _SecondaryMetricBox(
-                    label: 'Vòng ngực',
-                    value: fmt(chest, ' cm'),
-                    accentColor: palette.primaryText,
-                  ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _SecondaryMetricBox(
+                  key: const Key('journal-open-tape-chest'),
+                  label: 'Vòng ngực',
+                  value: fmt(chest, ' cm'),
+                  accentColor: palette.primaryText,
+                  interactive: interactive,
+                  onTap: onTapTapeSheet == null
+                      ? null
+                      : () => onTapTapeSheet('chest'),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _SecondaryMetricBox(
-                    label: 'Vòng eo',
-                    value: fmt(waist, ' cm'),
-                    accentColor: palette.success,
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SecondaryMetricBox(
+                  key: const Key('journal-open-tape-waist'),
+                  label: 'Vòng eo',
+                  value: fmt(waist, ' cm'),
+                  accentColor: palette.success,
+                  interactive: interactive,
+                  onTap: onTapTapeSheet == null
+                      ? null
+                      : () => onTapTapeSheet('waist'),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _SecondaryMetricBox(
-                    label: 'Vòng hông',
-                    value: fmt(hips, ' cm'),
-                    accentColor: palette.reflection,
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SecondaryMetricBox(
+                  key: const Key('journal-open-tape-hips'),
+                  label: 'Vòng hông',
+                  value: fmt(hips, ' cm'),
+                  accentColor: palette.reflection,
+                  interactive: interactive,
+                  onTap: onTapTapeSheet == null
+                      ? null
+                      : () => onTapTapeSheet('hip'),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildEditableMeasurementCard(_DayDraft draft) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     Widget field({
+      required Key fieldKey,
       required String label,
       required String unit,
       required String initial,
@@ -1571,7 +1973,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
         children: [
           Text(
             label,
-            style: TextStyle(color: palette.textSecondary, fontSize: 10),
+            style: TextStyle(color: palette.textSecondary, fontSize: 11),
           ),
           const SizedBox(height: 4),
           Row(
@@ -1580,19 +1982,20 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 child: SizedBox(
                   height: 48,
                   child: TextFormField(
+                    key: fieldKey,
                     initialValue: initial,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     style: TextStyle(
                       color: palette.textPrimary,
-                      fontSize: 13,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
                     decoration: InputDecoration(
                       hintText: '—',
                       hintStyle: TextStyle(
-                        color: palette.textSecondary.withValues(alpha: 0.7),
+                        color: palette.textSecondary.withValues(alpha: 0.6),
                       ),
                       filled: true,
                       fillColor: palette.metricPanelBg,
@@ -1601,13 +2004,13 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                         vertical: 10,
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
                           color: palette.metricPanelBorder,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
                           color: MetaGymTheme.brandOrange,
                         ),
@@ -1622,7 +2025,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 unit,
                 style: TextStyle(
                   color: palette.textSecondary,
-                  fontSize: 10.5,
+                  fontSize: 11,
                 ),
               ),
             ],
@@ -1644,7 +2047,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   'Chỉ số cơ thể',
                   style: TextStyle(
                     color: palette.textPrimary,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1652,17 +2055,37 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               IconButton(
                 tooltip: 'Thu gọn chỉ số cơ thể',
                 onPressed: () => setState(() => _openCard = null),
-                icon: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: palette.primaryText,
+                icon: const MetaGymSvgIcon(
+                  MetaGymIcons.commonChevronUp,
+                  fallbackIcon: Icons.keyboard_arrow_up_rounded,
                 ),
               ),
             ],
           ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              _QuickToolChip(
+                icon: MetaGymIcons.bodyWeightScale,
+                label: 'Đĩa tạ & Mỡ',
+                color: palette.primaryText,
+                onTap: () => _openWeightBodyFatSheet(draft),
+              ),
+              _QuickToolChip(
+                icon: MetaGymIcons.bodyMeasureTape,
+                label: 'Thước 3 vòng',
+                color: palette.success,
+                onTap: () => _openTapeScannerSheet(draft, 'chest'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: field(
+                  fieldKey: ValueKey('meas-weight-$_modalSyncVersion'),
                   label: 'Cân nặng',
                   unit: 'kg',
                   initial: draft.weight,
@@ -1672,6 +2095,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: field(
+                  fieldKey: ValueKey('meas-fat-$_modalSyncVersion'),
                   label: 'Body fat',
                   unit: '%',
                   initial: draft.bodyFat,
@@ -1685,6 +2109,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             children: [
               Expanded(
                 child: field(
+                  fieldKey: ValueKey('meas-chest-$_modalSyncVersion'),
                   label: 'Vòng ngực',
                   unit: 'cm',
                   initial: draft.chest,
@@ -1694,6 +2119,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: field(
+                  fieldKey: ValueKey('meas-waist-$_modalSyncVersion'),
                   label: 'Vòng eo',
                   unit: 'cm',
                   initial: draft.waist,
@@ -1703,6 +2129,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: field(
+                  fieldKey: ValueKey('meas-hips-$_modalSyncVersion'),
                   label: 'Vòng hông',
                   unit: 'cm',
                   initial: draft.hips,
@@ -1720,134 +2147,194 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     required List<_AchievementDraft> items,
     required String notes,
     required bool interactive,
+    VoidCallback? onTapAddPr,
   }) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final dividerColor = isLight
-        ? palette.borderSolid.withValues(alpha: 0.5)
-        : const Color(0x24A79D92);
+    final palette = _palette;
     final filled = items
         .where((item) => item.result.trim().isNotEmpty)
         .toList();
     return MetaGymGlassCard(
       solid: false,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: MetaGymTap(
-        borderRadius: BorderRadius.circular(18),
-        onTap: interactive
-            ? () => setState(() => _openCard = _EditCard.achievements)
-            : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const MetaGymSvgIcon(
-                  MetaGymIcons.progressAchievementPr,
-                  size: 17,
-                  fallbackIcon: Icons.emoji_events_outlined,
-                ),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    'Thành tích của bạn',
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (interactive)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: palette.chipActiveBg,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'Chạm để ghi',
-                      style: TextStyle(
-                        color: palette.primaryText,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              'Tùy chọn · 3 bài gợi ý hoặc thêm bài riêng',
-              style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
-            ),
-            const SizedBox(height: 8),
-            if (filled.isEmpty)
-              Text(
-                'Chưa ghi thành tích',
-                style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
-              )
-            else
-              ...filled.map(
-                (item) => Container(
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: dividerColor)),
-                  ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: MetaGymTap(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: interactive
+                      ? () => setState(() => _openCard = _EditCard.achievements)
+                      : null,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: palette.chipActiveBg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: MetaGymTheme.primary.withValues(alpha: 0.36),
                           ),
                         ),
+                        alignment: Alignment.center,
+                        child: const MetaGymSvgIcon(
+                          MetaGymIcons.progressAchievementPr,
+                          size: 18,
+                          fallbackIcon: Icons.emoji_events_outlined,
+                        ),
                       ),
-                      Text(
-                        item.result,
-                        style: TextStyle(
-                          color: palette.primaryText,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          fontFeatures: MetaGymTheme.tabularFigures,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Thành tích của bạn',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              interactive
+                                  ? 'Chạm để sửa · Hoặc thêm PR nhanh'
+                                  : 'Thành tích đã lưu',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            if (notes.trim().isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.only(top: 7),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: dividerColor)),
+              if (interactive && onTapAddPr != null) ...[
+                const SizedBox(width: 8),
+                MetaGymTap(
+                  key: const Key('journal-open-add-pr'),
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: onTapAddPr,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 34),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.chipActiveBg,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '+ Thêm',
+                      style: TextStyle(
+                        color: palette.primaryText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                 ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (filled.isEmpty)
+            MetaGymTap(
+              borderRadius: BorderRadius.circular(10),
+              onTap: interactive
+                  ? () => setState(() => _openCard = _EditCard.achievements)
+                  : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(
-                  notes.trim(),
+                  'Chưa ghi thành tích',
                   style: TextStyle(
                     color: palette.textSecondary,
-                    fontSize: 11.5,
+                    fontSize: 12,
                   ),
                 ),
               ),
-            ],
+            )
+          else
+            ...filled.map(
+              (item) => Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: palette.borderSolid.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      item.result,
+                      style: TextStyle(
+                        color: palette.primaryText,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        fontFeatures: MetaGymTheme.tabularFigures,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (notes.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: palette.borderSolid.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+              child: Text(
+                notes.trim(),
+                style: TextStyle(
+                  color: palette.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildEditableAchievementCard(_DayDraft draft) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     return MetaGymGlassCard(
       solid: false,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
@@ -1861,24 +2348,54 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   'Thành tích của bạn',
                   style: TextStyle(
                     color: palette.textPrimary,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              MetaGymTap(
+                key: const Key('journal-open-add-pr-inline'),
+                borderRadius: BorderRadius.circular(999),
+                onTap: () => _openAddPrSheet(draft),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.chipActiveBg,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: MetaGymTheme.brandOrange.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      '+ Mở máy tính PR',
+                      style: TextStyle(
+                        color: palette.primaryText,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ),
               IconButton(
                 tooltip: 'Thu gọn thành tích',
                 onPressed: () => setState(() => _openCard = null),
-                icon: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: palette.primaryText,
+                icon: const MetaGymSvgIcon(
+                  MetaGymIcons.commonChevronUp,
+                  fallbackIcon: Icons.keyboard_arrow_up_rounded,
                 ),
               ),
             ],
           ),
           Text(
             'Tùy chọn · Chỉ lưu bài bạn đã ghi',
-            style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+            style: TextStyle(color: palette.textSecondary, fontSize: 11),
           ),
           const SizedBox(height: 8),
           ...List.generate(draft.achievements.length, (index) {
@@ -1894,17 +2411,18 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                             _starterAchievements[index],
                             style: TextStyle(
                               color: palette.textPrimary,
-                              fontSize: 12.5,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           )
                         : SizedBox(
                             height: 48,
                             child: TextFormField(
-                              key: ValueKey('custom-name-$index'),
+                              key: ValueKey('custom-name-$index-$_modalSyncVersion'),
                               initialValue: row.title,
                               style: TextStyle(
                                 color: palette.textPrimary,
-                                fontSize: 12.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
                               decoration: _inlineInputDecoration('Tên bài'),
@@ -1914,15 +2432,15 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   ),
                   const SizedBox(width: 8),
                   SizedBox(
-                    width: 110,
+                    width: 116,
                     height: 48,
                     child: TextFormField(
-                      key: ValueKey('ach-result-$index'),
+                      key: ValueKey('ach-result-$index-$_modalSyncVersion'),
                       initialValue: row.result,
                       textAlign: TextAlign.right,
                       style: TextStyle(
                         color: palette.textPrimary,
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                       decoration: _inlineInputDecoration('Chưa ghi'),
@@ -1934,10 +2452,10 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                       tooltip: 'Xóa bài',
                       onPressed: () =>
                           setState(() => draft.achievements.removeAt(index)),
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: palette.primaryText,
+                      icon: const MetaGymSvgIcon(
+                        MetaGymIcons.commonClose,
                         size: 18,
+                        fallbackIcon: Icons.close_rounded,
                       ),
                     ),
                 ],
@@ -1951,7 +2469,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                 foregroundColor: palette.primaryText,
                 backgroundColor: palette.chipActiveBg,
                 side: BorderSide(
-                  color: palette.primaryText.withValues(alpha: 0.45),
+                  color: MetaGymTheme.primary.withValues(alpha: 0.42),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -1962,7 +2480,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                   _AchievementDraft(title: '', result: ''),
                 );
               }),
-              icon: const Icon(Icons.add_rounded, size: 17),
+              icon: const MetaGymSvgIcon(MetaGymIcons.commonAdd, size: 17, fallbackIcon: Icons.add_rounded),
               label: const Text(
                 'Thêm bài khác',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
@@ -1983,11 +2501,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   InputDecoration _inlineInputDecoration(String hint) {
-    final palette = MetaGymTheme.paletteOf(context);
+    final palette = _palette;
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-        color: palette.textSecondary.withValues(alpha: 0.75),
+        color: palette.textSecondary.withValues(alpha: 0.65),
         fontSize: 12,
       ),
       filled: true,
@@ -2005,22 +2523,18 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   Widget _buildProgressTab() {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final dividerColor = isLight
-        ? palette.borderSolid.withValues(alpha: 0.5)
-        : const Color(0x24A79D92);
+    final palette = _palette;
     final latestMeasure = _measurements.isNotEmpty ? _measurements.first : null;
     final latestWeight =
         latestMeasure?.weightKg ?? _summary?.latestMeasurement?.weightKg;
     final workoutCount = _summary?.workoutCount;
 
-    String weightDeltaLabel = 'Chưa đủ dữ liệu so sánh';
+    String weightDeltaLabel = 'Chưa đủ dữ liệu';
     if (_weightPoints.length >= 2) {
       final delta = _weightPoints.last.weightKg - _weightPoints.first.weightKg;
       final sign = delta <= 0 ? '↓' : '↑';
       weightDeltaLabel =
-          '$sign ${delta.abs().toStringAsFixed(1)} kg trong $_chartRange';
+          '$sign ${delta.abs().toStringAsFixed(1)} kg · $_chartRange';
     }
 
     final latestEntryWithMeasure = _entries.cast<JournalEntry?>().firstWhere(
@@ -2052,96 +2566,202 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     final trendRange = _weightPoints.length >= 2
         ? '${_weightPoints.first.weightKg.toStringAsFixed(1)} → ${_weightPoints.last.weightKg.toStringAsFixed(1)}'
         : null;
+    final latestFat = latestMeasure?.bodyFatPercent;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: MetaGymGlassCard(
-                solid: false,
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cân nặng gần nhất',
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 11,
-                      ),
+        MetaGymHeroGlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'TỔNG QUAN TIẾN ĐỘ',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.primaryText,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.9,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Theo dõi chỉ số & PR',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      latestWeight == null
-                          ? '—'
-                          : '${latestWeight.toStringAsFixed(1)} kg',
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        fontFeatures: MetaGymTheme.tabularFigures,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      weightDeltaLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.success,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: MetaGymTheme.tabularFigures,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  _statusPill(
+                    label: _weightPoints.length >= 2
+                        ? '↑ Tiến bộ tốt'
+                        : 'Đang theo dõi',
+                    color: palette.success,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: MetaGymGlassCard(
-                solid: false,
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tổng buổi đã tập',
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 11,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: MetaGymMetricPanel(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Cân nặng',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            latestWeight == null
+                                ? '—'
+                                : '${latestWeight.toStringAsFixed(1)} kg',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            weightDeltaLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.success,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      workoutCount == null ? '—' : '$workoutCount buổi',
-                      style: TextStyle(
-                        color: palette.primaryText,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: MetaGymMetricPanel(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Mỡ cơ thể',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            latestFat == null
+                                ? '—'
+                                : '${latestFat.toStringAsFixed(1)}%',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            latestDate ?? 'Chưa đo',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textSecondary,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${_entries.length} ngày có nhật ký',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.success,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: MetaGymTheme.tabularFigures,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: MetaGymMetricPanel(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Số buổi',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            workoutCount == null ? '—' : '$workoutCount buổi',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.primaryText,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_entries.length} nhật ký',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.success,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: MetaGymTheme.tabularFigures,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         MetaGymGlassCard(
@@ -2151,73 +2771,120 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const MetaGymSvgIcon(
-                        MetaGymIcons.statsChartLine,
-                        size: 17,
-                        fallbackIcon: Icons.show_chart_rounded,
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        'Biểu đồ cân nặng',
-                        style: TextStyle(
-                          color: palette.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const MetaGymSvgIcon(
+                          MetaGymIcons.statsChartLine,
+                          size: 18,
+                          fallbackIcon: Icons.show_chart_rounded,
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (trendRange != null) ...[
-                        Text(
-                          trendRange,
-                          style: TextStyle(
-                            color: palette.success,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            fontFeatures: MetaGymTheme.tabularFigures,
+                        const SizedBox(width: 7),
+                        Flexible(
+                          child: Text(
+                            'Biểu đồ cân nặng',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
                       ],
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _chartRange,
-                          dropdownColor: isLight
-                              ? palette.surfaceSolid
-                              : const Color(0xFF2B2622),
-                          style: TextStyle(
-                            color: palette.primaryText,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          items: const ['8 tuần', '30 ngày', 'Toàn bộ']
-                              .map(
-                                (label) => DropdownMenuItem(
-                                  value: label,
-                                  child: Text(label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) _changeChartRange(value);
-                          },
+                    ),
+                  ),
+                  if (trendRange != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: palette.success.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: palette.success.withValues(alpha: 0.34),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Text(
+                        trendRange,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.success,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: MetaGymTheme.tabularFigures,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
+              const SizedBox(height: 4),
               Text(
                 'Thay đổi theo những lần bạn nhập số đo',
-                style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                style: TextStyle(color: palette.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: palette.metricPanelBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: palette.metricPanelBorder),
+                ),
+                child: Row(
+                  children: [
+                    for (final label in const ['8 tuần', '30 ngày', 'Toàn bộ'])
+                      Expanded(
+                        child: Semantics(
+                          button: true,
+                          selected: _chartRange == label,
+                          child: MetaGymTap(
+                            key: Key('journal-chart-range-$label'),
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => _changeChartRange(label),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              constraints: const BoxConstraints(minHeight: 38),
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _chartRange == label
+                                    ? MetaGymTheme.brandOrange
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _chartRange == label
+                                      ? Colors.white
+                                      : palette.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: _chartRange == label
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  fontFeatures: MetaGymTheme.tabularFigures,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
               if (_weightPoints.length < 2)
@@ -2261,9 +2928,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                               drawVerticalLine: false,
                               horizontalInterval: yInterval,
                               getDrawingHorizontalLine: (_) => FlLine(
-                                color: isLight
-                                    ? palette.borderSolid.withValues(alpha: 0.6)
-                                    : const Color(0x24FFFFFF),
+                                color: palette.borderSolid.withValues(
+                                  alpha: 0.7,
+                                ),
                                 strokeWidth: 1,
                               ),
                             ),
@@ -2289,7 +2956,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                                       value.toStringAsFixed(0),
                                       style: TextStyle(
                                         color: palette.textSecondary,
-                                        fontSize: 10,
+                                        fontSize: 11,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
                                       ),
                                     );
                                   },
@@ -2299,13 +2968,22 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                                 sideTitles: SideTitles(
                                   showTitles: true,
                                   reservedSize: 22,
-                                  interval: (_weightPoints.length / 4)
-                                      .clamp(1, 999)
-                                      .toDouble(),
+                                  interval: 1,
                                   getTitlesWidget: (value, _) {
+                                    if ((value - value.roundToDouble()).abs() >
+                                        0.01) {
+                                      return const SizedBox.shrink();
+                                    }
                                     final idx = value.round();
-                                    if (idx < 0 ||
-                                        idx >= _weightPoints.length) {
+                                    final total = _weightPoints.length;
+                                    if (idx < 0 || idx >= total) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final step = (total / 4).ceil().clamp(1, 999);
+                                    final isEdge = idx == 0 || idx == total - 1;
+                                    if (!isEdge &&
+                                        (idx % step != 0 ||
+                                            total - 1 - idx < step / 2)) {
                                       return const SizedBox.shrink();
                                     }
                                     final d = _parseIsoDate(
@@ -2317,7 +2995,9 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                                           : DateFormat('d/M').format(d),
                                       style: TextStyle(
                                         color: palette.textSecondary,
-                                        fontSize: 10,
+                                        fontSize: 11,
+                                        fontFeatures:
+                                            MetaGymTheme.tabularFigures,
                                       ),
                                     );
                                   },
@@ -2385,16 +3065,20 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Số đo cơ thể',
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Text(
+                      'Số đo cơ thể',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   TextButton(
                     onPressed: () {
                       final router = GoRouter.maybeOf(context);
@@ -2435,7 +3119,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
               _MeasureRow(
                 label: 'Vòng ngực',
                 value: chest == null ? '—' : '${chest.toStringAsFixed(1)} cm',
-                dotColor: MetaGymTheme.brandOrange,
+                dotColor: palette.primaryText,
               ),
               _MeasureRow(
                 label: 'Vòng eo',
@@ -2463,7 +3147,7 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: MetaGymTheme.brandOrange.withValues(alpha: 0.16),
+                      color: palette.chipActiveBg,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: MetaGymTheme.brandOrange.withValues(alpha: 0.42),
@@ -2502,7 +3186,11 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
                     decoration: idx > 0
                         ? BoxDecoration(
                             border: Border(
-                              top: BorderSide(color: dividerColor),
+                              top: BorderSide(
+                                color: palette.borderSolid.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
                             ),
                           )
                         : null,
@@ -2538,24 +3226,19 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
   }
 
   Widget _buildBanner(String text, {required bool isError}) {
-    final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final toneColor = isError ? palette.error : palette.warning;
+    final palette = _palette;
+    final accent = isError ? palette.error : palette.warning;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: toneColor.withValues(alpha: isLight ? 0.12 : 0.18),
+        color: accent.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: toneColor.withValues(alpha: 0.48),
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.45)),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: isLight
-              ? toneColor
-              : (isError ? const Color(0xFFFFB4B8) : const Color(0xFFFFD89B)),
+          color: accent,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -2563,31 +3246,28 @@ class _MemberJournalPageState extends State<MemberJournalPage> {
     );
   }
 
-  Widget _buildErrorCard() {
-    final palette = MetaGymTheme.paletteOf(context);
-    return MetaGymGlassCard(
-      solid: false,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: palette.textPrimary, fontSize: 13),
+  Widget _buildErrorCard() => MetaGymGlassCard(
+    solid: false,
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      children: [
+        Text(
+          _error!,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: _palette.textPrimary, fontSize: 13),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: MetaGymTheme.brandOrange,
+            foregroundColor: Colors.white,
           ),
-          const SizedBox(height: 12),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: MetaGymTheme.brandOrange,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: _load,
-            child: const Text('Thử lại'),
-          ),
-        ],
-      ),
-    );
-  }
+          onPressed: _load,
+          child: const Text('Thử lại'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _SegmentButton extends StatelessWidget {
@@ -2605,7 +3285,7 @@ class _SegmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     return MetaGymTap(
-      borderRadius: BorderRadius.circular(11),
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: AnimatedContainer(
         duration: MetaGymTheme.stateDurationOf(context),
@@ -2613,20 +3293,30 @@ class _SegmentButton extends StatelessWidget {
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? palette.chipActiveBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
-          border: active
-              ? Border.all(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.78),
-                  width: 1.1,
+          gradient: active
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFF6D48), Color(0xFFFF5E36)],
                 )
+              : null,
+          color: active ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: active
+              ? const [
+                  BoxShadow(
+                    color: Color(0x33FF5E36),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ]
               : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: active ? palette.chipActiveText : palette.textSecondary,
-            fontSize: 12.5,
+            color: active ? Colors.white : palette.textSecondary,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -2653,7 +3343,21 @@ class _CalendarNavButton extends StatelessWidget {
       tooltip: tooltip,
       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       onPressed: onTap,
-      icon: Icon(icon, color: palette.textPrimary, size: 22),
+      icon: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: palette.metricPanelBg,
+          shape: BoxShape.circle,
+          border: Border.all(color: palette.metricPanelBorder),
+        ),
+        alignment: Alignment.center,
+        child: MetaGymResolvedIcon(
+          icon,
+          size: 18,
+          fallbackColor: palette.primaryText,
+        ),
+      ),
     );
   }
 }
@@ -2673,29 +3377,30 @@ class _ViewModeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
     return MetaGymTap(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(9),
       onTap: onTap,
       child: AnimatedContainer(
         duration: MetaGymTheme.stateDurationOf(context),
         curve: Curves.easeOutCubic,
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        constraints: const BoxConstraints(minWidth: 44, minHeight: 36),
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: active ? palette.chipActiveBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: active
-              ? Border.all(
-                  color: MetaGymTheme.brandOrange.withValues(alpha: 0.72),
-                  width: 1,
+          gradient: active
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFF6D48), Color(0xFFFF5E36)],
                 )
               : null,
+          color: active ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: active ? palette.chipActiveText : palette.textSecondary,
-            fontSize: 10.5,
+            color: active ? Colors.white : palette.textSecondary,
+            fontSize: 11.5,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -2704,44 +3409,134 @@ class _ViewModeChip extends StatelessWidget {
   }
 }
 
+class _QuickToolChip extends StatelessWidget {
+  const _QuickToolChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MetaGymTap(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Center(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MetaGymSvgIcon(
+                icon,
+                size: 14,
+                color: color,
+                adaptForLightMode: false,
+                fallbackIcon: Icons.tune_rounded,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PrimaryMetricBox extends StatelessWidget {
-  const _PrimaryMetricBox({required this.label, required this.value});
+  const _PrimaryMetricBox({
+    required this.label,
+    required this.value,
+    this.interactive = false,
+    this.onTap,
+    super.key,
+  });
+
   final String label;
   final String value;
+  final bool interactive;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    final box = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: palette.metricPanelBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: palette.metricPanelBorder),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: interactive
+              ? MetaGymTheme.brandOrange.withValues(alpha: 0.28)
+              : palette.metricPanelBorder,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: palette.textSecondary,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (interactive)
+                MetaGymSvgIcon(
+                  MetaGymIcons.commonEdit,
+                  size: 13,
+                  color: palette.primaryText,
+                  adaptForLightMode: false,
+                  fallbackIcon: Icons.edit_outlined,
+                ),
+            ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 4),
           Text(
             value,
             style: TextStyle(
               color: palette.textPrimary,
-              fontSize: 17,
+              fontSize: 17.5,
               fontWeight: FontWeight.w800,
               fontFeatures: MetaGymTheme.tabularFigures,
             ),
           ),
         ],
       ),
+    );
+    if (!interactive || onTap == null) return box;
+    return MetaGymTap(
+      borderRadius: BorderRadius.circular(13),
+      onTap: onTap,
+      child: box,
     );
   }
 }
@@ -2751,45 +3546,125 @@ class _SecondaryMetricBox extends StatelessWidget {
     required this.label,
     required this.value,
     required this.accentColor,
+    this.interactive = false,
+    this.onTap,
+    super.key,
   });
+
   final String label;
   final String value;
   final Color accentColor;
+  final bool interactive;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+    final box = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
       decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: accentColor.withValues(alpha: 0.34), width: 1),
+        color: accentColor.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: accentColor.withValues(alpha: interactive ? 0.42 : 0.30),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: palette.textWarmMuted,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (interactive) ...[
+                const SizedBox(width: 3),
+                MetaGymSvgIcon(
+                  MetaGymIcons.commonEdit,
+                  size: 11,
+                  color: accentColor,
+                  adaptForLightMode: false,
+                  fallbackIcon: Icons.edit_outlined,
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 3),
           Text(
             value,
             style: TextStyle(
               color: palette.textPrimary,
-              fontSize: 13,
+              fontSize: 13.5,
               fontWeight: FontWeight.w800,
               fontFeatures: MetaGymTheme.tabularFigures,
             ),
           ),
         ],
+      ),
+    );
+    if (!interactive || onTap == null) return box;
+    return MetaGymTap(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: box,
+    );
+  }
+}
+
+class _MiniGenderChip extends StatelessWidget {
+  const _MiniGenderChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = MetaGymTheme.paletteOf(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(7),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: MetaGymTheme.stateDurationOf(context),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: active
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFF6D48), Color(0xFFFF5E36)],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: active ? Colors.white : palette.textSecondary,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2808,16 +3683,11 @@ class _MeasureRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: isLight
-                ? palette.borderSolid.withValues(alpha: 0.5)
-                : const Color(0x24A79D92),
-          ),
+          top: BorderSide(color: palette.borderSolid.withValues(alpha: 0.7)),
         ),
       ),
       child: Row(
@@ -2837,7 +3707,7 @@ class _MeasureRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(color: palette.textWarmMuted, fontSize: 12.5),
+                style: TextStyle(color: palette.textSecondary, fontSize: 12.5),
               ),
             ],
           ),
@@ -2888,19 +3758,16 @@ class _JournalPhotoState extends State<_JournalPhoto> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(11),
       child: Container(
-        color: palette.metricPanelBg,
+        color: palette.surfaceRaised,
         child: FutureBuilder<Uri>(
           future: _accessUrl,
           builder: (context, snapshot) => snapshot.hasData
               ? Image.network(
                   snapshot.data.toString(),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.broken_image_outlined,
-                    color: palette.textSecondary,
-                  ),
+                  errorBuilder: (_, _, _) => MetaGymSvgIcon(MetaGymIcons.stateBrokenImage, fallbackIcon: Icons.broken_image_outlined),
                 )
-              : Icon(Icons.image_outlined, color: palette.textSecondary),
+              : MetaGymSvgIcon(MetaGymIcons.mediaGallery, fallbackIcon: Icons.image_outlined),
         ),
       ),
     );

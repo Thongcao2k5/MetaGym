@@ -10,6 +10,7 @@ import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_detail_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.7 Khám phá Coach** đồng bộ `tab5-profile-sub.js` (`member-coach-selection`)
 /// và chuẩn Warm Smoked Liquid Glass (Dark + Light Daylight Studio).
@@ -215,10 +216,7 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    icon: const Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                    ),
+                                    icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                                     label: const Text(
                                       'Thử lại',
                                       style: TextStyle(
@@ -290,11 +288,7 @@ class _CoachSelectionPageState extends State<CoachSelectionPage> {
                                               _searchController.clear();
                                               setState(() => _searchTerm = '');
                                             },
-                                            icon: Icon(
-                                              Icons.close_rounded,
-                                              color: colors.textSecondary,
-                                              size: 18,
-                                            ),
+                                            icon: MetaGymSvgIcon(MetaGymIcons.commonClose, size: 18, fallbackIcon: Icons.close_rounded),
                                           )
                                         : null,
                                     filled: true,

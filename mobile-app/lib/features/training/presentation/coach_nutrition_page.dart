@@ -12,6 +12,8 @@ import 'package:meta_gym_app/features/training/presentation/coach_nutrition_edit
 import 'package:provider/provider.dart';
 
 import 'meal_plans_page.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 class CoachNutritionPage extends StatefulWidget {
   const CoachNutritionPage({this.service, this.structured = false, super.key});
@@ -60,9 +62,10 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
@@ -83,9 +86,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: isLight
-                        ? palette.surfaceSolid
-                        : const Color(0xFF282320),
+                    backgroundColor: colors.surface,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -169,12 +170,7 @@ class _CoachNutritionPageState extends State<CoachNutritionPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: isLight
-                                          ? palette.textSecondary
-                                          : const Color(0xFFB7B2AF),
-                                    ),
+                                    MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                                   ],
                                 ),
                               ),
@@ -263,9 +259,10 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
+    final colors = MetaGymColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: palette.canvas,
         extendBodyBehindAppBar: true,
@@ -286,9 +283,7 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                   )
                 : RefreshIndicator(
                     color: MetaGymTheme.primary,
-                    backgroundColor: isLight
-                        ? palette.surfaceSolid
-                        : const Color(0xFF282320),
+                    backgroundColor: colors.surface,
                     onRefresh: _load,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -381,10 +376,8 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: _guideAccent(
-                                          guide.status,
-                                          palette,
-                                        ).withValues(alpha: 0.14),
+                                        color: _guideAccent(guide.status, palette)
+                                            .withValues(alpha: 0.14),
                                         borderRadius: BorderRadius.circular(13),
                                         border: Border.all(
                                           color: _guideAccent(
@@ -393,14 +386,10 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                           ).withValues(alpha: 0.35),
                                         ),
                                       ),
-                                      child: Icon(
-                                        _guideIcon(guide.status),
-                                        color: _guideAccent(
+                                      child: MetaGymResolvedIcon(_guideIcon(guide.status), size: 22, fallbackColor: _guideAccent(
                                           guide.status,
                                           palette,
-                                        ),
-                                        size: 22,
-                                      ),
+                                        )),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -440,10 +429,7 @@ class _MemberGuidesPageState extends State<_MemberGuidesPage> {
                                     const SizedBox(width: 6),
                                     Padding(
                                       padding: const EdgeInsets.only(top: 10),
-                                      child: Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: palette.textSecondary,
-                                      ),
+                                      child: MetaGymSvgIcon(MetaGymIcons.commonChevronRight, fallbackIcon: Icons.chevron_right_rounded),
                                     ),
                                   ],
                                 ),
@@ -539,7 +525,7 @@ class _NutritionSectionHeader extends StatelessWidget {
     final palette = MetaGymTheme.paletteOf(context);
     return Row(
       children: [
-        Icon(icon, color: palette.success, size: 19),
+        MetaGymResolvedIcon(icon, size: 19, fallbackColor: palette.success),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -573,8 +559,6 @@ class _NutritionEmptyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = MetaGymTheme.paletteOf(context);
-    final isLight = MetaGymTheme.isLightPalette(context);
-    final muted = isLight ? palette.textSecondary : const Color(0xFFB7B2AF);
     return CoachingGraphiteCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -587,7 +571,7 @@ class _NutritionEmptyCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: palette.metricPanelBorder),
             ),
-            child: Icon(icon, color: muted, size: 24),
+            child: MetaGymResolvedIcon(icon, size: 24, fallbackColor: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           Text(
@@ -604,7 +588,7 @@ class _NutritionEmptyCard extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: muted,
+              color: palette.textSecondary,
               fontSize: 13,
               height: 1.45,
             ),

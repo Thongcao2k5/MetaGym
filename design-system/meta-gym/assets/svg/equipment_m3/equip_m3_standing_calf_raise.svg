@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+<defs><linearGradient id="equip-m3-standing-calf-raise-blush" x1="8" y1="7" x2="40" y2="41" gradientUnits="userSpaceOnUse"><stop stop-color="#FF5E36" stop-opacity=".03"/><stop offset="1" stop-color="#FF5E36" stop-opacity=".28"/></linearGradient></defs>
+<g stroke="#E8EDF5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 40V11a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v29M6 41h17M25 41h17M38 36V10M23 10h15M29 14v5M25 23h14M40 21v5"/><path d="M12 17h4m-4 6h4m-4 6h4" stroke-width="2"/><g fill="url(#equip-m3-standing-calf-raise-blush)"><rect x="24" y="13" width="11" height="4" rx="2"/><path d="M26 36h13v4H26z"/></g></g>
+<path d="M29 18v7M27 25h4" stroke="#FF5E36" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

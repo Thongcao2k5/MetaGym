@@ -9,6 +9,7 @@ import 'package:meta_gym_app/features/coaching/presentation/coaching_ui.dart';
 import 'package:meta_gym_app/features/profile/presentation/widgets/body_metric_pickers.dart';
 import 'package:meta_gym_app/features/progress/data/member_measurement_service.dart';
 import 'package:provider/provider.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 
 /// Màn hình **5.4 Khai báo thể trạng** khớp sát bố cục preview `tab5-profile.js`
 /// (`member-health-declaration`) trên nền & thẻ Warm Smoked Liquid Glass:
@@ -624,10 +625,7 @@ class _MemberHealthDeclarationPageState
                                     alignment: Alignment.centerLeft,
                                     child: TextButton.icon(
                                       onPressed: _load,
-                                      icon: const Icon(
-                                        Icons.refresh_rounded,
-                                        size: 18,
-                                      ),
+                                      icon: const MetaGymSvgIcon(MetaGymIcons.commonRefresh, size: 18, fallbackIcon: Icons.refresh_rounded),
                                       label: const Text('Tải lại hồ sơ'),
                                     ),
                                   ),
@@ -696,11 +694,7 @@ class _MemberHealthDeclarationPageState
                                                     ),
                                                   ),
                                                   const SizedBox(width: 2),
-                                                  Icon(
-                                                    Icons.north_east_rounded,
-                                                    size: 13,
-                                                    color: colors.primaryText,
-                                                  ),
+                                                  MetaGymSvgIcon(MetaGymIcons.commonChevronRight, size: 13, fallbackIcon: Icons.north_east_rounded),
                                                 ],
                                               ),
                                             ),

@@ -4,16 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meta_gym_app/app/meta_gym_app.dart';
+import 'package:meta_gym_app/core/theme/meta_gym_icons.dart';
 import 'package:meta_gym_app/core/widgets/meta_gym_bottom_nav.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_svg_icon.dart';
 import 'package:meta_gym_app/features/catalog/domain/catalog_models.dart';
 import 'package:meta_gym_app/features/member/presentation/member_home_page.dart';
 import 'package:meta_gym_app/features/coach/presentation/coach_home_page.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_selection_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_requests_service.dart';
 import 'package:meta_gym_app/features/coaching/data/coach_members_service.dart';
+import 'package:meta_gym_app/features/coaching/data/member_coaching_service.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_member_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_request_models.dart';
 import 'package:meta_gym_app/features/coaching/domain/coach_models.dart';
+import 'package:meta_gym_app/features/coaching/domain/member_coaching_models.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_members_page.dart';
 import 'package:meta_gym_app/features/coaching/presentation/coach_selection_page.dart';
 import 'package:meta_gym_app/core/storage/token_storage.dart';
@@ -86,6 +90,7 @@ void main() {
             sessionController: controller,
             membershipService: _EmptyMembershipService(),
             coachSelectionService: _EmptyCoachSelectionService(),
+            memberCoachingService: _EmptyMemberCoachingService(),
             memberTrainingService: _EmptyMemberTrainingService(),
             memberNutritionService: _EmptyMemberNutritionService(),
             memberSessionsService: _EmptyMemberSessionsService(),
@@ -164,6 +169,7 @@ void main() {
         sessionController: controller,
         membershipService: _EmptyMembershipService(),
         coachSelectionService: _EmptyCoachSelectionService(),
+        memberCoachingService: _EmptyMemberCoachingService(),
         memberTrainingService: _EmptyMemberTrainingService(),
         memberNutritionService: _EmptyMemberNutritionService(),
         memberSessionsService: _EmptyMemberSessionsService(),
@@ -189,45 +195,52 @@ void main() {
     expect(find.text('Tiến độ'), findsNothing);
 
     // Quick access Coach opens CoachSelectionPage
-    await tester.tap(find.text('Coach'));
+    await tester.tap(find.text('Coach').first);
     await tester.pumpAndSettle();
     expect(find.text('Khám phá Coach', findRichText: true), findsWidgets);
     expect(find.byType(CoachSelectionPage), findsOneWidget);
     expect(find.byType(MetaGymBottomNav), findsNothing);
     expect(find.text('Chưa có Coach để lựa chọn.'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
+    await tester.tap(
+      find
+          .byWidgetPredicate(
+            (w) =>
+                w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.commonBack,
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     expect(find.byType(MemberHomePage), findsOneWidget);
 
+    Future<void> tapBottomTab(String label) async {
+      await tester.tap(
+        find.descendant(
+          of: find.byType(MetaGymBottomNav),
+          matching: find.text(label),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
     // Tapping bottom nav tab 1 opens the training hub.
-    await tester.tap(
-      find.descendant(
-        of: find.byType(MetaGymBottomNav),
-        matching: find.byIcon(Icons.fitness_center_outlined),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await tapBottomTab('Tập luyện');
     expect(find.byType(MemberTrainingHubPage), findsOneWidget);
-    expect(find.text('Lịch tập của tôi'), findsOneWidget);
+    expect(find.text('META GYM · TẬP LUYỆN'), findsOneWidget);
 
     // Tapping bottom nav tab 2: AI -> AiConversationsPage
-    await tester.tap(find.byIcon(Icons.auto_awesome_rounded));
-    await tester.pumpAndSettle();
+    await tapBottomTab('AI');
     expect(find.byType(AiConversationsPage), findsOneWidget);
 
     // Tapping bottom nav tab 3: Tin nhắn -> ConversationsPage
-    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
-    await tester.pumpAndSettle();
+    await tapBottomTab('Tin nhắn');
     expect(find.byType(ConversationsPage), findsOneWidget);
 
     // Tapping bottom nav tab 4: Hồ sơ -> ProfilePage
-    await tester.tap(find.byIcon(Icons.person_outline_rounded));
-    await tester.pumpAndSettle();
+    await tapBottomTab('Hồ sơ');
     expect(find.byType(ProfilePage), findsOneWidget);
 
     // Tapping bottom nav tab 0: Trang chủ -> Return to MemberDashboardView
-    await tester.tap(find.byIcon(Icons.home_outlined));
-    await tester.pumpAndSettle();
+    await tapBottomTab('Trang chủ');
     expect(find.byType(MemberHomePage), findsOneWidget);
 
     // Direct routing to nutrition
@@ -345,7 +358,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CoachMembersPage), findsOneWidget);
     expect(find.text('Chưa có hội viên đang phụ trách.'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
+    await tester.tap(
+      find
+          .byWidgetPredicate(
+            (w) =>
+                w is MetaGymSvgIcon && w.assetPath == MetaGymIcons.commonBack,
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Dinh dưỡng'), 250);
     await tester.tap(find.text('Dinh dưỡng'));
@@ -517,6 +537,47 @@ class _EmptyCoachSelectionService implements CoachSelectionService {
   @override
   Future<CoachRequest> sendRequest(String coachId, String? message) =>
       throw UnimplementedError('No coach in this fixture');
+}
+
+class _EmptyMemberCoachingService implements MemberCoachingService {
+  @override
+  Future<Map<String, String>> getCoachNames() async => const {};
+
+  @override
+  Future<List<MemberCoachRequest>> getRequests() async => const [];
+
+  @override
+  Future<MemberCoachRelationship?> getCurrentRelationship() async => null;
+
+  @override
+  Future<List<MemberCoachRelationship>> getRelationshipHistory() async =>
+      const [];
+
+  @override
+  Future<void> cancelRequest(String id) async {}
+
+  @override
+  Future<CoachLockChoiceResult> submitCoachLockChoice({
+    required String choice,
+    String? note,
+  }) => throw UnimplementedError('No relationship in this fixture');
+
+  @override
+  Future<List<CoachTerminationRequest>> getEarlyTerminationRequests() async =>
+      const [];
+
+  @override
+  Future<CoachTerminationRequest> requestEarlyTermination(
+    String relationshipId,
+    String reason,
+  ) => throw UnimplementedError('No relationship in this fixture');
+
+  @override
+  Future<CoachTerminationRequest> respondEarlyTermination(
+    String requestId, {
+    required String decision,
+    String? reason,
+  }) => throw UnimplementedError('No termination request in this fixture');
 }
 
 class _EmptyCoachRequestsService implements CoachRequestsService {

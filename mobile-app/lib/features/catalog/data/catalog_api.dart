@@ -37,7 +37,10 @@ class CatalogApi implements CatalogService {
         },
         decode: (value) => (value as List)
             .map(CatalogItem.fromJson)
-            .where((item) => item.status == 'ACTIVE')
+            .where((item) {
+              final status = item.status.toUpperCase();
+              return status == 'ACTIVE' || status == 'MAINTENANCE';
+            })
             .toList(),
       )).data;
 }

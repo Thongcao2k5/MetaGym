@@ -15,10 +15,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Sức bền cơ bản'), findsOneWidget);
       expect(find.text('Bản nháp bí mật'), findsNothing);
-      expect(find.text('Giáo trình cũ'), findsOneWidget);
+      expect(find.text('Ngày 1'), findsNothing);
       expect(find.text('Toàn thân'), findsOneWidget);
       expect(find.text('Squat'), findsOneWidget);
       expect(find.text('3 hiệp · 12 lần'), findsOneWidget);
+      expect(find.text('Tuần'), findsOneWidget);
+      expect(find.text('Tháng'), findsOneWidget);
       expect(find.text('Đang áp dụng'), findsNothing);
       await tester.tap(find.text('Sức bền cơ bản'));
       await tester.pumpAndSettle();
@@ -27,9 +29,16 @@ void main() {
       await tester.tap(find.text('Sức bền cơ bản'));
       await tester.pumpAndSettle();
       expect(find.text('Đang áp dụng'), findsNothing);
-      expect(find.text('Dinh dưỡng'), findsOneWidget);
+      // Workout curriculum is cleanly separated from the Nutrition plan tab.
+      expect(find.text('Dinh dưỡng'), findsNothing);
       expect(find.textContaining('Phiên bản'), findsNothing);
       expect(find.text('Lịch sử đến gym'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Giáo trình cũ'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Giáo trình cũ'), findsOneWidget);
     },
   );
 

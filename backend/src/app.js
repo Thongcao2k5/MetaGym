@@ -59,6 +59,7 @@ import {
   retireLegacyWrites,
 } from './modules/system/index.js';
 import { createRealtimeRouter } from './config/realtime.js';
+import { createNotificationsRouter } from './routes/notifications.routes.js';
 import { createDatabaseLoginRateLimiter } from './security/login-rate-limiter.js';
 
 const JWT_SECRET_PLACEHOLDER =
@@ -104,6 +105,7 @@ export function createApp({
   callTokenProvider,
   liveKit,
   realtime,
+  fcm,
   imageStorage,
   vnpay,
   momo,
@@ -174,13 +176,14 @@ export function createApp({
   app.use('/api/v1', createCoachPackagesRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachScheduleRouter({ database, jwtSecret }));
   app.use('/api/v1', createCoachPaymentHoldsRouter({ database, jwtSecret }));
-  app.use('/api/v1', createCoachBookingsRouter({ database, jwtSecret }));
+  app.use('/api/v1', createCoachBookingsRouter({ database, jwtSecret, realtime, fcm }));
   app.use('/api/v1', createCatalogRouter({ database, jwtSecret, imageStorage }));
-  app.use('/api/v1', createStructuredNutritionRouter({ database, jwtSecret }));
-  app.use('/api/v1', createTrainingRouter({ database, jwtSecret }));
+  app.use('/api/v1', createStructuredNutritionRouter({ database, jwtSecret, realtime, fcm }));
+  app.use('/api/v1', createTrainingRouter({ database, jwtSecret, realtime, fcm }));
   app.use('/api/v1', createSessionsRouter({ database, jwtSecret }));
   app.use('/api/v1', createRealtimeRouter({ database, jwtSecret, realtime }));
-  app.use('/api/v1', createMessagingRouter({ database, jwtSecret, realtime }));
+  app.use('/api/v1', createNotificationsRouter({ database, jwtSecret, realtime, fcm }));
+  app.use('/api/v1', createMessagingRouter({ database, jwtSecret, realtime, fcm }));
   app.use('/api/v1', createMemberNutritionRouter({ database, jwtSecret }));
   app.use('/api/v1', createProgressRouter({ database, jwtSecret }));
   app.use('/api/v1', createJournalRouter({ database, jwtSecret }));
@@ -188,7 +191,7 @@ export function createApp({
   app.use('/api/v1', createGymVisitsRouter({ database, jwtSecret }));
   app.use('/api/v1', createDashboardRouter({ database, jwtSecret }));
   app.use('/api/v1', createAiConversationsRouter({ database, jwtSecret, aiResponder }));
-  app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime }));
+  app.use('/api/v1', createCallsRouter({ database, jwtSecret, callTokenProvider, liveKit, realtime, fcm }));
   app.use('/api/v1', createPaymentsRouter({ database, jwtSecret, vnpay, momo, zalopay, preferredPaymentGateway,
     allowMockPayments: nodeEnv !== 'production' && !vnpay && !momo && !zalopay }));
   app.use('/api/v1', createCoachingRouter({ database, jwtSecret }));

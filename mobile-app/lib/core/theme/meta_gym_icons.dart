@@ -105,6 +105,68 @@ abstract final class MetaGymIcons {
   // === default (1) ===
   static const String defaultDefault = '$_root/default/default.svg';
 
+  // === equipment_m3 (8) ===
+  static const String equipM3BackExtension =
+      '$_root/equipment_m3/equip_m3_back_extension.svg';
+  static const String equipM3ChinDipAssist =
+      '$_root/equipment_m3/equip_m3_chin_dip_assist.svg';
+  static const String equipM3GluteSeated =
+      '$_root/equipment_m3/equip_m3_glute_seated.svg';
+  static const String equipM3GluteStanding =
+      '$_root/equipment_m3/equip_m3_glute_standing.svg';
+  static const String equipM3PecFlyRearDelt =
+      '$_root/equipment_m3/equip_m3_pec_fly_rear_delt.svg';
+  static const String equipM3RotaryTorso =
+      '$_root/equipment_m3/equip_m3_rotary_torso.svg';
+  static const String equipM3SeatedLegCurl =
+      '$_root/equipment_m3/equip_m3_seated_leg_curl.svg';
+  static const String equipM3StandingCalfRaise =
+      '$_root/equipment_m3/equip_m3_standing_calf_raise.svg';
+
+  // === equipment_video (4) ===
+  static const String equipVideoAssistedPullUp =
+      '$_root/equipment_video/equip_video_assisted_pull_up.svg';
+  static const String equipVideoPecDeckFly =
+      '$_root/equipment_video/equip_video_pec_deck_fly.svg';
+  static const String equipVideoReverseMachineFly =
+      '$_root/equipment_video/equip_video_reverse_machine_fly.svg';
+  static const String equipVideoSeatedLegCurl =
+      '$_root/equipment_video/equip_video_seated_leg_curl.svg';
+
+  // === equipment_7groups (16) ===
+  static const String equip7CableAnkleStation =
+      '$_root/equipment_7groups/equip_cable_ankle_station.svg';
+  static const String equip7CableLowBar =
+      '$_root/equipment_7groups/equip_cable_low_bar.svg';
+  static const String equip7CablePreacher =
+      '$_root/equipment_7groups/equip_cable_preacher.svg';
+  static const String equip7CableRopeStation =
+      '$_root/equipment_7groups/equip_cable_rope_station.svg';
+  static const String equip7ChestPress =
+      '$_root/equipment_7groups/equip_chest_press.svg';
+  static const String equip7DualCable =
+      '$_root/equipment_7groups/equip_dual_cable.svg';
+  static const String equip7HyperextensionAngular =
+      '$_root/equipment_7groups/equip_hyperextension_angular.svg';
+  static const String equip7HyperextensionCurved =
+      '$_root/equipment_7groups/equip_hyperextension_curved.svg';
+  static const String equip7LatPulldown =
+      '$_root/equipment_7groups/equip_lat_pulldown.svg';
+  static const String equip7LegExtension =
+      '$_root/equipment_7groups/equip_leg_extension.svg';
+  static const String equip7MultiHip =
+      '$_root/equipment_7groups/equip_multi_hip.svg';
+  static const String equip7PecDeck =
+      '$_root/equipment_7groups/equip_pec_deck.svg';
+  static const String equip7SeatedDip =
+      '$_root/equipment_7groups/equip_seated_dip.svg';
+  static const String equip7SeatedTricepsExtension =
+      '$_root/equipment_7groups/equip_seated_triceps_extension.svg';
+  static const String equip7SmithHipThrust =
+      '$_root/equipment_7groups/equip_smith_hip_thrust.svg';
+  static const String equip7SmithSquat =
+      '$_root/equipment_7groups/equip_smith_squat.svg';
+
   // === membership (20) ===
   static const String membershipDefault = '$_root/membership/default.svg';
   static const String membershipActiveSeal = '$_root/membership/membership_active_seal.svg';
@@ -159,6 +221,43 @@ abstract final class MetaGymIcons {
   static const String muscleTraps = '$_root/muscles/muscle_traps.svg';
   static const String muscleTriceps = '$_root/muscles/muscle_triceps.svg';
   static const String muscleUpper = '$_root/muscles/muscle_upper.svg';
+  static const String femaleBodyDefault = '$_root/muscles/female_default.svg';
+  static const String femaleBodyChest = '$_root/muscles/female_chest.svg';
+  static const String femaleBodyCore = '$_root/muscles/female_core.svg';
+  static const String femaleBodyHips = '$_root/muscles/female_hips.svg';
+
+  // === muscles/focus (31) ===
+  static const String musclesFocusDefault = '$_root/muscles/focus/default.svg';
+  static const String musclesFocusDefaultBack = '$_root/muscles/focus/default_back.svg';
+  static const String muscleFocusAbs = '$_root/muscles/focus/muscle_abs.svg';
+  static const String muscleFocusAdductors = '$_root/muscles/focus/muscle_adductors.svg';
+  static const String muscleFocusArm = '$_root/muscles/focus/muscle_arm.svg';
+  static const String muscleFocusArms = '$_root/muscles/focus/muscle_arms.svg';
+  static const String muscleFocusBack = '$_root/muscles/focus/muscle_back.svg';
+  static const String muscleFocusBiceps = '$_root/muscles/focus/muscle_biceps.svg';
+  static const String muscleFocusCalves = '$_root/muscles/focus/muscle_calves.svg';
+  static const String muscleFocusCardio = '$_root/muscles/focus/muscle_cardio.svg';
+  static const String muscleFocusChest = '$_root/muscles/focus/muscle_chest.svg';
+  static const String muscleFocusCore = '$_root/muscles/focus/muscle_core.svg';
+  static const String muscleFocusForearms = '$_root/muscles/focus/muscle_forearms.svg';
+  static const String muscleFocusFull = '$_root/muscles/focus/muscle_full.svg';
+  static const String muscleFocusFullBody = '$_root/muscles/focus/muscle_full_body.svg';
+  static const String muscleFocusGlute = '$_root/muscles/focus/muscle_glute.svg';
+  static const String muscleFocusGlutes = '$_root/muscles/focus/muscle_glutes.svg';
+  static const String muscleFocusHamstrings = '$_root/muscles/focus/muscle_hamstrings.svg';
+  static const String muscleFocusLats = '$_root/muscles/focus/muscle_lats.svg';
+  static const String muscleFocusLeg = '$_root/muscles/focus/muscle_leg.svg';
+  static const String muscleFocusLegs = '$_root/muscles/focus/muscle_legs.svg';
+  static const String muscleFocusLower = '$_root/muscles/focus/muscle_lower.svg';
+  static const String muscleFocusLowerBack = '$_root/muscles/focus/muscle_lower_back.svg';
+  static const String muscleFocusObliques = '$_root/muscles/focus/muscle_obliques.svg';
+  static const String muscleFocusQuads = '$_root/muscles/focus/muscle_quads.svg';
+  static const String muscleFocusRearDelts = '$_root/muscles/focus/muscle_rear_delts.svg';
+  static const String muscleFocusShoulder = '$_root/muscles/focus/muscle_shoulder.svg';
+  static const String muscleFocusShoulders = '$_root/muscles/focus/muscle_shoulders.svg';
+  static const String muscleFocusTraps = '$_root/muscles/focus/muscle_traps.svg';
+  static const String muscleFocusTriceps = '$_root/muscles/focus/muscle_triceps.svg';
+  static const String muscleFocusUpper = '$_root/muscles/focus/muscle_upper.svg';
 
   // === navigation (30) ===
   static const String navigationDefault = '$_root/navigation/default.svg';
