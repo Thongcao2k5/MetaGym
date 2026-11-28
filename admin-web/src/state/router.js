@@ -14,6 +14,14 @@ const SECTION_ALIASES = {
   storage: 'media-analytics',
   analytics: 'media-analytics',
   settings: 'media-settings',
+  system: 'system-info',
+  nhansu: 'staff',
+  'staff-positions': 'staff',
+  positions: 'staff',
+  voucher: 'vouchers',
+  promo: 'vouchers',
+  schedule: 'coach-schedule',
+  calendar: 'coach-schedule',
 };
 
 export function normalizeSection(rawSection) {

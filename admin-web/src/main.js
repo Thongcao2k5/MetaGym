@@ -43,8 +43,12 @@ import { renderNotificationPage } from './pages/notification.js';
 import { renderDesignSystemPage } from './pages/design-system.js';
 import { renderMediaLibraryPage } from './pages/media-library.js';
 import { renderMediaSharingPage } from './pages/media-sharing.js';
-import { destroyAnalyticsCharts, renderMediaAnalyticsPage } from './pages/media-analytics.js';
+import { renderMediaAnalyticsPage, destroyAnalyticsCharts } from './pages/media-analytics.js';
 import { renderMediaSettingsPage } from './pages/media-settings.js';
+import { renderSystemInfoPage } from './pages/system-info.js';
+import { renderStaffPage } from './pages/staff.js';
+import { renderVouchersPage } from './pages/vouchers.js';
+import { renderCoachSchedulePage } from './pages/coach-schedule.js';
 
 export function createApp({
   root = document.querySelector('#app'),
@@ -123,7 +127,7 @@ export function createApp({
       if (!getCurrentUser()) {
         const res = await api('/users/me');
         if (currentId !== routingId) return;
-        if (res?.data?.role !== 'ADMIN') {
+        if (!['ADMIN', 'STAFF'].includes(res?.data?.role)) {
           await signOut({ expired: false });
           return;
         }
@@ -168,6 +172,10 @@ export function createApp({
         'media-sharing': () => renderMediaSharingPage(ctx),
         'media-analytics': () => renderMediaAnalyticsPage(ctx),
         'media-settings': () => renderMediaSettingsPage(ctx),
+        'system-info': () => renderSystemInfoPage(ctx),
+        staff: () => renderStaffPage(ctx),
+        vouchers: () => renderVouchersPage(ctx),
+        'coach-schedule': () => renderCoachSchedulePage(ctx),
       };
 
       const handler = pages[parsed.section];

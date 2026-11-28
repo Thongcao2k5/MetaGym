@@ -382,3 +382,40 @@ test('Sidebar renders dedicated links for all promoted sections and marks the ac
     assert.equal(activeLink.getAttribute('aria-current'), 'page', `${section} link must have aria-current="page"`);
   }
 });
+
+test('Header Command Grid button opens full admin functions grid modal with instant search', () => {
+  const env = createDomEnvironment({ hash: '#/admin/dashboard', token: 'tok' });
+  renderShell({
+    root: env.root,
+    section: 'dashboard',
+    user: { role: 'ADMIN', fullName: 'Meta Admin', email: 'admin@metagym.vn' },
+    contentHtml: '<p>ok</p>',
+    badges: { incidents: 3, disputes: 1 },
+  });
+
+  const gridBtn = env.root.querySelector('#open-command-grid-btn');
+  assert.ok(gridBtn, 'Header must include Command Grid button');
+  assert.equal(gridBtn.innerHTML.includes('Bảng điều khiển'), true);
+
+  gridBtn.click();
+  assert.equal(env.modalOverlay.hidden, false);
+  const cards = env.modalDialog.querySelectorAll('.cmd-grid-card');
+  assert.ok(cards.length >= 20, 'Command Grid must render all functional cards');
+  assert.equal(env.modalDialog.innerHTML.includes('Voucher khuyến mãi'), true);
+  assert.equal(env.modalDialog.innerHTML.includes('Nhân sự &amp; Vị trí nhân viên'), true);
+
+  const search = env.modalDialog.querySelector('#cmd-grid-search');
+  search.value = 'voucher';
+  search.dispatchEvent({ type: 'input' });
+  const voucherMatches = env.modalDialog.querySelectorAll('.cmd-grid-card');
+  assert.equal(voucherMatches.length, 2, 'Should match both Voucher khuyến mãi and POS desc mentioning voucher');
+
+  search.value = 'khuyến mãi';
+  search.dispatchEvent({ type: 'input' });
+  const filteredCards = env.modalDialog.querySelectorAll('.cmd-grid-card');
+  assert.equal(filteredCards.length, 1);
+  assert.equal(filteredCards[0].getAttribute('href'), '#/admin/vouchers');
+
+  filteredCards[0].click();
+  assert.equal(env.modalOverlay.hidden, true, 'Clicking a grid card must close modal');
+});
