@@ -94,5 +94,35 @@ void main() {
         );
       }
     }
+
+    testWidgets(
+      'works cleanly inside MaterialApp builder above Navigator/Overlay without No Overlay error',
+      (tester) async {
+        final controller = ApiCacheStatusController();
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: MetaGymTheme.dark,
+            builder: (context, child) => OfflineCacheBannerOverlay(
+              controller: controller,
+              child: child!,
+            ),
+            home: const Scaffold(body: Center(child: Text('Body'))),
+          ),
+        );
+
+        controller.recordCacheFallback(DateTime.now());
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('offline-cache-banner')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byKey(const Key('offline-cache-banner-dismiss')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('offline-cache-banner')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

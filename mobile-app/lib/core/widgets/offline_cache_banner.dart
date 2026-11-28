@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meta_gym_app/core/network/api_cache_interceptor.dart';
 import 'package:meta_gym_app/core/theme/app_theme.dart';
+import 'package:meta_gym_app/core/widgets/meta_gym_tap.dart';
 
 /// Lớp phủ hiển thị thông báo gọn phía trên khi app đang dùng dữ liệu đã lưu ngoại tuyến.
 ///
@@ -109,16 +110,24 @@ class _OfflineBannerCard extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                key: const Key('offline-cache-banner-dismiss'),
-                onPressed: onDismiss,
-                tooltip: 'Ẩn thông báo ngoại tuyến',
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                padding: EdgeInsets.zero,
-                icon: Icon(
-                  Icons.close_rounded,
-                  size: 18,
-                  color: palette.textSecondary,
+              Semantics(
+                button: true,
+                label: 'Ẩn thông báo ngoại tuyến',
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: MetaGymTap(
+                    key: const Key('offline-cache-banner-dismiss'),
+                    onTap: onDismiss,
+                    customBorder: const CircleBorder(),
+                    child: Center(
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: palette.textSecondary,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
