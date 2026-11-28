@@ -1404,18 +1404,18 @@ test('T18 Group 6: D6 payment immutability, payment_adjustments uniqueness, D3 s
   });
 
 // ============================================================================
-// GROUP 7: Database Schema (55 Tables), 0033 Indexes & REVOKE ALL Privilege Guard
+// GROUP 7: Database Schema (75 Tables), 0033 Indexes & REVOKE ALL Privilege Guard
 // ============================================================================
-test('T18 Group 7: DB schema integrity (55 public tables, 0033 indexes, hard cap 8, REVOKE ALL privilege guard)',
+test('T18 Group 7: DB schema integrity (75 public tables, 0033 indexes, hard cap 8, REVOKE ALL privilege guard)',
   { skip: !databaseUrl }, async () => {
     const database = new pg.Pool({ connectionString: databaseUrl });
 
     try {
-      // 7A. Verify exactly 55 public tables
+      // 7A. Verify exactly 75 public tables
       const { rows: [{ table_count: tableCount }] } = await database.query(
         `SELECT count(*)::int AS table_count FROM pg_tables WHERE schemaname = 'public'`,
       );
-      assert.equal(tableCount, 55, `Expected 55 public tables, found ${tableCount}`);
+      assert.equal(tableCount, 75, `Expected 75 public tables, found ${tableCount}`);
 
       // 7B. Verify all 9 indexes from 0033_web_admin_reporting_and_audit_indexes.up.sql exist
       const expectedIndexes = [

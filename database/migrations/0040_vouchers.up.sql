@@ -92,6 +92,15 @@ ALTER TABLE payments
   ADD COLUMN IF NOT EXISTS original_amount bigint CHECK (original_amount IS NULL OR original_amount >= 0),
   ADD COLUMN IF NOT EXISTS discount_amount bigint NOT NULL DEFAULT 0 CHECK (discount_amount >= 0);
 
-REVOKE ALL ON vouchers, voucher_redemptions FROM anon, authenticated;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON vouchers, voucher_redemptions FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON vouchers, voucher_redemptions FROM authenticated;
+  END IF;
+END
+$$;
 
 COMMIT;
